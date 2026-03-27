@@ -1,0 +1,66 @@
+{
+  "elements": [
+    {
+      "id": 3,
+      "web_name": "Magalh\u00e3es",
+      "team": 1,
+      "element_type": 2,
+      "now_cost": 55,
+      "selected_by_percent": "8.2",
+      "form": "5.0",
+      "status": "a",
+      "minutes": 1620,
+      "starts": 18,
+      "defensive_contributions": 42,
+      "clearances_blocks_interceptions": 38,
+      "direct_freekicks_order": null,
+      "penalties_order": null,
+      "corners_and_indirect_freekicks_order": null,
+      "news": "",
+      "extra_field_that_should_be_stripped": true
+    },
+    {
+      "id": 17,
+      "web_name": "Saka",
+      "team": 1,
+      "element_type": 3,
+      "now_cost": 105,
+      "selected_by_percent": "32.1",
+      "form": "7.8",
+      "status": "a",
+      "minutes": 1540,
+      "starts": 17,
+      "defensive_contributions": 5,
+      "clearances_blocks_interceptions": 3,
+      "direct_freekicks_order": 1,
+      "penalties_order": null,
+      "corners_and_indirect_freekicks_order": 1,
+      "news": ""
+    },
+    {
+      "id": 318,
+      "web_name": "Wissa",
+      "team": 4,
+      "element_type": 4,
+      "now_cost": 62,
+      "selected_by_percent": "3.1",
+      "form": "4.2",
+      "status": "d",
+      "minutes": 980,
+      "starts": 12,
+      "defensive_contributions": null,
+      "clearances_blocks_interceptions": null,
+      "direct_freekicks_order": null,
+      "penalties_order": 1,
+      "corners_and_indirect_freekicks_order": null,
+      "news": "Knee injury - 50% chance of playing"
+    }
+  ],
+  "teams": [
+    { "id": 1, "name": "Arsenal", "short_name": "ARS", "code": 3 },
+    { "id": 4, "name": "Brentford", "short_name": "BRE", "code": 94 }
+  ],
+  "events": [
+    { "id": 20, "is_current": true, "is_next": false, "finished": false }
+  ]
+}

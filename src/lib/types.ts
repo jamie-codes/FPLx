@@ -1,0 +1,66 @@
+// Position codes used by FPL API: 1=GK, 2=DEF, 3=MID, 4=FWD
+export type PositionCode = 1 | 2 | 3 | 4
+
+// FPL player status codes
+export type PlayerStatus = 'a' | 'd' | 'i' | 's' | 'u' | 'n'
+
+// Validated FPL element (after Zod parsing, only consumed fields)
+export interface FPLElement {
+  id: number
+  web_name: string
+  team: number
+  element_type: PositionCode
+  now_cost: number                          // tenths of GBP 1m (e.g. 65 = GBP 6.5m)
+  selected_by_percent: string               // "12.5" — FPL returns as string
+  form: string                              // "6.3" — FPL returns as string
+  status: PlayerStatus                      // a=available, d=doubtful, i=injured, s=suspended, u=unavailable, n=not available
+  minutes: number
+  starts: number
+  defensive_contributions: number | null    // 2025/26 field — nullable per PPS-01
+  clearances_blocks_interceptions: number | null  // 2025/26 field — nullable per PPS-01
+  direct_freekicks_order: number | null     // Set piece taker order per PPS-01. 1 = primary taker, null = not a taker.
+  penalties_order: number | null            // Penalty taker order per PPS-01. 1 = primary taker, null = not a taker.
+  corners_and_indirect_freekicks_order: number | null  // Corner taker order per PPS-01. 1 = primary taker, null = not a taker.
+  news: string                              // injury/availability news text per PPS-04
+}
+
+// Validated FPL team
+export interface FPLTeam {
+  id: number
+  name: string
+  short_name: string
+  code: number
+}
+
+// Validated FPL gameweek event
+export interface FPLEvent {
+  id: number
+  is_current: boolean
+  is_next: boolean
+  finished: boolean
+}
+
+// Full bootstrap-static response (validated)
+export interface FPLBootstrap {
+  elements: FPLElement[]
+  teams: FPLTeam[]
+  events: FPLEvent[]
+}
+
+// Player ID map entry: bridges FPL <-> Understat
+export interface PlayerIdMapEntry {
+  fpl_id: number
+  fpl_web_name: string
+  understat_id: number | null               // null for promoted-team players with no Understat history (per D-02)
+  understat_name: string | null             // null when understat_id is null
+}
+
+// Player ID map: keyed by FPL id as string
+export type PlayerIdMap = Record<string, PlayerIdMapEntry>
+
+// Pipeline metadata written alongside cached data
+export interface PipelineMetadata {
+  last_updated: string                      // ISO 8601 timestamp
+  stale: boolean                            // true when serving previous day's cache after pipeline failure (per D-06)
+  source: 'blob' | 'local'                  // where data was read from
+}
