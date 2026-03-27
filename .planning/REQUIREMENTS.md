@@ -51,10 +51,10 @@ IDs assigned for phase traceability.
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| PPS-01 | Penalty taker, set piece taker, corner taker flags | Pending |
-| PPS-02 | Minutes reliability: average minutes per game, consistency indicator | Pending |
+| PPS-01 | Penalty taker, set piece taker, corner taker flags | Complete |
+| PPS-02 | Minutes reliability: average minutes per game, consistency indicator | Complete |
 | PPS-03 | xG per 90 and xA per 90 (from Understat) | Pending |
-| PPS-04 | Injury / availability status from FPL flags | Pending |
+| PPS-04 | Injury / availability status from FPL flags | Complete |
 
 ## Transfer Suggestions
 
@@ -92,10 +92,10 @@ IDs assigned for phase traceability.
 |-------------|-------|--------|
 | DAT-01 | Phase 1 | Pending |
 | DAT-02 | Phase 6 | Pending |
-| PPS-01 | Phase 1 | Pending |
-| PPS-02 | Phase 1 | Pending |
+| PPS-01 | Phase 1 | Complete |
+| PPS-02 | Phase 1 | Complete |
 | PPS-03 | Phase 1 | Pending |
-| PPS-04 | Phase 1 | Pending |
+| PPS-04 | Phase 1 | Complete |
 | GEM-03 | Phase 2 | Pending |
 | FFA-01 | Phase 2 | Pending |
 | FFA-02 | Phase 2 | Pending |
