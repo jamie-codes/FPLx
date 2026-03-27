@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Pipeline local cache
+pipeline/cache/
+
+# Environment
+.env.local
+.env*.local
