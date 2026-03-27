@@ -1,0 +1,4952 @@
+{
+  "1": {
+    "fpl_id": 1,
+    "fpl_web_name": "Raya",
+    "understat_id": 9676,
+    "understat_name": null
+  },
+  "2": {
+    "fpl_id": 2,
+    "fpl_web_name": "Arrizabalaga",
+    "understat_id": 5061,
+    "understat_name": null
+  },
+  "3": {
+    "fpl_id": 3,
+    "fpl_web_name": "Hein",
+    "understat_id": 9692,
+    "understat_name": null
+  },
+  "4": {
+    "fpl_id": 4,
+    "fpl_web_name": "Setford",
+    "understat_id": 13011,
+    "understat_name": null
+  },
+  "5": {
+    "fpl_id": 5,
+    "fpl_web_name": "Gabriel",
+    "understat_id": 5613,
+    "understat_name": null
+  },
+  "6": {
+    "fpl_id": 6,
+    "fpl_web_name": "Saliba",
+    "understat_id": 6888,
+    "understat_name": null
+  },
+  "7": {
+    "fpl_id": 7,
+    "fpl_web_name": "Calafiori",
+    "understat_id": 8129,
+    "understat_name": null
+  },
+  "8": {
+    "fpl_id": 8,
+    "fpl_web_name": "J.Timber",
+    "understat_id": 11707,
+    "understat_name": null
+  },
+  "9": {
+    "fpl_id": 9,
+    "fpl_web_name": "Kiwior",
+    "understat_id": 10012,
+    "understat_name": null
+  },
+  "10": {
+    "fpl_id": 10,
+    "fpl_web_name": "Lewis-Skelly",
+    "understat_id": 12272,
+    "understat_name": null
+  },
+  "11": {
+    "fpl_id": 11,
+    "fpl_web_name": "White",
+    "understat_id": 7298,
+    "understat_name": null
+  },
+  "13": {
+    "fpl_id": 13,
+    "fpl_web_name": "Clarke",
+    "understat_id": 13607,
+    "understat_name": null
+  },
+  "14": {
+    "fpl_id": 14,
+    "fpl_web_name": "Kacurri",
+    "understat_id": 13081,
+    "understat_name": null
+  },
+  "15": {
+    "fpl_id": 15,
+    "fpl_web_name": "Nichols",
+    "understat_id": 13115,
+    "understat_name": null
+  },
+  "16": {
+    "fpl_id": 16,
+    "fpl_web_name": "Saka",
+    "understat_id": 7322,
+    "understat_name": null
+  },
+  "17": {
+    "fpl_id": 17,
+    "fpl_web_name": "Ødegaard",
+    "understat_id": 2517,
+    "understat_name": null
+  },
+  "18": {
+    "fpl_id": 18,
+    "fpl_web_name": "Madueke",
+    "understat_id": 11357,
+    "understat_name": null
+  },
+  "19": {
+    "fpl_id": 19,
+    "fpl_web_name": "Martinelli",
+    "understat_id": 7752,
+    "understat_name": null
+  },
+  "20": {
+    "fpl_id": 20,
+    "fpl_web_name": "Trossard",
+    "understat_id": 7698,
+    "understat_name": null
+  },
+  "21": {
+    "fpl_id": 21,
+    "fpl_web_name": "Rice",
+    "understat_id": 5553,
+    "understat_name": null
+  },
+  "22": {
+    "fpl_id": 22,
+    "fpl_web_name": "Merino",
+    "understat_id": 5304,
+    "understat_name": null
+  },
+  "23": {
+    "fpl_id": 23,
+    "fpl_web_name": "Fábio Vieira",
+    "understat_id": 11007,
+    "understat_name": null
+  },
+  "24": {
+    "fpl_id": 24,
+    "fpl_web_name": "Nørgaard",
+    "understat_id": 7083,
+    "understat_name": null
+  },
+  "25": {
+    "fpl_id": 25,
+    "fpl_web_name": "Nwaneri",
+    "understat_id": 11132,
+    "understat_name": null
+  },
+  "26": {
+    "fpl_id": 26,
+    "fpl_web_name": "Zubimendi",
+    "understat_id": 7526,
+    "understat_name": null
+  },
+  "28": {
+    "fpl_id": 28,
+    "fpl_web_name": "Kabia",
+    "understat_id": 13082,
+    "understat_name": null
+  },
+  "29": {
+    "fpl_id": 29,
+    "fpl_web_name": "Sambi",
+    "understat_id": 9689,
+    "understat_name": null
+  },
+  "30": {
+    "fpl_id": 30,
+    "fpl_web_name": "Havertz",
+    "understat_id": 5220,
+    "understat_name": null
+  },
+  "31": {
+    "fpl_id": 31,
+    "fpl_web_name": "G.Jesus",
+    "understat_id": 5543,
+    "understat_name": null
+  },
+  "266": {
+    "fpl_id": 266,
+    "fpl_web_name": "Eze",
+    "understat_id": 8706,
+    "understat_name": null
+  },
+  "662": {
+    "fpl_id": 662,
+    "fpl_web_name": "Mosquera",
+    "understat_id": 10024,
+    "understat_name": null
+  },
+  "666": {
+    "fpl_id": 666,
+    "fpl_web_name": "Gyökeres",
+    "understat_id": 7254,
+    "understat_name": null
+  },
+  "700": {
+    "fpl_id": 700,
+    "fpl_web_name": "Dowman",
+    "understat_id": 13872,
+    "understat_name": null
+  },
+  "711": {
+    "fpl_id": 711,
+    "fpl_web_name": "Harriman-Annous",
+    "understat_id": 14000,
+    "understat_name": null
+  },
+  "725": {
+    "fpl_id": 725,
+    "fpl_web_name": "Hincapie",
+    "understat_id": 9911,
+    "understat_name": null
+  },
+  "759": {
+    "fpl_id": 759,
+    "fpl_web_name": "Salmon",
+    "understat_id": 14220,
+    "understat_name": null
+  },
+  "32": {
+    "fpl_id": 32,
+    "fpl_web_name": "Martinez",
+    "understat_id": 4401,
+    "understat_name": null
+  },
+  "33": {
+    "fpl_id": 33,
+    "fpl_web_name": "M.Bizot",
+    "understat_id": 9614,
+    "understat_name": null
+  },
+  "34": {
+    "fpl_id": 34,
+    "fpl_web_name": "Gauci",
+    "understat_id": 12445,
+    "understat_name": null
+  },
+  "35": {
+    "fpl_id": 35,
+    "fpl_web_name": "Marschall",
+    "understat_id": 10173,
+    "understat_name": null
+  },
+  "36": {
+    "fpl_id": 36,
+    "fpl_web_name": "Cash",
+    "understat_id": 8864,
+    "understat_name": null
+  },
+  "37": {
+    "fpl_id": 37,
+    "fpl_web_name": "Digne",
+    "understat_id": 1823,
+    "understat_name": null
+  },
+  "38": {
+    "fpl_id": 38,
+    "fpl_web_name": "Konsa",
+    "understat_id": 7726,
+    "understat_name": null
+  },
+  "39": {
+    "fpl_id": 39,
+    "fpl_web_name": "Maatsen",
+    "understat_id": 11807,
+    "understat_name": null
+  },
+  "40": {
+    "fpl_id": 40,
+    "fpl_web_name": "Mings",
+    "understat_id": 1024,
+    "understat_name": null
+  },
+  "41": {
+    "fpl_id": 41,
+    "fpl_web_name": "Pau",
+    "understat_id": 6221,
+    "understat_name": null
+  },
+  "42": {
+    "fpl_id": 42,
+    "fpl_web_name": "A.García",
+    "understat_id": 13392,
+    "understat_name": null
+  },
+  "43": {
+    "fpl_id": 43,
+    "fpl_web_name": "Alex Moreno",
+    "understat_id": 4120,
+    "understat_name": null
+  },
+  "44": {
+    "fpl_id": 44,
+    "fpl_web_name": "Bogarde",
+    "understat_id": 10025,
+    "understat_name": null
+  },
+  "45": {
+    "fpl_id": 45,
+    "fpl_web_name": "Sousa",
+    "understat_id": 11133,
+    "understat_name": null
+  },
+  "46": {
+    "fpl_id": 46,
+    "fpl_web_name": "Yasin",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "47": {
+    "fpl_id": 47,
+    "fpl_web_name": "Rogers",
+    "understat_id": 12412,
+    "understat_name": null
+  },
+  "48": {
+    "fpl_id": 48,
+    "fpl_web_name": "Tielemans",
+    "understat_id": 5956,
+    "understat_name": null
+  },
+  "49": {
+    "fpl_id": 49,
+    "fpl_web_name": "Bailey",
+    "understat_id": 5221,
+    "understat_name": null
+  },
+  "50": {
+    "fpl_id": 50,
+    "fpl_web_name": "Buendía",
+    "understat_id": 2203,
+    "understat_name": null
+  },
+  "51": {
+    "fpl_id": 51,
+    "fpl_web_name": "Iling Jr",
+    "understat_id": 10616,
+    "understat_name": null
+  },
+  "53": {
+    "fpl_id": 53,
+    "fpl_web_name": "Malen",
+    "understat_id": 9749,
+    "understat_name": null
+  },
+  "54": {
+    "fpl_id": 54,
+    "fpl_web_name": "McGinn",
+    "understat_id": 7723,
+    "understat_name": null
+  },
+  "55": {
+    "fpl_id": 55,
+    "fpl_web_name": "Barkley",
+    "understat_id": 592,
+    "understat_name": null
+  },
+  "56": {
+    "fpl_id": 56,
+    "fpl_web_name": "Barrenechea",
+    "understat_id": 11140,
+    "understat_name": null
+  },
+  "57": {
+    "fpl_id": 57,
+    "fpl_web_name": "Dobbin",
+    "understat_id": 10027,
+    "understat_name": null
+  },
+  "58": {
+    "fpl_id": 58,
+    "fpl_web_name": "Kamara",
+    "understat_id": 5789,
+    "understat_name": null
+  },
+  "59": {
+    "fpl_id": 59,
+    "fpl_web_name": "Onana",
+    "understat_id": 9667,
+    "understat_name": null
+  },
+  "60": {
+    "fpl_id": 60,
+    "fpl_web_name": "Broggio",
+    "understat_id": 13221,
+    "understat_name": null
+  },
+  "61": {
+    "fpl_id": 61,
+    "fpl_web_name": "Dendoncker",
+    "understat_id": 7236,
+    "understat_name": null
+  },
+  "62": {
+    "fpl_id": 62,
+    "fpl_web_name": "Jimoh-Aloba",
+    "understat_id": 13310,
+    "understat_name": null
+  },
+  "63": {
+    "fpl_id": 63,
+    "fpl_web_name": "Young",
+    "understat_id": 11240,
+    "understat_name": null
+  },
+  "64": {
+    "fpl_id": 64,
+    "fpl_web_name": "Watkins",
+    "understat_id": 8865,
+    "understat_name": null
+  },
+  "65": {
+    "fpl_id": 65,
+    "fpl_web_name": "Redmond",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "389": {
+    "fpl_id": 389,
+    "fpl_web_name": "Elliott",
+    "understat_id": 7546,
+    "understat_name": null
+  },
+  "456": {
+    "fpl_id": 456,
+    "fpl_web_name": "Sancho",
+    "understat_id": 6345,
+    "understat_name": null
+  },
+  "688": {
+    "fpl_id": 688,
+    "fpl_web_name": "Wright",
+    "understat_id": 11488,
+    "understat_name": null
+  },
+  "699": {
+    "fpl_id": 699,
+    "fpl_web_name": "Douglas Luiz",
+    "understat_id": 6122,
+    "understat_name": null
+  },
+  "701": {
+    "fpl_id": 701,
+    "fpl_web_name": "Rowe",
+    "understat_id": 13869,
+    "understat_name": null
+  },
+  "702": {
+    "fpl_id": 702,
+    "fpl_web_name": "Burrowes",
+    "understat_id": 13870,
+    "understat_name": null
+  },
+  "703": {
+    "fpl_id": 703,
+    "fpl_web_name": "Proctor",
+    "understat_id": 12273,
+    "understat_name": null
+  },
+  "710": {
+    "fpl_id": 710,
+    "fpl_web_name": "Patterson",
+    "understat_id": 11507,
+    "understat_name": null
+  },
+  "719": {
+    "fpl_id": 719,
+    "fpl_web_name": "Lindelöf",
+    "understat_id": 6080,
+    "understat_name": null
+  },
+  "754": {
+    "fpl_id": 754,
+    "fpl_web_name": "George Hemmings",
+    "understat_id": 14193,
+    "understat_name": null
+  },
+  "757": {
+    "fpl_id": 757,
+    "fpl_web_name": "Hollingshead",
+    "understat_id": 14218,
+    "understat_name": null
+  },
+  "768": {
+    "fpl_id": 768,
+    "fpl_web_name": "Leon Routh",
+    "understat_id": 14265,
+    "understat_name": null
+  },
+  "781": {
+    "fpl_id": 781,
+    "fpl_web_name": "Carroll",
+    "understat_id": 14288,
+    "understat_name": null
+  },
+  "792": {
+    "fpl_id": 792,
+    "fpl_web_name": "Alysson",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "808": {
+    "fpl_id": 808,
+    "fpl_web_name": "Abraham",
+    "understat_id": 702,
+    "understat_name": null
+  },
+  "183": {
+    "fpl_id": 183,
+    "fpl_web_name": "Weiss",
+    "understat_id": 13731,
+    "understat_name": null
+  },
+  "184": {
+    "fpl_id": 184,
+    "fpl_web_name": "Green",
+    "understat_id": 9294,
+    "understat_name": null
+  },
+  "185": {
+    "fpl_id": 185,
+    "fpl_web_name": "Hladký",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "186": {
+    "fpl_id": 186,
+    "fpl_web_name": "Roberts",
+    "understat_id": 5568,
+    "understat_name": null
+  },
+  "187": {
+    "fpl_id": 187,
+    "fpl_web_name": "Walker",
+    "understat_id": 638,
+    "understat_name": null
+  },
+  "188": {
+    "fpl_id": 188,
+    "fpl_web_name": "Delcroix",
+    "understat_id": 11998,
+    "understat_name": null
+  },
+  "189": {
+    "fpl_id": 189,
+    "fpl_web_name": "Dodgson",
+    "understat_id": 9827,
+    "understat_name": null
+  },
+  "190": {
+    "fpl_id": 190,
+    "fpl_web_name": "Ekdal",
+    "understat_id": 11704,
+    "understat_name": null
+  },
+  "191": {
+    "fpl_id": 191,
+    "fpl_web_name": "Estève",
+    "understat_id": 9487,
+    "understat_name": null
+  },
+  "192": {
+    "fpl_id": 192,
+    "fpl_web_name": "Hartman",
+    "understat_id": 13727,
+    "understat_name": null
+  },
+  "193": {
+    "fpl_id": 193,
+    "fpl_web_name": "Humphreys",
+    "understat_id": 11243,
+    "understat_name": null
+  },
+  "194": {
+    "fpl_id": 194,
+    "fpl_web_name": "Jordan",
+    "understat_id": 6557,
+    "understat_name": null
+  },
+  "195": {
+    "fpl_id": 195,
+    "fpl_web_name": "Lucas Pires",
+    "understat_id": 11824,
+    "understat_name": null
+  },
+  "196": {
+    "fpl_id": 196,
+    "fpl_web_name": "Sambo",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "197": {
+    "fpl_id": 197,
+    "fpl_web_name": "Sonne",
+    "understat_id": 13726,
+    "understat_name": null
+  },
+  "198": {
+    "fpl_id": 198,
+    "fpl_web_name": "Tuanzebe",
+    "understat_id": 934,
+    "understat_name": null
+  },
+  "199": {
+    "fpl_id": 199,
+    "fpl_web_name": "Worrall",
+    "understat_id": 10756,
+    "understat_name": null
+  },
+  "200": {
+    "fpl_id": 200,
+    "fpl_web_name": "Anthony",
+    "understat_id": 10746,
+    "understat_name": null
+  },
+  "201": {
+    "fpl_id": 201,
+    "fpl_web_name": "Benson",
+    "understat_id": 11702,
+    "understat_name": null
+  },
+  "202": {
+    "fpl_id": 202,
+    "fpl_web_name": "Bruun Larsen",
+    "understat_id": 5355,
+    "understat_name": null
+  },
+  "203": {
+    "fpl_id": 203,
+    "fpl_web_name": "Boateng",
+    "understat_id": 5563,
+    "understat_name": null
+  },
+  "204": {
+    "fpl_id": 204,
+    "fpl_web_name": "Churlinov",
+    "understat_id": 7790,
+    "understat_name": null
+  },
+  "205": {
+    "fpl_id": 205,
+    "fpl_web_name": "Cullen",
+    "understat_id": 1018,
+    "understat_name": null
+  },
+  "206": {
+    "fpl_id": 206,
+    "fpl_web_name": "Edwards",
+    "understat_id": 13730,
+    "understat_name": null
+  },
+  "207": {
+    "fpl_id": 207,
+    "fpl_web_name": "Hannibal",
+    "understat_id": 9558,
+    "understat_name": null
+  },
+  "208": {
+    "fpl_id": 208,
+    "fpl_web_name": "Koleosho",
+    "understat_id": 10620,
+    "understat_name": null
+  },
+  "209": {
+    "fpl_id": 209,
+    "fpl_web_name": "Laurent",
+    "understat_id": 13728,
+    "understat_name": null
+  },
+  "210": {
+    "fpl_id": 210,
+    "fpl_web_name": "Tchaouna",
+    "understat_id": 9977,
+    "understat_name": null
+  },
+  "211": {
+    "fpl_id": 211,
+    "fpl_web_name": "A.Ramsey",
+    "understat_id": 9913,
+    "understat_name": null
+  },
+  "212": {
+    "fpl_id": 212,
+    "fpl_web_name": "Adewumi",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "213": {
+    "fpl_id": 213,
+    "fpl_web_name": "Banel",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "214": {
+    "fpl_id": 214,
+    "fpl_web_name": "Trésor",
+    "understat_id": 12094,
+    "understat_name": null
+  },
+  "215": {
+    "fpl_id": 215,
+    "fpl_web_name": "Flemming",
+    "understat_id": 13729,
+    "understat_name": null
+  },
+  "216": {
+    "fpl_id": 216,
+    "fpl_web_name": "Amdouni",
+    "understat_id": 11701,
+    "understat_name": null
+  },
+  "217": {
+    "fpl_id": 217,
+    "fpl_web_name": "Foster",
+    "understat_id": 7498,
+    "understat_name": null
+  },
+  "218": {
+    "fpl_id": 218,
+    "fpl_web_name": "Barnes",
+    "understat_id": 4422,
+    "understat_name": null
+  },
+  "219": {
+    "fpl_id": 219,
+    "fpl_web_name": "Obafemi",
+    "understat_id": 6504,
+    "understat_name": null
+  },
+  "470": {
+    "fpl_id": 470,
+    "fpl_web_name": "Dúbravka",
+    "understat_id": 6532,
+    "understat_name": null
+  },
+  "614": {
+    "fpl_id": 614,
+    "fpl_web_name": "Ward-Prowse",
+    "understat_id": 843,
+    "understat_name": null
+  },
+  "676": {
+    "fpl_id": 676,
+    "fpl_web_name": "Ugochukwu",
+    "understat_id": 9451,
+    "understat_name": null
+  },
+  "680": {
+    "fpl_id": 680,
+    "fpl_web_name": "Broja",
+    "understat_id": 8384,
+    "understat_name": null
+  },
+  "722": {
+    "fpl_id": 722,
+    "fpl_web_name": "Florentino",
+    "understat_id": 8969,
+    "understat_name": null
+  },
+  "776": {
+    "fpl_id": 776,
+    "fpl_web_name": "Pimlott",
+    "understat_id": 14282,
+    "understat_name": null
+  },
+  "784": {
+    "fpl_id": 784,
+    "fpl_web_name": "Brierley",
+    "understat_id": 14292,
+    "understat_name": null
+  },
+  "820": {
+    "fpl_id": 820,
+    "fpl_web_name": "McMahon-Brown",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "66": {
+    "fpl_id": 66,
+    "fpl_web_name": "Neto",
+    "understat_id": 1297,
+    "understat_name": null
+  },
+  "67": {
+    "fpl_id": 67,
+    "fpl_web_name": "Petrović",
+    "understat_id": 12032,
+    "understat_name": null
+  },
+  "68": {
+    "fpl_id": 68,
+    "fpl_web_name": "Dennis",
+    "understat_id": 10748,
+    "understat_name": null
+  },
+  "69": {
+    "fpl_id": 69,
+    "fpl_web_name": "McKenna",
+    "understat_id": 12582,
+    "understat_name": null
+  },
+  "70": {
+    "fpl_id": 70,
+    "fpl_web_name": "Paulsen",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "71": {
+    "fpl_id": 71,
+    "fpl_web_name": "Zabarnyi",
+    "understat_id": 11486,
+    "understat_name": null
+  },
+  "72": {
+    "fpl_id": 72,
+    "fpl_web_name": "Senesi",
+    "understat_id": 10864,
+    "understat_name": null
+  },
+  "73": {
+    "fpl_id": 73,
+    "fpl_web_name": "Smith",
+    "understat_id": 825,
+    "understat_name": null
+  },
+  "74": {
+    "fpl_id": 74,
+    "fpl_web_name": "Truffert",
+    "understat_id": 8640,
+    "understat_name": null
+  },
+  "75": {
+    "fpl_id": 75,
+    "fpl_web_name": "Akinmboni",
+    "understat_id": 13344,
+    "understat_name": null
+  },
+  "76": {
+    "fpl_id": 76,
+    "fpl_web_name": "Bevan",
+    "understat_id": 11034,
+    "understat_name": null
+  },
+  "77": {
+    "fpl_id": 77,
+    "fpl_web_name": "Hill",
+    "understat_id": 10747,
+    "understat_name": null
+  },
+  "78": {
+    "fpl_id": 78,
+    "fpl_web_name": "J.Araujo",
+    "understat_id": 11745,
+    "understat_name": null
+  },
+  "79": {
+    "fpl_id": 79,
+    "fpl_web_name": "Mepham",
+    "understat_id": 7384,
+    "understat_name": null
+  },
+  "80": {
+    "fpl_id": 80,
+    "fpl_web_name": "Soler",
+    "understat_id": 13474,
+    "understat_name": null
+  },
+  "81": {
+    "fpl_id": 81,
+    "fpl_web_name": "Kluivert",
+    "understat_id": 6963,
+    "understat_name": null
+  },
+  "84": {
+    "fpl_id": 84,
+    "fpl_web_name": "Tavernier",
+    "understat_id": 10741,
+    "understat_name": null
+  },
+  "85": {
+    "fpl_id": 85,
+    "fpl_web_name": "Adams",
+    "understat_id": 7352,
+    "understat_name": null
+  },
+  "86": {
+    "fpl_id": 86,
+    "fpl_web_name": "Brooks",
+    "understat_id": 6820,
+    "understat_name": null
+  },
+  "87": {
+    "fpl_id": 87,
+    "fpl_web_name": "Christie",
+    "understat_id": 10744,
+    "understat_name": null
+  },
+  "88": {
+    "fpl_id": 88,
+    "fpl_web_name": "Cook",
+    "understat_id": 1789,
+    "understat_name": null
+  },
+  "89": {
+    "fpl_id": 89,
+    "fpl_web_name": "Philip",
+    "understat_id": 6034,
+    "understat_name": null
+  },
+  "90": {
+    "fpl_id": 90,
+    "fpl_web_name": "Scott",
+    "understat_id": 12149,
+    "understat_name": null
+  },
+  "91": {
+    "fpl_id": 91,
+    "fpl_web_name": "Sinisterra",
+    "understat_id": 10866,
+    "understat_name": null
+  },
+  "92": {
+    "fpl_id": 92,
+    "fpl_web_name": "Faivre",
+    "understat_id": 6420,
+    "understat_name": null
+  },
+  "93": {
+    "fpl_id": 93,
+    "fpl_web_name": "H.Traorè",
+    "understat_id": 6986,
+    "understat_name": null
+  },
+  "94": {
+    "fpl_id": 94,
+    "fpl_web_name": "Sadi",
+    "understat_id": 11300,
+    "understat_name": null
+  },
+  "95": {
+    "fpl_id": 95,
+    "fpl_web_name": "Silcott-Duberry",
+    "understat_id": 13351,
+    "understat_name": null
+  },
+  "96": {
+    "fpl_id": 96,
+    "fpl_web_name": "Winterburn",
+    "understat_id": 13242,
+    "understat_name": null
+  },
+  "97": {
+    "fpl_id": 97,
+    "fpl_web_name": "Evanilson",
+    "understat_id": 12963,
+    "understat_name": null
+  },
+  "98": {
+    "fpl_id": 98,
+    "fpl_web_name": "Enes Ünal",
+    "understat_id": 6219,
+    "understat_name": null
+  },
+  "99": {
+    "fpl_id": 99,
+    "fpl_web_name": "Adu-Adjei",
+    "understat_id": 11301,
+    "understat_name": null
+  },
+  "100": {
+    "fpl_id": 100,
+    "fpl_web_name": "Kroupi.Jr",
+    "understat_id": 11504,
+    "understat_name": null
+  },
+  "391": {
+    "fpl_id": 391,
+    "fpl_web_name": "Gannon-Doak",
+    "understat_id": 11231,
+    "understat_name": null
+  },
+  "685": {
+    "fpl_id": 685,
+    "fpl_web_name": "Diakité",
+    "understat_id": 7268,
+    "understat_name": null
+  },
+  "687": {
+    "fpl_id": 687,
+    "fpl_web_name": "Rees-Dottin",
+    "understat_id": 13307,
+    "understat_name": null
+  },
+  "697": {
+    "fpl_id": 697,
+    "fpl_web_name": "Adli",
+    "understat_id": 8211,
+    "understat_name": null
+  },
+  "713": {
+    "fpl_id": 713,
+    "fpl_web_name": "A.Jimenez",
+    "understat_id": 12168,
+    "understat_name": null
+  },
+  "721": {
+    "fpl_id": 721,
+    "fpl_web_name": "Milosavljević",
+    "understat_id": 14027,
+    "understat_name": null
+  },
+  "756": {
+    "fpl_id": 756,
+    "fpl_web_name": "DaCosta",
+    "understat_id": 14215,
+    "understat_name": null
+  },
+  "782": {
+    "fpl_id": 782,
+    "fpl_web_name": "Forster",
+    "understat_id": 831,
+    "understat_name": null
+  },
+  "799": {
+    "fpl_id": 799,
+    "fpl_web_name": "Stevens",
+    "understat_id": 14367,
+    "understat_name": null
+  },
+  "801": {
+    "fpl_id": 801,
+    "fpl_web_name": "Tóth.A",
+    "understat_id": 14374,
+    "understat_name": null
+  },
+  "806": {
+    "fpl_id": 806,
+    "fpl_web_name": "Mandas",
+    "understat_id": 12043,
+    "understat_name": null
+  },
+  "807": {
+    "fpl_id": 807,
+    "fpl_web_name": "Rayan",
+    "understat_id": 14395,
+    "understat_name": null
+  },
+  "27": {
+    "fpl_id": 27,
+    "fpl_web_name": "Nelson",
+    "understat_id": 6492,
+    "understat_name": null
+  },
+  "83": {
+    "fpl_id": 83,
+    "fpl_web_name": "O.Dango",
+    "understat_id": 9662,
+    "understat_name": null
+  },
+  "101": {
+    "fpl_id": 101,
+    "fpl_web_name": "Kelleher",
+    "understat_id": 7904,
+    "understat_name": null
+  },
+  "102": {
+    "fpl_id": 102,
+    "fpl_web_name": "Balcombe",
+    "understat_id": 11985,
+    "understat_name": null
+  },
+  "103": {
+    "fpl_id": 103,
+    "fpl_web_name": "Cox",
+    "understat_id": 10093,
+    "understat_name": null
+  },
+  "104": {
+    "fpl_id": 104,
+    "fpl_web_name": "Eyestone",
+    "understat_id": 13408,
+    "understat_name": null
+  },
+  "105": {
+    "fpl_id": 105,
+    "fpl_web_name": "Valdimarsson",
+    "understat_id": 12595,
+    "understat_name": null
+  },
+  "106": {
+    "fpl_id": 106,
+    "fpl_web_name": "Collins",
+    "understat_id": 9733,
+    "understat_name": null
+  },
+  "107": {
+    "fpl_id": 107,
+    "fpl_web_name": "Lewis-Potter",
+    "understat_id": 10809,
+    "understat_name": null
+  },
+  "108": {
+    "fpl_id": 108,
+    "fpl_web_name": "Ajer",
+    "understat_id": 9677,
+    "understat_name": null
+  },
+  "109": {
+    "fpl_id": 109,
+    "fpl_web_name": "Henry",
+    "understat_id": 9679,
+    "understat_name": null
+  },
+  "110": {
+    "fpl_id": 110,
+    "fpl_web_name": "Kayode",
+    "understat_id": 11281,
+    "understat_name": null
+  },
+  "111": {
+    "fpl_id": 111,
+    "fpl_web_name": "Pinnock",
+    "understat_id": 9678,
+    "understat_name": null
+  },
+  "112": {
+    "fpl_id": 112,
+    "fpl_web_name": "Roerslev",
+    "understat_id": 9685,
+    "understat_name": null
+  },
+  "113": {
+    "fpl_id": 113,
+    "fpl_web_name": "Van den Berg",
+    "understat_id": 10721,
+    "understat_name": null
+  },
+  "114": {
+    "fpl_id": 114,
+    "fpl_web_name": "Arthur",
+    "understat_id": 12533,
+    "understat_name": null
+  },
+  "115": {
+    "fpl_id": 115,
+    "fpl_web_name": "Fredrick",
+    "understat_id": 12397,
+    "understat_name": null
+  },
+  "116": {
+    "fpl_id": 116,
+    "fpl_web_name": "Hickey",
+    "understat_id": 8942,
+    "understat_name": null
+  },
+  "117": {
+    "fpl_id": 117,
+    "fpl_web_name": "Ji-soo",
+    "understat_id": 12136,
+    "understat_name": null
+  },
+  "118": {
+    "fpl_id": 118,
+    "fpl_web_name": "Meghoma",
+    "understat_id": 13067,
+    "understat_name": null
+  },
+  "120": {
+    "fpl_id": 120,
+    "fpl_web_name": "Schade",
+    "understat_id": 9156,
+    "understat_name": null
+  },
+  "121": {
+    "fpl_id": 121,
+    "fpl_web_name": "Damsgaard",
+    "understat_id": 8859,
+    "understat_name": null
+  },
+  "122": {
+    "fpl_id": 122,
+    "fpl_web_name": "Milambo",
+    "understat_id": 13780,
+    "understat_name": null
+  },
+  "123": {
+    "fpl_id": 123,
+    "fpl_web_name": "Carvalho",
+    "understat_id": 9501,
+    "understat_name": null
+  },
+  "124": {
+    "fpl_id": 124,
+    "fpl_web_name": "Henderson",
+    "understat_id": 605,
+    "understat_name": null
+  },
+  "125": {
+    "fpl_id": 125,
+    "fpl_web_name": "Janelt",
+    "understat_id": 9680,
+    "understat_name": null
+  },
+  "126": {
+    "fpl_id": 126,
+    "fpl_web_name": "Jensen",
+    "understat_id": 7166,
+    "understat_name": null
+  },
+  "127": {
+    "fpl_id": 127,
+    "fpl_web_name": "Nunes",
+    "understat_id": 13588,
+    "understat_name": null
+  },
+  "128": {
+    "fpl_id": 128,
+    "fpl_web_name": "Onyeka",
+    "understat_id": 9681,
+    "understat_name": null
+  },
+  "129": {
+    "fpl_id": 129,
+    "fpl_web_name": "Yarmoliuk",
+    "understat_id": 11772,
+    "understat_name": null
+  },
+  "130": {
+    "fpl_id": 130,
+    "fpl_web_name": "Donovan",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "131": {
+    "fpl_id": 131,
+    "fpl_web_name": "Konak",
+    "understat_id": 12633,
+    "understat_name": null
+  },
+  "132": {
+    "fpl_id": 132,
+    "fpl_web_name": "Maghoma",
+    "understat_id": 10053,
+    "understat_name": null
+  },
+  "133": {
+    "fpl_id": 133,
+    "fpl_web_name": "Peart-Harris",
+    "understat_id": 10205,
+    "understat_name": null
+  },
+  "134": {
+    "fpl_id": 134,
+    "fpl_web_name": "Trevitt",
+    "understat_id": 11146,
+    "understat_name": null
+  },
+  "136": {
+    "fpl_id": 136,
+    "fpl_web_name": "Thiago",
+    "understat_id": 13222,
+    "understat_name": null
+  },
+  "137": {
+    "fpl_id": 137,
+    "fpl_web_name": "Morgan",
+    "understat_id": 13472,
+    "understat_name": null
+  },
+  "748": {
+    "fpl_id": 748,
+    "fpl_web_name": "Dasilva",
+    "understat_id": 10405,
+    "understat_name": null
+  },
+  "797": {
+    "fpl_id": 797,
+    "fpl_web_name": "Furo",
+    "understat_id": 14356,
+    "understat_name": null
+  },
+  "810": {
+    "fpl_id": 810,
+    "fpl_web_name": "Bentt",
+    "understat_id": 14405,
+    "understat_name": null
+  },
+  "819": {
+    "fpl_id": 819,
+    "fpl_web_name": "Shield",
+    "understat_id": 14483,
+    "understat_name": null
+  },
+  "823": {
+    "fpl_id": 823,
+    "fpl_web_name": "Stephenson",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "824": {
+    "fpl_id": 824,
+    "fpl_web_name": "McManus",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "138": {
+    "fpl_id": 138,
+    "fpl_web_name": "Steele",
+    "understat_id": 7235,
+    "understat_name": null
+  },
+  "139": {
+    "fpl_id": 139,
+    "fpl_web_name": "Verbruggen",
+    "understat_id": 11711,
+    "understat_name": null
+  },
+  "140": {
+    "fpl_id": 140,
+    "fpl_web_name": "McGill",
+    "understat_id": 9319,
+    "understat_name": null
+  },
+  "141": {
+    "fpl_id": 141,
+    "fpl_web_name": "Rushworth",
+    "understat_id": 12760,
+    "understat_name": null
+  },
+  "142": {
+    "fpl_id": 142,
+    "fpl_web_name": "Scherpen",
+    "understat_id": 9960,
+    "understat_name": null
+  },
+  "143": {
+    "fpl_id": 143,
+    "fpl_web_name": "Boscagli",
+    "understat_id": 3645,
+    "understat_name": null
+  },
+  "144": {
+    "fpl_id": 144,
+    "fpl_web_name": "Coppola",
+    "understat_id": 10169,
+    "understat_name": null
+  },
+  "145": {
+    "fpl_id": 145,
+    "fpl_web_name": "De Cuyper",
+    "understat_id": 13711,
+    "understat_name": null
+  },
+  "146": {
+    "fpl_id": 146,
+    "fpl_web_name": "Dunk",
+    "understat_id": 6048,
+    "understat_name": null
+  },
+  "147": {
+    "fpl_id": 147,
+    "fpl_web_name": "Estupiñan",
+    "understat_id": 5136,
+    "understat_name": null
+  },
+  "148": {
+    "fpl_id": 148,
+    "fpl_web_name": "F.Kadıoğlu",
+    "understat_id": 13066,
+    "understat_name": null
+  },
+  "149": {
+    "fpl_id": 149,
+    "fpl_web_name": "Igor",
+    "understat_id": 7943,
+    "understat_name": null
+  },
+  "150": {
+    "fpl_id": 150,
+    "fpl_web_name": "Lamptey",
+    "understat_id": 8226,
+    "understat_name": null
+  },
+  "151": {
+    "fpl_id": 151,
+    "fpl_web_name": "Van Hecke",
+    "understat_id": 10807,
+    "understat_name": null
+  },
+  "152": {
+    "fpl_id": 152,
+    "fpl_web_name": "Veltman",
+    "understat_id": 8780,
+    "understat_name": null
+  },
+  "153": {
+    "fpl_id": 153,
+    "fpl_web_name": "Webster",
+    "understat_id": 7699,
+    "understat_name": null
+  },
+  "154": {
+    "fpl_id": 154,
+    "fpl_web_name": "Cashin",
+    "understat_id": 13459,
+    "understat_name": null
+  },
+  "155": {
+    "fpl_id": 155,
+    "fpl_web_name": "Slater",
+    "understat_id": 13238,
+    "understat_name": null
+  },
+  "156": {
+    "fpl_id": 156,
+    "fpl_web_name": "Tasker",
+    "understat_id": 13570,
+    "understat_name": null
+  },
+  "157": {
+    "fpl_id": 157,
+    "fpl_web_name": "Mitoma",
+    "understat_id": 10806,
+    "understat_name": null
+  },
+  "158": {
+    "fpl_id": 158,
+    "fpl_web_name": "Georginio",
+    "understat_id": 6937,
+    "understat_name": null
+  },
+  "159": {
+    "fpl_id": 159,
+    "fpl_web_name": "March",
+    "understat_id": 6049,
+    "understat_name": null
+  },
+  "160": {
+    "fpl_id": 160,
+    "fpl_web_name": "Minteh",
+    "understat_id": 12759,
+    "understat_name": null
+  },
+  "161": {
+    "fpl_id": 161,
+    "fpl_web_name": "Enciso",
+    "understat_id": 11058,
+    "understat_name": null
+  },
+  "162": {
+    "fpl_id": 162,
+    "fpl_web_name": "Gruda",
+    "understat_id": 11310,
+    "understat_name": null
+  },
+  "163": {
+    "fpl_id": 163,
+    "fpl_web_name": "Hinshelwood",
+    "understat_id": 11269,
+    "understat_name": null
+  },
+  "164": {
+    "fpl_id": 164,
+    "fpl_web_name": "O'Riley",
+    "understat_id": 13206,
+    "understat_name": null
+  },
+  "165": {
+    "fpl_id": 165,
+    "fpl_web_name": "Sima",
+    "understat_id": 11046,
+    "understat_name": null
+  },
+  "166": {
+    "fpl_id": 166,
+    "fpl_web_name": "Ayari",
+    "understat_id": 11385,
+    "understat_name": null
+  },
+  "167": {
+    "fpl_id": 167,
+    "fpl_web_name": "Baleba",
+    "understat_id": 10527,
+    "understat_name": null
+  },
+  "169": {
+    "fpl_id": 169,
+    "fpl_web_name": "Gomez",
+    "understat_id": 13364,
+    "understat_name": null
+  },
+  "170": {
+    "fpl_id": 170,
+    "fpl_web_name": "Milner",
+    "understat_id": 489,
+    "understat_name": null
+  },
+  "171": {
+    "fpl_id": 171,
+    "fpl_web_name": "Sarmiento",
+    "understat_id": 10036,
+    "understat_name": null
+  },
+  "172": {
+    "fpl_id": 172,
+    "fpl_web_name": "Watson",
+    "understat_id": 14029,
+    "understat_name": null
+  },
+  "173": {
+    "fpl_id": 173,
+    "fpl_web_name": "Wieffer",
+    "understat_id": 12758,
+    "understat_name": null
+  },
+  "174": {
+    "fpl_id": 174,
+    "fpl_web_name": "Yalcouye",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "175": {
+    "fpl_id": 175,
+    "fpl_web_name": "Knight",
+    "understat_id": 13399,
+    "understat_name": null
+  },
+  "176": {
+    "fpl_id": 176,
+    "fpl_web_name": "Mazilu",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "177": {
+    "fpl_id": 177,
+    "fpl_web_name": "Moran",
+    "understat_id": 11193,
+    "understat_name": null
+  },
+  "178": {
+    "fpl_id": 178,
+    "fpl_web_name": "Welbeck",
+    "understat_id": 501,
+    "understat_name": null
+  },
+  "179": {
+    "fpl_id": 179,
+    "fpl_web_name": "Ferguson",
+    "understat_id": 10177,
+    "understat_name": null
+  },
+  "180": {
+    "fpl_id": 180,
+    "fpl_web_name": "Tzimas",
+    "understat_id": 14028,
+    "understat_name": null
+  },
+  "181": {
+    "fpl_id": 181,
+    "fpl_web_name": "Kostoulas",
+    "understat_id": 14118,
+    "understat_name": null
+  },
+  "744": {
+    "fpl_id": 744,
+    "fpl_web_name": "Oriola",
+    "understat_id": 14127,
+    "understat_name": null
+  },
+  "761": {
+    "fpl_id": 761,
+    "fpl_web_name": "Simmonds",
+    "understat_id": 13583,
+    "understat_name": null
+  },
+  "783": {
+    "fpl_id": 783,
+    "fpl_web_name": "Groß",
+    "understat_id": 239,
+    "understat_name": null
+  },
+  "795": {
+    "fpl_id": 795,
+    "fpl_web_name": "Howell",
+    "understat_id": 13584,
+    "understat_name": null
+  },
+  "220": {
+    "fpl_id": 220,
+    "fpl_web_name": "Sánchez",
+    "understat_id": 9098,
+    "understat_name": null
+  },
+  "221": {
+    "fpl_id": 221,
+    "fpl_web_name": "Jörgensen",
+    "understat_id": 9272,
+    "understat_name": null
+  },
+  "222": {
+    "fpl_id": 222,
+    "fpl_web_name": "Penders",
+    "understat_id": 13816,
+    "understat_name": null
+  },
+  "223": {
+    "fpl_id": 223,
+    "fpl_web_name": "Slonina",
+    "understat_id": 13854,
+    "understat_name": null
+  },
+  "224": {
+    "fpl_id": 224,
+    "fpl_web_name": "Cucurella",
+    "understat_id": 7134,
+    "understat_name": null
+  },
+  "225": {
+    "fpl_id": 225,
+    "fpl_web_name": "James",
+    "understat_id": 8067,
+    "understat_name": null
+  },
+  "226": {
+    "fpl_id": 226,
+    "fpl_web_name": "Chalobah",
+    "understat_id": 6615,
+    "understat_name": null
+  },
+  "227": {
+    "fpl_id": 227,
+    "fpl_web_name": "Colwill",
+    "understat_id": 10805,
+    "understat_name": null
+  },
+  "228": {
+    "fpl_id": 228,
+    "fpl_web_name": "Gusto",
+    "understat_id": 9017,
+    "understat_name": null
+  },
+  "229": {
+    "fpl_id": 229,
+    "fpl_web_name": "B.Badiashile",
+    "understat_id": 7240,
+    "understat_name": null
+  },
+  "230": {
+    "fpl_id": 230,
+    "fpl_web_name": "Fofana",
+    "understat_id": 7589,
+    "understat_name": null
+  },
+  "231": {
+    "fpl_id": 231,
+    "fpl_web_name": "M.Sarr",
+    "understat_id": 11253,
+    "understat_name": null
+  },
+  "232": {
+    "fpl_id": 232,
+    "fpl_web_name": "Tosin",
+    "understat_id": 5590,
+    "understat_name": null
+  },
+  "233": {
+    "fpl_id": 233,
+    "fpl_web_name": "Acheampong",
+    "understat_id": 12535,
+    "understat_name": null
+  },
+  "234": {
+    "fpl_id": 234,
+    "fpl_web_name": "Anselmino",
+    "understat_id": 13460,
+    "understat_name": null
+  },
+  "235": {
+    "fpl_id": 235,
+    "fpl_web_name": "Palmer",
+    "understat_id": 8497,
+    "understat_name": null
+  },
+  "236": {
+    "fpl_id": 236,
+    "fpl_web_name": "Neto",
+    "understat_id": 6382,
+    "understat_name": null
+  },
+  "237": {
+    "fpl_id": 237,
+    "fpl_web_name": "Enzo",
+    "understat_id": 11356,
+    "understat_name": null
+  },
+  "238": {
+    "fpl_id": 238,
+    "fpl_web_name": "Estêvão",
+    "understat_id": 13775,
+    "understat_name": null
+  },
+  "239": {
+    "fpl_id": 239,
+    "fpl_web_name": "Gittens",
+    "understat_id": 10542,
+    "understat_name": null
+  },
+  "240": {
+    "fpl_id": 240,
+    "fpl_web_name": "Nkunku",
+    "understat_id": 3300,
+    "understat_name": null
+  },
+  "241": {
+    "fpl_id": 241,
+    "fpl_web_name": "Caicedo",
+    "understat_id": 9453,
+    "understat_name": null
+  },
+  "244": {
+    "fpl_id": 244,
+    "fpl_web_name": "Lavia",
+    "understat_id": 10004,
+    "understat_name": null
+  },
+  "245": {
+    "fpl_id": 245,
+    "fpl_web_name": "Mudryk",
+    "understat_id": 11305,
+    "understat_name": null
+  },
+  "246": {
+    "fpl_id": 246,
+    "fpl_web_name": "Andrey Santos",
+    "understat_id": 11808,
+    "understat_name": null
+  },
+  "247": {
+    "fpl_id": 247,
+    "fpl_web_name": "D.Essugo",
+    "understat_id": 13094,
+    "understat_name": null
+  },
+  "248": {
+    "fpl_id": 248,
+    "fpl_web_name": "Paez",
+    "understat_id": 13818,
+    "understat_name": null
+  },
+  "249": {
+    "fpl_id": 249,
+    "fpl_web_name": "João Pedro",
+    "understat_id": 8272,
+    "understat_name": null
+  },
+  "250": {
+    "fpl_id": 250,
+    "fpl_web_name": "Delap",
+    "understat_id": 8868,
+    "understat_name": null
+  },
+  "251": {
+    "fpl_id": 251,
+    "fpl_web_name": "N.Jackson",
+    "understat_id": 10048,
+    "understat_name": null
+  },
+  "252": {
+    "fpl_id": 252,
+    "fpl_web_name": "Marc Guiu",
+    "understat_id": 11633,
+    "understat_name": null
+  },
+  "453": {
+    "fpl_id": 453,
+    "fpl_web_name": "Garnacho",
+    "understat_id": 10552,
+    "understat_name": null
+  },
+  "672": {
+    "fpl_id": 672,
+    "fpl_web_name": "Hato",
+    "understat_id": 13776,
+    "understat_name": null
+  },
+  "743": {
+    "fpl_id": 743,
+    "fpl_web_name": "Emenalo",
+    "understat_id": 14112,
+    "understat_name": null
+  },
+  "789": {
+    "fpl_id": 789,
+    "fpl_web_name": "Merrick",
+    "understat_id": 14317,
+    "understat_name": null
+  },
+  "803": {
+    "fpl_id": 803,
+    "fpl_web_name": "Sharman-Lowe",
+    "understat_id": 12561,
+    "understat_name": null
+  },
+  "253": {
+    "fpl_id": 253,
+    "fpl_web_name": "Henderson",
+    "understat_id": 7702,
+    "understat_name": null
+  },
+  "254": {
+    "fpl_id": 254,
+    "fpl_web_name": "Benitez",
+    "understat_id": 5652,
+    "understat_name": null
+  },
+  "255": {
+    "fpl_id": 255,
+    "fpl_web_name": "Matthews",
+    "understat_id": 9834,
+    "understat_name": null
+  },
+  "256": {
+    "fpl_id": 256,
+    "fpl_web_name": "Muñoz",
+    "understat_id": 12408,
+    "understat_name": null
+  },
+  "257": {
+    "fpl_id": 257,
+    "fpl_web_name": "Lacroix",
+    "understat_id": 8853,
+    "understat_name": null
+  },
+  "258": {
+    "fpl_id": 258,
+    "fpl_web_name": "Mitchell",
+    "understat_id": 8214,
+    "understat_name": null
+  },
+  "259": {
+    "fpl_id": 259,
+    "fpl_web_name": "Sosa",
+    "understat_id": 7075,
+    "understat_name": null
+  },
+  "261": {
+    "fpl_id": 261,
+    "fpl_web_name": "Richards",
+    "understat_id": 8430,
+    "understat_name": null
+  },
+  "262": {
+    "fpl_id": 262,
+    "fpl_web_name": "Chadi Riad",
+    "understat_id": 11167,
+    "understat_name": null
+  },
+  "263": {
+    "fpl_id": 263,
+    "fpl_web_name": "Clyne",
+    "understat_id": 603,
+    "understat_name": null
+  },
+  "264": {
+    "fpl_id": 264,
+    "fpl_web_name": "Holding",
+    "understat_id": 1749,
+    "understat_name": null
+  },
+  "265": {
+    "fpl_id": 265,
+    "fpl_web_name": "Kporha",
+    "understat_id": 13130,
+    "understat_name": null
+  },
+  "267": {
+    "fpl_id": 267,
+    "fpl_web_name": "Sarr",
+    "understat_id": 5675,
+    "understat_name": null
+  },
+  "268": {
+    "fpl_id": 268,
+    "fpl_web_name": "Doucouré",
+    "understat_id": 8666,
+    "understat_name": null
+  },
+  "269": {
+    "fpl_id": 269,
+    "fpl_web_name": "Esse",
+    "understat_id": 13387,
+    "understat_name": null
+  },
+  "270": {
+    "fpl_id": 270,
+    "fpl_web_name": "Hughes",
+    "understat_id": 6104,
+    "understat_name": null
+  },
+  "271": {
+    "fpl_id": 271,
+    "fpl_web_name": "Kamada",
+    "understat_id": 6145,
+    "understat_name": null
+  },
+  "272": {
+    "fpl_id": 272,
+    "fpl_web_name": "Lerma",
+    "understat_id": 2182,
+    "understat_name": null
+  },
+  "273": {
+    "fpl_id": 273,
+    "fpl_web_name": "Wharton",
+    "understat_id": 12409,
+    "understat_name": null
+  },
+  "274": {
+    "fpl_id": 274,
+    "fpl_web_name": "Agbinone",
+    "understat_id": 13039,
+    "understat_name": null
+  },
+  "275": {
+    "fpl_id": 275,
+    "fpl_web_name": "Ahamada",
+    "understat_id": 9274,
+    "understat_name": null
+  },
+  "276": {
+    "fpl_id": 276,
+    "fpl_web_name": "Devenny",
+    "understat_id": 13038,
+    "understat_name": null
+  },
+  "277": {
+    "fpl_id": 277,
+    "fpl_web_name": "Ebiowei",
+    "understat_id": 10698,
+    "understat_name": null
+  },
+  "278": {
+    "fpl_id": 278,
+    "fpl_web_name": "J.Rak-Sakyi",
+    "understat_id": 9461,
+    "understat_name": null
+  },
+  "279": {
+    "fpl_id": 279,
+    "fpl_web_name": "M.França",
+    "understat_id": 12152,
+    "understat_name": null
+  },
+  "280": {
+    "fpl_id": 280,
+    "fpl_web_name": "Ozoh",
+    "understat_id": 11268,
+    "understat_name": null
+  },
+  "281": {
+    "fpl_id": 281,
+    "fpl_web_name": "Rodney",
+    "understat_id": 11033,
+    "understat_name": null
+  },
+  "282": {
+    "fpl_id": 282,
+    "fpl_web_name": "Umeh",
+    "understat_id": 12454,
+    "understat_name": null
+  },
+  "283": {
+    "fpl_id": 283,
+    "fpl_web_name": "Mateta",
+    "understat_id": 5735,
+    "understat_name": null
+  },
+  "284": {
+    "fpl_id": 284,
+    "fpl_web_name": "Nketiah",
+    "understat_id": 6482,
+    "understat_name": null
+  },
+  "285": {
+    "fpl_id": 285,
+    "fpl_web_name": "Édouard",
+    "understat_id": 3697,
+    "understat_name": null
+  },
+  "286": {
+    "fpl_id": 286,
+    "fpl_web_name": "Marsh",
+    "understat_id": 13203,
+    "understat_name": null
+  },
+  "580": {
+    "fpl_id": 580,
+    "fpl_web_name": "Johnson",
+    "understat_id": 10760,
+    "understat_name": null
+  },
+  "654": {
+    "fpl_id": 654,
+    "fpl_web_name": "Strand Larsen",
+    "understat_id": 11070,
+    "understat_name": null
+  },
+  "677": {
+    "fpl_id": 677,
+    "fpl_web_name": "Guessand",
+    "understat_id": 8006,
+    "understat_name": null
+  },
+  "690": {
+    "fpl_id": 690,
+    "fpl_web_name": "Cardines",
+    "understat_id": 13777,
+    "understat_name": null
+  },
+  "712": {
+    "fpl_id": 712,
+    "fpl_web_name": "Yeremy",
+    "understat_id": 9024,
+    "understat_name": null
+  },
+  "723": {
+    "fpl_id": 723,
+    "fpl_web_name": "Canvot",
+    "understat_id": 13091,
+    "understat_name": null
+  },
+  "732": {
+    "fpl_id": 732,
+    "fpl_web_name": "Uche",
+    "understat_id": 12726,
+    "understat_name": null
+  },
+  "762": {
+    "fpl_id": 762,
+    "fpl_web_name": "Drakes-Thomas",
+    "understat_id": 14263,
+    "understat_name": null
+  },
+  "773": {
+    "fpl_id": 773,
+    "fpl_web_name": "Benamar",
+    "understat_id": 14278,
+    "understat_name": null
+  },
+  "780": {
+    "fpl_id": 780,
+    "fpl_web_name": "Casey",
+    "understat_id": 14285,
+    "understat_name": null
+  },
+  "793": {
+    "fpl_id": 793,
+    "fpl_web_name": "King",
+    "understat_id": 14328,
+    "understat_name": null
+  },
+  "798": {
+    "fpl_id": 798,
+    "fpl_web_name": "Imray",
+    "understat_id": 14355,
+    "understat_name": null
+  },
+  "242": {
+    "fpl_id": 242,
+    "fpl_web_name": "Dewsbury-Hall",
+    "understat_id": 9739,
+    "understat_name": null
+  },
+  "243": {
+    "fpl_id": 243,
+    "fpl_web_name": "George",
+    "understat_id": 12573,
+    "understat_name": null
+  },
+  "287": {
+    "fpl_id": 287,
+    "fpl_web_name": "Pickford",
+    "understat_id": 741,
+    "understat_name": null
+  },
+  "288": {
+    "fpl_id": 288,
+    "fpl_web_name": "Travers",
+    "understat_id": 7582,
+    "understat_name": null
+  },
+  "289": {
+    "fpl_id": 289,
+    "fpl_web_name": "Tyrer",
+    "understat_id": 9411,
+    "understat_name": null
+  },
+  "290": {
+    "fpl_id": 290,
+    "fpl_web_name": "Branthwaite",
+    "understat_id": 8476,
+    "understat_name": null
+  },
+  "291": {
+    "fpl_id": 291,
+    "fpl_web_name": "Tarkowski",
+    "understat_id": 1665,
+    "understat_name": null
+  },
+  "292": {
+    "fpl_id": 292,
+    "fpl_web_name": "Mykolenko",
+    "understat_id": 10291,
+    "understat_name": null
+  },
+  "293": {
+    "fpl_id": 293,
+    "fpl_web_name": "O'Brien",
+    "understat_id": 12014,
+    "understat_name": null
+  },
+  "294": {
+    "fpl_id": 294,
+    "fpl_web_name": "Coleman",
+    "understat_id": 585,
+    "understat_name": null
+  },
+  "295": {
+    "fpl_id": 295,
+    "fpl_web_name": "Keane",
+    "understat_id": 1653,
+    "understat_name": null
+  },
+  "296": {
+    "fpl_id": 296,
+    "fpl_web_name": "Patterson",
+    "understat_id": 10292,
+    "understat_name": null
+  },
+  "297": {
+    "fpl_id": 297,
+    "fpl_web_name": "Dixon",
+    "understat_id": 12946,
+    "understat_name": null
+  },
+  "298": {
+    "fpl_id": 298,
+    "fpl_web_name": "Welch",
+    "understat_id": 9469,
+    "understat_name": null
+  },
+  "299": {
+    "fpl_id": 299,
+    "fpl_web_name": "Ndiaye",
+    "understat_id": 9307,
+    "understat_name": null
+  },
+  "300": {
+    "fpl_id": 300,
+    "fpl_web_name": "McNeil",
+    "understat_id": 6756,
+    "understat_name": null
+  },
+  "301": {
+    "fpl_id": 301,
+    "fpl_web_name": "Alcaraz",
+    "understat_id": 11297,
+    "understat_name": null
+  },
+  "302": {
+    "fpl_id": 302,
+    "fpl_web_name": "Gana",
+    "understat_id": 668,
+    "understat_name": null
+  },
+  "303": {
+    "fpl_id": 303,
+    "fpl_web_name": "Garner",
+    "understat_id": 7438,
+    "understat_name": null
+  },
+  "304": {
+    "fpl_id": 304,
+    "fpl_web_name": "Iroegbunam",
+    "understat_id": 9554,
+    "understat_name": null
+  },
+  "305": {
+    "fpl_id": 305,
+    "fpl_web_name": "Armstrong",
+    "understat_id": 12757,
+    "understat_name": null
+  },
+  "306": {
+    "fpl_id": 306,
+    "fpl_web_name": "Bates",
+    "understat_id": 13204,
+    "understat_name": null
+  },
+  "307": {
+    "fpl_id": 307,
+    "fpl_web_name": "Ebere",
+    "understat_id": 13462,
+    "understat_name": null
+  },
+  "308": {
+    "fpl_id": 308,
+    "fpl_web_name": "Heath",
+    "understat_id": 13457,
+    "understat_name": null
+  },
+  "309": {
+    "fpl_id": 309,
+    "fpl_web_name": "Metcalfe",
+    "understat_id": 12269,
+    "understat_name": null
+  },
+  "310": {
+    "fpl_id": 310,
+    "fpl_web_name": "Barry",
+    "understat_id": 12916,
+    "understat_name": null
+  },
+  "311": {
+    "fpl_id": 311,
+    "fpl_web_name": "Beto",
+    "understat_id": 9983,
+    "understat_name": null
+  },
+  "312": {
+    "fpl_id": 312,
+    "fpl_web_name": "Y.Chermiti",
+    "understat_id": 11984,
+    "understat_name": null
+  },
+  "313": {
+    "fpl_id": 313,
+    "fpl_web_name": "Sherif",
+    "understat_id": 13345,
+    "understat_name": null
+  },
+  "419": {
+    "fpl_id": 419,
+    "fpl_web_name": "Grealish",
+    "understat_id": 675,
+    "understat_name": null
+  },
+  "630": {
+    "fpl_id": 630,
+    "fpl_web_name": "King",
+    "understat_id": 12245,
+    "understat_name": null
+  },
+  "667": {
+    "fpl_id": 667,
+    "fpl_web_name": "Aznou",
+    "understat_id": 12371,
+    "understat_name": null
+  },
+  "704": {
+    "fpl_id": 704,
+    "fpl_web_name": "Onyango",
+    "understat_id": 9287,
+    "understat_name": null
+  },
+  "705": {
+    "fpl_id": 705,
+    "fpl_web_name": "Campbell",
+    "understat_id": 12270,
+    "understat_name": null
+  },
+  "707": {
+    "fpl_id": 707,
+    "fpl_web_name": "Dibling",
+    "understat_id": 10586,
+    "understat_name": null
+  },
+  "728": {
+    "fpl_id": 728,
+    "fpl_web_name": "Röhl",
+    "understat_id": 11331,
+    "understat_name": null
+  },
+  "779": {
+    "fpl_id": 779,
+    "fpl_web_name": "Graham",
+    "understat_id": 14283,
+    "understat_name": null
+  },
+  "314": {
+    "fpl_id": 314,
+    "fpl_web_name": "Leno",
+    "understat_id": 181,
+    "understat_name": null
+  },
+  "315": {
+    "fpl_id": 315,
+    "fpl_web_name": "Benda",
+    "understat_id": 12735,
+    "understat_name": null
+  },
+  "316": {
+    "fpl_id": 316,
+    "fpl_web_name": "Robinson",
+    "understat_id": 8940,
+    "understat_name": null
+  },
+  "317": {
+    "fpl_id": 317,
+    "fpl_web_name": "Andersen",
+    "understat_id": 6314,
+    "understat_name": null
+  },
+  "318": {
+    "fpl_id": 318,
+    "fpl_web_name": "Bassey",
+    "understat_id": 11728,
+    "understat_name": null
+  },
+  "319": {
+    "fpl_id": 319,
+    "fpl_web_name": "Castagne",
+    "understat_id": 6157,
+    "understat_name": null
+  },
+  "320": {
+    "fpl_id": 320,
+    "fpl_web_name": "Diop",
+    "understat_id": 3203,
+    "understat_name": null
+  },
+  "321": {
+    "fpl_id": 321,
+    "fpl_web_name": "J.Cuenca",
+    "understat_id": 8489,
+    "understat_name": null
+  },
+  "322": {
+    "fpl_id": 322,
+    "fpl_web_name": "Tete",
+    "understat_id": 5973,
+    "understat_name": null
+  },
+  "323": {
+    "fpl_id": 323,
+    "fpl_web_name": "Amissah",
+    "understat_id": 13250,
+    "understat_name": null
+  },
+  "324": {
+    "fpl_id": 324,
+    "fpl_web_name": "Iwobi",
+    "understat_id": 500,
+    "understat_name": null
+  },
+  "325": {
+    "fpl_id": 325,
+    "fpl_web_name": "Smith Rowe",
+    "understat_id": 7230,
+    "understat_name": null
+  },
+  "327": {
+    "fpl_id": 327,
+    "fpl_web_name": "Andreas",
+    "understat_id": 922,
+    "understat_name": null
+  },
+  "328": {
+    "fpl_id": 328,
+    "fpl_web_name": "Sessegnon",
+    "understat_id": 6837,
+    "understat_name": null
+  },
+  "329": {
+    "fpl_id": 329,
+    "fpl_web_name": "Wilson",
+    "understat_id": 5596,
+    "understat_name": null
+  },
+  "330": {
+    "fpl_id": 330,
+    "fpl_web_name": "Berge",
+    "understat_id": 8285,
+    "understat_name": null
+  },
+  "331": {
+    "fpl_id": 331,
+    "fpl_web_name": "Cairney",
+    "understat_id": 6835,
+    "understat_name": null
+  },
+  "332": {
+    "fpl_id": 332,
+    "fpl_web_name": "Lukić",
+    "understat_id": 1537,
+    "understat_name": null
+  },
+  "333": {
+    "fpl_id": 333,
+    "fpl_web_name": "Godo",
+    "understat_id": 11164,
+    "understat_name": null
+  },
+  "334": {
+    "fpl_id": 334,
+    "fpl_web_name": "Harris",
+    "understat_id": 10719,
+    "understat_name": null
+  },
+  "335": {
+    "fpl_id": 335,
+    "fpl_web_name": "King",
+    "understat_id": 12410,
+    "understat_name": null
+  },
+  "336": {
+    "fpl_id": 336,
+    "fpl_web_name": "Reed",
+    "understat_id": 910,
+    "understat_name": null
+  },
+  "337": {
+    "fpl_id": 337,
+    "fpl_web_name": "Raúl",
+    "understat_id": 4105,
+    "understat_name": null
+  },
+  "338": {
+    "fpl_id": 338,
+    "fpl_web_name": "Muniz",
+    "understat_id": 10717,
+    "understat_name": null
+  },
+  "424": {
+    "fpl_id": 424,
+    "fpl_web_name": "Bobb",
+    "understat_id": 11903,
+    "understat_name": null
+  },
+  "664": {
+    "fpl_id": 664,
+    "fpl_web_name": "Lecomte",
+    "understat_id": 3451,
+    "understat_name": null
+  },
+  "727": {
+    "fpl_id": 727,
+    "fpl_web_name": "Chukwueze",
+    "understat_id": 7208,
+    "understat_name": null
+  },
+  "731": {
+    "fpl_id": 731,
+    "fpl_web_name": "Kevin",
+    "understat_id": 14030,
+    "understat_name": null
+  },
+  "737": {
+    "fpl_id": 737,
+    "fpl_web_name": "Kusi-Asare",
+    "understat_id": 13262,
+    "understat_name": null
+  },
+  "770": {
+    "fpl_id": 770,
+    "fpl_web_name": "Ridgeon",
+    "understat_id": 14270,
+    "understat_name": null
+  },
+  "786": {
+    "fpl_id": 786,
+    "fpl_web_name": "McNally",
+    "understat_id": 14308,
+    "understat_name": null
+  },
+  "168": {
+    "fpl_id": 168,
+    "fpl_web_name": "Buonanotte",
+    "understat_id": 11362,
+    "understat_name": null
+  },
+  "339": {
+    "fpl_id": 339,
+    "fpl_web_name": "Meslier",
+    "understat_id": 8715,
+    "understat_name": null
+  },
+  "340": {
+    "fpl_id": 340,
+    "fpl_web_name": "Cairns",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "341": {
+    "fpl_id": 341,
+    "fpl_web_name": "Darlow",
+    "understat_id": 780,
+    "understat_name": null
+  },
+  "342": {
+    "fpl_id": 342,
+    "fpl_web_name": "Bogle",
+    "understat_id": 9205,
+    "understat_name": null
+  },
+  "343": {
+    "fpl_id": 343,
+    "fpl_web_name": "Struijk",
+    "understat_id": 8717,
+    "understat_name": null
+  },
+  "344": {
+    "fpl_id": 344,
+    "fpl_web_name": "Bijol",
+    "understat_id": 6807,
+    "understat_name": null
+  },
+  "345": {
+    "fpl_id": 345,
+    "fpl_web_name": "Bornauw",
+    "understat_id": 7791,
+    "understat_name": null
+  },
+  "346": {
+    "fpl_id": 346,
+    "fpl_web_name": "Byram",
+    "understat_id": 902,
+    "understat_name": null
+  },
+  "347": {
+    "fpl_id": 347,
+    "fpl_web_name": "Gudmundsson",
+    "understat_id": 9944,
+    "understat_name": null
+  },
+  "348": {
+    "fpl_id": 348,
+    "fpl_web_name": "Rodon",
+    "understat_id": 6377,
+    "understat_name": null
+  },
+  "349": {
+    "fpl_id": 349,
+    "fpl_web_name": "Schmidt",
+    "understat_id": 13974,
+    "understat_name": null
+  },
+  "350": {
+    "fpl_id": 350,
+    "fpl_web_name": "Aaronson",
+    "understat_id": 10751,
+    "understat_name": null
+  },
+  "351": {
+    "fpl_id": 351,
+    "fpl_web_name": "Gnonto",
+    "understat_id": 11155,
+    "understat_name": null
+  },
+  "352": {
+    "fpl_id": 352,
+    "fpl_web_name": "Harrison",
+    "understat_id": 8720,
+    "understat_name": null
+  },
+  "353": {
+    "fpl_id": 353,
+    "fpl_web_name": "James",
+    "understat_id": 5595,
+    "understat_name": null
+  },
+  "354": {
+    "fpl_id": 354,
+    "fpl_web_name": "Ampadu",
+    "understat_id": 6369,
+    "understat_name": null
+  },
+  "355": {
+    "fpl_id": 355,
+    "fpl_web_name": "Greenwood",
+    "understat_id": 9493,
+    "understat_name": null
+  },
+  "356": {
+    "fpl_id": 356,
+    "fpl_web_name": "Gruev",
+    "understat_id": 8000,
+    "understat_name": null
+  },
+  "357": {
+    "fpl_id": 357,
+    "fpl_web_name": "Ramazani",
+    "understat_id": 10975,
+    "understat_name": null
+  },
+  "358": {
+    "fpl_id": 358,
+    "fpl_web_name": "Tanaka",
+    "understat_id": 13834,
+    "understat_name": null
+  },
+  "359": {
+    "fpl_id": 359,
+    "fpl_web_name": "Crew",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "360": {
+    "fpl_id": 360,
+    "fpl_web_name": "Gelhardt",
+    "understat_id": 9339,
+    "understat_name": null
+  },
+  "361": {
+    "fpl_id": 361,
+    "fpl_web_name": "Gyabi",
+    "understat_id": 10752,
+    "understat_name": null
+  },
+  "362": {
+    "fpl_id": 362,
+    "fpl_web_name": "Piroe",
+    "understat_id": 13835,
+    "understat_name": null
+  },
+  "363": {
+    "fpl_id": 363,
+    "fpl_web_name": "Bamford",
+    "understat_id": 822,
+    "understat_name": null
+  },
+  "364": {
+    "fpl_id": 364,
+    "fpl_web_name": "Mateo Joseph",
+    "understat_id": 11208,
+    "understat_name": null
+  },
+  "365": {
+    "fpl_id": 365,
+    "fpl_web_name": "Nmecha",
+    "understat_id": 6544,
+    "understat_name": null
+  },
+  "493": {
+    "fpl_id": 493,
+    "fpl_web_name": "Longstaff",
+    "understat_id": 7078,
+    "understat_name": null
+  },
+  "660": {
+    "fpl_id": 660,
+    "fpl_web_name": "Stach",
+    "understat_id": 9910,
+    "understat_name": null
+  },
+  "665": {
+    "fpl_id": 665,
+    "fpl_web_name": "Perri",
+    "understat_id": 12369,
+    "understat_name": null
+  },
+  "691": {
+    "fpl_id": 691,
+    "fpl_web_name": "Calvert-Lewin",
+    "understat_id": 5555,
+    "understat_name": null
+  },
+  "698": {
+    "fpl_id": 698,
+    "fpl_web_name": "Okafor",
+    "understat_id": 11966,
+    "understat_name": null
+  },
+  "706": {
+    "fpl_id": 706,
+    "fpl_web_name": "Justin",
+    "understat_id": 7753,
+    "understat_name": null
+  },
+  "741": {
+    "fpl_id": 741,
+    "fpl_web_name": "Gray",
+    "understat_id": 14073,
+    "understat_name": null
+  },
+  "787": {
+    "fpl_id": 787,
+    "fpl_web_name": "Chambers",
+    "understat_id": 14306,
+    "understat_name": null
+  },
+  "366": {
+    "fpl_id": 366,
+    "fpl_web_name": "A.Becker",
+    "understat_id": 1257,
+    "understat_name": null
+  },
+  "367": {
+    "fpl_id": 367,
+    "fpl_web_name": "Mamardashvili",
+    "understat_id": 9693,
+    "understat_name": null
+  },
+  "368": {
+    "fpl_id": 368,
+    "fpl_web_name": "Pécsi",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "369": {
+    "fpl_id": 369,
+    "fpl_web_name": "Woodman",
+    "understat_id": 852,
+    "understat_name": null
+  },
+  "370": {
+    "fpl_id": 370,
+    "fpl_web_name": "Frimpong",
+    "understat_id": 9328,
+    "understat_name": null
+  },
+  "371": {
+    "fpl_id": 371,
+    "fpl_web_name": "Kerkez",
+    "understat_id": 11709,
+    "understat_name": null
+  },
+  "372": {
+    "fpl_id": 372,
+    "fpl_web_name": "Robertson",
+    "understat_id": 1688,
+    "understat_name": null
+  },
+  "373": {
+    "fpl_id": 373,
+    "fpl_web_name": "Virgil",
+    "understat_id": 833,
+    "understat_name": null
+  },
+  "374": {
+    "fpl_id": 374,
+    "fpl_web_name": "Konaté",
+    "understat_id": 6326,
+    "understat_name": null
+  },
+  "375": {
+    "fpl_id": 375,
+    "fpl_web_name": "Bradley",
+    "understat_id": 10120,
+    "understat_name": null
+  },
+  "376": {
+    "fpl_id": 376,
+    "fpl_web_name": "Gomez",
+    "understat_id": 987,
+    "understat_name": null
+  },
+  "377": {
+    "fpl_id": 377,
+    "fpl_web_name": "Tsimikas",
+    "understat_id": 8852,
+    "understat_name": null
+  },
+  "378": {
+    "fpl_id": 378,
+    "fpl_web_name": "Nallo",
+    "understat_id": 12534,
+    "understat_name": null
+  },
+  "379": {
+    "fpl_id": 379,
+    "fpl_web_name": "R.Williams",
+    "understat_id": 9086,
+    "understat_name": null
+  },
+  "380": {
+    "fpl_id": 380,
+    "fpl_web_name": "Ramsay",
+    "understat_id": 11214,
+    "understat_name": null
+  },
+  "381": {
+    "fpl_id": 381,
+    "fpl_web_name": "M.Salah",
+    "understat_id": 1250,
+    "understat_name": null
+  },
+  "382": {
+    "fpl_id": 382,
+    "fpl_web_name": "Wirtz",
+    "understat_id": 8397,
+    "understat_name": null
+  },
+  "383": {
+    "fpl_id": 383,
+    "fpl_web_name": "Luis Díaz",
+    "understat_id": 10408,
+    "understat_name": null
+  },
+  "384": {
+    "fpl_id": 384,
+    "fpl_web_name": "Gakpo",
+    "understat_id": 11296,
+    "understat_name": null
+  },
+  "385": {
+    "fpl_id": 385,
+    "fpl_web_name": "Chiesa",
+    "understat_id": 1433,
+    "understat_name": null
+  },
+  "386": {
+    "fpl_id": 386,
+    "fpl_web_name": "Mac Allister",
+    "understat_id": 8379,
+    "understat_name": null
+  },
+  "387": {
+    "fpl_id": 387,
+    "fpl_web_name": "Szoboszlai",
+    "understat_id": 9788,
+    "understat_name": null
+  },
+  "388": {
+    "fpl_id": 388,
+    "fpl_web_name": "C.Jones",
+    "understat_id": 6665,
+    "understat_name": null
+  },
+  "390": {
+    "fpl_id": 390,
+    "fpl_web_name": "Gravenberch",
+    "understat_id": 10697,
+    "understat_name": null
+  },
+  "392": {
+    "fpl_id": 392,
+    "fpl_web_name": "Endo",
+    "understat_id": 8808,
+    "understat_name": null
+  },
+  "393": {
+    "fpl_id": 393,
+    "fpl_web_name": "Bajcetic",
+    "understat_id": 10723,
+    "understat_name": null
+  },
+  "394": {
+    "fpl_id": 394,
+    "fpl_web_name": "McConnell",
+    "understat_id": 11811,
+    "understat_name": null
+  },
+  "395": {
+    "fpl_id": 395,
+    "fpl_web_name": "Morton",
+    "understat_id": 10091,
+    "understat_name": null
+  },
+  "396": {
+    "fpl_id": 396,
+    "fpl_web_name": "Nyoni",
+    "understat_id": 12203,
+    "understat_name": null
+  },
+  "397": {
+    "fpl_id": 397,
+    "fpl_web_name": "Darwin",
+    "understat_id": 10720,
+    "understat_name": null
+  },
+  "398": {
+    "fpl_id": 398,
+    "fpl_web_name": "Danns",
+    "understat_id": 12455,
+    "understat_name": null
+  },
+  "499": {
+    "fpl_id": 499,
+    "fpl_web_name": "Isak",
+    "understat_id": 5232,
+    "understat_name": null
+  },
+  "661": {
+    "fpl_id": 661,
+    "fpl_web_name": "Ekitiké",
+    "understat_id": 8995,
+    "understat_name": null
+  },
+  "686": {
+    "fpl_id": 686,
+    "fpl_web_name": "Ngumoha",
+    "understat_id": 13692,
+    "understat_name": null
+  },
+  "692": {
+    "fpl_id": 692,
+    "fpl_web_name": "Leoni",
+    "understat_id": 13031,
+    "understat_name": null
+  },
+  "746": {
+    "fpl_id": 746,
+    "fpl_web_name": "Morrison",
+    "understat_id": 14144,
+    "understat_name": null
+  },
+  "760": {
+    "fpl_id": 760,
+    "fpl_web_name": "Lucky",
+    "understat_id": 14236,
+    "understat_name": null
+  },
+  "82": {
+    "fpl_id": 82,
+    "fpl_web_name": "Semenyo",
+    "understat_id": 11363,
+    "understat_name": null
+  },
+  "182": {
+    "fpl_id": 182,
+    "fpl_web_name": "Trafford",
+    "understat_id": 9077,
+    "understat_name": null
+  },
+  "260": {
+    "fpl_id": 260,
+    "fpl_web_name": "Guéhi",
+    "understat_id": 7603,
+    "understat_name": null
+  },
+  "399": {
+    "fpl_id": 399,
+    "fpl_web_name": "Ederson M.",
+    "understat_id": 6054,
+    "understat_name": null
+  },
+  "401": {
+    "fpl_id": 401,
+    "fpl_web_name": "Bettinelli",
+    "understat_id": 7076,
+    "understat_name": null
+  },
+  "402": {
+    "fpl_id": 402,
+    "fpl_web_name": "Aït-Nouri",
+    "understat_id": 6674,
+    "understat_name": null
+  },
+  "403": {
+    "fpl_id": 403,
+    "fpl_web_name": "Gvardiol",
+    "understat_id": 9790,
+    "understat_name": null
+  },
+  "404": {
+    "fpl_id": 404,
+    "fpl_web_name": "Akanji",
+    "understat_id": 6490,
+    "understat_name": null
+  },
+  "405": {
+    "fpl_id": 405,
+    "fpl_web_name": "Aké",
+    "understat_id": 579,
+    "understat_name": null
+  },
+  "406": {
+    "fpl_id": 406,
+    "fpl_web_name": "Khusanov",
+    "understat_id": 11763,
+    "understat_name": null
+  },
+  "407": {
+    "fpl_id": 407,
+    "fpl_web_name": "Matheus N.",
+    "understat_id": 11000,
+    "understat_name": null
+  },
+  "408": {
+    "fpl_id": 408,
+    "fpl_web_name": "Rúben",
+    "understat_id": 8961,
+    "understat_name": null
+  },
+  "409": {
+    "fpl_id": 409,
+    "fpl_web_name": "Stones",
+    "understat_id": 586,
+    "understat_name": null
+  },
+  "410": {
+    "fpl_id": 410,
+    "fpl_web_name": "Lewis",
+    "understat_id": 10847,
+    "understat_name": null
+  },
+  "411": {
+    "fpl_id": 411,
+    "fpl_web_name": "O'Reilly",
+    "understat_id": 11592,
+    "understat_name": null
+  },
+  "412": {
+    "fpl_id": 412,
+    "fpl_web_name": "Vitor Reis",
+    "understat_id": 13380,
+    "understat_name": null
+  },
+  "413": {
+    "fpl_id": 413,
+    "fpl_web_name": "Marmoush",
+    "understat_id": 8393,
+    "understat_name": null
+  },
+  "414": {
+    "fpl_id": 414,
+    "fpl_web_name": "Foden",
+    "understat_id": 6055,
+    "understat_name": null
+  },
+  "415": {
+    "fpl_id": 415,
+    "fpl_web_name": "Savinho",
+    "understat_id": 11735,
+    "understat_name": null
+  },
+  "416": {
+    "fpl_id": 416,
+    "fpl_web_name": "Bernardo",
+    "understat_id": 3635,
+    "understat_name": null
+  },
+  "417": {
+    "fpl_id": 417,
+    "fpl_web_name": "Cherki",
+    "understat_id": 8094,
+    "understat_name": null
+  },
+  "418": {
+    "fpl_id": 418,
+    "fpl_web_name": "Doku",
+    "understat_id": 8981,
+    "understat_name": null
+  },
+  "420": {
+    "fpl_id": 420,
+    "fpl_web_name": "Gündoğan",
+    "understat_id": 314,
+    "understat_name": null
+  },
+  "421": {
+    "fpl_id": 421,
+    "fpl_web_name": "Rodrigo",
+    "understat_id": 2496,
+    "understat_name": null
+  },
+  "422": {
+    "fpl_id": 422,
+    "fpl_web_name": "Kovačić",
+    "understat_id": 2254,
+    "understat_name": null
+  },
+  "423": {
+    "fpl_id": 423,
+    "fpl_web_name": "N.Gonzalez",
+    "understat_id": 9802,
+    "understat_name": null
+  },
+  "425": {
+    "fpl_id": 425,
+    "fpl_web_name": "Echeverri",
+    "understat_id": 13649,
+    "understat_name": null
+  },
+  "427": {
+    "fpl_id": 427,
+    "fpl_web_name": "Reijnders",
+    "understat_id": 11965,
+    "understat_name": null
+  },
+  "428": {
+    "fpl_id": 428,
+    "fpl_web_name": "Nypan",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "429": {
+    "fpl_id": 429,
+    "fpl_web_name": "Phillips",
+    "understat_id": 8719,
+    "understat_name": null
+  },
+  "430": {
+    "fpl_id": 430,
+    "fpl_web_name": "Haaland",
+    "understat_id": 8260,
+    "understat_name": null
+  },
+  "736": {
+    "fpl_id": 736,
+    "fpl_web_name": "Donnarumma",
+    "understat_id": 1116,
+    "understat_name": null
+  },
+  "739": {
+    "fpl_id": 739,
+    "fpl_web_name": "Mukasa",
+    "understat_id": 14055,
+    "understat_name": null
+  },
+  "740": {
+    "fpl_id": 740,
+    "fpl_web_name": "Mfuni",
+    "understat_id": 14054,
+    "understat_name": null
+  },
+  "742": {
+    "fpl_id": 742,
+    "fpl_web_name": "McAidoo",
+    "understat_id": 14097,
+    "understat_name": null
+  },
+  "763": {
+    "fpl_id": 763,
+    "fpl_web_name": "Gray",
+    "understat_id": 14255,
+    "understat_name": null
+  },
+  "764": {
+    "fpl_id": 764,
+    "fpl_web_name": "Heskey",
+    "understat_id": 14254,
+    "understat_name": null
+  },
+  "794": {
+    "fpl_id": 794,
+    "fpl_web_name": "Alleyne",
+    "understat_id": 13298,
+    "understat_name": null
+  },
+  "119": {
+    "fpl_id": 119,
+    "fpl_web_name": "Mbeumo",
+    "understat_id": 6552,
+    "understat_name": null
+  },
+  "431": {
+    "fpl_id": 431,
+    "fpl_web_name": "Bayindir",
+    "understat_id": 12054,
+    "understat_name": null
+  },
+  "432": {
+    "fpl_id": 432,
+    "fpl_web_name": "Onana",
+    "understat_id": 10913,
+    "understat_name": null
+  },
+  "433": {
+    "fpl_id": 433,
+    "fpl_web_name": "Harrison",
+    "understat_id": 13410,
+    "understat_name": null
+  },
+  "434": {
+    "fpl_id": 434,
+    "fpl_web_name": "Heaton",
+    "understat_id": 1651,
+    "understat_name": null
+  },
+  "435": {
+    "fpl_id": 435,
+    "fpl_web_name": "Mee",
+    "understat_id": 12531,
+    "understat_name": null
+  },
+  "436": {
+    "fpl_id": 436,
+    "fpl_web_name": "De Ligt",
+    "understat_id": 7902,
+    "understat_name": null
+  },
+  "437": {
+    "fpl_id": 437,
+    "fpl_web_name": "Martinez",
+    "understat_id": 10802,
+    "understat_name": null
+  },
+  "438": {
+    "fpl_id": 438,
+    "fpl_web_name": "Mazraoui",
+    "understat_id": 10696,
+    "understat_name": null
+  },
+  "439": {
+    "fpl_id": 439,
+    "fpl_web_name": "D.Leon",
+    "understat_id": 14057,
+    "understat_name": null
+  },
+  "440": {
+    "fpl_id": 440,
+    "fpl_web_name": "Dalot",
+    "understat_id": 7281,
+    "understat_name": null
+  },
+  "441": {
+    "fpl_id": 441,
+    "fpl_web_name": "Dorgu",
+    "understat_id": 11944,
+    "understat_name": null
+  },
+  "442": {
+    "fpl_id": 442,
+    "fpl_web_name": "Maguire",
+    "understat_id": 1687,
+    "understat_name": null
+  },
+  "443": {
+    "fpl_id": 443,
+    "fpl_web_name": "Shaw",
+    "understat_id": 1006,
+    "understat_name": null
+  },
+  "444": {
+    "fpl_id": 444,
+    "fpl_web_name": "Yoro",
+    "understat_id": 10564,
+    "understat_name": null
+  },
+  "445": {
+    "fpl_id": 445,
+    "fpl_web_name": "Amass",
+    "understat_id": 12559,
+    "understat_name": null
+  },
+  "446": {
+    "fpl_id": 446,
+    "fpl_web_name": "Fredricson",
+    "understat_id": 13467,
+    "understat_name": null
+  },
+  "447": {
+    "fpl_id": 447,
+    "fpl_web_name": "Heaven",
+    "understat_id": 13080,
+    "understat_name": null
+  },
+  "448": {
+    "fpl_id": 448,
+    "fpl_web_name": "Malacia",
+    "understat_id": 10803,
+    "understat_name": null
+  },
+  "449": {
+    "fpl_id": 449,
+    "fpl_web_name": "B.Fernandes",
+    "understat_id": 1228,
+    "understat_name": null
+  },
+  "450": {
+    "fpl_id": 450,
+    "fpl_web_name": "Cunha",
+    "understat_id": 7080,
+    "understat_name": null
+  },
+  "451": {
+    "fpl_id": 451,
+    "fpl_web_name": "Rashford",
+    "understat_id": 556,
+    "understat_name": null
+  },
+  "452": {
+    "fpl_id": 452,
+    "fpl_web_name": "Amad",
+    "understat_id": 8127,
+    "understat_name": null
+  },
+  "454": {
+    "fpl_id": 454,
+    "fpl_web_name": "Antony",
+    "understat_id": 11094,
+    "understat_name": null
+  },
+  "455": {
+    "fpl_id": 455,
+    "fpl_web_name": "Mount",
+    "understat_id": 7768,
+    "understat_name": null
+  },
+  "457": {
+    "fpl_id": 457,
+    "fpl_web_name": "Casemiro",
+    "understat_id": 2248,
+    "understat_name": null
+  },
+  "458": {
+    "fpl_id": 458,
+    "fpl_web_name": "Mainoo",
+    "understat_id": 11174,
+    "understat_name": null
+  },
+  "459": {
+    "fpl_id": 459,
+    "fpl_web_name": "Ugarte",
+    "understat_id": 11766,
+    "understat_name": null
+  },
+  "460": {
+    "fpl_id": 460,
+    "fpl_web_name": "Collyer",
+    "understat_id": 12461,
+    "understat_name": null
+  },
+  "461": {
+    "fpl_id": 461,
+    "fpl_web_name": "Fitzgerald",
+    "understat_id": 13196,
+    "understat_name": null
+  },
+  "462": {
+    "fpl_id": 462,
+    "fpl_web_name": "J.Fletcher",
+    "understat_id": 13150,
+    "understat_name": null
+  },
+  "463": {
+    "fpl_id": 463,
+    "fpl_web_name": "Kone",
+    "understat_id": 13469,
+    "understat_name": null
+  },
+  "464": {
+    "fpl_id": 464,
+    "fpl_web_name": "Moorhouse",
+    "understat_id": 13468,
+    "understat_name": null
+  },
+  "465": {
+    "fpl_id": 465,
+    "fpl_web_name": "Højlund",
+    "understat_id": 11055,
+    "understat_name": null
+  },
+  "466": {
+    "fpl_id": 466,
+    "fpl_web_name": "Zirkzee",
+    "understat_id": 8044,
+    "understat_name": null
+  },
+  "467": {
+    "fpl_id": 467,
+    "fpl_web_name": "Obi",
+    "understat_id": 13466,
+    "understat_name": null
+  },
+  "468": {
+    "fpl_id": 468,
+    "fpl_web_name": "Wheatley",
+    "understat_id": 12568,
+    "understat_name": null
+  },
+  "681": {
+    "fpl_id": 681,
+    "fpl_web_name": "Šeško",
+    "understat_id": 11974,
+    "understat_name": null
+  },
+  "733": {
+    "fpl_id": 733,
+    "fpl_web_name": "Lammens",
+    "understat_id": 14056,
+    "understat_name": null
+  },
+  "755": {
+    "fpl_id": 755,
+    "fpl_web_name": "Lacey",
+    "understat_id": 14198,
+    "understat_name": null
+  },
+  "769": {
+    "fpl_id": 769,
+    "fpl_web_name": "Bendito Mantato",
+    "understat_id": 14266,
+    "understat_name": null
+  },
+  "771": {
+    "fpl_id": 771,
+    "fpl_web_name": "Fletcher",
+    "understat_id": 14272,
+    "understat_name": null
+  },
+  "788": {
+    "fpl_id": 788,
+    "fpl_web_name": "Kukonki",
+    "understat_id": 13259,
+    "understat_name": null
+  },
+  "52": {
+    "fpl_id": 52,
+    "fpl_web_name": "J.Ramsey",
+    "understat_id": 8941,
+    "understat_name": null
+  },
+  "135": {
+    "fpl_id": 135,
+    "fpl_web_name": "Wissa",
+    "understat_id": 5786,
+    "understat_name": null
+  },
+  "469": {
+    "fpl_id": 469,
+    "fpl_web_name": "Pope",
+    "understat_id": 5552,
+    "understat_name": null
+  },
+  "471": {
+    "fpl_id": 471,
+    "fpl_web_name": "Gillespie",
+    "understat_id": 8729,
+    "understat_name": null
+  },
+  "472": {
+    "fpl_id": 472,
+    "fpl_web_name": "Odysseas",
+    "understat_id": 375,
+    "understat_name": null
+  },
+  "473": {
+    "fpl_id": 473,
+    "fpl_web_name": "Hall",
+    "understat_id": 10216,
+    "understat_name": null
+  },
+  "474": {
+    "fpl_id": 474,
+    "fpl_web_name": "Schär",
+    "understat_id": 76,
+    "understat_name": null
+  },
+  "475": {
+    "fpl_id": 475,
+    "fpl_web_name": "Botman",
+    "understat_id": 8635,
+    "understat_name": null
+  },
+  "476": {
+    "fpl_id": 476,
+    "fpl_web_name": "Burn",
+    "understat_id": 7382,
+    "understat_name": null
+  },
+  "477": {
+    "fpl_id": 477,
+    "fpl_web_name": "Livramento",
+    "understat_id": 9512,
+    "understat_name": null
+  },
+  "478": {
+    "fpl_id": 478,
+    "fpl_web_name": "Trippier",
+    "understat_id": 652,
+    "understat_name": null
+  },
+  "479": {
+    "fpl_id": 479,
+    "fpl_web_name": "Krafth",
+    "understat_id": 1545,
+    "understat_name": null
+  },
+  "480": {
+    "fpl_id": 480,
+    "fpl_web_name": "Lascelles",
+    "understat_id": 766,
+    "understat_name": null
+  },
+  "481": {
+    "fpl_id": 481,
+    "fpl_web_name": "A.Murphy",
+    "understat_id": 12199,
+    "understat_name": null
+  },
+  "482": {
+    "fpl_id": 482,
+    "fpl_web_name": "Ashby",
+    "understat_id": 10061,
+    "understat_name": null
+  },
+  "483": {
+    "fpl_id": 483,
+    "fpl_web_name": "Pivas",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "484": {
+    "fpl_id": 484,
+    "fpl_web_name": "Targett",
+    "understat_id": 884,
+    "understat_name": null
+  },
+  "485": {
+    "fpl_id": 485,
+    "fpl_web_name": "Gordon",
+    "understat_id": 8150,
+    "understat_name": null
+  },
+  "486": {
+    "fpl_id": 486,
+    "fpl_web_name": "Elanga",
+    "understat_id": 9524,
+    "understat_name": null
+  },
+  "487": {
+    "fpl_id": 487,
+    "fpl_web_name": "Barnes",
+    "understat_id": 6681,
+    "understat_name": null
+  },
+  "488": {
+    "fpl_id": 488,
+    "fpl_web_name": "Bruno G.",
+    "understat_id": 8327,
+    "understat_name": null
+  },
+  "489": {
+    "fpl_id": 489,
+    "fpl_web_name": "J.Murphy",
+    "understat_id": 6063,
+    "understat_name": null
+  },
+  "490": {
+    "fpl_id": 490,
+    "fpl_web_name": "Joelinton",
+    "understat_id": 87,
+    "understat_name": null
+  },
+  "491": {
+    "fpl_id": 491,
+    "fpl_web_name": "Tonali",
+    "understat_id": 7958,
+    "understat_name": null
+  },
+  "492": {
+    "fpl_id": 492,
+    "fpl_web_name": "Antoñito C.",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "494": {
+    "fpl_id": 494,
+    "fpl_web_name": "Willock",
+    "understat_id": 6630,
+    "understat_name": null
+  },
+  "495": {
+    "fpl_id": 495,
+    "fpl_web_name": "Hayden",
+    "understat_id": 6062,
+    "understat_name": null
+  },
+  "496": {
+    "fpl_id": 496,
+    "fpl_web_name": "Kuol",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "497": {
+    "fpl_id": 497,
+    "fpl_web_name": "L.Miley",
+    "understat_id": 11386,
+    "understat_name": null
+  },
+  "498": {
+    "fpl_id": 498,
+    "fpl_web_name": "White",
+    "understat_id": 9959,
+    "understat_name": null
+  },
+  "500": {
+    "fpl_id": 500,
+    "fpl_web_name": "Osula",
+    "understat_id": 9556,
+    "understat_name": null
+  },
+  "501": {
+    "fpl_id": 501,
+    "fpl_web_name": "Neave",
+    "understat_id": 13532,
+    "understat_name": null
+  },
+  "674": {
+    "fpl_id": 674,
+    "fpl_web_name": "Ramsdale",
+    "understat_id": 5603,
+    "understat_name": null
+  },
+  "684": {
+    "fpl_id": 684,
+    "fpl_web_name": "Thiaw",
+    "understat_id": 8378,
+    "understat_name": null
+  },
+  "689": {
+    "fpl_id": 689,
+    "fpl_web_name": "Seung soo",
+    "understat_id": 13710,
+    "understat_name": null
+  },
+  "714": {
+    "fpl_id": 714,
+    "fpl_web_name": "Woltemade",
+    "understat_id": 8117,
+    "understat_name": null
+  },
+  "753": {
+    "fpl_id": 753,
+    "fpl_web_name": "Ruddy",
+    "understat_id": 785,
+    "understat_name": null
+  },
+  "765": {
+    "fpl_id": 765,
+    "fpl_web_name": "Shahar",
+    "understat_id": 13572,
+    "understat_name": null
+  },
+  "772": {
+    "fpl_id": 772,
+    "fpl_web_name": "Alabi",
+    "understat_id": 14273,
+    "understat_name": null
+  },
+  "12": {
+    "fpl_id": 12,
+    "fpl_web_name": "Zinchenko",
+    "understat_id": 2958,
+    "understat_name": null
+  },
+  "400": {
+    "fpl_id": 400,
+    "fpl_web_name": "Ortega Moreno",
+    "understat_id": 8786,
+    "understat_name": null
+  },
+  "426": {
+    "fpl_id": 426,
+    "fpl_web_name": "McAtee",
+    "understat_id": 10126,
+    "understat_name": null
+  },
+  "502": {
+    "fpl_id": 502,
+    "fpl_web_name": "Sels",
+    "understat_id": 6903,
+    "understat_name": null
+  },
+  "503": {
+    "fpl_id": 503,
+    "fpl_web_name": "C.Miguel",
+    "understat_id": 12764,
+    "understat_name": null
+  },
+  "504": {
+    "fpl_id": 504,
+    "fpl_web_name": "Turner",
+    "understat_id": 10700,
+    "understat_name": null
+  },
+  "505": {
+    "fpl_id": 505,
+    "fpl_web_name": "Milenković",
+    "understat_id": 6174,
+    "understat_name": null
+  },
+  "506": {
+    "fpl_id": 506,
+    "fpl_web_name": "Murillo",
+    "understat_id": 12123,
+    "understat_name": null
+  },
+  "507": {
+    "fpl_id": 507,
+    "fpl_web_name": "Aina",
+    "understat_id": 725,
+    "understat_name": null
+  },
+  "508": {
+    "fpl_id": 508,
+    "fpl_web_name": "N.Williams",
+    "understat_id": 8204,
+    "understat_name": null
+  },
+  "509": {
+    "fpl_id": 509,
+    "fpl_web_name": "David Carmo",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "510": {
+    "fpl_id": 510,
+    "fpl_web_name": "Jair Cunha",
+    "understat_id": 13779,
+    "understat_name": null
+  },
+  "511": {
+    "fpl_id": 511,
+    "fpl_web_name": "Morato",
+    "understat_id": 13068,
+    "understat_name": null
+  },
+  "512": {
+    "fpl_id": 512,
+    "fpl_web_name": "O.Richards",
+    "understat_id": 9675,
+    "understat_name": null
+  },
+  "513": {
+    "fpl_id": 513,
+    "fpl_web_name": "Abbott",
+    "understat_id": 13306,
+    "understat_name": null
+  },
+  "514": {
+    "fpl_id": 514,
+    "fpl_web_name": "Boly",
+    "understat_id": 6850,
+    "understat_name": null
+  },
+  "515": {
+    "fpl_id": 515,
+    "fpl_web_name": "Gibbs-White",
+    "understat_id": 6857,
+    "understat_name": null
+  },
+  "516": {
+    "fpl_id": 516,
+    "fpl_web_name": "Hudson-Odoi",
+    "understat_id": 6456,
+    "understat_name": null
+  },
+  "517": {
+    "fpl_id": 517,
+    "fpl_web_name": "Anderson",
+    "understat_id": 9154,
+    "understat_name": null
+  },
+  "518": {
+    "fpl_id": 518,
+    "fpl_web_name": "Jota",
+    "understat_id": 12766,
+    "understat_name": null
+  },
+  "519": {
+    "fpl_id": 519,
+    "fpl_web_name": "Dominguez",
+    "understat_id": 8252,
+    "understat_name": null
+  },
+  "520": {
+    "fpl_id": 520,
+    "fpl_web_name": "O'Brien",
+    "understat_id": 10759,
+    "understat_name": null
+  },
+  "521": {
+    "fpl_id": 521,
+    "fpl_web_name": "Sangaré",
+    "understat_id": 5722,
+    "understat_name": null
+  },
+  "522": {
+    "fpl_id": 522,
+    "fpl_web_name": "Yates",
+    "understat_id": 11003,
+    "understat_name": null
+  },
+  "523": {
+    "fpl_id": 523,
+    "fpl_web_name": "Da Silva Moreira",
+    "understat_id": 12765,
+    "understat_name": null
+  },
+  "524": {
+    "fpl_id": 524,
+    "fpl_web_name": "Stamenic",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "525": {
+    "fpl_id": 525,
+    "fpl_web_name": "Wood",
+    "understat_id": 4456,
+    "understat_name": null
+  },
+  "526": {
+    "fpl_id": 526,
+    "fpl_web_name": "Igor Jesus",
+    "understat_id": 13778,
+    "understat_name": null
+  },
+  "527": {
+    "fpl_id": 527,
+    "fpl_web_name": "Awoniyi",
+    "understat_id": 7814,
+    "understat_name": null
+  },
+  "669": {
+    "fpl_id": 669,
+    "fpl_web_name": "Ndoye",
+    "understat_id": 8662,
+    "understat_name": null
+  },
+  "675": {
+    "fpl_id": 675,
+    "fpl_web_name": "Gunn",
+    "understat_id": 5544,
+    "understat_name": null
+  },
+  "693": {
+    "fpl_id": 693,
+    "fpl_web_name": "Hutchinson",
+    "understat_id": 10348,
+    "understat_name": null
+  },
+  "696": {
+    "fpl_id": 696,
+    "fpl_web_name": "Kalimuendo",
+    "understat_id": 8056,
+    "understat_name": null
+  },
+  "715": {
+    "fpl_id": 715,
+    "fpl_web_name": "John",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "716": {
+    "fpl_id": 716,
+    "fpl_web_name": "Savona",
+    "understat_id": 12905,
+    "understat_name": null
+  },
+  "729": {
+    "fpl_id": 729,
+    "fpl_web_name": "Cuiabano",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "734": {
+    "fpl_id": 734,
+    "fpl_web_name": "Bakwa",
+    "understat_id": 8920,
+    "understat_name": null
+  },
+  "805": {
+    "fpl_id": 805,
+    "fpl_web_name": "Lucca",
+    "understat_id": 11936,
+    "understat_name": null
+  },
+  "814": {
+    "fpl_id": 814,
+    "fpl_web_name": "Netz",
+    "understat_id": 8401,
+    "understat_name": null
+  },
+  "528": {
+    "fpl_id": 528,
+    "fpl_web_name": "Patterson",
+    "understat_id": 13721,
+    "understat_name": null
+  },
+  "529": {
+    "fpl_id": 529,
+    "fpl_web_name": "Moore",
+    "understat_id": 7715,
+    "understat_name": null
+  },
+  "530": {
+    "fpl_id": 530,
+    "fpl_web_name": "Nna Noukeu",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "531": {
+    "fpl_id": 531,
+    "fpl_web_name": "Ballard",
+    "understat_id": 13715,
+    "understat_name": null
+  },
+  "532": {
+    "fpl_id": 532,
+    "fpl_web_name": "Hume",
+    "understat_id": 13713,
+    "understat_name": null
+  },
+  "533": {
+    "fpl_id": 533,
+    "fpl_web_name": "Alese",
+    "understat_id": 10165,
+    "understat_name": null
+  },
+  "534": {
+    "fpl_id": 534,
+    "fpl_web_name": "Anderson",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "535": {
+    "fpl_id": 535,
+    "fpl_web_name": "Cirkin",
+    "understat_id": 8537,
+    "understat_name": null
+  },
+  "536": {
+    "fpl_id": 536,
+    "fpl_web_name": "Hjelde",
+    "understat_id": 10028,
+    "understat_name": null
+  },
+  "537": {
+    "fpl_id": 537,
+    "fpl_web_name": "Huggins",
+    "understat_id": 9219,
+    "understat_name": null
+  },
+  "538": {
+    "fpl_id": 538,
+    "fpl_web_name": "Johnson",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "539": {
+    "fpl_id": 539,
+    "fpl_web_name": "O'Nien",
+    "understat_id": 14099,
+    "understat_name": null
+  },
+  "540": {
+    "fpl_id": 540,
+    "fpl_web_name": "Pembele",
+    "understat_id": 8701,
+    "understat_name": null
+  },
+  "541": {
+    "fpl_id": 541,
+    "fpl_web_name": "Reinildo",
+    "understat_id": 7432,
+    "understat_name": null
+  },
+  "542": {
+    "fpl_id": 542,
+    "fpl_web_name": "Seelt",
+    "understat_id": 13714,
+    "understat_name": null
+  },
+  "543": {
+    "fpl_id": 543,
+    "fpl_web_name": "Adingra",
+    "understat_id": 11710,
+    "understat_name": null
+  },
+  "544": {
+    "fpl_id": 544,
+    "fpl_web_name": "Diarra",
+    "understat_id": 9767,
+    "understat_name": null
+  },
+  "545": {
+    "fpl_id": 545,
+    "fpl_web_name": "Roberts",
+    "understat_id": 925,
+    "understat_name": null
+  },
+  "546": {
+    "fpl_id": 546,
+    "fpl_web_name": "Aleksić",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "547": {
+    "fpl_id": 547,
+    "fpl_web_name": "E.Le Fée",
+    "understat_id": 8651,
+    "understat_name": null
+  },
+  "548": {
+    "fpl_id": 548,
+    "fpl_web_name": "Mundle",
+    "understat_id": 11461,
+    "understat_name": null
+  },
+  "549": {
+    "fpl_id": 549,
+    "fpl_web_name": "Neil",
+    "understat_id": 13720,
+    "understat_name": null
+  },
+  "550": {
+    "fpl_id": 550,
+    "fpl_web_name": "Poveda",
+    "understat_id": 8723,
+    "understat_name": null
+  },
+  "551": {
+    "fpl_id": 551,
+    "fpl_web_name": "Rigg",
+    "understat_id": 13719,
+    "understat_name": null
+  },
+  "552": {
+    "fpl_id": 552,
+    "fpl_web_name": "Sadiki",
+    "understat_id": 13716,
+    "understat_name": null
+  },
+  "553": {
+    "fpl_id": 553,
+    "fpl_web_name": "Talbi",
+    "understat_id": 13717,
+    "understat_name": null
+  },
+  "554": {
+    "fpl_id": 554,
+    "fpl_web_name": "Ba",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "555": {
+    "fpl_id": 555,
+    "fpl_web_name": "Browne",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "556": {
+    "fpl_id": 556,
+    "fpl_web_name": "Ekwah",
+    "understat_id": 10284,
+    "understat_name": null
+  },
+  "557": {
+    "fpl_id": 557,
+    "fpl_web_name": "H.Jones",
+    "understat_id": 13722,
+    "understat_name": null
+  },
+  "558": {
+    "fpl_id": 558,
+    "fpl_web_name": "Matete",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "559": {
+    "fpl_id": 559,
+    "fpl_web_name": "Triantis",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "560": {
+    "fpl_id": 560,
+    "fpl_web_name": "Isidor",
+    "understat_id": 7148,
+    "understat_name": null
+  },
+  "561": {
+    "fpl_id": 561,
+    "fpl_web_name": "Mayenda",
+    "understat_id": 13718,
+    "understat_name": null
+  },
+  "562": {
+    "fpl_id": 562,
+    "fpl_web_name": "Abdullahi",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "563": {
+    "fpl_id": 563,
+    "fpl_web_name": "Luís Hemir",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "564": {
+    "fpl_id": 564,
+    "fpl_web_name": "Rusyn",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "668": {
+    "fpl_id": 668,
+    "fpl_web_name": "Xhaka",
+    "understat_id": 204,
+    "understat_name": null
+  },
+  "670": {
+    "fpl_id": 670,
+    "fpl_web_name": "Roefs",
+    "understat_id": 13712,
+    "understat_name": null
+  },
+  "678": {
+    "fpl_id": 678,
+    "fpl_web_name": "Masuaku",
+    "understat_id": 1760,
+    "understat_name": null
+  },
+  "683": {
+    "fpl_id": 683,
+    "fpl_web_name": "Alderete",
+    "understat_id": 8986,
+    "understat_name": null
+  },
+  "694": {
+    "fpl_id": 694,
+    "fpl_web_name": "Mukiele",
+    "understat_id": 5659,
+    "understat_name": null
+  },
+  "724": {
+    "fpl_id": 724,
+    "fpl_web_name": "Geertruida",
+    "understat_id": 13064,
+    "understat_name": null
+  },
+  "730": {
+    "fpl_id": 730,
+    "fpl_web_name": "Brobbey",
+    "understat_id": 9789,
+    "understat_name": null
+  },
+  "735": {
+    "fpl_id": 735,
+    "fpl_web_name": "Traoré",
+    "understat_id": 695,
+    "understat_name": null
+  },
+  "774": {
+    "fpl_id": 774,
+    "fpl_web_name": "Jenson Jones",
+    "understat_id": 14276,
+    "understat_name": null
+  },
+  "775": {
+    "fpl_id": 775,
+    "fpl_web_name": "Tutierov",
+    "understat_id": 14277,
+    "understat_name": null
+  },
+  "800": {
+    "fpl_id": 800,
+    "fpl_web_name": "Jocelin.T",
+    "understat_id": 14460,
+    "understat_name": null
+  },
+  "812": {
+    "fpl_id": 812,
+    "fpl_web_name": "Ellborg",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "813": {
+    "fpl_id": 813,
+    "fpl_web_name": "Angulo",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "821": {
+    "fpl_id": 821,
+    "fpl_web_name": "Whittaker",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "822": {
+    "fpl_id": 822,
+    "fpl_web_name": "Jones",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "565": {
+    "fpl_id": 565,
+    "fpl_web_name": "Vicario",
+    "understat_id": 8858,
+    "understat_name": null
+  },
+  "566": {
+    "fpl_id": 566,
+    "fpl_web_name": "Austin",
+    "understat_id": 8093,
+    "understat_name": null
+  },
+  "567": {
+    "fpl_id": 567,
+    "fpl_web_name": "Kinsky",
+    "understat_id": 13348,
+    "understat_name": null
+  },
+  "568": {
+    "fpl_id": 568,
+    "fpl_web_name": "Pedro Porro",
+    "understat_id": 6912,
+    "understat_name": null
+  },
+  "569": {
+    "fpl_id": 569,
+    "fpl_web_name": "Romero",
+    "understat_id": 7218,
+    "understat_name": null
+  },
+  "570": {
+    "fpl_id": 570,
+    "fpl_web_name": "Danso",
+    "understat_id": 5261,
+    "understat_name": null
+  },
+  "571": {
+    "fpl_id": 571,
+    "fpl_web_name": "Davies",
+    "understat_id": 660,
+    "understat_name": null
+  },
+  "572": {
+    "fpl_id": 572,
+    "fpl_web_name": "Dragusin",
+    "understat_id": 9105,
+    "understat_name": null
+  },
+  "573": {
+    "fpl_id": 573,
+    "fpl_web_name": "Spence",
+    "understat_id": 10764,
+    "understat_name": null
+  },
+  "574": {
+    "fpl_id": 574,
+    "fpl_web_name": "Udogie",
+    "understat_id": 8831,
+    "understat_name": null
+  },
+  "575": {
+    "fpl_id": 575,
+    "fpl_web_name": "Van de Ven",
+    "understat_id": 10050,
+    "understat_name": null
+  },
+  "576": {
+    "fpl_id": 576,
+    "fpl_web_name": "Phillips",
+    "understat_id": 12031,
+    "understat_name": null
+  },
+  "577": {
+    "fpl_id": 577,
+    "fpl_web_name": "Takai",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "578": {
+    "fpl_id": 578,
+    "fpl_web_name": "Vuskovic",
+    "understat_id": 13725,
+    "understat_name": null
+  },
+  "579": {
+    "fpl_id": 579,
+    "fpl_web_name": "Son",
+    "understat_id": 453,
+    "understat_name": null
+  },
+  "581": {
+    "fpl_id": 581,
+    "fpl_web_name": "Maddison",
+    "understat_id": 6818,
+    "understat_name": null
+  },
+  "582": {
+    "fpl_id": 582,
+    "fpl_web_name": "Kudus",
+    "understat_id": 12027,
+    "understat_name": null
+  },
+  "583": {
+    "fpl_id": 583,
+    "fpl_web_name": "Kulusevski",
+    "understat_id": 6691,
+    "understat_name": null
+  },
+  "584": {
+    "fpl_id": 584,
+    "fpl_web_name": "Tel",
+    "understat_id": 9780,
+    "understat_name": null
+  },
+  "585": {
+    "fpl_id": 585,
+    "fpl_web_name": "Bentancur",
+    "understat_id": 6108,
+    "understat_name": null
+  },
+  "586": {
+    "fpl_id": 586,
+    "fpl_web_name": "Bergvall",
+    "understat_id": 12912,
+    "understat_name": null
+  },
+  "587": {
+    "fpl_id": 587,
+    "fpl_web_name": "Bissouma",
+    "understat_id": 5609,
+    "understat_name": null
+  },
+  "588": {
+    "fpl_id": 588,
+    "fpl_web_name": "Odobert",
+    "understat_id": 10822,
+    "understat_name": null
+  },
+  "589": {
+    "fpl_id": 589,
+    "fpl_web_name": "Solomon",
+    "understat_id": 10716,
+    "understat_name": null
+  },
+  "590": {
+    "fpl_id": 590,
+    "fpl_web_name": "Bryan",
+    "understat_id": 7338,
+    "understat_name": null
+  },
+  "591": {
+    "fpl_id": 591,
+    "fpl_web_name": "Gray",
+    "understat_id": 10184,
+    "understat_name": null
+  },
+  "592": {
+    "fpl_id": 592,
+    "fpl_web_name": "Moore",
+    "understat_id": 12603,
+    "understat_name": null
+  },
+  "593": {
+    "fpl_id": 593,
+    "fpl_web_name": "P.M.Sarr",
+    "understat_id": 9021,
+    "understat_name": null
+  },
+  "594": {
+    "fpl_id": 594,
+    "fpl_web_name": "Min-hyeok",
+    "understat_id": 13362,
+    "understat_name": null
+  },
+  "595": {
+    "fpl_id": 595,
+    "fpl_web_name": "Olusesi",
+    "understat_id": 13224,
+    "understat_name": null
+  },
+  "596": {
+    "fpl_id": 596,
+    "fpl_web_name": "Solanke",
+    "understat_id": 1679,
+    "understat_name": null
+  },
+  "597": {
+    "fpl_id": 597,
+    "fpl_web_name": "Richarlison",
+    "understat_id": 6026,
+    "understat_name": null
+  },
+  "598": {
+    "fpl_id": 598,
+    "fpl_web_name": "Lankshear",
+    "understat_id": 13127,
+    "understat_name": null
+  },
+  "599": {
+    "fpl_id": 599,
+    "fpl_web_name": "Scarlett",
+    "understat_id": 9332,
+    "understat_name": null
+  },
+  "673": {
+    "fpl_id": 673,
+    "fpl_web_name": "J.Palhinha",
+    "understat_id": 10715,
+    "understat_name": null
+  },
+  "717": {
+    "fpl_id": 717,
+    "fpl_web_name": "Xavi",
+    "understat_id": 8700,
+    "understat_name": null
+  },
+  "726": {
+    "fpl_id": 726,
+    "fpl_web_name": "Kolo Muani",
+    "understat_id": 5743,
+    "understat_name": null
+  },
+  "745": {
+    "fpl_id": 745,
+    "fpl_web_name": "Byfield",
+    "understat_id": 14134,
+    "understat_name": null
+  },
+  "750": {
+    "fpl_id": 750,
+    "fpl_web_name": "Rowswell",
+    "understat_id": 14176,
+    "understat_name": null
+  },
+  "751": {
+    "fpl_id": 751,
+    "fpl_web_name": "Akhamrich",
+    "understat_id": 14175,
+    "understat_name": null
+  },
+  "790": {
+    "fpl_id": 790,
+    "fpl_web_name": "Williams-Barnett",
+    "understat_id": 13249,
+    "understat_name": null
+  },
+  "796": {
+    "fpl_id": 796,
+    "fpl_web_name": "Gallagher",
+    "understat_id": 9040,
+    "understat_name": null
+  },
+  "804": {
+    "fpl_id": 804,
+    "fpl_web_name": "Souza",
+    "understat_id": 14410,
+    "understat_name": null
+  },
+  "811": {
+    "fpl_id": 811,
+    "fpl_web_name": "Kyerematen",
+    "understat_id": 14409,
+    "understat_name": null
+  },
+  "818": {
+    "fpl_id": 818,
+    "fpl_web_name": "Wilson",
+    "understat_id": 14462,
+    "understat_name": null
+  },
+  "326": {
+    "fpl_id": 326,
+    "fpl_web_name": "Adama",
+    "understat_id": 900,
+    "understat_name": null
+  },
+  "600": {
+    "fpl_id": 600,
+    "fpl_web_name": "Areola",
+    "understat_id": 2310,
+    "understat_name": null
+  },
+  "601": {
+    "fpl_id": 601,
+    "fpl_web_name": "Foderingham",
+    "understat_id": 8776,
+    "understat_name": null
+  },
+  "602": {
+    "fpl_id": 602,
+    "fpl_web_name": "Hegyi",
+    "understat_id": 11369,
+    "understat_name": null
+  },
+  "603": {
+    "fpl_id": 603,
+    "fpl_web_name": "Diouf",
+    "understat_id": 13723,
+    "understat_name": null
+  },
+  "604": {
+    "fpl_id": 604,
+    "fpl_web_name": "Emerson",
+    "understat_id": 1245,
+    "understat_name": null
+  },
+  "605": {
+    "fpl_id": 605,
+    "fpl_web_name": "Kilman",
+    "understat_id": 7332,
+    "understat_name": null
+  },
+  "606": {
+    "fpl_id": 606,
+    "fpl_web_name": "Mavropanos",
+    "understat_id": 6722,
+    "understat_name": null
+  },
+  "607": {
+    "fpl_id": 607,
+    "fpl_web_name": "N.Aguerd",
+    "understat_id": 6935,
+    "understat_name": null
+  },
+  "608": {
+    "fpl_id": 608,
+    "fpl_web_name": "Scarles",
+    "understat_id": 12358,
+    "understat_name": null
+  },
+  "609": {
+    "fpl_id": 609,
+    "fpl_web_name": "Todibo",
+    "understat_id": 6816,
+    "understat_name": null
+  },
+  "610": {
+    "fpl_id": 610,
+    "fpl_web_name": "Wan-Bissaka",
+    "understat_id": 5584,
+    "understat_name": null
+  },
+  "611": {
+    "fpl_id": 611,
+    "fpl_web_name": "Casey",
+    "understat_id": 11409,
+    "understat_name": null
+  },
+  "612": {
+    "fpl_id": 612,
+    "fpl_web_name": "L.Paquetá",
+    "understat_id": 7365,
+    "understat_name": null
+  },
+  "613": {
+    "fpl_id": 613,
+    "fpl_web_name": "Souček",
+    "understat_id": 8288,
+    "understat_name": null
+  },
+  "615": {
+    "fpl_id": 615,
+    "fpl_web_name": "Summerville",
+    "understat_id": 9492,
+    "understat_name": null
+  },
+  "616": {
+    "fpl_id": 616,
+    "fpl_web_name": "Álvarez",
+    "understat_id": 11926,
+    "understat_name": null
+  },
+  "617": {
+    "fpl_id": 617,
+    "fpl_web_name": "Cornet",
+    "understat_id": 3278,
+    "understat_name": null
+  },
+  "618": {
+    "fpl_id": 618,
+    "fpl_web_name": "G.Rodriguez",
+    "understat_id": 8267,
+    "understat_name": null
+  },
+  "619": {
+    "fpl_id": 619,
+    "fpl_web_name": "L.Guilherme",
+    "understat_id": 13026,
+    "understat_name": null
+  },
+  "620": {
+    "fpl_id": 620,
+    "fpl_web_name": "Earthy",
+    "understat_id": 12474,
+    "understat_name": null
+  },
+  "621": {
+    "fpl_id": 621,
+    "fpl_web_name": "Irving",
+    "understat_id": 12774,
+    "understat_name": null
+  },
+  "622": {
+    "fpl_id": 622,
+    "fpl_web_name": "Orford",
+    "understat_id": 12296,
+    "understat_name": null
+  },
+  "623": {
+    "fpl_id": 623,
+    "fpl_web_name": "Potts",
+    "understat_id": 13724,
+    "understat_name": null
+  },
+  "624": {
+    "fpl_id": 624,
+    "fpl_web_name": "Bowen",
+    "understat_id": 1776,
+    "understat_name": null
+  },
+  "625": {
+    "fpl_id": 625,
+    "fpl_web_name": "Füllkrug",
+    "understat_id": 6098,
+    "understat_name": null
+  },
+  "626": {
+    "fpl_id": 626,
+    "fpl_web_name": "Marshall",
+    "understat_id": 12359,
+    "understat_name": null
+  },
+  "659": {
+    "fpl_id": 659,
+    "fpl_web_name": "Walker-Peters",
+    "understat_id": 885,
+    "understat_name": null
+  },
+  "671": {
+    "fpl_id": 671,
+    "fpl_web_name": "Wilson",
+    "understat_id": 468,
+    "understat_name": null
+  },
+  "679": {
+    "fpl_id": 679,
+    "fpl_web_name": "Hermansen",
+    "understat_id": 12910,
+    "understat_name": null
+  },
+  "708": {
+    "fpl_id": 708,
+    "fpl_web_name": "M.Fernandes",
+    "understat_id": 12948,
+    "understat_name": null
+  },
+  "718": {
+    "fpl_id": 718,
+    "fpl_web_name": "S.Magassa",
+    "understat_id": 10770,
+    "understat_name": null
+  },
+  "738": {
+    "fpl_id": 738,
+    "fpl_web_name": "Fabianski",
+    "understat_id": 706,
+    "understat_name": null
+  },
+  "747": {
+    "fpl_id": 747,
+    "fpl_web_name": "Mayers",
+    "understat_id": 13247,
+    "understat_name": null
+  },
+  "752": {
+    "fpl_id": 752,
+    "fpl_web_name": "Golambeckis",
+    "understat_id": 14179,
+    "understat_name": null
+  },
+  "758": {
+    "fpl_id": 758,
+    "fpl_web_name": "Mohamadou Kanté",
+    "understat_id": 14219,
+    "understat_name": null
+  },
+  "785": {
+    "fpl_id": 785,
+    "fpl_web_name": "Pablo",
+    "understat_id": 14290,
+    "understat_name": null
+  },
+  "791": {
+    "fpl_id": 791,
+    "fpl_web_name": "Taty",
+    "understat_id": 10948,
+    "understat_name": null
+  },
+  "802": {
+    "fpl_id": 802,
+    "fpl_web_name": "Lamadrid",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "815": {
+    "fpl_id": 815,
+    "fpl_web_name": "Disasi",
+    "understat_id": 6885,
+    "understat_name": null
+  },
+  "825": {
+    "fpl_id": 825,
+    "fpl_web_name": "Herrick",
+    "understat_id": null,
+    "understat_name": null
+  },
+  "627": {
+    "fpl_id": 627,
+    "fpl_web_name": "Johnstone",
+    "understat_id": 978,
+    "understat_name": null
+  },
+  "628": {
+    "fpl_id": 628,
+    "fpl_web_name": "José Sá",
+    "understat_id": 9740,
+    "understat_name": null
+  },
+  "629": {
+    "fpl_id": 629,
+    "fpl_web_name": "Bentley",
+    "understat_id": 11361,
+    "understat_name": null
+  },
+  "631": {
+    "fpl_id": 631,
+    "fpl_web_name": "Agbadou",
+    "understat_id": 10856,
+    "understat_name": null
+  },
+  "632": {
+    "fpl_id": 632,
+    "fpl_web_name": "Doherty",
+    "understat_id": 6852,
+    "understat_name": null
+  },
+  "633": {
+    "fpl_id": 633,
+    "fpl_web_name": "H.Bueno",
+    "understat_id": 10140,
+    "understat_name": null
+  },
+  "634": {
+    "fpl_id": 634,
+    "fpl_web_name": "Mosquera",
+    "understat_id": 9958,
+    "understat_name": null
+  },
+  "635": {
+    "fpl_id": 635,
+    "fpl_web_name": "R.Gomes",
+    "understat_id": 12756,
+    "understat_name": null
+  },
+  "636": {
+    "fpl_id": 636,
+    "fpl_web_name": "S.Bueno",
+    "understat_id": 10945,
+    "understat_name": null
+  },
+  "637": {
+    "fpl_id": 637,
+    "fpl_web_name": "Toti",
+    "understat_id": 10293,
+    "understat_name": null
+  },
+  "638": {
+    "fpl_id": 638,
+    "fpl_web_name": "Hoever",
+    "understat_id": 8351,
+    "understat_name": null
+  },
+  "639": {
+    "fpl_id": 639,
+    "fpl_web_name": "Meupiyou",
+    "understat_id": 11775,
+    "understat_name": null
+  },
+  "640": {
+    "fpl_id": 640,
+    "fpl_web_name": "Pedro Lima",
+    "understat_id": 13156,
+    "understat_name": null
+  },
+  "641": {
+    "fpl_id": 641,
+    "fpl_web_name": "Pond",
+    "understat_id": 13117,
+    "understat_name": null
+  },
+  "642": {
+    "fpl_id": 642,
+    "fpl_web_name": "Hee Chan",
+    "understat_id": 8845,
+    "understat_name": null
+  },
+  "643": {
+    "fpl_id": 643,
+    "fpl_web_name": "André",
+    "understat_id": 13022,
+    "understat_name": null
+  },
+  "644": {
+    "fpl_id": 644,
+    "fpl_web_name": "Bellegarde",
+    "understat_id": 7762,
+    "understat_name": null
+  },
+  "645": {
+    "fpl_id": 645,
+    "fpl_web_name": "Fer López",
+    "understat_id": 13200,
+    "understat_name": null
+  },
+  "646": {
+    "fpl_id": 646,
+    "fpl_web_name": "J.Gomes",
+    "understat_id": 11384,
+    "understat_name": null
+  },
+  "647": {
+    "fpl_id": 647,
+    "fpl_web_name": "Guedes",
+    "understat_id": 5682,
+    "understat_name": null
+  },
+  "648": {
+    "fpl_id": 648,
+    "fpl_web_name": "Munetsi",
+    "understat_id": 7908,
+    "understat_name": null
+  },
+  "649": {
+    "fpl_id": 649,
+    "fpl_web_name": "B.Traore",
+    "understat_id": 8119,
+    "understat_name": null
+  },
+  "650": {
+    "fpl_id": 650,
+    "fpl_web_name": "Chirewa",
+    "understat_id": 12234,
+    "understat_name": null
+  },
+  "651": {
+    "fpl_id": 651,
+    "fpl_web_name": "Edozie",
+    "understat_id": 13220,
+    "understat_name": null
+  },
+  "652": {
+    "fpl_id": 652,
+    "fpl_web_name": "Gonzalez",
+    "understat_id": 12047,
+    "understat_name": null
+  },
+  "653": {
+    "fpl_id": 653,
+    "fpl_web_name": "Hodge",
+    "understat_id": 10755,
+    "understat_name": null
+  },
+  "655": {
+    "fpl_id": 655,
+    "fpl_web_name": "Fábio Silva",
+    "understat_id": 8778,
+    "understat_name": null
+  },
+  "656": {
+    "fpl_id": 656,
+    "fpl_web_name": "Kalajdžić",
+    "understat_id": 8812,
+    "understat_name": null
+  },
+  "657": {
+    "fpl_id": 657,
+    "fpl_web_name": "Chiwome",
+    "understat_id": 12532,
+    "understat_name": null
+  },
+  "658": {
+    "fpl_id": 658,
+    "fpl_web_name": "Fraser",
+    "understat_id": 11210,
+    "understat_name": null
+  },
+  "663": {
+    "fpl_id": 663,
+    "fpl_web_name": "J.Arias",
+    "understat_id": 13741,
+    "understat_name": null
+  },
+  "682": {
+    "fpl_id": 682,
+    "fpl_web_name": "Møller Wolfe",
+    "understat_id": 13740,
+    "understat_name": null
+  },
+  "695": {
+    "fpl_id": 695,
+    "fpl_web_name": "Tchatchoua",
+    "understat_id": 12113,
+    "understat_name": null
+  },
+  "709": {
+    "fpl_id": 709,
+    "fpl_web_name": "Krejčí",
+    "understat_id": 1447,
+    "understat_name": null
+  },
+  "720": {
+    "fpl_id": 720,
+    "fpl_web_name": "Tolu",
+    "understat_id": 8875,
+    "understat_name": null
+  },
+  "749": {
+    "fpl_id": 749,
+    "fpl_web_name": "Mané",
+    "understat_id": 13484,
+    "understat_name": null
+  },
+  "766": {
+    "fpl_id": 766,
+    "fpl_web_name": "Olagunju",
+    "understat_id": 14257,
+    "understat_name": null
+  },
+  "767": {
+    "fpl_id": 767,
+    "fpl_web_name": "Rawlings",
+    "understat_id": 14256,
+    "understat_name": null
+  },
+  "777": {
+    "fpl_id": 777,
+    "fpl_web_name": "Ojinnaka",
+    "understat_id": 12575,
+    "understat_name": null
+  },
+  "778": {
+    "fpl_id": 778,
+    "fpl_web_name": "Sutherland",
+    "understat_id": 14284,
+    "understat_name": null
+  },
+  "809": {
+    "fpl_id": 809,
+    "fpl_web_name": "Abbey",
+    "understat_id": 14394,
+    "understat_name": null
+  },
+  "816": {
+    "fpl_id": 816,
+    "fpl_web_name": "Angel",
+    "understat_id": 5598,
+    "understat_name": null
+  },
+  "817": {
+    "fpl_id": 817,
+    "fpl_web_name": "Armstrong",
+    "understat_id": 4419,
+    "understat_name": null
+  }
+}
