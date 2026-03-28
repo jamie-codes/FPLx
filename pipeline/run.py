@@ -12,6 +12,8 @@ load_dotenv()
 
 from fpl_client import get_bootstrap_static, get_fixtures
 from upload import save
+from understat_client import get_understat_players
+from merge import merge_players
 
 
 def _get_cache_dir() -> str:
@@ -47,6 +49,19 @@ def run(dry_run: bool = False):
         fixtures = get_fixtures()
         save('fpl_fixtures.json', fixtures)
 
+        # Fetch Understat data (uses 24h cache per D-07)
+        understat = get_understat_players()
+
+        # Load player ID map for FPL<->Understat join
+        import json as _json
+        id_map_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'player_id_map.json')
+        with open(id_map_path, 'r', encoding='utf-8') as f:
+            id_map = _json.load(f)
+
+        # Merge FPL + Understat data (per-90 normalisation, custom FDR, fixtures)
+        merged = merge_players(bootstrap, fixtures, understat, id_map)
+        save('merged_players.json', merged)
+
         # Write last_updated.json with success metadata
         from datetime import datetime, timezone
         timestamp = datetime.now(timezone.utc).isoformat()
@@ -62,10 +77,11 @@ def run(dry_run: bool = False):
             'player_count': player_count,
             'team_count': team_count,
             'fixture_count': fixture_count,
+            'merged_count': len(merged),
         }
         save('last_updated.json', last_updated)
 
-        print(f"Pipeline complete: {player_count} players, {team_count} teams, {fixture_count} fixtures")
+        print(f"Pipeline complete: {player_count} players, {team_count} teams, {fixture_count} fixtures, {len(merged)} merged")
 
     except Exception as exc:
         # Stale-cache fallback (per D-06): preserve prior cache, mark as stale
