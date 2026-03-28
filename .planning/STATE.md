@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 02-understat-pipeline-merged-data-api/02-03-PLAN.md
-last_updated: "2026-03-28T12:00:14.918Z"
+stopped_at: Completed 03-gem-rating-table/03-01-PLAN.md
+last_updated: "2026-03-28T12:30:21.733Z"
 last_activity: 2026-03-28
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 9
+  completed_plans: 7
   percent: 0
 ---
 
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-data-foundation P02 | 4 | 2 tasks | 3 files |
 | Phase 02-understat-pipeline-merged-data-api P02 | 2min | 2 tasks | 2 files |
 | Phase 02-understat-pipeline-merged-data-api P03 | 5 | 1 tasks | 5 files |
+| Phase 03-gem-rating-table P01 | 148 | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,9 @@ Recent decisions affecting current work:
 - [Phase 01-data-foundation]: Proxy URL appends trailing slash before query string to match FPL API convention
 - [Phase 02-understat-pipeline-merged-data-api]: D-08: USE_BLOB env var routes /api/players between Vercel Blob (prod) and pipeline/cache/ (dev); no Zod validation on output; raw string response to avoid JSON round-trip
 - [Phase 02-understat-pipeline-merged-data-api]: D-09: usePlayers uses queryKey ['players'] and staleTime 6h — single cache key for all consumers
+- [Phase 03-gem-rating-table]: DefCon likelihood dimension deferred to Phase 4 — per-match element-summary data not yet available
+- [Phase 03-gem-rating-table]: xG/xA excluded from gem composite when null (not zero-filled) per Research Pitfall 12
+- [Phase 03-gem-rating-table]: Min-max normalisation uses full player population before position filtering
 
 ### Pending Todos
 
@@ -84,6 +88,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T11:43:22.700Z
-Stopped at: Completed 02-understat-pipeline-merged-data-api/02-03-PLAN.md
+Last session: 2026-03-28T12:30:21.730Z
+Stopped at: Completed 03-gem-rating-table/03-01-PLAN.md
 Resume file: None
