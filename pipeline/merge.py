@@ -36,6 +36,56 @@ def _difficulty_tier(score: float, easy_threshold: float, hard_threshold: float)
         return 'medium'
 
 
+def _compute_difficulty_scores(bootstrap: dict, fixtures: list) -> dict[int, float]:
+    """Compute team difficulty scores from rolling xGA. Exported for defcon.py.
+
+    Args:
+        bootstrap: FPL bootstrap-static JSON (used for teams dict).
+        fixtures:  FPL fixtures list (used for rolling goals-conceded xGA proxy).
+
+    Returns:
+        Dict mapping team_id (int) -> difficulty score (0.0-1.0).
+        0.0 = easiest fixture (opponent concedes most), 1.0 = hardest.
+    """
+    teams = {t['id']: t for t in bootstrap.get('teams', [])}
+
+    ROLLING_WINDOW = 6
+
+    finished = sorted(
+        [f for f in fixtures if f.get('finished') and f.get('event') is not None],
+        key=lambda f: f['event'],
+    )
+
+    team_goals_conceded: dict[int, list[int]] = {t_id: [] for t_id in teams}
+
+    for fix in finished:
+        h_id = fix['team_h']
+        a_id = fix['team_a']
+        h_score = fix.get('team_h_score') or 0
+        a_score = fix.get('team_a_score') or 0
+
+        if h_id in team_goals_conceded:
+            team_goals_conceded[h_id].append(a_score)
+        if a_id in team_goals_conceded:
+            team_goals_conceded[a_id].append(h_score)
+
+    team_xga: dict[int, float] = {}
+    for t_id, conceded_list in team_goals_conceded.items():
+        last_n = conceded_list[-ROLLING_WINDOW:]
+        team_xga[t_id] = sum(last_n) / len(last_n) if last_n else 0.0
+
+    xga_values = sorted(team_xga.values())
+    min_xga = min(xga_values) if xga_values else 0.0
+    max_xga = max(xga_values) if xga_values else 1.0
+
+    difficulty_scores: dict[int, float] = {}
+    for t_id in teams:
+        xga = team_xga.get(t_id, 0.0)
+        difficulty_scores[t_id] = _compute_difficulty_score(xga, min_xga, max_xga)
+
+    return difficulty_scores
+
+
 def merge_players(
     bootstrap: dict,
     fixtures: list,
@@ -241,7 +291,7 @@ def merge_players(
             'starts': starts,
             'total_points': element['total_points'],
             # Set-piece / defensive flags
-            'defensive_contributions': element.get('defensive_contributions'),
+            'defensive_contribution': element.get('defensive_contribution'),
             'clearances_blocks_interceptions': element.get('clearances_blocks_interceptions'),
             'direct_freekicks_order': element.get('direct_freekicks_order'),
             'penalties_order': element.get('penalties_order'),

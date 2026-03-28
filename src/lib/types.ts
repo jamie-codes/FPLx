@@ -16,7 +16,8 @@ export interface FPLElement {
   status: PlayerStatus                      // a=available, d=doubtful, i=injured, s=suspended, u=unavailable, n=not available
   minutes: number
   starts: number
-  defensive_contributions: number | null    // 2025/26 field — nullable per PPS-01
+  defensive_contribution: number | null     // 2025/26 field — nullable per PPS-01
+  defensive_contribution_per_90: number | null  // season aggregate per 90 mins
   clearances_blocks_interceptions: number | null  // 2025/26 field — nullable per PPS-01
   direct_freekicks_order: number | null     // Set piece taker order per PPS-01. 1 = primary taker, null = not a taker.
   penalties_order: number | null            // Penalty taker order per PPS-01. 1 = primary taker, null = not a taker.
@@ -92,7 +93,7 @@ export interface MergedPlayer {
   minutes: number
   starts: number
   total_points: number
-  defensive_contributions: number | null
+  defensive_contribution: number | null
   clearances_blocks_interceptions: number | null
   direct_freekicks_order: number | null
   penalties_order: number | null
@@ -107,6 +108,28 @@ export interface MergedPlayer {
   form_pts_per90: number
   // Upcoming fixtures (D-03: next 5)
   fixtures: FixtureEntry[]
+}
+
+// DefCon per-player stats (Phase 4) — populated from pipeline/cache/defcon_stats.json
+export interface DefConPlayer {
+  id: number
+  web_name: string
+  element_type: PositionCode       // 2=DEF, 3=MID, 4=FWD
+  team: number
+  team_short_name: string
+  threshold: number                // 10 for DEF, 12 for MID/FWD
+  hit_rate: number                 // 0.0-1.0
+  hits: number                     // games meeting threshold
+  games_played: number             // games with minutes > 0
+  avg_per90: number                // defensive_contribution_per_90 from bootstrap
+  distance_to_threshold: number    // threshold - avg_per90 (negative = above)
+  fixture_correlation: {
+    insufficient_data: boolean
+    easy_hit_rate?: number
+    hard_hit_rate?: number
+    easy_n?: number
+    hard_n?: number
+  }
 }
 
 // Scored player with Gem composite and dimension scores (Phase 3)

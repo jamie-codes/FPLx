@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 03-gem-rating-table/03-02-PLAN.md
-last_updated: "2026-03-28T18:19:06.580Z"
+stopped_at: Completed 04-defcon-analysis/04-01-PLAN.md
+last_updated: "2026-03-28T21:13:16.260Z"
 last_activity: 2026-03-28
 progress:
   total_phases: 6
   completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
+  total_plans: 12
+  completed_plans: 10
   percent: 0
 ---
 
@@ -57,6 +57,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02-understat-pipeline-merged-data-api P03 | 5 | 1 tasks | 5 files |
 | Phase 03-gem-rating-table P01 | 148 | 3 tasks | 5 files |
 | Phase 03-gem-rating-table P02 | 3 | 2 tasks | 4 files |
+| Phase 04-defcon-analysis P01 | 4 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,8 @@ Recent decisions affecting current work:
 - [Phase 03-gem-rating-table]: page.tsx stays server component; GemTable carries all interactivity as 'use client'
 - [Phase 03-gem-rating-table]: Position filter passes numeric PositionCode (1/2/3/4) to column filter, never string labels
 - [Phase 03-gem-rating-table]: Null xG/xA scores display em-dash (\u2014) not zero per Research Pitfall 6
+- [Phase 04-defcon-analysis]: _compute_difficulty_scores requires both bootstrap and fixtures params — plan showed bootstrap-only but fixtures are needed for rolling xGA computation
+- [Phase 04-defcon-analysis]: DefConPlayer fixture_correlation stored as summary object in defcon_stats.json — raw match history stripped to keep file size manageable
 
 ### Pending Todos
 
@@ -92,6 +95,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T18:01:49.666Z
-Stopped at: Completed 03-gem-rating-table/03-02-PLAN.md
+Last session: 2026-03-28T21:13:16.257Z
+Stopped at: Completed 04-defcon-analysis/04-01-PLAN.md
 Resume file: None

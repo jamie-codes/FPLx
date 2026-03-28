@@ -44,14 +44,14 @@ describe('FPLBootstrapSchema', () => {
 })
 
 describe('FPLElement field validation', () => {
-  it('validates defensive_contributions as nullable number (PPS-01)', () => {
+  it('validates defensive_contribution as nullable number (PPS-01)', () => {
     const result = parseFPLBootstrap(sampleFixture)
     expect(result.success).toBe(true)
     if (!result.success) return
-    // Magalhaes (index 0): defensive_contributions === 42
-    expect(result.data.elements[0].defensive_contributions).toBe(42)
-    // Wissa (index 2): defensive_contributions === null
-    expect(result.data.elements[2].defensive_contributions).toBeNull()
+    // Magalhaes (index 0): defensive_contribution === 42
+    expect(result.data.elements[0].defensive_contribution).toBe(42)
+    // Wissa (index 2): defensive_contribution === null
+    expect(result.data.elements[2].defensive_contribution).toBeNull()
   })
 
   it('validates set piece order fields as nullable number (PPS-01)', () => {
@@ -96,7 +96,8 @@ describe('FPLElement field validation', () => {
       form: '3.0',
       minutes: 900,
       starts: 10,
-      defensive_contributions: null,
+      defensive_contribution: null,
+      defensive_contribution_per_90: null,
       clearances_blocks_interceptions: null,
       direct_freekicks_order: null,
       penalties_order: null,
