@@ -85,7 +85,7 @@ Plans:
 
 Plans:
 - [ ] 04-01-PLAN.md — Fix defensive_contribution bug, DefConPlayer type, pipeline/defcon.py, run.py integration
-- [ ] 04-02-PLAN.md — TDD: DefCon TypeScript utility functions (thresholds, splitting, formatting)
+- [x] 04-02-PLAN.md — TDD: DefCon TypeScript utility functions (thresholds, splitting, formatting)
 - [ ] 04-03-PLAN.md — /api/defcon route, useDefCon hook, DefConTables UI, page.tsx tab navigation
 
 ### Phase 5: Squad View + Transfer Suggestions
@@ -125,6 +125,6 @@ Phases execute in numeric order. Phases 3 and 4 are independent and can run in p
 | 1. Data Foundation | 3/3 | Complete   | 2026-03-27 |
 | 2. Understat Pipeline + Merged Data API | 3/3 | Complete   | 2026-03-28 |
 | 3. Gem Rating Table | 2/3 | In Progress|  |
-| 4. DefCon Analysis | 0/3 | Not started | - |
+| 4. DefCon Analysis | 1/3 | In Progress|  |
 | 5. Squad View + Transfer Suggestions | 0/? | Not started | - |
 | 6. Club Form, Value Gems and Polish | 0/? | Not started | - |
