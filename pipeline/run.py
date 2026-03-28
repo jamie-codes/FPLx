@@ -14,6 +14,7 @@ from fpl_client import get_bootstrap_static, get_fixtures
 from upload import save
 from understat_client import get_understat_players
 from merge import merge_players
+from defcon import compute_defcon_stats
 
 
 def _get_cache_dir() -> str:
@@ -61,6 +62,14 @@ def run(dry_run: bool = False):
         # Merge FPL + Understat data (per-90 normalisation, custom FDR, fixtures)
         merged = merge_players(bootstrap, fixtures, understat, id_map)
         save('merged_players.json', merged)
+
+        # Compute DefCon stats from element-summary history (Phase 4)
+        print("Computing DefCon stats...")
+        from merge import _compute_difficulty_scores
+        difficulty_scores = _compute_difficulty_scores(bootstrap, fixtures)
+        defcon_stats = compute_defcon_stats(bootstrap, difficulty_scores)
+        save('defcon_stats.json', defcon_stats)
+        print(f"DefCon stats: {len(defcon_stats)} players analysed")
 
         # Write last_updated.json with success metadata
         from datetime import datetime, timezone
