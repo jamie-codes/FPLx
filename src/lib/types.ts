@@ -64,3 +64,47 @@ export interface PipelineMetadata {
   stale: boolean                            // true when serving previous day's cache after pipeline failure (per D-06)
   source: 'blob' | 'local'                  // where data was read from
 }
+
+// Difficulty tier for fixture visualization (D-05)
+export type DifficultyTier = 'easy' | 'medium' | 'hard'
+
+// Single upcoming fixture entry per player (D-03, D-04)
+export interface FixtureEntry {
+  opponent_team: string          // Short name e.g. "ARS"
+  is_home: boolean               // True if player's team is home (D-04)
+  event_id: number               // Gameweek number
+  difficulty_score: number       // 0.0 (easiest) to 1.0 (hardest), from rolling xGA (D-02)
+  difficulty_tier: DifficultyTier // Visual tier (D-05)
+}
+
+// Merged player from pipeline (D-06): FPL fields + Understat + form + fixtures
+export interface MergedPlayer {
+  // FPL core fields (from Phase 1 FPLElement)
+  id: number
+  web_name: string
+  team: number
+  team_short_name: string
+  element_type: PositionCode
+  now_cost: number
+  selected_by_percent: string
+  form: string
+  status: PlayerStatus
+  minutes: number
+  starts: number
+  total_points: number
+  defensive_contributions: number | null
+  clearances_blocks_interceptions: number | null
+  direct_freekicks_order: number | null
+  penalties_order: number | null
+  corners_and_indirect_freekicks_order: number | null
+  news: string
+  // Understat fields (null for unmatched promoted-team players per Pitfall 12)
+  understat_id: number | null
+  xg_per90: number | null
+  xa_per90: number | null
+  // Form fields (D-01: last 5 GW window, per-90 normalised)
+  minutes_per90: number
+  form_pts_per90: number
+  // Upcoming fixtures (D-03: next 5)
+  fixtures: FixtureEntry[]
+}
