@@ -18,7 +18,7 @@ IDs assigned for phase traceability.
 | ID | Requirement | Status |
 |----|-------------|--------|
 | GEM-01 | Score each player across multiple dimensions and show an "Upcoming Gem" composite rating | Complete |
-| GEM-02 | Displayed as a sortable table, filterable by position (GK / DEF / MID / FWD) | Pending |
+| GEM-02 | Displayed as a sortable table, filterable by position (GK / DEF / MID / FWD) | Complete |
 | GEM-03 | Dimensions feeding the score: fixture difficulty, form, xG/xA, ownership %, minutes reliability, set piece role, DefCon likelihood | Complete |
 
 ## Form & Fixture Analysis
@@ -79,8 +79,8 @@ IDs assigned for phase traceability.
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| UIX-01 | Clear, data-forward layout using tabs or cards per section | Pending |
-| UIX-02 | Scannable tables with sort/filter by position | Pending |
+| UIX-01 | Clear, data-forward layout using tabs or cards per section | Complete |
+| UIX-02 | Scannable tables with sort/filter by position | Complete |
 | UIX-03 | Visual indicators for fixture difficulty (colour-coded easy/hard) | Pending |
 | UIX-04 | Home/away clearly distinguished | Complete |
 
@@ -103,13 +103,13 @@ IDs assigned for phase traceability.
 | UIX-03 | Phase 2 | Pending |
 | UIX-04 | Phase 2 | Complete |
 | GEM-01 | Phase 3 | Complete |
-| GEM-02 | Phase 3 | Pending |
+| GEM-02 | Phase 3 | Complete |
 | DEF-01 | Phase 4 | Pending |
 | DEF-02 | Phase 4 | Pending |
 | DEF-03 | Phase 4 | Pending |
 | DEF-04 | Phase 4 | Pending |
-| UIX-01 | Phase 3 | Pending |
-| UIX-02 | Phase 3 | Pending |
+| UIX-01 | Phase 3 | Complete |
+| UIX-02 | Phase 3 | Complete |
 | TIS-01 | Phase 5 | Pending |
 | TIS-02 | Phase 5 | Pending |
 | TIS-03 | Phase 5 | Pending |
