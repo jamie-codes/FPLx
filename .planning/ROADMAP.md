@@ -51,8 +51,8 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [x] 02-01-PLAN.md — Understat client, merge module with per-90/FDR/fixtures, pipeline integration
-- [ ] 02-02-PLAN.md — MergedPlayer TypeScript types, /api/players Route Handler
+- [ ] 02-01-PLAN.md — Understat client, merge module with per-90/FDR/fixtures, pipeline integration
+- [x] 02-02-PLAN.md — MergedPlayer TypeScript types, /api/players Route Handler
 - [ ] 02-03-PLAN.md — usePlayers() TanStack Query hook, QueryClientProvider wiring
 
 ### Phase 3: Gem Rating Table
@@ -115,7 +115,7 @@ Phases execute in numeric order. Phases 3 and 4 are independent and can run in p
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 3/3 | Complete   | 2026-03-27 |
-| 2. Understat Pipeline + Merged Data API | 0/3 | Not started | - |
+| 2. Understat Pipeline + Merged Data API | 1/3 | In Progress|  |
 | 3. Gem Rating Table | 0/? | Not started | - |
 | 4. DefCon Analysis | 0/? | Not started | - |
 | 5. Squad View + Transfer Suggestions | 0/? | Not started | - |

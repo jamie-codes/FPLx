@@ -28,7 +28,7 @@ IDs assigned for phase traceability.
 | FFA-01 | Players about to go on a high-scoring run: scored >2 pts last game(s) AND have favourable upcoming fixtures AND show high xG or xA recently | Complete |
 | FFA-02 | Players currently on a high-scoring run: highlight whether upcoming fixtures are easy/hard and home/away | Complete |
 | FFA-03 | Club form table: wins, goals scored, goals conceded over last N weeks | Pending |
-| FFA-04 | Most in-form players: highest points scorer over last N games | Complete |
+| FFA-04 | Most in-form players: highest points scorer over last N games | Pending |
 
 ## DefCon Analysis
 
@@ -81,8 +81,8 @@ IDs assigned for phase traceability.
 |----|-------------|--------|
 | UIX-01 | Clear, data-forward layout using tabs or cards per section | Pending |
 | UIX-02 | Scannable tables with sort/filter by position | Pending |
-| UIX-03 | Visual indicators for fixture difficulty (colour-coded easy/hard) | Complete |
-| UIX-04 | Home/away clearly distinguished | Complete |
+| UIX-03 | Visual indicators for fixture difficulty (colour-coded easy/hard) | Pending |
+| UIX-04 | Home/away clearly distinguished | Pending |
 
 ---
 
@@ -99,9 +99,9 @@ IDs assigned for phase traceability.
 | GEM-03 | Phase 2 | Complete |
 | FFA-01 | Phase 2 | Complete |
 | FFA-02 | Phase 2 | Complete |
-| FFA-04 | Phase 2 | Complete |
-| UIX-03 | Phase 2 | Complete |
-| UIX-04 | Phase 2 | Complete |
+| FFA-04 | Phase 2 | Pending |
+| UIX-03 | Phase 2 | Pending |
+| UIX-04 | Phase 2 | Pending |
 | GEM-01 | Phase 3 | Pending |
 | GEM-02 | Phase 3 | Pending |
 | DEF-01 | Phase 4 | Pending |
