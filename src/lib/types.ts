@@ -108,3 +108,15 @@ export interface MergedPlayer {
   // Upcoming fixtures (D-03: next 5)
   fixtures: FixtureEntry[]
 }
+
+// Scored player with Gem composite and dimension scores (Phase 3)
+export interface ScoredPlayer extends MergedPlayer {
+  gem_score: number           // 0.0-1.0 normalised composite
+  fdr_score: number           // fixture difficulty (inverted: easy fixtures = high score)
+  form_score: number          // per-90 form points
+  xg_score: number | null     // xG/90 (null when xg_per90 is null)
+  xa_score: number | null     // xA/90 (null when xa_per90 is null)
+  ownership_score: number     // inverse ownership % (low owned = high score)
+  minutes_score: number       // minutes reliability
+  set_piece_score: number     // set piece role (penalty/FK/corner taker)
+}

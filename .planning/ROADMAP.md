@@ -68,7 +68,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — ScoredPlayer type, gem scoring algorithm (TDD), @tanstack/react-table install
+- [x] 03-01-PLAN.md — ScoredPlayer type, gem scoring algorithm (TDD), @tanstack/react-table install
 - [ ] 03-02-PLAN.md — GemTable UI component with columns, position filter, page.tsx wiring
 - [ ] 03-03-PLAN.md — Visual verification checkpoint (sort, filter, null handling)
 
@@ -120,7 +120,7 @@ Phases execute in numeric order. Phases 3 and 4 are independent and can run in p
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 3/3 | Complete   | 2026-03-27 |
 | 2. Understat Pipeline + Merged Data API | 3/3 | Complete   | 2026-03-28 |
-| 3. Gem Rating Table | 0/3 | In progress | - |
+| 3. Gem Rating Table | 1/3 | In Progress|  |
 | 4. DefCon Analysis | 0/? | Not started | - |
 | 5. Squad View + Transfer Suggestions | 0/? | Not started | - |
 | 6. Club Form, Value Gems and Polish | 0/? | Not started | - |

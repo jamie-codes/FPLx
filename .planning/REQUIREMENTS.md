@@ -17,7 +17,7 @@ IDs assigned for phase traceability.
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| GEM-01 | Score each player across multiple dimensions and show an "Upcoming Gem" composite rating | Pending |
+| GEM-01 | Score each player across multiple dimensions and show an "Upcoming Gem" composite rating | Complete |
 | GEM-02 | Displayed as a sortable table, filterable by position (GK / DEF / MID / FWD) | Pending |
 | GEM-03 | Dimensions feeding the score: fixture difficulty, form, xG/xA, ownership %, minutes reliability, set piece role, DefCon likelihood | Complete |
 
@@ -53,7 +53,7 @@ IDs assigned for phase traceability.
 |----|-------------|--------|
 | PPS-01 | Penalty taker, set piece taker, corner taker flags | Complete |
 | PPS-02 | Minutes reliability: average minutes per game, consistency indicator | Complete |
-| PPS-03 | xG per 90 and xA per 90 (from Understat) | Pending |
+| PPS-03 | xG per 90 and xA per 90 (from Understat) | Complete |
 | PPS-04 | Injury / availability status from FPL flags | Complete |
 
 ## Transfer Suggestions
@@ -94,7 +94,7 @@ IDs assigned for phase traceability.
 | DAT-02 | Phase 6 | Pending |
 | PPS-01 | Phase 1 | Complete |
 | PPS-02 | Phase 1 | Complete |
-| PPS-03 | Phase 1 | Pending |
+| PPS-03 | Phase 1 | Complete |
 | PPS-04 | Phase 1 | Complete |
 | GEM-03 | Phase 2 | Complete |
 | FFA-01 | Phase 2 | Complete |
@@ -102,7 +102,7 @@ IDs assigned for phase traceability.
 | FFA-04 | Phase 2 | Complete |
 | UIX-03 | Phase 2 | Pending |
 | UIX-04 | Phase 2 | Complete |
-| GEM-01 | Phase 3 | Pending |
+| GEM-01 | Phase 3 | Complete |
 | GEM-02 | Phase 3 | Pending |
 | DEF-01 | Phase 4 | Pending |
 | DEF-02 | Phase 4 | Pending |
