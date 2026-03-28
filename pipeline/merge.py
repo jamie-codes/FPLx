@@ -241,7 +241,7 @@ def merge_players(
             'starts': starts,
             'total_points': element['total_points'],
             # Set-piece / defensive flags
-            'defensive_contributions': element.get('defensive_contributions'),
+            'defensive_contribution': element.get('defensive_contribution'),
             'clearances_blocks_interceptions': element.get('clearances_blocks_interceptions'),
             'direct_freekicks_order': element.get('direct_freekicks_order'),
             'penalties_order': element.get('penalties_order'),
