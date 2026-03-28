@@ -12,7 +12,11 @@ Give the manager a clear, prioritised view of who to buy and who to sell this we
 
 ### Validated
 
-(None yet — ship to validate)
+**Data Pipeline & API Layer** — Validated in Phase 02: Understat Pipeline + Merged Data API
+- Data refreshed once daily (FPL API + Understat) via `pipeline/run.py`
+- xG per 90 and xA per 90 (from Understat via soccerdata)
+- Visual indicators for fixture difficulty backed by rolling xGA custom FDR (difficulty_score 0-1 float, difficulty_tier easy/medium/hard)
+- `merged_players.json` schema is the single source of truth for all downstream UI phases
 
 ### Active
 
@@ -120,4 +124,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-25 after initialization*
+*Last updated: 2026-03-28 — Phase 02 complete (Understat pipeline, merged data API, usePlayers hook)*
