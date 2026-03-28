@@ -81,8 +81,12 @@ Plans:
   2. Two separate tables render: one for DEF players (threshold=10), one for MID/FWD players (threshold=12) — they are never combined and each is sortable by hit rate
   3. Each row shows: hit rate (%), average contributions per 90, and distance-to-threshold for the current season
   4. MID/FWD hit rates use the `defensive_contributions` field (not `clearances_blocks_interceptions`) — known box-to-box midfielders show non-zero hit rates
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 3 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Fix defensive_contribution bug, DefConPlayer type, pipeline/defcon.py, run.py integration
+- [ ] 04-02-PLAN.md — TDD: DefCon TypeScript utility functions (thresholds, splitting, formatting)
+- [ ] 04-03-PLAN.md — /api/defcon route, useDefCon hook, DefConTables UI, page.tsx tab navigation
 
 ### Phase 5: Squad View + Transfer Suggestions
 **Goal**: The manager can enter their FPL Team ID and receive ranked transfer suggestions that respect position rules, their approximate budget, and their actual squad
@@ -121,6 +125,6 @@ Phases execute in numeric order. Phases 3 and 4 are independent and can run in p
 | 1. Data Foundation | 3/3 | Complete   | 2026-03-27 |
 | 2. Understat Pipeline + Merged Data API | 3/3 | Complete   | 2026-03-28 |
 | 3. Gem Rating Table | 2/3 | In Progress|  |
-| 4. DefCon Analysis | 0/? | Not started | - |
+| 4. DefCon Analysis | 0/3 | Not started | - |
 | 5. Squad View + Transfer Suggestions | 0/? | Not started | - |
 | 6. Club Form, Value Gems and Polish | 0/? | Not started | - |
