@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-data-foundation/01-02-PLAN.md
-last_updated: "2026-03-27T19:00:53.184Z"
-last_activity: 2026-03-27
+stopped_at: Completed 02-understat-pipeline-merged-data-api/02-02-PLAN.md
+last_updated: "2026-03-28T11:36:56.597Z"
+last_activity: 2026-03-28
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 6
+  completed_plans: 4
   percent: 0
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-03-25)
 ## Current Position
 
 Phase: 01 (data-foundation) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
-Last activity: 2026-03-27
+Last activity: 2026-03-28
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 
 *Updated after each plan completion*
 | Phase 01-data-foundation P02 | 4 | 2 tasks | 3 files |
+| Phase 02-understat-pipeline-merged-data-api P02 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -69,6 +70,7 @@ Recent decisions affecting current work:
 - [Phase 01-data-foundation]: Zod 4 strips unknown fields by default — no explicit .strip() needed; satisfies D-04
 - [Phase 01-data-foundation]: parseFPLBootstrap wraps safeParse — callers decide throw-vs-stale-cache per D-06
 - [Phase 01-data-foundation]: Proxy URL appends trailing slash before query string to match FPL API convention
+- [Phase 02-understat-pipeline-merged-data-api]: D-08: USE_BLOB env var routes /api/players between Vercel Blob (prod) and pipeline/cache/ (dev); no Zod validation on output; raw string response to avoid JSON round-trip
 
 ### Pending Todos
 
@@ -80,6 +82,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T19:00:53.181Z
-Stopped at: Completed 01-data-foundation/01-02-PLAN.md
+Last session: 2026-03-28T11:36:56.594Z
+Stopped at: Completed 02-understat-pipeline-merged-data-api/02-02-PLAN.md
 Resume file: None

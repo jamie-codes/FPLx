@@ -19,14 +19,14 @@ IDs assigned for phase traceability.
 |----|-------------|--------|
 | GEM-01 | Score each player across multiple dimensions and show an "Upcoming Gem" composite rating | Pending |
 | GEM-02 | Displayed as a sortable table, filterable by position (GK / DEF / MID / FWD) | Pending |
-| GEM-03 | Dimensions feeding the score: fixture difficulty, form, xG/xA, ownership %, minutes reliability, set piece role, DefCon likelihood | Pending |
+| GEM-03 | Dimensions feeding the score: fixture difficulty, form, xG/xA, ownership %, minutes reliability, set piece role, DefCon likelihood | Complete |
 
 ## Form & Fixture Analysis
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| FFA-01 | Players about to go on a high-scoring run: scored >2 pts last game(s) AND have favourable upcoming fixtures AND show high xG or xA recently | Pending |
-| FFA-02 | Players currently on a high-scoring run: highlight whether upcoming fixtures are easy/hard and home/away | Pending |
+| FFA-01 | Players about to go on a high-scoring run: scored >2 pts last game(s) AND have favourable upcoming fixtures AND show high xG or xA recently | Complete |
+| FFA-02 | Players currently on a high-scoring run: highlight whether upcoming fixtures are easy/hard and home/away | Complete |
 | FFA-03 | Club form table: wins, goals scored, goals conceded over last N weeks | Pending |
 | FFA-04 | Most in-form players: highest points scorer over last N games | Pending |
 
@@ -96,9 +96,9 @@ IDs assigned for phase traceability.
 | PPS-02 | Phase 1 | Complete |
 | PPS-03 | Phase 1 | Pending |
 | PPS-04 | Phase 1 | Complete |
-| GEM-03 | Phase 2 | Pending |
-| FFA-01 | Phase 2 | Pending |
-| FFA-02 | Phase 2 | Pending |
+| GEM-03 | Phase 2 | Complete |
+| FFA-01 | Phase 2 | Complete |
+| FFA-02 | Phase 2 | Complete |
 | FFA-04 | Phase 2 | Pending |
 | UIX-03 | Phase 2 | Pending |
 | UIX-04 | Phase 2 | Pending |
