@@ -18,6 +18,12 @@ Give the manager a clear, prioritised view of who to buy and who to sell this we
 - Visual indicators for fixture difficulty backed by rolling xGA custom FDR (difficulty_score 0-1 float, difficulty_tier easy/medium/hard)
 - `merged_players.json` schema is the single source of truth for all downstream UI phases
 
+**Gem Rating Table** — Validated in Phase 03: Gem Rating Table
+- `computeAllGemScores` pure function scores every player across 7 dimensions (FDR, form, xG, xA, ownership, minutes, set piece) with min-max normalisation across population
+- Players with missing Understat data get null xg_score/xa_score but a valid gem_score from remaining dimensions
+- GemTable renders at `/` with TanStack Table v8 — sortable by any column, filterable by position (GK/DEF/MID/FWD), default sort gem_score desc
+- Component scores visible per row so manager sees why a player ranked where they did
+
 ### Active
 
 **Team Input & Squad View**
@@ -124,4 +130,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-28 — Phase 02 complete (Understat pipeline, merged data API, usePlayers hook)*
+*Last updated: 2026-03-28 — Phase 03 complete (Gem Rating Table — scoring algorithm + sortable/filterable UI at /)*
