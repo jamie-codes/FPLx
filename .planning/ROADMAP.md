@@ -13,7 +13,7 @@ Six phases build up from the data foundation that gates everything to the polish
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Foundation** - Next.js scaffold, FPL Route Handler proxy, Zod adapter, Vercel Blob cache, and player ID mapping — gates everything (completed 2026-03-27)
-- [x] **Phase 2: Understat Pipeline + Merged Data API** - Python pipeline (soccerdata xG/xA + FPL fetch), FPL/Understat merge, custom FDR, Blob upload, `/api/players` endpoint (completed 2026-03-28)
+- [x] **Phase 2: Understat Pipeline + Merged Data API** - Python pipeline (soccerdata xG/xA + FPL fetch), FPL/Understat merge, custom FDR, Blob upload, `/api/players` endpoint (completed 2026-03-28)
 - [ ] **Phase 3: Gem Rating Table** - Composite scoring (7 dimensions, per-90), scored pipeline output, sortable/filterable GemTable UI — core product value
 - [ ] **Phase 4: DefCon Analysis** - Per-match hit rate from element-summary history, position-split tables (DEF=10, MID/FWD=12), DefConTable UI
 - [ ] **Phase 5: Squad View + Transfer Suggestions** - Team ID input, squad fetch, transfer-engine.ts (position lock + approximate budget), transfer suggestions ranked by Gem delta
@@ -65,8 +65,12 @@ Plans:
   3. The table can be filtered to a single position (GK / DEF / MID / FWD) — selecting "MID" shows only midfielders and the row count updates accordingly
   4. Each row surfaces the component scores (not just the composite) so the manager can see why a player ranked where they did
   5. Players with missing Understat data show a dash (not zero) in xG/xA columns and their Gem score is computed on available dimensions only
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 3 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — ScoredPlayer type, gem scoring algorithm (TDD), @tanstack/react-table install
+- [ ] 03-02-PLAN.md — GemTable UI component with columns, position filter, page.tsx wiring
+- [ ] 03-03-PLAN.md — Visual verification checkpoint (sort, filter, null handling)
 
 ### Phase 4: DefCon Analysis
 **Goal**: The manager can see per-player DefCon hit rates and distance-to-threshold for DEF and MID/FWD separately, enabling identification of reliable +2 point earners
@@ -116,7 +120,7 @@ Phases execute in numeric order. Phases 3 and 4 are independent and can run in p
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 3/3 | Complete   | 2026-03-27 |
 | 2. Understat Pipeline + Merged Data API | 3/3 | Complete   | 2026-03-28 |
-| 3. Gem Rating Table | 0/? | Not started | - |
+| 3. Gem Rating Table | 0/3 | In progress | - |
 | 4. DefCon Analysis | 0/? | Not started | - |
 | 5. Squad View + Transfer Suggestions | 0/? | Not started | - |
 | 6. Club Form, Value Gems and Polish | 0/? | Not started | - |
