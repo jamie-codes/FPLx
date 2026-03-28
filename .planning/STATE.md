@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 03-gem-rating-table/03-01-PLAN.md
-last_updated: "2026-03-28T12:30:21.733Z"
+stopped_at: Completed 03-gem-rating-table/03-02-PLAN.md
+last_updated: "2026-03-28T18:01:49.669Z"
 last_activity: 2026-03-28
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 8
   percent: 0
 ---
 
@@ -56,6 +56,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02-understat-pipeline-merged-data-api P02 | 2min | 2 tasks | 2 files |
 | Phase 02-understat-pipeline-merged-data-api P03 | 5 | 1 tasks | 5 files |
 | Phase 03-gem-rating-table P01 | 148 | 3 tasks | 5 files |
+| Phase 03-gem-rating-table P02 | 3 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,9 @@ Recent decisions affecting current work:
 - [Phase 03-gem-rating-table]: DefCon likelihood dimension deferred to Phase 4 — per-match element-summary data not yet available
 - [Phase 03-gem-rating-table]: xG/xA excluded from gem composite when null (not zero-filled) per Research Pitfall 12
 - [Phase 03-gem-rating-table]: Min-max normalisation uses full player population before position filtering
+- [Phase 03-gem-rating-table]: page.tsx stays server component; GemTable carries all interactivity as 'use client'
+- [Phase 03-gem-rating-table]: Position filter passes numeric PositionCode (1/2/3/4) to column filter, never string labels
+- [Phase 03-gem-rating-table]: Null xG/xA scores display em-dash (\u2014) not zero per Research Pitfall 6
 
 ### Pending Todos
 
@@ -88,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T12:30:21.730Z
-Stopped at: Completed 03-gem-rating-table/03-01-PLAN.md
+Last session: 2026-03-28T18:01:49.666Z
+Stopped at: Completed 03-gem-rating-table/03-02-PLAN.md
 Resume file: None
