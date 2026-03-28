@@ -51,7 +51,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Understat client, merge module with per-90/FDR/fixtures, pipeline integration
+- [x] 02-01-PLAN.md — Understat client, merge module with per-90/FDR/fixtures, pipeline integration
 - [ ] 02-02-PLAN.md — MergedPlayer TypeScript types, /api/players Route Handler
 - [ ] 02-03-PLAN.md — usePlayers() TanStack Query hook, QueryClientProvider wiring
 
