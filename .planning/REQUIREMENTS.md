@@ -34,9 +34,9 @@ IDs assigned for phase traceability.
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| DEF-01 | Per-position thresholds: DEF needs 10 defensive contributions, MID/FWD need 12 | Pending |
-| DEF-02 | Per player: DefCon hit rate (% of games they achieved +2), average defensive contributions per 90, distance to threshold | Pending |
-| DEF-03 | Hypothesis analysis: do players get more DefCon in tough vs easy fixtures? | Pending |
+| DEF-01 | Per-position thresholds: DEF needs 10 defensive contributions, MID/FWD need 12 | Complete |
+| DEF-02 | Per player: DefCon hit rate (% of games they achieved +2), average defensive contributions per 90, distance to threshold | Complete |
+| DEF-03 | Hypothesis analysis: do players get more DefCon in tough vs easy fixtures? | Complete |
 | DEF-04 | Separate ranking tables per position — no combined table (thresholds differ) | Pending |
 
 ## Value & Ownership
@@ -104,9 +104,9 @@ IDs assigned for phase traceability.
 | UIX-04 | Phase 2 | Complete |
 | GEM-01 | Phase 3 | Complete |
 | GEM-02 | Phase 3 | Complete |
-| DEF-01 | Phase 4 | Pending |
-| DEF-02 | Phase 4 | Pending |
-| DEF-03 | Phase 4 | Pending |
+| DEF-01 | Phase 4 | Complete |
+| DEF-02 | Phase 4 | Complete |
+| DEF-03 | Phase 4 | Complete |
 | DEF-04 | Phase 4 | Pending |
 | UIX-01 | Phase 3 | Complete |
 | UIX-02 | Phase 3 | Complete |
