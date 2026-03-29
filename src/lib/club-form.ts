@@ -68,8 +68,8 @@ export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[])
     ? 1 - ((xgaValues[Math.floor(n / 3)] ?? minXga) - minXga) / (maxXga - minXga === 0 ? 1 : maxXga - minXga)
     : 0.67
   const tier = (score: number): DifficultyTier => {
-    if (score >= hardThreshScore) return 'easy'
-    if (score <= easyThreshScore) return 'hard'
+    if (score >= hardThreshScore) return 'hard'
+    if (score <= easyThreshScore) return 'easy'
     return 'medium'
   }
 

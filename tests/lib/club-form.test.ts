@@ -101,4 +101,34 @@ describe('computeClubForm', () => {
       expect(f.event_id).toBeGreaterThan(0)
     }
   })
+
+  it('assigns difficulty tier correctly — strong team is hard, weak team is easy', () => {
+    // BUR (id=3) has the worst defensive record: conceded 3+2+1=6 goals in 3 games (events 3,4,5).
+    // ARS (id=1) conceded 1+0+0+1+2=4 goals in 5 games.
+    // Playing BUR (high xGA / easy to score against) should be the easiest fixture.
+    // Playing ARS (low xGA / hard to score against) should be harder.
+    const result = computeClubForm(bootstrap, makeFixtures())
+    const ars = result.find(r => r.team_id === 1)!
+
+    // ARS's upcoming fixtures: event 30 (away at CHE), event 32 (home vs BUR)
+    const vsBur = ars.upcoming_fixtures.find(f => f.opponent_team === 'BUR')
+    const vsChe = ars.upcoming_fixtures.find(f => f.opponent_team === 'CHE')
+
+    // BUR has conceded the most goals — facing them should be easy or at least not hard
+    expect(vsBur).toBeDefined()
+    expect(vsBur!.difficulty_tier).not.toBe('hard')
+
+    // ARS vs CHE: CHE's defensive record is stronger than BUR's, so CHE should not be easier than BUR
+    if (vsChe) {
+      // If vs BUR is 'easy', vs CHE should be 'medium' or 'hard'
+      if (vsBur!.difficulty_tier === 'easy') {
+        expect(['medium', 'hard']).toContain(vsChe.difficulty_tier)
+      }
+    }
+
+    // Verify that difficulty_score is correct direction:
+    // BUR's diffScore should be lower (weak team = low difficulty score after 1-inversion)
+    // The tier for BUR should not be 'hard'
+    expect(vsBur!.difficulty_score).toBeLessThan(0.5)
+  })
 })
