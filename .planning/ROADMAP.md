@@ -43,7 +43,11 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
   2. User can query `/api/players` and receive `xmins`, `start_prob`, and `mins_risk` fields reflecting injury-aware expected minutes and start probability per player
   3. DGW players show higher projected points than equivalent single-GW players in the same data response
   4. The element-summary fetch is shared between defcon and xmins modules — pipeline run time does not increase proportionally with the addition of xmins
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 07-01-PLAN.md — Refactor defcon.py for shared summaries + create xmins.py module
+- [ ] 07-02-PLAN.md — Add projected points to merge.py + wire run.py orchestration
+- [ ] 07-03-PLAN.md — Extend MergedPlayer TypeScript types + add validation tests
 
 ### Phase 8: Minutes Risk UI + Transfer Integration
 **Goal**: Managers can see rotation risk classification for every player at a glance, and transfer suggestions automatically de-prioritise rotation risks
@@ -112,7 +116,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 | 4. DefCon Analysis | v1.0 | 3/3 | Complete | 2026-03-28 |
 | 5. Squad View + Transfer Suggestions | v1.0 | 3/3 | Complete | 2026-03-29 |
 | 6. Club Form, Value Gems and Polish | v1.0 | 4/4 | Complete | 2026-03-29 |
-| 7. Pipeline Schema Extension | v1.1 | 0/? | Not started | - |
+| 7. Pipeline Schema Extension | v1.1 | 0/3 | Not started | - |
 | 8. Minutes Risk UI + Transfer Integration | v1.1 | 0/? | Not started | - |
 | 9. Projected Points Columns | v1.1 | 0/? | Not started | - |
 | 10. Buy/Hold/Sell + Captaincy Engines | v1.1 | 0/? | Not started | - |
