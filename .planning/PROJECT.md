@@ -2,138 +2,119 @@
 
 ## What This Is
 
-A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID (or login) and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, and transfer suggestions — all grounded in FPL API data plus Understat xG/xA.
+A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, and transfer suggestions — all grounded in FPL API data plus Understat xG/xA.
+
+v1.0 shipped as a complete daily-use tool. The manager enters their Team ID and receives ranked transfer suggestions, a Gem Rating table, DefCon analysis, Club Form, and Value Gems — all from a single daily pipeline run.
 
 ## Core Value
 
 Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
 
+## Current State (v1.0)
+
+Shipped 2026-03-29. All 6 phases complete.
+
+**Tech stack:** Next.js 16, React 19, TypeScript, TanStack Table v8, TanStack Query, Tailwind CSS v4, Vitest, Python (requests, pandas, soccerdata), Vercel Blob
+
+**Codebase:** ~6,600 LOC, 166 files
+
+**What's running:**
+- `/` — Gem Ratings tab (default), DefCon tab, Squad tab, Club Form tab, Value Gems tab
+- `/api/players` — merged FPL+Understat dataset from Vercel Blob
+- `/api/defcon` — DefCon stats from pipeline cache
+- `/api/club-form` — club form computed from fixtures
+- `/api/last-updated` — timestamp of last pipeline run
+- `pipeline/run.py` — daily refresh (manual; GitHub Actions cron scaffolded)
+
+**Known gaps carried forward to v1.1:**
+- DAT-01: GitHub Actions daily cron not verified as operational
+
 ## Requirements
 
-### Validated
+### Validated (v1.0)
 
-**Data Pipeline & API Layer** — Validated in Phase 02: Understat Pipeline + Merged Data API
-- Data refreshed once daily (FPL API + Understat) via `pipeline/run.py`
-- xG per 90 and xA per 90 (from Understat via soccerdata)
-- Visual indicators for fixture difficulty backed by rolling xGA custom FDR (difficulty_score 0-1 float, difficulty_tier easy/medium/hard)
-- `merged_players.json` schema is the single source of truth for all downstream UI phases
+**Data Pipeline & API Layer**
+- ✓ FPL proxy Route Handler — server-side CORS-free fetches via `/api/fpl/[...proxy]` — v1.0
+- ✓ Zod validation adapter — structured failure on field changes, stale-cache fallback — v1.0
+- ✓ 825-entry `player_id_map.json` (782 matched, 43 null Understat entries) — v1.0
+- ✓ Python pipeline: FPL + Understat xG/xA merged, per-90 normalised, custom FDR — v1.0
+- ✓ `GET /api/players` from Vercel Blob, `usePlayers()` with 6h stale time — v1.0
+- ✓ `cost_change_event` / `cost_change_start` fields in pipeline and `MergedPlayer` type — v1.0
 
-**Gem Rating Table** — Validated in Phase 03: Gem Rating Table
-- `computeAllGemScores` pure function scores every player across 7 dimensions (FDR, form, xG, xA, ownership, minutes, set piece) with min-max normalisation across population
-- Players with missing Understat data get null xg_score/xa_score but a valid gem_score from remaining dimensions
-- GemTable renders at `/` with TanStack Table v8 — sortable by any column, filterable by position (GK/DEF/MID/FWD), default sort gem_score desc
-- Component scores visible per row so manager sees why a player ranked where they did
+**Gem Rating Table** — v1.0
+- ✓ `computeAllGemScores` scores every player across 7 dimensions with min-max normalisation
+- ✓ Null xG/xA excluded from composite (not zero-filled); displayed as em-dash
+- ✓ Sortable/filterable TanStack Table at `/`, position filter, component scores per row
 
-**Club Form, Value Gems & Polish** — Validated in Phase 06: Club Form, Value Gems & Polish (including gap closure 06-04)
-- `computeClubForm()` pure function computes W/D/L/GS/GC over rolling 5-game window per team (DGW-safe)
-- `isCheapGem`/`isLowOwned` filter predicates extracted as testable pure functions
-- `cost_change_event` and `cost_change_start` fields on `MergedPlayer` and passed through `merge.py`
-- Club Form tab: sortable TanStack table for all 20 clubs with `FixtureBadges` (next 5, colour-coded H/A)
-- Value Gems tab: filter pills (All/Cheap/Low-Owned/Both) with `isCheapGem`/`isLowOwned` predicates
-- `PriceTrendCell` with GW primary + season sub-text on GemTable, ValueGemsTable, and TransferPanel
-- `LastUpdated` component (amber when stale, unit tested)
-- `tier()` logic correct: high difficulty_score → `'hard'` (strong opponent), low → `'easy'` (weak opponent)
-- All `cost_change_event`/`cost_change_start` reads guarded with `?? 0` — no NaN in price trend display
+**DefCon Analysis** — v1.0
+- ✓ Per-match hit rates from `element-summary` (DEF=10, MID/FWD=12 per-match thresholds)
+- ✓ `pipeline/defcon.py` + `defcon_stats.json`, two position-split sortable tables
 
-**DefCon Analysis** — Validated in Phase 04: DefCon Analysis
-- Per-match hit rates from `element-summary` API — per-game threshold check (DEF: 10, MID/FWD: 12), not season aggregate
-- `pipeline/defcon.py` fetches per-player element history, computes hit rates, and writes `defcon_stats.json` (integrated into `run.py`)
-- `src/lib/defcon.ts` — pure utility: `DEFCON_THRESHOLD`, `splitByPosition`, `formatHitRate`, `getDefConStatus`, `formatCorrelation`
-- Two independent sortable TanStack Tables (DEF + MID/FWD) at `/` via tab navigation alongside GemTable
-- `pipeline/cache/defcon_stats.json` is generated at pipeline run time — route returns 404 until pipeline has been run
+**Squad View & Transfer Suggestions** — v1.0
+- ✓ Team ID input → squad split by position (GK/DEF/MID/FWD) with price, own%, mins, flags
+- ✓ Transfer engine: position lock, approximate budget, chip guard, save recommendation
+- ✓ Ranked by Gem delta; affordable suggestions sorted before unaffordable
 
-### Active
+**Club Form, Value Gems & Polish** — v1.0
+- ✓ `computeClubForm()` rolling 5-game window, DGW-safe
+- ✓ `isCheapGem` / `isLowOwned` filter predicates; Value Gems tab with filter pills
+- ✓ `PriceTrendCell` on GemTable, ValueGemsTable, TransferPanel (NaN guards: `?? 0`)
+- ✓ `FixtureBadges` (next 5, colour-coded H/A) on Club Form + Gem Ratings
+- ✓ `LastUpdated` component (amber when stale), `tier()` inversion fixed
 
-**Team Input & Squad View**
-- [ ] Enter FPL Team ID to pull current squad (public API, no login needed)
-- [ ] Optional FPL login (email/password) to fetch bank balance and remaining transfers
-- [ ] Display squad split by position (GK / DEF / MID / FWD) with price, ownership %, minutes played, and injury/flag status
+### Active (v1.1 candidates)
 
-**Upcoming Gem Rating**
-- [ ] Score each player across multiple dimensions and show an "Upcoming Gem" composite rating
-- [ ] Displayed as a sortable table, filterable by position (GK / DEF / MID / FWD)
-- [ ] Dimensions feeding the score: fixture difficulty, form, xG/xA, ownership %, minutes reliability, set piece role, DefCon likelihood
-
-**Form & Fixture Analysis**
-- [ ] Players about to go on a high-scoring run: scored >2 pts last game(s) AND have favourable upcoming fixtures AND show high xG or xA recently
-- [ ] Players currently on a high-scoring run: highlight whether upcoming fixtures are easy/hard and home/away
-- [ ] Club form table: wins, goals scored, goals conceded over last N weeks
-- [ ] Most in-form players: highest points scorer over last N games
-
-**Value & Ownership**
-- [ ] Cheap gems: relatively cheap players getting disproportionate points
-- [ ] Low-owned but high-scoring: players with ownership < X% but strong recent returns
-- [ ] Show current price and price change trend for all analysed players
-
-**Player Profile Signals**
-- [ ] Penalty taker, set piece taker, corner taker flags
-- [ ] Minutes reliability: average minutes per game, consistency indicator
-- [ ] xG per 90 and xA per 90 (from Understat)
-- [ ] Injury / availability status from FPL flags
-
-**Transfer Suggestions**
-- [ ] Suggest who to sell or sub out based on recent performance and upcoming fixtures
-- [ ] For each sell candidate: show up to 3 replacement options ranked by Upcoming Gem rating
-- [ ] Enforce position rules (MID → MID, FWD → FWD, etc.)
-- [ ] Factor in bank balance + sale value: only suggest affordable transfers
-- [ ] Suggest multi-transfer combinations if user has available free transfers
-- [ ] If no strong transfers available, recommend saving the transfer
-- [ ] Show how many free transfers the user has (from login or user input fallback)
-
-**Data & Refresh**
-- [ ] Data refreshed once daily (FPL API + Understat)
-- [ ] Show "last updated" timestamp on all data views
-
-**UI / UX**
-- [ ] Clear, data-forward layout using tabs or cards per section
-- [ ] Scannable tables with sort/filter by position
-- [ ] Visual indicators for fixture difficulty (colour-coded easy/hard)
-- [ ] Home/away clearly distinguished
+- [ ] DAT-01: Verified automated daily refresh — GitHub Actions cron confirmed operational
+- [ ] TIS-02: Optional FPL login (session-cookie) for exact bank balance and sell price
+- [ ] FPL login: `selling_price` from `my-team` endpoint for exact sell price display
 
 ### Out of Scope
 
 - Live in-match updates — data refreshes daily, not during gameweeks
-- Mini-league or head-to-head analysis — focused on squad optimisation only
-- Mobile app — web only for v1
+- Mini-league or head-to-head analysis — squad optimisation focus only
+- Mobile app — web only
 - FPL chip strategy (Wildcard, Free Hit, Triple Captain) — out of scope for v1
+- Offline mode — daily refresh is sufficient
 
 ## Context
 
-- **FPL API**: Official undocumented API at `https://fantasy.premierleague.com/api/` — provides prices, ownership, fixtures, positions, flags, player history, squad data, and (with login) bank/transfers. Reference: https://ukretroaming.co.uk/blogs/blog/a-complete-guide-to-the-fantasy-premier-league-fpl-api
-- **Understat**: Python/scraping source for shot-level xG and xA data per player — richer than FPL's built-in expected stats
-- **DefCon rule**: Introduced 2025/26 season. DEF threshold = 10 defensive contributions (clearances, blocks, interceptions, recoveries, tackles). MID/FWD threshold = 12. Award = +2 pts. Active CBs/full-backs most likely; box-to-box midfielders more so than attacking 10s; pressing forwards rarely.
-- **Transfer rules**: Position-locked (can only swap like-for-like position). Free transfers accumulate up to 2 per week; extra transfers cost 4 pts each.
-- **Comparison reference**: https://www.fplcore.com/comparison — example of FPL comparison UI for inspiration
+- **FPL API**: Official undocumented API at `https://fantasy.premierleague.com/api/`
+- **Understat**: Shot-level xG/xA via soccerdata Python library
+- **DefCon rule**: 2025/26 season. DEF threshold=10 defensive contributions, MID/FWD threshold=12. Award=+2 pts.
+- **Transfer rules**: Position-locked. Free transfers accumulate to 2/week; extra cost 4 pts each.
+- **Auth**: Session-cookie auth (not OAuth). v1 uses Team ID only (public API).
 
 ## Constraints
 
-- **Auth**: FPL login uses session-cookie auth (not OAuth) — handle securely, store nothing persistent
-- **Data**: Understat scraping may need rate limiting / caching to avoid being blocked
-- **API**: FPL API has no official docs and may change; build with adapter layer to isolate breakage
-- **Single user**: Personal tool — no multi-tenancy, no user accounts, no DB required for v1
-- **Refresh cadence**: Once-daily data pull is sufficient; no real-time requirements
+- **Auth**: FPL login uses session-cookie auth — handle securely, nothing persistent
+- **Data**: Understat scraping needs rate limiting / caching
+- **API**: FPL API undocumented — adapter layer isolates breakage
+- **Single user**: Personal tool — no multi-tenancy, no DB required
+- **Refresh**: Once-daily sufficient; no real-time requirements
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Understat for xG/xA (not FPL only) | FPL's built-in xG/xA is less granular; Understat provides shot-level data for better DefCon and gem detection | — Pending |
-| Daily refresh (not real-time) | FPL data updates once daily post-gameweek; real-time adds complexity with no benefit | — Pending |
-| FPL login optional (Team ID primary) | Most useful features work with public data; login unlocks transfer budget/transfer count | — Pending |
-| No database for v1 | Single-user tool; cached JSON files or in-memory state sufficient | — Pending |
+| Custom FDR from rolling xGA (not official integers) | Official FDR doesn't reflect actual team strength | ✓ Good — produces meaningful difficulty tiers |
+| `merged_players.json` as single source of truth | One schema for all downstream UI phases | ✓ Good — prevented type drift across 6 phases |
+| No database for v1 | Single-user tool; cached JSON sufficient | ✓ Good — no infra overhead |
+| Zod 4 unknown-field stripping | Zod 4 strips by default — no `.strip()` needed | ✓ Good — simpler adapter code |
+| `parseFPLBootstrap` wraps `safeParse` | Callers decide throw-vs-stale-cache | ✓ Good — flexible error handling per context |
+| USE_BLOB env var for Blob vs local cache routing | Dev/prod parity without Blob credentials locally | ✓ Good — smooth dev workflow |
+| `usePlayers` single query key `['players']` with 6h stale | Prevents duplicate fetches across tabs | ✓ Good — single request per session |
+| Page.tsx as client component (Phase 4) | Both GemTable and DefConTables are client components; server wrapper adds no benefit | ✓ Good — simpler tab state management |
+| Transfer sort: affordable before unaffordable, then gem_delta desc | Actionable suggestions first | ✓ Good — user sees what they can actually do |
+| `tier()` return-value swap (Phase 6 gap) | Thresholds were correct; only return labels were swapped | ✓ Fixed — Man City now shows red (hard) |
+| `?? 0` guards for `cost_change_event/start` | Fields absent from older cached data; Math.abs(undefined)=NaN | ✓ Fixed — price trend never shows NaN |
+| FPL login is v1.x (not v1) | Session-cookie auth complexity deferred | — v1.1 candidate |
+| Daily refresh cadence | FPL data updates post-gameweek; real-time adds complexity | — Accepted constraint |
 
 ---
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
-
-**After each phase transition** (via `/gsd:transition`):
-1. Requirements invalidated? → Move to Out of Scope with reason
-2. Requirements validated? → Move to Validated with phase reference
-3. New requirements emerged? → Add to Active
-4. Decisions to log? → Add to Key Decisions
-5. "What This Is" still accurate? → Update if drifted
 
 **After each milestone** (via `/gsd:complete-milestone`):
 1. Full review of all sections
@@ -142,4 +123,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-29 — Phase 06 fully complete including gap closure (tier inversion + NaN price trend fixes verified)*
+*Last updated: 2026-03-29 — v1.0 milestone complete*
