@@ -297,6 +297,9 @@ def merge_players(
             'penalties_order': element.get('penalties_order'),
             'corners_and_indirect_freekicks_order': element.get('corners_and_indirect_freekicks_order'),
             'news': element.get('news', ''),
+            # Price trend (VAL-03)
+            'cost_change_event': element.get('cost_change_event', 0),
+            'cost_change_start': element.get('cost_change_start', 0),
             # Understat fields (null for unmatched — Phase 1 D-02: never exclude, show dash)
             'understat_id': understat_id_val,
             'xg_per90': xg_per90,

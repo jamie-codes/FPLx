@@ -10,6 +10,7 @@ function makeMergedPlayer(overrides: Partial<MergedPlayer> = {}): MergedPlayer {
     defensive_contribution: null, clearances_blocks_interceptions: null,
     direct_freekicks_order: null, penalties_order: null,
     corners_and_indirect_freekicks_order: null, news: '',
+    cost_change_event: 0, cost_change_start: 0,
     understat_id: 100, xg_per90: 0.3, xa_per90: 0.15,
     minutes_per90: 85, form_pts_per90: 5.0,
     fixtures: [

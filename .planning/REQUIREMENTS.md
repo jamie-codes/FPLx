@@ -27,7 +27,7 @@ IDs assigned for phase traceability.
 |----|-------------|--------|
 | FFA-01 | Players about to go on a high-scoring run: scored >2 pts last game(s) AND have favourable upcoming fixtures AND show high xG or xA recently | Complete |
 | FFA-02 | Players currently on a high-scoring run: highlight whether upcoming fixtures are easy/hard and home/away | Complete |
-| FFA-03 | Club form table: wins, goals scored, goals conceded over last N weeks | Pending |
+| FFA-03 | Club form table: wins, goals scored, goals conceded over last N weeks | Complete |
 | FFA-04 | Most in-form players: highest points scorer over last N games | Complete |
 
 ## DefCon Analysis
@@ -43,9 +43,9 @@ IDs assigned for phase traceability.
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| VAL-01 | Cheap gems: relatively cheap players getting disproportionate points | Pending |
-| VAL-02 | Low-owned but high-scoring: players with ownership < X% but strong recent returns | Pending |
-| VAL-03 | Show current price and price change trend for all analysed players | Pending |
+| VAL-01 | Cheap gems: relatively cheap players getting disproportionate points | Complete |
+| VAL-02 | Low-owned but high-scoring: players with ownership < X% but strong recent returns | Complete |
+| VAL-03 | Show current price and price change trend for all analysed players | Complete |
 
 ## Player Profile Signals
 
@@ -73,7 +73,7 @@ IDs assigned for phase traceability.
 | ID | Requirement | Status |
 |----|-------------|--------|
 | DAT-01 | Data refreshed once daily (FPL API + Understat) | Pending |
-| DAT-02 | Show "last updated" timestamp on all data views | Pending |
+| DAT-02 | Show "last updated" timestamp on all data views | Complete |
 
 ## UI / UX
 
@@ -81,7 +81,7 @@ IDs assigned for phase traceability.
 |----|-------------|--------|
 | UIX-01 | Clear, data-forward layout using tabs or cards per section | Complete |
 | UIX-02 | Scannable tables with sort/filter by position | Complete |
-| UIX-03 | Visual indicators for fixture difficulty (colour-coded easy/hard) | Pending |
+| UIX-03 | Visual indicators for fixture difficulty (colour-coded easy/hard) | Complete |
 | UIX-04 | Home/away clearly distinguished | Complete |
 
 ---
@@ -91,7 +91,7 @@ IDs assigned for phase traceability.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | DAT-01 | Phase 1 | Pending |
-| DAT-02 | Phase 6 | Pending |
+| DAT-02 | Phase 6 | Complete |
 | PPS-01 | Phase 1 | Complete |
 | PPS-02 | Phase 1 | Complete |
 | PPS-03 | Phase 1 | Complete |
@@ -100,7 +100,7 @@ IDs assigned for phase traceability.
 | FFA-01 | Phase 2 | Complete |
 | FFA-02 | Phase 2 | Complete |
 | FFA-04 | Phase 2 | Complete |
-| UIX-03 | Phase 2 | Pending |
+| UIX-03 | Phase 2 | Complete |
 | UIX-04 | Phase 2 | Complete |
 | GEM-01 | Phase 3 | Complete |
 | GEM-02 | Phase 3 | Complete |
@@ -120,10 +120,10 @@ IDs assigned for phase traceability.
 | TRF-05 | Phase 5 | Complete |
 | TRF-06 | Phase 5 | Complete |
 | TRF-07 | Phase 5 | Complete |
-| FFA-03 | Phase 6 | Pending |
-| VAL-01 | Phase 6 | Pending |
-| VAL-02 | Phase 6 | Pending |
-| VAL-03 | Phase 6 | Pending |
+| FFA-03 | Phase 6 | Complete |
+| VAL-01 | Phase 6 | Complete |
+| VAL-02 | Phase 6 | Complete |
+| VAL-03 | Phase 6 | Complete |
 
 ---
 

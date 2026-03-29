@@ -120,7 +120,7 @@ Plans:
 
 Plans:
 - [ ] 06-01-PLAN.md — Data layer: price trend fields in merge.py + MergedPlayer, ClubForm types, computeClubForm pure function (TDD)
-- [ ] 06-02-PLAN.md — Club Form tab, /api/club-form + /api/last-updated routes, FixtureBadges + LastUpdated shared components, fixture badges on GemTable
+- [x] 06-02-PLAN.md — Club Form tab, /api/club-form + /api/last-updated routes, FixtureBadges + LastUpdated shared components, fixture badges on GemTable
 - [ ] 06-03-PLAN.md — Value Gems tab with filter pills, price trend columns on GemTable + ValueGems + TransferPanel
 
 ## Progress

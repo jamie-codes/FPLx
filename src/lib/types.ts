@@ -23,6 +23,9 @@ export interface FPLElement {
   penalties_order: number | null            // Penalty taker order per PPS-01. 1 = primary taker, null = not a taker.
   corners_and_indirect_freekicks_order: number | null  // Corner taker order per PPS-01. 1 = primary taker, null = not a taker.
   news: string                              // injury/availability news text per PPS-04
+  // Price trend fields (VAL-03)
+  cost_change_event: number                 // tenths of GBP 1m, this GW (0 = no change)
+  cost_change_start: number                 // tenths of GBP 1m, since season start
 }
 
 // Validated FPL team
@@ -142,4 +145,26 @@ export interface ScoredPlayer extends MergedPlayer {
   ownership_score: number     // inverse ownership % (low owned = high score)
   minutes_score: number       // minutes reliability
   set_piece_score: number     // set piece role (penalty/FK/corner taker)
+}
+
+// Club form fixture (upcoming, per club)
+export interface ClubFormFixture {
+  opponent_team: string          // short_name e.g. "ARS"
+  is_home: boolean
+  event_id: number
+  difficulty_score: number
+  difficulty_tier: DifficultyTier
+}
+
+// Club form stats over rolling 5-game window (FFA-03)
+export interface ClubForm {
+  team_id: number
+  team_name: string
+  team_short_name: string
+  wins: number
+  draws: number
+  losses: number
+  goals_scored: number
+  goals_conceded: number
+  upcoming_fixtures: ClubFormFixture[]   // next 5
 }
