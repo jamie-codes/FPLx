@@ -10,6 +10,20 @@ v1.0 shipped as a complete daily-use tool. The manager enters their Team ID and 
 
 Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
 
+## Current Milestone: v1.1 Decision Engine
+
+**Goal:** Turn the v1.0 data dashboard into an active decision assistant — projected points + minutes risk + buy/hold/sell + captaincy recommendations per player.
+
+**Target features:**
+- Projected Points engine — next 1 / 3 / 5 GW per player, computed in Python pipeline
+- xMins / Minutes Risk model — expected minutes, start probability, rotation risk badges
+- Buy / Hold / Sell recommendations — squad-level with replacement shortlist and projected delta
+- Captaincy rankings — top-5 candidates, safe vs upside, projected captain points
+- Explainability panel — "Why this player" reasons + risk flags per recommendation
+- FPL login (session-cookie) — exact bank + sell price via `/api/my-team`
+
+---
+
 ## Current State (v1.0)
 
 Shipped 2026-03-29. All 6 phases complete.
@@ -62,11 +76,25 @@ Shipped 2026-03-29. All 6 phases complete.
 - ✓ `FixtureBadges` (next 5, colour-coded H/A) on Club Form + Gem Ratings
 - ✓ `LastUpdated` component (amber when stale), `tier()` inversion fixed
 
-### Active (v1.1 candidates)
+### Active (v1.1)
+
+- [ ] PROJ-01: Projected points next GW per player (Python pipeline)
+- [ ] PROJ-02: Projected points next 3 GW per player (Python pipeline)
+- [ ] PROJ-03: Projected points next 5 GW per player (Python pipeline)
+- [ ] MINS-01: Expected minutes and start probability per player
+- [ ] MINS-02: Minutes risk badge (Nailed / Likely start / Rotation risk / Cameo risk)
+- [ ] REC-01: Buy / Hold / Sell recommendation per squad player
+- [ ] REC-02: Replacement shortlist with projected points delta per transfer suggestion
+- [ ] CAP-01: Captaincy rankings — top-5 candidates for next GW
+- [ ] CAP-02: Safe vs upside captain split, projected captain points
+- [ ] EXP-01: Explainability panel — "Why this player" reasons per recommendation
+- [ ] EXP-02: Risk flags per player (rotation concern, fixture swing, regression risk, etc.)
+- [ ] AUTH-01: Optional FPL login (session-cookie) for exact bank balance and sell price
+- [ ] AUTH-02: `selling_price` from `my-team` endpoint for exact sell price display
+
+### Active (carry-forward, deferred)
 
 - [ ] DAT-01: Verified automated daily refresh — GitHub Actions cron confirmed operational
-- [ ] TIS-02: Optional FPL login (session-cookie) for exact bank balance and sell price
-- [ ] FPL login: `selling_price` from `my-team` endpoint for exact sell price display
 
 ### Out of Scope
 
@@ -123,4 +151,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-29 — v1.0 milestone complete*
+*Last updated: 2026-03-29 — v1.1 milestone started*
