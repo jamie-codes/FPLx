@@ -60,12 +60,12 @@ IDs assigned for phase traceability.
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| TRF-01 | Suggest who to sell or sub out based on recent performance and upcoming fixtures | Pending |
-| TRF-02 | For each sell candidate: show up to 3 replacement options ranked by Upcoming Gem rating | Pending |
-| TRF-03 | Enforce position rules (MID → MID, FWD → FWD, etc.) | Pending |
-| TRF-04 | Factor in bank balance + sale value: only suggest affordable transfers | Pending |
-| TRF-05 | Suggest multi-transfer combinations if user has available free transfers | Pending |
-| TRF-06 | If no strong transfers available, recommend saving the transfer | Pending |
+| TRF-01 | Suggest who to sell or sub out based on recent performance and upcoming fixtures | Complete |
+| TRF-02 | For each sell candidate: show up to 3 replacement options ranked by Upcoming Gem rating | Complete |
+| TRF-03 | Enforce position rules (MID → MID, FWD → FWD, etc.) | Complete |
+| TRF-04 | Factor in bank balance + sale value: only suggest affordable transfers | Complete |
+| TRF-05 | Suggest multi-transfer combinations if user has available free transfers | Complete |
+| TRF-06 | If no strong transfers available, recommend saving the transfer | Complete |
 | TRF-07 | Show how many free transfers the user has (from login or user input fallback) | Pending |
 
 ## Data & Refresh
@@ -113,12 +113,12 @@ IDs assigned for phase traceability.
 | TIS-01 | Phase 5 | Pending |
 | TIS-02 | Phase 5 | Pending |
 | TIS-03 | Phase 5 | Pending |
-| TRF-01 | Phase 5 | Pending |
-| TRF-02 | Phase 5 | Pending |
-| TRF-03 | Phase 5 | Pending |
-| TRF-04 | Phase 5 | Pending |
-| TRF-05 | Phase 5 | Pending |
-| TRF-06 | Phase 5 | Pending |
+| TRF-01 | Phase 5 | Complete |
+| TRF-02 | Phase 5 | Complete |
+| TRF-03 | Phase 5 | Complete |
+| TRF-04 | Phase 5 | Complete |
+| TRF-05 | Phase 5 | Complete |
+| TRF-06 | Phase 5 | Complete |
 | TRF-07 | Phase 5 | Pending |
 | FFA-03 | Phase 6 | Pending |
 | VAL-01 | Phase 6 | Pending |
