@@ -72,6 +72,36 @@ export const columns = [
     cell: (info) => info.getValue() === 'a' ? '' : info.getValue().toUpperCase(),
   }),
   col.display({
+    id: 'trend',
+    header: 'Trend',
+    cell: ({ row }) => {
+      const ev = row.original.cost_change_event
+      const st = row.original.cost_change_start
+      const seasonAmt = (Math.abs(st) / 10).toFixed(1)
+      const seasonSign = st > 0 ? '+' : st < 0 ? '-' : ''
+      const seasonText = st !== 0 ? `${seasonSign}${seasonAmt}m season` : ''
+
+      if (ev > 0) return (
+        <div>
+          <span className="text-green-600">↑ {(ev / 10).toFixed(1)}m</span>
+          {seasonText && <span className="block text-[10px] text-zinc-400">{seasonText}</span>}
+        </div>
+      )
+      if (ev < 0) return (
+        <div>
+          <span className="text-red-600">↓ {(Math.abs(ev) / 10).toFixed(1)}m</span>
+          {seasonText && <span className="block text-[10px] text-zinc-400">{seasonText}</span>}
+        </div>
+      )
+      return (
+        <div>
+          <span className="text-zinc-400">—</span>
+          {seasonText && <span className="block text-[10px] text-zinc-400">{seasonText}</span>}
+        </div>
+      )
+    },
+  }),
+  col.display({
     id: 'fixtures',
     header: 'Next 5',
     cell: ({ row }) => <FixtureBadges fixtures={row.original.fixtures.slice(0, 5)} />,
