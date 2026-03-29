@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Understat Pipeline + Merged Data API** - Python pipeline (soccerdata xG/xA + FPL fetch), FPL/Understat merge, custom FDR, Blob upload, `/api/players` endpoint (completed 2026-03-28)
 - [ ] **Phase 3: Gem Rating Table** - Composite scoring (7 dimensions, per-90), scored pipeline output, sortable/filterable GemTable UI — core product value
 - [x] **Phase 4: DefCon Analysis** - Per-match hit rate from element-summary history, position-split tables (DEF=10, MID/FWD=12), DefConTable UI (completed 2026-03-28)
-- [x] **Phase 5: Squad View + Transfer Suggestions** - Team ID input, squad fetch, transfer-engine.ts (position lock + approximate budget), transfer suggestions ranked by Gem delta (completed 2026-03-29)
+- [x] **Phase 5: Squad View + Transfer Suggestions** - Team ID input, squad fetch, transfer-engine.ts (position lock + approximate budget), transfer suggestions ranked by Gem delta (completed 2026-03-29)
 - [ ] **Phase 6: Club Form, Value Gems and Polish** - Club form table, cheap gems / low-owned views, fixture difficulty badges, last-updated display, price trend
 
 ## Phase Details
@@ -116,8 +116,12 @@ Plans:
   3. Price trend (rising/falling/stable) is displayed for all players in the gem table and value view
   4. Fixture difficulty badges on every player row use the custom FDR (not official FDR integers) and clearly distinguish home from away
   5. A "Last updated" timestamp is visible on every data view and reflects the most recent pipeline run timestamp from `last_updated.json`
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 3 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Data layer: price trend fields in merge.py + MergedPlayer, ClubForm types, computeClubForm pure function (TDD)
+- [ ] 06-02-PLAN.md — Club Form tab, /api/club-form + /api/last-updated routes, FixtureBadges + LastUpdated shared components, fixture badges on GemTable
+- [ ] 06-03-PLAN.md — Value Gems tab with filter pills, price trend columns on GemTable + ValueGems + TransferPanel
 
 ## Progress
 
@@ -131,4 +135,4 @@ Phases execute in numeric order. Phases 3 and 4 are independent and can run in p
 | 3. Gem Rating Table | 2/3 | In Progress|  |
 | 4. DefCon Analysis | 3/3 | Complete   | 2026-03-28 |
 | 5. Squad View + Transfer Suggestions | 3/3 | Complete   | 2026-03-29 |
-| 6. Club Form, Value Gems and Polish | 0/? | Not started | - |
+| 6. Club Form, Value Gems and Polish | 0/3 | Not started | - |
