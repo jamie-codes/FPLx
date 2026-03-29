@@ -3,7 +3,7 @@ status: complete
 phase: 06-club-form-value-gems-and-polish
 source: [06-01-SUMMARY.md, 06-02-SUMMARY.md, 06-03-SUMMARY.md]
 started: 2026-03-29T16:50:00Z
-updated: 2026-03-29T16:50:00Z
+updated: 2026-03-29T18:10:00Z
 ---
 
 ## Current Test
@@ -68,24 +68,27 @@ blocked: 0
 ## Gaps
 
 - truth: "Fixture difficulty badges correctly reflect opponent strength — Man City fixtures should show as hard (red) not easy (green)"
-  status: failed
+  status: resolved
   reason: "User reported: Arsenal vs Man City Away and Burnley vs Man City Home both showing as green (easy). Root cause: tier() function in src/lib/club-form.ts lines 71-73 is inverted — returns 'easy' when score >= hardThreshScore (should be 'hard') and 'hard' when score <= easyThreshScore (should be 'easy'). Fix: swap the two return values."
+  resolved_in: "06-04"
   severity: major
   test: 2
   artifacts: [src/lib/club-form.ts]
   missing: [correct tier logic]
 
 - truth: "Price trend column shows GW change and season change with correct formatting — no NaN values"
-  status: failed
+  status: resolved
   reason: "User reported on Value Gems, Gem Ratings, and Transfer Panel: '— NaNm season' or '(-NaNm season)' on every row. Root cause: (1) merged_players.json is missing cost_change_event/cost_change_start fields — pipeline has not been re-run since merge.py was updated. (2) PriceTrendCell and TransferPanel do not guard against undefined — Math.abs(undefined) = NaN, and `undefined !== 0` is true so season sub-text always renders. Fix: add `?? 0` guards in PriceTrendCell props and TransferPanel cost_change reads; re-run pipeline."
+  resolved_in: "06-04"
   severity: major
   test: 6
   artifacts: [src/components/value-gems/columns.tsx, src/components/gem-table/columns.tsx, src/components/transfers/TransferPanel.tsx]
   missing: [undefined guards for cost_change fields, pipeline re-run]
 
 - truth: "Transfer Panel price trend shows correct GW arrow and season change — no NaN values"
-  status: failed
+  status: resolved
   reason: "Same root cause as test 6/8 — covered by the same fix (undefined guards + pipeline re-run)"
+  resolved_in: "06-04"
   severity: major
   test: 9
   artifacts: [src/components/transfers/TransferPanel.tsx]
