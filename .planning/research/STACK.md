@@ -1,175 +1,128 @@
 # Technology Stack
 
-**Project:** FPL Analyst
-**Researched:** 2026-03-25
-**Overall confidence:** MEDIUM-HIGH
+**Project:** FPL Analyst — v1.1 Decision Engine additions
+**Researched:** 2026-03-29
+**Scope:** NEW capabilities only. Existing validated stack (Next.js 16, React 19, TypeScript, TanStack Table v8, TanStack Query v5, Tailwind CSS v4, Vitest, Python/pandas/soccerdata/requests/Vercel Blob) is NOT re-researched here.
 
 ---
 
-## Recommended Stack
+## What Is Already Installed (do not re-add)
 
-### Core Framework
+From `package.json` and `pipeline/requirements.txt` as of 2026-03-29:
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Next.js | 16.x (latest stable ~16.2) | Full-stack framework | Server-side FPL API proxying (bypasses CORS), Route Handlers act as the backend, Vercel-native deployment, no separate server needed |
-| React | 19.x | UI rendering | Required by Next.js 16; concurrent features, no legacy baggage |
-| TypeScript | 5.x | Type safety | Catches shape mismatches between FPL API response and UI; FPL API schema changes are frequent |
+**npm:** `next@16.2.1`, `react@19.2.4`, `@tanstack/react-query@^5.95.2`, `@tanstack/react-table@^8.21.3`, `@vercel/blob@^2.3.1`, `zod@^4.3.6`, `tailwindcss@^4`, `vitest@^4.1.2`
 
-**Why Next.js over Vite + separate API server:**
-The FPL API blocks direct browser requests via CORS. You must proxy through a server. Next.js Route Handlers give you a server for free — you don't need a separate Express/FastAPI process. For a personal tool this eliminates infra complexity entirely.
-
-**Why Next.js 16 over 15:**
-Both are production-stable. Next.js 16 ships Turbopack as default (faster builds), stable React Compiler, and stable PPR. No meaningful migration risk from 15 → 16 for a greenfield project.
-
-### Styling
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Tailwind CSS | 4.x (v4.2+) | Utility-first CSS | Pairs with shadcn/ui; v4 Oxide engine is dramatically faster; CSS-first config removes the tailwind.config.js complexity |
-| shadcn/ui | current (CLI-based, no package version) | Component primitives | Copy-paste component model means you own the code; React 19 + Tailwind v4 compatible as of 2026; data-table pattern built on TanStack Table is exactly what FPL tables need |
-
-### Data Tables (Critical for this project)
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| TanStack Table | v8 (via shadcn/ui data-table) | Sortable/filterable tables | The FPL gem rating, DefCon, and value tables all need client-side sort/filter; TanStack Table is the standard; shadcn/ui's data-table recipe wraps it cleanly |
-
-### Client-Side Data Fetching and Caching
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| TanStack Query (React Query) | v5 | Server state management | Handles staleTime, background refetch, loading/error states out of the box; avoids hand-rolling useState + useEffect fetch patterns |
-
-**Configuration for daily-refresh data:**
-```typescript
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 60 * 6, // 6 hours — data refreshes daily server-side
-      gcTime: 1000 * 60 * 60 * 12,   // keep in memory for 12 hours
-    },
-  },
-})
-```
-
-### Charting
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Recharts | ^2.x | Form trend lines, fixture heatmaps | Lightweight, idiomatic React JSX API, widely documented; Tremor is built on top of it but adds weight this project does not need. Direct Recharts is preferred for control. |
-
-Note: Tremor is explicitly NOT recommended here. It layers abstraction on top of Recharts without adding value for a table-heavy analytics tool. Pick Recharts directly.
-
-### Data Pipeline (Python)
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Python | 3.11+ | Data pipeline runtime | soccerdata is Python-native; no JS equivalent for Understat scraping |
-| soccerdata | 1.8.8 | Understat xG/xA scraper | Official library, maintained, extracts JS variables embedded in Understat HTML pages, returns Pandas DataFrames; last release January 2026 |
-| requests | ^2.31 | FPL API HTTP calls (in pipeline) | Simple, well-understood; handles session cookies for authenticated FPL endpoints |
-| pandas | ^2.x | Data transformation | Required by soccerdata; normalise Understat DataFrames into JSON for Next.js consumption |
-
-**Why a Python pipeline instead of Node.js scraping:**
-soccerdata's Understat scraper handles the non-trivial JS variable extraction Understat uses (data is embedded in `<script>` tags, not JSON endpoints). There is no maintained equivalent in the Node.js ecosystem. The pipeline runs on a schedule (daily) and writes JSON files — it does not need to be a live service.
-
-### Caching Strategy
-
-**Architecture: File-based JSON cache, no database.**
-
-```
-[Python pipeline] → writes → /cache/fpl_data.json
-                            /cache/understat_data.json
-                            /cache/last_updated.json
-[Next.js Route Handlers] → reads from cache files → serve to frontend
-```
-
-| Layer | Approach | Why |
-|-------|----------|-----|
-| Server cache | JSON files on disk, refreshed by daily cron | No Redis/DB needed for single-user; files survive process restarts; human-readable for debugging |
-| Route Handler | Reads cache file, adds Cache-Control headers | `stale-while-revalidate` lets Vercel edge cache serve stale data instantly |
-| Client cache | TanStack Query staleTime: 6h | Avoids redundant API calls within a session |
-
-### Infrastructure / Deployment
-
-| Technology | Purpose | Why |
-|------------|---------|-----|
-| Vercel Hobby (free) | Next.js hosting | Free tier: 100 GB bandwidth/month, 150K function invocations/month — massively sufficient for personal use. First-class Next.js support. |
-| GitHub Actions (or local cron) | Daily pipeline trigger | Runs Python data pipeline once daily; writes JSON cache to a persistent store |
-| Vercel Blob / GitHub repo /tmp | Cache storage | See note below |
-
-**Cache storage decision (important):**
-Vercel serverless functions are stateless — `/tmp` is ephemeral and wiped between cold starts. For the cache to persist, options are:
-1. **Vercel Blob** (recommended for Vercel-native): Object storage, free tier available, works with Route Handlers natively
-2. **Commit cache to GitHub repo**: Simple but pollutes git history; acceptable for personal tool
-3. **Separate persistent storage** (e.g., Cloudflare R2 free tier): More robust but more setup
-
-Recommendation: **Vercel Blob** for cache storage. It is the simplest Vercel-native solution, has a free tier adequate for ~2 MB of daily FPL JSON, and integrates with Next.js Route Handlers without additional packages.
+**pip:** `requests>=2.32.0`, `pandas>=2.2.0`, `soccerdata==1.8.8`, `vercel-blob>=0.4.0`, `python-dotenv>=1.0.0`
 
 ---
 
-## FPL API Specifics
+## New Stack Additions Required
 
-### CORS Constraint
+### Python Pipeline — Projected Points and xMins Engine
 
-The FPL API at `https://fantasy.premierleague.com/api/` does not allow direct browser fetch calls. All calls must be made server-side.
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| scikit-learn | ^1.8.0 | xMins start-probability model (logistic regression) | The xMins model is a classifier: given recent minutes, team news flags, and fixture difficulty, estimate P(start). Logistic regression (`sklearn.linear_model.LogisticRegression`) is the correct tool — interpretable, no heavy dependencies, outputs calibrated probabilities. scikit-learn 1.8.0 released December 2025; supports Python 3.11 and pandas 2.x. |
+| scipy | ^1.15.0 | Weighted ranking for captaincy scores | `scipy.stats.weightedtau` / `numpy.average` for composite captaincy score construction. Also provides `scipy.stats.norm` for Bayesian-style projection intervals if needed later. Already an indirect soccerdata dependency but should be pinned explicitly. |
 
-**Solution:** Next.js Route Handlers act as the proxy. The browser calls `/api/fpl/bootstrap-static` which the Route Handler forwards to `https://fantasy.premierleague.com/api/bootstrap-static/` server-side. CORS is irrelevant server-to-server.
+**Why scikit-learn over custom formula for xMins:**
+The xMins model inputs are tabular: recent minutes per GW (last 5), team news status flag (from bootstrap `news` field), FDR of next fixture, position (proxy for rotation likelihood). A logistic regression trained on historical `element_summary` data gives a calibrated start probability with `predict_proba()`. Custom formula would require manual calibration. scikit-learn adds ~30 MB to the venv — acceptable for a pipeline-only dependency.
 
-### Auth (FPL Login — Optional Feature)
+**Why no XGBoost or neural network:**
+The dataset is small (~600 players, ~38 GW history). Complex models overfit on small tabular data. A logistic regression is correct here. If a more complex model is warranted later it can be swapped; the interface stays the same.
 
-FPL login uses session-cookie authentication, not OAuth:
-
-```
-POST https://users.premierleague.com/accounts/login/
-Payload: { login, password, redirect_uri, app }
-Response: Sets pl_profile, sessionid cookies
-```
-
-**Handling in this app:**
-- The Python pipeline handles authenticated calls (fetching squad bank balance, transfer count) using `requests.Session()` which persists cookies automatically
-- Credentials are passed via environment variables (`FPL_EMAIL`, `FPL_PASSWORD`) — never stored in code or cache files
-- For the UI flow: user enters FPL Team ID (public, no auth) OR optionally provides credentials via the UI which are POSTed to a Next.js Route Handler, used once for the session, and never persisted to disk
-
-### Key Public Endpoints (No Auth Required)
-
-| Endpoint | Data |
-|----------|------|
-| `/api/bootstrap-static/` | All players, teams, gameweek info, prices, ownership, flags |
-| `/api/fixtures/` | All fixtures with difficulty ratings |
-| `/api/element-summary/{player_id}/` | Per-player history, upcoming fixtures |
-| `/api/entry/{team_id}/` | Public team info |
-| `/api/entry/{team_id}/event/{gw}/picks/` | Team picks for a gameweek |
-
-### Key Auth-Gated Endpoints
-
-| Endpoint | Data |
-|----------|------|
-| `/api/me/` | Bank balance, remaining transfers (requires login) |
-| `/api/my-team/{team_id}/` | Current squad with selling prices |
+**Why scipy separately:**
+soccerdata pulls it in transitively but does not pin it. Explicit pin in requirements.txt prevents silent version drift breaking the captaincy ranking computation.
 
 ---
 
-## Understat Scraping
+### Python Pipeline — FPL Auth (Session-Cookie Login)
 
-### Approach
-
-Use soccerdata's `Understat` class. It extracts JavaScript variables embedded in Understat HTML (not a REST API), returns Pandas DataFrames, and caches locally by default.
+No new library required. The existing `requests` library handles session-cookie auth natively via `requests.Session()`. The authentication pattern is:
 
 ```python
-import soccerdata as sd
+import requests
 
-understat = sd.Understat()
-# Returns DataFrame with player xG, xA, shots per season/league
-player_stats = understat.read_player_season_stats(
-    leagues=["EFL Championship"],  # Premier League = "EPL"
-    seasons=["2425"]
+session = requests.Session()
+session.post(
+    'https://users.premierleague.com/accounts/login/',
+    data={
+        'login': email,
+        'password': password,
+        'redirect_uri': 'https://fantasy.premierleague.com/a/login',
+        'app': 'plfpl-web',
+    },
+    headers=HEADERS,
 )
+# session now holds pl_profile and sessionid cookies
+response = session.get(f'https://fantasy.premierleague.com/api/my-team/{team_id}/', headers=HEADERS)
 ```
 
-**Rate limiting:** soccerdata includes built-in delays. Understat does not publish a rate limit policy, but the community practice is 1-2 requests/second with randomised delays. Running once daily with a warm cache means negligible request volume — unlikely to be blocked.
+**Why not the `fpl` PyPI library (amosbastian/fpl):**
+The `fpl` library is unmaintained — last PyPI release August 2023, no published releases on GitHub, open issues unresolved. It is async-only (requires `aiohttp`), which is unnecessary overhead for a pipeline that runs sequentially. The raw `requests.Session()` pattern is a 10-line implementation and has no maintenance risk.
 
-**Fragility:** soccerdata relies on scraping; Understat HTML changes will break it. Pin to `soccerdata==1.8.8` and test at season start each year. This is a known maintenance cost.
+**Why not `fpl-api` (C-Roensholt/fpl-api):**
+Similar maintenance uncertainty. The existing `fpl_client.py` already implements the FPL HTTP layer. Extending it with a `login()` function that returns an authenticated session is the correct approach — consistent with existing patterns, no new dependency.
+
+**Auth endpoint status (MEDIUM confidence):**
+The `users.premierleague.com/accounts/login/` endpoint has been the login URL since at least 2019. No evidence found of it being replaced or broken in 2024/25. However, FPL has changed endpoint paths before (e.g., `/drf/` → `/api/`). The my-team URL to use is `/api/my-team/{team_id}/` (modern path, not the old `/drf/my-team/`). The cookie names `pl_profile` and `sessionid` remain the same. Flag this endpoint for manual verification at v1.1 build time.
+
+---
+
+### Next.js Route Handler — Auth Relay
+
+No new npm package required. The existing Next.js Route Handler pattern handles the auth relay:
+
+- `POST /api/auth/login` — accepts `{ email, password }` from UI, calls FPL login server-side, returns `{ bank, selling_prices }` (never returns cookies to client)
+- `GET /api/auth/my-team` — calls `/api/my-team/{id}/` with session cookies held server-side for the duration of the request
+
+The session is used once per pipeline trigger or page load and is not persisted. Credentials are never stored — they are passed in the request body and discarded after use.
+
+**Note on cookie jar in Node.js fetch:**
+If the auth relay is implemented in a Route Handler using Node.js `fetch()` (not the Python pipeline), cookie jar management requires either `tough-cookie` + `node-fetch` or using the Python pipeline path. The simpler approach: delegate auth to the Python pipeline (which already uses `requests.Session()`), have the pipeline write the authenticated data (bank, selling prices) to `my_team.json` in Blob, and serve it from a Route Handler like all other pipeline outputs. This avoids cookie management in Node.js entirely.
+
+---
+
+### Frontend — Explainability and Recommendations UI
+
+No new npm packages are required. All UI primitives needed exist in shadcn/ui (already installed) using Tailwind CSS v4.
+
+| Component | shadcn/ui primitive | Purpose |
+|-----------|--------------------|---------|
+| Risk flag badges | `Badge` (variant="destructive" / "warning" / "outline") | Rotation risk, regression risk, fixture swing — colour-coded per severity |
+| Buy/Hold/Sell pill | `Badge` with custom CVA variants | Single recommendation per squad player |
+| Explainability panel | `Collapsible` or `Accordion` | "Why this player" reasons expand inline per row |
+| Captaincy card | Composed from `Card` + `Badge` | Top-5 captaincy candidates with safe/upside split |
+| Tooltip on flags | `Tooltip` | Hover-over detail for each risk flag code |
+
+**Why no new UI library (e.g., react-tooltip standalone):**
+shadcn/ui's `Tooltip` wraps Radix UI's `@radix-ui/react-tooltip` which is already a transitive dependency of shadcn/ui's other components. Adding a standalone tooltip library would be redundant and create conflicting styles.
+
+**Why Collapsible over Accordion for explainability:**
+`Accordion` implies mutually exclusive open panels — only one item open at a time. `Collapsible` is independent per-row, so the manager can expand multiple players simultaneously to compare reasoning. Use `Collapsible` per table row.
+
+**Why no dedicated "explainability library" (e.g., LIME/SHAP JS bindings):**
+The explainability data is generated in the Python pipeline as structured text reasons (strings) and numeric factor weights. The UI only needs to render them — it does not compute them. No ML explainability library belongs in the frontend.
+
+---
+
+## Summary: What to Add
+
+### pip (pipeline/requirements.txt additions)
+
+```bash
+pip install scikit-learn>=1.8.0 scipy>=1.15.0
+```
+
+### npm (no additions needed)
+
+The existing `package.json` is sufficient. Use shadcn/ui CLI to add any not-yet-added components:
+
+```bash
+npx shadcn@latest add collapsible accordion badge tooltip card
+```
+
+These are copy-paste components with no new runtime npm dependency — they use Radix UI primitives already present.
 
 ---
 
@@ -177,42 +130,48 @@ player_stats = understat.read_player_season_stats(
 
 | Category | Recommended | Alternative | Why Not |
 |----------|-------------|-------------|---------|
-| Framework | Next.js 16 | Vite + Express | Vite has no server — you need a separate Express process to proxy FPL API. Next.js collocates frontend + API in one deploy. |
-| Framework | Next.js 16 | Remix | Remix is excellent but ecosystem maturity for data-table patterns (shadcn/TanStack) is more Next.js-centric. Adds learning curve with no benefit here. |
-| Styling | Tailwind + shadcn/ui | Mantine / Chakra UI | Mantine/Chakra are full component libraries with opinionated styles; harder to theme for a data-forward FPL aesthetic. shadcn/ui gives full ownership. |
-| Charts | Recharts | Tremor | Tremor wraps Recharts — using it means less control over chart internals. For simple bar/line charts in FPL context, direct Recharts is sufficient. |
-| Charts | Recharts | D3.js | D3 is lower-level; engineering overhead not justified for simple fixture heatmaps and form lines |
-| Data pipeline | Python (soccerdata) | Node.js + Playwright | No maintained Node.js Understat library. Playwright scraping is more brittle and harder to maintain than soccerdata's approach. |
-| Cache storage | Vercel Blob | Redis / Upstash | Redis adds cost and infrastructure complexity. Upstash free tier is viable but Vercel Blob is simpler and natively integrated. |
-| Cache storage | Vercel Blob | SQLite (Turso/libSQL) | SQLite is appropriate if data becomes relational. For v1 daily JSON dumps, it is over-engineering. |
-| Client state | TanStack Query v5 | SWR | Both are fine. TanStack Query has more control over staleTime/gcTime and better DevTools. SWR is simpler but less expressive for complex caching. |
-| Deployment | Vercel | Railway / Render | Railway/Render are better for always-on Node servers. For Next.js + serverless, Vercel is unambiguously better. |
+| xMins model | scikit-learn LogisticRegression | Custom weighted formula | Formula requires manual calibration; sklearn gives calibrated probabilities and is replaceable without interface change |
+| xMins model | scikit-learn LogisticRegression | XGBoost / LightGBM | Overkill for ~600-player tabular dataset; adds 200+ MB dependency; overfits on small data |
+| FPL auth library | raw requests.Session() | amosbastian/fpl (PyPI) | Unmaintained since Aug 2023; async-only (aiohttp required); existing fpl_client.py pattern is simpler |
+| FPL auth library | raw requests.Session() | fpl-api (C-Roensholt) | Maintenance uncertainty; adds abstraction layer without benefit for a 10-line auth extension |
+| Auth relay | Python pipeline writes my_team.json | Node.js Route Handler with cookie jar | Cookie jar in Node.js needs tough-cookie (extra dep); Python pipeline already handles auth; pattern is consistent with all other pipeline outputs |
+| Explainability UI | shadcn/ui Collapsible | Dedicated react-tooltip library | Redundant — Radix tooltip already a transitive dep; conflicting styles |
+| Explainability UI | shadcn/ui Collapsible | SHAP/LIME JS bindings | Explainability computed in Python, not client-side; frontend only needs to render structured strings |
+| Captaincy ranking | pandas + numpy weighted score | ML ranking model | Ranking 15 squad players by composite score is a sort, not a learned model; weighted sum is correct and auditable |
 
 ---
 
-## Installation
+## Integration with Existing Stack
 
-```bash
-# Create Next.js app
-npx create-next-app@latest fplx --typescript --tailwind --app --src-dir
+| New Capability | Integrates With | Integration Point |
+|----------------|-----------------|-------------------|
+| Projected points (Python) | `merge.py` pipeline | New `projected_points.py` module adds `proj_pts_1gw`, `proj_pts_3gw`, `proj_pts_5gw` fields to `merged_players.json` schema |
+| xMins model (Python) | `merge.py` pipeline | New `xmins.py` module adds `xMins`, `start_prob`, `minutes_risk` fields to `merged_players.json` |
+| Buy/Hold/Sell (Python) | Pipeline output + Next.js | New `recommendations.json` blob written by pipeline; served via new `/api/recommendations` Route Handler |
+| Captaincy rankings (Python) | Pipeline output + Next.js | `recommendations.json` includes `captaincy` array; served via same Route Handler |
+| Explainability (UI) | `MergedPlayer` TypeScript type | Add `reasons: string[]` and `risk_flags: RiskFlag[]` to existing `MergedPlayer` type; Zod schema extended |
+| FPL auth (Python + UI) | `fpl_client.py` + new Route Handler | `fpl_client.py` gets `login(email, password) -> requests.Session`; pipeline uses it when `FPL_EMAIL`/`FPL_PASSWORD` env vars present; UI has optional login form that POSTs to `/api/auth/login` |
 
-# shadcn/ui init (Tailwind v4 mode)
-npx shadcn@latest init
+---
 
-# Core runtime deps
-npm install @tanstack/react-query @tanstack/react-table recharts
+## FPL Auth: Exact Endpoint Reference
 
-# Dev deps
-npm install -D @tanstack/react-query-devtools
+The session-cookie auth flow (MEDIUM confidence — verify at build time):
 
-# Vercel Blob (for cache storage)
-npm install @vercel/blob
+```
+POST https://users.premierleague.com/accounts/login/
+Content-Type: application/x-www-form-urlencoded
+
+login=<email>&password=<password>&redirect_uri=https://fantasy.premierleague.com/a/login&app=plfpl-web
 ```
 
-```bash
-# Python pipeline (separate venv)
-pip install soccerdata==1.8.8 requests pandas python-dotenv
-```
+Cookies returned: `pl_profile` (.premierleague.com), `sessionid` (fantasy.premierleague.com), `sessionid` (users.premierleague.com)
+
+Authenticated endpoints needed for v1.1:
+- `GET /api/my-team/{team_id}/` — returns `picks[].selling_price` and `transfers.bank`
+- `GET /api/me/` — returns bank balance (alternative)
+
+**Risk:** FPL has changed API paths before. The endpoint has been stable since at least 2019 based on community sources, but no official documentation exists. Build with a clear error path for auth failure — fall back to public-data-only mode.
 
 ---
 
@@ -220,32 +179,29 @@ pip install soccerdata==1.8.8 requests pandas python-dotenv
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Next.js as framework choice | HIGH | CORS constraint makes server-side proxy mandatory; Next.js is the obvious single-deploy solution |
-| Next.js 16 version | MEDIUM | 16.2.1 confirmed latest stable March 2026; minor version details from WebSearch only |
-| FPL API CORS constraint | HIGH | Confirmed by multiple community sources and FPL API documentation |
-| FPL auth mechanism | MEDIUM | Session-cookie flow documented by community; FPL may change it without notice |
-| soccerdata for Understat | HIGH | PyPI v1.8.8 confirmed Jan 2026; Understat support explicitly listed |
-| Tailwind v4 + shadcn/ui | HIGH | shadcn/ui changelog confirms React 19 + Tailwind v4 support as of 2026 |
-| TanStack Query v5 / Table v8 | HIGH | Current stable; widely used; API stable |
-| Recharts | MEDIUM | Widely used; no breaking changes in recent releases; training data-era knowledge |
-| Vercel Blob for cache | MEDIUM | Verified via Vercel docs as free-tier product; free tier limits not confirmed |
-| Vercel Hobby limits | HIGH | Confirmed: 100 GB bandwidth, 150K function invocations/month |
+| scikit-learn for xMins | HIGH | Version 1.8.0 confirmed on PyPI (Dec 2025); Python 3.11 + pandas 2.x compatible confirmed |
+| scipy for ranking | HIGH | Standard scientific Python stack; version 1.15.x current; no compatibility issues |
+| No new npm packages needed | HIGH | shadcn/ui components are copy-paste; Radix primitives already present transitively |
+| requests.Session() for auth | HIGH | Documented pattern; works with Python's built-in cookie jar |
+| `fpl` PyPI library abandonment | HIGH | Last release Aug 2023; GitHub shows no active maintenance |
+| FPL auth endpoint stability | MEDIUM | Observed stable since 2019 in community sources; no official FPL documentation; could change without notice |
+| my-team endpoint fields (selling_price, bank) | MEDIUM | `selling_price` in picks confirmed by fpl.readthedocs.io source code; `bank` field in transfers object confirmed by community guides; not officially documented |
+| shadcn Collapsible for explainability | HIGH | Documented component; correct primitive for independent-expand per row |
 
 ---
 
 ## Sources
 
-- FPL API CORS constraint: [FPL APIs Explained — Oliver Looney](https://www.oliverlooney.com/blogs/FPL-APIs-Explained)
-- FPL API endpoints: [Complete Guide to FPL API — UK Retro Gaming](https://ukretrogaming.co.uk/blogs/blog/a-complete-guide-to-the-fantasy-premier-league-fpl-api)
-- FPL auth: [FPL API Authentication Guide — Medium](https://medium.com/@bram.vanherle1/fantasy-premier-league-api-authentication-guide-2f7aeb2382e4)
-- soccerdata PyPI: [soccerdata 1.8.8 — PyPI](https://pypi.org/project/soccerdata/) (v1.8.8, released January 16, 2026)
-- soccerdata Understat: [Understat and Sofascore Scrapers — DeepWiki](https://deepwiki.com/probberechts/soccerdata/3.5-understat-and-sofascore-scrapers)
-- Next.js versions: [Next.js 16.1 — nextjs.org](https://nextjs.org/blog/next-16-1); [Upgrading to v16 — nextjs.org](https://nextjs.org/docs/app/guides/upgrading/version-16)
-- Next.js as FPL proxy: [Building APIs with Next.js — nextjs.org](https://nextjs.org/blog/building-apis-with-nextjs)
-- shadcn/ui React 19 + Tailwind v4: [shadcn/ui changelog](https://ui.shadcn.com/docs/changelog)
-- shadcn/ui data-table: [Data Table — shadcn/ui](https://ui.shadcn.com/docs/components/radix/data-table)
-- TanStack Query v5 caching: [Caching Examples — TanStack](https://tanstack.com/query/v5/docs/react/guides/caching)
-- Tailwind CSS v4.2: [Tailwind CSS v4.0 — tailwindcss.com](https://tailwindcss.com/blog/tailwindcss-v4)
-- Recharts vs Tremor: [Best React Chart Libraries 2025 — LogRocket](https://blog.logrocket.com/best-react-chart-libraries-2025/)
-- Vercel Hobby limits: [Vercel Hobby Plan — vercel.com](https://vercel.com/docs/plans/hobby)
-- Vite vs Next.js for analytics: [Vite vs Next.js 2025 — Strapi](https://strapi.io/blog/vite-vs-nextjs-2025-developer-framework-comparison)
+- scikit-learn 1.8.0 release: [scikit-learn PyPI](https://pypi.org/project/scikit-learn/) — v1.8.0, December 2025
+- scikit-learn Python 3.11 support: [scikit-learn install docs](https://scikit-learn.org/stable/install.html)
+- FPL auth flow: [Fantasy Premier League API authentication guide — Bram Vanherle, Medium](https://medium.com/@bram.vanherle1/fantasy-premier-league-api-authentication-guide-2f7aeb2382e4) (2019, still referenced as current approach in 2025 community searches)
+- FPL auth Node.js variant: [Fantasy Premier League API authentication guide — eyasu kibru, Medium](https://medium.com/@eyasukibru13/fantasy-premier-league-api-authentication-guide-using-node-js-ca25e693594e)
+- FPL my-team endpoint: [FPL API Endpoints Cheat Sheet — sertalpbilal, Cheatography](https://cheatography.com/sertalpbilal/cheat-sheets/fpl-api-endpoints/history/279325)
+- FPL my-team fields: [Fantasy Premier League API Endpoints Detailed Guide — Frenzel Timothy, Medium](https://medium.com/@frenzelts/fantasy-premier-league-api-endpoints-a-detailed-guide-acbd5598eb19)
+- amosbastian/fpl maintenance status: [fpl GitHub](https://github.com/amosbastian/fpl) — no releases published, last meaningful activity 2023
+- shadcn/ui Collapsible: [Collapsible — shadcn/ui docs](https://ui.shadcn.com/docs/components/radix/collapsible)
+- shadcn/ui Accordion: [Accordion — shadcn/ui docs](https://ui.shadcn.com/docs/components/radix/accordion)
+- shadcn/ui Badge: [Badge — shadcn/ui docs](https://ui.shadcn.com/docs/components/radix/badge)
+- pandas weighted rolling average: [pandas DataFrame.rolling — pandas 3.0.1 docs](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.rolling.html)
+- scipy weightedtau: [scipy.stats.weightedtau — SciPy v1.17.0 Manual](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.weightedtau.html)
+- FPL projected points community reference: [FPL-Expected-Points — daniel-mehta, GitHub](https://github.com/daniel-mehta/FPL-Expected-Points)

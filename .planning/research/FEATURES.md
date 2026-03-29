@@ -1,32 +1,24 @@
 # Feature Research
 
-**Domain:** FPL analytics web app (personal squad management tool)
-**Researched:** 2026-03-26
-**Confidence:** HIGH — based on FPL API verification (PITFALLS.md), confirmed field availability, and PROJECT.md requirements
+**Domain:** FPL decision-engine — v1.1 milestone: projected points, minutes risk, buy/hold/sell, captaincy, explainability, FPL login
+**Researched:** 2026-03-29
+**Confidence:** MEDIUM — methodology well-understood from public FPL tools and open-source papers; exact formula calibration is our own choice
 
 ---
 
-## FPL API Data Availability Reference
+## Context: What Is Already Built (v1.0)
 
-All features below depend on confirmed API data. Key fields verified:
+The following are complete and not in scope for v1.1 feature research. They are listed here as dependency anchors only.
 
-| Data | Source | Endpoint / Field | Confirmed |
-|------|--------|------------------|-----------|
-| Player list, prices, ownership | FPL | `bootstrap-static/` → `elements[]` | YES |
-| Form, points history | FPL | `bootstrap-static/` → `elements[].form` | YES |
-| Injury/availability flags | FPL | `bootstrap-static/` → `elements[].status` (a/d/i/s/u/n) | YES |
-| Set piece / penalty notes | FPL | `bootstrap-static/` → `elements[].news` (text field) | YES (text, not structured) |
-| Fixture list + difficulty | FPL | `fixtures/` → `team_h_difficulty`, `team_a_difficulty` | YES (official FDR unreliable — use custom) |
-| Per-player match history | FPL | `element-summary/{id}/history[]` | YES |
-| Defensive contributions | FPL | `elements[].defensive_contributions` (2025/26 new field) | YES — all positions |
-| Clearances/blocks/interceptions | FPL | `elements[].clearances_blocks_interceptions` (DEF subset) | YES |
-| Squad picks (public) | FPL | `entry/{team_id}/event/{gw}/picks/` | YES |
-| Bank balance, transfer count | FPL auth | `my-team/{team_id}/` | YES (requires login) |
-| Selling price per player | FPL auth | `my-team/{team_id}/` → `picks[].selling_price` | YES (requires login) |
-| xG, xA per player | Understat | soccerdata `read_player_season_stats()` | YES — EPL only |
-| Per-match xG | Understat | soccerdata `read_player_match_stats()` | YES |
-
-**Notable gap:** Set piece taker / penalty taker is only in the text `news` field — no structured boolean flag. Parsing this field requires text matching and is unreliable. Will need periodic manual updates or community data source (e.g. Fantasy Football Scout set piece notes).
+| Already Built | Relevance to v1.1 |
+|---------------|-------------------|
+| `merged_players.json` with `xg_per90`, `xa_per90`, `fixtures[]`, `starts`, `minutes`, `form` | Primary inputs to projected-points formula |
+| `MergedPlayer` TypeScript type | Must be extended with new fields |
+| `computeAllGemScores` → `ScoredPlayer` with `gem_score` | `projected_pts` will replace `gem_score` as primary ranking signal in transfers |
+| `computeTransferSuggestions` → `SingleTransfer` with `gem_delta` | Buy/Hold/Sell rule layer sits on top of this existing output |
+| `fixtures[]` on each player (next 5 with `difficulty_score`) | Direct input to 3GW/5GW projection aggregation |
+| FPL API proxy (`/api/fpl/[...proxy]`) | Auth login handler should follow the same server-side pattern |
+| `selected_by_percent` on `MergedPlayer` | Ownership input to captaincy differential split |
 
 ---
 
@@ -34,107 +26,127 @@ All features below depend on confirmed API data. Key fields verified:
 
 ### Table Stakes (Users Expect These)
 
+Features that are standard across comparable FPL tools. Missing any of these makes the v1.1 milestone feel unfinished.
+
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Player list with price, ownership, form | Every FPL tool shows this | LOW | From `bootstrap-static` |
-| Injury/availability status display | Players making decisions need this | LOW | `status` field: a=available, d=doubtful, i=injured, s=suspended |
-| Fixture difficulty display | Core to FPL decision-making | MEDIUM | Custom FDR from xG/xGA; official FDR as fallback only |
-| Sort/filter by position | GK/DEF/MID/FWD distinctions are fundamental | LOW | TanStack Table client-side sort/filter |
-| "Last updated" timestamp | Users need to know data freshness | LOW | `last_updated.json` from pipeline |
-| Squad view with your players | Personal tool — your squad is the anchor | MEDIUM | Requires Team ID input; calls `entry/{id}/event/{gw}/picks/` |
+| Projected points — next GW per player | Every major FPL tool (fplreview, FFScout, FPL Form) shows a single-GW projection. Users treat it as their primary buy/sell signal. | MEDIUM | Computed in Python pipeline. Inputs available: `xg_per90`, `xa_per90`, `difficulty_score` (next fixture), `minutes_per90` (proxy for xMins), clean sheet probability (position-based). Multi-component sum — no ML required for a credible v1. |
+| Projected points — next 3 GW and 5 GW | "Fixture run" view is standard. Users look ahead before making transfers. 3GW and 5GW are the conventional windows. | LOW (after next-GW formula exists) | Aggregate of per-GW projections. `MergedPlayer.fixtures[]` already holds next 5 entries each with `difficulty_score`. Sum is trivial once per-GW formula is in place. |
+| Expected minutes (xMins) per player | fplreview's xMins is the industry reference. A number like "85 xMins" is more useful than vague "nailed" language without a number. | LOW | Derived from `starts` and `minutes` over trailing 5–10 games. `starts / games_played * 90` gives a reliable start-probability-weighted xMins. No new API calls needed — data already in `FPLElement`. |
+| Minutes risk badge — 4-tier | Categorical label is universal across FPL tools (fpl.team, Fantasy Football Fix). "Nailed / Likely / Rotation / Cameo" gives the manager an instant read. | LOW | Threshold rule over xMins: Nailed ≥ 80 mins; Likely 60–79; Rotation 30–59; Cameo < 30. One computed field, rendered as a badge in Squad view and Transfer panel. |
+| Buy / Hold / Sell label per squad player | Managers expect the tool to give a verdict on each of their own players — not just list replacements. | LOW | Rule-based from existing transfer engine output. SELL when best available replacement has projected-pts delta above threshold AND budget is sufficient; HOLD otherwise. BUY is for unowned candidates only. |
+| Replacement shortlist with projected-points delta | "Who to bring in" alongside "who to sell" is expected in any transfer-focused tool. The delta should be in projected points, not an abstract gem score. | MEDIUM | Existing `computeTransferSuggestions` already surfaces replacements. New: add `projected_pts_delta` (projected_pts(buy) − projected_pts(sell) for next GW). Replace `gem_delta` as primary sort signal. |
+| Captaincy top-5 for next GW | Every major FPL tool provides a weekly captaincy ranking. Users expect at minimum a short ranked list before the deadline. | LOW (after projected-pts exists) | Sort all players by `projected_pts_next_gw * 2` (captain multiplier). Top 5. Requires projected_pts in pipeline output — no new data. |
+| Safe vs differential captain split | Industry-standard framing: "safe" (high ownership, nailed, easy fixture) vs "differential" (low ownership, high ceiling). Explicitly calling this out saves the user a mental step. | LOW | Ownership threshold already in `selected_by_percent`. Rule: safe = ownership > 20% AND xMins tier "Nailed"; differential = ownership < 15% AND projected_pts in top 10. |
 
 ### Differentiators (Competitive Advantage)
 
+Features that set this tool apart, aligning with the core value of "clear prioritised view backed by data".
+
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Upcoming Gem composite rating | Single number that blends 7 dimensions — FPL tools rarely combine all dimensions in one score | HIGH | Scoring: fixture difficulty (custom FDR) + form (per-90 normalised) + xG/xA + ownership% + minutes reliability + set piece role + DefCon likelihood |
-| DefCon hit rate & distance-to-threshold | New 2025/26 rule; no major tool has dedicated DefCon analysis yet | MEDIUM | Per-match threshold check from `element-summary` history; separate DEF (10) vs MID/FWD (12) tables |
-| Transfer suggestions with budget enforcement | Most tools show who's good; few show who's actually affordable for *your* squad | HIGH | Uses `selling_price` from auth + bank balance; enforces position lock; ranks by Gem score improvement |
-| DefCon hypothesis: tough vs easy fixtures | Tests whether defenders genuinely earn more DefCon vs weak attacks | MEDIUM | Correlate per-match DefCon data with opponent strength |
-| xG/xA from Understat (not FPL built-in) | Understat xG is shot-level and more granular than FPL's own expected stats | MEDIUM | Requires Python pipeline + player ID mapping |
-| Multi-transfer combinations | Shows 2-transfer combos ranked by total improvement, not just single swaps | HIGH | Combinatorial — limit to manageable search space |
+| Projected-pts delta as primary transfer signal | v1.0 uses gem_score delta — an abstract composite. Projected-pts delta is directly meaningful: "this transfer gains you +3.2 points next GW". No other free tool surfaces this from your specific squad. | MEDIUM | Requires `projected_pts_next_gw` in pipeline. Delta = projected(buy) − projected(sell). Replaces `gem_delta` as primary ranking key in `computeTransferSuggestions`. Existing sort structure is unchanged. |
+| xMins grounded in FPL API data (not third-party team news) | Commercial tools (fplreview, FFScout) source team news from external feeds. Our xMins derives from the same FPL API data the rest of the app uses. Transparent, consistent, no extra scraping dependency. | LOW | `starts` and `minutes` fields are already in `MergedPlayer`. Trailing window calculation is simple arithmetic. |
+| Explainability panel: per-component breakdown | Showing "xG component: +2.1 pts, fixture bonus: +0.8 pts, clean sheet: +0.6 pts, minutes risk: −0.5 pts" is rare in free tools. Builds manager trust in the recommendation and teaches the model's logic. | MEDIUM | Python pipeline must emit `projected_pts_components: { appearance, clean_sheet, attacking, fixture_adj }` alongside the total. UI renders as a collapsible breakdown panel. |
+| Risk flags as structured, actionable signals | FPL's `news` field is unstructured text ("Hamstring injury, 50% chance of playing"). Structured flags ("rotation_risk", "regression_risk", "fixture_swing") are higher-signal and filterable. | MEDIUM | Rule-based derivation from existing fields: status field maps to injury/suspension flags; xG vs goals gap → regression_risk; fixture difficulty swing over next 3 GWs → fixture_swing; xMins tier Rotation/Cameo → rotation_risk. No new data needed. |
+| "Why this player" reasons list per recommendation | Translates algorithm logic to natural-language bullets: "Strong upcoming fixture (Easy)", "Nailed starter (88 xMins)", "Top-3 captaincy candidate", "Rotation risk — 54 xMins". Rare in free tools, present in premium tools (FPL Assist, Scout AI). | LOW (after all signal components exist) | Template-driven string assembly — deterministic, not LLM-based. One reason string per active signal. Renders as a tooltip or side panel per player row. |
+| Projected captain points displayed explicitly | Most tools show base projected pts and let the user mentally double. Showing "projected captain pts: 14.6" removes a cognitive step. Differentiator at zero cost once projected_pts exists. | LOW | Field: `projected_captain_pts = projected_pts_next_gw * 2`. Single addition to captaincy output. |
+| FPL login for exact selling price | All free tools use `now_cost` as sell-price proxy. Actual `selling_price` from `/api/my-team` can differ by up to £0.5m for rising players. Exact sell price means exact budget calculation. | MEDIUM | Session-cookie POST to `users.premierleague.com/accounts/login/`. Returns `selling_price` per pick. Server-side only; credentials never persisted; sessions are request-scoped. Existing `/api/fpl/[...proxy]` pattern is the right architectural model. |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| Real-time match data | "I want to see who's scoring live" | FPL data updates post-match, not live; real-time adds streaming infrastructure for negligible benefit over daily refresh | Show last-updated prominently; add manual refresh trigger |
-| Live price change predictions | "Tell me who's about to rise" | Price prediction requires modelling transfer patterns; community tools (e.g. FPL Changes) do this better with dedicated data | Link out to FPL Changes; show current price and recent trend only |
-| Chip strategy recommendations | "Tell me when to use Wildcard/Free Hit" | Requires opponent modelling, season-long projections — out of scope and gets stale fast | Detect chip state and surface it; don't recommend chip timing |
-| Historical season comparison | "How does this player compare to last season?" | Understat historical data available but adds pipeline complexity; FPL team changes between seasons make it hard to interpret | Focus on current-season form windows; add historical as v2 |
-| Mini-league analysis | "Show me how to beat my rivals" | Requires fetching each rival's squad — N×1 API calls; data mostly uninteresting | Out of scope v1; personal squad optimisation only |
+| ML-based point projection (LSTM, XGBoost) | Sounds more accurate; users see "AI-powered" branding on commercial tools | Training/retraining infrastructure required; model drift mid-season without monitoring; FPL dataset is small (38 GW/season). OpenFPL arXiv paper (2508.09992) shows ensemble ML only *matches* well-calibrated formula tools — it does not beat them on a per-GW basis. Adds opacity with no proven accuracy gain. | Deterministic formula: xG/90 × position_attack_pts + xA/90 × assist_pts + clean_sheet_probability × cs_pts + appearance_pts, scaled by xMins/90. Transparent, reproducible, community-standard accuracy. |
+| Projected-points confidence interval / range | "Salah: 7–14 pts" sounds statistically sophisticated | Hard to communicate in UI; managers make the same decision from a point estimate; ceiling adds cognitive load without changing the action. Commercial tools that show ranges (fplreview simulation) require 1,000 simulation runs — overkill for a personal tool. | Show ceiling as a secondary signal only in the captaincy panel (captaincy is the one decision where upside vs safety trade-off matters). Use a single projected_pts value everywhere else. |
+| Live in-match projected points | "Update my captain recommendation mid-match" | Data refreshes daily by design (PROJECT.md out-of-scope). Polling the FPL API intra-match risks rate limiting and requires real-time infrastructure. | Show `last_updated` timestamp prominently. Pre-deadline projection covers 100% of the decisions managers need to make. |
+| Automated captain pick / lineup submission | "Just tell me who to captain" | FPL terms of service prohibit automated team management via third-party apps. Also, the tool lacks context the manager has (personal risk tolerance, chip plans, double GW strategy). | Top-5 captaincy ranking with safe/differential labels gives the signal; manager makes the call. |
+| Persistent FPL session / stored credentials | Convenience — avoid re-entering login each visit | Storing session cookies creates a credential exposure risk. FPL sessions expire regularly regardless. Persistent storage adds a security attack surface this personal tool doesn't need. | Session-scoped login only. Credentials handled server-side per request. Session ends on page reload. Never written to Blob, DB, or localStorage. |
+| Multi-step transfer planner (3+ GW chip lookahead) | Elite FPL managers want long-horizon planning | Requires Wildcard/Free Hit/Triple Captain chip logic, double/blank GW detection, and a constraint solver — complexity of its own milestone. v1.0 chip guard warns when chips are active but doesn't plan around them. | Defer to v2. v1.1 focus is actionable single-week signals. |
 
 ---
 
 ## Feature Dependencies
 
 ```
-Data pipeline (FPL + Understat fetch + merge)
-    └──required by──> ALL features below
+[Pipeline: projected_pts_next_gw + components]
+    └──required by──> [Projected Points 3GW/5GW]
+    └──required by──> [Projected-pts delta in transfer suggestions]
+    └──required by──> [Captaincy top-5]
+    └──required by──> [Captaincy: projected captain pts 2x]
+    └──required by──> [Explainability: contributor breakdown]
 
-FPL proxy (server-side Route Handlers)
-    └──required by──> Squad view, Transfer suggestions, Bank balance
+[Pipeline: xMins + start_probability]
+    └──required by──> [Minutes risk badge]
+    └──feeds into──>  [projected_pts (gates minutes component)]
+    └──required by──> [Safe vs differential captain split]
+    └──required by──> [Risk flag: rotation_risk]
 
-Player ID mapping (FPL ↔ Understat)
-    └──required by──> xG/xA display, Gem composite score
+[Risk flags]
+    └──required by──> [Explainability: "Why this player" reasons]
+    └──enhances──>    [Buy/Hold/Sell confidence] (SELL more confident when rotation_risk present)
 
-Squad view (Team ID input)
-    └──required by──> Transfer suggestions, Sell price accuracy
-    └──enhanced by──> FPL login (unlocks bank balance + selling_price)
+[FPL Login — session cookie]
+    └──required by──> [Exact selling_price from my-team]
+    └──enhances──>    [Transfer suggestions: accurate budget]
+    └──independent of all other v1.1 features]
 
-Gem composite score
-    └──required by──> Transfer suggestions (ranks replacements by Gem delta)
-    └──requires──> xG/xA (from Understat), custom FDR, per-90 form
+[Existing: MergedPlayer.fixtures[] with difficulty_score]
+    └──already supports──> [Projected Points per-GW fixture weighting]
+    └──already supports──> [3GW/5GW aggregation]
 
-Custom FDR (xG/xGA-based)
-    └──required by──> Gem composite score, Fixture display
-    └──requires──> Understat team-level xGA data OR FPL goals conceded history
+[Existing: MergedPlayer.xg_per90, xa_per90]
+    └──already supports──> [Projected Points attacking component]
 
-DefCon hit rate
-    └──requires──> Per-match element-summary history (not bootstrap-static season totals)
-    └──independent of──> Understat (DefCon data is FPL-native)
+[Existing: MergedPlayer.starts, minutes, minutes_per90]
+    └──already supports──> [xMins calculation]
 
-Transfer suggestions
-    └──requires──> Squad view + Gem scores + budget (selling_price or estimated)
-    └──enhanced by──> FPL login (exact selling prices vs estimated)
+[Existing: computeTransferSuggestions output]
+    └──extended by──>     [projected_pts_delta replaces gem_delta as sort key]
+    └──drives──>          [Buy/Hold/Sell label derivation]
+
+[Existing: selected_by_percent]
+    └──already supports──> [Captaincy differential split]
 ```
 
 ### Dependency Notes
 
-- **All features require pipeline**: No feature can be built without the Python pipeline writing to Blob first.
-- **Transfer suggestions require Gem scores**: Suggestions rank replacements by Gem improvement — Gem scoring must be complete first.
-- **xG/xA requires player ID mapping**: Building the mapping file (`player_id_map.json`) is a one-time manual task that gates all Understat-dependent features.
-- **DefCon hit rate is FPL-only**: It does NOT require Understat. It can be built independently in parallel with xG/xA work.
-- **Squad view enhances but doesn't block**: Gem table, DefCon table, and club form work without the user providing a Team ID.
+- **Build pipeline first**: `projected_pts_next_gw` gates 80% of v1.1 features. New Python module (`projections.py`) must run inside `pipeline/run.py` before any UI work starts.
+- **xMins is an input to projected points**: compute xMins and start_probability in the same pipeline pass as projected_pts (or in a prerequisite step). They share the same trailing-window data.
+- **3GW/5GW projection is near-free**: once per-GW formula exists, summing across `fixtures[]` entries is three lines of Python.
+- **Auth is fully independent**: AUTH-01/02 can be built at any point without blocking or being blocked by other v1.1 features. Build last — it's a standalone Route Handler.
+- **Explainability is a consumer, not a producer**: the panel reads already-computed values (projected_pts components, risk flags, xMins tier). Build after all other pipeline fields are present.
+- **Risk flags need no new data**: all inputs (status, xG vs goals gap, fixture difficulty swing, xMins) are already in `MergedPlayer`. Pure derivation logic, can be computed in TypeScript or Python.
 
 ---
 
 ## MVP Definition
 
-### Launch With (v1) — What's in PROJECT.md
+This is a subsequent milestone (v1.1), not a greenfield MVP. All 6 feature groups from PROJECT.md v1.1 requirements are in scope. The question is build order, not whether to include.
 
-- [x] **Data pipeline** — FPL + Understat fetch, merge, upload to Blob daily. Gate for everything.
-- [x] **Player API** — `/api/players` serving merged + scored player data.
-- [x] **Gem rating table** — sortable/filterable table with composite score per player. Core value.
-- [x] **DefCon analysis** — separate DEF / MID+FWD tables; hit rate, avg contributions, distance-to-threshold.
-- [x] **Squad view** — enter Team ID, see your squad with prices, flags, and Gem scores.
-- [x] **Transfer suggestions** — ranked by Gem delta, budget-enforced, position-locked.
-- [x] **Club form table** — wins/goals/conceded over last N games.
-- [x] **Value/cheap gems** — low-owned high-scorers; price trend.
-- [x] **Player signals** — xG/xA per 90, minutes reliability, injury flag, set piece notes (text).
+### Launch With (v1.1 — all requirements must ship)
+
+- [ ] PROJ-01: Projected points next GW (gates all other features)
+- [ ] PROJ-02/03: Projected points 3GW / 5GW (near-zero incremental cost after PROJ-01)
+- [ ] MINS-01: xMins + start probability (input to projected pts; surface independently in squad view)
+- [ ] MINS-02: Minutes risk badge (trivial derivation from xMins; high-visibility UX signal)
+- [ ] REC-01: Buy/Hold/Sell label per squad player (rule layer over existing transfer engine)
+- [ ] REC-02: Replacement shortlist with projected-pts delta (upgrade gem_delta signal)
+- [ ] CAP-01: Captaincy top-5 (direct sort on projected_pts, already in pipeline by this point)
+- [ ] CAP-02: Safe vs differential captain split (rule on top of CAP-01)
+- [ ] EXP-01: Explainability panel with reasons (template-driven; all data already computed)
+- [ ] EXP-02: Risk flags (rule-based from existing fields)
+- [ ] AUTH-01/02: FPL login + exact selling price (isolated; build last)
 
 ### Add After Validation (v1.x)
 
-- [ ] **FPL login** — unlocks exact selling prices and transfer count. High value but more complexity (cookie-jar auth).
-- [ ] **Multi-transfer combos** — "who are the best 2 transfers" combinatorial suggestions. Requires Gem scores to exist first.
-- [ ] **DefCon hypothesis** — tough vs easy fixture DefCon correlation. Needs at least a full season of per-match data.
-- [ ] **Custom FDR visualisation** — show the custom FDR vs official FDR side-by-side for transparency.
+- [ ] Per-GW breakdown in 3GW/5GW view — show fixture-by-fixture table, not just sum. Add if users find the aggregate confusing.
+- [ ] Projected captain pts ceiling display — add if captaincy panel gets heavy use and users want upside context.
 
 ### Future Consideration (v2+)
 
-- [ ] **Historical season comparison** — cross-season xG/xA trends. Adds pipeline complexity.
-- [ ] **Price prediction** — community-quality prediction needs transfer modelling beyond scope here.
-- [ ] **Mobile-optimised layout** — web-first for v1; responsive polish post-launch.
+- [ ] Multi-transfer planner with chip activation — requires constraint solver; out of scope v1 (PROJECT.md)
+- [ ] ML-based projection model — only useful once formula baseline is established and its limitations known
 
 ---
 
@@ -142,49 +154,87 @@ Transfer suggestions
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Data pipeline (FPL + Understat) | HIGH | HIGH | P1 — gates everything |
-| Gem rating table | HIGH | MEDIUM | P1 — core value |
-| Squad view (Team ID) | HIGH | LOW | P1 — personalisation anchor |
-| DefCon analysis tables | HIGH | MEDIUM | P1 — differentiator (new rule) |
-| Transfer suggestions | HIGH | HIGH | P1 — core value |
-| Player xG/xA display | MEDIUM | MEDIUM | P1 — differentiator |
-| Club form table | MEDIUM | LOW | P1 — table stakes |
-| Injury/flag display | HIGH | LOW | P1 — table stakes |
-| Cheap gems / low-owned | MEDIUM | LOW | P1 — table stakes |
-| Minutes reliability | MEDIUM | LOW | P1 — input to Gem score |
-| Custom FDR | MEDIUM | MEDIUM | P1 — required for accurate Gem |
-| FPL login (selling prices) | HIGH | HIGH | P2 — enhances transfers |
-| Multi-transfer combos | MEDIUM | HIGH | P2 — after core transfers work |
-| DefCon hypothesis analysis | LOW | MEDIUM | P2 — research feature |
-| Set piece flag (structured) | LOW | HIGH | P3 — text field only; unreliable |
-| Historical comparison | LOW | HIGH | P3 — complex; defer |
+| Projected pts next GW — PROJ-01 | HIGH | MEDIUM | P1 — gates everything |
+| xMins / start probability — MINS-01 | HIGH | LOW | P1 — input to PROJ-01 |
+| Minutes risk badge — MINS-02 | HIGH | LOW | P1 — high-visibility, near-free |
+| Projected pts 3GW/5GW — PROJ-02/03 | HIGH | LOW (after PROJ-01) | P1 |
+| Buy/Hold/Sell labels — REC-01 | HIGH | LOW | P1 |
+| Replacement shortlist w/ pts delta — REC-02 | HIGH | MEDIUM | P1 |
+| Captaincy top-5 — CAP-01 | HIGH | LOW (after PROJ-01) | P1 |
+| Safe vs differential split — CAP-02 | MEDIUM | LOW | P1 |
+| Risk flags — EXP-02 | MEDIUM | LOW | P2 |
+| Explainability panel — EXP-01 | MEDIUM | LOW (after all pipeline fields) | P2 |
+| FPL login / exact sell price — AUTH-01/02 | MEDIUM | MEDIUM | P2 |
+| Projected captain pts 2x display | LOW | LOW | P3 |
+
+**Priority key:**
+- P1: Core decision-engine — v1.1 is not done without these
+- P2: Trust and polish — adds meaningfully but launch is viable without
+- P3: Cosmetic enhancement — low cost, low urgency
 
 ---
 
 ## Competitor Feature Analysis
 
-| Feature | FPL Core (fplcore.com) | Fantasy Football Scout | Our Approach |
-|---------|----------------------|----------------------|--------------|
-| Player comparison | Side-by-side stats UI | Detailed stats tables | Gem composite score collapses comparison to one actionable number |
-| Fixture difficulty | Official FDR colours | Custom FDR with analyst notes | Computed custom FDR from xG/xGA; no manual editorial layer needed |
-| Transfer suggestions | Manual comparison | Scout picks (editorial) | Algorithmic: ranked by Gem delta + budget enforcement |
-| DefCon analysis | Not available | Basic defensive stats | Full DefCon hit rate, threshold distance, position-split tables |
-| xG/xA | FPL built-in only | Opta stats (paid) | Understat (free, shot-level) via soccerdata |
-| Squad-aware transfers | No | No | Yes — uses your selling prices, your bank balance |
+| Feature | fplreview (premium) | Fantasy Football Scout | FPL Form (free) | Our Approach |
+|---------|---------------------|----------------------|-----------------|--------------|
+| Projected points | xPts with 1,000-simulation distribution; editable xMins | Season projections (editorial + algo hybrid) | Single GW projection, next-GW only | Formula: xG/90 × attack_pts + xA/90 × assist_pts + CS_prob × cs_pts + appearance_pts, scaled by xMins. Transparent, reproducible. |
+| xMins model | Detailed probabilistic model; editable per fixture; uses external team news | Not offered | Not offered | Trailing window: `starts_last_n / games_played_last_n × 90`. No external feed dependency. |
+| Minutes risk labels | Implicit in xMins value only — no badge | Injury flags from FPL status only | None | 4-tier badge: Nailed / Likely / Rotation / Cameo. Derived from xMins thresholds. Displayed in squad view and transfer panel. |
+| Buy/Hold/Sell | Solver output — complex, premium feature | Human editorial picks | None | Rule-based from projected-pts delta and budget check. Built on top of existing transfer engine. |
+| Captaincy ranking | Full captaincy planner with EO stats | Weekly editorial "Top 3" with stats overlay | None | Top-5 by projected captain pts (2×), safe/differential split. No editorial layer. |
+| Explainability | No — black-box solver output | No | No | Structured reasons list per player. Template-driven from computed signals. Rare in free tools. |
+| FPL login / exact sell price | First-class — central to solver accuracy | Not offered | Not offered | Optional, request-scoped, server-side. Returns `selling_price` for exact budget in transfer calculations. |
+
+---
+
+## Implementation Notes: New Fields Required
+
+### Python Pipeline (`projections.py` — new module)
+
+Fields to add to each player record in `merged_players.json`:
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `projected_pts_next_gw` | `float` | Core formula output |
+| `projected_pts_3gw` | `float` | Sum of next 3 per-GW projections using `fixtures[]` |
+| `projected_pts_5gw` | `float` | Sum of next 5 per-GW projections |
+| `projected_pts_components` | `object` | `{ appearance, clean_sheet, attacking, fixture_adj }` — for explainability |
+| `xmins` | `float` | Expected minutes 0–90, trailing window |
+| `start_probability` | `float` | 0.0–1.0 |
+| `minutes_risk` | `string` | `'nailed' \| 'likely' \| 'rotation' \| 'cameo'` |
+| `risk_flags` | `string[]` | e.g. `['rotation_risk', 'regression_risk', 'fixture_swing']` |
+
+### TypeScript Extensions
+
+- Extend `MergedPlayer` in `src/lib/types.ts` with above fields
+- Extend `ScoredPlayer` with `projected_pts_next_gw` (for use as transfer sort key)
+- New lib: `src/lib/captaincy.ts` — `computeCaptaincyRankings(players, squadIds)`
+- New lib: `src/lib/explainability.ts` — `buildReasons(player): string[]`
+- Extend `computeTransferSuggestions` to use `projected_pts_delta` alongside/replacing `gem_delta`
+- New Route Handler: `/api/fpl-login` — POST handler, session-scoped, server-side only
+
+### Component Extensions
+
+- Squad view: add xMins column + risk badge per player
+- Transfer panel: show BUY/HOLD/SELL badge + top reason per squad player
+- New component: `CaptaincyPanel` — top-5 with projected captain pts, safe/differential label
+- New component: `ExplainabilityPanel` — "Why this player" drawer or tooltip
 
 ---
 
 ## Sources
 
-- FPL API bootstrap-static field list: confirmed via PITFALLS.md + [FPL API Guide — UK Retro Gaming](https://ukretrogaming.co.uk/blogs/blog/a-complete-guide-to-the-fantasy-premier-league-fpl-api)
-- DefCon fields (`defensive_contributions`, `clearances_blocks_interceptions`): [What's new in 2025/26 Fantasy — Premier League official](https://www.premierleague.com/en/news/4361991/whats-new-in-202526-fantasy-defensive-contributions)
-- Understat coverage (EPL from 2014/15): [soccerdata Understat docs — DeepWiki](https://deepwiki.com/probberechts/soccerdata/3.5-understat-and-sofascore-scrapers)
-- Set piece flag limitation: confirmed from `bootstrap-static` field inspection — no boolean flag exists, only `news` text
-- Selling price formula and `my-team` endpoint: PITFALLS.md Pitfall 3
-- Custom FDR rationale: PITFALLS.md Pitfall 8
-- Transfer position rules: PROJECT.md context section
+- [fplreview xMins documentation](https://docs.fplreview.com/the-model/projections/xmins/) — xMins as probability-weighted average across 1,000 simulations; rotation risk implicit in value (HIGH confidence — official tool docs)
+- [OpenFPL open-source forecasting paper (arXiv 2508.09992)](https://arxiv.org/html/2508.09992v1) — position-specific ensembles, feature architecture (player/team/opponent/match-status), categorical availability from FPL API, performance categories (Zeros/Blanks/Tickers/Haulers) (HIGH confidence — peer-reviewed arXiv preprint)
+- [Marcus Leadboot — Modelling xPts in FPL v1](https://medium.com/@marcusleadboot/modelling-xpts-in-fpl-gameweek-1-01fd2179eac6) — four-component formula: xMinDisc, xPtDef, xPtNoAdj, fixture adjustment via FPL strength ratings (MEDIUM confidence — community methodology article)
+- [Fantasy Football Fix — xFPL explainer](https://support.fantasyfootballfix.com/support/solutions/articles/202000055995-what-is-expected-fpl-points-xfpl-) — xFPL = xG + xA + xCS + appearance/bonus (MEDIUM confidence — commercial tool documentation)
+- [FPL Gameweek — Effective Ownership explained](https://www.fplgameweek.com/articles/fpl-effective-ownership/) — EO formula (selected + captained + triple captained / total teams) and differential captaincy strategy (MEDIUM confidence — community article)
+- [Oliver Looney — FPL APIs Explained](https://www.oliverlooney.com/blogs/FPL-APIs-Explained) — my-team endpoint structure, cookie authentication pattern (MEDIUM confidence — community guide, 2024)
+- [FPL API authentication guide (Bram Vanherle)](https://medium.com/@bram.vanherle1/fantasy-premier-league-api-authentication-guide-2f7aeb2382e4) — login endpoint, required cookie names (LOW confidence — 2019 article; API may have evolved, but endpoint structure appears stable per 2024 community usage)
+- Existing codebase: `src/lib/types.ts`, `src/lib/transfer-engine.ts`, `pipeline/merge.py`, `pipeline/run.py` — authoritative ground truth for available data fields and architecture patterns (HIGH confidence)
 
 ---
 
-*Feature research for: FPL analytics web app*
-*Researched: 2026-03-26*
+*Feature research for: FPL Analyst v1.1 Decision Engine*
+*Researched: 2026-03-29*

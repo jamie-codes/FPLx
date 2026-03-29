@@ -1,17 +1,17 @@
 # Project Research Summary
 
-**Project:** FPL Analyst
-**Domain:** Personal FPL analytics web app (squad optimisation tool)
-**Researched:** 2026-03-26
+**Project:** FPL Analyst — v1.1 Decision Engine
+**Domain:** Personal FPL analytics web app — projected points, minutes risk, recommendations, captaincy, explainability, FPL auth
+**Researched:** 2026-03-29
 **Confidence:** HIGH
 
 ## Executive Summary
 
-FPL Analyst is a personal squad-management tool that merges two data sources — the FPL API (player data, prices, ownership, DefCon stats, squad picks) and Understat (shot-level xG/xA via soccerdata) — into a single ranked view of which players to target and which to sell. The recommended approach is a two-runtime architecture: a Python pipeline (soccerdata + requests + pandas) runs daily via GitHub Actions, writes scored JSON to Vercel Blob, and a Next.js 16 app serves that cached data through Route Handler endpoints to a React/TanStack/shadcn/ui frontend. No database is needed. This is the minimal viable architecture for a single-user analytics tool — adding more infrastructure would be over-engineering.
+FPL Analyst v1.1 is a well-scoped extension to an established personal analytics tool. The v1.0 foundation (Next.js 16 / React 19 / Python pipeline / Vercel Blob) is proven and does not require re-evaluation. The v1.1 work adds a decision engine on top of that foundation: projected points per player, minutes risk classification, buy/hold/sell recommendations, captaincy rankings, an explainability layer, and optional FPL session-cookie login for exact selling prices. All six feature groups are required for milestone completion — none are optional.
 
-The recommended stack is sound and well-matched to the constraints. Next.js is the correct choice specifically because the FPL API blocks direct browser requests via CORS — Route Handlers provide a server-side proxy for free. The Python pipeline is justified because no maintained Node.js equivalent exists for Understat scraping. The file-based JSON cache (Vercel Blob) is appropriate for data that refreshes once daily. All major technologies (Next.js 16, Tailwind v4, shadcn/ui, TanStack Query v5, soccerdata 1.8.8) are confirmed stable as of March 2026.
+The recommended approach is pipeline-first. The Python pipeline must be extended first with two new modules (`projections.py` and `xmins.py`) that emit projected points and expected minutes fields into the existing `merged_players.json`. Every other v1.1 feature is either a direct consumer of those fields (captaincy, explainability, risk badges) or an independent feature that can be built in parallel at the end (FPL auth). The buy/hold/sell recommendation engine belongs in TypeScript (`recommend.ts`) because it is squad-relative and requires runtime user data. The projection formula must use a scenario-weighted model rather than a naive linear minutes multiplier — this is the single most important correctness decision in the milestone.
 
-The principal risks are not architectural but data-layer: the FPL/Understat player ID mismatch will silently corrupt xG/xA for roughly 20% of players if not addressed upfront; the sell price logic (50% profit tax, rounded down) will cause transfer budget errors if using `now_cost` instead of `selling_price`; and the custom FDR must be built from scratch — the official FPL FDR is well-documented as unreliable. All three of these must be resolved in the foundation phase, not retrofitted later.
+The primary risks are: (1) the xPts formula using a naive linear xMins multiplier, which is incorrect due to FPL's non-linear scoring cliffs at 60 minutes; (2) rotation risk badges misclassifying injury-returning players as rotation risks because raw historical minutes are indistinguishable from a genuine rotation pattern without `status`/`news` context; (3) the buy/hold/sell classifier conflicting with the existing transfer engine if built independently rather than sharing the same gem_score source of truth; and (4) the FPL login being accidentally added to the automated pipeline cron job, which violates FPL terms of service and risks account bans. All four risks are avoidable with deliberate design at phase start.
 
 ---
 
@@ -19,202 +19,156 @@ The principal risks are not architectural but data-layer: the FPL/Understat play
 
 ### Recommended Stack
 
-Next.js 16 (App Router) is the full-stack framework. It handles both the React frontend and the FPL proxy — all calls to `fantasy.premierleague.com/api/` go through Next.js Route Handlers server-side, which completely sidesteps the CORS block. Tailwind CSS v4 and shadcn/ui provide the component layer; TanStack Table v8 handles the sortable/filterable data tables that are the core UI pattern; TanStack Query v5 manages client-side caching (staleTime=6h, matching the daily refresh cadence). The Python pipeline is an entirely separate runtime running in GitHub Actions — it is not part of the Next.js deploy.
+The stack requires only two new pip additions: `scikit-learn>=1.8.0` (logistic regression for the xMins start-probability model) and `scipy>=1.15.0` (explicit pin to prevent transitive version drift). No new npm packages are needed — shadcn/ui components (Badge, Collapsible, Tooltip, Card) cover all new UI primitives using Radix UI that is already a transitive dependency. FPL auth requires no new library — the existing `requests.Session()` pattern is the correct implementation; the `fpl` PyPI library is unmaintained (last release August 2023) and must not be used.
 
 **Core technologies:**
-- Next.js 16 (App Router): full-stack framework + FPL proxy — mandatory to bypass CORS
-- Python 3.11 + soccerdata 1.8.8: Understat xG/xA pipeline — no Node.js equivalent exists
-- Vercel Blob: persistent JSON cache between pipeline runs — free tier, Vercel-native
-- TanStack Table v8 (via shadcn/ui): sortable/filterable tables — core UI pattern for this app
-- TanStack Query v5: client data fetching + 6h stale cache — avoids redundant fetches
-- Recharts: fixture heatmaps and form trend lines — direct (not Tremor wrapper)
-- TypeScript 5.x + Zod: API boundary validation — catches FPL field renames loudly
+- `scikit-learn>=1.8.0` (NEW): xMins logistic regression — calibrated `predict_proba()`, interpretable, ~30 MB pipeline-only dep; version 1.8.0 confirmed on PyPI December 2025
+- `scipy>=1.15.0` (NEW): explicit pin for weighted ranking computation — currently an unpinned transitive dep; must be pinned to prevent drift
+- `shadcn/ui Collapsible` (add component): per-row explainability panel — independent-expand semantics, correct for comparing multiple players simultaneously
+- `requests.Session()` (existing): FPL session-cookie auth — 10-line implementation, no maintenance risk, consistent with existing `fpl_client.py` pattern
 
-See `.planning/research/STACK.md` for full rationale and alternatives considered.
+**What NOT to add:**
+- XGBoost / LightGBM: overkill for ~600-player tabular dataset; logistic regression is the correct model size; adds 200+ MB dep
+- `amosbastian/fpl` or `fpl-api`: unmaintained; adds abstraction without benefit
+- `tough-cookie` / Node.js cookie jar: unnecessary if auth is delegated to the Python pipeline route
 
 ### Expected Features
 
-**Must have (table stakes):**
-- Player list with price, ownership, form, and injury status
-- Fixture difficulty display (custom xG/xGA-based FDR, NOT official FDR)
-- Squad view via Team ID input
-- Sort/filter by position
-- "Last updated" timestamp on all data views
+All 11 feature requirements (PROJ-01/02/03, MINS-01/02, REC-01/02, CAP-01/02, EXP-01/02, AUTH-01/02) must ship in v1.1. There are no optional features in this milestone.
 
-**Should have (differentiators):**
-- Gem composite rating — 7-dimension score (fixture difficulty, form per-90, xG/xA, ownership, minutes reliability, set piece role, DefCon likelihood)
-- DefCon analysis — per-position hit rate tables (DEF threshold=10, MID/FWD threshold=12); uses per-match `element-summary` history, not season aggregates
-- Transfer suggestions — ranked by Gem delta, enforces position-lock, uses `selling_price` (not `now_cost`) for budget
-- Club form table — wins, goals scored/conceded over rolling window
-- Value/cheap gems — low-owned high-scorers
+**Must have (table stakes — users of comparable tools expect these):**
+- Projected points next GW (PROJ-01) — gates all other features; every major FPL tool shows this
+- Projected points 3GW + 5GW (PROJ-02/03) — near-zero cost once PROJ-01 exists; `fixtures[]` already holds next 5 entries
+- xMins + 4-tier minutes risk badge (MINS-01/02) — industry-standard signal; Nailed/Likely/Rotation/Cameo tiers from xMins thresholds (75/55/30)
+- Buy/Hold/Sell label per squad player (REC-01) — managers expect a verdict on their own players
+- Replacement shortlist with projected-pts delta (REC-02) — replaces abstract gem_delta with a directly meaningful points gain
+- Captaincy top-5 with safe/differential split (CAP-01/02) — universal weekly feature at zero incremental cost once projected_pts exists
 
-**Defer to v1.x:**
-- FPL login for exact selling prices and transfer count (enhances transfers; not required for core value)
-- Multi-transfer combinations (requires Gem scores to exist first)
-- DefCon hypothesis analysis (tough vs easy fixture correlation)
+**Should have (differentiators this tool adds that comparable free tools lack):**
+- Explainability panel with per-player natural-language reasons (EXP-01) — rare in free tools; builds manager trust
+- Structured risk flags (EXP-02) — rotation_risk, regression_risk, fixture_swing, injury_concern — filterable and actionable
+- FPL login for exact selling price (AUTH-01/02) — free tools use `now_cost` as proxy; exact price matters for tight budget windows
 
-**Defer to v2+:**
-- Historical season comparison, price prediction, mobile-optimised layout
-
-See `.planning/research/FEATURES.md` for full dependency tree and prioritisation matrix.
+**Defer to v1.x / v2+:**
+- Per-GW fixture breakdown in 3GW/5GW view — add if users find aggregate confusing
+- Multi-transfer planner with chip activation — requires constraint solver; out of scope v1
+- ML-based projection (LSTM/XGBoost) — only warranted after formula baseline is established
 
 ### Architecture Approach
 
-The system has a clean separation between an async data pipeline and a synchronous web app. The pipeline writes to Vercel Blob; the Next.js app reads from it. They never communicate directly. The key architectural boundaries are: (1) a `lib/fpl-adapter.ts` module that is the sole owner of raw FPL field names — downstream code uses internal domain types only; (2) scoring logic lives in `pipeline/scoring.py` (pre-computed at pipeline time) with a TypeScript port for client-side re-ranking; (3) Route Handlers do not call the FPL API directly on each request — they serve from Blob.
+v1.1 follows the established v1.0 pattern (Python pipeline writes to Vercel Blob; Next.js Route Handlers serve JSON; TanStack Query hydrates React) with two new data flows added on top. The first extends `merged_players.json` with projected points and xMins fields computed at pipeline time — the correct location for any computation requiring element-summary history (700 HTTP calls). The second adds a new `/api/my-team` Route Handler for session-scoped FPL auth that never persists credentials or session cookies beyond a single request lifecycle.
 
 **Major components:**
-1. `pipeline/` (Python) — fetch FPL + Understat, merge on `player_id_map.json`, compute scores, upload JSON to Blob
-2. `src/app/api/` (Next.js Route Handlers) — serve cached JSON from Blob; proxy live FPL calls (squad/picks endpoint)
-3. `src/components/` (React) — GemTable, DefConTable, TransferPanel, SquadView via TanStack Query hooks
-4. `src/lib/fpl-adapter.ts` — isolates all FPL API field names; Zod schema validates at ingestion boundary
-5. GitHub Actions cron — triggers `pipeline/run.py` daily
+1. `pipeline/projections.py` (NEW) — scenario-weighted xPts for 1/3/5 GW windows; DGW-aware
+2. `pipeline/xmins.py` (NEW) — expected minutes and start_prob; injury-aware using `status` + `news`; reuses element-summary cache from defcon.py
+3. `pipeline/run.py` (MODIFIED) — shared element-summary cache passed to both defcon.py and xmins.py; prevents doubling 700 HTTP calls
+4. `src/lib/recommend.ts` (NEW) — pure TypeScript buy/hold/sell engine consuming `ScoredPlayer[]`; derives from same gem_score source as `transfer-engine.ts`
+5. `src/lib/captaincy.ts` (NEW) — pure TypeScript captaincy ranking; DGW-aware; safe/upside split on start_prob + fixture, not ownership
+6. `src/app/api/my-team/route.ts` (NEW) — FPL session-cookie login; server-side only; credentials discarded after single request
+7. Extended `MergedPlayer` TypeScript type — `proj_pts_1gw | null`, `proj_pts_3gw | null`, `proj_pts_5gw | null`, `xmins | null`, `start_prob | null`, `mins_risk | null`
 
-See `.planning/research/ARCHITECTURE.md` for data flow diagrams and anti-patterns.
+**Key patterns to follow:**
+- Pipeline computes, TypeScript consumes: no projection math in the frontend
+- Pure-function decision engines: `recommend.ts` and `captaincy.ts` are `(data) => output` with no side effects — trivially Vitest-testable
+- Optional auth enrichment: squad view works without FPL login using approximate bank balance; login enriches but never gates
+- Schema-first: all new per-player analytics fields must be in Python pipeline and `MergedPlayer` simultaneously — never analytics logic in a hook or component
 
 ### Critical Pitfalls
 
-1. **CORS blocks all browser-to-FPL-API calls** — Build the Next.js Route Handler proxy in Phase 1 and never prototype with direct browser fetches. Recovery after the fact is a medium-effort refactor.
+1. **Non-linear xMins multiplier in xPts formula (Pitfall 14)** — FPL scoring has a 60-minute cliff for clean sheets and appearance points. Model as scenario-weighted EV: `xPts = p_start_full × pts_full + p_start_sub60 × pts_sub60 + p_bench × pts_bench`. Build this correctly from the start — do not prototype with linear and plan to fix.
 
-2. **Understat player names do not match FPL names** — Build `player_id_map.json` (FPL ID to Understat ID) before any xG/xA feature. String-match joins silently drop ~20% of players. This gates the Gem score and all Understat-dependent features.
+2. **Injury recovery misclassified as rotation risk (Pitfall 15)** — raw historical minutes cannot distinguish a player returning from injury from a genuine rotation risk. Gate rotation classification on `status == 'a'` with blank `news`; exclude injury-period minutes from the rotation-risk window; show "returning from injury" indicator when recent minutes show a recovery trajectory.
 
-3. **Sell price is NOT the current buy price** — Use `selling_price` from the authenticated `my-team/{id}/` endpoint. Using `now_cost` overestimates available budget by up to £0.2m per player. For unauthenticated mode, label estimates as approximate.
+3. **Buy/Hold/Sell conflicts with transfer engine (Pitfall 18)** — if `recommend.ts` and `transfer-engine.ts` are built independently they will produce contradictory signals side-by-side. Recommendations must derive from the same `gem_score` source of truth as `computeTransferSuggestions`. Design the shared signal path before writing any recommendation code.
 
-4. **DGW/BGW distorts form metrics** — Normalise all stats per 90 minutes, not per gameweek. A player in a Double Gameweek plays twice in one "gameweek" slot; raw gameweek totals make them look twice as hot. This must be designed into the form calculation from the start.
+4. **FPL login in the automated pipeline cron job (Pitfall 20)** — automated logins are known to trigger account flags and bans. Auth must be UI-initiated only (user clicks a button). Never add FPL credentials or session logic to `pipeline/run.py` or any cron-scheduled code.
 
-5. **Official FPL FDR is unreliable** — Compute a custom FDR from rolling xG/xGA (available from FPL stats or Understat). The official `team_h_difficulty` / `team_a_difficulty` fields do not separate attacking vs defensive difficulty and do not update dynamically. Using raw FDR corrupts Gem ratings.
-
-6. **FPL API field names change without notice** — Route all FPL field access through `lib/fpl-adapter.ts` and validate with Zod at the ingestion boundary. Silent `undefined` propagation through scoring produces NaN Gem scores with no error.
-
-See `.planning/research/PITFALLS.md` for all 13 pitfalls, phase mapping, and a "looks done but isn't" checklist.
+5. **Projected points normalised to 0–1 instead of absolute FPL points (Pitfall 23)** — the existing `normalise()` function in `gem-score.ts` must not be applied to projected points. Projected point fields must be in actual FPL point values (2–15 range) for captaincy comparison and explainability to be meaningful.
 
 ---
 
 ## Implications for Roadmap
 
-The feature dependency tree from FEATURES.md maps cleanly onto a 6-phase build. The pipeline must come before any UI; the Gem score must come before transfer suggestions; DefCon can be built in parallel with the Gem work since it is FPL-native and does not depend on Understat.
+The feature dependency graph and build-order analysis from ARCHITECTURE.md suggest six phases. The ordering is driven by two hard constraints: (1) `projected_pts_next_gw` gates 80% of v1.1 features and must be in the pipeline before any dependent UI work starts; (2) FPL auth is fully independent of every other feature and has the highest complexity and security surface area — it should be built last on top of a working recommendation engine.
 
-### Phase 1: Data Foundation
+### Phase 1: Pipeline Schema Extension
 
-**Rationale:** Every feature is blocked until this exists. The CORS proxy, FPL adapter, Blob cache, and player ID mapping must be in place before any UI work begins. Pitfalls 1, 6, 7, 11 all point here.
+**Rationale:** `projected_pts_next_gw` is the single dependency that gates captaincy rankings, buy/hold/sell, replacement delta, and the explainability panel. xMins is a required input to the projected points formula itself. Both must land in the pipeline — and in `MergedPlayer` TypeScript types — before any UI work begins. This phase also establishes the correct scenario-weighted formula and injury-aware xMins classification before either can be done incorrectly in subsequent phases.
 
-**Delivers:**
-- Next.js scaffold with Route Handler FPL proxy (bypasses CORS)
-- Python pipeline: FPL bootstrap-static + fixtures + element-summary fetched and written to Blob
-- `lib/fpl-adapter.ts` with Zod schema validation — the only place that knows FPL field names
-- `player_id_map.json` — manual one-time mapping of FPL player IDs to Understat IDs
-- `last_updated.json` — pipeline staleness tracking
+**Delivers:** Extended `merged_players.json` with `proj_pts_1gw`, `proj_pts_3gw`, `proj_pts_5gw`, `xmins`, `start_prob`, `mins_risk` per player. Updated `MergedPlayer` TypeScript interface. Shared element-summary cache in `run.py`.
 
-**Must avoid:** Calling FPL API from browser (Pitfall 1), string-matching player names (Pitfall 6), hardcoding FPL field names without an adapter (Pitfall 7)
+**Addresses:** PROJ-01, PROJ-02, PROJ-03, MINS-01
 
-**Research flag:** Standard patterns — no additional research needed.
+**Avoids:** Pitfalls 14 (non-linear xMins), 15 (injury vs rotation conflation), 16 (form_pts_per90 double-counting), 17 (analytics in UI layer), 23 (normalisation to 0–1), 25 (DGW double-fixture handling)
 
----
+### Phase 2: Minutes Risk UI
 
-### Phase 2: Understat Pipeline + Merged Data API
+**Rationale:** Surface the new pipeline data immediately as a low-complexity UI component. `MinutesBadge` validates that Phase 1 data is correct (correct labels, correct tier thresholds) before it gets used in decision logic. A visible sanity check at low cost.
 
-**Rationale:** Once the FPL fetch is stable and the ID mapping exists, add the Understat leg and produce the merged player dataset. This unlocks all downstream features. Custom FDR also belongs here.
+**Delivers:** `MinutesBadge` component showing Nailed/Likely/Rotation/Cameo in SquadView and GemTable.
 
-**Delivers:**
-- `pipeline/understat_client.py` using soccerdata 1.8.8 — fetches xG/xA per player
-- `pipeline/merge.py` — joins FPL and Understat on `player_id_map.json`; promotes-team players get null xG (not zero)
-- Custom FDR computed from rolling xGA (not official FDR integers)
-- `merged_players.json` written to Blob
-- `/api/players` Route Handler serving the merged dataset
-- `usePlayers()` TanStack Query hook
+**Addresses:** MINS-02
 
-**Must avoid:** Using official FDR as primary signal (Pitfall 8), DGW form distortion (Pitfall 4), treating null Understat as zero (Pitfall 12)
+**Avoids:** Pitfall 15 (visual confirmation that injury-aware classification is working before it feeds recommendations)
 
-**Research flag:** soccerdata usage is well-documented (STACK.md). No additional research needed.
+### Phase 3: Projected Points Columns
 
----
+**Rationale:** Add `proj_pts_1gw` and `proj_pts_3gw` as sortable columns in GemTable. Validates that projection values are in the correct absolute range (2–15 pts for regular starters) and that DGW players rank correctly. Provides early signal that Phase 1 formula is plausible before it drives recommendation logic.
 
-### Phase 3: Gem Rating Table
+**Delivers:** Projected points columns in GemTable with correct absolute FPL point values and correct DGW ranking.
 
-**Rationale:** The Gem composite score is the core differentiator and a prerequisite for transfer suggestions. It depends on merged data (Phase 2 output). The scoring module belongs in the pipeline.
+**Addresses:** PROJ-01/02/03 surface in UI
 
-**Delivers:**
-- `pipeline/scoring.py` — Gem composite rating (fixture difficulty via custom FDR, form per-90, xG/xA, ownership, minutes reliability, DefCon likelihood, set piece role)
-- Gem scores included in `merged_players.json`
-- `GemTable` React component — sortable/filterable by position using TanStack Table
-- Per-90 normalisation throughout (not per-gameweek)
+**Avoids:** Pitfall 23 (confirms values are absolute, not normalised)
 
-**Must avoid:** Scoring logic in React components (Architecture anti-pattern 2), using raw gameweek counts for form (Pitfall 4)
+### Phase 4: Buy/Hold/Sell + Captaincy Engines
 
-**Research flag:** No additional research needed — scoring dimensions are fully specified in PROJECT.md.
+**Rationale:** Both `recommend.ts` and `captaincy.ts` are pure-function TypeScript engines that consume the Phase 1 pipeline data. They have no dependency on each other and no dependency on FPL auth. Building them before the explainability layer means they are fully functional and Vitest-testable before the UI narrative layer is added.
 
----
+**Delivers:** `recommend.ts` producing `PlayerRecommendation[]` (BUY/HOLD/SELL per squad player with replacement shortlist). `captaincy.ts` producing top-5 `CaptaincyCandidate[]` with safe/upside labels. `CaptaincyPanel` component.
 
-### Phase 4: DefCon Analysis
+**Addresses:** REC-01, CAP-01, CAP-02
 
-**Rationale:** DefCon is independent of Understat (FPL-native fields) so it can be built once the FPL data pipeline is stable. It does NOT depend on Phase 2 Understat merge — it can proceed in parallel with Phase 3 if capacity allows.
+**Avoids:** Pitfall 18 (recommend.ts derives from gem_score shared with transfer engine), Pitfall 21 (captaincy uses DGW-aware formula), Pitfall 26 (percentile-based thresholds within squad), Pitfall 27 (safe = start_prob + fixture, not ownership percentage)
 
-**Delivers:**
-- DefCon hit rate per player — from per-match `element-summary` history (not season aggregate)
-- Position-split tables: DEF (threshold=10) and MID/FWD (threshold=12) — never combined
-- Distance-to-threshold metric per player
-- `DefConTable` component
+### Phase 5: Explainability + Risk Flags + Replacement Shortlist
 
-**Must avoid:** Using season-aggregate `defensive_contributions` divided by games (wrong — threshold is per-match, Pitfall 5), using `clearances_blocks_interceptions` for MID/FWD (wrong field, Pitfall 5)
+**Rationale:** The explainability panel and risk flags are pure consumers of already-computed fields. They require no new pipeline work — only a text-generation layer (`buildReasons()`) and new UI components. REC-02 (replacement shortlist with `proj_pts_delta`) also belongs here since it requires both Phase 1 data and Phase 4 recommendation engine output.
 
-**Research flag:** No additional research needed — DefCon field semantics are confirmed in PITFALLS.md and FEATURES.md.
+**Delivers:** `ExplainPanel` component with natural-language reasons per player. Risk flags (rotation_risk, regression_risk, fixture_swing, injury_concern). `RecommendationBadge` in TransferPanel. Replacement shortlist ranked by `proj_pts_delta`.
 
----
+**Addresses:** EXP-01, EXP-02, REC-02
 
-### Phase 5: Squad View + Transfer Suggestions
+**Avoids:** Pitfall 22 (reasons are natural-language text from templates, not normalised component scores 0–1)
 
-**Rationale:** Transfer suggestions are the highest-complexity feature — they require Gem scores (Phase 3), squad data (live FPL proxy), and correct budget logic (sell price, not buy price). This phase comes last in the core v1 build.
+### Phase 6: FPL Auth + Exact Selling Price
 
-**Delivers:**
-- Team ID input → `useSquad()` hook → `/api/squad/[teamId]` proxy → `entry/{id}/event/{gw}/picks/`
-- `SquadView` component — squad by position with prices, flags, Gem scores
-- `lib/transfer-engine.ts` — pure function: (squad, allPlayers, budget) → ranked suggestions
-- Sell price using `selling_price` from `my-team` when authenticated; `now_cost` labelled as approximate when not
-- Position-lock enforcement (element_type matching, not string labels)
-- Chip state detection: Free Hit and Wildcard surface warnings, not broken suggestions
+**Rationale:** Auth is fully independent of every other feature and is the most complex phase (network, security, session lifecycle). Building it last means it adds exact sell prices to an already-working recommendation engine. The existing approximate bank balance from the public picks endpoint is sufficient to validate all other phases. Building it last also prevents auth logic leaking into pipeline code.
 
-**Must avoid:** Using `now_cost` as sell price without labelling it approximate (Pitfall 3), cross-position transfer suggestions (Pitfall 11), ignoring chip state (Pitfalls 9, 10)
+**Delivers:** `/api/my-team` Route Handler. `useMyTeam` hook. Optional login form in TransferPanel. Exact `selling_price` per player and `entry_history.bank` in budget calculations.
 
-**Research flag:** FPL auth cookie flow (Pitfall 2) — if adding optional login in this phase, test the dual-domain `sessionid` cookie requirement. Well-documented in PITFALLS.md but worth a focused implementation spike.
+**Addresses:** AUTH-01, AUTH-02
 
----
-
-### Phase 6: Polish + Club Form
-
-**Rationale:** Supporting features (club form table, value gems, price staleness display) add analytical context but do not block core usage. Polish work (fixture difficulty badges, home/away distinction, last-updated display) is deferred until the core tables are working.
-
-**Delivers:**
-- Club form table (wins, goals, conceded over rolling N-game window)
-- Value/cheap gems view (low-owned, high-scoring)
-- Fixture difficulty colour badges (using custom FDR, not official)
-- "Last updated" timestamp on all views
-- Manual refresh trigger
-- Price staleness handling (refresh after ~8am UK time when FPL prices settle)
-
-**Must avoid:** Showing official FDR colours directly (Pitfall 8), displaying 0 points for a BGW player as if it means poor form
-
-**Research flag:** Standard patterns — no additional research needed.
-
----
+**Avoids:** Pitfall 19 (session expiry handled with explicit re-prompt, not silent failure), Pitfall 20 (auth is UI-initiated only, never in pipeline), Pitfall 24 (both `selling_price` and `entry_history.bank` extracted from single `my-team` call)
 
 ### Phase Ordering Rationale
 
-- Phases 1-2 are strictly sequential: pipeline must exist before UI; Understat must be merged before Gem scoring can use it.
-- Phase 3 (Gem) and Phase 4 (DefCon) can proceed in parallel — DefCon uses only FPL data and does not depend on xG/xA.
-- Phase 5 (transfers) must come after Phase 3 — it ranks suggestions by Gem delta.
-- Phase 6 is parallelisable with Phases 4-5 for non-blocking polish items.
-- FPL optional login (exact selling prices, transfer count) is a Phase 5 enhancement and can be a follow-on v1.x task — it is not on the critical path for core transfer suggestions (unauthenticated mode using labelled approximate budgets is acceptable for v1).
+- Phase 1 before everything: `proj_pts_1gw` is the single most depended-upon field in the milestone. 80% of v1.1 features are blocked without it.
+- Phases 2 and 3 are validation gates: surface data early as simple read-only UI to catch formula errors before they propagate into recommendation logic.
+- Phase 4 before Phase 5: recommendation engine must exist before explainability reasons can be generated from it.
+- Phase 6 last: auth is independent, highest-complexity, and its absence does not block any other feature.
 
 ### Research Flags
 
-Phases with standard, well-documented patterns (skip research-phase during roadmap planning):
-- Phase 1: Next.js App Router scaffold, Route Handlers, Vercel Blob — all confirmed in STACK.md
-- Phase 2: soccerdata Understat usage confirmed in STACK.md; merge logic is straightforward
-- Phase 3: Scoring dimensions fully specified in PROJECT.md and FEATURES.md
-- Phase 4: DefCon field semantics confirmed in PITFALLS.md
-- Phase 6: Standard UI patterns
+Phases likely needing deeper research during planning:
+- **Phase 1 (Projection formula):** The scenario-weighted xPts formula requires deliberate design of FPL scoring bin weights (1pt for <60 min, 2pt for 60+ min, clean sheet thresholds by position, bonus proxy). Research the Marcus Leadboot v2 methodology and OpenFPL arXiv 2508.09992 before writing `projections.py`. The exact weight values are not prescribed by research — they are design decisions.
+- **Phase 6 (FPL auth endpoint):** The `users.premierleague.com/accounts/login/` endpoint is MEDIUM confidence — stable since 2019 but officially undocumented. Manual verification at build time is required. Plan a graceful fallback to public-data-only mode if auth fails.
 
-Phase that may benefit from a focused implementation spike:
-- Phase 5 (FPL auth, if optional login is included): The dual-domain session cookie flow is documented but finicky. Recommend a short spike to validate `requests.Session()` cookie handling against a live FPL account before building the UI around it.
+Phases with standard patterns (skip research-phase):
+- **Phase 2 (MinutesBadge):** Pure UI component using documented shadcn/ui Badge primitive. No research needed.
+- **Phase 3 (Projected points columns):** Adding TanStack Table columns to existing GemTable follows established v1.0 pattern. No research needed.
+- **Phase 4 (Pure TypeScript engines):** `recommend.ts` and `captaincy.ts` are pure functions; contracts fully specified in ARCHITECTURE.md. No research needed.
+- **Phase 5 (Explainability panel):** Template-driven string assembly consuming already-computed fields. shadcn/ui Collapsible is well-documented. No research needed.
 
 ---
 
@@ -222,47 +176,46 @@ Phase that may benefit from a focused implementation spike:
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All major technologies confirmed stable at current versions; FPL CORS constraint is a hard documented fact; soccerdata v1.8.8 verified on PyPI January 2026 |
-| Features | HIGH | FPL API fields confirmed present; DefCon fields verified via Premier League official 2025/26 docs; set piece flag limitation confirmed (text field only, no structured boolean) |
-| Architecture | HIGH | Architecture derived directly from confirmed stack decisions; patterns (proxy, Blob cache, adapter layer) are standard and well-documented |
-| Pitfalls | HIGH | 13 pitfalls researched with primary sources; sell price formula from FPL docs; DGW normalisation from FPL history endpoint structure; Understat name mismatch from community sources |
+| Stack | HIGH | Only 2 new pip deps (scikit-learn 1.8.0, scipy 1.15.0); versions confirmed on PyPI Dec 2025; no new npm packages; all rationale verified against official docs |
+| Features | MEDIUM | Methodology well-understood from public FPL tools and arXiv paper; exact formula calibration weights are our design choice, not externally prescribed |
+| Architecture | HIGH | Derived from direct codebase inspection + verified external sources; all integration points cross-referenced against existing code patterns |
+| Pitfalls | HIGH | v1.0 pitfalls verified; v1.1 pitfalls derived from community post-mortems, FPL Review docs, and first-principles analysis of existing codebase |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Set piece structured flag**: No boolean `is_penalty_taker` field exists in the FPL API. Set piece role is text-only in the `news` field. For v1 this means approximate text parsing; a structured flag would require a manual community data source (e.g. Fantasy Football Scout). Decision: parse `news` field with documented limitations for v1; log which players have ambiguous set piece status.
-
-- **Vercel Blob free tier limits**: Free tier confirmed to exist but exact storage/bandwidth limits not verified. The daily JSON payload is approximately 2 MB — well within typical free tier limits. Validate on first deploy; fall back to committing JSON to git repo if needed.
-
-- **Understat early-season data**: For newly-promoted clubs or early in the 2025/26 season, Understat xG/xA may be sparse. The pipeline must handle null xG/xA gracefully (treat as missing, not zero) from day one. Gem scoring must weight xG/xA conditionally on data availability.
-
-- **FPL auth cookie expiry**: The session-cookie flow (Pitfall 2) is community-documented but FPL may change it without notice. Optional login is v1.x anyway — but if included in Phase 5, plan a validation step against a live account before building the UI.
-
-- **soccerdata scraping fragility**: soccerdata relies on scraping Understat HTML. If Understat changes its embedded JS variable structure, the library breaks. Mitigation: pin to `soccerdata==1.8.8`, test at each new FPL season start, and ensure the pipeline logs scraping failures loudly.
+- **xPts formula component weights:** Research identifies the correct structure (scenario-weighted, 4 components) but the exact weights (FDR adjustment magnitude, clean sheet probability model for DEF/GK) are not prescribed. Use community-standard values from Marcus Leadboot v2 as starting point; document assumptions explicitly for post-season review.
+- **FPL auth endpoint stability:** MEDIUM confidence. The `users.premierleague.com/accounts/login/` endpoint is undocumented by FPL and has changed paths before. Verify manually at v1.1 build time; build explicit fallback to public-data-only mode.
+- **`minutes_per90` field semantics:** This field in `MergedPlayer` is `minutes / starts` — not minutes-per-90-minutes as the name implies. The xMins module must use `total_minutes / total_appearances` for average minutes per match, not the existing `minutes_per90` field directly.
+- **DGW detection in fixtures array:** DGW detection requires checking for multiple fixtures with the same `event_id` in `MergedPlayer.fixtures[]`. Verify this field is populated correctly in the current fixtures schema before Phase 1 coding begins.
 
 ---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Premier League official DefCon rule](https://www.premierleague.com/en/news/4361991/whats-new-in-202526-fantasy-defensive-contributions) — DefCon fields, per-position thresholds, point cap
-- [soccerdata 1.8.8 — PyPI](https://pypi.org/project/soccerdata/) — version confirmation, Understat support
-- [FPL APIs Explained — Oliver Looney](https://www.oliverlooney.com/blogs/FPL-APIs-Explained) — CORS constraint, endpoint reference
-- [Next.js 16 — nextjs.org](https://nextjs.org/blog/next-16-1) — version confirmation
-- [shadcn/ui changelog](https://ui.shadcn.com/docs/changelog) — React 19 + Tailwind v4 compatibility
-- [Vercel Hobby Plan](https://vercel.com/docs/plans/hobby) — bandwidth and function invocation limits
+- Existing codebase: `src/lib/types.ts`, `src/lib/transfer-engine.ts`, `pipeline/merge.py`, `pipeline/run.py` — authoritative ground truth for available data fields and architecture patterns
+- scikit-learn 1.8.0 — [PyPI](https://pypi.org/project/scikit-learn/) — version and Python 3.11 / pandas 2.x compatibility confirmed
+- [scikit-learn install docs](https://scikit-learn.org/stable/install.html) — support matrix verified
+- shadcn/ui [Collapsible](https://ui.shadcn.com/docs/components/radix/collapsible) / [Badge](https://ui.shadcn.com/docs/components/radix/badge) — component behaviour confirmed
+- scipy v1.17.0 manual — `scipy.stats.weightedtau` confirmed
 
 ### Secondary (MEDIUM confidence)
-- [FPL API Authentication Guide — Medium](https://medium.com/@bram.vanherle1/fantasy-premier-league-api-authentication-guide-2f7aeb2382e4) — session cookie auth flow
-- [FPL price changes — FPL Dashboard](https://fpl.page/article/how-fpl-price-changes-work-tool-predictor) — sell price formula
-- [FPL Blank and Double Gameweeks — Fantasy Football Scout](https://www.fantasyfootballscout.co.uk/2026/03/19/when-are-the-fpl-blank-and-double-gameweeks-in-2025-26) — DGW/BGW schedule
+- [OpenFPL arXiv 2508.09992](https://arxiv.org/html/2508.09992v1) — position-specific feature architecture; performance categories; ensemble ML vs formula comparison
+- [Marcus Leadboot — Modelling xPts in FPL v2.0](https://medium.com/@marcusleadboot/modelling-xpts-in-fpl-version-2-0-e7d8cd738e75) — four-component xPts formula; xMinDisc, xPtDef, xPtNoAdj, fixture adjustment
+- [Fantasy Football Fix xFPL explainer](https://support.fantasyfootballfix.com/support/solutions/articles/202000055995-what-is-expected-fpl-points-xfpl-) — xFPL = xG + xA + xCS + appearance/bonus
+- [FPL Review xMins documentation](https://docs.fplreview.com/the-model/projections/xmins/) — probability-weighted average across simulations; rotation risk classification
+- [FPL Gameweek — Effective Ownership explained](https://www.fplgameweek.com/articles/fpl-effective-ownership/) — differential captaincy strategy
+- [FPL API Endpoints Cheat Sheet (sertalpbilal)](https://cheatography.com/sertalpbilal/cheat-sheets/fpl-api-endpoints/) — my-team endpoint structure
+- [FPL API Endpoints Detailed Guide (Frenzel Timothy)](https://medium.com/@frenzelts/fantasy-premier-league-api-endpoints-a-detailed-guide-acbd5598eb19) — `selling_price` and `entry_history.bank` field structure
 
-### Tertiary (supporting)
-- [Getting data from FPL and Understat — Stateastic](https://stateastic.home.blog/2022/08/02/getting-data-from-fpl-and-understat-to-do-analysis/) — player ID mapping approach
-- [soccerdata Understat docs — DeepWiki](https://deepwiki.com/probberechts/soccerdata/3.5-understat-and-sofascore-scrapers) — API usage
+### Tertiary (LOW confidence — verify at build time)
+- [FPL auth guide (Bram Vanherle, 2019)](https://medium.com/@bram.vanherle1/fantasy-premier-league-api-authentication-guide-2f7aeb2382e4) — login endpoint, cookie names; endpoint stable per 2024 community usage but officially undocumented
+- [FPL auth Node.js variant (Eyasu Kibru)](https://medium.com/@eyasukibru13/fantasy-premier-league-api-authentication-guide-using-node-js-ca25e693594e) — Node.js fetch cookie extraction pattern
+- [FPL-Expected-Points (daniel-mehta, GitHub)](https://github.com/daniel-mehta/FPL-Expected-Points) — community projected points implementation reference
 
 ---
 
-*Research completed: 2026-03-26*
+*Research completed: 2026-03-29*
 *Ready for roadmap: yes*

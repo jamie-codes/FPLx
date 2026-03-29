@@ -1,300 +1,327 @@
 # Pitfalls Research
 
-**Domain:** FPL analytics web app (personal tool, FPL API + Understat xG/xA, transfer suggestions)
-**Researched:** 2026-03-25
-**Confidence:** HIGH (most pitfalls verified via official FPL docs, community sources, and live API inspection)
+**Domain:** FPL decision engine — projected points, xMins, buy/hold/sell, captaincy, explainability, session-cookie auth added to existing FPL Analyst app (v1.1 milestone)
+**Researched:** 2026-03-29
+**Confidence:** HIGH (v1.0 pitfalls verified; v1.1 pitfalls derived from community post-mortems, FPL Review docs, codebase inspection, and first-principles analysis of the existing code)
+
+---
+
+## Scope Note
+
+This file extends the v1.0 PITFALLS.md (also at this path). It supersedes the previous version and contains all prior pitfalls plus new v1.1-specific pitfalls. Previous pitfalls 1–13 are retained in condensed form in the appendix; the new pitfalls below are numbered 14 onwards.
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: CORS Blocks All Direct Browser-to-FPL-API Calls
+### Pitfall 14: Projected Points Uses Minutes as a Multiplier — But xMins Is Not Linearly Proportional to Expected Value
 
 **What goes wrong:**
-Any attempt to call `https://fantasy.premierleague.com/api/*` directly from a browser (including a React/Next.js frontend) is blocked by CORS policy. The FPL API does not allow cross-origin requests from browser clients. This will silently fail or throw a network error in the browser devtools with no CORS headers on the response.
+The naive projected-points formula is: `xPts = base_event_rate × xMins`. This assumes expected points scale linearly with minutes. They do not. The FPL scoring system is non-linear: a player with 90 xMins does not score 3× the points of a player with 30 xMins. Appearance points (1 pt for <60 min, 2 pts for ≥60 min) create a cliff, clean-sheet points apply only with >59 minutes, and bonus points are match-level not minute-proportional. A player projected at 51 xMins (blending a 60% chance of starting and 40% chance of being a sub) is NOT expected to score 51/90 of a full starter's projected points.
 
 **Why it happens:**
-Developers assume "it's a public API, I'll just fetch it client-side." The FPL API is public in the sense that some endpoints need no auth, but it was never designed as a third-party API — it's a first-party API for the FPL website itself.
+Developers see the formula `xPts = rate × minutes` used in analytics and apply it directly. The non-linearity of FPL's scoring bins is easy to overlook when the formula "approximately works" for starters.
 
 **How to avoid:**
-All FPL API calls must go through a server-side proxy (e.g. a Next.js API route or a backend service). The frontend calls your own server, which calls FPL, and returns the data. Never call FPL API endpoints from the browser directly. Build this assumption in from day one — do not prototype with browser-side fetches.
+- Model projected points as expected value over a probability distribution of playing-time scenarios, not as a continuous linear scale:
+  - Scenario A: Starts and plays 60+ mins (probability p1) → full clean sheet / appearance points eligible
+  - Scenario B: Starts but subbed before 60 mins (probability p2) → 1-pt appearance, no clean sheet
+  - Scenario C: Comes off bench (probability p3) → 1-pt appearance, minute-weighted goal/assist probability
+  - Scenario D: Does not play (probability p4) → 0 pts
+- Weight each scenario by its probability and sum: `xPts = p1*xPts_full + p2*xPts_sub60 + p3*xPts_bench + p4*0`
+- For v1.1 keep it tractable: use `start_probability` (from recent starts/appearances ratio) as the weight on "full" vs "partial" scenarios rather than a full simulation
 
 **Warning signs:**
-- `CORS error` or `Access-Control-Allow-Origin` missing in browser console
-- Works in Postman but fails in the browser
+- A rotation-risk player (40% start prob) shows projected points only slightly below a nailed starter — the minutes multiplier is masking the non-linearity
+- A player with 55 expected minutes always projects equal clean sheet probability to one with 90 — the 60-minute threshold is being ignored
 
 **Phase to address:**
-Phase 1 (data layer foundation) — bake in server-side proxy pattern before any other work.
+Projected Points phase (PROJ-01/02/03) — build the model correctly from the start; do not prototype with linear xMins multiplication and plan to fix it later.
 
 ---
 
-### Pitfall 2: FPL Auth Uses Session Cookies, Not OAuth — and Has No Official Docs
+### Pitfall 15: Rotation Risk Badges Based on Recent Minutes Conflate Injury Recovery with Actual Rotation
 
 **What goes wrong:**
-The FPL login flow requires a POST to `https://users.premierleague.com/accounts/login/` with `login`, `password`, `redirect_uri`, and `app: plfpl-web`. On success, three session cookies are returned: `pl_profile` (`.premierleague.com`), `sessionid` (`fantasy.premierleague.com`), and `sessionid` (`users.premierleague.com`). These cookies must then be forwarded on every subsequent request to authenticated endpoints (`my-team/{id}/`, `me/`, `transfers-latest/`).
-
-If you do not carry the session cookies properly (e.g. you parse the cookies manually rather than using a cookie-aware HTTP session), authenticated endpoints return 401 or an empty response with no helpful error message.
+The most common xMins pitfall: using raw historical minutes to classify rotation risk. A player returning from a 6-week injury will have genuine zeroes and low-minute appearances in their history that look identical to a squad rotation pattern. The minutes distribution `[0, 0, 0, 25, 45, 55, 80, 87, 90]` — injury recovery — produces the same "rotation risk" badge as a genuine squad player. After full recovery, the model dramatically underestimates start probability.
 
 **Why it happens:**
-No official documentation. Developers reverse-engineer the flow from community articles, miss the dual-domain `sessionid` requirement, or use a plain `fetch` call without a session-cookie-aware client.
+Historical minutes are easy to retrieve from `element-summary/{id}/history`. The underlying cause (injury vs rotation) is not encoded in the FPL API data — it requires reading `news` and `status` fields alongside the history.
 
 **How to avoid:**
-Use a cookie-jar-aware HTTP client (e.g. `axios` with a `CookieJar`, or `node-fetch` with `fetch-cookie`). Make a single login call, persist the cookie jar for the duration of the session, and forward all cookies on authenticated requests. Do not store credentials or session cookies in the database — this is a personal tool and the session should be ephemeral (in-memory for the duration of a server request).
+- Always read `status` and `news` alongside minutes history: `status == 'a'` with blank `news` indicates fully available
+- Exclude minutes from gameweeks where `status` was not `'a'` when computing rotation statistics — or at minimum, weight recent fully-fit matches higher than injury-period matches
+- Add a "recovering" flag: if the last N weeks include a transition from non-available status to available with rising minutes, suppress the rotation risk badge and show a "returning from injury" indicator instead
+- Use `starts` and `minutes` from `bootstrap-static` (season aggregates) alongside the per-match history — a high `starts / games_played` ratio with recent zeroes is the rotation signal; a low ratio that recently recovered is the injury signal
 
 **Warning signs:**
-- `my-team/{id}/` returns `{"detail":"Authentication credentials were not provided."}` or a redirect to the login page
-- Auth works for a while then silently stops — session cookie has expired
+- A well-known first-choice starter just back from injury gets a "Rotation risk" badge despite being nailed pre-injury
+- Players whose `news` field is empty (fully fit) are still showing "Cameo risk" based on old injury minutes
 
 **Phase to address:**
-Phase 1 (data layer) — implement auth as part of the initial data-fetching service.
+xMins / Minutes Risk phase (MINS-01/02) — design the classification logic from the start with injury-awareness; do not compute rotation risk from raw minutes alone.
 
 ---
 
-### Pitfall 3: The Sell Price Is NOT the Current Buy Price (50% Profit Tax, Rounded Down)
+### Pitfall 16: The Existing `form_pts_per90` Field in `merged_players.json` Is FPL's Rolling Average, Not a Pipeline-Computed Field — Projected Points Must Not Double-Count It
 
 **What goes wrong:**
-Transfer suggestion logic that computes a player's "value" for squad budget purposes uses the player's current market price (`now_cost` in the FPL API). But when the user wants to sell a player they own, the actual sell price is different:
-
-- If price has risen since purchase: sell price = purchase price + floor((rise / 2))
-- If price has fallen since purchase: sell price = current price (full loss)
-- Profit is always rounded down to the nearest £0.1m
-
-Example: Bought at £5.0m, now £5.3m — sell price is £5.1m, NOT £5.3m. The "bank" after selling is £0.3m less than assumed.
+In `merge.py`, `form_pts_per90` is set to `_safe_float(element.get('form', '0'), 0.0)` — this is the FPL API's own `form` field, which is a rolling 30-day average of points per game. If the projected points engine is then built on top of `form_pts_per90` as an input feature, it is building on FPL's black-box rolling average. This creates two problems:
+1. It double-counts form — if fixture difficulty and xG/xA are also inputs, those correlate with form; the composite overfits recent noise
+2. The `form` field is not per-90; despite being named `form_pts_per90`, it is FPL's `form` divided by 1 (not normalised by minutes), making the name misleading for projected-points calculations
 
 **Why it happens:**
-`now_cost` (available from `bootstrap-static`) reflects the current market price for buying, not the sell price for a specific manager's player. The sell price is manager-specific and only returned by the authenticated `my-team/{id}/` endpoint. Developers building transfer logic often only call public endpoints and use `now_cost` for both sides of the equation.
+`form_pts_per90` is already in `MergedPlayer`. The projected points engine author naturally reaches for it as an input. The misleading name (`per90`) suggests it is already minute-normalised.
 
 **How to avoid:**
-When the user provides FPL login, use `my-team/{id}/` to get `selling_price` per player (this is the actual sell price for that manager). When no login is provided, clearly label the budget estimate as approximate and document that actual sell prices may be lower. Do not compute `selling_price` yourself — always use the value from the API when authenticated, since it accounts for price change history the app does not have access to without purchase history.
+- Audit what `form_pts_per90` actually contains before using it in projected-points logic: it is `element['form']` from FPL — a 30-day rolling points-per-match average, not a per-90 normalised value
+- For projected points, compute the underlying rates separately: goals per 90 (from Understat xG), assists per 90 (from Understat xA), clean sheet probability (from fixture difficulty + team defensive metrics), appearance points probability (from xMins model)
+- Do not feed `form_pts_per90` directly into a projected-points formula as if it represents something independent of FPL's own estimate — it partially already is a points projection
 
 **Warning signs:**
-- Transfer suggestions show players as "affordable" but FPL rejects them as over budget
-- Budget remaining after sell appears higher than FPL's own interface shows
+- Projected points values track very closely with `form_pts_per90` for all players — the model is essentially just re-scaling FPL's own form field
+- Projected points for a player with a big upcoming fixture swing look almost identical to their recent form — fixture impact is not being captured
 
 **Phase to address:**
-Phase 2 or 3 (transfer suggestion feature) — this is a v1 requirement, not deferred.
+Projected Points phase (PROJ-01) — before writing the projection formula, audit what each `MergedPlayer` field actually contains.
 
 ---
 
-### Pitfall 4: Double Gameweeks Inflate Form Metrics — Blank Gameweeks Deflate Them
+### Pitfall 17: `MergedPlayer` Schema Must Be Extended for v1.1 Fields — Not Patched at the UI Layer
 
 **What goes wrong:**
-Form calculations (e.g. "points over last 3 gameweeks", "goals over last 5 games") that operate on gameweek-level data treat all gameweeks as equivalent. A player with a Double Gameweek (DGW) will have had two matches in one "gameweek" slot, accumulating ~2x the stats. A player with a Blank Gameweek (BGW) has zero for that gameweek despite being available.
-
-This corrupts "form" scores and "Upcoming Gem" ratings — DGW players look like they're on fire when they're actually just playing twice, and BGW players look like they've gone cold.
+v1.1 adds new per-player fields: `xMins`, `start_probability`, `rotation_badge`, `projected_pts_1gw`, `projected_pts_3gw`, `projected_pts_5gw`, `recommendation`, `captain_score`. The path of least resistance is to compute these in TypeScript at the UI layer (in a React component or a hook), passing them alongside a `MergedPlayer`. This bypasses the single source of truth established in v1.0 (`merged_players.json` → `MergedPlayer` type) and creates two data layers that can desynchronise.
 
 **Why it happens:**
-The `history` array in `element-summary/{id}/` returns one entry per gameweek, not per fixture. When a player plays twice in a DGW, their stats may be aggregated into one entry (or split into two, depending on the API response structure for that gameweek). Developers count array entries rather than normalising by fixtures played.
+The pipeline is Python and runs daily; adding a field to it means editing `merge.py`, `run.py`, and the Python schema. The TypeScript layer is more familiar and faster to iterate. Developers add a quick computed field to a hook or component.
 
 **How to avoid:**
-- Always normalise stats per 90 minutes, not per gameweek
-- Use `minutes` in each history entry to normalise: `stat_per_90 = stat / (minutes / 90)`
-- When computing form windows, count fixtures (matches played) not gameweeks
-- For upcoming fixture difficulty: count fixtures not gameweek slots — a DGW player has two FDR values, not one
-- Check the `fixtures` endpoint with `?event=X` to get fixture count per team per gameweek before computing DGW/BGW status
+- All new per-player fields that are derived from pipeline data (projected points, xMins, rotation badge) must be computed in Python and added to `merged_players.json` and the `MergedPlayer` TypeScript type simultaneously
+- TypeScript-only computations are acceptable only for pure presentation transforms (formatting a number for display) — never for analytics logic
+- When adding to `MergedPlayer`, follow the existing pattern: update `pipeline/merge.py` first, run the pipeline, verify the new field appears in `pipeline/cache/merged_players.json`, then update `src/lib/types.ts`
 
 **Warning signs:**
-- A player appears in the top 5 form table immediately after a DGW — cross-check if they played twice
-- A reliable regular starter appears to have "0 points" in a gameweek — may be BGW not poor form
+- A new computed field exists in a React hook or component but is not in `MergedPlayer`
+- Two different components compute the "same" value with subtly different logic (e.g. projected points computed in both the panel and the captaincy table)
+- `merged_players.json` and `MergedPlayer` type have diverged — fields exist in one but not the other
 
 **Phase to address:**
-Phase 2 (form and fixture analysis) — normalisation logic must be built in from the start of that phase.
+First phase of v1.1 (projected points pipeline) — establish the schema extension pattern before building any UI layer for new fields.
 
 ---
 
-### Pitfall 5: DefCon Data Is Available in the FPL API But Has Nuances
+### Pitfall 18: Buy/Hold/Sell Recommendation Conflicts with Existing Transfer Engine Rankings — No Tie-Breaking Strategy
 
 **What goes wrong:**
-Two new fields were added to the FPL API for 2025/26: `defensive_contributions` and `clearances_blocks_interceptions`. The `defensive_contributions` field covers CBIT for defenders and CBIRT (adding ball recoveries) for midfielders and forwards. The `clearances_blocks_interceptions` field is the defender-relevant subset.
-
-The potential pitfall is: (a) assuming this data is NOT in the API (it is), (b) confusing which field applies to which position, or (c) implementing DefCon logic that uses `clearances_blocks_interceptions` for midfielders/forwards (wrong — they need `defensive_contributions` which includes ball recoveries).
-
-Additionally, DefCon points are capped at 2 per match regardless of how high the raw count goes. The API's cumulative season totals won't tell you whether +2 was earned per match — you need per-match data from `element-summary/{id}/history` to calculate hit rate and "distance to threshold this season".
+The existing `computeTransferSuggestions()` in `transfer-engine.ts` ranks sell candidates by `gem_score` ascending (lowest gem score = sell first). The v1.1 Buy/Hold/Sell recommendation (REC-01) is a separate classification that will also produce a "Sell" verdict for some players. If these two signals conflict — the transfer engine recommends selling Player X, but the recommendation engine says "Hold" — the user sees contradictory advice with no explanation. This is a trust-destroying experience.
 
 **Why it happens:**
-The rule is new (2025/26 only). Developers working from older API documentation or FPL API wrapper libraries won't see these fields. The distinction between the two new fields for different positions is subtle and underdocumented.
+The two features are built independently, often in separate phases. The conflict is not discovered until both are rendered side-by-side.
 
 **How to avoid:**
-- Confirm field presence by hitting `bootstrap-static/` and inspecting a known defender and midfielder to verify both fields are present with sensible values
-- Use `defensive_contributions` as the primary field for all positions; use `clearances_blocks_interceptions` only as a supplementary breakdown for defenders
-- To compute per-game hit rate, iterate `element-summary/{id}/history` and check if the per-gameweek `defensive_contributions` value meets the position threshold (10 for DEF, 12 for MID/FWD)
-- Do not use season-aggregate totals divided by matches — the threshold is per-match, not cumulative
+- Design the Buy/Hold/Sell signal as a direct extension of the existing `gem_score` logic, not a separate pipeline: `Sell` = gem_score in bottom quartile of squad AND a better-value replacement exists within budget; `Hold` = gem_score is mid-squad AND no materially better replacement is affordable; `Buy` = not in squad, top-5 gem_delta candidates
+- Feed the same `gem_score` used by `computeTransferSuggestions` into the recommendation classifier — they must derive from the same source of truth
+- When displaying the recommendation panel, show the `gem_delta` rationale inline: "Sell — your gem score is 0.31, best available same-position replacement scores 0.67 (+£0.3m)"
+- Add a reconciliation check: if a player has `recommendation == 'Sell'` but does not appear in `computeTransferSuggestions().suggestions`, log a warning — it indicates the two systems have diverged
 
 **Warning signs:**
-- Mid/FWD DefCon hit rates are near zero — likely using the wrong (CBIT-only) field
-- Defenders showing 0 defensive contributions — field may not be populated for GKs (check position filter)
+- A player shows "Hold" in the recommendation panel but appears as the top sell candidate in the Transfer Panel
+- The "why this recommendation" reason references a different metric than the Transfer Panel uses
+- After a pipeline refresh, recommendations and transfer suggestions flip for the same player due to slightly different normalisation
 
 **Phase to address:**
-Phase 3 (DefCon analysis feature) — but validate field presence in Phase 1 data layer.
+Recommendation phase (REC-01) — resolve the architecture of how recommendations relate to the existing transfer engine before writing any code.
 
 ---
 
-### Pitfall 6: Understat Player Names Do Not Match FPL Player Names
+### Pitfall 19: Session-Cookie Auth Expiry Is Silent and Mid-Session — Not Just on Login
 
 **What goes wrong:**
-Understat uses its own player name format (typically full international names, sometimes with diacritics). FPL uses a different format (often anglicised, sometimes abbreviated). A naive name-match join between the two data sources will fail silently — players go unmatched and simply have no xG/xA data, which may not throw an error but corrupts gem ratings that depend on xG/xA.
-
-Examples of common mismatches:
-- Accents and diacritics: `Rúben Dias` vs `Ruben Dias`
-- Different transliterations of Cyrillic/Arabic names
-- Players known by different names in different countries
+FPL session cookies (`sessionid` at `fantasy.premierleague.com`) expire independently of when they were obtained. A user logs in, the app fetches `my-team/{id}/` successfully, and then 15–30 minutes later (or at the next daily pipeline run) the same cookie returns a 401 or redirect-to-login response with no explanatory message. The app has no mechanism to distinguish "cookie expired" from "bad data" from "FPL API down".
 
 **Why it happens:**
-Understat and FPL are independent data sources with no shared player ID. Community solutions exist (pre-built mapping CSVs keyed by FPL player ID and Understat player ID) but they need to be maintained when new players join the league, or when players change clubs and their names are re-rendered.
+Session expiry is a runtime concern, not a setup concern. It is not exercised during development (where tests run immediately after obtaining a cookie). Production use involves longer gaps between login and data fetch.
 
 **How to avoid:**
-- Use a community-maintained player ID mapping (e.g. the `id_dict.csv` commonly referenced in FPL analytics projects) as the primary join key rather than name-string matching
-- As a fallback for unmatched players: implement fuzzy name matching with Unicode normalisation (`str.normalize('NFD')` to strip diacritics) plus Levenshtein distance, and log any match with confidence below a threshold for manual review
-- On each daily data refresh, check for newly unmatched players and alert (or log) rather than silently dropping them
-- Never use raw string equality for cross-source player matching
+- Never pass session cookies through to the Python pipeline — the pipeline runs on a cron schedule and cannot re-authenticate
+- Auth should be on-demand: user clicks "Connect FPL Account" → Next.js Route Handler fetches `my-team` immediately → stores `selling_price` per player in server-side memory for the duration of the request → discards cookie
+- Treat every `my-team` response as potentially stale: always check HTTP status before parsing; on 401/403, surface a "Session expired — please log in again" message, not a generic error
+- Do not store the session cookie in the browser (`localStorage`, `sessionStorage`, or a cookie relay to the frontend) — re-prompt for credentials instead
+- Test specifically: obtain cookie, wait 20+ minutes doing nothing, then attempt a `my-team` fetch — verify the expired-cookie path shows the correct UI message
 
 **Warning signs:**
-- xG/xA columns are null for a large percentage of players after joining
-- High-profile players (known signings) show no Understat data
-- xG/xA is populated for some players in a team but not others
+- `my-team` endpoint works once at app load but silently returns empty data or old data 30 minutes later
+- Auth flow works in Vitest mocks (synchronous) but fails in real use (async with time gap)
+- The app shows a player's sell price from a previous session after the user has logged out
 
 **Phase to address:**
-Phase 1 (data layer) — the join logic must be solved before any feature that depends on xG/xA can be built.
+Auth phase (AUTH-01/02) — design the session lifecycle explicitly, not as an afterthought.
 
 ---
 
-### Pitfall 7: FPL API Is Undocumented and Can Change Without Notice
+### Pitfall 20: FPL Login Can Trigger Account Flags — Especially Automated or Repeated Calls
 
 **What goes wrong:**
-The FPL API at `https://fantasy.premierleague.com/api/` has no official documentation, no versioning, no changelog, and no deprecation policy. Fields have been renamed, added, and removed between seasons. The `defensive_contributions` and `clearances_blocks_interceptions` fields are themselves an example of new fields added at the start of 2025/26 — but the same mechanism can remove or rename fields.
-
-If the application hardcodes field names in its data-parsing logic (e.g. `player.goals_scored`), any renaming breaks silently — the field returns `undefined` instead of raising an error, leading to NaN calculations propagating through the scoring system.
+The FPL API terms of service prohibit automated logins and scripted squad management. While the FPL community widely uses session-cookie auth for personal tools, repeated automated logins (e.g. re-authenticating on every pipeline cron run) are known to trigger account warnings or temporary bans. A leading FPL player had their account banned specifically because of automated API usage.
 
 **Why it happens:**
-The informal "documentation" is community-maintained reverse-engineering. Community docs lag behind actual API changes by days or weeks at the start of each season.
+Developers build auth into the pipeline's scheduled cron job for convenience. The pipeline runs daily; if it re-logs in each time, that is 365 automated logins per year.
 
 **How to avoid:**
-- Build an adapter/schema layer that maps raw API field names to internal domain names: `raw.goals_scored → player.goalsScored`. All downstream code uses the internal name.
-- Add schema validation (e.g. Zod in TypeScript) at the API boundary — if expected fields are missing, fail loudly at ingestion time rather than propagating nulls
-- Log the full raw API response for the first fetch of each day so field changes can be detected by diffing responses
-- At the start of each new FPL season, manually verify all field names against a live API call before deployment
+- Never put FPL login in the automated pipeline (`run.py`) — the pipeline uses only public API endpoints that need no auth
+- Auth is UI-initiated only: user explicitly clicks a login button; the app makes a single `my-team` fetch; the cookie is used once and discarded
+- Never cache or replay session cookies across sessions or pipeline runs
+- Display a clear disclaimer in the UI: "FPL login is optional and used only to retrieve exact sell prices. Your credentials are never stored."
 
 **Warning signs:**
-- Gem scores are all zero or NaN after a season changeover
-- No error logged but key metrics appear blank in UI
-- A field that should always be present is consistently `undefined`
+- A `requests.Session()` with FPL credentials appears anywhere in `pipeline/run.py`, `pipeline/fpl_client.py`, or a cron job
+- The app re-fetches `my-team` on every page load rather than only on explicit user action
 
 **Phase to address:**
-Phase 1 (data layer foundation) — the adapter pattern must be established before any feature work.
+Auth phase (AUTH-01) — establish what auth is explicitly NOT used for before writing any auth code.
 
 ---
 
-### Pitfall 8: FPL FDR (Official Fixture Difficulty Rating) Is Unreliable
+### Pitfall 21: Captaincy Ranking Conflates Expected Points with Captaincy Value — The 2× Multiplier Changes the Optimal Choice
 
 **What goes wrong:**
-The FPL API returns `team_h_difficulty` and `team_a_difficulty` in the fixtures endpoint — integer values from 1-5 representing FPL's official Fixture Difficulty Rating. The FDR is widely regarded as inaccurate for several reasons:
-- It does not differentiate attacking difficulty vs defensive difficulty (a team that scores lots AND concedes lots gets a single rating)
-- It uses a generic, imprecise colour-band system rather than continuous probability
-- It does not update dynamically as team form changes during the season
-
-An analytics app that uses raw FDR values to compute "upcoming gem" ratings will produce misleading recommendations.
+The optimal captain choice is the player who maximises the expected value of `2 × projected_points`, not the player with the highest raw projected points. These diverge when considering variance: a player with 12 projected points and high variance (e.g. a penalty taker who might score a hat-trick or blank completely) has higher captaincy value than a player with 14 projected points and low variance (e.g. a reliable midfielder who scores 2 assists most weeks). The 2× multiplier makes variance valuable for captaincy in a way it is not for regular selection.
 
 **Why it happens:**
-FDR is the most accessible fixture difficulty signal in the API. Developers use it because it's there and it's a number. The inaccuracy is well-known in the FPL community but not obvious to new developers.
+"Highest projected points = best captain" is the intuitive but incorrect shortcut. Variance analysis requires a more complex model.
 
 **How to avoid:**
-- Do not use raw FDR as the primary fixture difficulty signal
-- Compute a custom FDR from recent team xG and xGA over a rolling N-game window (both available from FPL API stats and/or Understat)
-- Separate attacking fixture difficulty (how hard is it to score against this team?) from defensive fixture difficulty (how likely is this team to concede and allow clean sheet points?)
-- Fall back to official FDR only if custom calculation cannot be made (insufficient data early in season)
-- Clearly label any metric that uses official FDR as approximate
+- For the v1.1 "safe vs upside" split (CAP-02), make the distinction explicit:
+  - "Safe" captain: highest projected points, low variance (e.g. high minutes, home fixture, good form — reliable 6–9 pts expected)
+  - "Upside" captain: slightly lower projected points but high ceiling (penalty taker, DGW player, facing a team with high xGA — could blank or haul)
+- Use fixture count (DGW = 2 fixtures = double captaincy value), penalty order, and home/away as the primary upside signals
+- Do not attempt to model statistical variance without historical match-level data — it is out of scope for v1.1; instead use DGW status and set-piece role as upside proxies
 
 **Warning signs:**
-- Gem rankings recommend players with "easy" fixtures that experienced FPL managers would rate as hard
-- All five teams have the same "difficulty" colour for an obvious mismatch (e.g. top-6 away vs bottom-3 home)
+- The top captaincy recommendation is always identical to the top gem score — no fixture/DGW/set-piece adjustment is happening
+- A player in a DGW does not appear higher on the captaincy list than equivalent single-GW players
 
 **Phase to address:**
-Phase 2 (form and fixture analysis) — build custom FDR from the start; do not prototype with official FDR and plan to replace it later.
+Captaincy phase (CAP-01/02) — design the safe/upside split from the start rather than adding it as a feature after a single-score captain ranking is built.
+
+---
+
+### Pitfall 22: Explainability Panel Shows Scores, Not Reasons — The User Cannot Act On a Number
+
+**What goes wrong:**
+The most common explainability anti-pattern: showing component scores (e.g. "Form: 0.72, FDR: 0.85, xG: 0.61") rather than natural-language reasons ("Strong form (avg 7.2 pts/game), easy next 3 fixtures (Southampton H, Brentford H, Wolves A), consistent starter (started 8 of last 9)"). A score dashboard tells the user nothing they could act on or verify. They cannot determine whether the recommendation is correct without independently understanding what the scores mean.
+
+**Why it happens:**
+Component scores are what the engine already computes — exposing them is the shortest path to showing "explainability". Translating scores into reasons requires a separate text-generation layer.
+
+**How to avoid:**
+- Define a set of reason templates for each positive and negative signal. For each dimension that contributes to a recommendation, generate a plain-text reason from the raw values:
+  - `fdr_score > 0.75` → "Easy run of fixtures (next 3: {opponent list})"
+  - `form_pts_per90 > threshold` → "In-form: averaging {N} pts per game"
+  - `xg_per90 > threshold` → "High shot volume ({xg_per90} xG/90)"
+  - `rotation_badge == 'Nailed'` → "Nailed starter ({start_pct}% start rate)"
+  - `penalties_order == 1` → "Primary penalty taker"
+- For risk flags (EXP-02): use the same pattern — "Rotation concern (started only 4 of last 8)", "Fixture swing (faces Arsenal A, Man City A in next 3)"
+- Never display a component score without its label and the raw value it was derived from
+
+**Warning signs:**
+- The explainability panel shows a radar chart or bar chart of normalised scores — the user sees numbers between 0 and 1 with no reference
+- A recommendation says "Sell" but the reason panel shows "Gem Score: 0.31" without explaining what that means in plain terms
+- Two different players have near-identical component scores but receive different recommendations — and the UI cannot explain why
+
+**Phase to address:**
+Explainability phase (EXP-01/02) — design the reason-generation layer in parallel with the recommendation classifier, not as a post-hoc addition.
+
+---
+
+### Pitfall 23: Min-Max Normalisation in `computeAllGemScores` Is Squad-Context-Dependent — Projected Points Must Not Reuse the Same Normalisation
+
+**What goes wrong:**
+`computeAllGemScores` in `gem-score.ts` uses min-max normalisation across all ~700 players. The result is that `gem_score` is a relative score — it measures how a player compares to the entire player pool at that moment. This is correct for "who is the best value in the market". But projected points (PROJ-01) should be absolute, not normalised: "this player is projected to score 8.3 points in the next GW" regardless of what other players are doing. If projected points are also min-max normalised (easy to do when extending the pipeline), they become useless for captaincy comparison and for communicating "how confident are we in this projection".
+
+**Why it happens:**
+The existing normalisation pattern in `computeAllGemScores` is the established approach in the codebase. New developers extending the pipeline follow the pattern for projected points, producing a normalised 0–1 score instead of actual expected points.
+
+**How to avoid:**
+- Projected points fields (`projected_pts_1gw`, `projected_pts_3gw`, `projected_pts_5gw`) must be expressed in FPL points (e.g. 7.4 projected pts), not in a 0–1 normalised score
+- Do not pass projected points through the `normalise()` function in `gem-score.ts`
+- The captaincy ranking score (for ordering the top-5 candidates) may be normalised within the top-N candidates for display purposes, but the raw projected points value must also be surfaced
+- Add explicit type comments on any new fields: `projected_pts_1gw: number  // absolute FPL points, not normalised`
+
+**Warning signs:**
+- `projected_pts_1gw` values are all between 0.0 and 1.0 rather than in the range of typical FPL scores (2–15 points)
+- A captain candidate with 10 projected points and a candidate with 5 projected points show similar "captain scores" after normalisation
+
+**Phase to address:**
+Projected Points phase (PROJ-01) — document the distinction between normalised gem dimensions and absolute projected points before writing the computation.
+
+---
+
+### Pitfall 24: The `selling_price` from `my-team` Is Per-Player, Not the Budget — Budget Calculation Requires Both Fields Together
+
+**What goes wrong:**
+`my-team/{id}/` returns both `picks[].selling_price` (per player) and `entry_history.bank` (squad bank balance). The transfer budget available for a specific transfer is `entry_history.bank + selling_price_of_player_being_sold`. If only `selling_price` is fetched without `entry_history.bank`, or if `bank` is taken from a different source (e.g. the public `entry/{id}/history/` endpoint which may lag), budget calculations will be wrong. The existing `computeTransferSuggestions` in `transfer-engine.ts` already uses `bankBalance` as a parameter — AUTH-02 must populate that parameter from `my-team`, not from a separate endpoint.
+
+**Why it happens:**
+Developers fetch `my-team` for `selling_price` and separately call `entry/{id}/` for the bank balance, not realising that `my-team` already contains the authoritative bank figure in `entry_history.bank`.
+
+**How to avoid:**
+- When AUTH-01 is implemented, extract both `picks[].selling_price` and `entry_history.bank` from the single `my-team/{id}/` response
+- Pass `entry_history.bank` as the `bankBalance` argument to `computeTransferSuggestions`, replacing the approximate value currently derived from the squad view
+- Never call a separate endpoint for bank balance when `my-team` data is available — it creates a race condition if the user has just made a transfer
+
+**Warning signs:**
+- Bank balance after auth looks correct but transfer suggestions still show some transfers as unaffordable when they should be affordable — likely using `now_cost` as sell price instead of `selling_price`
+- `bankBalance` in `computeTransferSuggestions` is being passed as a hardcoded approximate rather than the `my-team` value
+
+**Phase to address:**
+Auth phase (AUTH-01/02) — the `my-team` response structure must be fully understood before building the auth flow.
 
 ---
 
 ## Moderate Pitfalls
 
-### Pitfall 9: Free Hit Chip Resets Squad After Gameweek — Transfer Logic Must Account for This
+### Pitfall 25: Projected Points for DGW Players Must Account for Two Fixtures, Not One
 
 **What goes wrong:**
-The Free Hit chip allows unlimited transfers for one gameweek. After the gameweek ends, the squad reverts to what it was before the chip was played. Transfer suggestions that do not detect the Free Hit chip being active will show the chip squad as the user's real squad and compute wrong sell values / wrong bank balance.
-
-In 2025/26, the Free Hit chip is available twice (refreshes after GW19). Additionally, if the user transfers a player in before playing Free Hit, that transfer is lost when the chip is played.
+A player in a Double Gameweek has two fixtures in one FPL gameweek. A naively computed single-fixture projection (e.g. `xPts = f(xMins, fixture_difficulty, form)`) will underestimate DGW players by approximately 2×. The DGW player appears lower on the projected points ranking than they should, and the captain recommendation is wrong.
 
 **How to avoid:**
-- Read `active_chip` from `my-team/{id}/` — if it's `"freehit"`, display a warning that the current squad is temporary and skip normal transfer suggestions
-- Read `chips` from the manager's history to detect which chips have been used and which remain
-- For v1 (chips out of scope), surface a clear warning when Free Hit is detected rather than trying to compute suggestions
+- Before computing projected points, check fixture count per team per gameweek using the `fixtures` array already in `MergedPlayer` — count fixtures with the same `event_id`
+- For DGW players: `projected_pts = sum(xPts_per_fixture for each fixture in that gameweek)`
+- A DGW xMins projection is also approximately 2× a single GW — a player who would start both DGW matches has ~180 xMins not 90
 
 **Phase to address:**
-Transfer suggestion phase — handle as an edge case with a graceful warning, not complex logic.
+Projected Points phase (PROJ-01/02/03) — DGW handling must be built in from the start, not retrofitted.
 
 ---
 
-### Pitfall 10: Wildcard Chip Makes "Remaining Transfers" Meaningless
+### Pitfall 26: Buy/Hold/Sell Classification Threshold Is Arbitrary Without Calibration
 
 **What goes wrong:**
-When a Wildcard is active, the user has unlimited free transfers. The `my-team/{id}/` endpoint returns `transfers.limit` which will be null or a high number when Wildcard is active. Transfer suggestion logic that checks `transfers.limit` to constrain suggestions to 1 or 2 transfers will break — it may show no suggestions ("save your transfer") or crash on null.
+The Buy/Hold/Sell classifier needs thresholds: "what gem_score delta makes a player a 'Sell' vs 'Hold'?" Without calibration against real FPL outcomes, arbitrary thresholds (e.g. `gem_delta > 0.1 = Buy`) will produce too many Buys, making the recommendation feel like noise rather than signal.
 
 **How to avoid:**
-- Check `active_chip` before reading `transfers.limit`
-- If `active_chip == "wildcard"`, treat available transfers as unlimited
-- Surface a UI message: "Wildcard active — showing full squad optimisation suggestions"
-- For v1 (chips out of scope per PROJECT.md), still handle gracefully: detect wildcard and show a notice rather than broken transfer counts
+- Use percentile-based thresholds within the squad rather than absolute values: `Sell` = bottom quartile of squad gem scores where a better affordable replacement exists; `Hold` = second quartile; `Hold` = top half with no better affordable replacement; `Buy` = top-5 gem_delta candidates not in squad
+- The key threshold is: does a better replacement exist within budget? This is already computed in `computeTransferSuggestions`. Reuse it.
+- Surface confidence: "Strong Sell (gem delta: +0.38)" vs "Marginal Sell (gem delta: +0.08)"
 
 **Phase to address:**
-Transfer suggestion phase — guard clause at top of suggestion logic.
+Recommendation phase (REC-01) — define thresholds based on the actual squad distribution, not upfront.
 
 ---
 
-### Pitfall 11: Player Positions Are Integer Codes, Not Strings — and Dual-Position Players May Exist
+### Pitfall 27: Captaincy Safety Label Can Be Gamed by Ownership — High-Ownership ≠ Safe Captain
 
 **What goes wrong:**
-The FPL API uses `element_type` as an integer: `1 = GK, 2 = DEF, 3 = MID, 4 = FWD`. Transfer suggestion logic that compares position strings ("MID") instead of these codes will fail. More critically, FPL does not support dual-position players (a player registered as a MID cannot be transferred in for a FWD slot) — but historically some players have changed position mid-season by FPL re-registering them.
+Using `selected_by_percent` as a proxy for "safe" captain (because high ownership means the community agrees) conflates popular consensus with statistical safety. A highly-owned player can still be a rotation risk, face a tough fixture, or be returning from injury. The captain recommendation that says "Haaland is safe (55% owned)" communicates nothing about his actual ceiling or floor for the upcoming gameweek.
 
 **How to avoid:**
-- Map `element_type` to position labels at the data layer boundary — never pass raw integers to feature logic
-- At the start of each daily data refresh, log any players whose `element_type` has changed from the previous day's data (this catches mid-season position changes)
-- Transfer suggestion enforcement: always compare `element_type` integers, not display labels, to ensure position-lock compliance
+- "Safe" should mean: high start probability + at least average fixture + in form — not high ownership
+- Ownership is relevant for a different signal: differential captaincy risk (if a high-ownership player blanks, you lose rank vs the average manager — relevant for rank-maintenance strategies, out of scope for v1.1)
 
 **Phase to address:**
-Phase 1 (data layer) and transfer suggestion phase.
-
----
-
-### Pitfall 12: Understat Only Covers Premier League — No Data for Promoted Teams in Their First Season
-
-**What goes wrong:**
-Understat covers the Premier League for seasons since 2014/15. However, for teams promoted to the Premier League for the first time (or for the first time in many years), Understat will have no prior EPL-season data and may have incomplete or missing data for their players early in the current season.
-
-Transfer suggestion logic or gem ratings that require Understat xG/xA will produce nulls for players from newly-promoted clubs, which can cause those players to appear worse than they are (null xG treated as zero xG).
-
-**How to avoid:**
-- Treat missing Understat xG/xA as genuinely missing data, not zero — display a null/dash rather than a zero
-- Do not penalise players for missing xG/xA in composite gem scores — weight xG/xA only when data is available; compute a separate score for players with and without Understat data
-- Log which players have no Understat data on each refresh
-
-**Phase to address:**
-Phase 1 (data layer) and any phase that computes composite gem scores.
-
----
-
-### Pitfall 13: Price Change Timing and API Staleness
-
-**What goes wrong:**
-FPL prices change overnight (UK time). The `now_cost` field in `bootstrap-static` reflects the price at the time of the last fetch. If the app caches `bootstrap-static` for 24 hours and a price change happens during the day, the cached price may be stale. This particularly matters for transfer budget calculations — a player who rose £0.1m overnight appears cheaper than they really are.
-
-Additionally, the `selling_price` in `my-team/{id}/` reflects the selling price at the time of the fetch — not the price at the time the user makes a decision if they revisit the app later that day.
-
-**How to avoid:**
-- Display a "Last updated" timestamp on all price-sensitive views
-- Consider refreshing `bootstrap-static` at a fixed time each day that is after the FPL nightly price update (FPL price changes typically finalise by ~8am UK time)
-- Add a "Refresh now" button for the user to force a fresh fetch when making transfer decisions
-- Clearly label all prices as of the last refresh date
-
-**Phase to address:**
-Data refresh phase — establish refresh timing and display of staleness from the start.
+Captaincy phase (CAP-02) — define "safe" explicitly in terms of the player's own profile, not the crowd's opinion.
 
 ---
 
@@ -302,12 +329,13 @@ Data refresh phase — establish refresh timing and display of staleness from th
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Use raw FPL FDR integers for fixture difficulty | Saves one feature's complexity | Misleading gem ratings, user complaints | Never — implement custom FDR from phase 2 |
-| String-match player names across FPL and Understat | Avoids ID mapping maintenance | Silent data loss, broken gem ratings for many players | Never — use ID mapping from day one |
-| Call FPL API directly from frontend | Faster prototyping | Breaks immediately in browser due to CORS | Never — build server proxy from phase 1 |
-| Treat `now_cost` as sell price | Simpler budget logic | Overestimates user's available budget | Acceptable only if clearly labelled as approximate and no auth login |
-| Hardcode FPL API field names throughout app | Faster initial development | Season changeover breaks entire app silently | Never — use adapter/schema layer |
-| Use gameweek count instead of minutes for form windows | Simpler calculation | DGW/BGW distorts all form metrics | Never — normalise per 90 from the start |
+| Compute projected points as `form_pts_per90 × xMins` | Fast to build | Double-counts FPL's own estimate; misses DGW, clean sheet cliffs | Never — build component model from start |
+| Classify rotation risk from raw historical minutes only | Simple, data is already in pipeline | Injury recovery misclassified as rotation risk; nailed starters flagged | Never — always combine with `status` and `news` |
+| Derive Buy/Hold/Sell in TypeScript, not Python pipeline | No pipeline change required | Schema drift; recommendations inconsistent with gem_score | Never — all analytics in pipeline |
+| Store FPL session cookie in `localStorage` for convenience | Persistent auth across sessions | Cookie theft via XSS gives FPL account access | Never — ephemeral server-side only |
+| Hardcode safe/upside captaincy threshold as a fixed number | Simple to ship | Stale in weeks 5–15 when form distributions shift | Acceptable if documented and revisited each milestone |
+| Show component score numbers instead of reasons in explainability panel | No text generation required | User cannot validate or act on the recommendation | Acceptable only in dev/debug mode — never for production UI |
+| Use official FPL `ep_next` / `ep_this` fields for projected points | Zero pipeline work | FPL's own projection is a black box; cannot explain it; inaccurate for set-piece/DGW situations | Acceptable as a fallback or sanity-check comparison, never as the primary signal |
 
 ---
 
@@ -315,14 +343,14 @@ Data refresh phase — establish refresh timing and display of staleness from th
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| FPL API | Calling from browser frontend | All calls via server-side proxy (Next.js API routes) |
-| FPL Auth | Using fetch without cookie-jar | Use `axios`+`tough-cookie` or equivalent to maintain session |
-| FPL `my-team` | Using `now_cost` for sell price | Use `selling_price` field from authenticated `my-team` response |
-| FPL fixtures | Not checking fixture count per gameweek | Fetch `fixtures?event=X` to detect DGW/BGW per team per gameweek |
-| Understat | String name matching across sources | Use community ID mapping file; fuzzy-match only as fallback |
-| Understat | Scraping without delay | Add per-request delay (500ms minimum) and cache aggressively |
-| DefCon | Using `clearances_blocks_interceptions` for all positions | Use `defensive_contributions` for MID/FWD; CBIT for DEF supplementary only |
-| DefCon | Using season aggregates for hit rate | Use per-match `element-summary` history to count threshold-crossing events |
+| `computeAllGemScores` → projected points | Passing projected points through the same `normalise()` function | Projected points are absolute (FPL points); do not normalise to 0–1 |
+| `computeTransferSuggestions` → recommendation engine | Building buy/hold/sell separately, creating conflicting signals | Derive recommendations directly from the same `gem_score` and `gem_delta` values |
+| `my-team` auth → transfer engine | Fetching `selling_price` without also capturing `entry_history.bank` | Extract both from one `my-team` call; pass `bank` as `bankBalance` to `computeTransferSuggestions` |
+| `MergedPlayer` schema → v1.1 fields | Adding projected points / xMins in a TypeScript hook rather than in `merged_players.json` | Pipeline first, then type; never analytics in the UI layer |
+| `minutes_per90` in `MergedPlayer` | Using it as if it is minutes-per-90-minutes normalised (it is actually `minutes / starts`) | For xMins, compute `total_minutes / total_appearances` to get average minutes per match, or use `starts` and `minutes` separately |
+| FPL login → pipeline | Adding auth to `pipeline/run.py` or `pipeline/fpl_client.py` | Auth is UI-initiated only; pipeline never logs in |
+| Session cookie → multiple requests | Re-using a cookie obtained at UI login time for later pipeline calls | One login → one `my-team` fetch → discard. Never share or replay cookies. |
+| Captaincy ranking → gem_score | Ranking captaincy by `gem_score` alone | Apply DGW multiplier, fixture count, and set-piece order on top of gem_score |
 
 ---
 
@@ -330,10 +358,10 @@ Data refresh phase — establish refresh timing and display of staleness from th
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Fetching `element-summary` for all ~700 players on every request | Page load takes 30-60 seconds | Cache element-summary responses for 24 hours; batch fetch on background refresh | Immediately even for a single user |
-| No caching of `bootstrap-static` | Every page hit re-fetches the 2MB bootstrap payload | Cache with 24-hour TTL, refresh on schedule | At first real use |
-| Understat fetch without caching | Rate limited or blocked after first few requests | Cache all Understat data with 24-hour TTL | After 10-20 requests |
-| Per-player Understat fetches (serial) | Data ingestion takes minutes | Batch or parallel fetch with rate limiting | If looping 500+ players |
+| Computing projected points in the Next.js route handler on each request | API route is slow on each page load | All projections pre-computed in Python pipeline and stored in `merged_players.json` | Immediately — pipeline exists precisely to avoid this |
+| Fetching `element-summary/{id}/history` per player for xMins | Data ingestion takes 10+ minutes | Cache element-summary for 24h; fetch only changed players on incremental refresh | At first pipeline run with ~700 players |
+| Re-authenticating with FPL login on every page load | FPL may flag repeated logins; session is slow | Auth on explicit user action only; cache `selling_price` in React Query for the session duration | After a few hundred rapid logins |
+| Rendering an explainability panel with per-player reason strings computed in JavaScript | UI jank on player table scroll | Pre-render reason strings in Python pipeline alongside projected points | At ~700 player table with 5 reason strings each |
 
 ---
 
@@ -341,10 +369,11 @@ Data refresh phase — establish refresh timing and display of staleness from th
 
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Logging FPL login credentials to server logs | Credential exposure in log files | Never log `login` or `password` fields; scrub from error traces |
-| Persisting FPL session cookies to disk/database | Cookie theft gives account access | Keep session cookies in-memory only; discard after server request completes |
-| Echoing raw FPL API errors to browser | API structure leakage | Normalise error responses; never proxy raw errors |
-| Storing email/password in browser localStorage | Client-side credential exposure | Never store credentials; always re-prompt for login per session |
+| Storing FPL credentials in `.env` and committing to git | Credential exposure in version history | Never log or persist FPL email/password; prompt at runtime in UI only |
+| Returning raw `my-team` response to the browser | `selling_price`, squad structure, and transfer history exposed in browser network tab | Extract only the fields needed (`selling_price` per player, `bank`); return a minimal payload |
+| Logging session cookies in Next.js request logs | Cookie usable to access the FPL account | Explicitly scrub any cookie header from server logs |
+| Passing session cookie from browser → Next.js API → Python pipeline | Cookie lifetime extended; more exposure surface | Session cookie never leaves the Next.js Route Handler; pipeline has no auth |
+| Trusting user-supplied Team ID without validation | No auth risk (Team ID is public), but malformed IDs could cause unhandled errors in pipeline | Validate Team ID as a positive integer in the Route Handler before passing to FPL API |
 
 ---
 
@@ -352,25 +381,27 @@ Data refresh phase — establish refresh timing and display of staleness from th
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Showing gem scores without explaining inputs | User distrusts scores, can't validate | Show the component scores (form, xG, FDR, ownership) alongside composite score |
-| Transfer suggestion says "no transfers recommended" during Wildcard | User confused — they expect suggestions | Detect chip state and show Wildcard-optimised suggestions or a clear explanation |
-| Showing a player's `now_cost` as their sell value | User plans transfer, finds they're over budget in FPL | Always show buy price and estimated sell price separately |
-| Not flagging when Understat data is unavailable for a player | User sees 0 xG and thinks player has no shots | Display null/dash, not zero, for missing data |
-| Displaying raw FPL FDR colours directly | User assumes app uses better data than FPL | Compute custom FDR and label it clearly; hide or label official FDR if shown |
+| Showing projected points without confidence interval or caveats | User treats 7.4 projected pts as a guarantee and is surprised by a blank | Add "±" range or a "confidence" qualifier: "7.4 pts (moderate confidence — rotation risk)" |
+| Recommendation says "Sell Saka" based on a fixture swing | User correctly ignores it; trust in all recommendations drops | Apply a minimum gem_score floor: never recommend selling players above a quality threshold |
+| Captain recommendation list shows 5 players with similar scores | User cannot distinguish; ignores all 5 | Force ranking with clear tier labels: "1st choice", "2nd choice"; do not show near-ties without explanation |
+| Explainability panel opens on hover and closes before readable | User cannot absorb the reason | Use click-to-open or persistent panel; hover tooltip only for very short reasons |
+| "Rotation risk" badge on a player the user knows is nailed | User distrusts the badge system entirely | Show the evidence: "3 of last 8 appearances were subs or DNPs" — user can judge |
+| Buy/Hold/Sell recommendation for a player who is injured | User confused — why is an injured player a "Hold"? | Filter recommendations: injured/unavailable players should show a status badge, not a trade recommendation |
 
 ---
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **Sell price logic:** Transfer budget calculation uses `selling_price` from `my-team` (not `now_cost`) — verify with a player who has risen in price
-- [ ] **DGW normalisation:** Form metrics show per-90 stats, not raw gameweek totals — check a known DGW player's form window
-- [ ] **DefCon hit rate:** Hit rate calculated from per-match `element-summary` history, not season aggregate divided by games — verify threshold logic per position
-- [ ] **Understat join:** All starting-XI players from top-6 clubs have non-null xG/xA — zero null values for established players is the passing criterion
-- [ ] **CORS proxy:** FPL API calls work from the deployed URL, not just localhost — test on actual deployment
-- [ ] **Auth session:** `my-team` endpoint works after 30-minute idle — verify session cookie is not expiring between fetch calls
-- [ ] **Free Hit detection:** When `active_chip == "freehit"`, transfer suggestions show an appropriate warning rather than suggestions based on the temporary squad
-- [ ] **Position enforcement:** Transfer suggestions never recommend a MID as a replacement for a DEF — run a full squad scan to verify
-- [ ] **Blank gameweek display:** A player on BGW shows a dash or fixture count of 0, not a "0 points scored" display that looks like poor form
+- [ ] **Projected points DGW handling:** A player in a DGW shows ~2× the projected points of equivalent single-GW player — verify with a known DGW week
+- [ ] **xMins injury-awareness:** A player who was injured last month but is now fully fit (`status == 'a'`, blank `news`) does NOT show "Rotation risk" badge — verify with a known returning player
+- [ ] **Normalisation boundary:** `projected_pts_1gw` values are in FPL points range (3–15 for starters, 0–3 for bench) — not in 0–1 normalised range
+- [ ] **Auth budget accuracy:** After logging in, the available budget shown for a transfer matches what FPL's own interface shows — verify with a player who has risen in price (sell price should be less than buy price)
+- [ ] **Sell price integration:** `computeTransferSuggestions` `bankBalance` parameter is sourced from `entry_history.bank` (from `my-team`) when auth is active — not from a separate API call or estimate
+- [ ] **Recommendation-transfer coherence:** Every player marked "Sell" appears in `computeTransferSuggestions().suggestions` — if not, both systems must be reconciled
+- [ ] **Session expiry path:** After 30 minutes idle, the app shows "Session expired — please log in again" rather than a generic error or stale sell prices
+- [ ] **Explainability reasons:** The explainability panel shows natural-language reasons ("Easy fixtures", "Consistent starter") not just component score numbers — verify on three different player types
+- [ ] **Captaincy DGW boost:** A DGW player with moderate per-GW projection appears in the top 3 captaincy candidates — verify in a DGW week
+- [ ] **form_pts_per90 audit:** Confirm `form_pts_per90` in `merged_players.json` equals the raw FPL `form` field (not a per-90 normalised value) — and that projected points engine does NOT treat it as a per-90 rate
 
 ---
 
@@ -378,12 +409,12 @@ Data refresh phase — establish refresh timing and display of staleness from th
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| CORS discovered late | MEDIUM | Extract all data-fetching into server-side routes; 1-2 days refactoring |
-| Wrong sell price in production | LOW | Fix `selling_price` field reference; no data migration needed |
-| DGW inflating form — discovered in production | MEDIUM | Recalculate form with per-90 normalisation; update all cached scores |
-| Understat name matching silently dropping players | HIGH | Build ID mapping, re-import data, audit which players were affected |
-| FPL API field renamed at season start | MEDIUM | Update adapter/schema layer field mappings; if using Zod, get loud errors immediately |
-| DefCon wrong field (CBIT vs CBIRT) | LOW | Change field reference in DefCon calculation; re-run hit rate calculation |
+| Linear xMins projection discovered in production | MEDIUM | Rebuild projection model with scenario-based approach; re-run pipeline; projected points in `merged_players.json` will update on next run |
+| Injury history conflated with rotation — wrong badges | LOW | Add `status`-filtered lookback window in `defcon.py`/merge logic; re-run pipeline; badges update immediately |
+| Schema drift (new fields computed in TypeScript not Python) | HIGH | Audit all analytics in hooks/components; migrate to pipeline; update `MergedPlayer` type; UI refactor |
+| Session cookie stored in `localStorage` discovered in production | LOW but urgent | Remove `localStorage` call; force re-login (no session migration possible); cookie was never auth-safe in localStorage |
+| Buy/Hold/Sell conflicts with Transfer Panel | MEDIUM | Decide canonical data source (gem_score wins); rewrite recommendation classifier to derive from gem_score; test both panels with same player set |
+| Projected points not normalised — showing 0–1 instead of FPL pts | LOW | Fix normalisation step in pipeline; `merged_players.json` updates on next run; no UI refactor needed |
 
 ---
 
@@ -391,40 +422,60 @@ Data refresh phase — establish refresh timing and display of staleness from th
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| CORS (Pitfall 1) | Phase 1: Data layer | No browser console CORS errors on any page |
-| FPL auth cookie handling (Pitfall 2) | Phase 1: Data layer | `my-team` endpoint returns data after 30-min idle |
-| Sell price vs buy price (Pitfall 3) | Transfer suggestion phase | Budget shown matches FPL official interface within £0.1m |
-| DGW/BGW form inflation (Pitfall 4) | Phase 2: Form/fixture analysis | DGW player form score is normalised; not 2x a single-game player |
-| DefCon field and per-match logic (Pitfall 5) | Phase 3: DefCon analysis + Phase 1 data layer | Hit rates are non-zero for known high-contribution defenders |
-| Understat player name mismatch (Pitfall 6) | Phase 1: Data layer | 0 unmatched players for top-6 first-choice XI |
-| FPL API field schema breakage (Pitfall 7) | Phase 1: Data layer | Zod schema validation throws on missing fields |
-| Bad FDR data (Pitfall 8) | Phase 2: Fixture analysis | Custom FDR used; official FDR not the primary signal |
-| Free Hit chip state (Pitfall 9) | Transfer suggestion phase | Free Hit warning shown when chip is active |
-| Wildcard chip state (Pitfall 10) | Transfer suggestion phase | Wildcard detected; unlimited transfer mode or warning shown |
-| Position code handling (Pitfall 11) | Phase 1: Data layer | No cross-position transfer suggestions in test scenarios |
-| Missing Understat data (Pitfall 12) | Phase 1: Data layer | Promoted-team players show null xG, not 0 |
-| Price staleness (Pitfall 13) | Data refresh infrastructure | "Last updated" timestamp visible on all price views |
+| Linear xMins multiplication (14) | Projected Points (PROJ-01) | Rotation-risk player's xPts is not 60% of a nailed starter's xPts unless minutes model supports that |
+| Injury/rotation conflation (15) | xMins phase (MINS-01/02) | Returning-from-injury player with blank `news` shows "Nailed" or "Likely start", not "Rotation risk" |
+| `form_pts_per90` double-counting (16) | Projected Points (PROJ-01) | Projected pts correlates with xG/fixture difficulty, not just with FPL `form` field |
+| Schema drift — new fields in TypeScript (17) | First v1.1 phase, any | No analytics computed in hooks or components; `merged_players.json` contains all projected fields |
+| Recommendation-transfer conflict (18) | Recommendation phase (REC-01) | Every "Sell" recommendation appears in transfer suggestions; no contradictory signals |
+| Session expiry silent failure (19) | Auth phase (AUTH-01) | 30-minute idle → explicit "session expired" message, not broken state |
+| Auth in pipeline / repeated logins (20) | Auth phase (AUTH-01) | `pipeline/run.py` contains zero authentication code; login is UI-initiated only |
+| Captaincy variance — safe vs upside (21) | Captaincy phase (CAP-01/02) | DGW player appears in top captaincy candidates; safe/upside are separate labelled lists |
+| Scores not reasons in explainability (22) | Explainability phase (EXP-01/02) | Every recommendation shows at least 2 natural-language reasons, not just component scores |
+| Projected points normalised to 0–1 (23) | Projected Points (PROJ-01) | `projected_pts_1gw` range is 0–20 FPL pts, not 0–1 |
+| `selling_price` without `bank` (24) | Auth phase (AUTH-02) | Budget after login matches FPL interface to within £0.1m |
+| DGW double fixture projection (25) | Projected Points (PROJ-01/02) | DGW player projects ~2× a similar single-GW player |
+| Arbitrary Buy/Hold/Sell thresholds (26) | Recommendation phase (REC-01) | "Sell" count per typical squad is 1–3, not 8–11; thresholds are squad-relative |
+| Ownership as "safe" captain proxy (27) | Captaincy phase (CAP-02) | "Safe" label correlates with start probability and form, not ownership percentage |
+
+---
+
+## Appendix: v1.0 Pitfalls (condensed)
+
+The following pitfalls from the v1.0 research remain valid. They are resolved in the existing codebase but must not be regressed during v1.1 development.
+
+| Pitfall | Status | v1.1 Regression Risk |
+|---------|--------|----------------------|
+| CORS — all FPL calls via server proxy | Resolved (proxy at `/api/fpl/[...proxy]`) | Low — proxy exists; do not add direct browser fetches for auth endpoints |
+| Session-cookie auth — cookie-jar-aware client | Partially resolved (AUTH-01 not yet built) | Active — v1.1 must implement correctly |
+| Sell price ≠ buy price | Resolved (approximate; exact requires AUTH-02) | Active — AUTH-02 must use `selling_price`, not `now_cost` |
+| DGW/BGW form inflation | Resolved (`form_pts_per90` uses FPL rolling average) | Active — projected points must not reintroduce gameweek-count normalisation |
+| DefCon field confusion (`defensive_contributions` vs CBIT) | Resolved | Low — DefCon phase complete |
+| Understat name mismatch | Resolved (`player_id_map.json`) | Low — map maintained |
+| FPL API field changes | Mitigated (Zod adapter) | Low — adapter exists |
+| Raw FDR unreliable | Resolved (custom rolling xGA FDR) | Low — FDR model in pipeline |
+| Free Hit / Wildcard chip detection | Resolved (chip guard in transfer engine) | Low — chip guard already in `computeTransferSuggestions` |
+| Position codes — integer not string | Resolved (type system) | Low |
+| Missing Understat for promoted teams | Resolved (null not zero) | Low |
+| Price change staleness | Mitigated (LastUpdated component) | Low |
 
 ---
 
 ## Sources
 
-- [FPL APIs Explained — Oliver Looney](https://www.oliverlooney.com/blogs/FPL-APIs-Explained) — CORS policy, authenticated endpoints
-- [Fantasy Premier League API Authentication Guide — Bram Vanherle, Medium](https://medium.com/@bram.vanherle1/fantasy-premier-league-api-authentication-guide-2f7aeb2382e4) — cookie auth flow
-- [Fantasy Premier League API Endpoints: A Detailed Guide — Frenzel Timothy, Medium](https://medium.com/@frenzelts/fantasy-premier-league-api-endpoints-a-detailed-guide-acbd5598eb19) — endpoint reference
-- [What's new in 2025/26 Fantasy: Defensive contributions — Premier League official](https://www.premierleague.com/en/news/4361991/whats-new-in-202526-fantasy-defensive-contributions) — DefCon rule, per-position thresholds, point cap
-- [FPL 2025/26: The New Defensive Contributions Rule Explained — Gethyn Ellis](https://www.gethynellis.com/2025/09/fpl-2025-26-the-new-defensive-contributions-rule-explained.html) — API field names
-- [How FPL Price changes work — FPL Dashboard](https://fpl.page/article/how-fpl-price-changes-work-tool-predictor) — sell price formula
-- [FPL player price changes: how, why and when — Premier League official](https://www.premierleague.com/en/news/2858775) — price change timing
-- [When are the FPL Blank and Double Gameweeks in 2025/26 — Fantasy Football Scout](https://www.fantasyfootballscout.co.uk/2026/03/19/when-are-the-fpl-blank-and-double-gameweeks-in-2025-26) — DGW/BGW schedule
-- [FPL Fixture Difficulty 2025/26 — All Fantasy Tips](https://allfantasytips.com/fpl-fixture-difficulty/) — FDR inaccuracy
-- [FPL FDR — Premier Fantasy Tools](https://www.premierfantasytools.com/fpl-fixture-difficulty/) — community FDR alternative rationale
-- [Getting data from FPL and Understat — Stateastic](https://stateastic.home.blog/2022/08/02/getting-data-from-fpl-and-understat-to-do-analysis/) — player name / ID matching approach
-- [understatAPI — PyPI](https://pypi.org/project/understatapi/) — Understat scraping library
-- [Free Hit vs Wildcard: What is the Difference — Ingenuity Fantasy Football](https://ingenuityfantasy.com/fantasy-fundamentals/free-hit-vs-wildcard-what-is-the-difference/) — chip mechanics
-- [How and when to use your chips in 2025/26 Fantasy — Premier League official](https://www.premierleague.com/en/news/4362085/how-and-when-to-use-your-chips-in-202526-fantasy) — chip rules including Free Hit refresh after GW19
+- [xMins (Expected Minutes) — FPL Review Documentation](https://docs.fplreview.com/the-model/projections/xmins/) — non-linear EV, scenario modelling
+- [Modelling xPts in FPL — Marcus Leadboot, Medium](https://medium.com/@marcusleadboot/modelling-xpts-in-fpl-gameweek-1-01fd2179eac6) — injury vs rotation conflation, clean sheet modelling challenges
+- [Fantasy Premier League API Authentication Guide — Bram Vanherle, Medium](https://medium.com/@bram.vanherle1/fantasy-premier-league-api-authentication-guide-2f7aeb2382e4) — session cookie auth flow, required cookies
+- [FPL APIs Explained — Oliver Looney](https://www.oliverlooney.com/blogs/FPL-APIs-Explained) — CORS, authenticated endpoints, `my-team` fields
+- [Enhancing Fantasy Premier League with Explainable AI — Uppsala University](https://uu.diva-portal.org/smash/get/diva2:1972615/FULLTEXT02.pdf) — explainability importance for user trust, natural language vs score display
+- [AIrsenal — Alan Turing Institute GitHub](https://github.com/alan-turing-institute/AIrsenal) — component-based projected points approach (team model + player model)
+- [FPL Expected Points Calculator — Daniel Mehta GitHub](https://github.com/daniel-mehta/FPL-Expected-Points) — xPts formula approaches comparison
+- [Codebase inspection: `pipeline/merge.py`] — `form_pts_per90` = raw FPL `form` field (not per-90 normalised)
+- [Codebase inspection: `src/lib/transfer-engine.ts`] — `bankBalance` parameter, `gem_score` sort logic
+- [Codebase inspection: `src/lib/gem-score.ts`] — min-max normalisation pattern
+- [Codebase inspection: `src/lib/types.ts`] — `MergedPlayer` schema, `minutes_per90 = minutes / starts`
+- [FPL Review on X — xMins model update](https://x.com/fplreview/status/1189252407806627841) — previous "past minutes" model replaced with hierarchical model; pure historical minutes insufficient
 
 ---
 
-*Pitfalls research for: FPL analytics web app*
-*Researched: 2026-03-25*
+*Pitfalls research for: FPL decision engine (v1.1) — projected points, xMins, captaincy, recommendations, explainability, session-cookie auth*
+*Researched: 2026-03-29*
