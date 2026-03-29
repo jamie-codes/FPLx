@@ -75,8 +75,8 @@ export const columns = [
     id: 'trend',
     header: 'Trend',
     cell: ({ row }) => {
-      const ev = row.original.cost_change_event
-      const st = row.original.cost_change_start
+      const ev = row.original.cost_change_event ?? 0
+      const st = row.original.cost_change_start ?? 0
       const seasonAmt = (Math.abs(st) / 10).toFixed(1)
       const seasonSign = st > 0 ? '+' : st < 0 ? '-' : ''
       const seasonText = st !== 0 ? `${seasonSign}${seasonAmt}m season` : ''

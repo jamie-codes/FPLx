@@ -56,8 +56,8 @@ export const columns = [
     header: 'Trend',
     cell: ({ row }) => (
       <PriceTrendCell
-        costChangeEvent={row.original.cost_change_event}
-        costChangeStart={row.original.cost_change_start}
+        costChangeEvent={row.original.cost_change_event ?? 0}
+        costChangeStart={row.original.cost_change_start ?? 0}
       />
     ),
   }),
