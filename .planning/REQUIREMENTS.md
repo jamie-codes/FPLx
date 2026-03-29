@@ -9,9 +9,9 @@ IDs assigned for phase traceability.
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| TIS-01 | Enter FPL Team ID to pull current squad (public API, no login needed) | Complete |
-| TIS-02 | Optional FPL login (email/password) to fetch bank balance and remaining transfers | Complete |
-| TIS-03 | Display squad split by position (GK / DEF / MID / FWD) with price, ownership %, minutes played, and injury/flag status | Complete |
+| TIS-01 | Enter FPL Team ID to pull current squad (public API, no login needed) | Pending |
+| TIS-02 | Optional FPL login (email/password) to fetch bank balance and remaining transfers | Pending |
+| TIS-03 | Display squad split by position (GK / DEF / MID / FWD) with price, ownership %, minutes played, and injury/flag status | Pending |
 
 ## Upcoming Gem Rating
 
@@ -60,13 +60,13 @@ IDs assigned for phase traceability.
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| TRF-01 | Suggest who to sell or sub out based on recent performance and upcoming fixtures | Pending |
-| TRF-02 | For each sell candidate: show up to 3 replacement options ranked by Upcoming Gem rating | Pending |
-| TRF-03 | Enforce position rules (MID → MID, FWD → FWD, etc.) | Pending |
-| TRF-04 | Factor in bank balance + sale value: only suggest affordable transfers | Pending |
-| TRF-05 | Suggest multi-transfer combinations if user has available free transfers | Pending |
-| TRF-06 | If no strong transfers available, recommend saving the transfer | Pending |
-| TRF-07 | Show how many free transfers the user has (from login or user input fallback) | Complete |
+| TRF-01 | Suggest who to sell or sub out based on recent performance and upcoming fixtures | Complete |
+| TRF-02 | For each sell candidate: show up to 3 replacement options ranked by Upcoming Gem rating | Complete |
+| TRF-03 | Enforce position rules (MID → MID, FWD → FWD, etc.) | Complete |
+| TRF-04 | Factor in bank balance + sale value: only suggest affordable transfers | Complete |
+| TRF-05 | Suggest multi-transfer combinations if user has available free transfers | Complete |
+| TRF-06 | If no strong transfers available, recommend saving the transfer | Complete |
+| TRF-07 | Show how many free transfers the user has (from login or user input fallback) | Pending |
 
 ## Data & Refresh
 
@@ -110,16 +110,16 @@ IDs assigned for phase traceability.
 | DEF-04 | Phase 4 | Complete |
 | UIX-01 | Phase 3 | Complete |
 | UIX-02 | Phase 3 | Complete |
-| TIS-01 | Phase 5 | Complete |
-| TIS-02 | Phase 5 | Complete |
-| TIS-03 | Phase 5 | Complete |
-| TRF-01 | Phase 5 | Pending |
-| TRF-02 | Phase 5 | Pending |
-| TRF-03 | Phase 5 | Pending |
-| TRF-04 | Phase 5 | Pending |
-| TRF-05 | Phase 5 | Pending |
-| TRF-06 | Phase 5 | Pending |
-| TRF-07 | Phase 5 | Complete |
+| TIS-01 | Phase 5 | Pending |
+| TIS-02 | Phase 5 | Pending |
+| TIS-03 | Phase 5 | Pending |
+| TRF-01 | Phase 5 | Complete |
+| TRF-02 | Phase 5 | Complete |
+| TRF-03 | Phase 5 | Complete |
+| TRF-04 | Phase 5 | Complete |
+| TRF-05 | Phase 5 | Complete |
+| TRF-06 | Phase 5 | Complete |
+| TRF-07 | Phase 5 | Pending |
 | FFA-03 | Phase 6 | Pending |
 | VAL-01 | Phase 6 | Pending |
 | VAL-02 | Phase 6 | Pending |

@@ -102,8 +102,8 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [x] 05-01-PLAN.md — Squad adapter (Zod schemas), Route Handler, useSquad hook
-- [ ] 05-02-PLAN.md — TDD: transfer engine (position lock, budget, chip guard, save recommendation)
+- [ ] 05-01-PLAN.md — Squad adapter (Zod schemas), Route Handler, useSquad hook
+- [x] 05-02-PLAN.md — TDD: transfer engine (position lock, budget, chip guard, save recommendation)
 - [ ] 05-03-PLAN.md — SquadView + TransferPanel UI components, page.tsx tab wiring
 
 ### Phase 6: Club Form, Value Gems and Polish
