@@ -159,10 +159,30 @@ export function TransferPanel() {
                       <div className="text-sm text-zinc-900">
                         Sell{' '}
                         <span className="font-medium">{s.sell.web_name}</span>{' '}
-                        <span className="text-zinc-500">({s.sell.gem_score.toFixed(2)})</span>{' '}
-                        &rarr; Buy{' '}
+                        <span className="text-zinc-500">({s.sell.gem_score.toFixed(2)})</span>
+                        {/* VAL-03: price trend */}
+                        {s.sell.cost_change_event > 0 && (
+                          <span className="text-green-600 text-xs ml-1">↑{(s.sell.cost_change_event / 10).toFixed(1)}</span>
+                        )}
+                        {s.sell.cost_change_event < 0 && (
+                          <span className="text-red-600 text-xs ml-1">↓{(Math.abs(s.sell.cost_change_event) / 10).toFixed(1)}</span>
+                        )}
+                        {s.sell.cost_change_start !== 0 && (
+                          <span className="text-zinc-400 text-[10px] ml-1">({s.sell.cost_change_start > 0 ? '+' : '-'}{(Math.abs(s.sell.cost_change_start) / 10).toFixed(1)}m season)</span>
+                        )}
+                        {' '}&rarr; Buy{' '}
                         <span className="font-medium">{s.buy.web_name}</span>{' '}
                         <span className="text-zinc-500">({s.buy.gem_score.toFixed(2)})</span>
+                        {/* VAL-03: price trend */}
+                        {s.buy.cost_change_event > 0 && (
+                          <span className="text-green-600 text-xs ml-1">↑{(s.buy.cost_change_event / 10).toFixed(1)}</span>
+                        )}
+                        {s.buy.cost_change_event < 0 && (
+                          <span className="text-red-600 text-xs ml-1">↓{(Math.abs(s.buy.cost_change_event) / 10).toFixed(1)}</span>
+                        )}
+                        {s.buy.cost_change_start !== 0 && (
+                          <span className="text-zinc-400 text-[10px] ml-1">({s.buy.cost_change_start > 0 ? '+' : '-'}{(Math.abs(s.buy.cost_change_start) / 10).toFixed(1)}m season)</span>
+                        )}
                       </div>
                       <div className="text-xs text-zinc-500">
                         Gem improvement:{' '}
@@ -200,10 +220,30 @@ export function TransferPanel() {
                       <div className="text-sm text-zinc-900">
                         Sell{' '}
                         <span className="font-medium">{s.sell.web_name}</span>{' '}
-                        <span className="text-zinc-500">({s.sell.gem_score.toFixed(2)})</span>{' '}
-                        &rarr; Buy{' '}
+                        <span className="text-zinc-500">({s.sell.gem_score.toFixed(2)})</span>
+                        {/* VAL-03: price trend */}
+                        {s.sell.cost_change_event > 0 && (
+                          <span className="text-green-600 text-xs ml-1">↑{(s.sell.cost_change_event / 10).toFixed(1)}</span>
+                        )}
+                        {s.sell.cost_change_event < 0 && (
+                          <span className="text-red-600 text-xs ml-1">↓{(Math.abs(s.sell.cost_change_event) / 10).toFixed(1)}</span>
+                        )}
+                        {s.sell.cost_change_start !== 0 && (
+                          <span className="text-zinc-400 text-[10px] ml-1">({s.sell.cost_change_start > 0 ? '+' : '-'}{(Math.abs(s.sell.cost_change_start) / 10).toFixed(1)}m season)</span>
+                        )}
+                        {' '}&rarr; Buy{' '}
                         <span className="font-medium">{s.buy.web_name}</span>{' '}
                         <span className="text-zinc-500">({s.buy.gem_score.toFixed(2)})</span>
+                        {/* VAL-03: price trend */}
+                        {s.buy.cost_change_event > 0 && (
+                          <span className="text-green-600 text-xs ml-1">↑{(s.buy.cost_change_event / 10).toFixed(1)}</span>
+                        )}
+                        {s.buy.cost_change_event < 0 && (
+                          <span className="text-red-600 text-xs ml-1">↓{(Math.abs(s.buy.cost_change_event) / 10).toFixed(1)}</span>
+                        )}
+                        {s.buy.cost_change_start !== 0 && (
+                          <span className="text-zinc-400 text-[10px] ml-1">({s.buy.cost_change_start > 0 ? '+' : '-'}{(Math.abs(s.buy.cost_change_start) / 10).toFixed(1)}m season)</span>
+                        )}
                       </div>
                       <div className="text-xs text-zinc-500">
                         Gem improvement:{' '}

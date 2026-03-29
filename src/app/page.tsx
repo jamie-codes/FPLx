@@ -6,6 +6,7 @@ import { DefConTables } from '@/components/defcon/DefConTables'
 import { TransferPanel } from '@/components/transfers/TransferPanel'
 import { ClubFormTable } from '@/components/club-form/ClubFormTable'
 import { LastUpdated } from '@/components/LastUpdated'
+import { ValueGemsTable } from '@/components/value-gems/ValueGemsTable'
 
 type Tab = 'gems' | 'defcon' | 'squad' | 'club-form' | 'value-gems'
 
@@ -88,7 +89,7 @@ export default function Home() {
         </div>
       )}
       {activeTab === 'club-form' && <ClubFormTable />}
-      {activeTab === 'value-gems' && <p className="text-gray-500">Coming soon...</p>}
+      {activeTab === 'value-gems' && <ValueGemsTable />}
     </main>
   )
 }
