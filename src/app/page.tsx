@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import { GemTable } from '@/components/gem-table/GemTable'
 import { DefConTables } from '@/components/defcon/DefConTables'
+import { TransferPanel } from '@/components/transfers/TransferPanel'
 
-type Tab = 'gems' | 'defcon'
+type Tab = 'gems' | 'defcon' | 'squad'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('gems')
@@ -33,11 +34,22 @@ export default function Home() {
         >
           DefCon Analysis
         </button>
+        <button
+          className={`pb-2 px-1 text-sm font-medium ${
+            activeTab === 'squad'
+              ? 'border-b-2 border-zinc-900 text-zinc-900'
+              : 'text-zinc-500 hover:text-zinc-700'
+          }`}
+          onClick={() => setActiveTab('squad')}
+        >
+          Squad & Transfers
+        </button>
       </div>
 
       {/* Tab content */}
       {activeTab === 'gems' && <GemTable />}
       {activeTab === 'defcon' && <DefConTables />}
+      {activeTab === 'squad' && <TransferPanel />}
     </main>
   )
 }
