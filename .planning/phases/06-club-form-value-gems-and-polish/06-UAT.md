@@ -69,24 +69,24 @@ blocked: 0
 
 - truth: "Fixture difficulty badges correctly reflect opponent strength — Man City fixtures should show as hard (red) not easy (green)"
   status: failed
-  reason: "User reported: Arsenal vs Man City Away and Burnley vs Man City Home both showing as green (easy) — clearly wrong for a top-6 opponent"
+  reason: "User reported: Arsenal vs Man City Away and Burnley vs Man City Home both showing as green (easy). Root cause: tier() function in src/lib/club-form.ts lines 71-73 is inverted — returns 'easy' when score >= hardThreshScore (should be 'hard') and 'hard' when score <= easyThreshScore (should be 'easy'). Fix: swap the two return values."
   severity: major
   test: 2
-  artifacts: []
-  missing: []
+  artifacts: [src/lib/club-form.ts]
+  missing: [correct tier logic]
 
 - truth: "Price trend column shows GW change and season change with correct formatting — no NaN values"
   status: failed
-  reason: "User reported on both Value Gems and Gem Ratings tabs: trend column shows '— NaNm season' on every row — cost_change_event/cost_change_start are undefined/NaN, either missing from merged_players.json (pipeline not re-run) or PriceTrendCell fails to guard against undefined/missing fields"
+  reason: "User reported on Value Gems, Gem Ratings, and Transfer Panel: '— NaNm season' or '(-NaNm season)' on every row. Root cause: (1) merged_players.json is missing cost_change_event/cost_change_start fields — pipeline has not been re-run since merge.py was updated. (2) PriceTrendCell and TransferPanel do not guard against undefined — Math.abs(undefined) = NaN, and `undefined !== 0` is true so season sub-text always renders. Fix: add `?? 0` guards in PriceTrendCell props and TransferPanel cost_change reads; re-run pipeline."
   severity: major
   test: 6
-  artifacts: []
-  missing: []
+  artifacts: [src/components/value-gems/columns.tsx, src/components/gem-table/columns.tsx, src/components/transfers/TransferPanel.tsx]
+  missing: [undefined guards for cost_change fields, pipeline re-run]
 
 - truth: "Transfer Panel price trend shows correct GW arrow and season change — no NaN values"
   status: failed
-  reason: "User reported: 'Sell Virgil (0.21)(-NaNm season) → Buy De Cuyper (0.65)(-NaNm season)' — same NaN issue as test 6/8, cost_change fields missing or unguarded"
+  reason: "Same root cause as test 6/8 — covered by the same fix (undefined guards + pipeline re-run)"
   severity: major
   test: 9
-  artifacts: []
-  missing: []
+  artifacts: [src/components/transfers/TransferPanel.tsx]
+  missing: [undefined guards for cost_change fields]
