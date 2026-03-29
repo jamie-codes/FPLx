@@ -24,6 +24,15 @@ Give the manager a clear, prioritised view of who to buy and who to sell this we
 - GemTable renders at `/` with TanStack Table v8 — sortable by any column, filterable by position (GK/DEF/MID/FWD), default sort gem_score desc
 - Component scores visible per row so manager sees why a player ranked where they did
 
+**Club Form, Value Gems & Polish** — Validated in Phase 06: Club Form, Value Gems & Polish
+- `computeClubForm()` pure function computes W/D/L/GS/GC over rolling 5-game window per team (DGW-safe)
+- `isCheapGem`/`isLowOwned` filter predicates extracted as testable pure functions
+- `cost_change_event` and `cost_change_start` fields on `MergedPlayer` and passed through `merge.py`
+- Club Form tab: sortable TanStack table for all 20 clubs with `FixtureBadges` (next 5, colour-coded H/A)
+- Value Gems tab: filter pills (All/Cheap/Low-Owned/Both) with `isCheapGem`/`isLowOwned` predicates
+- `PriceTrendCell` with GW primary + season sub-text on GemTable, ValueGemsTable, and TransferPanel
+- `LastUpdated` component (amber when stale, unit tested)
+
 **DefCon Analysis** — Validated in Phase 04: DefCon Analysis
 - Per-match hit rates from `element-summary` API — per-game threshold check (DEF: 10, MID/FWD: 12), not season aggregate
 - `pipeline/defcon.py` fetches per-player element history, computes hit rates, and writes `defcon_stats.json` (integrated into `run.py`)
@@ -131,4 +140,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-28 — Phase 04 complete (DefCon Analysis — per-match hit rates, dual position tables, tab navigation)*
+*Last updated: 2026-03-29 — Phase 06 complete (Club Form, Value Gems & Polish — filter pills, price trends, FixtureBadges, LastUpdated)*
