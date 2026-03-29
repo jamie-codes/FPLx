@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Data Foundation** - Next.js scaffold, FPL Route Handler proxy, Zod adapter, Vercel Blob cache, and player ID mapping — gates everything (completed 2026-03-27)
 - [x] **Phase 2: Understat Pipeline + Merged Data API** - Python pipeline (soccerdata xG/xA + FPL fetch), FPL/Understat merge, custom FDR, Blob upload, `/api/players` endpoint (completed 2026-03-28)
 - [ ] **Phase 3: Gem Rating Table** - Composite scoring (7 dimensions, per-90), scored pipeline output, sortable/filterable GemTable UI — core product value
-- [x] **Phase 4: DefCon Analysis** - Per-match hit rate from element-summary history, position-split tables (DEF=10, MID/FWD=12), DefConTable UI (completed 2026-03-28)
+- [x] **Phase 4: DefCon Analysis** - Per-match hit rate from element-summary history, position-split tables (DEF=10, MID/FWD=12), DefConTable UI (completed 2026-03-28)
 - [ ] **Phase 5: Squad View + Transfer Suggestions** - Team ID input, squad fetch, transfer-engine.ts (position lock + approximate budget), transfer suggestions ranked by Gem delta
 - [ ] **Phase 6: Club Form, Value Gems and Polish** - Club form table, cheap gems / low-owned views, fixture difficulty badges, last-updated display, price trend
 
@@ -99,8 +99,12 @@ Plans:
   4. Budget enforcement uses `now_cost` labelled as approximate — each suggestion shows the estimated cost and labels prices as "approx" when no FPL login is provided
   5. When Free Hit (`active_chip == "freehit"`) or Wildcard is detected, the panel shows a chip warning instead of normal suggestions
   6. If no transfer improves the squad's Gem rating, the panel explicitly recommends saving the transfer rather than showing a forced suggestion
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 3 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Squad adapter (Zod schemas), Route Handler, useSquad hook
+- [ ] 05-02-PLAN.md — TDD: transfer engine (position lock, budget, chip guard, save recommendation)
+- [ ] 05-03-PLAN.md — SquadView + TransferPanel UI components, page.tsx tab wiring
 
 ### Phase 6: Club Form, Value Gems and Polish
 **Goal**: Supporting analytics (club form, value gems, price trends) and UI polish (fixture badges, last-updated timestamp) are in place, making the app complete for daily use
@@ -126,5 +130,5 @@ Phases execute in numeric order. Phases 3 and 4 are independent and can run in p
 | 2. Understat Pipeline + Merged Data API | 3/3 | Complete   | 2026-03-28 |
 | 3. Gem Rating Table | 2/3 | In Progress|  |
 | 4. DefCon Analysis | 3/3 | Complete   | 2026-03-28 |
-| 5. Squad View + Transfer Suggestions | 0/? | Not started | - |
+| 5. Squad View + Transfer Suggestions | 0/3 | Not started | - |
 | 6. Club Form, Value Gems and Polish | 0/? | Not started | - |
