@@ -9,9 +9,9 @@ IDs assigned for phase traceability.
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| TIS-01 | Enter FPL Team ID to pull current squad (public API, no login needed) | Pending |
-| TIS-02 | Optional FPL login (email/password) to fetch bank balance and remaining transfers | Pending |
-| TIS-03 | Display squad split by position (GK / DEF / MID / FWD) with price, ownership %, minutes played, and injury/flag status | Pending |
+| TIS-01 | Enter FPL Team ID to pull current squad (public API, no login needed) | Complete |
+| TIS-02 | Optional FPL login (email/password) to fetch bank balance and remaining transfers | Complete |
+| TIS-03 | Display squad split by position (GK / DEF / MID / FWD) with price, ownership %, minutes played, and injury/flag status | Complete |
 
 ## Upcoming Gem Rating
 
@@ -66,7 +66,7 @@ IDs assigned for phase traceability.
 | TRF-04 | Factor in bank balance + sale value: only suggest affordable transfers | Complete |
 | TRF-05 | Suggest multi-transfer combinations if user has available free transfers | Complete |
 | TRF-06 | If no strong transfers available, recommend saving the transfer | Complete |
-| TRF-07 | Show how many free transfers the user has (from login or user input fallback) | Pending |
+| TRF-07 | Show how many free transfers the user has (from login or user input fallback) | Complete |
 
 ## Data & Refresh
 
@@ -110,16 +110,16 @@ IDs assigned for phase traceability.
 | DEF-04 | Phase 4 | Complete |
 | UIX-01 | Phase 3 | Complete |
 | UIX-02 | Phase 3 | Complete |
-| TIS-01 | Phase 5 | Pending |
-| TIS-02 | Phase 5 | Pending |
-| TIS-03 | Phase 5 | Pending |
+| TIS-01 | Phase 5 | Complete |
+| TIS-02 | Phase 5 | Complete |
+| TIS-03 | Phase 5 | Complete |
 | TRF-01 | Phase 5 | Complete |
 | TRF-02 | Phase 5 | Complete |
 | TRF-03 | Phase 5 | Complete |
 | TRF-04 | Phase 5 | Complete |
 | TRF-05 | Phase 5 | Complete |
 | TRF-06 | Phase 5 | Complete |
-| TRF-07 | Phase 5 | Pending |
+| TRF-07 | Phase 5 | Complete |
 | FFA-03 | Phase 6 | Pending |
 | VAL-01 | Phase 6 | Pending |
 | VAL-02 | Phase 6 | Pending |
