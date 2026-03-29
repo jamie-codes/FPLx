@@ -29,6 +29,8 @@ function makeScoredPlayer(overrides: Partial<ScoredPlayer> = {}): ScoredPlayer {
     penalties_order: null,
     corners_and_indirect_freekicks_order: null,
     news: '',
+    cost_change_event: 0,
+    cost_change_start: 0,
     understat_id: 100,
     xg_per90: 0.3,
     xa_per90: 0.15,

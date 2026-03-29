@@ -102,6 +102,9 @@ export interface MergedPlayer {
   penalties_order: number | null
   corners_and_indirect_freekicks_order: number | null
   news: string
+  // Price trend fields (VAL-03)
+  cost_change_event: number                 // tenths of GBP 1m, this GW (0 = no change)
+  cost_change_start: number                 // tenths of GBP 1m, since season start
   // Understat fields (null for unmatched promoted-team players per Pitfall 12)
   understat_id: number | null
   xg_per90: number | null
