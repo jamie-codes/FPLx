@@ -66,22 +66,20 @@
 
 ## Traceability
 
-*Filled by roadmapper — maps each REQ-ID to a phase.*
-
 | REQ-ID | Description | Phase |
 |--------|-------------|-------|
-| PROJ-01 | Projected pts 1 GW | — |
-| PROJ-02 | Projected pts 3 GW | — |
-| PROJ-03 | Projected pts 5 GW | — |
-| PROJ-04 | Projected pts UI columns | — |
-| MINS-01 | Expected minutes + start prob | — |
-| MINS-02 | Rotation risk badge | — |
-| MINS-03 | xMins in transfer suggestions | — |
-| REC-01 | Buy / Hold / Sell labels | — |
-| REC-02 | Replacement shortlist + delta | — |
-| CAP-01 | Captain top-5 rankings | — |
-| CAP-02 | Safe vs upside captain | — |
-| EXP-01 | Why-this-player reasons | — |
-| EXP-02 | Risk flags | — |
-| AUTH-01 | FPL login | — |
-| AUTH-02 | Exact sell price | — |
+| PROJ-01 | Projected pts 1 GW | Phase 7 |
+| PROJ-02 | Projected pts 3 GW | Phase 7 |
+| PROJ-03 | Projected pts 5 GW | Phase 7 |
+| PROJ-04 | Projected pts UI columns | Phase 9 |
+| MINS-01 | Expected minutes + start prob | Phase 7 |
+| MINS-02 | Rotation risk badge | Phase 8 |
+| MINS-03 | xMins in transfer suggestions | Phase 8 |
+| REC-01 | Buy / Hold / Sell labels | Phase 10 |
+| REC-02 | Replacement shortlist + delta | Phase 11 |
+| CAP-01 | Captain top-5 rankings | Phase 10 |
+| CAP-02 | Safe vs upside captain | Phase 10 |
+| EXP-01 | Why-this-player reasons | Phase 11 |
+| EXP-02 | Risk flags | Phase 11 |
+| AUTH-01 | FPL login | Phase 12 |
+| AUTH-02 | Exact sell price | Phase 12 |

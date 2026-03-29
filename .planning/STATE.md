@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Decision Engine
 status: planning
-stopped_at: Defining requirements
+stopped_at: Roadmap created — ready for phase planning
 last_updated: "2026-03-29T00:00:00.000Z"
 last_activity: 2026-03-29
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.0 milestone complete — planning v1.1
+**Current focus:** v1.1 Decision Engine — pipeline-first build of projected points, minutes risk, buy/hold/sell, captaincy, explainability, and FPL auth.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Phase 7 (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-03-29 — Milestone v1.1 started
+Status: Roadmap created — ready for phase planning
+Last activity: 2026-03-29 — v1.1 roadmap written (Phases 7–12)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -52,15 +52,6 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 *Updated after each plan completion*
-| Phase 01-data-foundation P02 | 4 | 2 tasks | 3 files |
-| Phase 02-understat-pipeline-merged-data-api P02 | 2min | 2 tasks | 2 files |
-| Phase 02-understat-pipeline-merged-data-api P03 | 5 | 1 tasks | 5 files |
-| Phase 03-gem-rating-table P01 | 148 | 3 tasks | 5 files |
-| Phase 03-gem-rating-table P02 | 3 | 2 tasks | 4 files |
-| Phase 04-defcon-analysis P03 | 60 | 3 tasks | 5 files |
-| Phase 05-squad-view-transfer-suggestions P02 | 160 | 1 tasks | 3 files |
-| Phase 05-squad-view-transfer-suggestions P03 | 745 | 3 tasks | 3 files |
-| Phase 06-club-form-value-gems-and-polish P04 | 4 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -92,6 +83,12 @@ Recent decisions affecting current work:
 - [Phase 05-squad-view-transfer-suggestions]: SquadView receives allPlayers as ScoredPlayer[] — no re-scoring inside the component
 - [Phase 05-squad-view-transfer-suggestions]: TransferPanel manages submittedId separately from teamId input — squad does not reload on every keystroke
 - [Phase 06-club-form-value-gems-and-polish]: tier() bug was a return-value swap — weak teams already correctly identified by thresholds, only the label mapping was wrong
+- [v1.1 Roadmap]: Phase 7 must complete before any other v1.1 phase — proj_pts_next_gw gates 80% of v1.1 features
+- [v1.1 Roadmap]: element-summary fetches shared between defcon.py and xmins.py via run.py cache — never fetched twice
+- [v1.1 Roadmap]: recommend.ts must derive from same gem_score source as transfer-engine.ts — no contradictory signals
+- [v1.1 Roadmap]: projected_pts fields must be absolute FPL points (2–15 range) — normalise() from gem-score.ts must NOT be applied
+- [v1.1 Roadmap]: FPL auth is UI-initiated only — never added to pipeline/run.py or any cron-scheduled code
+- [v1.1 Roadmap]: rotation risk classification gated on status == 'a' with blank news — injury-period minutes excluded from classification window
 
 ### Pending Todos
 
@@ -103,6 +100,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T18:05:22.731Z
-Stopped at: Completed 06-04-PLAN.md
+Last session: 2026-03-29
+Stopped at: v1.1 roadmap created — Phases 7–12 written to ROADMAP.md
 Resume file: None
