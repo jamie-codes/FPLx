@@ -102,7 +102,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Squad adapter (Zod schemas), Route Handler, useSquad hook
+- [x] 05-01-PLAN.md — Squad adapter (Zod schemas), Route Handler, useSquad hook
 - [ ] 05-02-PLAN.md — TDD: transfer engine (position lock, budget, chip guard, save recommendation)
 - [ ] 05-03-PLAN.md — SquadView + TransferPanel UI components, page.tsx tab wiring
 
@@ -130,5 +130,5 @@ Phases execute in numeric order. Phases 3 and 4 are independent and can run in p
 | 2. Understat Pipeline + Merged Data API | 3/3 | Complete   | 2026-03-28 |
 | 3. Gem Rating Table | 2/3 | In Progress|  |
 | 4. DefCon Analysis | 3/3 | Complete   | 2026-03-28 |
-| 5. Squad View + Transfer Suggestions | 0/3 | Not started | - |
+| 5. Squad View + Transfer Suggestions | 1/3 | In Progress|  |
 | 6. Club Form, Value Gems and Polish | 0/? | Not started | - |
