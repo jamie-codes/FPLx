@@ -4,8 +4,10 @@ import { useState } from 'react'
 import { GemTable } from '@/components/gem-table/GemTable'
 import { DefConTables } from '@/components/defcon/DefConTables'
 import { TransferPanel } from '@/components/transfers/TransferPanel'
+import { ClubFormTable } from '@/components/club-form/ClubFormTable'
+import { LastUpdated } from '@/components/LastUpdated'
 
-type Tab = 'gems' | 'defcon' | 'squad'
+type Tab = 'gems' | 'defcon' | 'squad' | 'club-form' | 'value-gems'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('gems')
@@ -44,12 +46,49 @@ export default function Home() {
         >
           Squad & Transfers
         </button>
+        <button
+          className={`pb-2 px-1 text-sm font-medium ${
+            activeTab === 'club-form'
+              ? 'border-b-2 border-zinc-900 text-zinc-900'
+              : 'text-zinc-500 hover:text-zinc-700'
+          }`}
+          onClick={() => setActiveTab('club-form')}
+        >
+          Club Form
+        </button>
+        <button
+          className={`pb-2 px-1 text-sm font-medium ${
+            activeTab === 'value-gems'
+              ? 'border-b-2 border-zinc-900 text-zinc-900'
+              : 'text-zinc-500 hover:text-zinc-700'
+          }`}
+          onClick={() => setActiveTab('value-gems')}
+        >
+          Value Gems
+        </button>
       </div>
 
       {/* Tab content */}
-      {activeTab === 'gems' && <GemTable />}
-      {activeTab === 'defcon' && <DefConTables />}
-      {activeTab === 'squad' && <TransferPanel />}
+      {activeTab === 'gems' && (
+        <div>
+          <GemTable />
+          <LastUpdated />
+        </div>
+      )}
+      {activeTab === 'defcon' && (
+        <div>
+          <DefConTables />
+          <LastUpdated />
+        </div>
+      )}
+      {activeTab === 'squad' && (
+        <div>
+          <TransferPanel />
+          <LastUpdated />
+        </div>
+      )}
+      {activeTab === 'club-form' && <ClubFormTable />}
+      {activeTab === 'value-gems' && <p className="text-gray-500">Coming soon...</p>}
     </main>
   )
 }

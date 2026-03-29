@@ -1,5 +1,6 @@
 import { createColumnHelper } from '@tanstack/react-table'
 import type { ScoredPlayer } from '@/lib/types'
+import { FixtureBadges } from '@/components/fixtures/FixtureBadges'
 
 const col = createColumnHelper<ScoredPlayer>()
 
@@ -69,5 +70,11 @@ export const columns = [
     header: 'Status',
     enableSorting: false,
     cell: (info) => info.getValue() === 'a' ? '' : info.getValue().toUpperCase(),
+  }),
+  col.display({
+    id: 'fixtures',
+    header: 'Next 5',
+    cell: ({ row }) => <FixtureBadges fixtures={row.original.fixtures.slice(0, 5)} />,
+    enableSorting: false,
   }),
 ]
