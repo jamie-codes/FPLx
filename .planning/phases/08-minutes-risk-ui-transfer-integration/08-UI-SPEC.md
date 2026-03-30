@@ -33,7 +33,7 @@ Declared values (must be multiples of 4):
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| xs | 4px | Icon gaps, inline badge padding (px-1.5 py-0.5) |
+| xs | 4px | Icon gaps, inline badge padding (px-2 py-1) |
 | sm | 8px | Compact element spacing, gap-2 in flex rows |
 | md | 16px | Default element spacing, section padding |
 | lg | 24px | Section padding, space-y-6 |
@@ -89,6 +89,12 @@ Source: semantic extension of the existing badge pattern in TransferPanel.tsx (`
 
 ---
 
+## Visuals
+
+Phase 8 inherits visual hierarchy from prior phases. The amber `rotation_risk` badge is the highest-contrast new element added in this phase.
+
+---
+
 ## Component Inventory
 
 ### New: MinsRiskBadge component
@@ -101,10 +107,10 @@ Source: semantic extension of the existing badge pattern in TransferPanel.tsx (`
 ```
 
 **Rendering contract:**
-- `nailed` → `<span class="inline-block text-xs font-medium text-green-800 bg-green-100 rounded px-1.5 py-0.5">Nailed</span>`
-- `likely_start` → `<span class="inline-block text-xs font-medium text-blue-800 bg-blue-100 rounded px-1.5 py-0.5">Likely start</span>`
-- `rotation_risk` → `<span class="inline-block text-xs font-medium text-amber-800 bg-amber-100 rounded px-1.5 py-0.5">Rotation risk</span>`
-- `cameo` → `<span class="inline-block text-xs font-medium text-zinc-600 bg-zinc-100 rounded px-1.5 py-0.5">Cameo</span>`
+- `nailed` → `<span class="inline-block text-xs font-normal text-green-800 bg-green-100 rounded px-2 py-1">Nailed</span>`
+- `likely_start` → `<span class="inline-block text-xs font-normal text-blue-800 bg-blue-100 rounded px-2 py-1">Likely start</span>`
+- `rotation_risk` → `<span class="inline-block text-xs font-normal text-amber-800 bg-amber-100 rounded px-2 py-1">Rotation risk</span>`
+- `cameo` → `<span class="inline-block text-xs font-normal text-zinc-600 bg-zinc-100 rounded px-2 py-1">Cameo</span>`
 - `injured` → `null` (render nothing; StatusBadge already communicates this)
 
 **Accessibility:** Each span receives a `title` attribute describing the classification in plain English:
