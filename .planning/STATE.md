@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Decision Engine
 status: executing
-stopped_at: Completed 07-01-PLAN.md
-last_updated: "2026-03-30T06:34:26.318Z"
+stopped_at: Completed 07-02-PLAN.md
+last_updated: "2026-03-30T06:39:07.278Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 ## Current Position
 
 Phase: 07 (pipeline-schema-extension) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-03-30
 
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 
 *Updated after each plan completion*
 | Phase 07-pipeline-schema-extension P01 | 2 | 2 tasks | 2 files |
+| Phase 07-pipeline-schema-extension P02 | 4 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -92,6 +93,8 @@ Recent decisions affecting current work:
 - [v1.1 Roadmap]: rotation risk classification gated on status == 'a' with blank news — injury-period minutes excluded from classification window
 - [Phase 07-01]: defcon.py accepts summaries dict — pure computation module with no I/O, all fetching in run.py
 - [Phase 07-01]: xmins.py processes ALL players including GKs; mins_risk gated on status='a' + blank news (locked decision)
+- [Phase 07-02]: xmins_stats parameter defaults to None so existing callers don't break; all 6 projected fields always non-null on every player
+- [Phase 07-02]: import time as _time alias in run.py avoids collision; get_element_summary added to top-level fpl_client import
 
 ### Pending Todos
 
@@ -103,6 +106,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T06:34:26.315Z
-Stopped at: Completed 07-01-PLAN.md
+Last session: 2026-03-30T06:39:07.275Z
+Stopped at: Completed 07-02-PLAN.md
 Resume file: None

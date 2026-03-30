@@ -46,7 +46,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 **Plans**: 3 plans
 Plans:
 - [x] 07-01-PLAN.md — Refactor defcon.py for shared summaries + create xmins.py module
-- [ ] 07-02-PLAN.md — Add projected points to merge.py + wire run.py orchestration
+- [x] 07-02-PLAN.md — Add projected points to merge.py + wire run.py orchestration
 - [ ] 07-03-PLAN.md — Extend MergedPlayer TypeScript types + add validation tests
 
 ### Phase 8: Minutes Risk UI + Transfer Integration
