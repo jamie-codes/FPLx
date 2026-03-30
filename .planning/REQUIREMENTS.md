@@ -13,7 +13,7 @@
 
 ### Minutes Risk (MINS)
 
-- [ ] **MINS-01**: User can see expected minutes and start probability per player
+- [x] **MINS-01**: User can see expected minutes and start probability per player
 - [ ] **MINS-02**: User can see rotation risk badge per player (Nailed / Likely start / Rotation risk / Cameo risk)
 - [ ] **MINS-03**: Transfer suggestions de-prioritise rotation risk players relative to gem score
 
