@@ -35,6 +35,7 @@ function computePositionAverages(allPlayers: ScoredPlayer[]): Record<number, num
  *
  * Rules:
  * - Only starting-XI picks (position 1-11) are considered
+ * - Goalkeepers (element_type === 1) are excluded — captaining a GK is never optimal
  * - Players with proj_pts_1gw <= 0 or mins_risk === 'injured' are excluded
  * - projected_captain_pts = proj_pts_1gw * 2
  * - captain_type is 'safe' when mins_risk === 'nailed' AND gem_score >= position average
@@ -67,6 +68,9 @@ export function computeCaptaincyCandidates(
 
     const player = playerMap.get(pick.element)
     if (!player) continue
+
+    // Exclude goalkeepers — captaining a GK is never optimal
+    if (player.element_type === 1) continue
 
     // Exclude injured or zero-projection players
     if (player.proj_pts_1gw <= 0) continue

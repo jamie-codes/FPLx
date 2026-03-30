@@ -132,6 +132,21 @@ describe('computeCaptaincyCandidates', () => {
     expect(result.find(c => c.player.id === 2)).toBeDefined()
   })
 
+  it('excludes goalkeepers (element_type === 1) even with high proj_pts_1gw', () => {
+    const goalkeeper = makeScoredPlayer({ id: 1, element_type: 1, proj_pts_1gw: 9.0, mins_risk: 'nailed' })
+    const outfielder = makeScoredPlayer({ id: 2, element_type: 4, proj_pts_1gw: 6.0 })
+    const allPlayers = [goalkeeper, outfielder]
+    const squadPicks = [
+      makeSquadPick({ element: 1, position: 1 }),
+      makeSquadPick({ element: 2, position: 2 }),
+    ]
+
+    const result = computeCaptaincyCandidates(squadPicks, allPlayers)
+
+    expect(result.find(c => c.player.id === 1)).toBeUndefined()
+    expect(result.find(c => c.player.id === 2)).toBeDefined()
+  })
+
   it('excludes players with proj_pts_1gw <= 0', () => {
     const zeroProjectionPlayer = makeScoredPlayer({ id: 1, proj_pts_1gw: 0.0, mins_risk: 'nailed' })
     const normalPlayer = makeScoredPlayer({ id: 2, proj_pts_1gw: 4.0 })
