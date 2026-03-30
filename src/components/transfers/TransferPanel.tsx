@@ -6,6 +6,7 @@ import { usePlayers } from '@/lib/hooks/usePlayers'
 import { computeAllGemScores } from '@/lib/gem-score'
 import { computeTransferSuggestions, type ChipState, type SingleTransfer } from '@/lib/transfer-engine'
 import { SquadView } from '@/components/squad/SquadView'
+import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
 
 export function TransferPanel() {
   const [teamId, setTeamId] = useState<string>('')
@@ -159,6 +160,7 @@ export function TransferPanel() {
                       <div className="text-sm text-zinc-900">
                         Sell{' '}
                         <span className="font-medium">{s.sell.web_name}</span>{' '}
+                        <MinsRiskBadge minsRisk={s.sell.mins_risk} />{' '}
                         <span className="text-zinc-500">({s.sell.gem_score.toFixed(2)})</span>
                         {/* VAL-03: price trend */}
                         {(s.sell.cost_change_event ?? 0) > 0 && (
@@ -220,6 +222,7 @@ export function TransferPanel() {
                       <div className="text-sm text-zinc-900">
                         Sell{' '}
                         <span className="font-medium">{s.sell.web_name}</span>{' '}
+                        <MinsRiskBadge minsRisk={s.sell.mins_risk} />{' '}
                         <span className="text-zinc-500">({s.sell.gem_score.toFixed(2)})</span>
                         {/* VAL-03: price trend */}
                         {(s.sell.cost_change_event ?? 0) > 0 && (
