@@ -72,11 +72,12 @@ export function computeCaptaincyCandidates(
     // Exclude goalkeepers — captaining a GK is never optimal
     if (player.element_type === 1) continue
 
-    // Exclude injured or zero-projection players
-    if (player.proj_pts_1gw <= 0) continue
+    // Exclude injured or zero/undefined-projection players
+    // Note: undefined <= 0 is false in JS, so explicit truthiness check is required
+    if (!player.proj_pts_1gw || player.proj_pts_1gw <= 0) continue
     if (player.mins_risk === 'injured') continue
 
-    const projected_captain_pts = player.proj_pts_1gw * 2
+    const projected_captain_pts = (player.proj_pts_1gw ?? 0) * 2
 
     // Classify captain type
     const posAvg = positionAvgs[player.element_type] ?? 0.5

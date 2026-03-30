@@ -56,7 +56,7 @@ export function CaptaincyPanel({ candidates, nextGw }: CaptaincyPanelProps) {
             <span className="text-sm font-medium text-zinc-900 flex-1">{c.player.web_name}</span>
             <span className="text-sm text-zinc-500">{c.player.team_short_name}</span>
             <span className="text-sm text-zinc-700 whitespace-nowrap">
-              {c.projected_captain_pts.toFixed(1)} pts (C)
+              {(isNaN(c.projected_captain_pts) ? 0 : c.projected_captain_pts).toFixed(1)} pts (C)
             </span>
             <CaptainTypeBadge type={c.captain_type} />
             <MinsRiskBadge minsRisk={c.player.mins_risk} />
