@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Decision Engine
 status: executing
-stopped_at: Completed 08-02-PLAN.md
-last_updated: "2026-03-30T08:12:41.810Z"
+stopped_at: Completed 09-02-PLAN.md
+last_updated: "2026-03-30T10:53:28.091Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 7
+  completed_plans: 6
   percent: 0
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 08 — minutes-risk-ui-transfer-integration
+**Current focus:** Phase 09 — projected-points-columns
 
 ## Current Position
 
-Phase: 9
-Plan: Not started
+Phase: 09 (projected-points-columns) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
 Last activity: 2026-03-30
 
@@ -57,6 +57,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 07-pipeline-schema-extension P03 | 2 | 2 tasks | 4 files |
 | Phase 08 P01 | 5 | 2 tasks | 4 files |
 | Phase 08 P02 | 158 | 2 tasks | 3 files |
+| Phase 09 P02 | 5 minutes | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,7 @@ Recent decisions affecting current work:
 - [Phase 08]: isRotationRisk covers rotation_risk and cameo (both deprioritised as buy candidates in transfer sort)
 - [Phase 08]: Rotation risk penalty is buy-side only — rotation_risk sell candidates still surfaced normally
 - [Phase 08]: MinsRiskBadge placed on sell-side player only in TransferPanel (confirms why player is a sell candidate)
+- [Phase 09]: TransferPanel always shows 1 GW horizon for proj pts — multi-GW toggle deferred to future phase per UI-SPEC
 
 ### Pending Todos
 
@@ -114,6 +116,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T08:08:39.691Z
-Stopped at: Completed 08-02-PLAN.md
+Last session: 2026-03-30T10:53:28.088Z
+Stopped at: Completed 09-02-PLAN.md
 Resume file: None
