@@ -34,3 +34,34 @@ export type EntryHistory = z.infer<typeof EntryHistorySchema>
 export function parseSquadResponse(data: unknown) {
   return SquadPicksResponseSchema.safeParse(data)
 }
+
+/**
+ * MyTeamPickSchema extends SquadPickSchema with selling_price.
+ * selling_price is only available from the authenticated /api/my-team/ endpoint.
+ * Unit: tenths of £1m (same as now_cost, bank, value).
+ */
+export const MyTeamPickSchema = SquadPickSchema.extend({
+  selling_price: z.number().int(),  // exact sell price in tenths of £1m
+})
+
+/**
+ * MyTeamResponseSchema validates the full /api/my-team/ response.
+ * Separate from SquadPicksResponseSchema — the my-team endpoint requires auth
+ * and includes selling_price; the public picks endpoint does not.
+ */
+export const MyTeamResponseSchema = z.object({
+  picks: z.array(MyTeamPickSchema),
+  entry_history: EntryHistorySchema,
+})
+
+export type MyTeamPick = z.infer<typeof MyTeamPickSchema>
+export type MyTeamResponse = z.infer<typeof MyTeamResponseSchema>
+
+/**
+ * Parse and validate the FPL /api/my-team/ authenticated response.
+ * Returns { success: true, data } or { success: false, error }.
+ * Follows the same pattern as parseSquadResponse.
+ */
+export function parseMyTeamResponse(data: unknown) {
+  return MyTeamResponseSchema.safeParse(data)
+}
