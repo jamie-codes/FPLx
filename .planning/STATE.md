@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Decision Engine
-status: verifying
-stopped_at: Phase 12 context gathered
-last_updated: "2026-03-30T19:20:38.936Z"
+status: executing
+stopped_at: Completed 12-01-PLAN.md
+last_updated: "2026-03-30T20:45:45.363Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 13
-  completed_plans: 13
+  total_plans: 15
+  completed_plans: 14
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 11 — explainability-replacement-shortlist
+**Current focus:** Phase 12 — fpl-auth-exact-selling-price
 
 ## Current Position
 
-Phase: 12
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 12 (fpl-auth-exact-selling-price) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-03-30
 
 Progress: [░░░░░░░░░░] 0%
@@ -63,6 +63,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 11-explainability-replacement-shortlist P02 | 2 | 2 tasks | 2 files |
 | Phase 11-explainability-replacement-shortlist P01 | 2 | 2 tasks | 2 files |
 | Phase 11-explainability-replacement-shortlist P03 | 15 | 3 tasks | 2 files |
+| Phase 12-fpl-auth-exact-selling-price P01 | 141 | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -121,6 +122,9 @@ Recent decisions affecting current work:
 - [Phase 11-01]: EXP-02 risk flags implemented as negative reasons in computeExplanations per D-04 (no separate chip concept)
 - [Phase 11-03]: ExplainPanel colSpan=9 hard-coded to match SquadView 9 column headers
 - [Phase 11-03]: Shortlist only rendered for verdict === 'sell' — Buy/Hold players show reasons only per D-02
+- [Phase 12-fpl-auth-exact-selling-price]: extractPlProfile takes string[] — getAll() fallback pattern handles multi-header FPL Set-Cookie responses
+- [Phase 12-fpl-auth-exact-selling-price]: redirect: 'manual' on FPL login fetch — FPL returns 302 on success; Set-Cookie headers lost without it
+- [Phase 12-fpl-auth-exact-selling-price]: session?.value check in status/my-team routes — prevents stale empty-value cookie appearing authenticated
 
 ### Pending Todos
 
@@ -132,6 +136,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T19:20:38.933Z
-Stopped at: Phase 12 context gathered
-Resume file: .planning/phases/12-fpl-auth-exact-selling-price/12-CONTEXT.md
+Last session: 2026-03-30T20:45:45.360Z
+Stopped at: Completed 12-01-PLAN.md
+Resume file: None

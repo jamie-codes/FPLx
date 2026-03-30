@@ -119,7 +119,7 @@ Plans:
   4. FPL credentials are never persisted beyond a single request lifecycle and are never passed to or stored in `pipeline/run.py` or any cron-scheduled code
 **Plans**: 2 plans
 Plans:
-- [ ] 12-01-PLAN.md — Schemas, auth helper, and four Route Handlers (login, logout, status, my-team)
+- [x] 12-01-PLAN.md — Schemas, auth helper, and four Route Handlers (login, logout, status, my-team)
 - [ ] 12-02-PLAN.md — Auth hooks, login nudge in TransferPanel, tilde/exact price display in SquadView
 **UI hint**: yes
 
@@ -138,4 +138,4 @@ Plans:
 | 9. Projected Points Columns | v1.1 | 1/2 | In Progress|  |
 | 10. Buy/Hold/Sell + Captaincy Engines | v1.1 | 3/3 | Complete   | 2026-03-30 |
 | 11. Explainability + Replacement Shortlist | v1.1 | 3/3 | Complete    | 2026-03-30 |
-| 12. FPL Auth + Exact Selling Price | v1.1 | 0/2 | Not started | - |
+| 12. FPL Auth + Exact Selling Price | v1.1 | 1/2 | In Progress|  |
