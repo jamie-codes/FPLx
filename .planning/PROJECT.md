@@ -24,9 +24,9 @@ Give the manager a clear, prioritised view of who to buy and who to sell this we
 
 ---
 
-## Current State (v1.1 — Phase 7 complete)
+## Current State (v1.1 — Phase 8 complete)
 
-v1.0 shipped 2026-03-29. Phase 7 complete 2026-03-30 — pipeline now computes and publishes `proj_pts_1gw`, `proj_pts_3gw`, `proj_pts_5gw`, `xmins`, `start_prob`, and `mins_risk` for all 825 players. `MergedPlayer` TypeScript interface extended. All downstream v1.1 phases (8–11) can consume projected points without separate computation.
+v1.0 shipped 2026-03-29. Phase 7 complete 2026-03-30 — pipeline computes `proj_pts_1gw/3gw/5gw`, `xmins`, `start_prob`, and `mins_risk` for all 825 players. Phase 8 complete 2026-03-30 — rotation risk badges (Nailed / Likely start / Rotation risk / Cameo risk) visible on every player row in SquadView and GemTable; transfer suggestions now de-prioritise rotation-risk buy candidates via a 3-tier sort.
 
 **Tech stack:** Next.js 16, React 19, TypeScript, TanStack Table v8, TanStack Query, Tailwind CSS v4, Vitest, Python (requests, pandas, soccerdata), Vercel Blob
 
@@ -82,7 +82,8 @@ v1.0 shipped 2026-03-29. Phase 7 complete 2026-03-30 — pipeline now computes a
 - [x] PROJ-02: Projected points next 3 GW per player (Python pipeline) — Validated in Phase 7: Pipeline Schema Extension
 - [x] PROJ-03: Projected points next 5 GW per player (Python pipeline) — Validated in Phase 7: Pipeline Schema Extension
 - [x] MINS-01: Expected minutes and start probability per player — Validated in Phase 7: Pipeline Schema Extension
-- [ ] MINS-02: Minutes risk badge (Nailed / Likely start / Rotation risk / Cameo risk)
+- [x] MINS-02: Minutes risk badge (Nailed / Likely start / Rotation risk / Cameo risk) — Validated in Phase 8: Minutes Risk UI + Transfer Integration
+- [x] MINS-03: Transfer suggestions de-prioritise rotation-risk buy candidates — Validated in Phase 8: Minutes Risk UI + Transfer Integration
 - [ ] REC-01: Buy / Hold / Sell recommendation per squad player
 - [ ] REC-02: Replacement shortlist with projected points delta per transfer suggestion
 - [ ] CAP-01: Captaincy rankings — top-5 candidates for next GW
@@ -151,4 +152,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-30 — Phase 7 complete, pipeline schema extended*
+*Last updated: 2026-03-30 — Phase 8 complete, rotation risk badges + transfer de-prioritisation*
