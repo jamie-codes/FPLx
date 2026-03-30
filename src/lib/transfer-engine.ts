@@ -1,6 +1,10 @@
 import type { ScoredPlayer } from '@/lib/types'
 import type { SquadPick } from '@/lib/squad-adapter'
 
+function isRotationRisk(p: ScoredPlayer): boolean {
+  return p.mins_risk === 'rotation_risk' || p.mins_risk === 'cameo'
+}
+
 export type ChipState = 'freehit' | 'wildcard' | 'bboost' | '3xc' | null
 
 export interface SingleTransfer {
@@ -86,13 +90,17 @@ export function computeTransferSuggestions(
     }
   }
 
-  // Step 5: Sort all suggestions — budget_sufficient first, then gem_delta desc within each budget tier
+  // Step 5: Sort — budget tier > rotation risk on buy > gem_delta desc
   allSuggestions.sort((a, b) => {
-    // Primary: affordable before unaffordable
+    // Tier 1: affordable before unaffordable
     if (a.budget_sufficient !== b.budget_sufficient) {
       return a.budget_sufficient ? -1 : 1
     }
-    // Secondary: higher gem_delta first within same budget tier
+    // Tier 2: non-rotation-risk buy before rotation-risk buy
+    const aRisk = isRotationRisk(a.buy)
+    const bRisk = isRotationRisk(b.buy)
+    if (aRisk !== bRisk) return aRisk ? 1 : -1
+    // Tier 3: higher gem_delta first
     return b.gem_delta - a.gem_delta
   })
 
