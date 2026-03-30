@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 07 — pipeline-schema-extension
+**Current focus:** Phase 08 — minutes-risk-ui-transfer-integration
 
 ## Current Position
 
-Phase: 8
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-03-30
+Phase: 08 (minutes-risk-ui-transfer-integration) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 08
+Last activity: 2026-03-30 -- Phase 08 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
