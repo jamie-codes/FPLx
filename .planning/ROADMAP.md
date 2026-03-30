@@ -117,7 +117,10 @@ Plans:
   2. User can see their exact bank balance (from `entry_history.bank`) when authenticated, not the approximate budget derived from public picks
   3. All features work correctly for unauthenticated users — FPL login enriches but never gates functionality
   4. FPL credentials are never persisted beyond a single request lifecycle and are never passed to or stored in `pipeline/run.py` or any cron-scheduled code
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 12-01-PLAN.md — Schemas, auth helper, and four Route Handlers (login, logout, status, my-team)
+- [ ] 12-02-PLAN.md — Auth hooks, login nudge in TransferPanel, tilde/exact price display in SquadView
 **UI hint**: yes
 
 ## Progress
@@ -135,4 +138,4 @@ Plans:
 | 9. Projected Points Columns | v1.1 | 1/2 | In Progress|  |
 | 10. Buy/Hold/Sell + Captaincy Engines | v1.1 | 3/3 | Complete   | 2026-03-30 |
 | 11. Explainability + Replacement Shortlist | v1.1 | 3/3 | Complete    | 2026-03-30 |
-| 12. FPL Auth + Exact Selling Price | v1.1 | 0/? | Not started | - |
+| 12. FPL Auth + Exact Selling Price | v1.1 | 0/2 | Not started | - |
