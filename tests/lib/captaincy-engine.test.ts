@@ -222,7 +222,7 @@ describe('computeCaptaincyCandidates', () => {
   })
 
   it('DGW player with high proj_pts_1gw ranks first', () => {
-    const dgwPlayer = makeScoredPlayer({ id: 1, proj_pts_1gw: 12.0, proj_pts_1gw: 12.0 })
+    const dgwPlayer = makeScoredPlayer({ id: 1, proj_pts_1gw: 12.0 })
     const normalPlayer = makeScoredPlayer({ id: 2, proj_pts_1gw: 6.0 })
     const allPlayers = [dgwPlayer, normalPlayer]
     const squadPicks = [
