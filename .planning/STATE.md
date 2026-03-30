@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Decision Engine
 status: executing
-stopped_at: Completed 07-03-PLAN.md
-last_updated: "2026-03-30T06:44:49.413Z"
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-03-30T08:03:01.395Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 5
+  completed_plans: 4
   percent: 0
 ---
 
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 07-pipeline-schema-extension P01 | 2 | 2 tasks | 2 files |
 | Phase 07-pipeline-schema-extension P02 | 4 | 2 tasks | 2 files |
 | Phase 07-pipeline-schema-extension P03 | 2 | 2 tasks | 4 files |
+| Phase 08 P01 | 5 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -97,6 +98,7 @@ Recent decisions affecting current work:
 - [Phase 07-02]: xmins_stats parameter defaults to None so existing callers don't break; all 6 projected fields always non-null on every player
 - [Phase 07-02]: import time as _time alias in run.py avoids collision; get_element_summary added to top-level fpl_client import
 - [Phase 07-03]: All 6 new MergedPlayer fields are non-nullable (number/MinsRisk) — Python pipeline writes 0.0 for missing data, never null (per Research Pitfall 7)
+- [Phase 08]: getMinsRiskConfig returns null for both 'injured' and falsy/undefined values
 
 ### Pending Todos
 
@@ -108,6 +110,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T06:39:07.275Z
-Stopped at: Completed 07-03-PLAN.md
+Last session: 2026-03-30T08:03:01.392Z
+Stopped at: Completed 08-01-PLAN.md
 Resume file: None
