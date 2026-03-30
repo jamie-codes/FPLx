@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Decision Engine
-status: executing
-stopped_at: Completed 12-01-PLAN.md
-last_updated: "2026-03-30T20:45:45.363Z"
+status: verifying
+stopped_at: Completed 12-02-PLAN.md
+last_updated: "2026-03-30T21:18:46.080Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 15
-  completed_plans: 14
+  completed_plans: 15
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 Phase: 12 (fpl-auth-exact-selling-price) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-03-30
 
 Progress: [░░░░░░░░░░] 0%
@@ -64,6 +64,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 11-explainability-replacement-shortlist P01 | 2 | 2 tasks | 2 files |
 | Phase 11-explainability-replacement-shortlist P03 | 15 | 3 tasks | 2 files |
 | Phase 12-fpl-auth-exact-selling-price P01 | 141 | 3 tasks | 7 files |
+| Phase 12-fpl-auth-exact-selling-price P02 | 35 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -125,6 +126,8 @@ Recent decisions affecting current work:
 - [Phase 12-fpl-auth-exact-selling-price]: extractPlProfile takes string[] — getAll() fallback pattern handles multi-header FPL Set-Cookie responses
 - [Phase 12-fpl-auth-exact-selling-price]: redirect: 'manual' on FPL login fetch — FPL returns 302 on success; Set-Cookie headers lost without it
 - [Phase 12-fpl-auth-exact-selling-price]: session?.value check in status/my-team routes — prevents stale empty-value cookie appearing authenticated
+- [Phase 12-fpl-auth-exact-selling-price]: exactSellPrices and isAuthenticated passed as optional props to SquadView — unauthenticated path unchanged, auth only enriches
+- [Phase 12-fpl-auth-exact-selling-price]: useMyTeam gated on isAuthenticated && !!submittedId — avoids unnecessary 401 fetches; 401 response invalidates auth-status via setQueryData
 
 ### Pending Todos
 
@@ -136,6 +139,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T20:45:45.360Z
-Stopped at: Completed 12-01-PLAN.md
+Last session: 2026-03-30T21:18:46.077Z
+Stopped at: Completed 12-02-PLAN.md
 Resume file: None
