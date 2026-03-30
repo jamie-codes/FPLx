@@ -13,89 +13,94 @@ const fmtScore = (v: number) => (v * 100).toFixed(0)
 const fmtScoreNull = (v: number | null) => (v === null ? '\u2014' : (v * 100).toFixed(0))
 const fmtDec2 = (v: number | null) => (v === null ? '\u2014' : v.toFixed(2))
 
+// Column header with hover tooltip
+const H = (label: string, tip: string) => () => <span title={tip} className="cursor-help">{label}</span>
+
 export const columns = [
   col.accessor('web_name', { header: 'Player', enableSorting: true }),
   col.accessor('team_short_name', { header: 'Team', enableSorting: false }),
   col.accessor('element_type', {
-    header: 'Pos',
+    header: H('Pos', 'Position: GK / DEF / MID / FWD'),
     filterFn: 'equals',
     enableSorting: false,
     cell: (info) => POS_LABEL[info.getValue()] ?? '?',
   }),
   col.accessor('now_cost', {
-    header: 'Price',
+    header: H('Price', 'Current FPL price (£m)'),
     cell: (info) => `${(info.getValue() / 10).toFixed(1)}`,
   }),
   col.accessor('gem_score', {
-    header: 'Gem',
+    header: H('Gem', 'Composite Gem score (0–100): weighted blend of FDR, form, xG/90, xA/90, differential ownership, minutes reliability, and set-piece role'),
     cell: (info) => fmtScore(info.getValue()),
   }),
   col.accessor('fdr_score', {
-    header: 'FDR',
+    header: H('FDR', 'Fixture Difficulty Rating score (0–100): higher = easier upcoming fixtures'),
     cell: (info) => fmtScore(info.getValue()),
   }),
   col.accessor('form_score', {
-    header: 'Form',
+    header: H('Form', 'Form score (0–100): normalised points-per-90 over the last 5 gameweeks'),
     cell: (info) => fmtScore(info.getValue()),
   }),
   col.accessor('xg_per90', {
-    header: 'xG/90',
+    header: H('xG/90', 'Expected goals per 90 minutes (Understat). Blank = no Understat data (promoted-team or new players)'),
     cell: (info) => fmtDec2(info.getValue()),
   }),
   col.accessor('xa_per90', {
-    header: 'xA/90',
+    header: H('xA/90', 'Expected assists per 90 minutes (Understat). Blank = no Understat data (promoted-team or new players)'),
     cell: (info) => fmtDec2(info.getValue()),
   }),
   col.accessor('xg_score', {
-    header: 'xG Sc',
+    header: H('xG Sc', 'xG score (0–100): normalised xG/90 relative to all players. Blank = no Understat data'),
     cell: (info) => fmtScoreNull(info.getValue()),
   }),
   col.accessor('xa_score', {
-    header: 'xA Sc',
+    header: H('xA Sc', 'xA score (0–100): normalised xA/90 relative to all players. Blank = no Understat data'),
     cell: (info) => fmtScoreNull(info.getValue()),
   }),
   col.accessor('ownership_score', {
-    header: 'Own',
+    header: H('Own', 'Differential score (0–100): higher = less owned = more differential value'),
     cell: (info) => fmtScore(info.getValue()),
   }),
   col.accessor('minutes_score', {
-    header: 'Min',
+    header: H('Min', 'Minutes reliability score (0–100): based on expected minutes per GW'),
     cell: (info) => fmtScore(info.getValue()),
   }),
   col.accessor('set_piece_score', {
-    header: 'SP',
+    header: H('SP', 'Set piece score (0–100): accounts for penalty, free-kick, and corner taker roles'),
     cell: (info) => fmtScore(info.getValue()),
   }),
-  col.accessor('selected_by_percent', { header: 'Own%' }),
+  col.accessor('selected_by_percent', {
+    header: H('Own%', 'FPL ownership percentage — how many managers own this player'),
+  }),
   col.accessor('status', {
-    header: 'Status',
+    header: H('Status', 'Player availability: blank = available, D = doubtful, I = injured, S = suspended, N = unavailable'),
     enableSorting: false,
     cell: (info) => info.getValue() === 'a' ? '' : info.getValue().toUpperCase(),
   }),
   col.display({
     id: 'mins_risk',
-    header: 'Risk',
+    header: H('Risk', 'Minutes risk: Nailed (>85% start prob) · Likely (65–85%) · Rotation (40–65%) · Bench risk (<40%)'),
     enableSorting: false,
     cell: ({ row }) => <MinsRiskBadge minsRisk={row.original.mins_risk} />,
   }),
   col.accessor('proj_pts_1gw', {
-    header: 'Proj Pts',
+    header: H('Proj Pts', 'Projected FPL points next gameweek (FPL expected points × availability). Blank GW or no fixture = 0'),
     cell: (info) => (info.getValue() ?? 0).toFixed(1),
     enableSorting: true,
   }),
   col.accessor('proj_pts_3gw', {
-    header: 'Proj Pts (3)',
+    header: H('Proj Pts (3)', 'Projected FPL points across next 3 gameweeks (points-per-game × start probability, DGW-aware)'),
     cell: (info) => (info.getValue() ?? 0).toFixed(1),
     enableSorting: true,
   }),
   col.accessor('proj_pts_5gw', {
-    header: 'Proj Pts (5)',
+    header: H('Proj Pts (5)', 'Projected FPL points across next 5 gameweeks (points-per-game × start probability, DGW-aware)'),
     cell: (info) => (info.getValue() ?? 0).toFixed(1),
     enableSorting: true,
   }),
   col.display({
     id: 'trend',
-    header: 'Trend',
+    header: H('Trend', 'Price trend: this GW change (↑/↓) and season-to-date change'),
     cell: ({ row }) => {
       const ev = row.original.cost_change_event ?? 0
       const st = row.original.cost_change_start ?? 0
