@@ -28,7 +28,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 - [ ] **Phase 7: Pipeline Schema Extension** — Extend the Python pipeline with projected points (1/3/5 GW) and xMins fields; update MergedPlayer TypeScript types
 - [x] **Phase 8: Minutes Risk UI + Transfer Integration** — Surface rotation risk badges in SquadView and GemTable; de-prioritise rotation risks in transfer suggestions (completed 2026-03-30)
 - [ ] **Phase 9: Projected Points Columns** — Add projected points as sortable columns in GemTable and Transfer Panel with absolute FPL point values
-- [x] **Phase 10: Buy/Hold/Sell + Captaincy Engines** — Pure TypeScript recommendation and captaincy engines consuming pipeline data (completed 2026-03-30)
+- [x] **Phase 10: Buy/Hold/Sell + Captaincy Engines** — Pure TypeScript recommendation and captaincy engines consuming pipeline data (completed 2026-03-30)
 - [ ] **Phase 11: Explainability + Replacement Shortlist** — Natural-language reasons, structured risk flags, and replacement shortlist with projected points delta
 - [ ] **Phase 12: FPL Auth + Exact Selling Price** — Optional FPL session-cookie login for exact bank balance and sell prices
 
@@ -101,7 +101,11 @@ Plans:
   1. User can expand a panel per player to see natural-language "why this player" reasons (e.g. "Strong fixture run — FDR 2 for next 3 GWs", "High start probability (92%)")
   2. User can see structured risk flags per player: rotation concern, fixture swing, regression risk, injury concern — displayed as labelled indicators
   3. User can see a replacement shortlist of 3–5 alternatives for Sell candidates, ranked by projected points delta, with the gain stated in absolute FPL points
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 11-01-PLAN.md — TDD: computeExplanations pure function (reasons + risk flags)
+- [ ] 11-02-PLAN.md — TDD: computeReplacementShortlist pure function (proj pts delta ranking)
+- [ ] 11-03-PLAN.md — UI: ExplainPanel component + SquadView expand wiring
 **UI hint**: yes
 
 ### Phase 12: FPL Auth + Exact Selling Price
@@ -130,5 +134,5 @@ Plans:
 | 8. Minutes Risk UI + Transfer Integration | v1.1 | 2/2 | Complete   | 2026-03-30 |
 | 9. Projected Points Columns | v1.1 | 1/2 | In Progress|  |
 | 10. Buy/Hold/Sell + Captaincy Engines | v1.1 | 3/3 | Complete   | 2026-03-30 |
-| 11. Explainability + Replacement Shortlist | v1.1 | 0/? | Not started | - |
+| 11. Explainability + Replacement Shortlist | v1.1 | 0/3 | Not started | - |
 | 12. FPL Auth + Exact Selling Price | v1.1 | 0/? | Not started | - |
