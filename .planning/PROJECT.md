@@ -24,9 +24,9 @@ Give the manager a clear, prioritised view of who to buy and who to sell this we
 
 ---
 
-## Current State (v1.1 — Phase 11 complete)
+## Current State (v1.1 — Phase 12 complete — milestone complete)
 
-v1.0 shipped 2026-03-29. Phase 7 complete 2026-03-30 — pipeline computes `proj_pts_1gw/3gw/5gw`, `xmins`, `start_prob`, and `mins_risk` for all 825 players. Phase 8 complete 2026-03-30 — rotation risk badges visible on SquadView, GemTable, and TransferPanel; transfer engine de-prioritises rotation risks. Phase 9 complete 2026-03-30 — GemTable has sortable projected points columns with 1 GW / 3 GW / 5 GW toggle; TransferPanel shows "Proj pts (1 GW): X.X → Y.Y" on every suggestion card. Phase 10 complete — Buy/Hold/Sell recommendations and captaincy rankings engine live. Phase 11 complete 2026-03-30 — Explainability panel (`ExplainPanel.tsx`) wired into SquadView; `computeExplanations` generates natural-language reasons per player; `computeReplacementShortlist` surfaces ranked alternatives for Sell-verdicted players.
+v1.0 shipped 2026-03-29. Phase 7 complete 2026-03-30 — pipeline computes `proj_pts_1gw/3gw/5gw`, `xmins`, `start_prob`, and `mins_risk` for all 825 players. Phase 8 complete 2026-03-30 — rotation risk badges visible on SquadView, GemTable, and TransferPanel; transfer engine de-prioritises rotation risks. Phase 9 complete 2026-03-30 — GemTable has sortable projected points columns with 1 GW / 3 GW / 5 GW toggle; TransferPanel shows "Proj pts (1 GW): X.X → Y.Y" on every suggestion card. Phase 10 complete — Buy/Hold/Sell recommendations and captaincy rankings engine live. Phase 11 complete 2026-03-30 — Explainability panel (`ExplainPanel.tsx`) wired into SquadView; `computeExplanations` generates natural-language reasons per player; `computeReplacementShortlist` surfaces ranked alternatives for Sell-verdicted players. Phase 12 complete 2026-03-30 — FPL session-cookie auth live: login/logout/status/my-team route handlers, `useAuthStatus`/`useMyTeam` TanStack Query hooks, inline login nudge in TransferPanel, exact sell prices and bank balance in SquadView (AUTH-01, AUTH-02 validated).
 
 **Tech stack:** Next.js 16, React 19, TypeScript, TanStack Table v8, TanStack Query, Tailwind CSS v4, Vitest, Python (requests, pandas, soccerdata), Vercel Blob
 
