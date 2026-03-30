@@ -29,7 +29,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 - [x] **Phase 8: Minutes Risk UI + Transfer Integration** — Surface rotation risk badges in SquadView and GemTable; de-prioritise rotation risks in transfer suggestions (completed 2026-03-30)
 - [ ] **Phase 9: Projected Points Columns** — Add projected points as sortable columns in GemTable and Transfer Panel with absolute FPL point values
 - [x] **Phase 10: Buy/Hold/Sell + Captaincy Engines** — Pure TypeScript recommendation and captaincy engines consuming pipeline data (completed 2026-03-30)
-- [ ] **Phase 11: Explainability + Replacement Shortlist** — Natural-language reasons, structured risk flags, and replacement shortlist with projected points delta
+- [x] **Phase 11: Explainability + Replacement Shortlist** — Natural-language reasons, structured risk flags, and replacement shortlist with projected points delta (completed 2026-03-30)
 - [ ] **Phase 12: FPL Auth + Exact Selling Price** — Optional FPL session-cookie login for exact bank balance and sell prices
 
 ## Phase Details
@@ -105,7 +105,7 @@ Plans:
 Plans:
 - [x] 11-01-PLAN.md — TDD: computeExplanations pure function (reasons + risk flags)
 - [x] 11-02-PLAN.md — TDD: computeReplacementShortlist pure function (proj pts delta ranking)
-- [ ] 11-03-PLAN.md — UI: ExplainPanel component + SquadView expand wiring
+- [x] 11-03-PLAN.md — UI: ExplainPanel component + SquadView expand wiring
 **UI hint**: yes
 
 ### Phase 12: FPL Auth + Exact Selling Price
@@ -134,5 +134,5 @@ Plans:
 | 8. Minutes Risk UI + Transfer Integration | v1.1 | 2/2 | Complete   | 2026-03-30 |
 | 9. Projected Points Columns | v1.1 | 1/2 | In Progress|  |
 | 10. Buy/Hold/Sell + Captaincy Engines | v1.1 | 3/3 | Complete   | 2026-03-30 |
-| 11. Explainability + Replacement Shortlist | v1.1 | 2/3 | In Progress|  |
+| 11. Explainability + Replacement Shortlist | v1.1 | 3/3 | Complete   | 2026-03-30 |
 | 12. FPL Auth + Exact Selling Price | v1.1 | 0/? | Not started | - |
