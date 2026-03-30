@@ -57,7 +57,10 @@ Plans:
   1. User can see a Nailed / Likely start / Rotation risk / Cameo risk badge on each player row in SquadView and GemTable
   2. Players with `status != 'a'` or injury `news` are not misclassified as rotation risks — their badge reflects availability context
   3. Transfer suggestions rank rotation-risk candidates lower than equivalent gem-score players without rotation risk
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 08-01-PLAN.md — MinsRiskBadge component + Risk column in SquadView and GemTable
+- [ ] 08-02-PLAN.md — Transfer engine rotation risk penalty + TransferPanel badge placement
 **UI hint**: yes
 
 ### Phase 9: Projected Points Columns
@@ -117,7 +120,7 @@ Plans:
 | 5. Squad View + Transfer Suggestions | v1.0 | 3/3 | Complete | 2026-03-29 |
 | 6. Club Form, Value Gems and Polish | v1.0 | 4/4 | Complete | 2026-03-29 |
 | 7. Pipeline Schema Extension | v1.1 | 2/3 | In Progress|  |
-| 8. Minutes Risk UI + Transfer Integration | v1.1 | 0/? | Not started | - |
+| 8. Minutes Risk UI + Transfer Integration | v1.1 | 0/2 | Not started | - |
 | 9. Projected Points Columns | v1.1 | 0/? | Not started | - |
 | 10. Buy/Hold/Sell + Captaincy Engines | v1.1 | 0/? | Not started | - |
 | 11. Explainability + Replacement Shortlist | v1.1 | 0/? | Not started | - |
