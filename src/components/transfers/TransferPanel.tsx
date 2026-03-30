@@ -5,8 +5,11 @@ import { useSquad } from '@/lib/hooks/useSquad'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { computeAllGemScores } from '@/lib/gem-score'
 import { computeTransferSuggestions, type ChipState, type SingleTransfer } from '@/lib/transfer-engine'
+import { computeVerdicts } from '@/lib/recommend'
+import { computeCaptaincyCandidates } from '@/lib/captaincy-engine'
 import { SquadView } from '@/components/squad/SquadView'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
+import { CaptaincyPanel } from '@/components/captaincy/CaptaincyPanel'
 
 export function TransferPanel() {
   const [teamId, setTeamId] = useState<string>('')
@@ -31,6 +34,18 @@ export function TransferPanel() {
       squadData.active_chip as ChipState,
     )
   }, [squadData, scoredPlayers, freeTransfers])
+
+  const verdicts = useMemo(() => {
+    if (!squadData || scoredPlayers.length === 0) return new Map()
+    return computeVerdicts(squadData.picks, scoredPlayers)
+  }, [squadData, scoredPlayers])
+
+  const captaincyCandidates = useMemo(() => {
+    if (!squadData || scoredPlayers.length === 0) return []
+    return computeCaptaincyCandidates(squadData.picks, scoredPlayers)
+  }, [squadData, scoredPlayers])
+
+  const nextGw = squadData ? squadData.entry_history.event + 1 : 0
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -118,8 +133,14 @@ export function TransferPanel() {
               picks={squadData.picks}
               allPlayers={scoredPlayers}
               entryHistory={squadData.entry_history}
+              verdicts={verdicts}
             />
           </div>
+
+          {/* Captaincy picks */}
+          {captaincyCandidates.length > 0 && (
+            <CaptaincyPanel candidates={captaincyCandidates} nextGw={nextGw} />
+          )}
 
           {/* Chip warning */}
           {transferResult?.type === 'CHIP_WARNING' && transferResult.chip === 'freehit' && (

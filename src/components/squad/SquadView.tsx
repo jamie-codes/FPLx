@@ -3,11 +3,14 @@
 import type { ScoredPlayer } from '@/lib/types'
 import type { SquadPick, EntryHistory } from '@/lib/squad-adapter'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
+import { VerdictBadge } from '@/components/shared/VerdictBadge'
+import type { Verdict } from '@/lib/recommend'
 
 interface SquadViewProps {
   picks: SquadPick[]
   allPlayers: ScoredPlayer[]
   entryHistory: EntryHistory
+  verdicts?: Map<number, Verdict>
 }
 
 const POSITION_LABELS: Record<number, string> = {
@@ -43,7 +46,7 @@ function StatusBadge({ status, news }: { status: string; news: string }) {
   )
 }
 
-export function SquadView({ picks, allPlayers, entryHistory }: SquadViewProps) {
+export function SquadView({ picks, allPlayers, entryHistory, verdicts }: SquadViewProps) {
   // Cross-reference picks with allPlayers by element id
   const playerMap = new Map(allPlayers.map(p => [p.id, p]))
 
@@ -97,6 +100,7 @@ export function SquadView({ picks, allPlayers, entryHistory }: SquadViewProps) {
                     <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap">Gem</th>
                     <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap">Status</th>
                     <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap">Risk</th>
+                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap">Rec</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -141,6 +145,11 @@ export function SquadView({ picks, allPlayers, entryHistory }: SquadViewProps) {
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap">
                           <MinsRiskBadge minsRisk={player.mins_risk} />
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          {!isBench && verdicts?.get(pick.element) ? (
+                            <VerdictBadge verdict={verdicts.get(pick.element)!} />
+                          ) : null}
                         </td>
                       </tr>
                     )
