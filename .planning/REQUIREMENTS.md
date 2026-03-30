@@ -24,8 +24,8 @@
 
 ### Captaincy (CAP)
 
-- [ ] **CAP-01**: User can see top-5 captaincy candidates for next GW with projected captain points
-- [ ] **CAP-02**: User can distinguish safe captain (nailed, high-floor) from upside captain (differential, high-ceiling)
+- [x] **CAP-01**: User can see top-5 captaincy candidates for next GW with projected captain points
+- [x] **CAP-02**: User can distinguish safe captain (nailed, high-floor) from upside captain (differential, high-ceiling)
 
 ### Explainability (EXP)
 
