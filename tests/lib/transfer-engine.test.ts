@@ -429,6 +429,72 @@ describe('computeTransferSuggestions — save recommendation (TRF-06)', () => {
 })
 
 // ---------------------------------------------------------------------------
+// ROTATION RISK PENALTY TESTS (MINS-03)
+// ---------------------------------------------------------------------------
+
+describe('computeTransferSuggestions — rotation risk penalty (MINS-03)', () => {
+  it('non-risk buy ranks above rotation_risk buy at same gem_delta', () => {
+    // rotation_risk candidate listed FIRST to prove sort is doing the work (not insertion order)
+    const picks: SquadPick[] = [makeSquadPick({ element: 1, position: 1 })]
+    const seller = makeScoredPlayer({ id: 1, element_type: 3, gem_score: 0.3, now_cost: 50 })
+    const rotationBuy = makeScoredPlayer({ id: 10, element_type: 3, gem_score: 0.8, now_cost: 50, mins_risk: 'rotation_risk' as const })
+    const nailedBuy = makeScoredPlayer({ id: 11, element_type: 3, gem_score: 0.8, now_cost: 50, mins_risk: 'nailed' as const })
+    // Pass rotation_risk first — without the rotation-risk tier, it would stay first due to stable sort
+    const result = computeTransferSuggestions(picks, [seller, rotationBuy, nailedBuy], 0, 1, null)
+    expect(result.type).toBe('SUGGESTIONS')
+    const suggestions = result.suggestions ?? []
+    expect(suggestions[0].buy.mins_risk).toBe('nailed')
+    expect(suggestions[1].buy.mins_risk).toBe('rotation_risk')
+  })
+
+  it('cameo buy ranks below non-risk (likely_start) buy at same gem_delta', () => {
+    // cameo candidate listed FIRST to prove sort is doing the work (not insertion order)
+    const picks: SquadPick[] = [makeSquadPick({ element: 1, position: 1 })]
+    const seller = makeScoredPlayer({ id: 1, element_type: 3, gem_score: 0.3, now_cost: 50 })
+    const cameoBuy = makeScoredPlayer({ id: 10, element_type: 3, gem_score: 0.8, now_cost: 50, mins_risk: 'cameo' as const })
+    const likelyBuy = makeScoredPlayer({ id: 11, element_type: 3, gem_score: 0.8, now_cost: 50, mins_risk: 'likely_start' as const })
+    // Pass cameo first — without the rotation-risk tier, it would stay first due to stable sort
+    const result = computeTransferSuggestions(picks, [seller, cameoBuy, likelyBuy], 0, 1, null)
+    expect(result.type).toBe('SUGGESTIONS')
+    const suggestions = result.suggestions ?? []
+    expect(suggestions[0].buy.mins_risk).toBe('likely_start')
+    expect(suggestions[1].buy.mins_risk).toBe('cameo')
+  })
+
+  it('budget tier still primary — affordable rotation_risk buy ranks above unaffordable nailed buy', () => {
+    const picks: SquadPick[] = [makeSquadPick({ element: 1, position: 1 })]
+    // bankBalance=5, sell.now_cost=50 → available = 0.5 + 5.0 = 5.5m
+    const seller = makeScoredPlayer({ id: 1, element_type: 3, gem_score: 0.3, now_cost: 50 })
+    // Affordable rotation_risk (5.0m <= 5.5m available)
+    const affordableRiskBuy = makeScoredPlayer({ id: 10, element_type: 3, gem_score: 0.8, now_cost: 50, mins_risk: 'rotation_risk' as const })
+    // Unaffordable nailed (20.0m > 5.5m available)
+    const expensiveNailedBuy = makeScoredPlayer({ id: 11, element_type: 3, gem_score: 0.9, now_cost: 200, mins_risk: 'nailed' as const })
+    const result = computeTransferSuggestions(picks, [seller, affordableRiskBuy, expensiveNailedBuy], 5, 1, null)
+    expect(result.type).toBe('SUGGESTIONS')
+    const suggestions = result.suggestions ?? []
+    // The affordable rotation_risk must come first despite being a rotation risk
+    expect(suggestions[0].buy.mins_risk).toBe('rotation_risk')
+    expect(suggestions[0].budget_sufficient).toBe(true)
+  })
+
+  it('rotation risk penalty applies to buy side — rotation_risk sell candidates are still returned', () => {
+    // Two sell candidates: one rotation_risk, one nailed
+    const picks: SquadPick[] = [
+      makeSquadPick({ element: 1, position: 1 }),
+      makeSquadPick({ element: 2, position: 2 }),
+    ]
+    const riskSeller = makeScoredPlayer({ id: 1, element_type: 3, gem_score: 0.2, mins_risk: 'rotation_risk' as const })
+    const nailedSeller = makeScoredPlayer({ id: 2, element_type: 3, gem_score: 0.3, mins_risk: 'nailed' as const })
+    const buyer = makeScoredPlayer({ id: 99, element_type: 3, gem_score: 0.9, mins_risk: 'nailed' as const })
+    const result = computeTransferSuggestions(picks, [riskSeller, nailedSeller, buyer], 0, 1, null)
+    expect(result.type).toBe('SUGGESTIONS')
+    const sellIds = (result.suggestions ?? []).map(s => s.sell.id)
+    // The rotation_risk sell candidate should still appear as a suggestion (not suppressed)
+    expect(sellIds).toContain(1)
+  })
+})
+
+// ---------------------------------------------------------------------------
 // DUPLICATE PREVENTION (Pitfall 5)
 // ---------------------------------------------------------------------------
 
