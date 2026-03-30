@@ -26,7 +26,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 **Milestone Goal:** Turn the v1.0 data dashboard into an active decision assistant — projected points + minutes risk + buy/hold/sell + captaincy recommendations per player.
 
 - [ ] **Phase 7: Pipeline Schema Extension** — Extend the Python pipeline with projected points (1/3/5 GW) and xMins fields; update MergedPlayer TypeScript types
-- [x] **Phase 8: Minutes Risk UI + Transfer Integration** — Surface rotation risk badges in SquadView and GemTable; de-prioritise rotation risks in transfer suggestions (completed 2026-03-30)
+- [x] **Phase 8: Minutes Risk UI + Transfer Integration** — Surface rotation risk badges in SquadView and GemTable; de-prioritise rotation risks in transfer suggestions (completed 2026-03-30)
 - [ ] **Phase 9: Projected Points Columns** — Add projected points as sortable columns in GemTable and Transfer Panel with absolute FPL point values
 - [ ] **Phase 10: Buy/Hold/Sell + Captaincy Engines** — Pure TypeScript recommendation and captaincy engines consuming pipeline data
 - [ ] **Phase 11: Explainability + Replacement Shortlist** — Natural-language reasons, structured risk flags, and replacement shortlist with projected points delta
@@ -71,7 +71,10 @@ Plans:
   1. User can sort GemTable by projected points next GW and see values in the 2–15 absolute FPL point range for regular starters
   2. User can toggle between 1 GW, 3 GW, and 5 GW projected points columns in GemTable
   3. Projected points columns are visible in the Transfer Panel alongside gem delta
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 09-01-PLAN.md — GwToggle component + projected points columns in GemTable
+- [ ] 09-02-PLAN.md — TransferPanel projected points metadata
 **UI hint**: yes
 
 ### Phase 10: Buy/Hold/Sell + Captaincy Engines
@@ -121,7 +124,7 @@ Plans:
 | 6. Club Form, Value Gems and Polish | v1.0 | 4/4 | Complete | 2026-03-29 |
 | 7. Pipeline Schema Extension | v1.1 | 2/3 | In Progress|  |
 | 8. Minutes Risk UI + Transfer Integration | v1.1 | 2/2 | Complete   | 2026-03-30 |
-| 9. Projected Points Columns | v1.1 | 0/? | Not started | - |
+| 9. Projected Points Columns | v1.1 | 0/2 | Not started | - |
 | 10. Buy/Hold/Sell + Captaincy Engines | v1.1 | 0/? | Not started | - |
 | 11. Explainability + Replacement Shortlist | v1.1 | 0/? | Not started | - |
 | 12. FPL Auth + Exact Selling Price | v1.1 | 0/? | Not started | - |
