@@ -78,6 +78,21 @@ export const columns = [
     enableSorting: false,
     cell: ({ row }) => <MinsRiskBadge minsRisk={row.original.mins_risk} />,
   }),
+  col.accessor('proj_pts_1gw', {
+    header: 'Proj Pts',
+    cell: (info) => info.getValue().toFixed(1),
+    enableSorting: true,
+  }),
+  col.accessor('proj_pts_3gw', {
+    header: 'Proj Pts (3)',
+    cell: (info) => info.getValue().toFixed(1),
+    enableSorting: true,
+  }),
+  col.accessor('proj_pts_5gw', {
+    header: 'Proj Pts (5)',
+    cell: (info) => info.getValue().toFixed(1),
+    enableSorting: true,
+  }),
   col.display({
     id: 'trend',
     header: 'Trend',

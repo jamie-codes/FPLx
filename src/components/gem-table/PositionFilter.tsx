@@ -17,7 +17,7 @@ interface Props {
 
 export function PositionFilter({ active, onChange }: Props) {
   return (
-    <div className="flex gap-2 mb-4">
+    <div className="flex gap-2">
       {POSITIONS.map(({ label, code }) => (
         <button
           key={label}

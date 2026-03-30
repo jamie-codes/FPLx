@@ -73,8 +73,8 @@ Plans:
   3. Projected points columns are visible in the Transfer Panel alongside gem delta
 **Plans**: 2 plans
 Plans:
-- [ ] 09-01-PLAN.md — GwToggle component + projected points columns in GemTable
-- [x] 09-02-PLAN.md — TransferPanel projected points metadata
+- [x] 09-01-PLAN.md — GwToggle component + projected points columns in GemTable
+- [ ] 09-02-PLAN.md — TransferPanel projected points metadata
 **UI hint**: yes
 
 ### Phase 10: Buy/Hold/Sell + Captaincy Engines
