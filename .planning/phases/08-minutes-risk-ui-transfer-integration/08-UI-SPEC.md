@@ -52,11 +52,11 @@ Source: inferred from existing SquadView.tsx and TransferPanel.tsx patterns (px-
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body | 14px (text-sm) | 400 (normal) | 1.5 |
-| Label | 12px (text-xs) | 500 (medium) | 1.4 |
+| Label | 12px (text-xs) | 400 (normal) | 1.4 |
 | Heading | 16px (text-base) | 600 (semibold) | 1.2 |
-| Display | 24px (text-2xl) | 700 (bold) | 1.2 |
+| Display | 24px (text-2xl) | 600 (semibold) | 1.2 |
 
-Source: detected from GemTable.tsx (`text-2xl font-bold`), TransferPanel.tsx (`text-base font-semibold`, `text-sm`, `text-xs`).
+Source: detected from GemTable.tsx (`text-2xl font-bold`), TransferPanel.tsx (`text-base font-semibold`, `text-sm`, `text-xs`). Weights consolidated to 2 (400/600) — size scale provides sufficient hierarchy.
 
 ---
 
