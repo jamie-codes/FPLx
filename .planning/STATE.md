@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Decision Engine
 status: executing
-stopped_at: Completed 07-01-PLAN.md
-last_updated: "2026-03-30T06:34:26.318Z"
+stopped_at: Completed 07-03-PLAN.md
+last_updated: "2026-03-30T06:38:57.320Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 ## Current Position
 
 Phase: 07 (pipeline-schema-extension) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-03-30
 
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 
 *Updated after each plan completion*
 | Phase 07-pipeline-schema-extension P01 | 2 | 2 tasks | 2 files |
+| Phase 07-pipeline-schema-extension P03 | 2 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -92,6 +93,7 @@ Recent decisions affecting current work:
 - [v1.1 Roadmap]: rotation risk classification gated on status == 'a' with blank news — injury-period minutes excluded from classification window
 - [Phase 07-01]: defcon.py accepts summaries dict — pure computation module with no I/O, all fetching in run.py
 - [Phase 07-01]: xmins.py processes ALL players including GKs; mins_risk gated on status='a' + blank news (locked decision)
+- [Phase 07-03]: All 6 new MergedPlayer fields are non-nullable (number/MinsRisk) — Python pipeline writes 0.0 for missing data, never null (per Research Pitfall 7)
 
 ### Pending Todos
 
@@ -103,6 +105,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T06:34:26.315Z
-Stopped at: Completed 07-01-PLAN.md
+Last session: 2026-03-30T06:38:57.317Z
+Stopped at: Completed 07-03-PLAN.md
 Resume file: None
