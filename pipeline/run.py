@@ -10,11 +10,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from dotenv import load_dotenv
 load_dotenv()
 
-from fpl_client import get_bootstrap_static, get_fixtures
+from fpl_client import get_bootstrap_static, get_fixtures, get_element_summary
 from upload import save
 from understat_client import get_understat_players
 from merge import merge_players
 from defcon import compute_defcon_stats
+from xmins import compute_xmins_stats
 
 
 def _get_cache_dir() -> str:
@@ -59,15 +60,37 @@ def run(dry_run: bool = False):
         with open(id_map_path, 'r', encoding='utf-8') as f:
             id_map = _json.load(f)
 
+        # Shared element-summary cache (Phase 7) — fetched once, used by defcon + xmins
+        print("Fetching element summaries...")
+        import time as _time
+        summaries: dict[int, dict] = {}
+        for element in bootstrap['elements']:
+            if element.get('starts', 0) == 0:
+                continue
+            try:
+                summaries[element['id']] = get_element_summary(element['id'])
+            except Exception as exc:
+                print(f"  Warning: skipping id={element['id']}: {exc}")
+            _time.sleep(0.1)
+        print(f"Element summaries fetched: {len(summaries)} players")
+
+        # Count finished gameweeks for xmins start_rate fallback
+        finished_gws = sum(1 for e in bootstrap.get('events', []) if e.get('finished'))
+
+        # Compute xmins stats (Phase 7 — MINS-01)
+        print("Computing xmins stats...")
+        xmins_stats = compute_xmins_stats(bootstrap, summaries, finished_gws)
+        print(f"xmins stats: {len(xmins_stats)} players")
+
         # Merge FPL + Understat data (per-90 normalisation, custom FDR, fixtures)
-        merged = merge_players(bootstrap, fixtures, understat, id_map)
+        merged = merge_players(bootstrap, fixtures, understat, id_map, xmins_stats=xmins_stats)
         save('merged_players.json', merged)
 
         # Compute DefCon stats from element-summary history (Phase 4)
         print("Computing DefCon stats...")
         from merge import _compute_difficulty_scores
         difficulty_scores = _compute_difficulty_scores(bootstrap, fixtures)
-        defcon_stats = compute_defcon_stats(bootstrap, difficulty_scores)
+        defcon_stats = compute_defcon_stats(bootstrap, difficulty_scores, summaries)
         save('defcon_stats.json', defcon_stats)
         print(f"DefCon stats: {len(defcon_stats)} players analysed")
 
