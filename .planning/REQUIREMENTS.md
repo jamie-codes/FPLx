@@ -29,8 +29,8 @@
 
 ### Explainability (EXP)
 
-- [ ] **EXP-01**: User can see natural-language "why this player" reasons per recommendation
-- [ ] **EXP-02**: User can see risk flags per player (rotation concern / fixture swing / regression risk / poor form)
+- [x] **EXP-01**: User can see natural-language "why this player" reasons per recommendation
+- [x] **EXP-02**: User can see risk flags per player (rotation concern / fixture swing / regression risk / poor form)
 
 ### Authentication (AUTH)
 
