@@ -1,20 +1,20 @@
 """Compute DefCon stats from FPL element-summary per-match history."""
 
-import time
-from fpl_client import get_element_summary
-
 DEFCON_THRESHOLD = {2: 10, 3: 12, 4: 12}  # position_code -> threshold
 
 
-def compute_defcon_stats(bootstrap: dict, difficulty_scores: dict) -> list:
+def compute_defcon_stats(bootstrap: dict, difficulty_scores: dict, summaries: dict) -> list:
     """
-    For each DEF/MID/FWD player with starts > 0, fetch element-summary
-    and compute hit rate, avg per90, distance to threshold, and fixture correlation.
+    For each DEF/MID/FWD player with starts > 0, look up element-summary from
+    the pre-fetched summaries dict and compute hit rate, avg per90, distance to
+    threshold, and fixture correlation.
 
     Args:
         bootstrap: Full FPL bootstrap-static JSON
         difficulty_scores: dict mapping team_id (int) -> difficulty score (0.0-1.0),
                           computed by merge.py from rolling xGA
+        summaries: dict mapping player_id (int) -> element-summary response dict.
+                   Pre-fetched by run.py shared cache.
     Returns:
         List of dicts matching DefConPlayer interface shape
     """
@@ -30,11 +30,8 @@ def compute_defcon_stats(bootstrap: dict, difficulty_scores: dict) -> list:
 
         threshold = DEFCON_THRESHOLD[pos]
 
-        # Fetch per-match history (skip on failure per Pitfall 5)
-        try:
-            summary = get_element_summary(element['id'])
-        except Exception as exc:
-            print(f"  Warning: skipping {element['web_name']} (id={element['id']}): {exc}")
+        summary = summaries.get(element['id'])
+        if summary is None:
             continue
 
         history = [m for m in summary.get('history', []) if m['minutes'] > 0]
@@ -66,8 +63,6 @@ def compute_defcon_stats(bootstrap: dict, difficulty_scores: dict) -> list:
             'distance_to_threshold': distance,
             'fixture_correlation': fixture_correlation,
         })
-
-        time.sleep(0.1)  # Rate limit: 100ms between API calls
 
     return results
 
