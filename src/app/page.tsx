@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { GemTable } from '@/components/gem-table/GemTable'
 import { DefConTables } from '@/components/defcon/DefConTables'
 import { TransferPanel } from '@/components/transfers/TransferPanel'
@@ -15,6 +16,12 @@ export default function Home() {
 
   return (
     <main className="max-w-7xl mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <Image src="/logo.png" alt="fplx logo" width={40} height={40} className="rounded" />
+        <span className="text-xl font-semibold text-zinc-900">fplx</span>
+        <div className="ml-auto"><LastUpdated /></div>
+      </div>
       {/* Tab navigation */}
       <div className="flex gap-4 mb-6 border-b border-zinc-200">
         <button
@@ -70,24 +77,9 @@ export default function Home() {
       </div>
 
       {/* Tab content */}
-      {activeTab === 'gems' && (
-        <div>
-          <GemTable />
-          <LastUpdated />
-        </div>
-      )}
-      {activeTab === 'defcon' && (
-        <div>
-          <DefConTables />
-          <LastUpdated />
-        </div>
-      )}
-      {activeTab === 'squad' && (
-        <div>
-          <TransferPanel />
-          <LastUpdated />
-        </div>
-      )}
+      {activeTab === 'gems' && <GemTable />}
+      {activeTab === 'defcon' && <DefConTables />}
+      {activeTab === 'squad' && <TransferPanel />}
       {activeTab === 'club-form' && <ClubFormTable />}
       {activeTab === 'value-gems' && <ValueGemsTable />}
     </main>
