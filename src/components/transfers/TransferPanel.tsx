@@ -216,9 +216,9 @@ export function TransferPanel() {
                         </span>{' '}
                         <span className="text-zinc-400">(approx)</span>
                         {' '}| Proj pts (1 GW):{' '}
-                        <span className="text-zinc-700">{s.sell.proj_pts_1gw.toFixed(1)}</span>
+                        <span className="text-zinc-700">{(s.sell.proj_pts_1gw ?? 0).toFixed(1)}</span>
                         {' '}&rarr;{' '}
-                        <span className="text-zinc-700">{s.buy.proj_pts_1gw.toFixed(1)}</span>
+                        <span className="text-zinc-700">{(s.buy.proj_pts_1gw ?? 0).toFixed(1)}</span>
                       </div>
                       <div>
                         {s.budget_sufficient ? (
@@ -282,9 +282,9 @@ export function TransferPanel() {
                         </span>{' '}
                         <span className="text-zinc-400">(approx)</span>
                         {' '}| Proj pts (1 GW):{' '}
-                        <span className="text-zinc-700">{s.sell.proj_pts_1gw.toFixed(1)}</span>
+                        <span className="text-zinc-700">{(s.sell.proj_pts_1gw ?? 0).toFixed(1)}</span>
                         {' '}&rarr;{' '}
-                        <span className="text-zinc-700">{s.buy.proj_pts_1gw.toFixed(1)}</span>
+                        <span className="text-zinc-700">{(s.buy.proj_pts_1gw ?? 0).toFixed(1)}</span>
                       </div>
                     </div>
                   ))}
