@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Decision Engine
 status: executing
-stopped_at: Phase 10 UI-SPEC approved
-last_updated: "2026-03-30T11:55:19.778Z"
+stopped_at: Completed 10-01-PLAN.md (Buy/Hold/Sell Verdict Engine)
+last_updated: "2026-03-30T13:08:31.050Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 6
   completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 10
+  completed_plans: 8
   percent: 0
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 08 — minutes-risk-ui-transfer-integration
+**Current focus:** Phase 10 — buy-hold-sell-captaincy-engines
 
 ## Current Position
 
-Phase: 10
-Plan: Not started
+Phase: 10 (buy-hold-sell-captaincy-engines) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
 Last activity: 2026-03-30
 
@@ -58,6 +58,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 08 P01 | 5 | 2 tasks | 4 files |
 | Phase 08 P02 | 158 | 2 tasks | 3 files |
 | Phase 09 P01 | 147 | 2 tasks | 5 files |
+| Phase 10-buy-hold-sell-captaincy-engines P01 | 90 | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -106,6 +107,9 @@ Recent decisions affecting current work:
 - [Phase 08]: MinsRiskBadge placed on sell-side player only in TransferPanel (confirms why player is a sell candidate)
 - [Phase 09]: columnVisibility is fully derived from gwHorizon state — no onColumnVisibilityChange handler needed
 - [Phase 09]: PositionFilter mb-4 removed in favour of wrapper div mb-2 to prevent double vertical margin
+- [Phase 10-buy-hold-sell-captaincy-engines]: Position averages for Buy/Hold/Sell verdicts computed from full allPlayers population (not squad-only) — prevents false signals
+- [Phase 10-buy-hold-sell-captaincy-engines]: BUY_THRESHOLD=1.0 (strictly above avg), SELL_THRESHOLD=0.90 (>10% below avg) in recommend.ts
+- [Phase 10-buy-hold-sell-captaincy-engines]: computePositionAverages exported from recommend.ts for reuse by captaincy-engine.ts (Plan 02)
 
 ### Pending Todos
 
@@ -117,6 +121,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T11:55:19.775Z
-Stopped at: Phase 10 UI-SPEC approved
-Resume file: .planning/phases/10-buy-hold-sell-captaincy-engines/10-UI-SPEC.md
+Last session: 2026-03-30T13:08:31.047Z
+Stopped at: Completed 10-01-PLAN.md (Buy/Hold/Sell Verdict Engine)
+Resume file: None

@@ -88,7 +88,7 @@ Plans:
   4. Buy/Hold/Sell labels and captaincy rankings pass Vitest tests with fixture data covering edge cases (DGW players, null xG/xA, injured players)
 **Plans**: 3 plans
 Plans:
-- [ ] 10-01-PLAN.md — TDD: computeVerdicts recommendation engine (Buy/Hold/Sell)
+- [x] 10-01-PLAN.md — TDD: computeVerdicts recommendation engine (Buy/Hold/Sell)
 - [ ] 10-02-PLAN.md — TDD: computeCaptaincyCandidates captaincy engine
 - [ ] 10-03-PLAN.md — UI: VerdictBadge, CaptaincyPanel, SquadView + TransferPanel wiring
 **UI hint**: yes
@@ -129,6 +129,6 @@ Plans:
 | 7. Pipeline Schema Extension | v1.1 | 2/3 | In Progress|  |
 | 8. Minutes Risk UI + Transfer Integration | v1.1 | 2/2 | Complete   | 2026-03-30 |
 | 9. Projected Points Columns | v1.1 | 1/2 | In Progress|  |
-| 10. Buy/Hold/Sell + Captaincy Engines | v1.1 | 0/3 | Not started | - |
+| 10. Buy/Hold/Sell + Captaincy Engines | v1.1 | 1/3 | In Progress|  |
 | 11. Explainability + Replacement Shortlist | v1.1 | 0/? | Not started | - |
 | 12. FPL Auth + Exact Selling Price | v1.1 | 0/? | Not started | - |
