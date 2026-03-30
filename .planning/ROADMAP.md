@@ -134,5 +134,5 @@ Plans:
 | 8. Minutes Risk UI + Transfer Integration | v1.1 | 2/2 | Complete   | 2026-03-30 |
 | 9. Projected Points Columns | v1.1 | 1/2 | In Progress|  |
 | 10. Buy/Hold/Sell + Captaincy Engines | v1.1 | 3/3 | Complete   | 2026-03-30 |
-| 11. Explainability + Replacement Shortlist | v1.1 | 3/3 | Complete   | 2026-03-30 |
+| 11. Explainability + Replacement Shortlist | v1.1 | 3/3 | Complete    | 2026-03-30 |
 | 12. FPL Auth + Exact Selling Price | v1.1 | 0/? | Not started | - |
