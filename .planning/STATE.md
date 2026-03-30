@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Decision Engine
 status: executing
-stopped_at: Completed 08-01-PLAN.md
-last_updated: "2026-03-30T08:03:01.395Z"
+stopped_at: Completed 08-02-PLAN.md
+last_updated: "2026-03-30T08:08:39.694Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 4
+  completed_plans: 5
   percent: 0
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 ## Current Position
 
 Phase: 08 (minutes-risk-ui-transfer-integration) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 08
-Last activity: 2026-03-30 -- Phase 08 execution started
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-03-30
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -56,6 +56,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 07-pipeline-schema-extension P02 | 4 | 2 tasks | 2 files |
 | Phase 07-pipeline-schema-extension P03 | 2 | 2 tasks | 4 files |
 | Phase 08 P01 | 5 | 2 tasks | 4 files |
+| Phase 08 P02 | 158 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -99,6 +100,9 @@ Recent decisions affecting current work:
 - [Phase 07-02]: import time as _time alias in run.py avoids collision; get_element_summary added to top-level fpl_client import
 - [Phase 07-03]: All 6 new MergedPlayer fields are non-nullable (number/MinsRisk) — Python pipeline writes 0.0 for missing data, never null (per Research Pitfall 7)
 - [Phase 08]: getMinsRiskConfig returns null for both 'injured' and falsy/undefined values
+- [Phase 08]: isRotationRisk covers rotation_risk and cameo (both deprioritised as buy candidates in transfer sort)
+- [Phase 08]: Rotation risk penalty is buy-side only — rotation_risk sell candidates still surfaced normally
+- [Phase 08]: MinsRiskBadge placed on sell-side player only in TransferPanel (confirms why player is a sell candidate)
 
 ### Pending Todos
 
@@ -110,6 +114,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T08:03:01.392Z
-Stopped at: Completed 08-01-PLAN.md
+Last session: 2026-03-30T08:08:39.691Z
+Stopped at: Completed 08-02-PLAN.md
 Resume file: None
