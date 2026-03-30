@@ -9,12 +9,14 @@ import {
   useReactTable,
   type ColumnFiltersState,
   type SortingState,
+  type VisibilityState,
 } from '@tanstack/react-table'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { computeAllGemScores } from '@/lib/gem-score'
 import type { PositionCode } from '@/lib/types'
 import { columns } from './columns'
 import { PositionFilter } from './PositionFilter'
+import { GwToggle, getColumnVisibility } from './GwToggle'
 
 export function GemTable() {
   const { data, isLoading, error } = usePlayers()
@@ -26,11 +28,14 @@ export function GemTable() {
   ])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [activePosition, setActivePosition] = useState<PositionCode | null>(null)
+  const [gwHorizon, setGwHorizon] = useState<1 | 3 | 5>(1)
+
+  const columnVisibility: VisibilityState = getColumnVisibility(gwHorizon)
 
   const table = useReactTable({
     data: scoredPlayers,
     columns,
-    state: { sorting, columnFilters },
+    state: { sorting, columnFilters, columnVisibility },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -62,7 +67,10 @@ export function GemTable() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Gem Ratings</h1>
-      <PositionFilter active={activePosition} onChange={handlePositionChange} />
+      <div className="flex justify-between items-center mb-2">
+        <PositionFilter active={activePosition} onChange={handlePositionChange} />
+        <GwToggle value={gwHorizon} onChange={setGwHorizon} />
+      </div>
       <p className="text-sm text-gray-500 mb-2">
         {table.getRowModel().rows.length} players
       </p>
