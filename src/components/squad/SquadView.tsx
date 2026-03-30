@@ -2,6 +2,7 @@
 
 import type { ScoredPlayer } from '@/lib/types'
 import type { SquadPick, EntryHistory } from '@/lib/squad-adapter'
+import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
 
 interface SquadViewProps {
   picks: SquadPick[]
@@ -95,6 +96,7 @@ export function SquadView({ picks, allPlayers, entryHistory }: SquadViewProps) {
                     <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap">Mins</th>
                     <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap">Gem</th>
                     <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap">Status</th>
+                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap">Risk</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -136,6 +138,9 @@ export function SquadView({ picks, allPlayers, entryHistory }: SquadViewProps) {
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap">
                           <StatusBadge status={player.status} news={player.news} />
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <MinsRiskBadge minsRisk={player.mins_risk} />
                         </td>
                       </tr>
                     )

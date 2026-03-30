@@ -1,6 +1,7 @@
 import { createColumnHelper } from '@tanstack/react-table'
 import type { ScoredPlayer } from '@/lib/types'
 import { FixtureBadges } from '@/components/fixtures/FixtureBadges'
+import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
 
 const col = createColumnHelper<ScoredPlayer>()
 
@@ -70,6 +71,12 @@ export const columns = [
     header: 'Status',
     enableSorting: false,
     cell: (info) => info.getValue() === 'a' ? '' : info.getValue().toUpperCase(),
+  }),
+  col.display({
+    id: 'mins_risk',
+    header: 'Risk',
+    enableSorting: false,
+    cell: ({ row }) => <MinsRiskBadge minsRisk={row.original.mins_risk} />,
   }),
   col.display({
     id: 'trend',
