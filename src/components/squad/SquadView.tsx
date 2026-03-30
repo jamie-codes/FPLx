@@ -1,10 +1,14 @@
 'use client'
 
+import { useState } from 'react'
 import type { ScoredPlayer } from '@/lib/types'
 import type { SquadPick, EntryHistory } from '@/lib/squad-adapter'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
 import { VerdictBadge } from '@/components/shared/VerdictBadge'
 import type { Verdict } from '@/lib/recommend'
+import { computeExplanations } from '@/lib/explain'
+import { computeReplacementShortlist } from '@/lib/replacement-shortlist'
+import { ExplainPanel } from '@/components/squad/ExplainPanel'
 
 interface SquadViewProps {
   picks: SquadPick[]
@@ -47,6 +51,18 @@ function StatusBadge({ status, news }: { status: string; news: string }) {
 }
 
 export function SquadView({ picks, allPlayers, entryHistory, verdicts }: SquadViewProps) {
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
+
+  function toggleExpand(id: number) {
+    setExpandedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const squadIds = new Set(picks.map(p => p.element))
+
   // Cross-reference picks with allPlayers by element id
   const playerMap = new Map(allPlayers.map(p => [p.id, p]))
 
@@ -108,11 +124,21 @@ export function SquadView({ picks, allPlayers, entryHistory, verdicts }: SquadVi
                     const isBench = pick.position >= 12
                     const priceM = (player.now_cost / 10).toFixed(1)
                     return (
+                      <>
                       <tr
                         key={pick.element}
                         className={`border-b border-zinc-100 hover:bg-zinc-50 ${isBench ? 'opacity-50' : ''}`}
                       >
                         <td className="px-3 py-2 whitespace-nowrap font-medium text-zinc-900">
+                          {!isBench && (
+                            <button
+                              onClick={() => toggleExpand(pick.element)}
+                              className="inline-flex items-center mr-1 text-zinc-400 hover:text-zinc-600"
+                              aria-label={expandedIds.has(pick.element) ? 'Collapse details' : 'Expand details'}
+                            >
+                              <span className="text-xs">{expandedIds.has(pick.element) ? '\u25BC' : '\u25B6'}</span>
+                            </button>
+                          )}
                           {player.web_name}
                           {pick.is_captain && (
                             <span className="ml-1 text-xs font-bold text-amber-600">(C)</span>
@@ -152,6 +178,21 @@ export function SquadView({ picks, allPlayers, entryHistory, verdicts }: SquadVi
                           ) : null}
                         </td>
                       </tr>
+                      {!isBench && expandedIds.has(pick.element) && (() => {
+                        const reasons = computeExplanations(player)
+                        const verdict = verdicts?.get(pick.element)
+                        const shortlist = verdict === 'sell'
+                          ? computeReplacementShortlist(player, allPlayers, squadIds, entryHistory.bank)
+                          : null
+                        return (
+                          <tr key={`expand-${pick.element}`}>
+                            <td colSpan={9} className="px-0 py-0">
+                              <ExplainPanel reasons={reasons} shortlist={shortlist} />
+                            </td>
+                          </tr>
+                        )
+                      })()}
+                      </>
                     )
                   })}
                 </tbody>
