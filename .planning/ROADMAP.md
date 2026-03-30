@@ -103,8 +103,8 @@ Plans:
   3. User can see a replacement shortlist of 3–5 alternatives for Sell candidates, ranked by projected points delta, with the gain stated in absolute FPL points
 **Plans**: 3 plans
 Plans:
-- [ ] 11-01-PLAN.md — TDD: computeExplanations pure function (reasons + risk flags)
-- [ ] 11-02-PLAN.md — TDD: computeReplacementShortlist pure function (proj pts delta ranking)
+- [x] 11-01-PLAN.md — TDD: computeExplanations pure function (reasons + risk flags)
+- [x] 11-02-PLAN.md — TDD: computeReplacementShortlist pure function (proj pts delta ranking)
 - [ ] 11-03-PLAN.md — UI: ExplainPanel component + SquadView expand wiring
 **UI hint**: yes
 
@@ -134,5 +134,5 @@ Plans:
 | 8. Minutes Risk UI + Transfer Integration | v1.1 | 2/2 | Complete   | 2026-03-30 |
 | 9. Projected Points Columns | v1.1 | 1/2 | In Progress|  |
 | 10. Buy/Hold/Sell + Captaincy Engines | v1.1 | 3/3 | Complete   | 2026-03-30 |
-| 11. Explainability + Replacement Shortlist | v1.1 | 0/3 | Not started | - |
+| 11. Explainability + Replacement Shortlist | v1.1 | 2/3 | In Progress|  |
 | 12. FPL Auth + Exact Selling Price | v1.1 | 0/? | Not started | - |
