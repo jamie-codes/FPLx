@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Decision Engine
 status: executing
-stopped_at: Phase 10 UI-SPEC approved
-last_updated: "2026-03-30T11:55:19.778Z"
+stopped_at: Completed 10-02-PLAN.md
+last_updated: "2026-03-30T13:09:04.420Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 6
   completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 10
+  completed_plans: 8
   percent: 0
 ---
 
@@ -58,6 +58,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 08 P01 | 5 | 2 tasks | 4 files |
 | Phase 08 P02 | 158 | 2 tasks | 3 files |
 | Phase 09 P01 | 147 | 2 tasks | 5 files |
+| Phase 10 P02 | 3 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -106,6 +107,8 @@ Recent decisions affecting current work:
 - [Phase 08]: MinsRiskBadge placed on sell-side player only in TransferPanel (confirms why player is a sell candidate)
 - [Phase 09]: columnVisibility is fully derived from gwHorizon state — no onColumnVisibilityChange handler needed
 - [Phase 09]: PositionFilter mb-4 removed in favour of wrapper div mb-2 to prevent double vertical margin
+- [Phase 10]: Position averages computed from ALL allPlayers pool (not just squad picks) for captain_type classification
+- [Phase 10]: computePositionAverages implemented inline in captaincy-engine.ts — plan 01 ran in parallel same wave; plan 03 will deduplicate
 
 ### Pending Todos
 
@@ -117,6 +120,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T11:55:19.775Z
-Stopped at: Phase 10 UI-SPEC approved
-Resume file: .planning/phases/10-buy-hold-sell-captaincy-engines/10-UI-SPEC.md
+Last session: 2026-03-30T13:09:04.417Z
+Stopped at: Completed 10-02-PLAN.md
+Resume file: None
