@@ -19,7 +19,7 @@
 
 ### Recommendations (REC)
 
-- [ ] **REC-01**: User can see Buy / Hold / Sell label for each player in their squad
+- [x] **REC-01**: User can see Buy / Hold / Sell label for each player in their squad
 - [ ] **REC-02**: User can see replacement shortlist (3–5 alternatives with projected pts delta) for Sell candidates
 
 ### Captaincy (CAP)
