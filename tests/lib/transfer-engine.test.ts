@@ -39,6 +39,12 @@ function makeScoredPlayer(overrides: Partial<ScoredPlayer> = {}): ScoredPlayer {
     fixtures: [
       { opponent_team: 'ARS', is_home: true, event_id: 10, difficulty_score: 0.6, difficulty_tier: 'medium' },
     ],
+    proj_pts_1gw: 4.5,
+    proj_pts_3gw: 12.0,
+    proj_pts_5gw: 18.5,
+    xmins: 78.0,
+    start_prob: 0.87,
+    mins_risk: 'nailed' as const,
     // ScoredPlayer dimensions
     gem_score: 0.5,
     fdr_score: 0.5,

@@ -6,9 +6,9 @@
 
 ### Projected Points (PROJ)
 
-- [ ] **PROJ-01**: User can see projected points for next 1 GW per player (absolute FPL pts, not normalised)
-- [ ] **PROJ-02**: User can see projected points for next 3 GWs per player
-- [ ] **PROJ-03**: User can see projected points for next 5 GWs per player
+- [x] **PROJ-01**: User can see projected points for next 1 GW per player (absolute FPL pts, not normalised)
+- [x] **PROJ-02**: User can see projected points for next 3 GWs per player
+- [x] **PROJ-03**: User can see projected points for next 5 GWs per player
 - [ ] **PROJ-04**: User can view projected points columns in GemTable and Transfer Panel UI
 
 ### Minutes Risk (MINS)

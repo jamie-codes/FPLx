@@ -81,6 +81,9 @@ export interface FixtureEntry {
   difficulty_tier: DifficultyTier // Visual tier (D-05)
 }
 
+// Minutes risk classification (Phase 7 — MINS-01)
+export type MinsRisk = 'nailed' | 'likely_start' | 'rotation_risk' | 'cameo' | 'injured'
+
 // Merged player from pipeline (D-06): FPL fields + Understat + form + fixtures
 export interface MergedPlayer {
   // FPL core fields (from Phase 1 FPLElement)
@@ -114,6 +117,14 @@ export interface MergedPlayer {
   form_pts_per90: number
   // Upcoming fixtures (D-03: next 5)
   fixtures: FixtureEntry[]
+  // Projected points (Phase 7 — PROJ-01/02/03) — absolute FPL pts, never normalised 0-1
+  proj_pts_1gw: number        // expected pts next 1 GW (ep_next * availability)
+  proj_pts_3gw: number        // expected pts next 3 GWs (ppg-based, DGW-aware sum)
+  proj_pts_5gw: number        // expected pts next 5 GWs (ppg-based, DGW-aware sum)
+  // Minutes risk (Phase 7 — MINS-01)
+  xmins: number               // expected minutes per GW (0-90)
+  start_prob: number          // probability of starting next match (0.0-1.0)
+  mins_risk: MinsRisk         // rotation risk classification
 }
 
 // DefCon per-player stats (Phase 4) — populated from pipeline/cache/defcon_stats.json
