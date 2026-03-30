@@ -15,6 +15,8 @@ interface SquadViewProps {
   allPlayers: ScoredPlayer[]
   entryHistory: EntryHistory
   verdicts?: Map<number, Verdict>
+  exactSellPrices?: Map<number, number>
+  isAuthenticated?: boolean
 }
 
 const POSITION_LABELS: Record<number, string> = {
@@ -50,7 +52,7 @@ function StatusBadge({ status, news }: { status: string; news: string }) {
   )
 }
 
-export function SquadView({ picks, allPlayers, entryHistory, verdicts }: SquadViewProps) {
+export function SquadView({ picks, allPlayers, entryHistory, verdicts, exactSellPrices, isAuthenticated }: SquadViewProps) {
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
 
   function toggleExpand(id: number) {
@@ -91,10 +93,18 @@ export function SquadView({ picks, allPlayers, entryHistory, verdicts }: SquadVi
 
   return (
     <div className="space-y-4">
-      {/* Budget summary */}
+      {/* Budget summary — D-05 (approx when unauth) / D-06 (exact when auth) */}
       <div className="text-sm text-zinc-600 border border-zinc-200 rounded px-3 py-2 bg-zinc-50">
-        Bank: <span className="font-medium">£{bankM}m</span> (approx) &nbsp;|&nbsp; Team value:{' '}
-        <span className="font-medium">£{valueM}m</span> (approx)
+        Bank:{' '}
+        <span className="font-medium">
+          {isAuthenticated ? `£${bankM}m` : (
+            <span title="Approximate — log in for exact value">~£{bankM}m</span>
+          )}
+        </span>
+        {!isAuthenticated && <span className="text-zinc-400 text-xs ml-1">(approx)</span>}
+        &nbsp;|&nbsp; Team value:{' '}
+        <span className="font-medium">£{valueM}m</span>
+        {!isAuthenticated && <span className="text-zinc-400 text-xs ml-1">(approx)</span>}
       </div>
 
       {/* Position groups */}
@@ -122,7 +132,6 @@ export function SquadView({ picks, allPlayers, entryHistory, verdicts }: SquadVi
                 <tbody>
                   {rows.map(({ pick, player }) => {
                     const isBench = pick.position >= 12
-                    const priceM = (player.now_cost / 10).toFixed(1)
                     return (
                       <>
                       <tr
@@ -154,8 +163,19 @@ export function SquadView({ picks, allPlayers, entryHistory, verdicts }: SquadVi
                           {player.team_short_name}
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap text-zinc-600">
-                          £{priceM}m{' '}
-                          <span className="text-zinc-400 text-xs">(approx)</span>
+                          {(() => {
+                            const exactPrice = exactSellPrices?.get(pick.element)
+                            const priceVal = exactPrice ?? player.now_cost
+                            const pM = (priceVal / 10).toFixed(1)
+                            if (isAuthenticated && exactPrice !== undefined) {
+                              return `£${pM}m`
+                            }
+                            return (
+                              <span title="Approximate sell price — log in for exact value">
+                                ~£{pM}m <span className="text-zinc-400 text-xs">(approx)</span>
+                              </span>
+                            )
+                          })()}
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap text-zinc-600">
                           {player.selected_by_percent}%

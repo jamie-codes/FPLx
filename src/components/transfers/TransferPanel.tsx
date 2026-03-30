@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useSquad } from '@/lib/hooks/useSquad'
 import { usePlayers } from '@/lib/hooks/usePlayers'
+import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
+import { useMyTeam } from '@/lib/hooks/useMyTeam'
 import { computeAllGemScores } from '@/lib/gem-score'
 import { computeTransferSuggestions, type ChipState, type SingleTransfer } from '@/lib/transfer-engine'
 import { computeVerdicts } from '@/lib/recommend'
@@ -15,9 +17,16 @@ export function TransferPanel() {
   const [teamId, setTeamId] = useState<string>('')
   const [submittedId, setSubmittedId] = useState<string | null>(null)
   const [freeTransfers, setFreeTransfers] = useState<number>(1)
+  const [showLoginForm, setShowLoginForm] = useState(false)
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [loginLoading, setLoginLoading] = useState(false)
+  const [loginError, setLoginError] = useState<string | null>(null)
 
   const { data: squadData, isLoading: squadLoading, error: squadError } = useSquad(submittedId)
   const { data: playersData, isLoading: playersLoading } = usePlayers()
+  const { isAuthenticated, setAuthenticated, clearAuthenticated } = useAuthStatus()
+  const { data: myTeamData } = useMyTeam(isAuthenticated && !!submittedId)
 
   const scoredPlayers = useMemo(
     () => computeAllGemScores(playersData ?? []),
@@ -45,7 +54,47 @@ export function TransferPanel() {
     return computeCaptaincyCandidates(squadData.picks, scoredPlayers)
   }, [squadData, scoredPlayers])
 
+  const exactSellPrices = useMemo(() => {
+    if (!myTeamData) return new Map<number, number>()
+    return new Map(myTeamData.picks.map(p => [p.element, p.selling_price]))
+  }, [myTeamData])
+
+  const effectiveEntryHistory = (isAuthenticated && myTeamData)
+    ? myTeamData.entry_history
+    : squadData?.entry_history
+
   const nextGw = squadData ? squadData.entry_history.event + 1 : 0
+
+  const handleLogin = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoginLoading(true)
+    setLoginError(null)
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setLoginError(body.error ?? 'Login failed')
+        return
+      }
+      setAuthenticated()
+      setShowLoginForm(false)
+      setLoginEmail('')
+      setLoginPassword('')
+    } catch {
+      setLoginError('Login failed — check your connection')
+    } finally {
+      setLoginLoading(false)
+    }
+  }, [loginEmail, loginPassword, setAuthenticated])
+
+  const handleLogout = useCallback(async () => {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    clearAuthenticated()
+  }, [clearAuthenticated])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -129,11 +178,75 @@ export function TransferPanel() {
           {/* Squad display */}
           <div className="rounded border border-zinc-200 p-4">
             <h2 className="text-base font-semibold text-zinc-900 mb-3">Your Squad</h2>
+
+            {/* Login nudge — D-01 */}
+            {!isAuthenticated && (
+              <div className="mb-3">
+                {!showLoginForm ? (
+                  <button
+                    onClick={() => setShowLoginForm(true)}
+                    className="text-sm text-blue-600 hover:text-blue-800 underline underline-offset-2"
+                  >
+                    Log in for exact prices &rarr;
+                  </button>
+                ) : (
+                  <form onSubmit={handleLogin} className="flex gap-2 items-end flex-wrap">
+                    <input
+                      type="email"
+                      placeholder="FPL email"
+                      value={loginEmail}
+                      onChange={e => setLoginEmail(e.target.value)}
+                      required
+                      className="border border-zinc-300 rounded px-2 py-1 text-sm w-48"
+                    />
+                    <input
+                      type="password"
+                      placeholder="FPL password"
+                      value={loginPassword}
+                      onChange={e => setLoginPassword(e.target.value)}
+                      required
+                      className="border border-zinc-300 rounded px-2 py-1 text-sm w-36"
+                    />
+                    <button
+                      type="submit"
+                      disabled={loginLoading}
+                      className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {loginLoading ? 'Logging in...' : 'Log in'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowLoginForm(false); setLoginError(null) }}
+                      className="text-sm text-zinc-500 hover:text-zinc-700"
+                    >
+                      Cancel
+                    </button>
+                    {loginError && <span className="text-sm text-red-600 w-full">{loginError}</span>}
+                  </form>
+                )}
+              </div>
+            )}
+
+            {/* Logged in indicator — D-01/D-03 */}
+            {isAuthenticated && (
+              <div className="mb-3 text-sm text-zinc-600">
+                Logged in &bull;{' '}
+                <button
+                  onClick={handleLogout}
+                  className="text-blue-600 hover:text-blue-800 underline underline-offset-2"
+                >
+                  Log out
+                </button>
+              </div>
+            )}
+
             <SquadView
               picks={squadData.picks}
               allPlayers={scoredPlayers}
-              entryHistory={squadData.entry_history}
+              entryHistory={effectiveEntryHistory ?? squadData.entry_history}
               verdicts={verdicts}
+              exactSellPrices={exactSellPrices}
+              isAuthenticated={isAuthenticated}
             />
           </div>
 
