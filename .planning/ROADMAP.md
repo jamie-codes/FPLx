@@ -45,6 +45,7 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
 - [ ] **Phase 15: Remaining Tables Mobile** - Column prioritisation for SquadView, DefConTables, ClubFormTable, and ValueGemsTable; sticky Player column in SquadView
 - [ ] **Phase 16: Component-Level Mobile** - Transfer suggestion card layout, login form, and captaincy panel grid for mobile
 - [ ] **Phase 17: Polish + Infrastructure** - Sticky filter bar, back-to-top button, and verified GitHub Actions cron
+- [ ] **Phase 18: Dark Mode** - System-preference-aware dark mode with manual toggle; all components themed
 
 ## Phase Details
 
@@ -105,6 +106,15 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
   2. After scrolling past the first screen of GemTable rows on mobile, a "back to top" button appears and tapping it scrolls the user back to the top
   3. The GitHub Actions cron job has run at least once and produced an updated `merged_players.json` in Vercel Blob — the LastUpdated component shows a fresh timestamp confirming automated refresh is live
 
+### Phase 18: Dark Mode
+**Goal**: The full app is usable in dark mode — system preference respected by default, manual toggle in the header, all components correctly themed
+**Depends on**: Phase 13
+**Requirements**: DARK-01, DARK-02, DARK-03
+**Success Criteria** (what must be TRUE):
+  1. On a device with dark system preference, the app opens in dark mode without a white flash
+  2. Clicking the toggle in the header switches between light and dark mode; the choice persists after a page reload
+  3. All 5 tabs render with no illegible text or missing contrast in dark mode — tables, badges, charts, and form inputs are all fully readable
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -126,3 +136,4 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
 | 15. Remaining Tables Mobile | v1.2 | 0/? | Not started | - |
 | 16. Component-Level Mobile | v1.2 | 0/? | Not started | - |
 | 17. Polish + Infrastructure | v1.2 | 0/? | Not started | - |
+| 18. Dark Mode | v1.2 | 0/? | Not started | - |

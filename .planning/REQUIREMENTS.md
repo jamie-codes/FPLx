@@ -45,6 +45,12 @@
 - [ ] **MOB-POL-01**: GW toggle and position filter row is sticky below the top of the viewport on mobile so the user can filter GemTable without scrolling back to the top
 - [ ] **MOB-POL-02**: A "back to top" button appears in GemTable on mobile after the user has scrolled past the first screen of rows
 
+### Dark Mode
+
+- [ ] **DARK-01**: User can toggle between light and dark mode via a button in the app header; preference persists across sessions (localStorage)
+- [ ] **DARK-02**: Dark mode defaults to the system `prefers-color-scheme` preference on first visit
+- [ ] **DARK-03**: All components render correctly in dark mode — no illegible text, sufficient contrast, no white flash on load
+
 ### Carry-Forward
 
 - [ ] **DAT-01**: Verified automated daily refresh — GitHub Actions cron confirmed operational (deferred from v1.1)
@@ -96,3 +102,6 @@
 | MOB-POL-01 | Phase 17 | Pending |
 | MOB-POL-02 | Phase 17 | Pending |
 | DAT-01 | Phase 17 | Pending |
+| DARK-01 | Phase 18 | Pending |
+| DARK-02 | Phase 18 | Pending |
+| DARK-03 | Phase 18 | Pending |
