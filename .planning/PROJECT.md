@@ -10,21 +10,7 @@ v1.0 shipped as a complete daily-use tool. The manager enters their Team ID and 
 
 Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
 
-## Current Milestone: v1.1 Decision Engine
-
-**Goal:** Turn the v1.0 data dashboard into an active decision assistant — projected points + minutes risk + buy/hold/sell + captaincy recommendations per player.
-
-**Target features:**
-- Projected Points engine — next 1 / 3 / 5 GW per player, computed in Python pipeline
-- xMins / Minutes Risk model — expected minutes, start probability, rotation risk badges
-- Buy / Hold / Sell recommendations — squad-level with replacement shortlist and projected delta
-- Captaincy rankings — top-5 candidates, safe vs upside, projected captain points
-- Explainability panel — "Why this player" reasons + risk flags per recommendation
-- FPL login (session-cookie) — exact bank + sell price via `/api/my-team`
-
----
-
-## Current State (v1.1 — Phase 12 complete — milestone complete)
+## Current State (v1.1 shipped 2026-03-30)
 
 v1.0 shipped 2026-03-29. Phase 7 complete 2026-03-30 — pipeline computes `proj_pts_1gw/3gw/5gw`, `xmins`, `start_prob`, and `mins_risk` for all 825 players. Phase 8 complete 2026-03-30 — rotation risk badges visible on SquadView, GemTable, and TransferPanel; transfer engine de-prioritises rotation risks. Phase 9 complete 2026-03-30 — GemTable has sortable projected points columns with 1 GW / 3 GW / 5 GW toggle; TransferPanel shows "Proj pts (1 GW): X.X → Y.Y" on every suggestion card. Phase 10 complete — Buy/Hold/Sell recommendations and captaincy rankings engine live. Phase 11 complete 2026-03-30 — Explainability panel (`ExplainPanel.tsx`) wired into SquadView; `computeExplanations` generates natural-language reasons per player; `computeReplacementShortlist` surfaces ranked alternatives for Sell-verdicted players. Phase 12 complete 2026-03-30 — FPL session-cookie auth live: login/logout/status/my-team route handlers, `useAuthStatus`/`useMyTeam` TanStack Query hooks, inline login nudge in TransferPanel, exact sell prices and bank balance in SquadView (AUTH-01, AUTH-02 validated).
 
@@ -76,23 +62,18 @@ v1.0 shipped 2026-03-29. Phase 7 complete 2026-03-30 — pipeline computes `proj
 - ✓ `FixtureBadges` (next 5, colour-coded H/A) on Club Form + Gem Ratings
 - ✓ `LastUpdated` component (amber when stale), `tier()` inversion fixed
 
-### Active (v1.1)
+### Validated (v1.1)
 
-- [x] PROJ-01: Projected points next GW per player (Python pipeline) — Validated in Phase 7: Pipeline Schema Extension
-- [x] PROJ-02: Projected points next 3 GW per player (Python pipeline) — Validated in Phase 7: Pipeline Schema Extension
-- [x] PROJ-03: Projected points next 5 GW per player (Python pipeline) — Validated in Phase 7: Pipeline Schema Extension
-- [x] MINS-01: Expected minutes and start probability per player — Validated in Phase 7: Pipeline Schema Extension
-- [x] MINS-02: Minutes risk badge (Nailed / Likely start / Rotation risk / Cameo risk) — Validated in Phase 8: Minutes Risk UI + Transfer Integration
-- [x] MINS-03: Transfer suggestions de-prioritise rotation-risk buy candidates — Validated in Phase 8: Minutes Risk UI + Transfer Integration
-- [x] PROJ-04: Projected points columns in GemTable (sortable, 1/3/5 GW toggle) and TransferPanel — Validated in Phase 9: Projected Points Columns
-- [ ] REC-01: Buy / Hold / Sell recommendation per squad player
-- [ ] REC-02: Replacement shortlist with projected points delta per transfer suggestion
-- [ ] CAP-01: Captaincy rankings — top-5 candidates for next GW
-- [ ] CAP-02: Safe vs upside captain split, projected captain points
-- [ ] EXP-01: Explainability panel — "Why this player" reasons per recommendation
-- [ ] EXP-02: Risk flags per player (rotation concern, fixture swing, regression risk, etc.)
-- [ ] AUTH-01: Optional FPL login (session-cookie) for exact bank balance and sell price
-- [ ] AUTH-02: `selling_price` from `my-team` endpoint for exact sell price display
+- ✓ PROJ-01/02/03: Projected points next 1/3/5 GW per player (Python pipeline) — v1.1
+- ✓ MINS-01: Expected minutes and start probability per player — v1.1
+- ✓ MINS-02: Rotation risk badge (Nailed / Likely start / Rotation risk / Cameo) — v1.1
+- ✓ MINS-03: Transfer suggestions de-prioritise rotation-risk buy candidates — v1.1
+- ✓ PROJ-04: Projected points columns in GemTable (sortable, 1/3/5 GW toggle) + TransferPanel — v1.1
+- ✓ REC-01: Buy / Hold / Sell recommendation per squad player — v1.1
+- ✓ REC-02: Replacement shortlist with projected points delta for Sell candidates — v1.1
+- ✓ CAP-01/02: Captaincy rankings — top-5, safe vs upside, projected captain points — v1.1
+- ✓ EXP-01/02: Explainability panel with natural-language reasons + risk flags — v1.1
+- ✓ AUTH-01/02: Optional FPL session-cookie login, exact sell prices and bank balance — v1.1
 
 ### Active (carry-forward, deferred)
 
@@ -153,4 +134,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-30 — Phase 9 complete, projected points columns + GW toggle*
+*Last updated: 2026-03-31 after v1.1 milestone*

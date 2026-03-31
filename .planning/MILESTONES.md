@@ -1,5 +1,21 @@
 # Milestones
 
+## v1.1 Decision Engine (Shipped: 2026-03-31)
+
+**Phases completed:** 6 phases, 15 plans, 18 tasks
+
+**Key accomplishments:**
+
+- defcon.py refactored as pure computation module accepting pre-fetched summaries dict; new xmins.py computes xmins/start_prob/mins_risk for all players using locked status-gated classification
+- One-liner:
+- VerdictBadge and CaptaincyPanel surfaced to user in TransferPanel — Buy/Hold/Sell badges in SquadView Rec column, ranked captaincy picks with projected captain pts, safe/upside type, and mins risk below squad.
+- Pure `computeExplanations(player: ScoredPlayer): string[]` function mapping all D-03 signals to natural-language reasons with 20 Vitest tests green
+- Expandable player rows in SquadView showing natural-language reasons and replacement shortlist for Sell players, with per-player chevron toggle and bench exclusion
+- One-liner:
+- Inline FPL login form with TanStack Query auth hooks delivering exact sell prices (£X.Xm) and tilde-prefixed approximate prices (~£X.Xm) toggled by auth state, without gating any squad features
+
+---
+
 ## v1.0 MVP (Shipped: 2026-03-29)
 
 **Phases completed:** 6 phases, 19 plans (+ 1 gap-closure)
@@ -16,6 +32,7 @@
 6. Club Form tab, Value Gems tab with filter pills, price trend columns, FixtureBadges, and LastUpdated banner
 
 **Known Gaps:**
+
 - DAT-01: Automated daily pipeline refresh — `pipeline/run.py` exists and GitHub Actions workflow is scaffolded but daily scheduling was not verified as operational for v1. Candidate for v1.1.
 
 ---
