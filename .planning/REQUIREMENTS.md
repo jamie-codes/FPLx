@@ -73,16 +73,26 @@
 
 ## Traceability
 
-_Filled by roadmapper._
-
-| REQ-ID | Phase |
-|--------|-------|
-| MOB-NAV-01/02/03 | — |
-| MOB-LAY-01/02 | — |
-| MOB-TBL-01/02/03/04 | — |
-| MOB-TBL-05 | — |
-| MOB-TBL-06 | — |
-| MOB-TOUCH-01/02/03 | — |
-| MOB-COMP-01/02/03 | — |
-| MOB-POL-01/02 | — |
-| DAT-01 | — |
+| REQ-ID | Phase | Status |
+|--------|-------|--------|
+| MOB-NAV-01 | Phase 13 | Pending |
+| MOB-NAV-02 | Phase 13 | Pending |
+| MOB-NAV-03 | Phase 13 | Pending |
+| MOB-LAY-01 | Phase 13 | Pending |
+| MOB-LAY-02 | Phase 13 | Pending |
+| MOB-TOUCH-01 | Phase 13 | Pending |
+| MOB-TOUCH-02 | Phase 13 | Pending |
+| MOB-TOUCH-03 | Phase 13 | Pending |
+| MOB-TBL-01 | Phase 14 | Pending |
+| MOB-TBL-05 (GemTable) | Phase 14 | Pending |
+| MOB-TBL-06 | Phase 14 | Pending |
+| MOB-TBL-02 | Phase 15 | Pending |
+| MOB-TBL-03 | Phase 15 | Pending |
+| MOB-TBL-04 | Phase 15 | Pending |
+| MOB-TBL-05 (SquadView) | Phase 15 | Pending |
+| MOB-COMP-01 | Phase 16 | Pending |
+| MOB-COMP-02 | Phase 16 | Pending |
+| MOB-COMP-03 | Phase 16 | Pending |
+| MOB-POL-01 | Phase 17 | Pending |
+| MOB-POL-02 | Phase 17 | Pending |
+| DAT-01 | Phase 17 | Pending |

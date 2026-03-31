@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Mobile
 status: planning
-stopped_at: —
+stopped_at: Roadmap created — ready to plan Phase 13
 last_updated: "2026-03-31T00:00:00.000Z"
 last_activity: 2026-03-31
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -18,17 +18,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-29)
+See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 12 — fpl-auth-exact-selling-price
+**Current focus:** Phase 13 — Navigation + Layout Foundations
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 13 of 17 (Navigation + Layout Foundations)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-03-31 — Milestone v1.2 started
+Status: Ready to plan
+Last activity: 2026-03-31 — v1.2 roadmap created, 5 phases, 19 requirements mapped
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -52,19 +52,6 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 *Updated after each plan completion*
-| Phase 07-pipeline-schema-extension P01 | 2 | 2 tasks | 2 files |
-| Phase 07-pipeline-schema-extension P02 | 4 | 2 tasks | 2 files |
-| Phase 07-pipeline-schema-extension P03 | 2 | 2 tasks | 4 files |
-| Phase 08 P01 | 5 | 2 tasks | 4 files |
-| Phase 08 P02 | 158 | 2 tasks | 3 files |
-| Phase 09 P01 | 147 | 2 tasks | 5 files |
-| Phase 10-buy-hold-sell-captaincy-engines P01 | 90 | 3 tasks | 2 files |
-| Phase 10-buy-hold-sell-captaincy-engines P03 | 8 | 2 tasks | 4 files |
-| Phase 11-explainability-replacement-shortlist P02 | 2 | 2 tasks | 2 files |
-| Phase 11-explainability-replacement-shortlist P01 | 2 | 2 tasks | 2 files |
-| Phase 11-explainability-replacement-shortlist P03 | 15 | 3 tasks | 2 files |
-| Phase 12-fpl-auth-exact-selling-price P01 | 141 | 3 tasks | 7 files |
-| Phase 12-fpl-auth-exact-selling-price P02 | 35 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -73,61 +60,11 @@ Progress: [░░░░░░░░░░] 0%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Setup]: FPL login (session-cookie auth) is v1.x — NOT v1. Transfer suggestions use `now_cost` labelled as approximate when unauthenticated.
-- [Setup]: Custom FDR must be built in Phase 2 from rolling xGA — never use official `team_h_difficulty` as primary signal.
-- [Setup]: Sell price uses `selling_price` from `my-team` when authenticated; unauthenticated mode labels budget as approximate.
-- [Setup]: DGW/BGW normalisation (per-90 stats) must be designed into Phase 2 pipeline — not retrofitted later.
-- [Setup]: `player_id_map.json` is a manual one-time mapping file — no string-matching between FPL and Understat names.
-- [Phase 01-data-foundation]: Zod 4 strips unknown fields by default — no explicit .strip() needed; satisfies D-04
-- [Phase 01-data-foundation]: parseFPLBootstrap wraps safeParse — callers decide throw-vs-stale-cache per D-06
-- [Phase 01-data-foundation]: Proxy URL appends trailing slash before query string to match FPL API convention
-- [Phase 02-understat-pipeline-merged-data-api]: D-08: USE_BLOB env var routes /api/players between Vercel Blob (prod) and pipeline/cache/ (dev); no Zod validation on output; raw string response to avoid JSON round-trip
-- [Phase 02-understat-pipeline-merged-data-api]: D-09: usePlayers uses queryKey ['players'] and staleTime 6h — single cache key for all consumers
-- [Phase 03-gem-rating-table]: DefCon likelihood dimension deferred to Phase 4 — per-match element-summary data not yet available
-- [Phase 03-gem-rating-table]: xG/xA excluded from gem composite when null (not zero-filled) per Research Pitfall 12
-- [Phase 03-gem-rating-table]: Min-max normalisation uses full player population before position filtering
-- [Phase 03-gem-rating-table]: page.tsx stays server component; GemTable carries all interactivity as 'use client'
-- [Phase 03-gem-rating-table]: Position filter passes numeric PositionCode (1/2/3/4) to column filter, never string labels
-- [Phase 03-gem-rating-table]: Null xG/xA scores display em-dash (\u2014) not zero per Research Pitfall 6
-- [Phase 04-defcon-analysis]: page.tsx converted to client component for tab state — server wrapper added no SSR benefit since both GemTable and DefConTables are client components
-- [Phase 04-defcon-analysis]: DefCon API route is local-only (no USE_BLOB switch) — defcon_stats.json always served from pipeline/cache/
-- [Phase 05-squad-view-transfer-suggestions]: Sort suggestions: affordable (budget_sufficient=true) before unaffordable, then gem_delta desc within each tier
-- [Phase 05-squad-view-transfer-suggestions]: squad-adapter.ts Zod schema created in Plan 02 (parallel wave unblocking) — matches Plan 01 canonical types
-- [Phase 05-squad-view-transfer-suggestions]: SquadView receives allPlayers as ScoredPlayer[] — no re-scoring inside the component
-- [Phase 05-squad-view-transfer-suggestions]: TransferPanel manages submittedId separately from teamId input — squad does not reload on every keystroke
-- [Phase 06-club-form-value-gems-and-polish]: tier() bug was a return-value swap — weak teams already correctly identified by thresholds, only the label mapping was wrong
-- [v1.1 Roadmap]: Phase 7 must complete before any other v1.1 phase — proj_pts_next_gw gates 80% of v1.1 features
-- [v1.1 Roadmap]: element-summary fetches shared between defcon.py and xmins.py via run.py cache — never fetched twice
-- [v1.1 Roadmap]: recommend.ts must derive from same gem_score source as transfer-engine.ts — no contradictory signals
-- [v1.1 Roadmap]: projected_pts fields must be absolute FPL points (2–15 range) — normalise() from gem-score.ts must NOT be applied
-- [v1.1 Roadmap]: FPL auth is UI-initiated only — never added to pipeline/run.py or any cron-scheduled code
-- [v1.1 Roadmap]: rotation risk classification gated on status == 'a' with blank news — injury-period minutes excluded from classification window
-- [Phase 07-01]: defcon.py accepts summaries dict — pure computation module with no I/O, all fetching in run.py
-- [Phase 07-01]: xmins.py processes ALL players including GKs; mins_risk gated on status='a' + blank news (locked decision)
-- [Phase 07-02]: xmins_stats parameter defaults to None so existing callers don't break; all 6 projected fields always non-null on every player
-- [Phase 07-02]: import time as _time alias in run.py avoids collision; get_element_summary added to top-level fpl_client import
-- [Phase 07-03]: All 6 new MergedPlayer fields are non-nullable (number/MinsRisk) — Python pipeline writes 0.0 for missing data, never null (per Research Pitfall 7)
-- [Phase 08]: getMinsRiskConfig returns null for both 'injured' and falsy/undefined values
-- [Phase 08]: isRotationRisk covers rotation_risk and cameo (both deprioritised as buy candidates in transfer sort)
-- [Phase 08]: Rotation risk penalty is buy-side only — rotation_risk sell candidates still surfaced normally
-- [Phase 08]: MinsRiskBadge placed on sell-side player only in TransferPanel (confirms why player is a sell candidate)
-- [Phase 09]: columnVisibility is fully derived from gwHorizon state — no onColumnVisibilityChange handler needed
-- [Phase 09]: PositionFilter mb-4 removed in favour of wrapper div mb-2 to prevent double vertical margin
-- [Phase 10-buy-hold-sell-captaincy-engines]: Position averages for Buy/Hold/Sell verdicts computed from full allPlayers population (not squad-only) — prevents false signals
-- [Phase 10-buy-hold-sell-captaincy-engines]: BUY_THRESHOLD=1.0 (strictly above avg), SELL_THRESHOLD=0.90 (>10% below avg) in recommend.ts
-- [Phase 10-buy-hold-sell-captaincy-engines]: computePositionAverages exported from recommend.ts for reuse by captaincy-engine.ts (Plan 02)
-- [Phase 10-buy-hold-sell-captaincy-engines]: CaptainTypeBadge is inline in CaptaincyPanel.tsx — co-location reduces indirection for a component used only there
-- [Phase 11-explainability-replacement-shortlist]: Ranked by pts_delta (proj_pts_1gw delta) descending per D-05 — NOT gem_delta
-- [Phase 11-explainability-replacement-shortlist]: Budget arithmetic mirrors transfer-engine.ts: available_budget = bankBalance/10 + sellPlayer.now_cost/10
-- [Phase 11-01]: Low xG reason excluded for GK/DEF (element_type 1/2); only MID/FWD per Research Q2
-- [Phase 11-01]: EXP-02 risk flags implemented as negative reasons in computeExplanations per D-04 (no separate chip concept)
-- [Phase 11-03]: ExplainPanel colSpan=9 hard-coded to match SquadView 9 column headers
-- [Phase 11-03]: Shortlist only rendered for verdict === 'sell' — Buy/Hold players show reasons only per D-02
-- [Phase 12-fpl-auth-exact-selling-price]: extractPlProfile takes string[] — getAll() fallback pattern handles multi-header FPL Set-Cookie responses
-- [Phase 12-fpl-auth-exact-selling-price]: redirect: 'manual' on FPL login fetch — FPL returns 302 on success; Set-Cookie headers lost without it
-- [Phase 12-fpl-auth-exact-selling-price]: session?.value check in status/my-team routes — prevents stale empty-value cookie appearing authenticated
-- [Phase 12-fpl-auth-exact-selling-price]: exactSellPrices and isAuthenticated passed as optional props to SquadView — unauthenticated path unchanged, auth only enriches
-- [Phase 12-fpl-auth-exact-selling-price]: useMyTeam gated on isAuthenticated && !!submittedId — avoids unnecessary 401 fetches; 401 response invalidates auth-status via setQueryData
+- [v1.2 Roadmap]: CSS-only show/hide (`hidden sm:flex`, `sm:hidden`) for nav — no `useMediaQuery` hook; avoids hydration mismatch
+- [v1.2 Roadmap]: `sm` breakpoint (640px) chosen for mobile/desktop boundary — phones are <=480px, tablets get full desktop layout
+- [v1.2 Roadmap]: Tab state stays in page.tsx; MobileNav receives activeTab/onTabChange as props — no new context needed
+- [v1.2 Roadmap]: Column priority via TanStack Table VisibilityState — extends existing GW toggle pattern in GemTable
+- [v1.2 Roadmap]: MOB-TBL-05 split across Phase 14 (GemTable) and Phase 15 (SquadView) — same requirement, two components
 
 ### Pending Todos
 
@@ -139,6 +76,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T21:18:46.077Z
-Stopped at: Completed 12-02-PLAN.md
+Last session: 2026-03-31
+Stopped at: Roadmap created — 5 phases (13-17), 19 requirements mapped, all files written
 Resume file: None
