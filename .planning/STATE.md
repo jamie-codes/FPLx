@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Decision Engine
-status: verifying
-stopped_at: Completed 12-02-PLAN.md
-last_updated: "2026-03-31T09:05:43.865Z"
+milestone: v1.2
+milestone_name: Mobile
+status: planning
+stopped_at: —
+last_updated: "2026-03-31T00:00:00.000Z"
 last_activity: 2026-03-31
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 15
-  completed_plans: 15
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
   percent: 0
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 ## Current Position
 
-Phase: 12
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-03-31
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-31 — Milestone v1.2 started
 
 Progress: [░░░░░░░░░░] 0%
 

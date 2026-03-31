@@ -10,6 +10,17 @@ v1.0 shipped as a complete daily-use tool. The manager enters their Team ID and 
 
 Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
 
+## Current Milestone: v1.2 Mobile
+
+**Goal:** Make the full app usable on a phone with a touch-friendly responsive layout — same URL, desktop unchanged.
+
+**Target features:**
+- Responsive single-column layouts for all tabs (Gems, Squad, DefCon, Club Form, Value Gems)
+- Fixed bottom tab bar on mobile (icons + labels, replaces top tab strip)
+- Tables adapted for small screens — column prioritisation, horizontal scroll where needed
+- Transfer suggestions, captaincy panel, and auth flow usable on mobile
+- DAT-01 carry-forward: verify GitHub Actions cron operational
+
 ## Current State (v1.1 shipped 2026-03-30)
 
 v1.0 shipped 2026-03-29. Phase 7 complete 2026-03-30 — pipeline computes `proj_pts_1gw/3gw/5gw`, `xmins`, `start_prob`, and `mins_risk` for all 825 players. Phase 8 complete 2026-03-30 — rotation risk badges visible on SquadView, GemTable, and TransferPanel; transfer engine de-prioritises rotation risks. Phase 9 complete 2026-03-30 — GemTable has sortable projected points columns with 1 GW / 3 GW / 5 GW toggle; TransferPanel shows "Proj pts (1 GW): X.X → Y.Y" on every suggestion card. Phase 10 complete — Buy/Hold/Sell recommendations and captaincy rankings engine live. Phase 11 complete 2026-03-30 — Explainability panel (`ExplainPanel.tsx`) wired into SquadView; `computeExplanations` generates natural-language reasons per player; `computeReplacementShortlist` surfaces ranked alternatives for Sell-verdicted players. Phase 12 complete 2026-03-30 — FPL session-cookie auth live: login/logout/status/my-team route handlers, `useAuthStatus`/`useMyTeam` TanStack Query hooks, inline login nudge in TransferPanel, exact sell prices and bank balance in SquadView (AUTH-01, AUTH-02 validated).
