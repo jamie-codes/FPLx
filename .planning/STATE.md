@@ -4,7 +4,7 @@ milestone: v1.2
 milestone_name: Mobile
 status: verifying
 stopped_at: Completed 15-02-PLAN.md — DefConTables, ClubFormTable, ValueGemsTable mobile column hiding complete
-last_updated: "2026-04-01T09:27:09.314Z"
+last_updated: "2026-04-01T09:28:18.514Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 6
@@ -25,8 +25,8 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 
 ## Current Position
 
-Phase: 15 (remaining-tables-mobile) — EXECUTING
-Plan: 2 of 2
+Phase: 16
+Plan: Not started
 Status: Phase complete — ready for verification
 Last activity: 2026-04-01
 
