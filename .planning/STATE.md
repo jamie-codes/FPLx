@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Mobile
-status: verifying
-stopped_at: Completed 17-02-PLAN.md — last-updated Blob fix and cron verification (DAT-01)
-last_updated: "2026-04-01T11:51:25.966Z"
+status: executing
+stopped_at: Completed 18-01-PLAN.md — dark mode infrastructure (DARK-01, DARK-02)
+last_updated: "2026-04-01T18:13:04.280Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 9
-  completed_plans: 9
+  total_plans: 12
+  completed_plans: 10
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 17 — polish-infrastructure
+**Current focus:** Phase 18 — dark-mode
 
 ## Current Position
 
-Phase: 18
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 18 (dark-mode) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-04-01
 
 Progress: [░░░░░░░░░░] 0%
@@ -61,6 +61,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 17 P01 | 74 | 2 tasks | 1 files |
 | Phase 17 P03 | 6 | 2 tasks | 3 files |
 | Phase 17 P02 | 15 | 2 tasks | 1 files |
+| Phase 18-dark-mode P01 | 2 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -92,6 +93,9 @@ Recent decisions affecting current work:
 - [Phase 17]: DGW tier slots between rotation-risk and gem_delta so structural concerns outrank scheduling advantages
 - [Phase 17]: Map.entries() preserves fixture insertion order for DGW badge grouping — no additional sort needed
 - [Phase 17]: Mirror /api/players USE_BLOB pattern for /api/last-updated: list({ prefix }) + fetch for prod, readFile for dev
+- [Phase 18-dark-mode]: Replace @media prefers-color-scheme with .dark class selector — inline script drives system preference into class, media query would conflict
+- [Phase 18-dark-mode]: No next-themes dependency — manual inline script avoids React 19 Encountered a script tag warning
+- [Phase 18-dark-mode]: suppressHydrationWarning on html only — suppresses class mismatch from inline script without disabling child hydration
 
 ### Pending Todos
 
@@ -103,6 +107,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T11:45:09.094Z
-Stopped at: Completed 17-02-PLAN.md — last-updated Blob fix and cron verification (DAT-01)
+Last session: 2026-04-01T18:13:04.277Z
+Stopped at: Completed 18-01-PLAN.md — dark mode infrastructure (DARK-01, DARK-02)
 Resume file: None

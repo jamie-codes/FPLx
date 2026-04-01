@@ -133,7 +133,7 @@ Plans:
   3. All 5 tabs render with no illegible text or missing contrast in dark mode — tables, badges, charts, and form inputs are all fully readable
 **Plans**: 3 plans
 Plans:
-- [ ] 18-01-PLAN.md — Dark mode CSS infrastructure, FOUC prevention script, ThemeToggle component
+- [x] 18-01-PLAN.md — Dark mode CSS infrastructure, FOUC prevention script, ThemeToggle component
 - [ ] 18-02-PLAN.md — Dark variants on GemTable, TransferPanel, SquadView, MobileNav, page.tsx tabs
 - [ ] 18-03-PLAN.md — Dark variants on badge components, remaining tables, FixtureBadges, CaptaincyPanel
 
@@ -158,4 +158,4 @@ Plans:
 | 15. Remaining Tables Mobile | v1.2 | 2/2 | Complete    | 2026-04-01 |
 | 16. Component-Level Mobile | v1.2 | 1/1 | Complete    | 2026-04-01 |
 | 17. Polish + Infrastructure | v1.2 | 3/3 | Complete    | 2026-04-01 |
-| 18. Dark Mode | v1.2 | 0/3 | Not started | - |
+| 18. Dark Mode | v1.2 | 1/3 | In Progress|  |
