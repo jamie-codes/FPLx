@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import type { ScoredPlayer } from '@/lib/types'
 import type { SquadPick, EntryHistory } from '@/lib/squad-adapter'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
@@ -54,6 +54,16 @@ function StatusBadge({ status, news }: { status: string; news: string }) {
 
 export function SquadView({ picks, allPlayers, entryHistory, verdicts, exactSellPrices, isAuthenticated }: SquadViewProps) {
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
+
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  const hideOnMobile = isMobile ? 'hidden' : ''
 
   function toggleExpand(id: number) {
     setExpandedIds(prev => {
@@ -118,15 +128,15 @@ export function SquadView({ picks, allPlayers, entryHistory, verdicts, exactSell
               <table className="w-full text-sm text-left">
                 <thead>
                   <tr className="border-b border-zinc-200">
-                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap">Player</th>
-                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap">Team</th>
-                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap">Price</th>
-                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap">Own%</th>
-                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap">Mins</th>
-                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap">Gem</th>
-                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap">Status</th>
-                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap">Risk</th>
-                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap">Rec</th>
+                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap sticky left-0 z-30 bg-white">Player</th>
+                    <th className={`px-3 py-2 font-medium text-zinc-500 whitespace-nowrap z-20 ${hideOnMobile}`}>Team</th>
+                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap z-20">Price</th>
+                    <th className={`px-3 py-2 font-medium text-zinc-500 whitespace-nowrap z-20 ${hideOnMobile}`}>Own%</th>
+                    <th className={`px-3 py-2 font-medium text-zinc-500 whitespace-nowrap z-20 ${hideOnMobile}`}>Mins</th>
+                    <th className={`px-3 py-2 font-medium text-zinc-500 whitespace-nowrap z-20 ${hideOnMobile}`}>Gem</th>
+                    <th className={`px-3 py-2 font-medium text-zinc-500 whitespace-nowrap z-20 ${hideOnMobile}`}>Status</th>
+                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap z-20">Risk</th>
+                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap z-20">Rec</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -137,7 +147,7 @@ export function SquadView({ picks, allPlayers, entryHistory, verdicts, exactSell
                       <tr
                         className={`border-b border-zinc-100 hover:bg-zinc-50 ${isBench ? 'opacity-50' : ''}`}
                       >
-                        <td className="px-3 py-2 whitespace-nowrap font-medium text-zinc-900">
+                        <td className="px-3 py-2 whitespace-nowrap font-medium text-zinc-900 sticky left-0 z-10 bg-white">
                           {!isBench && (
                             <button
                               onClick={() => toggleExpand(pick.element)}
@@ -158,7 +168,7 @@ export function SquadView({ picks, allPlayers, entryHistory, verdicts, exactSell
                             <span className="ml-1 text-xs text-zinc-400">bench</span>
                           )}
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-zinc-600">
+                        <td className={`px-3 py-2 whitespace-nowrap text-zinc-600 ${hideOnMobile}`}>
                           {player.team_short_name}
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap text-zinc-600">
@@ -176,16 +186,16 @@ export function SquadView({ picks, allPlayers, entryHistory, verdicts, exactSell
                             )
                           })()}
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-zinc-600">
+                        <td className={`px-3 py-2 whitespace-nowrap text-zinc-600 ${hideOnMobile}`}>
                           {player.selected_by_percent}%
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-zinc-600">
+                        <td className={`px-3 py-2 whitespace-nowrap text-zinc-600 ${hideOnMobile}`}>
                           {player.minutes}
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-zinc-600">
+                        <td className={`px-3 py-2 whitespace-nowrap text-zinc-600 ${hideOnMobile}`}>
                           {player.gem_score.toFixed(2)}
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap">
+                        <td className={`px-3 py-2 whitespace-nowrap ${hideOnMobile}`}>
                           <StatusBadge status={player.status} news={player.news} />
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap">
@@ -205,7 +215,7 @@ export function SquadView({ picks, allPlayers, entryHistory, verdicts, exactSell
                           : null
                         return (
                           <tr key={`expand-${pick.element}`}>
-                            <td colSpan={9} className="px-0 py-0">
+                            <td colSpan={isMobile ? 4 : 9} className="px-0 py-0">
                               <ExplainPanel reasons={reasons} shortlist={shortlist} />
                             </td>
                           </tr>
