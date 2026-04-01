@@ -10,6 +10,20 @@ v1.2 shipped as a fully mobile-responsive, dark-mode-aware daily-use tool. The m
 
 Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
 
+## Current Milestone: v1.3 Gameweek Planner
+
+**Goal:** Let the manager plan 1–5 weeks of transfers ahead with auto-suggested sequences, chip timing, and scored output showing squad state at each gameweek.
+
+**Target features:**
+- Multi-GW transfer planner (user-set horizon, 1–5 GWs)
+- Auto-suggest optimal transfer sequence + manual edit mode
+- Scoring: projected points delta, fixture difficulty, DGW/BGW awareness, -4pt hit cost
+- Chip timing: Wildcard, Free Hit, Triple Captain, Bench Boost visible in the plan
+- Output: transfer-by-transfer table + squad snapshot per GW
+- New "Planner" tab in the navigation bar
+
+---
+
 ## Current State (v1.2 shipped 2026-04-01)
 
 v1.2 Mobile complete — full responsive layout on mobile with fixed bottom tab bar, touch-compliant controls (44px targets, 16px inputs), mobile-optimised tables (column hiding, sticky Player column, expandable rows), DGW-aware transfer engine, FOUC-free dark mode with ThemeToggle, and confirmed GitHub Actions cron for daily refresh.
@@ -87,9 +101,19 @@ v1.2 Mobile complete — full responsive layout on mobile with fixed bottom tab 
 - ✓ DGW-01/02: DGW-aware transfer engine tier, DGW labels in FixtureBadges/CaptaincyPanel — v1.2
 - ✓ DARK-01/02/03: Tailwind v4 class-based dark mode, FOUC prevention, ThemeToggle, all components — v1.2
 
-### Active (next milestone)
+### Active (v1.3)
 
-_(empty — start fresh with `/gsd:new-milestone`)_
+- [ ] **PLAN-01**: User can set a planning horizon of 1–5 gameweeks
+- [ ] **PLAN-02**: System auto-suggests an optimal transfer sequence for the chosen horizon
+- [ ] **PLAN-03**: User can manually edit the suggested transfer sequence in the UI
+- [ ] **PLAN-04**: Transfer sequence is scored by projected points delta over the horizon
+- [ ] **PLAN-05**: Transfer sequence accounts for fixture difficulty in scoring
+- [ ] **PLAN-06**: Transfer sequence flags DGW/BGW weeks and adjusts scoring accordingly
+- [ ] **PLAN-07**: Transfer cost (-4pt hit vs free transfer) is factored into plan scoring
+- [ ] **PLAN-08**: Chip timing (Wildcard, Free Hit, Triple Captain, Bench Boost) is visible in the plan
+- [ ] **PLAN-09**: Output shows a transfer-by-transfer table (GW, Out, In, Cost, Projected gain)
+- [ ] **PLAN-10**: Output shows a squad snapshot for each gameweek in the plan
+- [ ] **PLAN-11**: Planner is accessible via a new "Planner" tab in the navigation bar
 
 ### Out of Scope
 
@@ -149,4 +173,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-01 after v1.2 milestone (Mobile)*
+*Last updated: 2026-04-01 — v1.3 milestone started (Gameweek Planner)*

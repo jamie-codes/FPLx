@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: Mobile
-status: complete
-stopped_at: v1.2 milestone shipped 2026-04-01
-last_updated: "2026-04-01T20:00:00.000Z"
+milestone: v1.3
+milestone_name: Gameweek Planner
+status: defining_requirements
+stopped_at: ~
+last_updated: "2026-04-01T00:00:00.000Z"
 last_activity: 2026-04-01
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 12
-  completed_plans: 12
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-01 after v1.2)
 
 ## Current Position
 
-Phase: 18 (final)
-Plan: All complete
-Status: Milestone v1.2 complete — archived 2026-04-01
-Last activity: 2026-04-01
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-01 — Milestone v1.3 started
 
 Progress: [░░░░░░░░░░] 0%
 
