@@ -28,12 +28,12 @@ export default function Home() {
           </div>
         </div>
         {/* Tab navigation */}
-        <div className="hidden sm:flex gap-4 mb-6 border-b border-zinc-200">
+        <div className="hidden sm:flex gap-4 mb-6 border-b border-zinc-200 dark:border-zinc-700">
           <button
             className={`pb-2 px-1 text-sm font-medium ${
               activeTab === 'gems'
-                ? 'border-b-2 border-zinc-900 text-zinc-900'
-                : 'text-zinc-500 hover:text-zinc-700'
+                ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
             }`}
             onClick={() => setActiveTab('gems')}
           >
@@ -42,8 +42,8 @@ export default function Home() {
           <button
             className={`pb-2 px-1 text-sm font-medium ${
               activeTab === 'defcon'
-                ? 'border-b-2 border-zinc-900 text-zinc-900'
-                : 'text-zinc-500 hover:text-zinc-700'
+                ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
             }`}
             onClick={() => setActiveTab('defcon')}
           >
@@ -52,8 +52,8 @@ export default function Home() {
           <button
             className={`pb-2 px-1 text-sm font-medium ${
               activeTab === 'squad'
-                ? 'border-b-2 border-zinc-900 text-zinc-900'
-                : 'text-zinc-500 hover:text-zinc-700'
+                ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
             }`}
             onClick={() => setActiveTab('squad')}
           >
@@ -62,8 +62,8 @@ export default function Home() {
           <button
             className={`pb-2 px-1 text-sm font-medium ${
               activeTab === 'club-form'
-                ? 'border-b-2 border-zinc-900 text-zinc-900'
-                : 'text-zinc-500 hover:text-zinc-700'
+                ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
             }`}
             onClick={() => setActiveTab('club-form')}
           >
@@ -72,8 +72,8 @@ export default function Home() {
           <button
             className={`pb-2 px-1 text-sm font-medium ${
               activeTab === 'value-gems'
-                ? 'border-b-2 border-zinc-900 text-zinc-900'
-                : 'text-zinc-500 hover:text-zinc-700'
+                ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
             }`}
             onClick={() => setActiveTab('value-gems')}
           >

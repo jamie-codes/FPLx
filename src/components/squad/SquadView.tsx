@@ -104,7 +104,7 @@ export function SquadView({ picks, allPlayers, entryHistory, verdicts, exactSell
   return (
     <div className="space-y-4">
       {/* Budget summary — D-05 (approx when unauth) / D-06 (exact when auth) */}
-      <div className="text-sm text-zinc-600 border border-zinc-200 rounded px-3 py-2 bg-zinc-50">
+      <div className="text-sm text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 rounded px-3 py-2 bg-zinc-50 dark:bg-zinc-800">
         Bank:{' '}
         <span className="font-medium">
           {isAuthenticated ? `£${bankM}m` : (
@@ -123,20 +123,20 @@ export function SquadView({ picks, allPlayers, entryHistory, verdicts, exactSell
         if (rows.length === 0) return null
         return (
           <div key={et}>
-            <h3 className="text-sm font-semibold text-zinc-700 mb-1">{POSITION_LABELS[et]}</h3>
+            <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{POSITION_LABELS[et]}</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead>
-                  <tr className="border-b border-zinc-200">
-                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap sticky left-0 z-30 bg-white">Player</th>
-                    <th className={`px-3 py-2 font-medium text-zinc-500 whitespace-nowrap z-20 ${hideOnMobile}`}>Team</th>
-                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap z-20">Price</th>
-                    <th className={`px-3 py-2 font-medium text-zinc-500 whitespace-nowrap z-20 ${hideOnMobile}`}>Own%</th>
-                    <th className={`px-3 py-2 font-medium text-zinc-500 whitespace-nowrap z-20 ${hideOnMobile}`}>Mins</th>
-                    <th className={`px-3 py-2 font-medium text-zinc-500 whitespace-nowrap z-20 ${hideOnMobile}`}>Gem</th>
-                    <th className={`px-3 py-2 font-medium text-zinc-500 whitespace-nowrap z-20 ${hideOnMobile}`}>Status</th>
-                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap z-20">Risk</th>
-                    <th className="px-3 py-2 font-medium text-zinc-500 whitespace-nowrap z-20">Rec</th>
+                  <tr className="border-b border-zinc-200 dark:border-zinc-700">
+                    <th className="px-3 py-2 font-medium text-zinc-500 dark:text-zinc-400 whitespace-nowrap sticky left-0 z-30 bg-white dark:bg-zinc-900">Player</th>
+                    <th className={`px-3 py-2 font-medium text-zinc-500 dark:text-zinc-400 whitespace-nowrap z-20 ${hideOnMobile}`}>Team</th>
+                    <th className="px-3 py-2 font-medium text-zinc-500 dark:text-zinc-400 whitespace-nowrap z-20">Price</th>
+                    <th className={`px-3 py-2 font-medium text-zinc-500 dark:text-zinc-400 whitespace-nowrap z-20 ${hideOnMobile}`}>Own%</th>
+                    <th className={`px-3 py-2 font-medium text-zinc-500 dark:text-zinc-400 whitespace-nowrap z-20 ${hideOnMobile}`}>Mins</th>
+                    <th className={`px-3 py-2 font-medium text-zinc-500 dark:text-zinc-400 whitespace-nowrap z-20 ${hideOnMobile}`}>Gem</th>
+                    <th className={`px-3 py-2 font-medium text-zinc-500 dark:text-zinc-400 whitespace-nowrap z-20 ${hideOnMobile}`}>Status</th>
+                    <th className="px-3 py-2 font-medium text-zinc-500 dark:text-zinc-400 whitespace-nowrap z-20">Risk</th>
+                    <th className="px-3 py-2 font-medium text-zinc-500 dark:text-zinc-400 whitespace-nowrap z-20">Rec</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -145,13 +145,13 @@ export function SquadView({ picks, allPlayers, entryHistory, verdicts, exactSell
                     return (
                       <React.Fragment key={pick.element}>
                       <tr
-                        className={`border-b border-zinc-100 hover:bg-zinc-50 ${isBench ? 'opacity-50' : ''}`}
+                        className={`border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 ${isBench ? 'opacity-50' : ''}`}
                       >
-                        <td className="px-3 py-2 whitespace-nowrap font-medium text-zinc-900 sticky left-0 z-10 bg-white">
+                        <td className="px-3 py-2 whitespace-nowrap font-medium text-zinc-900 dark:text-zinc-100 sticky left-0 z-10 bg-white dark:bg-zinc-900">
                           {!isBench && (
                             <button
                               onClick={() => toggleExpand(pick.element)}
-                              className="inline-flex items-center mr-1 text-zinc-400 hover:text-zinc-600"
+                              className="inline-flex items-center mr-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
                               aria-label={expandedIds.has(pick.element) ? 'Collapse details' : 'Expand details'}
                             >
                               <span className="text-xs">{expandedIds.has(pick.element) ? '\u25BC' : '\u25B6'}</span>
@@ -159,19 +159,19 @@ export function SquadView({ picks, allPlayers, entryHistory, verdicts, exactSell
                           )}
                           {player.web_name}
                           {pick.is_captain && (
-                            <span className="ml-1 text-xs font-bold text-amber-600">(C)</span>
+                            <span className="ml-1 text-xs font-bold text-amber-600 dark:text-amber-400">(C)</span>
                           )}
                           {pick.is_vice_captain && (
-                            <span className="ml-1 text-xs font-semibold text-zinc-500">(VC)</span>
+                            <span className="ml-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">(VC)</span>
                           )}
                           {isBench && (
-                            <span className="ml-1 text-xs text-zinc-400">bench</span>
+                            <span className="ml-1 text-xs text-zinc-400 dark:text-zinc-500">bench</span>
                           )}
                         </td>
-                        <td className={`px-3 py-2 whitespace-nowrap text-zinc-600 ${hideOnMobile}`}>
+                        <td className={`px-3 py-2 whitespace-nowrap text-zinc-600 dark:text-zinc-400 ${hideOnMobile}`}>
                           {player.team_short_name}
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-zinc-600">
+                        <td className="px-3 py-2 whitespace-nowrap text-zinc-600 dark:text-zinc-400">
                           {(() => {
                             const exactPrice = exactSellPrices?.get(pick.element)
                             const priceVal = exactPrice ?? player.now_cost
@@ -186,13 +186,13 @@ export function SquadView({ picks, allPlayers, entryHistory, verdicts, exactSell
                             )
                           })()}
                         </td>
-                        <td className={`px-3 py-2 whitespace-nowrap text-zinc-600 ${hideOnMobile}`}>
+                        <td className={`px-3 py-2 whitespace-nowrap text-zinc-600 dark:text-zinc-400 ${hideOnMobile}`}>
                           {player.selected_by_percent}%
                         </td>
-                        <td className={`px-3 py-2 whitespace-nowrap text-zinc-600 ${hideOnMobile}`}>
+                        <td className={`px-3 py-2 whitespace-nowrap text-zinc-600 dark:text-zinc-400 ${hideOnMobile}`}>
                           {player.minutes}
                         </td>
-                        <td className={`px-3 py-2 whitespace-nowrap text-zinc-600 ${hideOnMobile}`}>
+                        <td className={`px-3 py-2 whitespace-nowrap text-zinc-600 dark:text-zinc-400 ${hideOnMobile}`}>
                           {player.gem_score.toFixed(2)}
                         </td>
                         <td className={`px-3 py-2 whitespace-nowrap ${hideOnMobile}`}>
