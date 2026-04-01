@@ -1,13 +1,15 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, Fragment } from 'react'
 import {
   flexRender,
   getCoreRowModel,
+  getExpandedRowModel,
   getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
   type ColumnFiltersState,
+  type ExpandedState,
   type SortingState,
   type VisibilityState,
 } from '@tanstack/react-table'
@@ -17,6 +19,24 @@ import type { PositionCode } from '@/lib/types'
 import { columns } from './columns'
 import { PositionFilter } from './PositionFilter'
 import { GwToggle, getColumnVisibility } from './GwToggle'
+
+const HIDDEN_COLUMN_LABELS: Record<string, string> = {
+  team_short_name: 'Team',
+  now_cost: 'Price',
+  fdr_score: 'FDR',
+  form_score: 'Form',
+  xg_per90: 'xG/90',
+  xa_per90: 'xA/90',
+  xg_score: 'xG Score',
+  xa_score: 'xA Score',
+  ownership_score: 'Own Score',
+  minutes_score: 'Minutes',
+  set_piece_score: 'Set Piece',
+  selected_by_percent: 'Owned %',
+  status: 'Status',
+  trend: 'Price Trend',
+  fixtures: 'Next 5',
+}
 
 export function GemTable() {
   const { data, isLoading, error } = usePlayers()
@@ -30,17 +50,30 @@ export function GemTable() {
   const [activePosition, setActivePosition] = useState<PositionCode | null>(null)
   const [gwHorizon, setGwHorizon] = useState<1 | 3 | 5>(1)
 
-  const columnVisibility: VisibilityState = getColumnVisibility(gwHorizon)
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  const [expanded, setExpanded] = useState<ExpandedState>({})
+
+  const columnVisibility: VisibilityState = getColumnVisibility(gwHorizon, isMobile)
 
   const table = useReactTable({
     data: scoredPlayers,
     columns,
-    state: { sorting, columnFilters, columnVisibility },
+    state: { sorting, columnFilters, columnVisibility, expanded },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onExpandedChange: setExpanded,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
+    getRowCanExpand: () => isMobile,
   })
 
   const handlePositionChange = (code: PositionCode | null) => {
@@ -83,6 +116,10 @@ export function GemTable() {
                   <th
                     key={header.id}
                     className={`px-2 py-2.5 sm:py-1 font-semibold text-gray-700 whitespace-nowrap min-h-[44px] ${
+                      header.column.id === 'web_name'
+                        ? 'sticky left-0 z-30 bg-white'
+                        : 'z-20'
+                    } ${
                       header.column.getCanSort() ? 'cursor-pointer select-none' : ''
                     }`}
                     onClick={header.column.getToggleSortingHandler()}
@@ -102,13 +139,46 @@ export function GemTable() {
           </thead>
           <tbody>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="even:bg-gray-50 hover:bg-blue-50">
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-2 py-1 whitespace-nowrap">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
+              <Fragment key={row.id}>
+                <tr
+                  className={`even:bg-gray-50 hover:bg-blue-50 ${isMobile ? 'cursor-pointer active:bg-blue-100' : ''}`}
+                  onClick={() => { if (isMobile) row.toggleExpanded() }}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td
+                      key={cell.id}
+                      className={
+                        cell.column.id === 'web_name'
+                          ? 'px-2 py-1 whitespace-nowrap sticky left-0 z-10 bg-white'
+                          : 'px-2 py-1 whitespace-nowrap'
+                      }
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+                {row.getIsExpanded() && (
+                  <tr className="bg-blue-50 sm:hidden">
+                    <td colSpan={row.getVisibleCells().length} className="px-3 py-3">
+                      <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                        {row.getAllCells()
+                          .filter(cell => HIDDEN_COLUMN_LABELS[cell.column.id])
+                          .map(cell => (
+                            <div key={cell.column.id} className="flex gap-1">
+                              <dt className="text-gray-500 shrink-0">
+                                {HIDDEN_COLUMN_LABELS[cell.column.id]}:
+                              </dt>
+                              <dd className="font-medium truncate">
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                              </dd>
+                            </div>
+                          ))
+                        }
+                      </dl>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             ))}
           </tbody>
         </table>
