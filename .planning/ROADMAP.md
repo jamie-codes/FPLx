@@ -115,6 +115,10 @@ Plans:
   1. On mobile, the GW toggle and position filter row remains visible at the top of the screen while scrolling GemTable — the user can change filters without scrolling back to the top
   2. After scrolling past the first screen of GemTable rows on mobile, a "back to top" button appears and tapping it scrolls the user back to the top
   3. The GitHub Actions cron job has run at least once and produced an updated `merged_players.json` in Vercel Blob — the LastUpdated component shows a fresh timestamp confirming automated refresh is live
+**Plans**: 2 plans
+Plans:
+- [ ] 17-01-PLAN.md — Sticky filter bar and back-to-top button for GemTable mobile
+- [ ] 17-02-PLAN.md — Last-updated route Blob fix and GitHub Actions cron verification
 
 ### Phase 18: Dark Mode
 **Goal**: The full app is usable in dark mode — system preference respected by default, manual toggle in the header, all components correctly themed
@@ -145,5 +149,5 @@ Plans:
 | 14. GemTable Mobile | v1.2 | 1/1 | Complete    | 2026-04-01 |
 | 15. Remaining Tables Mobile | v1.2 | 2/2 | Complete    | 2026-04-01 |
 | 16. Component-Level Mobile | v1.2 | 1/1 | Complete    | 2026-04-01 |
-| 17. Polish + Infrastructure | v1.2 | 0/? | Not started | - |
+| 17. Polish + Infrastructure | v1.2 | 0/2 | Not started | - |
 | 18. Dark Mode | v1.2 | 0/? | Not started | - |
