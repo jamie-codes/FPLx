@@ -42,7 +42,7 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
 
 - [x] **Phase 13: Navigation + Layout Foundations** - Bottom tab bar, viewport contract, touch targets, and single-column layout across all tabs (completed 2026-04-01)
 - [x] **Phase 14: GemTable Mobile** - Column prioritisation, sticky Player column, and expandable row detail for GemTable (completed 2026-04-01)
-- [ ] **Phase 15: Remaining Tables Mobile** - Column prioritisation for SquadView, DefConTables, ClubFormTable, and ValueGemsTable; sticky Player column in SquadView
+- [x] **Phase 15: Remaining Tables Mobile** - Column prioritisation for SquadView, DefConTables, ClubFormTable, and ValueGemsTable; sticky Player column in SquadView (completed 2026-04-01)
 - [ ] **Phase 16: Component-Level Mobile** - Transfer suggestion card layout, login form, and captaincy panel grid for mobile
 - [ ] **Phase 17: Polish + Infrastructure** - Sticky filter bar, back-to-top button, and verified GitHub Actions cron
 - [ ] **Phase 18: Dark Mode** - System-preference-aware dark mode with manual toggle; all components themed
@@ -90,8 +90,8 @@ Plans:
   4. On mobile, ClubFormTable and ValueGemsTable show only key player identity and primary stat columns — each table fits comfortably within a 375px screen
 **Plans**: 2 plans
 Plans:
-- [ ] 15-01-PLAN.md — SquadView mobile column hiding + sticky Player column
-- [ ] 15-02-PLAN.md — DefConTables, ClubFormTable, ValueGemsTable mobile column hiding
+- [x] 15-01-PLAN.md — SquadView mobile column hiding + sticky Player column
+- [x] 15-02-PLAN.md — DefConTables, ClubFormTable, ValueGemsTable mobile column hiding
 **UI hint**: yes
 
 ### Phase 16: Component-Level Mobile
@@ -141,7 +141,7 @@ Plans:
 | 12. FPL Auth + Exact Selling Price | v1.1 | 2/2 | Complete | 2026-03-30 |
 | 13. Navigation + Layout Foundations | v1.2 | 2/2 | Complete    | 2026-04-01 |
 | 14. GemTable Mobile | v1.2 | 1/1 | Complete    | 2026-04-01 |
-| 15. Remaining Tables Mobile | v1.2 | 0/2 | Not started | - |
+| 15. Remaining Tables Mobile | v1.2 | 2/2 | Complete   | 2026-04-01 |
 | 16. Component-Level Mobile | v1.2 | 0/? | Not started | - |
 | 17. Polish + Infrastructure | v1.2 | 0/? | Not started | - |
 | 18. Dark Mode | v1.2 | 0/? | Not started | - |

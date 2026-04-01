@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Mobile
 status: verifying
-stopped_at: Completed 14-01-PLAN.md — Phase 14 fully verified and complete
-last_updated: "2026-04-01T08:00:35.895Z"
+stopped_at: Completed 15-02-PLAN.md — DefConTables, ClubFormTable, ValueGemsTable mobile column hiding complete
+last_updated: "2026-04-01T09:27:09.314Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 6
-  completed_phases: 2
-  total_plans: 3
-  completed_plans: 3
+  completed_phases: 3
+  total_plans: 5
+  completed_plans: 5
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 14 — gemtable-mobile
+**Current focus:** Phase 15 — remaining-tables-mobile
 
 ## Current Position
 
-Phase: 15
-Plan: Not started
-Status: Phase complete — verified and approved 2026-04-01
+Phase: 15 (remaining-tables-mobile) — EXECUTING
+Plan: 2 of 2
+Status: Phase complete — ready for verification
 Last activity: 2026-04-01
 
 Progress: [░░░░░░░░░░] 0%
@@ -55,6 +55,8 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 13 P01 | 2 | 3 tasks | 4 files |
 | Phase 13 P02 | 35 | 3 tasks | 7 files |
 | Phase 14-gemtable-mobile P01 | 15 | 2 tasks | 3 files |
+| Phase 15 P01 | 1 | 1 tasks | 1 files |
+| Phase 15-remaining-tables-mobile P02 | 8 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -74,6 +76,10 @@ Recent decisions affecting current work:
 - [Phase 13]: MobileNav moved to sibling of <main> (not inside it) to avoid contributing to main scrollWidth and causing horizontal overflow
 - [Phase 14-gemtable-mobile]: isMobile via window.innerWidth useEffect (not useMediaQuery) — avoids hydration mismatch, consistent with Phase 13 pattern
 - [Phase 14-gemtable-mobile]: getColumnVisibility spread order: MOBILE_HIDDEN_COLUMNS first, gwVisibility second — active proj_pts column overrides false
+- [Phase 15]: hideOnMobile = isMobile ? 'hidden' : '' on manual HTML table — reuses Phase 14 pattern, avoids adding TanStack VisibilityState
+- [Phase 15]: Dynamic colSpan on ExplainPanel (4 mobile / 9 desktop) spans only visible columns
+- [Phase 15-02]: Used window.innerWidth resize listener (not useMediaQuery) consistent with Phase 13/14 pattern to avoid hydration mismatch
+- [Phase 15-02]: DefConTables shares single columnVisibility constant wired to both defTable and midFwdTable instances
 
 ### Pending Todos
 
@@ -85,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T09:00:00Z
-Stopped at: Completed 14-01-PLAN.md — Phase 14 fully verified and complete
+Last session: 2026-04-01T09:27:09.311Z
+Stopped at: Completed 15-02-PLAN.md — DefConTables, ClubFormTable, ValueGemsTable mobile column hiding complete
 Resume file: None
