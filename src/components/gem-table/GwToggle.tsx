@@ -25,7 +25,7 @@ export function GwToggle({ value, onChange }: Props) {
           key={gw}
           onClick={() => onChange(gw)}
           aria-pressed={value === gw}
-          className={`px-3 py-1 text-sm font-medium transition-colors ${
+          className={`px-3 py-2.5 sm:py-1 text-sm font-medium transition-colors cursor-pointer active:scale-95 transition-transform min-h-[44px] ${
             value === gw
               ? 'bg-zinc-900 text-white'
               : 'bg-white text-zinc-700 hover:bg-zinc-50'
