@@ -8,6 +8,7 @@ import { TransferPanel } from '@/components/transfers/TransferPanel'
 import { ClubFormTable } from '@/components/club-form/ClubFormTable'
 import { LastUpdated } from '@/components/LastUpdated'
 import { ValueGemsTable } from '@/components/value-gems/ValueGemsTable'
+import { MobileNav } from '@/components/nav/MobileNav'
 
 type Tab = 'gems' | 'defcon' | 'squad' | 'club-form' | 'value-gems'
 
@@ -15,15 +16,14 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('gems')
 
   return (
-    <main className="max-w-7xl mx-auto px-4 py-8">
+    <main className="max-w-7xl mx-auto px-4 pt-2 pb-8 max-sm:pb-24 overflow-x-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Image src="/logo.png" alt="fplx logo" width={40} height={40} className="rounded" />
-        <span className="text-xl font-semibold text-zinc-900">fplx</span>
+      <div className="flex items-center gap-3 mb-2">
+        <Image src="/logo.png" alt="fplx logo" width={252} height={120} />
         <div className="ml-auto"><LastUpdated /></div>
       </div>
       {/* Tab navigation */}
-      <div className="flex gap-4 mb-6 border-b border-zinc-200">
+      <div className="hidden sm:flex gap-4 mb-6 border-b border-zinc-200">
         <button
           className={`pb-2 px-1 text-sm font-medium ${
             activeTab === 'gems'
@@ -82,6 +82,7 @@ export default function Home() {
       {activeTab === 'squad' && <TransferPanel />}
       {activeTab === 'club-form' && <ClubFormTable />}
       {activeTab === 'value-gems' && <ValueGemsTable />}
+      <MobileNav activeTab={activeTab} onTabChange={setActiveTab} />
     </main>
   )
 }
