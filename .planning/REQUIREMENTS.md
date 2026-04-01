@@ -58,7 +58,7 @@
 
 ### Carry-Forward
 
-- [ ] **DAT-01**: Verified automated daily refresh — GitHub Actions cron confirmed operational (deferred from v1.1)
+- [x] **DAT-01**: Verified automated daily refresh — GitHub Actions cron confirmed operational (deferred from v1.1)
 
 ---
 
@@ -106,7 +106,7 @@
 | MOB-COMP-03 | Phase 16 | Complete |
 | MOB-POL-01 | Phase 17 | Pending |
 | MOB-POL-02 | Phase 17 | Pending |
-| DAT-01 | Phase 17 | Pending |
+| DAT-01 | Phase 17 | Complete |
 | DGW-01 | Phase 17 | Pending |
 | DGW-02 | Phase 17 | Pending |
 | DARK-01 | Phase 18 | Pending |

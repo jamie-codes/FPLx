@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Mobile
-status: verifying
-stopped_at: Completed 16-01-PLAN.md — TransferPanel and CaptaincyPanel mobile layouts complete
-last_updated: "2026-04-01T10:33:29.332Z"
-last_activity: 2026-04-01
+status: executing
+stopped_at: Completed 17-02 Task 1 — Blob-aware last-updated route; awaiting Task 2 human-verify checkpoint
+last_updated: "2026-04-01T11:41:26.404Z"
+last_activity: 2026-04-01 -- Phase 17 execution started
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 9
+  completed_plans: 7
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 16 — component-level-mobile
+**Current focus:** Phase 17 — polish-infrastructure
 
 ## Current Position
 
-Phase: 17
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-04-01
+Phase: 17 (polish-infrastructure) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 17
+Last activity: 2026-04-01 -- Phase 17 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -83,6 +83,7 @@ Recent decisions affecting current work:
 - [Phase 15-02]: DefConTables shares single columnVisibility constant wired to both defTable and midFwdTable instances
 - [Phase 16-component-level-mobile]: hidden sm:inline for season price trend on mobile — GW trend always visible as decision-relevant
 - [Phase 16-component-level-mobile]: Captaincy panel uses grid-cols-2 sm:grid-cols-1 for equal-width cards on narrow screens
+- [Phase 17-polish-infrastructure]: Mirror /api/players USE_BLOB pattern for /api/last-updated: list({ prefix }) + fetch for prod, readFile for dev
 
 ### Pending Todos
 
@@ -94,6 +95,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T10:29:41.373Z
-Stopped at: Completed 16-01-PLAN.md — TransferPanel and CaptaincyPanel mobile layouts complete
+Last session: 2026-04-01T11:41:20.507Z
+Stopped at: Completed 17-02 Task 1 — Blob-aware last-updated route; awaiting Task 2 human-verify checkpoint
 Resume file: None

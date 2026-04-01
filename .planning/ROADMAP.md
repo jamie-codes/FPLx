@@ -120,7 +120,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [ ] 17-01-PLAN.md — Sticky filter bar and back-to-top button for GemTable mobile
-- [ ] 17-02-PLAN.md — Last-updated route Blob fix and GitHub Actions cron verification
+- [x] 17-02-PLAN.md — Last-updated route Blob fix and GitHub Actions cron verification
 - [ ] 17-03-PLAN.md — DGW/BGW awareness in transfer engine and fixture UI
 
 ### Phase 18: Dark Mode
@@ -152,5 +152,5 @@ Plans:
 | 14. GemTable Mobile | v1.2 | 1/1 | Complete    | 2026-04-01 |
 | 15. Remaining Tables Mobile | v1.2 | 2/2 | Complete    | 2026-04-01 |
 | 16. Component-Level Mobile | v1.2 | 1/1 | Complete    | 2026-04-01 |
-| 17. Polish + Infrastructure | v1.2 | 0/2 | Not started | - |
+| 17. Polish + Infrastructure | v1.2 | 1/3 | In Progress|  |
 | 18. Dark Mode | v1.2 | 0/? | Not started | - |
