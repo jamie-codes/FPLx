@@ -49,7 +49,7 @@
 
 - [x] **DARK-01**: User can toggle between light and dark mode via a button in the app header; preference persists across sessions (localStorage)
 - [x] **DARK-02**: Dark mode defaults to the system `prefers-color-scheme` preference on first visit
-- [ ] **DARK-03**: All components render correctly in dark mode — no illegible text, sufficient contrast, no white flash on load
+- [x] **DARK-03**: All components render correctly in dark mode — no illegible text, sufficient contrast, no white flash on load
 
 ### Double / Blank Gameweek Awareness
 
@@ -111,4 +111,4 @@
 | DGW-02 | Phase 17 | Complete |
 | DARK-01 | Phase 18 | Complete |
 | DARK-02 | Phase 18 | Complete |
-| DARK-03 | Phase 18 | Pending |
+| DARK-03 | Phase 18 | Complete |

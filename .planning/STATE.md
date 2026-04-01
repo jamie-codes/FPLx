@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Mobile
 status: executing
-stopped_at: Completed 18-01-PLAN.md — dark mode infrastructure (DARK-01, DARK-02)
-last_updated: "2026-04-01T18:13:04.280Z"
+stopped_at: Completed 18-03-PLAN.md — dark mode remaining component coverage (DARK-03)
+last_updated: "2026-04-01T18:18:24.735Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 12
-  completed_plans: 10
+  completed_plans: 11
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 ## Current Position
 
 Phase: 18 (dark-mode) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-01
 
@@ -62,6 +62,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 17 P03 | 6 | 2 tasks | 3 files |
 | Phase 17 P02 | 15 | 2 tasks | 1 files |
 | Phase 18-dark-mode P01 | 2 | 2 tasks | 4 files |
+| Phase 18-dark-mode P03 | 10 | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -96,6 +97,8 @@ Recent decisions affecting current work:
 - [Phase 18-dark-mode]: Replace @media prefers-color-scheme with .dark class selector — inline script drives system preference into class, media query would conflict
 - [Phase 18-dark-mode]: No next-themes dependency — manual inline script avoids React 19 Encountered a script tag warning
 - [Phase 18-dark-mode]: suppressHydrationWarning on html only — suppresses class mismatch from inline script without disabling child hydration
+- [Phase 18-dark-mode]: Badge dark palette: inverted scheme (dark:bg-*-900 + dark:text-*-200) for all status badge types
+- [Phase 18-dark-mode]: ValueGemsTable active filter pill: fully inverted in dark (dark:bg-white dark:text-zinc-900) for clear selection contrast
 
 ### Pending Todos
 
@@ -107,6 +110,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T18:13:04.277Z
-Stopped at: Completed 18-01-PLAN.md — dark mode infrastructure (DARK-01, DARK-02)
+Last session: 2026-04-01T18:18:24.732Z
+Stopped at: Completed 18-03-PLAN.md — dark mode remaining component coverage (DARK-03)
 Resume file: None
