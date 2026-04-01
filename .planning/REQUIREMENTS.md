@@ -42,8 +42,8 @@
 
 ### Polish
 
-- [ ] **MOB-POL-01**: GW toggle and position filter row is sticky below the top of the viewport on mobile so the user can filter GemTable without scrolling back to the top
-- [ ] **MOB-POL-02**: A "back to top" button appears in GemTable on mobile after the user has scrolled past the first screen of rows
+- [x] **MOB-POL-01**: GW toggle and position filter row is sticky below the top of the viewport on mobile so the user can filter GemTable without scrolling back to the top
+- [x] **MOB-POL-02**: A "back to top" button appears in GemTable on mobile after the user has scrolled past the first screen of rows
 
 ### Dark Mode
 
@@ -53,8 +53,8 @@
 
 ### Double / Blank Gameweek Awareness
 
-- [ ] **DGW-01**: Transfer engine boosts DGW players as buy targets — when a buy candidate has 2 fixtures in the immediately upcoming gameweek, they rank above a same-tier player with only 1 fixture
-- [ ] **DGW-02**: Fixture badges and captaincy panel show DGW indicators — FixtureBadges groups badges by gameweek and labels double-GW groups with "DGW"; CaptaincyPanel shows all fixtures for the next GW (not just the first)
+- [x] **DGW-01**: Transfer engine boosts DGW players as buy targets — when a buy candidate has 2 fixtures in the immediately upcoming gameweek, they rank above a same-tier player with only 1 fixture
+- [x] **DGW-02**: Fixture badges and captaincy panel show DGW indicators — FixtureBadges groups badges by gameweek and labels double-GW groups with "DGW"; CaptaincyPanel shows all fixtures for the next GW (not just the first)
 
 ### Carry-Forward
 
@@ -104,11 +104,11 @@
 | MOB-COMP-01 | Phase 16 | Complete |
 | MOB-COMP-02 | Phase 16 | Complete |
 | MOB-COMP-03 | Phase 16 | Complete |
-| MOB-POL-01 | Phase 17 | Pending |
-| MOB-POL-02 | Phase 17 | Pending |
+| MOB-POL-01 | Phase 17 | Complete |
+| MOB-POL-02 | Phase 17 | Complete |
 | DAT-01 | Phase 17 | Complete |
-| DGW-01 | Phase 17 | Pending |
-| DGW-02 | Phase 17 | Pending |
+| DGW-01 | Phase 17 | Complete |
+| DGW-02 | Phase 17 | Complete |
 | DARK-01 | Phase 18 | Pending |
 | DARK-02 | Phase 18 | Pending |
 | DARK-03 | Phase 18 | Pending |
