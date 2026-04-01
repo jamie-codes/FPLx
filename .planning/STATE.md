@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Mobile
-status: executing
-stopped_at: "Task 3 checkpoint:human-verify — 13-02 auto tasks complete, awaiting visual verification"
-last_updated: "2026-04-01T06:52:41.876Z"
+status: verifying
+stopped_at: Completed 13-02-PLAN.md — Phase 13 complete
+last_updated: "2026-04-01T07:08:12.881Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 6
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 
 Phase: 13 (navigation-layout-foundations) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-01
 
 Progress: [░░░░░░░░░░] 0%
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 
 *Updated after each plan completion*
 | Phase 13 P01 | 2 | 3 tasks | 4 files |
+| Phase 13 P02 | 35 | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -69,6 +70,7 @@ Recent decisions affecting current work:
 - [Phase 13]: CSS-only show/hide (sm:hidden / hidden sm:flex) for nav — no useMediaQuery to avoid hydration mismatch
 - [Phase 13]: Tab state stays in page.tsx; MobileNav is a controlled component via activeTab/onTabChange props — no context needed
 - [Phase 13]: nav-safe-bottom as named CSS class (not Tailwind arbitrary value) for iOS safe area inset readability
+- [Phase 13]: MobileNav moved to sibling of <main> (not inside it) to avoid contributing to main scrollWidth and causing horizontal overflow
 
 ### Pending Todos
 
@@ -80,6 +82,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T06:52:41.873Z
-Stopped at: Task 3 checkpoint:human-verify — 13-02 auto tasks complete, awaiting visual verification
+Last session: 2026-04-01T07:08:12.878Z
+Stopped at: Completed 13-02-PLAN.md — Phase 13 complete
 Resume file: None
