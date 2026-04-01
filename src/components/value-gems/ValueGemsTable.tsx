@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
   useReactTable,
   type SortingState,
+  type VisibilityState,
 } from '@tanstack/react-table'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { computeAllGemScores } from '@/lib/gem-score'
@@ -25,6 +26,18 @@ export function ValueGemsTable() {
 
   const scoredPlayers = useMemo(() => computeAllGemScores(data ?? []), [data])
 
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  const columnVisibility: VisibilityState = isMobile
+    ? { element_type: false, team_short_name: false, selected_by_percent: false, trend: false, fixtures: false }
+    : {}
+
   const filteredPlayers = useMemo(() => {
     switch (filter) {
       case 'cheap':
@@ -39,7 +52,7 @@ export function ValueGemsTable() {
   const table = useReactTable({
     data: filteredPlayers,
     columns,
-    state: { sorting },
+    state: { sorting, columnVisibility },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),

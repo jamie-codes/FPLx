@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
   useReactTable,
   type SortingState,
+  type VisibilityState,
 } from '@tanstack/react-table'
 import { useClubForm } from '@/lib/hooks/useClubForm'
 import { LastUpdated } from '@/components/LastUpdated'
@@ -15,6 +16,18 @@ import { columns } from './columns'
 export function ClubFormTable() {
   const { data, isLoading, error } = useClubForm()
 
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  const columnVisibility: VisibilityState = isMobile
+    ? { goals_scored: false, goals_conceded: false, upcoming: false }
+    : {}
+
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'wins', desc: true },
   ])
@@ -22,7 +35,7 @@ export function ClubFormTable() {
   const table = useReactTable({
     data: data ?? [],
     columns,
-    state: { sorting },
+    state: { sorting, columnVisibility },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
