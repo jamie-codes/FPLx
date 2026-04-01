@@ -44,7 +44,7 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
 - [x] **Phase 14: GemTable Mobile** - Column prioritisation, sticky Player column, and expandable row detail for GemTable (completed 2026-04-01)
 - [x] **Phase 15: Remaining Tables Mobile** - Column prioritisation for SquadView, DefConTables, ClubFormTable, and ValueGemsTable; sticky Player column in SquadView (completed 2026-04-01)
 - [x] **Phase 16: Component-Level Mobile** - Transfer suggestion card layout, login form, and captaincy panel grid for mobile (completed 2026-04-01)
-- [ ] **Phase 17: Polish + Infrastructure** - Sticky filter bar, back-to-top button, DGW/BGW indicators, and verified GitHub Actions cron
+- [x] **Phase 17: Polish + Infrastructure** - Sticky filter bar, back-to-top button, DGW/BGW indicators, and verified GitHub Actions cron (completed 2026-04-01)
 - [ ] **Phase 18: Dark Mode** - System-preference-aware dark mode with manual toggle; all components themed
 
 ## Phase Details
@@ -119,9 +119,9 @@ Plans:
   5. FixtureBadges groups double-gameweek fixtures and shows a "DGW" label; CaptaincyPanel shows all fixtures for the upcoming GW
 **Plans**: 3 plans
 Plans:
-- [ ] 17-01-PLAN.md — Sticky filter bar and back-to-top button for GemTable mobile
+- [x] 17-01-PLAN.md — Sticky filter bar and back-to-top button for GemTable mobile
 - [x] 17-02-PLAN.md — Last-updated route Blob fix and GitHub Actions cron verification
-- [ ] 17-03-PLAN.md — DGW/BGW awareness in transfer engine and fixture UI
+- [x] 17-03-PLAN.md — DGW/BGW awareness in transfer engine and fixture UI
 
 ### Phase 18: Dark Mode
 **Goal**: The full app is usable in dark mode — system preference respected by default, manual toggle in the header, all components correctly themed
@@ -152,5 +152,5 @@ Plans:
 | 14. GemTable Mobile | v1.2 | 1/1 | Complete    | 2026-04-01 |
 | 15. Remaining Tables Mobile | v1.2 | 2/2 | Complete    | 2026-04-01 |
 | 16. Component-Level Mobile | v1.2 | 1/1 | Complete    | 2026-04-01 |
-| 17. Polish + Infrastructure | v1.2 | 1/3 | In Progress|  |
+| 17. Polish + Infrastructure | v1.2 | 3/3 | Complete   | 2026-04-01 |
 | 18. Dark Mode | v1.2 | 0/? | Not started | - |

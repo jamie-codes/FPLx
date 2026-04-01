@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Mobile
 status: executing
-stopped_at: Completed 17-02 Task 1 — Blob-aware last-updated route; awaiting Task 2 human-verify checkpoint
-last_updated: "2026-04-01T11:41:26.404Z"
-last_activity: 2026-04-01 -- Phase 17 execution started
+stopped_at: Completed 17-03-PLAN.md — DGW/BGW awareness in transfer engine and fixture display
+last_updated: "2026-04-01T11:42:09.665Z"
+last_activity: 2026-04-01
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 9
   percent: 0
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 ## Current Position
 
 Phase: 17 (polish-infrastructure) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 17
-Last activity: 2026-04-01 -- Phase 17 execution started
+Plan: 3 of 3
+Status: Ready to execute
+Last activity: 2026-04-01
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -58,6 +58,8 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 15 P01 | 1 | 1 tasks | 1 files |
 | Phase 15-remaining-tables-mobile P02 | 8 | 2 tasks | 3 files |
 | Phase 16-component-level-mobile P01 | 126 | 2 tasks | 2 files |
+| Phase 17 P01 | 74 | 2 tasks | 1 files |
+| Phase 17 P03 | 6 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -84,6 +86,10 @@ Recent decisions affecting current work:
 - [Phase 16-component-level-mobile]: hidden sm:inline for season price trend on mobile — GW trend always visible as decision-relevant
 - [Phase 16-component-level-mobile]: Captaincy panel uses grid-cols-2 sm:grid-cols-1 for equal-width cards on narrow screens
 - [Phase 17-polish-infrastructure]: Mirror /api/players USE_BLOB pattern for /api/last-updated: list({ prefix }) + fetch for prod, readFile for dev
+- [Phase 17]: Filter bar z-40 over sticky thead (z-30) prevents player name float-over on mobile GemTable scroll
+- [Phase 17]: Back-to-top button uses dual gating: isMobile state + sm:hidden CSS, consistent with Phase 13/14 pattern
+- [Phase 17]: DGW tier slots between rotation-risk and gem_delta so structural concerns outrank scheduling advantages
+- [Phase 17]: Map.entries() preserves fixture insertion order for DGW badge grouping — no additional sort needed
 
 ### Pending Todos
 
@@ -95,6 +101,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T11:41:20.507Z
-Stopped at: Completed 17-02 Task 1 — Blob-aware last-updated route; awaiting Task 2 human-verify checkpoint
+Last session: 2026-04-01T11:42:09.662Z
+Stopped at: Completed 17-03-PLAN.md — DGW/BGW awareness in transfer engine and fixture display
 Resume file: None
