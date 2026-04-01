@@ -19,13 +19,13 @@ function renderTable(table: Table<DefConPlayer>) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm text-left">
-        <thead className="sticky top-0 bg-white border-b border-zinc-200">
+        <thead className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-700">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
-                  className={`px-2 py-1 font-semibold text-zinc-700 whitespace-nowrap ${
+                  className={`px-2 py-1 font-semibold text-zinc-700 dark:text-zinc-300 whitespace-nowrap ${
                     header.column.getCanSort() ? 'cursor-pointer select-none' : ''
                   }`}
                   onClick={header.column.getToggleSortingHandler()}
@@ -45,7 +45,7 @@ function renderTable(table: Table<DefConPlayer>) {
         </thead>
         <tbody>
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="even:bg-zinc-50 hover:bg-blue-50">
+            <tr key={row.id} className="even:bg-zinc-50 dark:even:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-zinc-700">
               {row.getVisibleCells().map((cell) => (
                 <td key={cell.id} className="px-2 py-1 whitespace-nowrap">
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
