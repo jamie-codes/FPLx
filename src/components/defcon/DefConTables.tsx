@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   flexRender,
   getCoreRowModel,
@@ -8,6 +8,7 @@ import {
   useReactTable,
   type SortingState,
   type Table,
+  type VisibilityState,
 } from '@tanstack/react-table'
 import { useDefCon } from '@/lib/hooks/useDefCon'
 import { splitByPosition } from '@/lib/defcon'
@@ -66,6 +67,18 @@ export function DefConTables() {
     [data]
   )
 
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  const columnVisibility: VisibilityState = isMobile
+    ? { hits: false, distance_to_threshold: false, fixture_correlation: false }
+    : {}
+
   const [defSorting, setDefSorting] = useState<SortingState>([
     { id: 'hit_rate', desc: true },
   ])
@@ -76,7 +89,7 @@ export function DefConTables() {
   const defTable = useReactTable({
     data: defPlayers,
     columns: defconColumns,
-    state: { sorting: defSorting },
+    state: { sorting: defSorting, columnVisibility },
     onSortingChange: setDefSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -85,7 +98,7 @@ export function DefConTables() {
   const midFwdTable = useReactTable({
     data: midFwdPlayers,
     columns: defconColumns,
-    state: { sorting: midFwdSorting },
+    state: { sorting: midFwdSorting, columnVisibility },
     onSortingChange: setMidFwdSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
