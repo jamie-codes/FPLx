@@ -46,20 +46,35 @@ export function CaptaincyPanel({ candidates, nextGw }: CaptaincyPanelProps) {
   return (
     <div className="rounded border border-zinc-200 p-4 space-y-3">
       <h2 className="text-base font-semibold text-zinc-900 mb-3">Captaincy Picks — GW {nextGw}</h2>
-      <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-2">
         {candidates.map((c, i) => (
           <div
             key={c.player.id}
-            className="rounded border border-zinc-100 bg-zinc-50 px-3 py-2 flex items-center gap-3"
+            className="rounded border border-zinc-100 bg-zinc-50 px-3 py-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3"
           >
-            <span className="text-sm text-zinc-400 w-4 shrink-0">{i + 1}</span>
-            <span className="text-sm font-medium text-zinc-900 flex-1">{c.player.web_name}</span>
-            <span className="text-sm text-zinc-500">{c.player.team_short_name}</span>
+            {/* Rank + player name row */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm text-zinc-400 w-4 shrink-0">{i + 1}</span>
+              <span className="text-sm font-medium text-zinc-900 sm:flex-1">{c.player.web_name}</span>
+            </div>
+            {/* Team + fixture row */}
+            <div className="flex items-center gap-2 text-xs text-zinc-500">
+              <span className="text-xs">{c.player.team_short_name}</span>
+              {c.player.fixtures[0] && (
+                <span className="text-xs text-zinc-400 whitespace-nowrap">
+                  {c.player.fixtures[0].is_home ? 'vs' : '@'} {c.player.fixtures[0].opponent_team}
+                </span>
+              )}
+            </div>
+            {/* Projected pts */}
             <span className="text-sm text-zinc-700 whitespace-nowrap">
               {(isNaN(c.projected_captain_pts) ? 0 : c.projected_captain_pts).toFixed(1)} pts (C)
             </span>
-            <CaptainTypeBadge type={c.captain_type} />
-            <MinsRiskBadge minsRisk={c.player.mins_risk} />
+            {/* Badges row */}
+            <div className="flex items-center gap-1.5">
+              <CaptainTypeBadge type={c.captain_type} />
+              <MinsRiskBadge minsRisk={c.player.mins_risk} />
+            </div>
           </div>
         ))}
       </div>
