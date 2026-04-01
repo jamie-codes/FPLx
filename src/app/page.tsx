@@ -7,6 +7,7 @@ import { DefConTables } from '@/components/defcon/DefConTables'
 import { TransferPanel } from '@/components/transfers/TransferPanel'
 import { ClubFormTable } from '@/components/club-form/ClubFormTable'
 import { LastUpdated } from '@/components/LastUpdated'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { ValueGemsTable } from '@/components/value-gems/ValueGemsTable'
 import { MobileNav } from '@/components/nav/MobileNav'
 
@@ -21,7 +22,10 @@ export default function Home() {
         {/* Header */}
         <div className="flex items-center gap-3 mb-2">
           <Image src="/logo.png" alt="fplx logo" width={252} height={120} />
-          <div className="ml-auto"><LastUpdated /></div>
+          <div className="ml-auto flex items-center gap-2">
+            <LastUpdated />
+            <ThemeToggle />
+          </div>
         </div>
         {/* Tab navigation */}
         <div className="hidden sm:flex gap-4 mb-6 border-b border-zinc-200">
