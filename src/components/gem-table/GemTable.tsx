@@ -58,6 +58,13 @@ export function GemTable() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  const [showBackToTop, setShowBackToTop] = useState(false)
+  useEffect(() => {
+    const handleScroll = () => setShowBackToTop(window.scrollY > window.innerHeight)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   const [expanded, setExpanded] = useState<ExpandedState>({})
 
   const columnVisibility: VisibilityState = getColumnVisibility(gwHorizon, isMobile)
@@ -183,6 +190,15 @@ export function GemTable() {
           </tbody>
         </table>
       </div>
+      {isMobile && showBackToTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-24 right-4 z-50 bg-zinc-900 text-white rounded-full w-10 h-10 flex items-center justify-center shadow-lg active:scale-95 transition-transform sm:hidden"
+          aria-label="Back to top"
+        >
+          ↑
+        </button>
+      )}
     </div>
   )
 }
