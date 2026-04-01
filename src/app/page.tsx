@@ -16,73 +16,75 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('gems')
 
   return (
-    <main className="max-w-7xl mx-auto px-4 pt-2 pb-8 max-sm:pb-24 overflow-x-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-2">
-        <Image src="/logo.png" alt="fplx logo" width={252} height={120} />
-        <div className="ml-auto"><LastUpdated /></div>
-      </div>
-      {/* Tab navigation */}
-      <div className="hidden sm:flex gap-4 mb-6 border-b border-zinc-200">
-        <button
-          className={`pb-2 px-1 text-sm font-medium ${
-            activeTab === 'gems'
-              ? 'border-b-2 border-zinc-900 text-zinc-900'
-              : 'text-zinc-500 hover:text-zinc-700'
-          }`}
-          onClick={() => setActiveTab('gems')}
-        >
-          Gem Ratings
-        </button>
-        <button
-          className={`pb-2 px-1 text-sm font-medium ${
-            activeTab === 'defcon'
-              ? 'border-b-2 border-zinc-900 text-zinc-900'
-              : 'text-zinc-500 hover:text-zinc-700'
-          }`}
-          onClick={() => setActiveTab('defcon')}
-        >
-          DefCon Analysis
-        </button>
-        <button
-          className={`pb-2 px-1 text-sm font-medium ${
-            activeTab === 'squad'
-              ? 'border-b-2 border-zinc-900 text-zinc-900'
-              : 'text-zinc-500 hover:text-zinc-700'
-          }`}
-          onClick={() => setActiveTab('squad')}
-        >
-          Squad & Transfers
-        </button>
-        <button
-          className={`pb-2 px-1 text-sm font-medium ${
-            activeTab === 'club-form'
-              ? 'border-b-2 border-zinc-900 text-zinc-900'
-              : 'text-zinc-500 hover:text-zinc-700'
-          }`}
-          onClick={() => setActiveTab('club-form')}
-        >
-          Club Form
-        </button>
-        <button
-          className={`pb-2 px-1 text-sm font-medium ${
-            activeTab === 'value-gems'
-              ? 'border-b-2 border-zinc-900 text-zinc-900'
-              : 'text-zinc-500 hover:text-zinc-700'
-          }`}
-          onClick={() => setActiveTab('value-gems')}
-        >
-          Value Gems
-        </button>
-      </div>
+    <>
+      <main className="max-w-7xl mx-auto px-4 pt-2 pb-8 max-sm:pb-24 overflow-x-hidden">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-2">
+          <Image src="/logo.png" alt="fplx logo" width={252} height={120} />
+          <div className="ml-auto"><LastUpdated /></div>
+        </div>
+        {/* Tab navigation */}
+        <div className="hidden sm:flex gap-4 mb-6 border-b border-zinc-200">
+          <button
+            className={`pb-2 px-1 text-sm font-medium ${
+              activeTab === 'gems'
+                ? 'border-b-2 border-zinc-900 text-zinc-900'
+                : 'text-zinc-500 hover:text-zinc-700'
+            }`}
+            onClick={() => setActiveTab('gems')}
+          >
+            Gem Ratings
+          </button>
+          <button
+            className={`pb-2 px-1 text-sm font-medium ${
+              activeTab === 'defcon'
+                ? 'border-b-2 border-zinc-900 text-zinc-900'
+                : 'text-zinc-500 hover:text-zinc-700'
+            }`}
+            onClick={() => setActiveTab('defcon')}
+          >
+            DefCon Analysis
+          </button>
+          <button
+            className={`pb-2 px-1 text-sm font-medium ${
+              activeTab === 'squad'
+                ? 'border-b-2 border-zinc-900 text-zinc-900'
+                : 'text-zinc-500 hover:text-zinc-700'
+            }`}
+            onClick={() => setActiveTab('squad')}
+          >
+            Squad & Transfers
+          </button>
+          <button
+            className={`pb-2 px-1 text-sm font-medium ${
+              activeTab === 'club-form'
+                ? 'border-b-2 border-zinc-900 text-zinc-900'
+                : 'text-zinc-500 hover:text-zinc-700'
+            }`}
+            onClick={() => setActiveTab('club-form')}
+          >
+            Club Form
+          </button>
+          <button
+            className={`pb-2 px-1 text-sm font-medium ${
+              activeTab === 'value-gems'
+                ? 'border-b-2 border-zinc-900 text-zinc-900'
+                : 'text-zinc-500 hover:text-zinc-700'
+            }`}
+            onClick={() => setActiveTab('value-gems')}
+          >
+            Value Gems
+          </button>
+        </div>
 
-      {/* Tab content */}
-      {activeTab === 'gems' && <GemTable />}
-      {activeTab === 'defcon' && <DefConTables />}
-      {activeTab === 'squad' && <TransferPanel />}
-      {activeTab === 'club-form' && <ClubFormTable />}
-      {activeTab === 'value-gems' && <ValueGemsTable />}
+        {/* Tab content */}
+        {activeTab === 'gems' && <GemTable />}
+        {activeTab === 'defcon' && <DefConTables />}
+        {activeTab === 'squad' && <TransferPanel />}
+        {activeTab === 'club-form' && <ClubFormTable />}
+        {activeTab === 'value-gems' && <ValueGemsTable />}
+      </main>
       <MobileNav activeTab={activeTab} onTabChange={setActiveTab} />
-    </main>
+    </>
   )
 }

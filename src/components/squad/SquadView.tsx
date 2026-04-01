@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import type { ScoredPlayer } from '@/lib/types'
 import type { SquadPick, EntryHistory } from '@/lib/squad-adapter'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
@@ -133,9 +133,8 @@ export function SquadView({ picks, allPlayers, entryHistory, verdicts, exactSell
                   {rows.map(({ pick, player }) => {
                     const isBench = pick.position >= 12
                     return (
-                      <>
+                      <React.Fragment key={pick.element}>
                       <tr
-                        key={pick.element}
                         className={`border-b border-zinc-100 hover:bg-zinc-50 ${isBench ? 'opacity-50' : ''}`}
                       >
                         <td className="px-3 py-2 whitespace-nowrap font-medium text-zinc-900">
@@ -212,7 +211,7 @@ export function SquadView({ picks, allPlayers, entryHistory, verdicts, exactSell
                           </tr>
                         )
                       })()}
-                      </>
+                      </React.Fragment>
                     )
                   })}
                 </tbody>
