@@ -1,687 +1,634 @@
-# Architecture Research
+# Architecture Patterns
 
-**Domain:** Personal FPL analytics web app — v1.1 Decision Engine integration
-**Researched:** 2026-03-29
-**Confidence:** HIGH (derived from codebase inspection + verified external sources)
-
----
-
-## Context: What v1.1 Adds to v1.0
-
-v1.0 established a stable pattern: Python pipeline writes `merged_players.json` to Vercel Blob, `/api/players` serves it, `usePlayers()` hydrates the React layer. Every v1.0 feature flows through this single channel.
-
-v1.1 adds six features on top of that foundation. Four of them extend the existing data flow. Two require new flows.
-
-| Feature | Integration mode |
-|---------|----------------|
-| Projected points (1/3/5 GW) | Extend `merged_players.json` schema |
-| xMins / minutes risk badges | Extend `merged_players.json` schema |
-| Buy / Hold / Sell recommendations | New TypeScript engine in `lib/` consuming extended schema |
-| Captaincy rankings | New TypeScript engine in `lib/` |
-| Explainability panel | Structured fields from Python + TS reasoning layer |
-| FPL session-cookie login | New Route Handler `/api/my-team` |
+**Domain:** Multi-GW transfer planner integrated into an existing FPL Analyst web app (v1.3)
+**Researched:** 2026-04-01
+**Confidence:** HIGH — based on direct codebase inspection of all touched files
 
 ---
 
-## System Overview (v1.1 Target State)
+## Context: What v1.3 Adds Architecturally
+
+v1.2 established a stable responsive layout. v1.3 adds a new planning domain: multi-gameweek transfer sequencing. This requires:
+
+1. A new `PlannerPanel` tab component (mirrors the pattern of `TransferPanel`)
+2. A new pure-function engine `multi-gw-planner.ts` (extends `transfer-engine.ts`)
+3. Mutable plan state owned at the panel level (not in a new route or server)
+4. No new API routes — all data already flows through existing hooks
+5. Minor extension of the `Tab` union type and both nav bars
+
+The architecture is **additive**. Nothing in the existing data pipeline, hooks, or components needs to change.
+
+---
+
+## Existing Architecture (Baseline for v1.3)
 
 ```
-┌────────────────────────────────────────────────────────────────────┐
-│                     DATA PIPELINE (Python)                          │
-│                                                                     │
-│  fpl_client.py      understat_client.py      fpl_fixtures          │
-│       │                    │                      │                 │
-│       └────────────────────┴──────────────────────┘                │
-│                             │                                       │
-│                        merge.py                                     │
-│                        + projections.py  (NEW)                     │
-│                        + xmins.py        (NEW)                     │
-│                             │                                       │
-│              merged_players.json  (EXTENDED schema)                 │
-│                     defcon_stats.json                               │
-│                      last_updated.json                              │
-│                             │                                       │
-│                    Vercel Blob / local cache                        │
-└────────────────────────────────────────────────────────────────────┘
-                              │
-                  reads at request time
-                              │
-┌────────────────────────────────────────────────────────────────────┐
-│                     NEXT.JS APP (Vercel)                            │
-│                                                                     │
-│  ROUTE HANDLERS (server-side)                                       │
-│  ┌─────────────┐  ┌─────────────┐  ┌──────────────┐  ┌──────────┐  │
-│  │ /api/players│  │/api/squad/  │  │/api/my-team  │  │/api/fpl/ │  │
-│  │ (unchanged) │  │[teamId]     │  │(NEW: auth)   │  │[..proxy] │  │
-│  │             │  │(unchanged)  │  │              │  │          │  │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬───────┘  └──────────┘  │
-│         │                │                │                        │
-│         └────────────────┴────────────────┘                        │
-│                          │                                          │
-│  CLIENT LIBS (lib/)                                                 │
-│  ┌────────────────┐  ┌────────────────┐  ┌────────────────────────┐ │
-│  │ gem-score.ts   │  │ recommend.ts   │  │ captaincy.ts           │ │
-│  │ (unchanged)    │  │ (NEW)          │  │ (NEW)                  │ │
-│  └────────────────┘  └────────────────┘  └────────────────────────┘ │
-│                                                                     │
-│  COMPONENTS (src/components/)                                       │
-│  ┌───────────────┐  ┌─────────────────┐  ┌───────────────────────┐  │
-│  │ GemTable      │  │ TransferPanel   │  │ CaptaincyPanel (NEW)  │  │
-│  │ (+ proj pts   │  │ (+ rec badges,  │  │                       │  │
-│  │  columns)     │  │  sell price)    │  │                       │  │
-│  └───────────────┘  └─────────────────┘  └───────────────────────┘  │
-│  ┌───────────────┐  ┌─────────────────┐                             │
-│  │ MinutesBadge  │  │ ExplainPanel    │                             │
-│  │ (NEW)         │  │ (NEW)           │                             │
-│  └───────────────┘  └─────────────────┘                             │
-└────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                      layout.tsx (Server Component)                   │
+│  body: pb-16 sm:pb-0                                                 │
+├─────────────────────────────────────────────────────────────────────┤
+│                      page.tsx ('use client')                         │
+│  useState<Tab> — 5 tabs: gems | defcon | squad | club-form |        │
+│                          value-gems                                  │
+│                                                                      │
+│  Tab content (conditional render):                                   │
+│    gems      → <GemTable />                                         │
+│    defcon    → <DefConTables />                                      │
+│    squad     → <TransferPanel />    ← closest analogue to Planner   │
+│    club-form → <ClubFormTable />                                     │
+│    value-gems→ <ValueGemsTable />                                    │
+│                                                                      │
+│  <MobileNav activeTab onTabChange />  (fixed bottom, sm:hidden)     │
+└─────────────────────────────────────────────────────────────────────┘
+
+Data layer (TanStack Query):
+  usePlayers()    → GET /api/players        → Vercel Blob merged_players.json
+  useSquad(id)    → GET /api/squad/[id]     → FPL public picks endpoint
+  useMyTeam(auth) → GET /api/fpl/my-team    → FPL authenticated my-team endpoint
+  useAuthStatus() → GET /api/auth/status    → HttpOnly cookie check
+
+Pure function engines (src/lib/):
+  computeAllGemScores()         → src/lib/gem-score.ts
+  computeTransferSuggestions()  → src/lib/transfer-engine.ts
+  computeVerdicts()             → src/lib/recommend.ts
+  computeCaptaincyCandidates()  → src/lib/captaincy-engine.ts
 ```
 
 ---
 
-## Feature 1: Projected Points — merged_players.json Schema Extension
+## Target Architecture (v1.3 — What Changes)
 
-### Decision: Compute in Python pipeline
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                      page.tsx ('use client')  [MODIFIED]            │
+│  useState<Tab> — NOW 6 tabs: adds 'planner'                         │
+│                                                                      │
+│  NEW:                                                                │
+│    planner → <PlannerPanel />                                       │
+│                                                                      │
+│  UNCHANGED:                                                          │
+│    gems | defcon | squad | club-form | value-gems                   │
+└─────────────────────────────────────────────────────────────────────┘
 
-Projected points require fixture data, team xGA, historical form over multiple gameweeks, and clean sheet probabilities — all already present or easily added in the pipeline. Computing them in Python at pipeline time is cheaper, simpler, and keeps TypeScript types thin.
+New component tree (src/components/planner/):
+  PlannerPanel.tsx              ← orchestrates data + state
+    PlannerConfig.tsx           ← horizon selector, free transfers, chip selector
+    PlanGwRow.tsx               ← one row per GW: transfers in/out, chip, score
+    PlanSquadSnapshot.tsx       ← 15-player squad at end of given GW
+    PlanTransferEditor.tsx      ← modal/inline: pick player out + player in
 
-TypeScript should not re-derive projections client-side. It should only consume them.
+New engine (src/lib/):
+  multi-gw-planner.ts           ← core planning logic (pure function)
 
-### New fields added to each player record in merged_players.json
+Type extensions:
+  src/lib/planner-types.ts      ← GwPlan, TransferPlan, PlannerConfig types
+```
 
-```python
-# Added in merge.py (or new projections.py called from run.py)
-{
-  # ... existing fields unchanged ...
+---
 
-  # Projected points (PROJ-01, PROJ-02, PROJ-03)
-  "proj_pts_1gw": 4.2,      # float, projected FPL points next 1 GW
-  "proj_pts_3gw": 13.1,     # float, sum over next 3 GWs
-  "proj_pts_5gw": 20.4,     # float, sum over next 5 GWs
+## Component Boundaries
 
-  # xMins (MINS-01, MINS-02)
-  "xmins": 72.5,            # float, expected minutes next GW (0–90)
-  "start_prob": 0.82,       # float, 0.0–1.0 probability of starting
-  "mins_risk": "Nailed",    # string: "Nailed" | "Likely" | "Rotation" | "Cameo"
+| Component | Responsibility | Communicates With |
+|-----------|---------------|-------------------|
+| `PlannerPanel.tsx` | Own all planner state (config + plan), fetch data via hooks, call engine, render sub-components | `usePlayers`, `useSquad`, `useMyTeam`, `useAuthStatus`, `multi-gw-planner.ts`, child components |
+| `PlannerConfig.tsx` | Horizon slider (1–5), free transfer count, chip selector. Controlled — all state in parent | `PlannerPanel` via props |
+| `PlanGwRow.tsx` | Renders one GW's row in the plan table: GW number, chip badge, transfer(s), projected gain, hit cost | `PlannerPanel` via props |
+| `PlanSquadSnapshot.tsx` | Renders 15-player squad at end of a specific GW from the plan | `PlannerPanel` via props (derived squad state) |
+| `PlanTransferEditor.tsx` | Player picker for manual edit: filter by position, show candidates sorted by proj_pts | `PlannerPanel` via props (callback to update plan) |
+| `multi-gw-planner.ts` | Pure function: given squad + all players + config → returns `GwPlan[]` | Called from `PlannerPanel` via `useMemo` |
+
+---
+
+## Data Flow
+
+### Auto-Suggest Flow
+
+```
+User opens Planner tab
+    ↓
+PlannerPanel mounts
+    ↓
+usePlayers() [cached 6h] + useSquad(teamId) [cached 5min]
+    ↓
+computeAllGemScores(players) [useMemo, ~250ms for 825 players]
+    ↓
+computeMultiGwPlan(picks, scoredPlayers, config) [useMemo]
+    ↓ returns GwPlan[]
+State: planState = GwPlan[]   ← mutable by user
+    ↓
+Render: PlanGwRow per GW + PlanSquadSnapshot per GW
+```
+
+### Manual Edit Flow
+
+```
+User clicks "Edit" on a transfer row in GwRow N
+    ↓
+PlannerPanel: setEditingTransfer({ gwIndex, transferIndex })
+    ↓
+PlanTransferEditor opens with position-filtered player list
+    ↓
+User selects replacement player
+    ↓
+PlannerPanel: setPlanState(produce(draft => {
+  draft[gwIndex].transfers[transferIndex].buyPlayer = selected
+}))
+    ↓
+useMemo re-runs: rescoreFromGw(planState, gwIndex, scoredPlayers) 
+    ↓ partial rescore — only GWs from gwIndex onwards need rescoring
+Re-render: updated scores, new squad snapshots
+```
+
+---
+
+## Multi-GW Planner Engine Design
+
+### Core Types (src/lib/planner-types.ts)
+
+```typescript
+export interface GwTransfer {
+  out: ScoredPlayer           // player being sold
+  in: ScoredPlayer            // player being bought
+  isFree: boolean             // true if within free transfer allowance
+  hitCost: number             // 0 or 4 (pts deducted)
+}
+
+export interface GwPlan {
+  gwNumber: number            // e.g. 33
+  transfers: GwTransfer[]     // 0-n transfers this GW
+  chip: ChipState             // 'wildcard' | 'freehit' | 'bboost' | '3xc' | null
+  projectedGain: number       // sum of (buy.proj_pts_Xgw - sell.proj_pts_Xgw) - hitCosts
+  squadAfter: ScoredPlayer[]  // 15-player squad at end of this GW
+  freeTransfersRemaining: number  // after this GW's transfers
+  bankAfter: number           // bank balance after this GW's transfers (tenths)
+}
+
+export interface PlannerConfig {
+  horizon: 1 | 2 | 3 | 4 | 5    // number of GWs to plan
+  freeTransfersNow: number        // FTs available in the current GW (1 or 2)
+  bankBalance: number             // tenths of £1m
+  activeChip: ChipState
 }
 ```
 
-### MergedPlayer TypeScript interface additions
+### Engine Function Signature
 
 ```typescript
-// src/lib/types.ts — additions to MergedPlayer
-proj_pts_1gw: number | null    // null if insufficient data
-proj_pts_3gw: number | null
-proj_pts_5gw: number | null
-xmins: number | null           // expected minutes next GW
-start_prob: number | null      // 0.0–1.0
-mins_risk: 'Nailed' | 'Likely' | 'Rotation' | 'Cameo' | null
-```
-
-Use `| null` for all projected fields, not `| undefined`. A missing projection is a data gap, not a schema gap — null communicates that explicitly, and matches the existing `xg_per90: number | null` pattern.
-
-### Projection formula (Python, medium complexity)
-
-xPts for a single GW per player:
-
-```
-xPts = xMinPts(minutes_prob) + xGoalPts(xg_per90, start_prob, fdr) + xAssistPts(xa_per90, start_prob, fdr) + xCSPts(position, fdr) + xBonusPts(form_pts_per90)
-```
-
-Where:
-- `xMinPts`: Bayesian-smoothed probability of appearing at all (> 0 min) and of playing 60+ min, using last 6 GW minutes history from `element-summary`
-- `xGoalPts / xAssistPts`: `xg_per90 * (xmins/90) * (1 ± fdr_adjustment)` — FDR-adjusted per-90 rate times expected minutes fraction
-- `xCSPts`: DEF/GK only; Poisson probability of clean sheet from rolling goals-conceded data already computed for custom FDR
-- `xBonusPts`: small flat multiplier from recent form
-
-Multi-GW: sum single-GW projections over next 1/3/5 fixtures from existing `fixtures` array. Blank and double gameweeks handled naturally because the fixtures array already accounts for them.
-
-### xMins classification thresholds
-
-```python
-if xmins >= 75:     mins_risk = "Nailed"
-elif xmins >= 55:   mins_risk = "Likely"
-elif xmins >= 30:   mins_risk = "Rotation"
-else:               mins_risk = "Cameo"
-```
-
-These thresholds align with FPL scoring breakpoints (1 pt for any appearance, 2 pts for 60+ min).
-
----
-
-## Feature 2: xMins Model — Data Sources
-
-xMins is derived entirely from existing pipeline data — no new API calls required:
-
-| Input | Source | Already in pipeline? |
-|-------|--------|----------------------|
-| Minutes per game (last 6 GW) | `element-summary/{id}/history` | Partially — DefCon already calls this |
-| Start probability | Derived from minutes distribution | No — new computation |
-| FPL availability status | `bootstrap.elements[].status` | Yes |
-| Injury news text | `bootstrap.elements[].news` | Yes (`news` field) |
-
-The DefCon module (`pipeline/defcon.py`) already calls `element-summary` for every non-GK player. The xMins module can reuse those calls — or the pipeline should cache element-summary results to disk (not re-fetch for each module).
-
-### Recommended: shared element-summary cache
-
-```python
-# pipeline/run.py — share element-summary data between defcon and xmins
-summaries = fetch_all_element_summaries(bootstrap)  # single fetch pass
-defcon_stats = compute_defcon_stats(bootstrap, difficulty_scores, summaries)
-merged = merge_players(bootstrap, fixtures, understat, id_map, summaries)  # pass through for xmins
-```
-
-This avoids a second round of ~700 individual HTTP calls.
-
----
-
-## Feature 3: Buy / Hold / Sell Recommendations
-
-### Decision: Compute in TypeScript, not Python
-
-Buy/Hold/Sell is squad-relative — it requires knowing which players a specific manager owns. This data is per-user (from `/api/squad/[teamId]`) and is fetched at runtime. Python runs at pipeline time with no user context.
-
-The recommendation engine belongs in `src/lib/recommend.ts` as a pure function, similar to `transfer-engine.ts`.
-
-### recommend.ts contract
-
-```typescript
-// src/lib/recommend.ts
-export type Recommendation = 'BUY' | 'HOLD' | 'SELL'
-
-export interface PlayerRecommendation {
-  player: ScoredPlayer
-  recommendation: Recommendation
-  proj_pts_1gw: number | null
-  proj_pts_delta: number | null   // vs best available replacement
-  replacement_shortlist: ScoredPlayer[]  // top 3 same-position, not in squad
-  reasons: string[]               // for explainability panel
-  risk_flags: RiskFlag[]
-}
-
-export type RiskFlag =
-  | 'rotation_risk'
-  | 'fixture_swing'   // next GW difficulty jumps vs recent average
-  | 'regression_risk' // form_pts_per90 >> xg_per90+xa_per90 (overperforming)
-  | 'injury_concern'  // status !== 'a'
-
-export function computeRecommendations(
+// src/lib/multi-gw-planner.ts
+export function computeMultiGwPlan(
   picks: SquadPick[],
-  allPlayers: ScoredPlayer[],
-  bankBalance: number,
-): PlayerRecommendation[]
+  allScoredPlayers: ScoredPlayer[],
+  config: PlannerConfig,
+): GwPlan[]
 ```
 
-### Recommendation logic (simple heuristic, not ML)
+**Algorithm (greedy, horizon-aware):**
 
-```
-SELL if: mins_risk === 'Cameo' OR status === 'i'/'s'
-         OR (proj_pts_1gw < median_squad_proj_pts AND positive gem_delta replacement exists)
+1. Build starting squad from `picks` + `allScoredPlayers` lookup
+2. For each GW in the horizon (1 to config.horizon):
+   a. Determine available FTs for this GW (carry from previous + 1, cap at 2)
+   b. For each position, find the best improvement within budget
+   c. Score each transfer candidate using the **GW-horizon-aware projected points** field:
+      - GW 1 of plan: use `proj_pts_1gw`
+      - GW 2–3: use `proj_pts_3gw` as proxy (no per-GW breakdown in pipeline)
+      - GW 4–5: use `proj_pts_5gw`
+   d. Apply DGW multiplier: if the fixture data shows 2 fixtures for that GW, weight proj_pts up (DGW bonus is already baked into pipeline `proj_pts` fields via the Python pipeline)
+   e. Deduct 4pts for each transfer beyond the free allowance
+   f. Build `GwPlan` with the selected transfers, squad snapshot, and projected gain
+3. Return `GwPlan[]`
 
-BUY candidates: top players not in squad by proj_pts_1gw, filtered by budget
-
-HOLD: everything else
-```
-
-### Relationship to existing transfer-engine.ts
-
-`transfer-engine.ts` ranks transfers by `gem_delta`. The new `recommend.ts` ranks by `proj_pts_delta` (projected points improvement). These are related but distinct signals. Keep them as separate pure functions — the UI can surface both.
+**Key constraint:** The engine is a pure function. It takes in data and returns a plan. State mutation (user editing the plan) happens in `PlannerPanel` by calling the engine with modified inputs or by patching the plan directly and re-scoring.
 
 ---
 
-## Feature 4: Captaincy Rankings
+## State Management: Immutable vs Mutable Plan
 
-### Decision: Compute in TypeScript
+**Recommendation: Local component state in `PlannerPanel`, no global state manager.**
 
-Captaincy is projection-based and uses only the public player data already in `merged_players.json`. No pipeline change needed — it runs on the client from existing + extended fields.
+The plan state lifecycle is:
+- Born when the engine runs (auto-suggest)
+- Mutated by user edits (transfer swaps, chip changes)
+- Consumed only by child components of `PlannerPanel`
+- Discarded when the user leaves the Planner tab (panel unmounts)
 
-```typescript
-// src/lib/captaincy.ts
-export interface CaptaincyCandidate {
-  player: ScoredPlayer
-  proj_captain_pts: number  // proj_pts_1gw * 2
-  category: 'safe' | 'upside'
-  reasons: string[]
-}
+This is identical to how `TransferPanel` handles its own state — `useState` in the panel component, no context, no Zustand, no server state.
 
-export function rankCaptaincy(players: ScoredPlayer[]): CaptaincyCandidate[]
+```
+State lives in:          PlannerPanel.tsx (useState<GwPlan[]>)
+Auto-suggest writes to:  planState via setPlanState(engine output)
+User edits write to:     planState via setPlanState(patched copy)
+Children read from:      planState passed as props
 ```
 
-Classification:
-- **Safe**: high `xmins` (>= 75), `proj_pts_1gw` > threshold, easy-to-medium fixture
-- **Upside**: lower `xmins` but high `xg_per90`, very easy fixture, or DGW
+**Immer is recommended** for the patch operations — plan edits are nested array mutations (`planState[gwIndex].transfers[i].in = newPlayer`) and Immer's `produce` makes these safe without deep cloning. Immer is already a peer dependency of TanStack Query, so it may already be in the tree; confirm before adding.
 
-Top 5 returned. No separate API route needed — runs client-side from `usePlayers()` data.
+**Do not use `useReducer`** — the state is not complex enough to justify the action/dispatch indirection. Direct `setState` with `produce` is cleaner.
 
 ---
 
-## Feature 5: Explainability Panel
+## Integration Points: New vs Modified
 
-### Architecture: structured fields from Python + reasoning assembled in TypeScript
-
-The Python pipeline contributes machine-readable signals per player (the new projected fields, risk flag inputs). The TypeScript layer assembles human-readable strings from those signals. Do not pre-compute explanation strings in Python — they are presentational, not analytical.
-
-```typescript
-// src/lib/explain.ts (or inline in recommend.ts)
-function buildReasons(player: ScoredPlayer): string[] {
-  const reasons: string[] = []
-  if (player.start_prob !== null && player.start_prob >= 0.9)
-    reasons.push('Nailed starter — near-certain 90 minutes')
-  if (player.penalties_order === 1)
-    reasons.push('Primary penalty taker')
-  if (player.proj_pts_1gw !== null && player.proj_pts_1gw >= 8)
-    reasons.push(`Strong GW projection: ${player.proj_pts_1gw.toFixed(1)} pts`)
-  // ... etc
-  return reasons
-}
-```
-
-Risk flags are similarly assembled from player fields — they are predicates on the data, not new data.
-
-No new API route or pipeline output needed for explainability. The data is already in the schema; the narrative layer is pure TypeScript.
-
----
-
-## Feature 6: FPL Session-Cookie Login (`/api/my-team`)
-
-### Authentication flow
-
-FPL uses session-cookie auth, not OAuth or API tokens.
-
-**Login endpoint:** `POST https://users.premierleague.com/accounts/login/`
-
-```
-Body (form-encoded):
-  login=<email>
-  password=<password>
-  redirect_uri=https://fantasy.premierleague.com/a/login
-  app=plfpl-web
-```
-
-On success, the response sets cookies:
-- `pl_profile` (domain: `.premierleague.com`)
-- `sessionid` (domain: `fantasy.premierleague.com`)
-- `sessionid` (domain: `users.premierleague.com`)
-
-**My-team endpoint:** `GET https://fantasy.premierleague.com/api/my-team/{teamId}/`
-
-Requires the `sessionid` cookie forwarded in the request.
-
-### New Route Handler: `/api/my-team`
-
-This is a new dedicated Route Handler — not a generic proxy extension. It must:
-1. Accept credentials (email + password) as POST body parameters
-2. POST to `users.premierleague.com/accounts/login/` server-side
-3. Extract `sessionid` cookies from the login response
-4. GET `/api/my-team/{teamId}/` with the session cookies
-5. Return `picks` array (with `selling_price`) to the client
-6. Never persist credentials or session cookies
-
-```typescript
-// src/app/api/my-team/route.ts  (NEW)
-export async function POST(request: NextRequest) {
-  const { email, password, teamId } = await request.json()
-
-  // Step 1: Login to FPL
-  const loginRes = await fetch('https://users.premierleague.com/accounts/login/', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      login: email,
-      password: password,
-      redirect_uri: 'https://fantasy.premierleague.com/a/login',
-      app: 'plfpl-web',
-    }),
-  })
-
-  // Step 2: Extract session cookie from Set-Cookie header
-  const setCookieHeader = loginRes.headers.get('set-cookie')
-  // Parse sessionid for fantasy.premierleague.com domain
-  const sessionCookie = extractSessionId(setCookieHeader)
-
-  if (!sessionCookie) {
-    return Response.json({ error: 'Login failed' }, { status: 401 })
-  }
-
-  // Step 3: Fetch my-team with session cookie
-  const myTeamRes = await fetch(
-    `https://fantasy.premierleague.com/api/my-team/${teamId}/`,
-    {
-      headers: {
-        'Cookie': sessionCookie,
-        'User-Agent': 'fplx/1.1',
-      },
-    }
-  )
-
-  if (!myTeamRes.ok) {
-    return Response.json({ error: 'Failed to fetch team data' }, { status: myTeamRes.status })
-  }
-
-  const data = await myTeamRes.json()
-  // Return only picks (which contain selling_price) — do not expose chips or transfers unnecessarily
-  return Response.json({ picks: data.picks })
-}
-```
-
-### selling_price field
-
-The `/api/my-team/{teamId}/` response `picks` array contains:
-
-```json
-{
-  "picks": [
-    {
-      "element": 123,
-      "position": 1,
-      "selling_price": 65,   // tenths of £1m — exact FPL sell price for this player
-      "purchase_price": 62,
-      "multiplier": 1,
-      "is_captain": false,
-      "is_vice_captain": false
-    }
-  ]
-}
-```
-
-`selling_price` is the price at which the manager can sell the player (may differ from `now_cost` due to FPL's price locking mechanic). This is the v1.1 AUTH-02 requirement.
-
-### SquadPick schema extension
-
-```typescript
-// src/lib/squad-adapter.ts — extend SquadPickSchema
-export const SquadPickSchema = z.object({
-  element:          z.number().int(),
-  position:         z.number().int(),
-  multiplier:       z.number().int(),
-  is_captain:       z.boolean(),
-  is_vice_captain:  z.boolean(),
-  selling_price:    z.number().optional(),  // present when loaded via /api/my-team, absent from /api/squad/[id]
-  purchase_price:   z.number().optional(),
-})
-```
-
-### Security constraints
-
-- Credentials sent as POST body JSON — never in query string, never logged
-- Session cookie is used for one fetch call then discarded — not stored server-side
-- No cookie is forwarded to the client — all session material stays in the Route Handler
-- This is a single-user personal tool: no CSRF risk, no session management needed
-
----
-
-## New vs Modified Components
-
-### New files
+### New Files
 
 | File | Type | Purpose |
 |------|------|---------|
-| `pipeline/projections.py` | Python | xPts computation for 1/3/5 GW windows |
-| `pipeline/xmins.py` | Python | xMins model and start_prob / mins_risk classification |
-| `src/app/api/my-team/route.ts` | Route Handler | FPL session-cookie login + my-team fetch |
-| `src/lib/recommend.ts` | TypeScript | Buy/Hold/Sell engine (pure function) |
-| `src/lib/captaincy.ts` | TypeScript | Captaincy ranking engine (pure function) |
-| `src/components/squad/MinutesBadge.tsx` | Component | Colour-coded mins_risk badge |
-| `src/components/squad/RecommendationBadge.tsx` | Component | BUY / HOLD / SELL badge |
-| `src/components/captaincy/CaptaincyPanel.tsx` | Component | Top-5 captain candidates view |
-| `src/components/explain/ExplainPanel.tsx` | Component | "Why this player" reasons + risk flags |
-| `src/lib/hooks/useMyTeam.ts` | Hook | TanStack Query wrapper for POST /api/my-team |
+| `src/lib/planner-types.ts` | Type definitions | `GwTransfer`, `GwPlan`, `PlannerConfig` |
+| `src/lib/multi-gw-planner.ts` | Pure function engine | Auto-suggest algorithm |
+| `src/components/planner/PlannerPanel.tsx` | Client component | Tab panel, owns plan state |
+| `src/components/planner/PlannerConfig.tsx` | Client component | Horizon + config inputs |
+| `src/components/planner/PlanGwRow.tsx` | Client component | One GW's row in the table |
+| `src/components/planner/PlanSquadSnapshot.tsx` | Client component | Squad state after given GW |
+| `src/components/planner/PlanTransferEditor.tsx` | Client component | Player picker for manual edits |
 
-### Modified files
+### Modified Files
 
-| File | Change |
-|------|--------|
-| `pipeline/merge.py` | Import and call projections.py + xmins.py; pass element-summary cache through |
-| `pipeline/run.py` | Share element-summary fetch between defcon and xmins modules |
-| `src/lib/types.ts` | Add projected fields + xmins fields to `MergedPlayer`; add `selling_price` + `purchase_price` to `SquadPick` |
-| `src/lib/squad-adapter.ts` | Extend `SquadPickSchema` with optional `selling_price` / `purchase_price` |
-| `src/app/page.tsx` | Add "Captaincy" tab; add FPL login form to Squad tab |
-| `src/components/transfers/TransferPanel.tsx` | Show exact sell price when available; show Buy/Hold/Sell badges |
-| `src/components/squad/SquadView.tsx` | Add MinutesBadge, RecommendationBadge, proj_pts columns |
-| `src/components/gem-table/columns.tsx` | Add proj_pts_1gw, proj_pts_3gw columns (optional, toggle) |
+| File | Change | Complexity |
+|------|--------|------------|
+| `src/app/page.tsx` | Add `'planner'` to `Tab` union, add `<PlannerPanel>` conditional render, add desktop tab button | Low |
+| `src/components/nav/MobileNav.tsx` | Add `{ id: 'planner', label: 'Plan' }` to `TABS` array | Trivial |
+| `src/lib/types.ts` | No change required — `ScoredPlayer`, `FixtureEntry`, `MergedPlayer` all have the needed fields |  |
+| `src/lib/transfer-engine.ts` | No change required — `computeTransferSuggestions` is used as-is from `TransferPanel`; planner has its own engine |  |
 
----
+### No New API Routes
 
-## Data Flow (v1.1)
+All data the planner needs is already accessible:
+- Squad picks: `useSquad(teamId)` → `/api/squad/[teamId]` (already exists)
+- Player data with proj_pts: `usePlayers()` → `/api/players` (already exists)
+- Exact sell prices: `useMyTeam(auth)` → `/api/fpl/my-team` (already exists)
+- Current GW / fixture data: embedded in player fixtures array from `usePlayers()` (already exists)
 
-### Extended Pipeline Flow
-
-```
-GitHub Actions cron (daily)
-    ↓
-pipeline/run.py
-    ├── fpl_client.py → bootstrap-static + fixtures
-    ├── understat_client.py → xG/xA
-    ├── defcon.py (existing)
-    ├── projections.py (NEW) → uses element-summary history
-    └── xmins.py (NEW) → uses element-summary + status + news
-         ↓
-    merge.py → joins all data, emits extended merged_players.json
-         ↓
-    Vercel Blob: merged_players.json (extended schema)
-```
-
-### FPL Login Flow (new)
-
-```
-User clicks "Login with FPL" in TransferPanel
-    ↓
-LoginForm component → POST /api/my-team { email, password, teamId }
-    ↓
-Route Handler → POST users.premierleague.com/accounts/login/
-    ↓
-Extract sessionid cookie from response headers
-    ↓
-GET fantasy.premierleague.com/api/my-team/{teamId}/ with Cookie header
-    ↓
-Return { picks: [...] } with selling_price per player
-    ↓
-useMyTeam() hook stores result in TanStack Query cache
-    ↓
-TransferPanel shows exact sell prices; recommend.ts uses selling_price for budget calculations
-```
-
-### Recommendation Flow (new)
-
-```
-User loads Squad tab (Team ID entered or FPL login done)
-    ↓
-usePlayers() → merged_players.json (now includes proj_pts_*, xmins, start_prob, mins_risk)
-useSquad(teamId) → entry/[id]/event/[gw]/picks/ (existing)
-    ↓ (optional, if user logged in)
-useMyTeam() → /api/my-team → selling_price per player
-    ↓
-recommend.ts(picks, allPlayers, bankBalance, sellingPrices?) → PlayerRecommendation[]
-captaincy.ts(allPlayers) → CaptaincyCandidate[5]
-    ↓
-SquadView shows per-player: recommendation badge, proj_pts, risk flags
-CaptaincyPanel shows top 5 candidates
-ExplainPanel shows reasons + risk flags on player click
-```
+The planner is a client-side computation feature. No server-side planning endpoint is needed.
 
 ---
 
-## Suggested Build Order
+## Tab Extension Pattern
 
-Dependencies drive this order. A feature cannot be built until its data dependencies are available.
+### page.tsx Change
 
-### Phase 1: Schema extension (pipeline)
-
-**PROJ-01, PROJ-02, PROJ-03, MINS-01, MINS-02**
-
-Build `pipeline/projections.py` and `pipeline/xmins.py`, wire into `run.py`, extend `merged_players.json`. Update `MergedPlayer` TypeScript type. This is the foundation for every other v1.1 feature.
-
-Do not build any UI until this data is confirmed in the schema.
-
-### Phase 2: xMins UI (surface the new data)
-
-**MINS-02**
-
-Add `MinutesBadge` component. Show `mins_risk` badges in SquadView and GemTable. This is low-complexity UI that validates the pipeline data is correct before it gets used in decision logic.
-
-### Phase 3: Projected points columns
-
-**PROJ-01 / PROJ-02 / PROJ-03**
-
-Add `proj_pts_1gw`, `proj_pts_3gw` columns to GemTable (behind a toggle or as additional sortable columns). Validates projections are plausible.
-
-### Phase 4: Buy/Hold/Sell + Captaincy engines
-
-**REC-01, CAP-01, CAP-02**
-
-Build `recommend.ts` and `captaincy.ts` as pure TypeScript functions with no dependencies on the auth flow. Both consume `ScoredPlayer[]` which already includes the new projected fields from Phase 1.
-
-CaptaincyPanel component.
-
-### Phase 5: Explainability
-
-**EXP-01, EXP-02**
-
-`ExplainPanel` component. Risk flags. "Why this player" reasons. These are pure derivations from already-present fields — no new data, just reasoning layer.
-
-Add `RecommendationBadge` + replacement shortlist to TransferPanel (REC-02).
-
-### Phase 6: FPL login + exact sell price
-
-**AUTH-01, AUTH-02**
-
-`/api/my-team` Route Handler. `useMyTeam` hook. Login form in TransferPanel. `selling_price` integration into recommend.ts for exact budget calculations.
-
-Build this last because it is the most complex (network, auth, security) and adds value only on top of an already-working recommendation engine. The existing approximate bank balance from `/api/squad/[teamId]` is sufficient to validate all other features.
-
-### Build order summary
-
-```
-Phase 1: projections.py + xmins.py + schema extension  ← all others depend on this
-Phase 2: MinutesBadge (MINS-02)                         ← validates Phase 1 data
-Phase 3: Projected points columns in GemTable           ← validates projections
-Phase 4: recommend.ts + captaincy.ts + CaptaincyPanel   ← uses Phase 1 data
-Phase 5: ExplainPanel + risk flags + REC-02 shortlist   ← uses Phase 4 output
-Phase 6: /api/my-team + selling_price + login UI        ← standalone, last
-```
-
----
-
-## Architectural Patterns
-
-### Pattern 1: Pipeline-computed projections, TypeScript-consumed
-
-**What:** Python computes projected points and xMins at pipeline time. TypeScript receives them as plain numeric fields. No TypeScript projection math.
-
-**When to use:** Any metric that requires access to historical per-GW data (element-summary) or multi-table joins. Python handles this naturally; TypeScript should not replicate it.
-
-**Trade-offs:** +Pipeline is authoritative. +TypeScript stays thin. −A pipeline bug affects all users until the next daily run. −Cannot recompute projections with custom assumptions client-side.
-
-### Pattern 2: Pure-function decision engines in lib/
-
-**What:** `recommend.ts` and `captaincy.ts` are pure functions: `(data) => output`. No side effects, no external calls, no component state.
-
-**When to use:** Any analysis that combines pipeline data with runtime user data (squad, bank). This pattern makes the engines trivially testable with Vitest — pass in fixture data, assert on output.
-
-**Example:**
 ```typescript
-// In a test:
-const recs = computeRecommendations(mockPicks, mockPlayers, 50)
-expect(recs.find(r => r.player.id === 123)?.recommendation).toBe('SELL')
+// Before
+type Tab = 'gems' | 'defcon' | 'squad' | 'club-form' | 'value-gems'
+
+// After
+type Tab = 'gems' | 'defcon' | 'squad' | 'club-form' | 'value-gems' | 'planner'
 ```
 
-### Pattern 3: Optional auth enrichment
+The `Tab` type is currently defined locally in `page.tsx` and duplicated in `MobileNav.tsx`. This was noted as a tech-debt item in the v1.2 architecture research. For v1.3, extract `Tab` to `src/lib/tabs.ts` before adding `'planner'` — this prevents the three-file change problem (page.tsx + MobileNav.tsx + any new component that imports Tab).
 
-**What:** The squad view and transfer panel work without FPL login (using approximate bank balance from the public picks endpoint). FPL login enriches but does not gate the feature.
+### MobileNav.tsx Change
 
-**When to use:** Any feature where the primary functionality can work with public data but benefits from authenticated data.
+```typescript
+// Add to TABS array:
+{ id: 'planner', label: 'Plan' },
+```
 
-**Trade-offs:** +Lower friction (user doesn't need to log in to see recommendations). +Degrades gracefully. −Two code paths for sell price (exact vs approximate) — handle in recommend.ts by accepting `sellingPrices?: Map<number, number>` and falling back to `now_cost`.
-
-### Pattern 4: Separate Zod schema for my-team picks
-
-**What:** The `/api/my-team` picks include `selling_price` and `purchase_price` which the existing `SquadPickSchema` doesn't have. Extend the schema with `.optional()` fields rather than creating a new type. This keeps `SquadPick` as the single type throughout the codebase.
-
-**Trade-offs:** +Single type for all squad pick contexts. +Callers that don't use selling_price don't break. −Optional fields require null-checks at use sites.
+Six tabs at the bottom nav will compress labels. At 375px with 6 tabs, each tab gets ~62px. Labels must stay short — "Plan" (4 chars) is correct. Consider whether to reorder tabs to put "Plan" second or third (adjacent to "Squad") for logical grouping.
 
 ---
 
-## Anti-Patterns
+## PlannerPanel and TransferPanel: Shared Data Pattern
 
-### Anti-Pattern 1: Computing projections in TypeScript
+`PlannerPanel` uses the same data hooks as `TransferPanel`. Both panels need `teamId` input, `usePlayers`, `useSquad`, `useMyTeam`, and `useAuthStatus`.
 
-**What people do:** Port the projection formula to TypeScript to allow client-side recalculation.
+**Do not merge the panels.** They serve different cognitive tasks:
+- `TransferPanel`: "What should I do THIS week?"
+- `PlannerPanel`: "What should I do over the next N weeks?"
 
-**Why it's wrong:** Projection needs element-summary history (6 GW of per-match data per player). That data is 700 HTTP calls from the pipeline. The client cannot fetch it without hitting FPL rate limits. The pipeline already has all this data.
+The team ID and auth state are not shared via context — each panel manages its own form. This is by design: panels are independent, mount on tab switch, unmount when hidden. The `usePlayers` query is shared at the TanStack Query cache level (same `['players']` query key), so there is no duplicate network request.
 
-**Do this instead:** Compute in Python, ship in `merged_players.json`, consume in TypeScript as plain numeric fields.
-
-### Anti-Pattern 2: Forwarding FPL session cookies to the browser
-
-**What people do:** Return the `sessionid` cookie from `/api/my-team` to the client so subsequent requests can use it directly.
-
-**Why it's wrong:** The session cookie provides access to the user's FPL account. Exposing it to JavaScript (even within the same app) is an XSS attack surface.
-
-**Do this instead:** Use the session cookie in the Route Handler only (one request lifetime), then discard it. All authenticated FPL calls go through the Route Handler, never directly from the browser.
-
-### Anti-Pattern 3: Separate fetches for element-summary in each pipeline module
-
-**What people do:** DefCon calls element-summary. xMins also calls element-summary. They each fetch independently, doubling HTTP calls.
-
-**Why it's wrong:** 700+ individual HTTP calls per pipeline run is already slow. Doubling to 1400+ adds 5-10 minutes to pipeline time and risks rate-limiting.
-
-**Do this instead:** Fetch all element-summaries once in `run.py`, pass the cached result to both `defcon.py` and `xmins.py` as a parameter.
-
-### Anti-Pattern 4: Blocking the Squad tab on FPL login
-
-**What people do:** Gate the recommendation panel behind the login form.
-
-**Why it's wrong:** The recommendation engine works without authentication (using approximate sell prices). Requiring login removes most of the value for a tool that works fine without it.
-
-**Do this instead:** Show recommendations with approximate prices by default. Offer an optional "Login for exact prices" affordance that enriches the display but doesn't gate it.
+**Implication for build order:** PlannerPanel can be built without any knowledge of TransferPanel internals. It calls the same hooks but has no component coupling.
 
 ---
 
-## Integration Points
+## Scoring: Projected Points Delta Over Horizon
 
-### External Services
+The planner scores each transfer candidate by comparing projected points over the planning horizon. The pipeline already provides:
 
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| FPL bootstrap + fixtures | Route Handler proxy (existing) | Unchanged |
-| FPL picks (public) | Route Handler proxy (existing `/api/squad/[teamId]`) | Unchanged |
-| FPL my-team (authenticated) | New `/api/my-team` Route Handler (POST, server-side auth) | Session cookie never leaves server |
-| FPL login endpoint | `users.premierleague.com/accounts/login/` via server-side fetch | POST with form-encoded credentials |
-| Vercel Blob | Extended schema, same read/write pattern | No code change needed |
+- `proj_pts_1gw` — expected points next 1 GW
+- `proj_pts_3gw` — expected points next 3 GWs (DGW-aware cumulative)
+- `proj_pts_5gw` — expected points next 5 GWs (DGW-aware cumulative)
 
-### Internal Boundaries
+**Mapping horizon to scoring field:**
 
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| `pipeline/projections.py` → `merged_players.json` | New numeric fields in existing JSON | MergedPlayer TypeScript type must be extended |
-| `pipeline/xmins.py` → `merged_players.json` | New fields: `xmins`, `start_prob`, `mins_risk` | `mins_risk` is a string enum — validate in TypeScript |
-| `recommend.ts` ↔ `transfer-engine.ts` | Both consume `ScoredPlayer[]`, both are pure functions | Keep separate — recommendation by proj_pts, transfer suggestion by gem_delta |
-| `/api/my-team` → `useMyTeam` hook | JSON: `{ picks: SquadPick[] }` — same shape as existing picks | Extend SquadPick with optional `selling_price` |
-| `captaincy.ts` → `CaptaincyPanel` | `CaptaincyCandidate[]` — top 5 | CaptaincyPanel is read-only; no state beyond display |
+| Horizon | Primary scoring field | Notes |
+|---------|----------------------|-------|
+| 1 GW | `proj_pts_1gw` | Most accurate — ep_next based |
+| 2 GW | `proj_pts_3gw` | No 2-GW field exists; 3-GW is the nearest proxy |
+| 3 GW | `proj_pts_3gw` | Direct match |
+| 4 GW | `proj_pts_5gw` | 5-GW is the nearest proxy |
+| 5 GW | `proj_pts_5gw` | Direct match |
+
+For horizon 2 and 4, the engine uses the longer-horizon field. This is an acceptable approximation — the pipeline already factors DGW/BGW into these figures.
+
+**Transfer cost scoring:**
+
+- Free transfer: no deduction
+- Hit (extra transfer beyond FT allowance): -4 pts deducted from `projectedGain`
+- Hit cost is compared against `proj_pts` delta — the planner surfaces whether the hit is worth taking
 
 ---
 
-## Scaling Considerations
+## Squad Simulation Across GWs
 
-This is a single-user personal tool. These considerations are provided for completeness, not as recommendations to act on.
+Each GW plan step needs to track squad composition to:
+1. Apply budget constraints (sell price + bank)
+2. Prevent duplicate player selection across GW steps
+3. Render the squad snapshot per GW
 
-| Scale | Architecture |
-|-------|-------------|
-| Single user (current) | Everything as described above — no changes needed |
-| Multi-user | `/api/my-team` needs per-user session isolation; recommend.ts would need to be called per-user with their squad |
-| Performance | Projections for 700 players computed once/day in Python is negligible; TypeScript engines are O(n) on ~700 players, runs in < 5ms |
+**Squad simulation approach:**
+
+```typescript
+// Starting state
+let currentSquad: ScoredPlayer[] = initialSquadFromPicks(picks, allPlayers)
+let currentBank: number = config.bankBalance
+
+// Per GW step:
+for (const transfer of gwPlan.transfers) {
+  currentSquad = currentSquad.filter(p => p.id !== transfer.out.id)
+  currentSquad.push(transfer.in)
+  currentBank = currentBank + transfer.out.selling_price - transfer.in.now_cost
+}
+gwPlan.squadAfter = [...currentSquad]
+gwPlan.bankAfter = currentBank
+```
+
+**Sell price approximation:** For GW 2+ in the plan, the engine cannot know the exact future sell price (price may change). Use `now_cost` as an approximation. Flag this in the UI as "approximate" — the same caveat already shown in `TransferPanel`.
+
+---
+
+## Chip State in the Plan
+
+Chip timing is visible in the plan (PLAN-08) but chip automation is out of scope. The UI shows a chip selector per GW row. When the user assigns a chip to a GW:
+
+| Chip | Engine effect |
+|------|---------------|
+| Wildcard | All transfers that GW are free (no -4pt cost) |
+| Free Hit | Transfers that GW are free; squad reverts to previous GW's squad next GW |
+| Triple Captain | No transfer cost effect; surfaced as a badge in PlanGwRow |
+| Bench Boost | No transfer cost effect; surfaced as a badge in PlanGwRow |
+
+The chip list comes from the `active_chip` field that already exists in `SquadPicksResponse` (via `squad-adapter.ts`). The planner needs to know which chips the manager has *available* — this data lives in FPL's `entry/{id}/` endpoint, which the current codebase does not call. Options:
+
+1. **Manual input:** User indicates which chips are available via checkboxes in `PlannerConfig`. Simple, no new API call. 
+2. **Auto-fetch:** New call to `GET /api/fpl/entry/[teamId]` to read `chips` array. Adds complexity and a new route.
+
+**Recommendation:** Manual input first. Add auto-fetch as a subsequent enhancement if it proves friction-heavy.
+
+---
+
+## Architecture Diagram (v1.3 Target State)
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│  page.tsx  ('use client')    [Tab union adds 'planner']          │
+│                                                                   │
+│  Tab content:                                                     │
+│    planner → <PlannerPanel />   ← NEW                           │
+│    ... (5 existing tabs unchanged) ...                           │
+│                                                                   │
+│  <MobileNav />  [adds 'Plan' tab]    ← MODIFIED (trivial)       │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│  PlannerPanel.tsx  ('use client')                                │
+│                                                                   │
+│  Hooks (same as TransferPanel — shared via TQ cache):            │
+│    usePlayers()        → scoredPlayers (useMemo)                 │
+│    useSquad(teamId)    → picks, bank, activeChip                 │
+│    useMyTeam(auth)     → exact sell prices                       │
+│    useAuthStatus()     → isAuthenticated                         │
+│                                                                   │
+│  State:                                                           │
+│    teamId, freeTransfers                (input form)             │
+│    config: PlannerConfig               (horizon, chips)          │
+│    planState: GwPlan[]                 (mutable plan)            │
+│    editingTransfer: {gwIdx, tIdx}|null (editor open state)       │
+│                                                                   │
+│  Derived (useMemo):                                               │
+│    scoredPlayers = computeAllGemScores(players)                  │
+│    autoPlan = computeMultiGwPlan(picks, scoredPlayers, config)   │
+│    → on mount: setPlanState(autoPlan)                            │
+│                                                                   │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │  PlannerConfig                                             │  │
+│  │  horizon: 1–5 | FTs: 1–2 | chips available                │  │
+│  └────────────────────────────────────────────────────────────┘  │
+│                                                                   │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │  Plan Table (one PlanGwRow per GW in horizon)              │  │
+│  │  GW | Chip | Transfers (Out → In) | Hit Cost | Proj Gain   │  │
+│  │  [Edit] button per row → opens PlanTransferEditor          │  │
+│  └────────────────────────────────────────────────────────────┘  │
+│                                                                   │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │  PlanSquadSnapshot (one per GW, below plan table)          │  │
+│  │  GK / DEF / MID / FWD split, highlights changed players    │  │
+│  └────────────────────────────────────────────────────────────┘  │
+│                                                                   │
+│  PlanTransferEditor (modal/inline, shown when editingTransfer)   │
+│    position-filtered player list, sorted by proj_pts_Xgw         │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│  multi-gw-planner.ts  (pure function — no side effects)          │
+│                                                                   │
+│  computeMultiGwPlan(                                             │
+│    picks: SquadPick[],                                           │
+│    allPlayers: ScoredPlayer[],                                   │
+│    config: PlannerConfig                                         │
+│  ): GwPlan[]                                                     │
+│                                                                   │
+│  Calls:                                                          │
+│    computeAllGemScores() — already in gem-score.ts              │
+│    nextGwFixtureCount()  — already in transfer-engine.ts         │
+│  Does NOT call:                                                  │
+│    computeTransferSuggestions() — separate single-GW engine     │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Patterns to Follow
+
+### Pattern 1: Pure Function Engine
+
+**What:** All planning logic in `multi-gw-planner.ts` as a pure function. No React state, no hooks, no side effects. Takes data in, returns `GwPlan[]`.
+
+**When:** The engine is called from `useMemo` in `PlannerPanel`. The same function can be called with patched inputs to re-score after user edits.
+
+**Precedent in codebase:** `computeTransferSuggestions` (transfer-engine.ts), `computeVerdicts` (recommend.ts), `computeAllGemScores` (gem-score.ts) — all pure functions called from `useMemo` in `TransferPanel`.
+
+### Pattern 2: Panel-Level State Ownership
+
+**What:** All planner state (`planState`, `config`, `editingTransfer`) lives in `PlannerPanel`. No context, no global store. Child components receive data and callbacks as props.
+
+**When:** The state is consumed by children of a single parent. One level of prop passing is not "drilling" — it is the correct pattern at this component depth.
+
+**Precedent in codebase:** `TransferPanel` owns `freeTransfers`, computed results, and all UI state. Passes derived data down to `SquadView`, `CaptaincyPanel`, etc.
+
+### Pattern 3: useMemo for Derived Plan State
+
+**What:** `planState` = auto-suggested plan stored in `useState`. User edits produce a new array via `produce` (Immer). Downstream derived values (squad snapshots, projected totals) computed with `useMemo(fn, [planState, scoredPlayers])`.
+
+**When:** Expensive computations triggered by user edits. `useMemo` prevents recomputation on unrelated re-renders.
+
+**Precedent in codebase:** `transferResult`, `verdicts`, `captaincyCandidates` in TransferPanel.tsx all use `useMemo`.
+
+### Pattern 4: Progressive Disclosure for Squad Snapshots
+
+**What:** Squad snapshots (15-player lists) are shown per GW but collapsed by default. User clicks "View squad →" to expand the snapshot for that GW. This avoids a wall of 15-player tables.
+
+**When:** Content that is useful but dense — show on demand. The page would be 90+ rows of player names without this.
+
+**Implementation:** `useState<Set<number>>` of expanded GW indices. Each `PlanSquadSnapshot` receives `isExpanded` prop and an `onToggle` callback.
+
+### Pattern 5: Responsive Table Pattern (from v1.2)
+
+**What:** Plan table on mobile uses the same `overflow-x-auto` + sticky first column pattern already used by GemTable. On mobile (< sm), compress the plan table to: GW | Transfers | Score. Chip badge and detailed breakdown visible on expand.
+
+**When:** Table with 5+ columns rendered on mobile.
+
+**Precedent in codebase:** All 4 TanStack tables in v1.2 use `overflow-x-auto` with `columnVisibility` for mobile.
+
+---
+
+## Anti-Patterns to Avoid
+
+### Anti-Pattern 1: Server-Side Plan Computation
+
+**What people do:** Create a `POST /api/planner` route that accepts squad + config, runs the planning algorithm server-side, and returns the plan.
+
+**Why it's wrong for this app:** The planning algorithm needs the scored players (`computeAllGemScores` output) which are expensive to recompute server-side per request. The `usePlayers` data is already cached client-side with a 6h stale time. All planning computations run in under 500ms on the client (825 players, 5-GW horizon, greedy algorithm). Server-side adds a network round-trip, auth complexity, and caching questions for a computation that is inherently personal and ephemeral.
+
+**Do this instead:** Pure function in `src/lib/multi-gw-planner.ts`, called from `useMemo` in `PlannerPanel`. Same pattern as `computeTransferSuggestions`.
+
+### Anti-Pattern 2: Zustand or External State Manager for Plan State
+
+**What people do:** Create a `usePlannerStore` with Zustand to hold `GwPlan[]` globally so the plan persists across tab switches.
+
+**Why it's wrong:** Plan state is session-ephemeral. It is meaningless if the user's squad or the player data has changed. The plan should regenerate when the user re-opens the Planner tab. Persisting plan state across tabs adds complexity (stale plan problem, invalidation triggers) that provides no real user value.
+
+**Do this instead:** `useState<GwPlan[]>` in `PlannerPanel`. The panel re-mounts on each tab switch (conditional render pattern already used), which naturally clears stale state. If plan persistence becomes a user need, address it then.
+
+### Anti-Pattern 3: Merging PlannerPanel into TransferPanel
+
+**What people do:** Add a "multi-GW mode" toggle to `TransferPanel` and extend that component with planner functionality.
+
+**Why it's wrong:** `TransferPanel` is already 430 lines and handles 5 distinct concerns (auth, squad loading, transfer engine, captaincy, verdicts). Adding planning UI would push it past 800 lines with conditional rendering scattered through a single component. The cognitive tasks are distinct — single-GW suggestion vs multi-GW planning — and deserve separate tabs.
+
+**Do this instead:** New `PlannerPanel` component in `src/components/planner/`. It reuses the same hooks and data layer but has its own component tree.
+
+### Anti-Pattern 4: Recalculating Full Plan on Every Edit
+
+**What people do:** When the user edits transfer N in GW 2, call `computeMultiGwPlan` from scratch with modified inputs.
+
+**Why it's wrong:** Full plan recomputation is O(players * horizon * positions). For a 5-GW plan, this is acceptable (~100ms), but it discards all other manual edits the user has made to other GWs.
+
+**Do this instead:** Partial re-score from the edited GW onwards. GWs before the edit are unchanged (squad state is the same). Implement `rescoreFromGw(planState, gwIndex, scoredPlayers)` that recalculates `projectedGain` and `squadAfter` for GWs >= gwIndex without regenerating transfer recommendations for earlier GWs. This preserves user edits above the changed GW.
+
+### Anti-Pattern 5: New API Route for Fixture Data
+
+**What people do:** Create `GET /api/fpl/fixtures` to fetch upcoming GW fixture data for the planner.
+
+**Why it's wrong:** Fixture data (specifically the `event_id` on each player's `fixtures` array) is already embedded in `MergedPlayer.fixtures` from `usePlayers()`. The pipeline computes `proj_pts_1gw`, `proj_pts_3gw`, `proj_pts_5gw` factoring in DGW/BGW. No additional fixture API call is needed for the planner's scoring logic.
+
+**Do this instead:** Use `player.fixtures` (already in `MergedPlayer`) to identify DGW/BGW weeks and use `player.proj_pts_Xgw` fields for scoring.
+
+---
+
+## Build Order (Dependency-Respecting)
+
+```
+Step 1:  src/lib/planner-types.ts
+         Define GwTransfer, GwPlan, PlannerConfig types.
+         Zero dependencies. Required by steps 2–5.
+
+Step 2:  src/lib/multi-gw-planner.ts
+         Pure function engine. Depends on planner-types + existing 
+         ScoredPlayer/SquadPick types. No UI dependency.
+         Write unit tests alongside (Vitest — same pattern as squad-adapter.test.ts).
+
+Step 3:  src/lib/tabs.ts
+         Extract Tab union type from page.tsx + MobileNav.tsx into a shared file.
+         Add 'planner' to the union here.
+         Prerequisite for step 7 (MobileNav) and step 8 (page.tsx).
+
+Step 4:  src/components/planner/PlanGwRow.tsx
+         Dumb component — receives GwPlan as props, renders one table row.
+         No state, no hooks. Build and snapshot-test in isolation.
+
+Step 5:  src/components/planner/PlanSquadSnapshot.tsx
+         Dumb component — receives ScoredPlayer[] + changes, renders squad grid.
+         No state, no hooks.
+
+Step 6:  src/components/planner/PlannerConfig.tsx
+         Controlled form component. Horizon selector, FT count, chip availability.
+         Only peer dependency: planner-types.ts.
+
+Step 7:  src/components/planner/PlanTransferEditor.tsx
+         Player picker. Receives position filter, playerList, onSelect callback.
+         No state (controlled by parent).
+
+Step 8:  src/components/planner/PlannerPanel.tsx
+         Assembles all sub-components + hooks + engine.
+         Depends on steps 2–7. This is the integration step.
+
+Step 9:  Update src/app/page.tsx
+         Add 'planner' tab button + <PlannerPanel /> conditional render.
+         Depends on step 8.
+
+Step 10: Update src/components/nav/MobileNav.tsx
+         Add 'Plan' entry to TABS.
+         Depends on step 3 (shared Tab type).
+
+Step 11: Integration test: full tab render with real hook data (manual + Vitest).
+```
+
+---
+
+## Scalability Considerations
+
+This is a single-user personal tool. Scalability concerns are about code maintainability, not load.
+
+| Concern | Now (v1.3) | If Requirements Expand |
+|---------|------------|------------------------|
+| Plan algorithm complexity | Greedy, O(players * horizon * positions) — ~100ms max | Beam search or dynamic programming if brute-force quality needed |
+| Plan persistence | Session-only (useState, lost on tab switch) | localStorage serialisation, invalidate on squad change |
+| Chip availability detection | Manual user input | Fetch `entry/{id}/` chips array via new route |
+| Horizon length | 1–5 GWs | Beyond 5, `proj_pts_5gw` is the ceiling of available data |
+| Multiple plan variants | Single plan per session | "Saved scenarios" pattern: `useState<GwPlan[][]>` |
+| Mobile layout of plan table | overflow-x-auto + compressed columns | Same column-hiding pattern as v1.2 tables |
+
+---
+
+## Integration Points Summary
+
+| What integrates | With what | How | Change type |
+|-----------------|-----------|-----|-------------|
+| `PlannerPanel` | `usePlayers` | Hook call — returns `MergedPlayer[]` | Reuse (no change) |
+| `PlannerPanel` | `useSquad` | Hook call — returns picks + bank + chip | Reuse (no change) |
+| `PlannerPanel` | `useMyTeam` | Hook call — returns exact sell prices | Reuse (no change) |
+| `PlannerPanel` | `useAuthStatus` | Hook call — gates `useMyTeam` | Reuse (no change) |
+| `PlannerPanel` | `computeAllGemScores` | Direct import + useMemo | Reuse (no change) |
+| `PlannerPanel` | `multi-gw-planner.ts` | Direct import + useMemo | New engine |
+| `page.tsx` | `PlannerPanel` | Conditional render on tab | Minor addition |
+| `page.tsx` | `Tab` type | Add `'planner'` literal | Minor extension |
+| `MobileNav` | `Tab` type | Add `'Plan'` to TABS array | Trivial addition |
+| `planner-types.ts` | `ChipState` from `transfer-engine.ts` | Re-export or re-use | Reuse |
 
 ---
 
 ## Sources
 
-- FPL API authentication: [Fantasy Premier League API authentication guide](https://medium.com/@bram.vanherle1/fantasy-premier-league-api-authentication-guide-2f7aeb2382e4)
-- FPL API endpoints reference: [FPL API Endpoints Cheat Sheet](https://cheatography.com/sertalpbilal/cheat-sheets/fpl-api-endpoints/)
-- xPts model methodology: [Modelling xPts in FPL (Version 2.0)](https://medium.com/@marcusleadboot/modelling-xpts-in-fpl-version-2-0-e7d8cd738e75)
-- xMins methodology: [FPL Review xMins documentation](https://docs.fplreview.com/the-model/projections/xmins/)
-- my-team endpoint: [FPL API Endpoints: A Detailed Guide](https://medium.com/@frenzelts/fantasy-premier-league-api-endpoints-a-detailed-guide-acbd5598eb19)
+- `src/lib/transfer-engine.ts` — pure function pattern, `ChipState`, `SingleTransfer` types; scoring approach with DGW awareness (HIGH confidence — codebase)
+- `src/components/transfers/TransferPanel.tsx` — panel-level state ownership pattern; hook usage; `useMemo` for derived values (HIGH confidence — codebase)
+- `src/lib/types.ts` — `MergedPlayer.proj_pts_1gw/3gw/5gw`, `FixtureEntry.event_id` for DGW detection (HIGH confidence — codebase)
+- `src/app/page.tsx` — Tab union type location, conditional render pattern, desktop tab bar structure (HIGH confidence — codebase)
+- `src/components/nav/MobileNav.tsx` — TABS array structure, Tab type duplication issue (HIGH confidence — codebase)
+- `src/lib/squad-adapter.ts` — `SquadPicksResponse`, `MyTeamPickSchema.selling_price`, `EntryHistorySchema.bank` (HIGH confidence — codebase)
+- `src/lib/gem-score.ts` — `computeAllGemScores` signature; 825-player, ~250ms estimate based on 7-dimension O(n) pass (HIGH confidence — codebase)
 
 ---
 
-*Architecture research for: FPL Analyst v1.1 Decision Engine*
-*Researched: 2026-03-29*
+*Architecture research for: FPL Analyst v1.3 Gameweek Planner*
+*Researched: 2026-04-01*

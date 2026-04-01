@@ -1,128 +1,142 @@
 # Technology Stack
 
-**Project:** FPL Analyst — v1.1 Decision Engine additions
-**Researched:** 2026-03-29
-**Scope:** NEW capabilities only. Existing validated stack (Next.js 16, React 19, TypeScript, TanStack Table v8, TanStack Query v5, Tailwind CSS v4, Vitest, Python/pandas/soccerdata/requests/Vercel Blob) is NOT re-researched here.
+**Project:** FPL Analyst — v1.3 Gameweek Planner additions
+**Researched:** 2026-04-01
+**Confidence:** HIGH
+**Scope:** NEW capabilities only. Existing validated stack (Next.js 16, React 19, TypeScript, TanStack Table v8, TanStack Query v5, Tailwind CSS v4, Vitest, Python/pandas/requests/soccerdata/Vercel Blob) is NOT re-researched here.
 
 ---
 
 ## What Is Already Installed (do not re-add)
 
-From `package.json` and `pipeline/requirements.txt` as of 2026-03-29:
+From `package.json` as of 2026-04-01:
 
 **npm:** `next@16.2.1`, `react@19.2.4`, `@tanstack/react-query@^5.95.2`, `@tanstack/react-table@^8.21.3`, `@vercel/blob@^2.3.1`, `zod@^4.3.6`, `tailwindcss@^4`, `vitest@^4.1.2`
 
-**pip:** `requests>=2.32.0`, `pandas>=2.2.0`, `soccerdata==1.8.8`, `vercel-blob>=0.4.0`, `python-dotenv>=1.0.0`
+**No UI component library installed.** All components are hand-written Tailwind CSS. There is NO shadcn/ui, Radix UI, or Headless UI in the project — the v1.1 research file mentioned them as recommendations but they were not adopted. Build new components the same way: custom Tailwind.
 
 ---
 
-## New Stack Additions Required
+## New Stack Additions Required for v1.3
 
-### Python Pipeline — Projected Points and xMins Engine
+### 1. State Management for Multi-GW Plan
+
+**Add: `use-immer@0.11.0` (peer: `immer@11.1.4`)**
 
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| scikit-learn | ^1.8.0 | xMins start-probability model (logistic regression) | The xMins model is a classifier: given recent minutes, team news flags, and fixture difficulty, estimate P(start). Logistic regression (`sklearn.linear_model.LogisticRegression`) is the correct tool — interpretable, no heavy dependencies, outputs calibrated probabilities. scikit-learn 1.8.0 released December 2025; supports Python 3.11 and pandas 2.x. |
-| scipy | ^1.15.0 | Weighted ranking for captaincy scores | `scipy.stats.weightedtau` / `numpy.average` for composite captaincy score construction. Also provides `scipy.stats.norm` for Bayesian-style projection intervals if needed later. Already an indirect soccerdata dependency but should be pinned explicitly. |
+| immer | ^11.1.4 | Immutable state update primitive | Enables safe mutation syntax in reducers; zero runtime overhead for reads; well-established (5,900+ npm dependents) |
+| use-immer | ^0.11.0 | `useImmerReducer` hook | Wraps React's `useReducer` with Immer's `produce`; eliminates nested spread boilerplate in plan state updates |
 
-**Why scikit-learn over custom formula for xMins:**
-The xMins model inputs are tabular: recent minutes per GW (last 5), team news status flag (from bootstrap `news` field), FDR of next fixture, position (proxy for rotation likelihood). A logistic regression trained on historical `element_summary` data gives a calibrated start probability with `predict_proba()`. Custom formula would require manual calibration. scikit-learn adds ~30 MB to the venv — acceptable for a pipeline-only dependency.
+The Gameweek Planner needs a plan state that looks like:
 
-**Why no XGBoost or neural network:**
-The dataset is small (~600 players, ~38 GW history). Complex models overfit on small tabular data. A logistic regression is correct here. If a more complex model is warranted later it can be swapped; the interface stays the same.
+```typescript
+interface GWPlan {
+  horizon: 1 | 2 | 3 | 4 | 5
+  freeTransfers: number
+  bank: number
+  gwSteps: GWStep[]          // one entry per GW in horizon
+  chipSequence: ChipSlot[]   // which chip (if any) plays in which GW
+}
 
-**Why scipy separately:**
-soccerdata pulls it in transitively but does not pin it. Explicit pin in requirements.txt prevents silent version drift breaking the captaincy ranking computation.
-
----
-
-### Python Pipeline — FPL Auth (Session-Cookie Login)
-
-No new library required. The existing `requests` library handles session-cookie auth natively via `requests.Session()`. The authentication pattern is:
-
-```python
-import requests
-
-session = requests.Session()
-session.post(
-    'https://users.premierleague.com/accounts/login/',
-    data={
-        'login': email,
-        'password': password,
-        'redirect_uri': 'https://fantasy.premierleague.com/a/login',
-        'app': 'plfpl-web',
-    },
-    headers=HEADERS,
-)
-# session now holds pl_profile and sessionid cookies
-response = session.get(f'https://fantasy.premierleague.com/api/my-team/{team_id}/', headers=HEADERS)
+interface GWStep {
+  gwId: number
+  transfers: PlannedTransfer[]  // up to 2 transfers per GW
+  squadSnapshot: SquadPick[]    // 15-player squad after transfers applied
+  projectedPoints: number
+  transferCost: number          // 0 or 4 * extra transfers
+}
 ```
 
-**Why not the `fpl` PyPI library (amosbastian/fpl):**
-The `fpl` library is unmaintained — last PyPI release August 2023, no published releases on GitHub, open issues unresolved. It is async-only (requires `aiohttp`), which is unnecessary overhead for a pipeline that runs sequentially. The raw `requests.Session()` pattern is a 10-line implementation and has no maintenance risk.
+Updating a single transfer inside `gwSteps[2].transfers[1]` with plain `useReducer` requires five levels of nested spread. With `useImmerReducer`, the reducer writes `draft.gwSteps[2].transfers[1].buyId = newId` directly. The state remains immutable; Immer handles the structural sharing internally.
 
-**Why not `fpl-api` (C-Roensholt/fpl-api):**
-Similar maintenance uncertainty. The existing `fpl_client.py` already implements the FPL HTTP layer. Extending it with a `login()` function that returns an authenticated session is the correct approach — consistent with existing patterns, no new dependency.
+**Why not Zustand:**
+Zustand is a global store. The planner state is local to the `PlannerTab` component — it does not need to be shared across other tabs, persisted, or accessed from outside the component tree. `useImmerReducer` is component-local state management, which is the correct scope. Zustand adds a global subscription model that is unnecessary here. The React docs recommend `useReducer` for complex, co-located state — this is that case.
 
-**Auth endpoint status (MEDIUM confidence):**
-The `users.premierleague.com/accounts/login/` endpoint has been the login URL since at least 2019. No evidence found of it being replaced or broken in 2024/25. However, FPL has changed endpoint paths before (e.g., `/drf/` → `/api/`). The my-team URL to use is `/api/my-team/{team_id}/` (modern path, not the old `/drf/my-team/`). The cookie names `pl_profile` and `sessionid` remain the same. Flag this endpoint for manual verification at v1.1 build time.
+**Why not plain `useReducer` (without Immer):**
+The plan state has 3–5 levels of nesting (horizon → gwStep → transfer → player). Plain useReducer spreads at this depth are verbose, error-prone, and produce unclear diffs. Immer eliminates the spread boilerplate without changing the `useReducer` model — it is a mechanical improvement, not a paradigm shift.
 
----
-
-### Next.js Route Handler — Auth Relay
-
-No new npm package required. The existing Next.js Route Handler pattern handles the auth relay:
-
-- `POST /api/auth/login` — accepts `{ email, password }` from UI, calls FPL login server-side, returns `{ bank, selling_prices }` (never returns cookies to client)
-- `GET /api/auth/my-team` — calls `/api/my-team/{id}/` with session cookies held server-side for the duration of the request
-
-The session is used once per pipeline trigger or page load and is not persisted. Credentials are never stored — they are passed in the request body and discarded after use.
-
-**Note on cookie jar in Node.js fetch:**
-If the auth relay is implemented in a Route Handler using Node.js `fetch()` (not the Python pipeline), cookie jar management requires either `tough-cookie` + `node-fetch` or using the Python pipeline path. The simpler approach: delegate auth to the Python pipeline (which already uses `requests.Session()`), have the pipeline write the authenticated data (bank, selling prices) to `my_team.json` in Blob, and serve it from a Route Handler like all other pipeline outputs. This avoids cookie management in Node.js entirely.
-
----
-
-### Frontend — Explainability and Recommendations UI
-
-No new npm packages are required. All UI primitives needed exist in shadcn/ui (already installed) using Tailwind CSS v4.
-
-| Component | shadcn/ui primitive | Purpose |
-|-----------|--------------------|---------|
-| Risk flag badges | `Badge` (variant="destructive" / "warning" / "outline") | Rotation risk, regression risk, fixture swing — colour-coded per severity |
-| Buy/Hold/Sell pill | `Badge` with custom CVA variants | Single recommendation per squad player |
-| Explainability panel | `Collapsible` or `Accordion` | "Why this player" reasons expand inline per row |
-| Captaincy card | Composed from `Card` + `Badge` | Top-5 captaincy candidates with safe/upside split |
-| Tooltip on flags | `Tooltip` | Hover-over detail for each risk flag code |
-
-**Why no new UI library (e.g., react-tooltip standalone):**
-shadcn/ui's `Tooltip` wraps Radix UI's `@radix-ui/react-tooltip` which is already a transitive dependency of shadcn/ui's other components. Adding a standalone tooltip library would be redundant and create conflicting styles.
-
-**Why Collapsible over Accordion for explainability:**
-`Accordion` implies mutually exclusive open panels — only one item open at a time. `Collapsible` is independent per-row, so the manager can expand multiple players simultaneously to compare reasoning. Use `Collapsible` per table row.
-
-**Why no dedicated "explainability library" (e.g., LIME/SHAP JS bindings):**
-The explainability data is generated in the Python pipeline as structured text reasons (strings) and numeric factor weights. The UI only needs to render them — it does not compute them. No ML explainability library belongs in the frontend.
-
----
-
-## Summary: What to Add
-
-### pip (pipeline/requirements.txt additions)
+**Why not Redux Toolkit:**
+Redux adds a global store, DevTools dependency, slice boilerplate, and a provider. The planner is one tab in a single-user personal tool. This is engineering overhead with no benefit.
 
 ```bash
-pip install scikit-learn>=1.8.0 scipy>=1.15.0
+npm install immer use-immer
 ```
 
-### npm (no additions needed)
+---
 
-The existing `package.json` is sufficient. Use shadcn/ui CLI to add any not-yet-added components:
+### 2. Combobox for Player Search (Manual Edit Mode)
+
+**Add: NONE — build native with Tailwind**
+
+Manual edit mode lets the manager pick a replacement player from a filtered list. A combobox (type-to-filter input + dropdown list) is needed. Options considered:
+
+| Option | Assessment |
+|--------|------------|
+| `@headlessui/react@2.2.9` | Latest stable, fully accessible, zero styling. Compatible with Tailwind v4 via `@headlessui/tailwindcss` plugin. But: adds ~12kB to bundle and a new library contract to maintain. |
+| Native `<input>` + filtered `<datalist>` | Accessible, zero-dependency, but `<datalist>` styling is uncontrollable — will look broken in dark mode. |
+| Custom `<input>` + absolutely-positioned `<ul>` with React state | ~50 lines of code; full style control; matches existing pattern in the codebase; works with Tailwind dark mode. |
+
+**Recommendation: Custom native implementation.** The codebase has no UI component library and has consistently used hand-written Tailwind. The player search combobox for this planner filters ~600 players by name/position. This is a simple controlled input + filtered array pattern, not a complex compound component. Implementing it natively (40–60 lines) is consistent with all existing components and adds zero dependency overhead.
+
+If complexity grows (nested portals, focus trapping across modals, keyboard nav edge cases), add `@headlessui/react` at that point. It is backward-compatible.
+
+---
+
+### 3. Planner Algorithm (Auto-Suggest)
+
+**Add: NONE — pure TypeScript, no library**
+
+The auto-suggest transfer sequence uses a **greedy beam search** implemented as a pure TypeScript function. This is the same algorithmic approach used by the FPL industry's most sophisticated tools (fplreview's "Transfer Solver" is explicitly described as a "chess-engine style search" — beam search over transfer sequences, not MILP).
+
+**Algorithm scope for v1.3:**
+- Horizon: 1–5 GWs (user-set)
+- Beam width: 3–5 candidates per step (controllable constant)
+- Each node: current squad + bank + free transfers + chip state
+- Scoring: projected points delta minus transfer costs, summed over horizon
+- DGW/BGW awareness: pulled from existing `FixtureEntry.event_id` fixture count logic (already in `transfer-engine.ts`)
+
+The algorithm is a deterministic tree search with bounded branching factor. It runs client-side in TypeScript in ~100ms for a 5-GW horizon with beam width 3 (O(beam × candidates × horizon) ≈ 3 × 20 × 5 = 300 evaluations). No WASM, no Web Worker, no optimization library needed.
+
+**Why not MILP (linear programming solver like HiGHS):**
+MILP guarantees global optimality over the horizon. However: (1) there is no production-ready MILP solver that runs in the browser in JavaScript; (2) the existing scoring model is heuristic (gem scores, projected points from ppg), not a rigorous probability model — MILP precision is false accuracy on heuristic inputs; (3) beam search with beam width 3 finds solutions within 2–5% of optimal for FPL-scale problems according to the fplreview solver documentation. Beam search is correct for this scope.
+
+**Why not a server-side API route for the algorithm:**
+The planner is interactive — the manager edits transfers and sees scores update in real time. A server round-trip on every edit (changing a player, adjusting the horizon) would make the UI feel sluggish. Client-side pure TypeScript is the correct execution model.
+
+---
+
+### 4. Drag-and-Drop for Plan Reordering
+
+**Add: NONE for v1.3 — defer drag-and-drop entirely**
+
+The planner output is a transfer-by-transfer table (PLAN-09) and squad snapshots (PLAN-10). Manual editing (PLAN-03) means selecting replacement players, not reordering rows. There is no drag-and-drop UX requirement in the v1.3 feature list.
+
+If reordering of the transfer sequence becomes a requirement, `@dnd-kit/core@6.3.1` + `@dnd-kit/sortable@10.0.0` is the right choice — accessible, React 19 compatible (peer dep `react@>=16.8.0`, tested against React 18/19 in the community), 25kB total. Do not add it until the requirement exists.
+
+**Do NOT add `react-beautiful-dnd`:** Atlassian has archived the project (read-only, no releases since 2022). It has peer dep issues with React 18+. It is abandoned.
+
+---
+
+### 5. Animation
+
+**Add: NONE — CSS transitions only**
+
+The planner UI needs fade-in on plan generation, row highlight on edit, and squad snapshot transition between GWs. All of these are achievable with Tailwind `transition-*` utilities and CSS `@keyframes` in `globals.css`. Framer Motion (34kB base, ~50kB gzipped) is disproportionate for a personal tool where users tolerate functional UI over polished animation.
+
+---
+
+## Summary: What to Install
 
 ```bash
-npx shadcn@latest add collapsible accordion badge tooltip card
+# The only new npm dependencies needed for v1.3
+npm install immer use-immer
 ```
 
-These are copy-paste components with no new runtime npm dependency — they use Radix UI primitives already present.
+Everything else is implemented as:
+- Pure TypeScript functions in `src/lib/` (algorithm, scoring, state derivation)
+- Hand-written Tailwind CSS components (combobox, plan table, squad snapshot)
+- Existing TanStack Query `select` option for derived state from cached player data
 
 ---
 
@@ -130,14 +144,38 @@ These are copy-paste components with no new runtime npm dependency — they use 
 
 | Category | Recommended | Alternative | Why Not |
 |----------|-------------|-------------|---------|
-| xMins model | scikit-learn LogisticRegression | Custom weighted formula | Formula requires manual calibration; sklearn gives calibrated probabilities and is replaceable without interface change |
-| xMins model | scikit-learn LogisticRegression | XGBoost / LightGBM | Overkill for ~600-player tabular dataset; adds 200+ MB dependency; overfits on small data |
-| FPL auth library | raw requests.Session() | amosbastian/fpl (PyPI) | Unmaintained since Aug 2023; async-only (aiohttp required); existing fpl_client.py pattern is simpler |
-| FPL auth library | raw requests.Session() | fpl-api (C-Roensholt) | Maintenance uncertainty; adds abstraction layer without benefit for a 10-line auth extension |
-| Auth relay | Python pipeline writes my_team.json | Node.js Route Handler with cookie jar | Cookie jar in Node.js needs tough-cookie (extra dep); Python pipeline already handles auth; pattern is consistent with all other pipeline outputs |
-| Explainability UI | shadcn/ui Collapsible | Dedicated react-tooltip library | Redundant — Radix tooltip already a transitive dep; conflicting styles |
-| Explainability UI | shadcn/ui Collapsible | SHAP/LIME JS bindings | Explainability computed in Python, not client-side; frontend only needs to render structured strings |
-| Captaincy ranking | pandas + numpy weighted score | ML ranking model | Ranking 15 squad players by composite score is a sort, not a learned model; weighted sum is correct and auditable |
+| Plan state | `useImmerReducer` (local) | Zustand (global) | Plan state is tab-local; Zustand's global model adds unnecessary scope and subscription overhead |
+| Plan state | `useImmerReducer` | Redux Toolkit | RTK adds global store + provider + slice boilerplate; no benefit for single-tab local state |
+| Plan state | `useImmerReducer` | Jotai atoms | Atomic model fits fine-grained cross-component state; plan state is a single cohesive structure that acts as one unit — reducer is clearer |
+| Combobox | Custom native ~50 LOC | `@headlessui/react` | No existing UI lib in project; native implementation is 40–60 LOC with full style control; Headless UI adds library maintenance obligation without sufficient payoff at this complexity level |
+| Combobox | Custom native | `react-select` | react-select is 28kB, has its own styling system that conflicts with Tailwind, known for Tailwind dark mode friction |
+| Algorithm | Pure TypeScript beam search | MILP solver (HiGHS-js) | No stable browser WASM port; MILP precision is false accuracy on heuristic scoring model; beam search matches the industry approach at this scale |
+| Algorithm | Pure TypeScript beam search | Server-side API route | Interactive edits require real-time feedback; round-trip latency destroys UX; algorithm is fast enough client-side |
+| Drag-and-drop | Deferred | `@dnd-kit/core` | No UX requirement exists for row reordering in v1.3; premature |
+| Animation | CSS transitions | Framer Motion | ~50kB for a personal tool; Tailwind transitions cover all needed cases |
+
+---
+
+## What NOT to Add
+
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| `react-beautiful-dnd` | Archived by Atlassian 2022, no React 18/19 support, open peer dep issues | `@dnd-kit/core` if drag-drop is ever needed |
+| `redux` / `@reduxjs/toolkit` | Global store architecture is overkill for tab-scoped planner state; adds DevTools dependency | `useImmerReducer` |
+| `framer-motion` | ~50kB bundle addition for a personal tool; CSS transitions sufficient | `transition-*` Tailwind utilities |
+| `react-select` | Own styling system conflicts with Tailwind dark mode; 28kB; maintenance overhead | Custom native combobox (~50 LOC) |
+| Any MILP solver (`highs-js`, `glpk.js`) | Browser WASM ports are large and unstable; overkill for heuristic-scored planning | Pure TypeScript beam search |
+| `@headlessui/react` for this milestone | No existing dependency; native implementation is sufficient for a single combobox | Custom native; re-evaluate if more complex UI primitives are needed |
+| `xstate` / state machines | Overcomplicated for a 5-step linear plan; introduces a new paradigm with no ecosystem precedent in this codebase | `useImmerReducer` with typed action union |
+
+---
+
+## Version Compatibility
+
+| Package | Compatible With | Notes |
+|---------|-----------------|-------|
+| `immer@^11.1.4` | React 19.2.4, TypeScript 5.x, Node 25 | No React dependency; pure JS; ES2015+ target; 11.x branch active |
+| `use-immer@^0.11.0` | React 19.2.4 (peer: `react>=16.8.0`), immer ^10 or ^11 | Last published ~1 year ago, but stable; no React 19-specific issues reported |
 
 ---
 
@@ -145,33 +183,12 @@ These are copy-paste components with no new runtime npm dependency — they use 
 
 | New Capability | Integrates With | Integration Point |
 |----------------|-----------------|-------------------|
-| Projected points (Python) | `merge.py` pipeline | New `projected_points.py` module adds `proj_pts_1gw`, `proj_pts_3gw`, `proj_pts_5gw` fields to `merged_players.json` schema |
-| xMins model (Python) | `merge.py` pipeline | New `xmins.py` module adds `xMins`, `start_prob`, `minutes_risk` fields to `merged_players.json` |
-| Buy/Hold/Sell (Python) | Pipeline output + Next.js | New `recommendations.json` blob written by pipeline; served via new `/api/recommendations` Route Handler |
-| Captaincy rankings (Python) | Pipeline output + Next.js | `recommendations.json` includes `captaincy` array; served via same Route Handler |
-| Explainability (UI) | `MergedPlayer` TypeScript type | Add `reasons: string[]` and `risk_flags: RiskFlag[]` to existing `MergedPlayer` type; Zod schema extended |
-| FPL auth (Python + UI) | `fpl_client.py` + new Route Handler | `fpl_client.py` gets `login(email, password) -> requests.Session`; pipeline uses it when `FPL_EMAIL`/`FPL_PASSWORD` env vars present; UI has optional login form that POSTs to `/api/auth/login` |
-
----
-
-## FPL Auth: Exact Endpoint Reference
-
-The session-cookie auth flow (MEDIUM confidence — verify at build time):
-
-```
-POST https://users.premierleague.com/accounts/login/
-Content-Type: application/x-www-form-urlencoded
-
-login=<email>&password=<password>&redirect_uri=https://fantasy.premierleague.com/a/login&app=plfpl-web
-```
-
-Cookies returned: `pl_profile` (.premierleague.com), `sessionid` (fantasy.premierleague.com), `sessionid` (users.premierleague.com)
-
-Authenticated endpoints needed for v1.1:
-- `GET /api/my-team/{team_id}/` — returns `picks[].selling_price` and `transfers.bank`
-- `GET /api/me/` — returns bank balance (alternative)
-
-**Risk:** FPL has changed API paths before. The endpoint has been stable since at least 2019 based on community sources, but no official documentation exists. Build with a clear error path for auth failure — fall back to public-data-only mode.
+| Beam-search algorithm | `transfer-engine.ts`, `gem-score.ts`, `types.ts` | New `planner-engine.ts` module; consumes `ScoredPlayer`, `SquadPick`, `MergedPlayer` types; extends `transfer-engine.ts`'s `SingleTransfer` into `PlannedTransfer` |
+| Plan state (`useImmerReducer`) | TanStack Query (`usePlayers`, `useMyTeam`) | Planner component reads cached player data from TQ; plan state is separate local reducer — TQ is read-only data layer, Immer reducer is mutable plan layer |
+| Planner tab | `page.tsx`, `MobileNav` | Extend `Tab` union type to include `'planner'`; add tab button to desktop nav; add icon + label to `MobileNav` |
+| Squad snapshot | `squad-adapter.ts` | `applyTransfers(squad, transfers) -> SquadPick[]` pure function; derives simulated squad state per GW without any new library |
+| TanStack Query `select` | Existing `usePlayers()` | Use `select` option to pre-filter and sort players by position and score for combobox; no new query keys needed |
+| Chip state in plan | `ChipState` type in `transfer-engine.ts` | Extend existing `ChipState` type; planner tracks which chip is active in which GW of the plan |
 
 ---
 
@@ -179,29 +196,28 @@ Authenticated endpoints needed for v1.1:
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| scikit-learn for xMins | HIGH | Version 1.8.0 confirmed on PyPI (Dec 2025); Python 3.11 + pandas 2.x compatible confirmed |
-| scipy for ranking | HIGH | Standard scientific Python stack; version 1.15.x current; no compatibility issues |
-| No new npm packages needed | HIGH | shadcn/ui components are copy-paste; Radix primitives already present transitively |
-| requests.Session() for auth | HIGH | Documented pattern; works with Python's built-in cookie jar |
-| `fpl` PyPI library abandonment | HIGH | Last release Aug 2023; GitHub shows no active maintenance |
-| FPL auth endpoint stability | MEDIUM | Observed stable since 2019 in community sources; no official FPL documentation; could change without notice |
-| my-team endpoint fields (selling_price, bank) | MEDIUM | `selling_price` in picks confirmed by fpl.readthedocs.io source code; `bank` field in transfers object confirmed by community guides; not officially documented |
-| shadcn Collapsible for explainability | HIGH | Documented component; correct primitive for independent-expand per row |
+| `useImmerReducer` for plan state | HIGH | Verified: immer 11.1.4 on npm; use-immer 0.11.0 on npm; React 19 peer dep satisfied; pattern well-documented |
+| No drag-and-drop needed | HIGH | Reviewed PLAN-01 through PLAN-11 requirements; no reorder UX specified |
+| Beam search in TypeScript | HIGH | Proven approach — fplreview uses same model; O(beam×candidates×horizon) is well within browser compute limits for these input sizes |
+| No MILP needed | HIGH | No stable browser WASM port; heuristic scoring makes MILP precision meaningless |
+| Custom combobox over library | MEDIUM | Custom implementation is consistent with codebase pattern; risk is accessibility edge cases (keyboard nav, screen reader) that headlessui handles by default — acceptable for a personal tool |
+| CSS transitions over Framer Motion | HIGH | Tailwind transition utilities confirmed sufficient for fade, slide, highlight patterns needed |
 
 ---
 
 ## Sources
 
-- scikit-learn 1.8.0 release: [scikit-learn PyPI](https://pypi.org/project/scikit-learn/) — v1.8.0, December 2025
-- scikit-learn Python 3.11 support: [scikit-learn install docs](https://scikit-learn.org/stable/install.html)
-- FPL auth flow: [Fantasy Premier League API authentication guide — Bram Vanherle, Medium](https://medium.com/@bram.vanherle1/fantasy-premier-league-api-authentication-guide-2f7aeb2382e4) (2019, still referenced as current approach in 2025 community searches)
-- FPL auth Node.js variant: [Fantasy Premier League API authentication guide — eyasu kibru, Medium](https://medium.com/@eyasukibru13/fantasy-premier-league-api-authentication-guide-using-node-js-ca25e693594e)
-- FPL my-team endpoint: [FPL API Endpoints Cheat Sheet — sertalpbilal, Cheatography](https://cheatography.com/sertalpbilal/cheat-sheets/fpl-api-endpoints/history/279325)
-- FPL my-team fields: [Fantasy Premier League API Endpoints Detailed Guide — Frenzel Timothy, Medium](https://medium.com/@frenzelts/fantasy-premier-league-api-endpoints-a-detailed-guide-acbd5598eb19)
-- amosbastian/fpl maintenance status: [fpl GitHub](https://github.com/amosbastian/fpl) — no releases published, last meaningful activity 2023
-- shadcn/ui Collapsible: [Collapsible — shadcn/ui docs](https://ui.shadcn.com/docs/components/radix/collapsible)
-- shadcn/ui Accordion: [Accordion — shadcn/ui docs](https://ui.shadcn.com/docs/components/radix/accordion)
-- shadcn/ui Badge: [Badge — shadcn/ui docs](https://ui.shadcn.com/docs/components/radix/badge)
-- pandas weighted rolling average: [pandas DataFrame.rolling — pandas 3.0.1 docs](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.rolling.html)
-- scipy weightedtau: [scipy.stats.weightedtau — SciPy v1.17.0 Manual](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.weightedtau.html)
-- FPL projected points community reference: [FPL-Expected-Points — daniel-mehta, GitHub](https://github.com/daniel-mehta/FPL-Expected-Points)
+- immer npm: https://www.npmjs.com/package/immer — v11.1.4 confirmed
+- use-immer npm: https://www.npmjs.com/package/use-immer — v0.11.0 confirmed
+- use-immer GitHub: https://github.com/immerjs/use-immer — React 19 peer dep `>=16.8.0`
+- fplreview solver comparison: https://docs.fplreview.com/the-model/solvers/solver-comparison/ — confirms beam search ("chess-engine style") as the solver approach
+- Zustand v5 React 19: https://github.com/pmndrs/zustand/discussions/2686 — confirmed React 19 compatible
+- @dnd-kit/core npm: https://www.npmjs.com/package/@dnd-kit/core — v6.3.1; peer `react>=16.8.0`
+- @dnd-kit/sortable npm: https://www.npmjs.com/package/@dnd-kit/sortable — v10.0.0
+- react-beautiful-dnd archived: https://github.com/atlassian/react-beautiful-dnd — archived 2022
+- TanStack Query select option: https://tanstack.com/query/v5/docs/framework/react/reference/useQuery — `select` transform documented
+- React 2025 state patterns: https://makersden.io/blog/react-state-management-in-2025 — useReducer recommended for co-located complex state
+
+---
+*Stack research for: FPL Analyst v1.3 Gameweek Planner*
+*Researched: 2026-04-01*

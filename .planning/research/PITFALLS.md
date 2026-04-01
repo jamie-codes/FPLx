@@ -1,327 +1,324 @@
 # Pitfalls Research
 
-**Domain:** FPL decision engine — projected points, xMins, buy/hold/sell, captaincy, explainability, session-cookie auth added to existing FPL Analyst app (v1.1 milestone)
-**Researched:** 2026-03-29
-**Confidence:** HIGH (v1.0 pitfalls verified; v1.1 pitfalls derived from community post-mortems, FPL Review docs, codebase inspection, and first-principles analysis of the existing code)
+**Domain:** Multi-GW Gameweek Planner — adding multi-step transfer sequencing, chip timing, budget tracking, and squad state simulation to an existing single-GW FPL Analyst app (v1.3 milestone)
+**Researched:** 2026-04-01
+**Confidence:** HIGH (chip rules verified against official PL docs; transfer mechanics verified against fplreview docs and community sources; state mutation pitfalls derived from codebase inspection and first-principles analysis of existing `transfer-engine.ts` and `squad-adapter.ts`)
 
 ---
 
 ## Scope Note
 
-This file extends the v1.0 PITFALLS.md (also at this path). It supersedes the previous version and contains all prior pitfalls plus new v1.1-specific pitfalls. Previous pitfalls 1–13 are retained in condensed form in the appendix; the new pitfalls below are numbered 14 onwards.
+This file supersedes the v1.1 PITFALLS.md (previous version at this path). It retains all prior pitfalls in condensed form in the appendix (pitfalls 14–27), and adds v1.3-specific pitfalls numbered 28 onwards. Pitfalls 14–27 remain valid and must not be regressed during v1.3 development.
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 14: Projected Points Uses Minutes as a Multiplier — But xMins Is Not Linearly Proportional to Expected Value
+### Pitfall 28: Free Hit Squad Reversion Is a Separate State Branch — Not a Transfer in the Plan Sequence
 
 **What goes wrong:**
-The naive projected-points formula is: `xPts = base_event_rate × xMins`. This assumes expected points scale linearly with minutes. They do not. The FPL scoring system is non-linear: a player with 90 xMins does not score 3× the points of a player with 30 xMins. Appearance points (1 pt for <60 min, 2 pts for ≥60 min) create a cliff, clean-sheet points apply only with >59 minutes, and bonus points are match-level not minute-proportional. A player projected at 51 xMins (blending a 60% chance of starting and 40% chance of being a sub) is NOT expected to score 51/90 of a full starter's projected points.
+The Free Hit chip causes FPL to revert your squad to its pre-Free-Hit state at the next deadline. A planner that models each GW as a sequential squad state mutation will treat a Free Hit GW as a normal transfer step: "GW N squad → make transfers → GW N+1 squad." This is wrong. After a Free Hit GW, the squad reverts to the exact squad that existed _before_ the Free Hit was played — not the Free Hit squad. If the planner does not branch state at the Free Hit activation point and restore the branched state at GW N+1, every subsequent GW in the plan will have the wrong squad, budget, and sell prices.
 
 **Why it happens:**
-Developers see the formula `xPts = rate × minutes` used in analytics and apply it directly. The non-linearity of FPL's scoring bins is easy to overlook when the formula "approximately works" for starters.
+The single-GW transfer engine in `transfer-engine.ts` represents transfers as squad mutations. The multi-GW extension follows the same pattern across all GWs. The Free Hit exception — "this GW's transfers are temporary" — requires a fundamentally different state model (snapshot + restore) rather than a mutation chain.
 
 **How to avoid:**
-- Model projected points as expected value over a probability distribution of playing-time scenarios, not as a continuous linear scale:
-  - Scenario A: Starts and plays 60+ mins (probability p1) → full clean sheet / appearance points eligible
-  - Scenario B: Starts but subbed before 60 mins (probability p2) → 1-pt appearance, no clean sheet
-  - Scenario C: Comes off bench (probability p3) → 1-pt appearance, minute-weighted goal/assist probability
-  - Scenario D: Does not play (probability p4) → 0 pts
-- Weight each scenario by its probability and sum: `xPts = p1*xPts_full + p2*xPts_sub60 + p3*xPts_bench + p4*0`
-- For v1.1 keep it tractable: use `start_probability` (from recent starts/appearances ratio) as the weight on "full" vs "partial" scenarios rather than a full simulation
+- The planner's state model must distinguish between two transfer modes per GW:
+  - **Permanent transfers:** squad after transfers becomes the base for the next GW (normal transfers, Wildcard)
+  - **Temporary transfers (Free Hit):** a snapshot of the current squad is saved before planning the Free Hit GW; the snapshot is restored as the base for GW N+1, regardless of what was played in the Free Hit GW
+- Represent this as: `PlanStep.chipMode = 'freehit' | 'wildcard' | 'normal'`; when `chipMode === 'freehit'`, the step's output squad is discarded — GW N+1 starts from `PlanStep[N-1].outputSquad`
+- The squad snapshot must include both player IDs and sell prices, since sell prices would have changed during the Free Hit GW if any of those players rose in value while temporarily out of your squad
+- Test: build a 3-GW plan with a Free Hit in GW 2 and verify that GW 3's squad equals GW 1's squad, not GW 2's
 
 **Warning signs:**
-- A rotation-risk player (40% start prob) shows projected points only slightly below a nailed starter — the minutes multiplier is masking the non-linearity
-- A player with 55 expected minutes always projects equal clean sheet probability to one with 90 — the 60-minute threshold is being ignored
+- After a Free Hit in the plan, subsequent GW projections show players the manager does not actually own
+- Budget calculations diverge from reality after any Free Hit GW
+- The planner allows "planning" transfers of Free Hit players as if they are permanent squad members
 
 **Phase to address:**
-Projected Points phase (PROJ-01/02/03) — build the model correctly from the start; do not prototype with linear xMins multiplication and plan to fix it later.
+The core planner state engine phase (PLAN-01/02) — the state model must be correct before any scoring or UI is built on top of it.
 
 ---
 
-### Pitfall 15: Rotation Risk Badges Based on Recent Minutes Conflate Injury Recovery with Actual Rotation
+### Pitfall 29: Wildcard Resets Transfer History But Banked Transfers Are Preserved — Not Zeroed
 
 **What goes wrong:**
-The most common xMins pitfall: using raw historical minutes to classify rotation risk. A player returning from a 6-week injury will have genuine zeroes and low-minute appearances in their history that look identical to a squad rotation pattern. The minutes distribution `[0, 0, 0, 25, 45, 55, 80, 87, 90]` — injury recovery — produces the same "rotation risk" badge as a genuine squad player. After full recovery, the model dramatically underestimates start probability.
+Pre-2024/25 FPL rules reset banked free transfers to 1 after playing a Wildcard. Many developers (and community resources) document this old behaviour. In 2025/26, the rule changed: when playing a Wildcard or Free Hit chip, the manager keeps all banked transfers. A planner that resets `freeTransfers = 1` after a Wildcard gameweek will undercount available transfers in subsequent GWs, causing the plan to score hit costs for transfers that should be free.
 
 **Why it happens:**
-Historical minutes are easy to retrieve from `element-summary/{id}/history`. The underlying cause (injury vs rotation) is not encoded in the FPL API data — it requires reading `news` and `status` fields alongside the history.
+The old rule is well-documented online and persists in older tutorials, Stack Overflow answers, and community spreadsheets. The change was introduced in 2024/25 and carries into 2025/26 but has not propagated to all documentation.
 
 **How to avoid:**
-- Always read `status` and `news` alongside minutes history: `status == 'a'` with blank `news` indicates fully available
-- Exclude minutes from gameweeks where `status` was not `'a'` when computing rotation statistics — or at minimum, weight recent fully-fit matches higher than injury-period matches
-- Add a "recovering" flag: if the last N weeks include a transition from non-available status to available with rising minutes, suppress the rotation risk badge and show a "returning from injury" indicator instead
-- Use `starts` and `minutes` from `bootstrap-static` (season aggregates) alongside the per-match history — a high `starts / games_played` ratio with recent zeroes is the rotation signal; a low ratio that recently recovered is the injury signal
+- After a Wildcard GW in the plan: `freeTransfers` for the following GW = current banked transfers (carry forward unchanged) + 1 standard weekly accumulation, up to the 5-transfer cap
+- After a Free Hit GW: same rule — banked transfers are preserved
+- The Wildcard itself does not consume a free transfer slot; it replaces any hits that were taken in that GW with zero cost
+- Document this rule in the planner state model with an explicit source reference
+- Verify against the official FPL rules page before each new season starts — this rule changed once and could change again
 
 **Warning signs:**
-- A well-known first-choice starter just back from injury gets a "Rotation risk" badge despite being nailed pre-injury
-- Players whose `news` field is empty (fully fit) are still showing "Cameo risk" based on old injury minutes
+- After a Wildcard in GW N, the plan shows only 1 free transfer in GW N+1 even when the manager had 3 banked going into the Wildcard GW
+- Free transfer counter in the plan UI does not match the manager's actual FPL account after a chip is played
 
 **Phase to address:**
-xMins / Minutes Risk phase (MINS-01/02) — design the classification logic from the start with injury-awareness; do not compute rotation risk from raw minutes alone.
+Transfer state accumulation logic — first phase that models multi-GW free transfer rolling (PLAN-01). Encode the correct rule from the start; do not copy the old "reset to 1" behaviour from community code.
 
 ---
 
-### Pitfall 16: The Existing `form_pts_per90` Field in `merged_players.json` Is FPL's Rolling Average, Not a Pipeline-Computed Field — Projected Points Must Not Double-Count It
+### Pitfall 30: Budget Across GWs Uses `now_cost` as Sell Price — Missing Sell Price Decay
 
 **What goes wrong:**
-In `merge.py`, `form_pts_per90` is set to `_safe_float(element.get('form', '0'), 0.0)` — this is the FPL API's own `form` field, which is a rolling 30-day average of points per game. If the projected points engine is then built on top of `form_pts_per90` as an input feature, it is building on FPL's black-box rolling average. This creates two problems:
-1. It double-counts form — if fixture difficulty and xG/xA are also inputs, those correlate with form; the composite overfits recent noise
-2. The `form` field is not per-90; despite being named `form_pts_per90`, it is FPL's `form` divided by 1 (not normalised by minutes), making the name misleading for projected-points calculations
+The existing `transfer-engine.ts` uses `bankBalance + sellPlayer.now_cost` to calculate available budget for a transfer. This is an approximation: the actual sell price is `selling_price` from the `my-team` endpoint, which can be less than `now_cost` if the player has risen in price since purchase (FPL's profit-split rule: only £0.1m profit per £0.2m price rise). In a multi-GW planner, every simulated transfer compounds this error: if GW 2 plans to sell a player bought in GW 1, the sell price calculation for that GW 2 transfer is unknowable because future price changes are not predictable. Using `now_cost` as sell price for future GWs is an approximation that the planner must acknowledge and communicate — not silently treat as accurate.
 
 **Why it happens:**
-`form_pts_per90` is already in `MergedPlayer`. The projected points engine author naturally reaches for it as an input. The misleading name (`per90`) suggests it is already minute-normalised.
+The single-GW transfer engine already makes this approximation (intentionally, as the `my-team` auth may not be active). The multi-GW planner inherits the approximation without realising it accumulates across every step: a 5-GW plan with 4 transfer steps each over-estimates sell prices by up to £0.1m per step, potentially misrepresenting a plan as affordable when it requires £0.5m more than available.
 
 **How to avoid:**
-- Audit what `form_pts_per90` actually contains before using it in projected-points logic: it is `element['form']` from FPL — a 30-day rolling points-per-match average, not a per-90 normalised value
-- For projected points, compute the underlying rates separately: goals per 90 (from Understat xG), assists per 90 (from Understat xA), clean sheet probability (from fixture difficulty + team defensive metrics), appearance points probability (from xMins model)
-- Do not feed `form_pts_per90` directly into a projected-points formula as if it represents something independent of FPL's own estimate — it partially already is a points projection
+- For the current GW (GW N): use exact `selling_price` from `my-team` auth when available; fall back to `now_cost` with a warning when not authenticated
+- For future GWs (GW N+1 and beyond): use `now_cost` as the sell price for any player currently in squad; treat players bought in a prior plan step at their `now_cost` at time of "purchase" (since the planner cannot predict price changes)
+- Display budget estimates for future GWs as approximate: "~£X.Xm available (estimate — future sell prices may vary)"
+- Do not block a plan from displaying because exact sell prices are unavailable; show the approximation with a clear label
+- Avoid cumulative sell-price inflation: a player should never be valued above `now_cost` as a sell candidate in future GWs within the plan
 
 **Warning signs:**
-- Projected points values track very closely with `form_pts_per90` for all players — the model is essentially just re-scaling FPL's own form field
-- Projected points for a player with a big upcoming fixture swing look almost identical to their recent form — fixture impact is not being captured
+- A 4-GW plan shows a GW 4 transfer as affordable when the manager's actual budget in GW 4 would be insufficient
+- Budget available at GW 3 is substantially higher than what the manager actually has after executing GWs 1 and 2
+- No visual indicator distinguishing "exact budget" (GW 1, authenticated) from "estimated budget" (GW 2+)
 
 **Phase to address:**
-Projected Points phase (PROJ-01) — before writing the projection formula, audit what each `MergedPlayer` field actually contains.
+Budget tracking phase (PLAN-07) — the budget model must distinguish current-GW exact values from forward-GW estimates from the start.
 
 ---
 
-### Pitfall 17: `MergedPlayer` Schema Must Be Extended for v1.1 Fields — Not Patched at the UI Layer
+### Pitfall 31: Squad Snapshot Mutation — Shared Object References Corrupt State Across Plan Steps
 
 **What goes wrong:**
-v1.1 adds new per-player fields: `xMins`, `start_probability`, `rotation_badge`, `projected_pts_1gw`, `projected_pts_3gw`, `projected_pts_5gw`, `recommendation`, `captain_score`. The path of least resistance is to compute these in TypeScript at the UI layer (in a React component or a hook), passing them alongside a `MergedPlayer`. This bypasses the single source of truth established in v1.0 (`merged_players.json` → `MergedPlayer` type) and creates two data layers that can desynchronise.
+The multi-GW planner simulates squad state across N gameweeks by applying transfers to a squad object at each step. If the squad representation at each step is a reference to the same array/object rather than a deep copy, mutations at step N will corrupt the squad at step N-1. This manifests as the planner appearing to work on the first run but returning wrong squad states when the user edits step 2 of an existing plan: the edit mutates the shared reference, corrupting all downstream steps simultaneously.
 
 **Why it happens:**
-The pipeline is Python and runs daily; adding a field to it means editing `merge.py`, `run.py`, and the Python schema. The TypeScript layer is more familiar and faster to iterate. Developers add a quick computed field to a hook or component.
+JavaScript's reference semantics mean that `const nextSquad = currentSquad` shares the same array. The single-GW engine does not have this problem because it does not need to preserve historical state. The multi-GW engine holds state for N steps simultaneously, making reference bugs immediately destructive.
 
 **How to avoid:**
-- All new per-player fields that are derived from pipeline data (projected points, xMins, rotation badge) must be computed in Python and added to `merged_players.json` and the `MergedPlayer` TypeScript type simultaneously
-- TypeScript-only computations are acceptable only for pure presentation transforms (formatting a number for display) — never for analytics logic
-- When adding to `MergedPlayer`, follow the existing pattern: update `pipeline/merge.py` first, run the pipeline, verify the new field appears in `pipeline/cache/merged_players.json`, then update `src/lib/types.ts`
+- Every plan step that produces an "output squad" must produce a structurally independent copy: `[...squad]` for arrays of primitives, or `squad.map(p => ({ ...p }))` for arrays of objects
+- Use immutable update patterns (spread operators, `structuredClone`) consistently throughout the planner state model
+- Represent plan state as a list of immutable snapshots: `PlanState = PlanStep[]` where each `PlanStep.squadAfter` is a frozen or deeply cloned array
+- Write unit tests that verify: editing step 2 of a 5-step plan does not change the `squadAfter` of step 1
 
 **Warning signs:**
-- A new computed field exists in a React hook or component but is not in `MergedPlayer`
-- Two different components compute the "same" value with subtly different logic (e.g. projected points computed in both the panel and the captaincy table)
-- `merged_players.json` and `MergedPlayer` type have diverged — fields exist in one but not the other
+- Changing the "in" player for GW 3 transfer in the UI also changes the displayed squad in GW 2 "after transfer" view
+- Re-running the auto-suggest after a manual edit produces different results for earlier GWs
+- The squad snapshot shows the same player twice after an edit — shared reference being mutated in two places
 
 **Phase to address:**
-First phase of v1.1 (projected points pipeline) — establish the schema extension pattern before building any UI layer for new fields.
+Planner state model (PLAN-01/02) — immutable squad snapshots must be designed in from the start, not added as a fix after mutation bugs appear in testing.
 
 ---
 
-### Pitfall 18: Buy/Hold/Sell Recommendation Conflicts with Existing Transfer Engine Rankings — No Tie-Breaking Strategy
+### Pitfall 32: DGW/BGW Detection Is Not Guaranteed in Advance — The Planner Must Degrade Gracefully
 
 **What goes wrong:**
-The existing `computeTransferSuggestions()` in `transfer-engine.ts` ranks sell candidates by `gem_score` ascending (lowest gem score = sell first). The v1.1 Buy/Hold/Sell recommendation (REC-01) is a separate classification that will also produce a "Sell" verdict for some players. If these two signals conflict — the transfer engine recommends selling Player X, but the recommendation engine says "Hold" — the user sees contradictory advice with no explanation. This is a trust-destroying experience.
+The FPL API fixtures endpoint (`/api/fixtures/?event=N`) only populates future fixtures once the Premier League has officially scheduled them. Blank and Double Gameweeks are typically confirmed only 3–7 days before their deadline, often after FA Cup ties are resolved. A 5-GW planner running on a Wednesday before a weekend deadline will have confirmed fixtures for GW N and GW N+1 but potentially no fixtures at all for GW N+3 and GW N+4. A planner that uses fixture data to score transfers will silently score GW N+3 as if it is a BGW (zero fixtures) for all teams — dramatically underweighting the entire forward horizon.
 
 **Why it happens:**
-The two features are built independently, often in separate phases. The conflict is not discovered until both are rendered side-by-side.
+The existing `MergedPlayer.fixtures` array already contains per-player fixture data from the pipeline. The planner naturally uses this data without checking whether it is complete. When fixtures are unconfirmed, the array for a future GW has fewer entries than expected, and the engine treats absent fixtures as BGW zeroes.
 
 **How to avoid:**
-- Design the Buy/Hold/Sell signal as a direct extension of the existing `gem_score` logic, not a separate pipeline: `Sell` = gem_score in bottom quartile of squad AND a better-value replacement exists within budget; `Hold` = gem_score is mid-squad AND no materially better replacement is affordable; `Buy` = not in squad, top-5 gem_delta candidates
-- Feed the same `gem_score` used by `computeTransferSuggestions` into the recommendation classifier — they must derive from the same source of truth
-- When displaying the recommendation panel, show the `gem_delta` rationale inline: "Sell — your gem score is 0.31, best available same-position replacement scores 0.67 (+£0.3m)"
-- Add a reconciliation check: if a player has `recommendation == 'Sell'` but does not appear in `computeTransferSuggestions().suggestions`, log a warning — it indicates the two systems have diverged
+- Before scoring any GW in a multi-GW plan, check the fixture count for that GW: how many clubs have at least one confirmed fixture? If fewer than 18 teams have fixtures, treat that GW's fixture data as incomplete
+- When fixture data is incomplete for a GW in the plan horizon: score that GW using an average fixture difficulty (0.5) and flag it in the UI as "Fixture data not yet confirmed — scoring is estimated"
+- Never display DGW/BGW labels for future GWs unless the fixture count confirms them: 20 clubs with 2 fixtures each = DGW confirmed; 18 clubs with 1 fixture = normal; fewer = incomplete
+- The Python pipeline already computes per-player `fixtures` — extend it to also emit a per-GW fixture completeness flag: `{ event_id: 33, confirmed: false, team_count: 12 }`
 
 **Warning signs:**
-- A player shows "Hold" in the recommendation panel but appears as the top sell candidate in the Transfer Panel
-- The "why this recommendation" reason references a different metric than the Transfer Panel uses
-- After a pipeline refresh, recommendations and transfer suggestions flip for the same player due to slightly different normalisation
+- A 5-GW plan scores GW N+4 players as if they have zero fixtures (BGW) when in reality fixtures for that GW simply have not been announced yet
+- DGW/BGW labels appear on GWs beyond GW N+2 even before the Premier League has announced them
+- Transfer suggestions for GW N+3 deprioritise all players despite no confirmed BGW announcement
 
 **Phase to address:**
-Recommendation phase (REC-01) — resolve the architecture of how recommendations relate to the existing transfer engine before writing any code.
+Fixture data layer and scoring phase (PLAN-05/06) — fixture completeness checking must be built before any DGW/BGW scoring logic is added.
 
 ---
 
-### Pitfall 19: Session-Cookie Auth Expiry Is Silent and Mid-Session — Not Just on Login
+### Pitfall 33: Hit Cost Scoring Uses Wrong Baseline — `freeTransfers` Must Decrease Before Scoring Subsequent Steps
 
 **What goes wrong:**
-FPL session cookies (`sessionid` at `fantasy.premierleague.com`) expire independently of when they were obtained. A user logs in, the app fetches `my-team/{id}/` successfully, and then 15–30 minutes later (or at the next daily pipeline run) the same cookie returns a 401 or redirect-to-login response with no explanatory message. The app has no mechanism to distinguish "cookie expired" from "bad data" from "FPL API down".
+The multi-GW planner scores each step's hit cost as: `hits = max(0, transfersInThisGW - freeTransfers)` and applies -4 pts per hit. But after a GW with transfers, the free transfer count for the next GW must be computed correctly. The 2025/26 rules are: start with 1 free transfer per GW; each unused free transfer rolls to the next GW up to a maximum of 5; using more than your free transfers costs 4 pts per extra. If the planner does not correctly update `freeTransfers` after each plan step, hit cost scoring for GW N+2 will be wrong, making some plans appear cheaper than they are.
+
+**The accumulation rule (verified for 2025/26):**
+- After a GW where you used K transfers and had F free transfers:
+  - If K <= F: `nextFreeTransfers = min(5, F - K + 1)` (1 free per week, carry over unused)
+  - If K > F: `nextFreeTransfers = 1` (hit taken, back to normal)
+- Wildcard/Free Hit GWs: banked transfers are preserved (not reset to 1) — see Pitfall 29
 
 **Why it happens:**
-Session expiry is a runtime concern, not a setup concern. It is not exercised during development (where tests run immediately after obtaining a cookie). Production use involves longer gaps between login and data fetch.
+Single-GW transfer engine does not need to track accumulated free transfers — it receives `freeTransfers` as a parameter. The multi-GW extension adds a loop across GWs but forgets to thread the free transfer count as a stateful input-output across steps.
 
 **How to avoid:**
-- Never pass session cookies through to the Python pipeline — the pipeline runs on a cron schedule and cannot re-authenticate
-- Auth should be on-demand: user clicks "Connect FPL Account" → Next.js Route Handler fetches `my-team` immediately → stores `selling_price` per player in server-side memory for the duration of the request → discards cookie
-- Treat every `my-team` response as potentially stale: always check HTTP status before parsing; on 401/403, surface a "Session expired — please log in again" message, not a generic error
-- Do not store the session cookie in the browser (`localStorage`, `sessionStorage`, or a cookie relay to the frontend) — re-prompt for credentials instead
-- Test specifically: obtain cookie, wait 20+ minutes doing nothing, then attempt a `my-team` fetch — verify the expired-cookie path shows the correct UI message
+- Model free transfer state explicitly as a plan-level variable that flows through each step:
+  ```
+  for each planStep in [gw1, gw2, ..., gwN]:
+    hits = max(0, planStep.transferCount - currentFreeTransfers)
+    planStep.hitCost = hits * 4
+    currentFreeTransfers = computeNextFreeTransfers(currentFreeTransfers, planStep.transferCount, planStep.chip)
+  ```
+- Write a pure function `computeNextFreeTransfers(current, used, chip)` and unit-test it against all edge cases: 0 used, 1 used, 2 used, Wildcard, Free Hit, cap at 5
+- Display the free transfer count at the start of each GW in the plan output so the user can verify it matches their actual FPL account
 
 **Warning signs:**
-- `my-team` endpoint works once at app load but silently returns empty data or old data 30 minutes later
-- Auth flow works in Vitest mocks (synchronous) but fails in real use (async with time gap)
-- The app shows a player's sell price from a previous session after the user has logged out
+- A plan that uses 2 transfers in GW N (1 free, 1 hit) shows 2 free transfers in GW N+1 instead of 1
+- A plan that rolls a transfer for 4 consecutive GWs shows 5 free transfers in GW N+4 but allows more than 5 free in GW N+5
+- Hit cost is zero for all GWs even when the plan has 3 transfers in a GW where only 1 is free
 
 **Phase to address:**
-Auth phase (AUTH-01/02) — design the session lifecycle explicitly, not as an afterthought.
+Hit cost scoring (PLAN-07) — the free transfer state model must be correct before scoring any multi-step plan.
 
 ---
 
-### Pitfall 20: FPL Login Can Trigger Account Flags — Especially Automated or Repeated Calls
+### Pitfall 34: Auto-Suggest Greedy Optimisation per GW Produces Locally Optimal but Globally Suboptimal Plans
 
 **What goes wrong:**
-The FPL API terms of service prohibit automated logins and scripted squad management. While the FPL community widely uses session-cookie auth for personal tools, repeated automated logins (e.g. re-authenticating on every pipeline cron run) are known to trigger account warnings or temporary bans. A leading FPL player had their account banned specifically because of automated API usage.
+The simplest auto-suggest implementation picks the best transfer for GW N (highest gem delta, within budget, DGW-aware), then picks the best transfer for GW N+1 given the resulting squad, and so on. This greedy approach produces a locally optimal plan at each step but consistently misses globally superior plans that require a "worse" transfer in GW N to unlock a much better position in GW N+2. A concrete example: transferring out a mediocre midfielder in GW N costs a -4pt hit but brings in a midfielder who doubles in GW N+1 and GW N+2 — the greedy planner will avoid the hit in GW N, never making the sequence that yields +12 pts over 3 GWs.
 
 **Why it happens:**
-Developers build auth into the pipeline's scheduled cron job for convenience. The pipeline runs daily; if it re-logs in each time, that is 365 automated logins per year.
+The existing `computeTransferSuggestions` function is a greedy ranker — it finds the single best transfer right now. Extending it naively to N GWs by calling it N times in sequence inherits the greedy failure mode.
 
 **How to avoid:**
-- Never put FPL login in the automated pipeline (`run.py`) — the pipeline uses only public API endpoints that need no auth
-- Auth is UI-initiated only: user explicitly clicks a login button; the app makes a single `my-team` fetch; the cookie is used once and discarded
-- Never cache or replay session cookies across sessions or pipeline runs
-- Display a clear disclaimer in the UI: "FPL login is optional and used only to retrieve exact sell prices. Your credentials are never stored."
+- For a personal tool (single user, no server load concern), a depth-2 or depth-3 look-ahead is achievable: evaluate all single-transfer options for GW N, for each option evaluate the best transfer for GW N+1, pick the (GW N, GW N+1) pair that maximises combined projected delta minus hit costs
+- The horizon beyond 2–3 GWs becomes speculative due to fixture uncertainty (see Pitfall 32) — do not optimise beyond 3 GWs even if the user selects a 5-GW horizon; GWs 4–5 can use greedy fallback
+- Limit the search space: for each GW, evaluate only the top 10 sell candidates × top 5 buy candidates per position = at most 50 evaluations per GW; a 3-GW look-ahead is 50^3 = 125,000 combinations — tractable in TypeScript without a solver
+- Document the limitation: "Plan is optimised for the first 3 GWs; remaining GWs use best single-GW suggestion. For fully optimal multi-week plans, an integer programming solver (fplreview-style) would be required."
 
 **Warning signs:**
-- A `requests.Session()` with FPL credentials appears anywhere in `pipeline/run.py`, `pipeline/fpl_client.py`, or a cron job
-- The app re-fetches `my-team` on every page load rather than only on explicit user action
+- The planner always recommends 0 hits (never suggests a hit is worthwhile) even for DGW targets
+- A manual edit (user takes a hit to bring in a DGW player) produces a dramatically higher plan score than the auto-suggest — the auto-suggest is too conservative
+- Auto-suggest for a 3-GW plan is identical to three consecutive single-GW suggestions
 
 **Phase to address:**
-Auth phase (AUTH-01) — establish what auth is explicitly NOT used for before writing any auth code.
+Auto-suggest engine (PLAN-02) — design the look-ahead depth before implementation; do not build greedy single-GW and attempt to retrofit look-ahead later.
 
 ---
 
-### Pitfall 21: Captaincy Ranking Conflates Expected Points with Captaincy Value — The 2× Multiplier Changes the Optimal Choice
+### Pitfall 35: Chip Constraint — Only One Chip Per GW Is Enforceable, and Certain Chips Have Consecutive-GW Restrictions
 
 **What goes wrong:**
-The optimal captain choice is the player who maximises the expected value of `2 × projected_points`, not the player with the highest raw projected points. These diverge when considering variance: a player with 12 projected points and high variance (e.g. a penalty taker who might score a hat-trick or blank completely) has higher captaincy value than a player with 14 projected points and low variance (e.g. a reliable midfielder who scores 2 assists most weeks). The 2× multiplier makes variance valuable for captaincy in a way it is not for regular selection.
+The 2025/26 chip rules include: (a) only one chip can be active in a GW — you cannot use Bench Boost and Triple Captain in the same GW; (b) the Free Hit chip cannot be played in consecutive GWs (if played in GW 19, the second Free Hit cannot be activated until GW 21). A planner that treats chips as independent flags per GW without enforcing these mutual exclusions will allow illegal plan configurations that cannot be executed in FPL.
+
+**Additional chip constraint (2025/26 specific):**
+- There are two sets of chips: first half (must be used before GW 19 deadline) and second half (available from GW 20)
+- Chips from the first half cannot be carried into the second half — they expire at GW 19
+- The system must know which chips the manager has already played to prevent replanning with used chips
 
 **Why it happens:**
-"Highest projected points = best captain" is the intuitive but incorrect shortcut. Variance analysis requires a more complex model.
+The existing `ChipState` type in `transfer-engine.ts` is a single value for the current GW. A multi-GW planner allows chip assignment per step independently, and validation across steps (no two consecutive Free Hits, no two chips in same GW) must be explicitly enforced — it does not follow from the existing data model.
 
 **How to avoid:**
-- For the v1.1 "safe vs upside" split (CAP-02), make the distinction explicit:
-  - "Safe" captain: highest projected points, low variance (e.g. high minutes, home fixture, good form — reliable 6–9 pts expected)
-  - "Upside" captain: slightly lower projected points but high ceiling (penalty taker, DGW player, facing a team with high xGA — could blank or haul)
-- Use fixture count (DGW = 2 fixtures = double captaincy value), penalty order, and home/away as the primary upside signals
-- Do not attempt to model statistical variance without historical match-level data — it is out of scope for v1.1; instead use DGW status and set-piece role as upside proxies
+- The planner must validate chip assignments on every plan mutation:
+  1. At most one chip active per GW (Wildcard OR Free Hit OR Bench Boost OR Triple Captain — not OR OR)
+  2. Free Hit cannot appear in consecutive GWs in the plan
+  3. Each chip can only be used once per half-season — if the manager has already used their first-half Wildcard, a Wildcard cannot appear in a plan for GWs 1–19
+- Read the manager's chip usage history from the FPL API before building a plan: `entry/{id}/history/` returns `chips` with `name` and `event` per chip played
+- Surface available chips in the plan UI: "You have: 1× Wildcard (H2), 1× Free Hit (H2), 1× Bench Boost (H2), 1× Triple Captain (H2)"
+- Disable already-played chips in the chip selector
 
 **Warning signs:**
-- The top captaincy recommendation is always identical to the top gem score — no fixture/DGW/set-piece adjustment is happening
-- A player in a DGW does not appear higher on the captaincy list than equivalent single-GW players
+- The UI allows assigning both Bench Boost and Triple Captain to the same GW
+- A Free Hit is shown as available for GW 25 when the user already played their second-half Free Hit in GW 22
+- The plan assigns a first-half Wildcard to a GW 25 slot
 
 **Phase to address:**
-Captaincy phase (CAP-01/02) — design the safe/upside split from the start rather than adding it as a feature after a single-score captain ranking is built.
+Chip timing layer (PLAN-08) — chip validation must be enforced before the chip UI is built, not as a post-release bugfix.
 
 ---
 
-### Pitfall 22: Explainability Panel Shows Scores, Not Reasons — The User Cannot Act On a Number
+### Pitfall 36: Bench Boost and Triple Captain Scoring Requires Squad Formation Awareness
 
 **What goes wrong:**
-The most common explainability anti-pattern: showing component scores (e.g. "Form: 0.72, FDR: 0.85, xG: 0.61") rather than natural-language reasons ("Strong form (avg 7.2 pts/game), easy next 3 fixtures (Southampton H, Brentford H, Wolves A), consistent starter (started 8 of last 9)"). A score dashboard tells the user nothing they could act on or verify. They cannot determine whether the recommendation is correct without independently understanding what the scores mean.
+Bench Boost adds all 4 bench players' points to the GW total. Triple Captain triples the captain's points. Both chips interact with the squad in ways the base transfer planner does not model:
+
+- **Bench Boost:** The bench players in the snapshot for that GW must be identified. The planner currently considers only the starting XI for gem delta scoring. A Bench Boost GW should optimise for all 15 players, not just 11. A plan that suggests a Bench Boost in a GW where the bench contains a £4.0m goalkeeper and three rotation risks will produce a much lower actual score boost than projected.
+- **Triple Captain:** The captain in the snapshot for that GW must be specified in the plan output. If the planner does not track captain designation per GW, the Triple Captain chip has no target to apply to.
 
 **Why it happens:**
-Component scores are what the engine already computes — exposing them is the shortest path to showing "explainability". Translating scores into reasons requires a separate text-generation layer.
+The transfer engine models squad as position-locked 15 players but does not track formation (who is in the XI vs bench) or captain designation. The multi-GW planner inherits this limitation.
 
 **How to avoid:**
-- Define a set of reason templates for each positive and negative signal. For each dimension that contributes to a recommendation, generate a plain-text reason from the raw values:
-  - `fdr_score > 0.75` → "Easy run of fixtures (next 3: {opponent list})"
-  - `form_pts_per90 > threshold` → "In-form: averaging {N} pts per game"
-  - `xg_per90 > threshold` → "High shot volume ({xg_per90} xG/90)"
-  - `rotation_badge == 'Nailed'` → "Nailed starter ({start_pct}% start rate)"
-  - `penalties_order == 1` → "Primary penalty taker"
-- For risk flags (EXP-02): use the same pattern — "Rotation concern (started only 4 of last 8)", "Fixture swing (faces Arsenal A, Man City A in next 3)"
-- Never display a component score without its label and the raw value it was derived from
+- For Bench Boost GWs: display all 15 players' projected points in the squad snapshot, not just the XI
+- The plan's score for a Bench Boost GW = sum of all 15 players' projected points (not just XI); flag if bench projected points are low
+- For Triple Captain GWs: allow the user to specify the captain in the plan UI; default the captain suggestion to the top captaincy candidate (from `captaincy-engine.ts`) for that GW's squad snapshot
+- Do not auto-optimise the entire 15-player squad for Bench Boost — the v1.3 scope is transfer sequencing; Bench Boost suggestion can be flagged as "recommended for GW X given your projected bench strength" without full optimisation
 
 **Warning signs:**
-- The explainability panel shows a radar chart or bar chart of normalised scores — the user sees numbers between 0 and 1 with no reference
-- A recommendation says "Sell" but the reason panel shows "Gem Score: 0.31" without explaining what that means in plain terms
-- Two different players have near-identical component scores but receive different recommendations — and the UI cannot explain why
+- Bench Boost chip is flagged as "recommended" based only on the XI's projected points — bench strength is not checked
+- No captain designation shown in the plan output for any GW, making Triple Captain scheduling meaningless
+- Bench players' projected points are all zero or null in the plan snapshot
 
 **Phase to address:**
-Explainability phase (EXP-01/02) — design the reason-generation layer in parallel with the recommendation classifier, not as a post-hoc addition.
-
----
-
-### Pitfall 23: Min-Max Normalisation in `computeAllGemScores` Is Squad-Context-Dependent — Projected Points Must Not Reuse the Same Normalisation
-
-**What goes wrong:**
-`computeAllGemScores` in `gem-score.ts` uses min-max normalisation across all ~700 players. The result is that `gem_score` is a relative score — it measures how a player compares to the entire player pool at that moment. This is correct for "who is the best value in the market". But projected points (PROJ-01) should be absolute, not normalised: "this player is projected to score 8.3 points in the next GW" regardless of what other players are doing. If projected points are also min-max normalised (easy to do when extending the pipeline), they become useless for captaincy comparison and for communicating "how confident are we in this projection".
-
-**Why it happens:**
-The existing normalisation pattern in `computeAllGemScores` is the established approach in the codebase. New developers extending the pipeline follow the pattern for projected points, producing a normalised 0–1 score instead of actual expected points.
-
-**How to avoid:**
-- Projected points fields (`projected_pts_1gw`, `projected_pts_3gw`, `projected_pts_5gw`) must be expressed in FPL points (e.g. 7.4 projected pts), not in a 0–1 normalised score
-- Do not pass projected points through the `normalise()` function in `gem-score.ts`
-- The captaincy ranking score (for ordering the top-5 candidates) may be normalised within the top-N candidates for display purposes, but the raw projected points value must also be surfaced
-- Add explicit type comments on any new fields: `projected_pts_1gw: number  // absolute FPL points, not normalised`
-
-**Warning signs:**
-- `projected_pts_1gw` values are all between 0.0 and 1.0 rather than in the range of typical FPL scores (2–15 points)
-- A captain candidate with 10 projected points and a candidate with 5 projected points show similar "captain scores" after normalisation
-
-**Phase to address:**
-Projected Points phase (PROJ-01) — document the distinction between normalised gem dimensions and absolute projected points before writing the computation.
-
----
-
-### Pitfall 24: The `selling_price` from `my-team` Is Per-Player, Not the Budget — Budget Calculation Requires Both Fields Together
-
-**What goes wrong:**
-`my-team/{id}/` returns both `picks[].selling_price` (per player) and `entry_history.bank` (squad bank balance). The transfer budget available for a specific transfer is `entry_history.bank + selling_price_of_player_being_sold`. If only `selling_price` is fetched without `entry_history.bank`, or if `bank` is taken from a different source (e.g. the public `entry/{id}/history/` endpoint which may lag), budget calculations will be wrong. The existing `computeTransferSuggestions` in `transfer-engine.ts` already uses `bankBalance` as a parameter — AUTH-02 must populate that parameter from `my-team`, not from a separate endpoint.
-
-**Why it happens:**
-Developers fetch `my-team` for `selling_price` and separately call `entry/{id}/` for the bank balance, not realising that `my-team` already contains the authoritative bank figure in `entry_history.bank`.
-
-**How to avoid:**
-- When AUTH-01 is implemented, extract both `picks[].selling_price` and `entry_history.bank` from the single `my-team/{id}/` response
-- Pass `entry_history.bank` as the `bankBalance` argument to `computeTransferSuggestions`, replacing the approximate value currently derived from the squad view
-- Never call a separate endpoint for bank balance when `my-team` data is available — it creates a race condition if the user has just made a transfer
-
-**Warning signs:**
-- Bank balance after auth looks correct but transfer suggestions still show some transfers as unaffordable when they should be affordable — likely using `now_cost` as sell price instead of `selling_price`
-- `bankBalance` in `computeTransferSuggestions` is being passed as a hardcoded approximate rather than the `my-team` value
-
-**Phase to address:**
-Auth phase (AUTH-01/02) — the `my-team` response structure must be fully understood before building the auth flow.
+Squad snapshot output (PLAN-10) — squad snapshots must include bench players and captain marker from the first implementation.
 
 ---
 
 ## Moderate Pitfalls
 
-### Pitfall 25: Projected Points for DGW Players Must Account for Two Fixtures, Not One
+### Pitfall 37: Transfer Sequence Includes Ineligible Players — Position Lock and Squad Composition Rules Must Be Re-Enforced Per Step
 
 **What goes wrong:**
-A player in a Double Gameweek has two fixtures in one FPL gameweek. A naively computed single-fixture projection (e.g. `xPts = f(xMins, fixture_difficulty, form)`) will underestimate DGW players by approximately 2×. The DGW player appears lower on the projected points ranking than they should, and the captain recommendation is wrong.
+FPL squad rules: maximum 3 players from the same Premier League team; exactly 2 GK, 5 DEF, 5 MID, 3 FWD in the 15-man squad. After applying simulated transfers at each plan step, the planner must verify the resulting squad still satisfies all composition rules. The existing `computeTransferSuggestions` enforces position lock (same position for sell/buy) but does not check the 3-per-club rule. A plan that buys two premium players from the same club in consecutive steps could produce an illegal 4-player club concentration.
 
 **How to avoid:**
-- Before computing projected points, check fixture count per team per gameweek using the `fixtures` array already in `MergedPlayer` — count fixtures with the same `event_id`
-- For DGW players: `projected_pts = sum(xPts_per_fixture for each fixture in that gameweek)`
-- A DGW xMins projection is also approximately 2× a single GW — a player who would start both DGW matches has ~180 xMins not 90
+- After each plan step's simulated squad mutation, validate: (a) position type counts still satisfy 2-5-5-3; (b) no club has more than 3 players; (c) total squad count is exactly 15
+- The position-lock per individual transfer already prevents the 2-5-5-3 rule from being violated if only one transfer is made per step. The 3-per-club rule requires a separate check
+- Display the club count in the plan output: "Man City: 3" should be highlighted if a plan step would create a 4th Man City player
 
 **Phase to address:**
-Projected Points phase (PROJ-01/02/03) — DGW handling must be built in from the start, not retrofitted.
+Planner state validation (PLAN-02) — squad composition validation as part of the plan step mutation function, not in the UI layer.
 
 ---
 
-### Pitfall 26: Buy/Hold/Sell Classification Threshold Is Arbitrary Without Calibration
+### Pitfall 38: Projected Points for Horizon Scoring Are Static — But the Plan Spans Multiple Future GWs Where Form and Injuries Change
 
 **What goes wrong:**
-The Buy/Hold/Sell classifier needs thresholds: "what gem_score delta makes a player a 'Sell' vs 'Hold'?" Without calibration against real FPL outcomes, arbitrary thresholds (e.g. `gem_delta > 0.1 = Buy`) will produce too many Buys, making the recommendation feel like noise rather than signal.
+The planner scores transfer sequences using the same `proj_pts_Ngw` values for every GW in the horizon. These projections are computed at pipeline run time (once daily) and reflect the current moment. For GW N+3, a player's projected points include estimated form, fitness, and fixture difficulty — all of which will have changed by the time that GW is actually played. The planner will present its GW N+3 scoring as if it is equally reliable as GW N+1 scoring, when it is far more speculative.
 
 **How to avoid:**
-- Use percentile-based thresholds within the squad rather than absolute values: `Sell` = bottom quartile of squad gem scores where a better affordable replacement exists; `Hold` = second quartile; `Hold` = top half with no better affordable replacement; `Buy` = top-5 gem_delta candidates not in squad
-- The key threshold is: does a better replacement exist within budget? This is already computed in `computeTransferSuggestions`. Reuse it.
-- Surface confidence: "Strong Sell (gem delta: +0.38)" vs "Marginal Sell (gem delta: +0.08)"
+- Apply a time-decay factor to projected points for GWs further in the horizon: `scoredPts(gw) = projPts * decay^(gw - currentGW)` where `decay` is a value like 0.85–0.92
+- This matches the approach used by fplreview solvers (time decay is a documented setting there)
+- Display projected plan value as a range for each GW: "GW N+1: 6.2 pts (high confidence), GW N+3: 5.1 pts (estimated, low confidence)"
+- Do not present the total 5-GW plan score as a precise number — show it as an estimate with a confidence caveat
 
 **Phase to address:**
-Recommendation phase (REC-01) — define thresholds based on the actual squad distribution, not upfront.
+Plan scoring (PLAN-04) — time decay factor must be part of the initial scoring formula, not a post-launch addition.
 
 ---
 
-### Pitfall 27: Captaincy Safety Label Can Be Gamed by Ownership — High-Ownership ≠ Safe Captain
+### Pitfall 39: The "Save Transfer" Option Disappears in a Multi-GW Plan
 
 **What goes wrong:**
-Using `selected_by_percent` as a proxy for "safe" captain (because high ownership means the community agrees) conflates popular consensus with statistical safety. A highly-owned player can still be a rotation risk, face a tough fixture, or be returning from injury. The captain recommendation that says "Haaland is safe (55% owned)" communicates nothing about his actual ceiling or floor for the upcoming gameweek.
+The existing transfer engine has a `SAVE` result type: "No transfer improves your squad; save the free transfer." In a multi-GW plan, "save" is a valid and often optimal strategy for a given GW — rolling a free transfer to enable a 2-for-1 in the next GW. The multi-GW planner may not surface this as an explicit plan option, forcing the user to either make a transfer they do not want or leave the GW with no suggestion. The auto-suggest may also fail to include "roll transfer" as a candidate when scoring plan sequences.
 
 **How to avoid:**
-- "Safe" should mean: high start probability + at least average fixture + in form — not high ownership
-- Ownership is relevant for a different signal: differential captaincy risk (if a high-ownership player blanks, you lose rank vs the average manager — relevant for rank-maintenance strategies, out of scope for v1.1)
+- Represent "roll transfer" as a first-class plan step option alongside "make 1 transfer" and "make 2 transfers"
+- Auto-suggest must evaluate the "roll transfer" option at each GW as a candidate: what is the total plan score if GW N has 0 transfers and GW N+1 has 2 free transfers?
+- Display "Roll transfer (bank for next GW)" explicitly in the plan output when the auto-suggest recommends no transfer for a GW
+- Show the projected free transfer count at the start of each GW so the user understands what rolling accomplishes
 
 **Phase to address:**
-Captaincy phase (CAP-02) — define "safe" explicitly in terms of the player's own profile, not the crowd's opinion.
+Auto-suggest engine (PLAN-02) and plan output table (PLAN-09) — the "roll" option must be a first-class concept in both.
+
+---
+
+### Pitfall 40: Sell Prices in Multi-GW Plans Ignore FPL's Profit-Split Rule for Players Bought Within the Plan
+
+**What goes wrong:**
+When the plan simulates buying a player in GW N and selling them in GW N+2, the sell price for that simulated resale should use FPL's profit-split rule: for every £0.2m price rise, the manager only gets £0.1m profit. If the planner assumes full sell price = buy price (or worse, uses the current `now_cost` for a player not yet owned), budget calculations for the resale GW will be wrong. This is particularly relevant for short-horizon price-rise chasing strategies.
+
+**Why it happens:**
+The `selling_price` field only exists for currently-owned players (from `my-team`). For hypothetical players bought within a plan, the sell price is unknowable. The temptation is to use `now_cost` — but this assumes zero profit, which will underestimate budget if the player rises in price (conservative) or use inflated buy prices for resales within the plan (not applicable here since the player is bought at `now_cost` at plan time).
+
+**How to avoid:**
+- For players bought within a plan step and then sold in a subsequent plan step: assume sell price = buy price (conservative and correct for the no-price-change case)
+- Do not attempt to predict future price changes for budget calculations
+- Flag any plan that involves buying and then selling the same player within the plan horizon as potentially inaccurate: "Budget at GW N+2 assumes no price change for [player] between GW N and GW N+2"
+
+**Phase to address:**
+Budget tracking across plan steps (PLAN-07) — the sell price model for intra-plan transfers must be defined before budget calculation is implemented.
 
 ---
 
@@ -329,13 +326,13 @@ Captaincy phase (CAP-02) — define "safe" explicitly in terms of the player's o
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Compute projected points as `form_pts_per90 × xMins` | Fast to build | Double-counts FPL's own estimate; misses DGW, clean sheet cliffs | Never — build component model from start |
-| Classify rotation risk from raw historical minutes only | Simple, data is already in pipeline | Injury recovery misclassified as rotation risk; nailed starters flagged | Never — always combine with `status` and `news` |
-| Derive Buy/Hold/Sell in TypeScript, not Python pipeline | No pipeline change required | Schema drift; recommendations inconsistent with gem_score | Never — all analytics in pipeline |
-| Store FPL session cookie in `localStorage` for convenience | Persistent auth across sessions | Cookie theft via XSS gives FPL account access | Never — ephemeral server-side only |
-| Hardcode safe/upside captaincy threshold as a fixed number | Simple to ship | Stale in weeks 5–15 when form distributions shift | Acceptable if documented and revisited each milestone |
-| Show component score numbers instead of reasons in explainability panel | No text generation required | User cannot validate or act on the recommendation | Acceptable only in dev/debug mode — never for production UI |
-| Use official FPL `ep_next` / `ep_this` fields for projected points | Zero pipeline work | FPL's own projection is a black box; cannot explain it; inaccurate for set-piece/DGW situations | Acceptable as a fallback or sanity-check comparison, never as the primary signal |
+| Reuse `computeTransferSuggestions` as-is for each plan step | Minimal new code | Greedy per-GW optimisation; no look-ahead; misses hit-worthwhile sequences | Only for MVP proof of concept — never for final scoring |
+| Use `now_cost` as sell price for all plan steps | Avoids auth dependency | Budget estimates diverge from reality for long-horizon plans; user takes hit expecting affordability | Acceptable with clear "estimated" UI label |
+| Model Free Hit as a normal transfer sequence step | Avoids state branching | Free Hit squad reversion corrupts all subsequent GW state — silent and catastrophic | Never |
+| Reset banked free transfers to 1 after Wildcard/Free Hit | Implements old FPL rule | Wrong in 2025/26 — underestimates free transfers in subsequent GWs; user sees phantom hits | Never — verify current rules before coding |
+| Greedy single-GW suggestion per plan horizon step | Quick to build | Globally suboptimal plans; never suggests a justified hit; user manual-edits all good plans | Acceptable for MVP if documented; replace with look-ahead before final release |
+| Share squad array reference across plan steps | Simpler state model | Reference mutation corrupts earlier GW snapshots on any plan edit | Never — always deep-copy squad snapshots |
+| Compute bench boost score from XI projected pts only | Less code | Bench Boost scoring wildly inaccurate; chip recommendation is misleading | Never if chip recommendations are shown |
 
 ---
 
@@ -343,14 +340,13 @@ Captaincy phase (CAP-02) — define "safe" explicitly in terms of the player's o
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| `computeAllGemScores` → projected points | Passing projected points through the same `normalise()` function | Projected points are absolute (FPL points); do not normalise to 0–1 |
-| `computeTransferSuggestions` → recommendation engine | Building buy/hold/sell separately, creating conflicting signals | Derive recommendations directly from the same `gem_score` and `gem_delta` values |
-| `my-team` auth → transfer engine | Fetching `selling_price` without also capturing `entry_history.bank` | Extract both from one `my-team` call; pass `bank` as `bankBalance` to `computeTransferSuggestions` |
-| `MergedPlayer` schema → v1.1 fields | Adding projected points / xMins in a TypeScript hook rather than in `merged_players.json` | Pipeline first, then type; never analytics in the UI layer |
-| `minutes_per90` in `MergedPlayer` | Using it as if it is minutes-per-90-minutes normalised (it is actually `minutes / starts`) | For xMins, compute `total_minutes / total_appearances` to get average minutes per match, or use `starts` and `minutes` separately |
-| FPL login → pipeline | Adding auth to `pipeline/run.py` or `pipeline/fpl_client.py` | Auth is UI-initiated only; pipeline never logs in |
-| Session cookie → multiple requests | Re-using a cookie obtained at UI login time for later pipeline calls | One login → one `my-team` fetch → discard. Never share or replay cookies. |
-| Captaincy ranking → gem_score | Ranking captaincy by `gem_score` alone | Apply DGW multiplier, fixture count, and set-piece order on top of gem_score |
+| `computeTransferSuggestions` → multi-GW planner | Calling it N times in a loop with the output squad of each step as input | Wrap in a new `computeMultiGWPlan` function that threads free-transfer state, chip state, and budget state across steps |
+| `my-team` auth → planner budget | Using `now_cost` for sell prices when auth is available | When auth is active, use `selling_price` for current-GW budget; use `now_cost` approximation only for future GW budget estimates |
+| `captaincy-engine.ts` → plan chip suggestions | Captaincy engine runs on current squad only | For Triple Captain GW in a plan, run captaincy engine on the plan's simulated squad snapshot for that GW |
+| `MergedPlayer.fixtures` → DGW/BGW detection in plan | Treating empty `fixtures` array as BGW for future GWs | Check fixture count completeness per GW before labelling as BGW; empty = unconfirmed, not blank |
+| Free Hit squad reversion → plan step N+1 | Using Free Hit step's output squad as GW N+1 base | Save pre-Free-Hit squad snapshot; restore it as the base for GW N+1 |
+| Free transfer accumulation across plan steps | Not threading `freeTransfers` state across steps | Implement `computeNextFreeTransfers(current, used, chip)` as a pure function and test it |
+| Chip availability state → plan UI | Not reading manager's chip usage history before plan | Fetch chip history from `entry/{id}/history/chips` before rendering plan chip selector |
 
 ---
 
@@ -358,22 +354,10 @@ Captaincy phase (CAP-02) — define "safe" explicitly in terms of the player's o
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Computing projected points in the Next.js route handler on each request | API route is slow on each page load | All projections pre-computed in Python pipeline and stored in `merged_players.json` | Immediately — pipeline exists precisely to avoid this |
-| Fetching `element-summary/{id}/history` per player for xMins | Data ingestion takes 10+ minutes | Cache element-summary for 24h; fetch only changed players on incremental refresh | At first pipeline run with ~700 players |
-| Re-authenticating with FPL login on every page load | FPL may flag repeated logins; session is slow | Auth on explicit user action only; cache `selling_price` in React Query for the session duration | After a few hundred rapid logins |
-| Rendering an explainability panel with per-player reason strings computed in JavaScript | UI jank on player table scroll | Pre-render reason strings in Python pipeline alongside projected points | At ~700 player table with 5 reason strings each |
-
----
-
-## Security Mistakes
-
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| Storing FPL credentials in `.env` and committing to git | Credential exposure in version history | Never log or persist FPL email/password; prompt at runtime in UI only |
-| Returning raw `my-team` response to the browser | `selling_price`, squad structure, and transfer history exposed in browser network tab | Extract only the fields needed (`selling_price` per player, `bank`); return a minimal payload |
-| Logging session cookies in Next.js request logs | Cookie usable to access the FPL account | Explicitly scrub any cookie header from server logs |
-| Passing session cookie from browser → Next.js API → Python pipeline | Cookie lifetime extended; more exposure surface | Session cookie never leaves the Next.js Route Handler; pipeline has no auth |
-| Trusting user-supplied Team ID without validation | No auth risk (Team ID is public), but malformed IDs could cause unhandled errors in pipeline | Validate Team ID as a positive integer in the Route Handler before passing to FPL API |
+| Exhaustive look-ahead across all 700+ players for all N GWs | Plan generation takes 30+ seconds | Pre-filter buy candidates to top 10 per position per GW before look-ahead; do not evaluate the entire player pool at each step | With 700 players × 4 positions × 3 GW look-ahead immediately |
+| Re-running plan auto-suggest on every user keystroke in manual edit mode | UI freezes when user edits transfer in plan table | Debounce plan recalculation; only recalculate affected GW steps and downstream steps when a single step is edited | With 5-GW plan and 700-player pool on first try |
+| Fetching fixture data per GW per player from FPL API in the planner | Multiple API calls per plan render | All fixture data already in `MergedPlayer.fixtures` from pipeline; use that, do not make fresh API calls during planning |  Immediately — API rate limits apply |
+| Deep cloning entire 700-player `ScoredPlayer[]` array for each plan step | Memory pressure, slow plan generation | Plan steps only need the 15-player squad snapshot, not a full player pool copy per step | With 5-GW plan × 700 players per step |
 
 ---
 
@@ -381,27 +365,27 @@ Captaincy phase (CAP-02) — define "safe" explicitly in terms of the player's o
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Showing projected points without confidence interval or caveats | User treats 7.4 projected pts as a guarantee and is surprised by a blank | Add "±" range or a "confidence" qualifier: "7.4 pts (moderate confidence — rotation risk)" |
-| Recommendation says "Sell Saka" based on a fixture swing | User correctly ignores it; trust in all recommendations drops | Apply a minimum gem_score floor: never recommend selling players above a quality threshold |
-| Captain recommendation list shows 5 players with similar scores | User cannot distinguish; ignores all 5 | Force ranking with clear tier labels: "1st choice", "2nd choice"; do not show near-ties without explanation |
-| Explainability panel opens on hover and closes before readable | User cannot absorb the reason | Use click-to-open or persistent panel; hover tooltip only for very short reasons |
-| "Rotation risk" badge on a player the user knows is nailed | User distrusts the badge system entirely | Show the evidence: "3 of last 8 appearances were subs or DNPs" — user can judge |
-| Buy/Hold/Sell recommendation for a player who is injured | User confused — why is an injured player a "Hold"? | Filter recommendations: injured/unavailable players should show a status badge, not a trade recommendation |
+| Displaying plan total score as a precise number (e.g. "Plan value: +18.4 pts") | User treats the projection as a guarantee; disappointed when actual return differs | Show as range with confidence indicator: "+14–22 pts estimated over 5 GWs" |
+| No visual separation between current GW (exact data) and future GWs (estimated) | User cannot tell which parts of the plan are reliable | GW N: exact buy/sell prices, bank balance; GW N+1+: "estimated" badge on all budget figures |
+| Plan resets entirely when user makes one manual edit | User afraid to experiment with the plan | Editing one step recalculates only that step and downstream steps; earlier steps are preserved |
+| Chip selector shows all chips including already-played ones | User tries to use an expired chip; plan is unexecutable | Grey out and label already-used chips: "Wildcard (H1) — already used GW 14" |
+| Free transfer count at start of each plan GW is hidden | User cannot verify plan against their actual FPL account | Show "X free transfers" at the top of each GW column in the plan table |
+| Plan table is too wide to read on mobile (GW columns × player rows) | User cannot use the planner on mobile | Collapsible GW columns; default to showing only next 2 GWs on mobile with expand option |
 
 ---
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **Projected points DGW handling:** A player in a DGW shows ~2× the projected points of equivalent single-GW player — verify with a known DGW week
-- [ ] **xMins injury-awareness:** A player who was injured last month but is now fully fit (`status == 'a'`, blank `news`) does NOT show "Rotation risk" badge — verify with a known returning player
-- [ ] **Normalisation boundary:** `projected_pts_1gw` values are in FPL points range (3–15 for starters, 0–3 for bench) — not in 0–1 normalised range
-- [ ] **Auth budget accuracy:** After logging in, the available budget shown for a transfer matches what FPL's own interface shows — verify with a player who has risen in price (sell price should be less than buy price)
-- [ ] **Sell price integration:** `computeTransferSuggestions` `bankBalance` parameter is sourced from `entry_history.bank` (from `my-team`) when auth is active — not from a separate API call or estimate
-- [ ] **Recommendation-transfer coherence:** Every player marked "Sell" appears in `computeTransferSuggestions().suggestions` — if not, both systems must be reconciled
-- [ ] **Session expiry path:** After 30 minutes idle, the app shows "Session expired — please log in again" rather than a generic error or stale sell prices
-- [ ] **Explainability reasons:** The explainability panel shows natural-language reasons ("Easy fixtures", "Consistent starter") not just component score numbers — verify on three different player types
-- [ ] **Captaincy DGW boost:** A DGW player with moderate per-GW projection appears in the top 3 captaincy candidates — verify in a DGW week
-- [ ] **form_pts_per90 audit:** Confirm `form_pts_per90` in `merged_players.json` equals the raw FPL `form` field (not a per-90 normalised value) — and that projected points engine does NOT treat it as a per-90 rate
+- [ ] **Free Hit reversion:** Build a 3-GW plan with a Free Hit in GW 2 — verify the GW 3 squad equals the GW 1 squad, not the GW 2 squad
+- [ ] **Wildcard banked transfer preservation:** Play a Wildcard in a plan where manager had 3 banked transfers — verify GW N+1 shows 3 (not 1) free transfers
+- [ ] **Hit cost accuracy:** A plan with 1 free transfer making 2 transfers in GW N shows -4 pts cost; making 3 shows -8 pts
+- [ ] **Budget at GW N+1:** After a simulated transfer (sell + buy) in GW N, the budget at GW N+1 equals `bank + sell_proceeds - buy_cost` — not the original bank
+- [ ] **DGW scoring:** A player with 2 confirmed fixtures in a GW shows approximately 2× projected points for that GW compared to a single-fixture GW projection
+- [ ] **BGW graceful degradation:** When fixture data is unavailable for GW N+3 (not yet announced), the plan labels it "fixtures unconfirmed" rather than scoring it as a BGW
+- [ ] **Chip mutual exclusion:** The UI prevents assigning Bench Boost AND Triple Captain to the same GW
+- [ ] **Squad mutation isolation:** Editing the GW 3 transfer in a 5-GW plan does not change the displayed squad for GW 2
+- [ ] **Squad composition validation:** After each simulated transfer step, no club has 4+ players and the 2-5-5-3 formation rule is maintained
+- [ ] **Free transfer threading:** A 5-GW plan that rolls in GW N and GW N+1 shows 3 free transfers at GW N+2 (not 1)
 
 ---
 
@@ -409,12 +393,12 @@ Captaincy phase (CAP-02) — define "safe" explicitly in terms of the player's o
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Linear xMins projection discovered in production | MEDIUM | Rebuild projection model with scenario-based approach; re-run pipeline; projected points in `merged_players.json` will update on next run |
-| Injury history conflated with rotation — wrong badges | LOW | Add `status`-filtered lookback window in `defcon.py`/merge logic; re-run pipeline; badges update immediately |
-| Schema drift (new fields computed in TypeScript not Python) | HIGH | Audit all analytics in hooks/components; migrate to pipeline; update `MergedPlayer` type; UI refactor |
-| Session cookie stored in `localStorage` discovered in production | LOW but urgent | Remove `localStorage` call; force re-login (no session migration possible); cookie was never auth-safe in localStorage |
-| Buy/Hold/Sell conflicts with Transfer Panel | MEDIUM | Decide canonical data source (gem_score wins); rewrite recommendation classifier to derive from gem_score; test both panels with same player set |
-| Projected points not normalised — showing 0–1 instead of FPL pts | LOW | Fix normalisation step in pipeline; `merged_players.json` updates on next run; no UI refactor needed |
+| Free Hit reversion not implemented — users ran plans with corrupted post-FH state | HIGH | Redesign plan step state model with snapshot/restore; all plans built with the buggy version must be discarded as their GW N+1+ state was wrong |
+| Wildcard resets banked transfers to 1 (old rule applied) | LOW | Fix `computeNextFreeTransfers`; no state migration needed (plan state is ephemeral, not persisted) |
+| Budget over-estimated across plan (now_cost instead of selling_price) | LOW | Add "estimated" label to future GW budget figures; fix current-GW budget when auth is active; no rewrite needed |
+| Squad reference mutation corrupting plan state on edit | MEDIUM | Audit all squad state assignments for reference sharing; add deep-copy wrapper; write tests verifying step isolation; no data migration (plan state is ephemeral) |
+| Greedy optimiser never recommends justified hits | LOW | Add look-ahead depth-2 or depth-3 evaluation; the greedy result is a subset of the look-ahead result so no breaking change |
+| Chip constraint violations in generated plans | LOW | Add chip validation on plan mutation; existing plans with violations should be flagged and the user prompted to fix them |
 
 ---
 
@@ -422,60 +406,72 @@ Captaincy phase (CAP-02) — define "safe" explicitly in terms of the player's o
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| Linear xMins multiplication (14) | Projected Points (PROJ-01) | Rotation-risk player's xPts is not 60% of a nailed starter's xPts unless minutes model supports that |
-| Injury/rotation conflation (15) | xMins phase (MINS-01/02) | Returning-from-injury player with blank `news` shows "Nailed" or "Likely start", not "Rotation risk" |
-| `form_pts_per90` double-counting (16) | Projected Points (PROJ-01) | Projected pts correlates with xG/fixture difficulty, not just with FPL `form` field |
-| Schema drift — new fields in TypeScript (17) | First v1.1 phase, any | No analytics computed in hooks or components; `merged_players.json` contains all projected fields |
-| Recommendation-transfer conflict (18) | Recommendation phase (REC-01) | Every "Sell" recommendation appears in transfer suggestions; no contradictory signals |
-| Session expiry silent failure (19) | Auth phase (AUTH-01) | 30-minute idle → explicit "session expired" message, not broken state |
-| Auth in pipeline / repeated logins (20) | Auth phase (AUTH-01) | `pipeline/run.py` contains zero authentication code; login is UI-initiated only |
-| Captaincy variance — safe vs upside (21) | Captaincy phase (CAP-01/02) | DGW player appears in top captaincy candidates; safe/upside are separate labelled lists |
-| Scores not reasons in explainability (22) | Explainability phase (EXP-01/02) | Every recommendation shows at least 2 natural-language reasons, not just component scores |
-| Projected points normalised to 0–1 (23) | Projected Points (PROJ-01) | `projected_pts_1gw` range is 0–20 FPL pts, not 0–1 |
-| `selling_price` without `bank` (24) | Auth phase (AUTH-02) | Budget after login matches FPL interface to within £0.1m |
-| DGW double fixture projection (25) | Projected Points (PROJ-01/02) | DGW player projects ~2× a similar single-GW player |
-| Arbitrary Buy/Hold/Sell thresholds (26) | Recommendation phase (REC-01) | "Sell" count per typical squad is 1–3, not 8–11; thresholds are squad-relative |
-| Ownership as "safe" captain proxy (27) | Captaincy phase (CAP-02) | "Safe" label correlates with start probability and form, not ownership percentage |
+| Free Hit squad reversion (28) | Planner state engine (PLAN-01/02) | 3-GW plan with FH in GW 2: GW 3 squad = GW 1 squad |
+| Wildcard banked transfer preservation (29) | Free transfer state model (PLAN-01) | Wildcard with 3 banked: next GW shows 3 free transfers |
+| Budget approximation across GWs (30) | Budget tracking (PLAN-07) | Future GW budget figures show "estimated" label; current GW uses exact sell price when auth active |
+| Squad snapshot mutation (31) | Planner state model (PLAN-01/02) | Edit GW 3 transfer: GW 2 squad snapshot unchanged |
+| DGW/BGW detection in advance (32) | Fixture data layer (PLAN-05/06) | GW with unannounced fixtures shows "unconfirmed" label, not BGW scoring |
+| Hit cost free transfer threading (33) | Hit cost scoring (PLAN-07) | 5-step plan with rolled transfers: free transfer count correct at each step |
+| Greedy optimisation suboptimality (34) | Auto-suggest engine (PLAN-02) | A hit to bring in a DGW target appears in auto-suggest when net gain > 8 pts |
+| Chip constraint enforcement (35) | Chip timing layer (PLAN-08) | Two chips cannot be assigned to same GW; consecutive Free Hits blocked |
+| Bench Boost / Triple Captain scoring (36) | Squad snapshot output (PLAN-10) | Bench Boost GW: score = all 15 players' pts; Triple Captain GW: captain shown in plan table |
+| Position lock and club concentration (37) | Plan step validation (PLAN-02) | No simulated squad has 4+ players from same club or violates 2-5-5-3 |
+| Time-decayed horizon scoring (38) | Plan scoring (PLAN-04) | GW N+4 projected score is visually less confident than GW N+1 projected score |
+| Roll-transfer as first-class option (39) | Auto-suggest and plan output (PLAN-02/09) | "Roll transfer" appears as an explicit GW option in plan table |
+| Intra-plan sell price assumption (40) | Budget tracking (PLAN-07) | Sell price for player bought in plan step uses buy price, not inflated future now_cost |
 
 ---
 
-## Appendix: v1.0 Pitfalls (condensed)
+## Appendix: v1.1 Pitfalls (condensed)
 
-The following pitfalls from the v1.0 research remain valid. They are resolved in the existing codebase but must not be regressed during v1.1 development.
+All prior pitfalls remain valid. Must not be regressed during v1.3 development.
 
-| Pitfall | Status | v1.1 Regression Risk |
-|---------|--------|----------------------|
-| CORS — all FPL calls via server proxy | Resolved (proxy at `/api/fpl/[...proxy]`) | Low — proxy exists; do not add direct browser fetches for auth endpoints |
-| Session-cookie auth — cookie-jar-aware client | Partially resolved (AUTH-01 not yet built) | Active — v1.1 must implement correctly |
-| Sell price ≠ buy price | Resolved (approximate; exact requires AUTH-02) | Active — AUTH-02 must use `selling_price`, not `now_cost` |
-| DGW/BGW form inflation | Resolved (`form_pts_per90` uses FPL rolling average) | Active — projected points must not reintroduce gameweek-count normalisation |
-| DefCon field confusion (`defensive_contributions` vs CBIT) | Resolved | Low — DefCon phase complete |
-| Understat name mismatch | Resolved (`player_id_map.json`) | Low — map maintained |
-| FPL API field changes | Mitigated (Zod adapter) | Low — adapter exists |
-| Raw FDR unreliable | Resolved (custom rolling xGA FDR) | Low — FDR model in pipeline |
-| Free Hit / Wildcard chip detection | Resolved (chip guard in transfer engine) | Low — chip guard already in `computeTransferSuggestions` |
-| Position codes — integer not string | Resolved (type system) | Low |
-| Missing Understat for promoted teams | Resolved (null not zero) | Low |
-| Price change staleness | Mitigated (LastUpdated component) | Low |
+| # | Pitfall | Status | v1.3 Regression Risk |
+|---|---------|--------|----------------------|
+| 14 | Linear xMins multiplication in projected points | Resolved in v1.1 pipeline | Low — do not reintroduce in planner projected pts calculations |
+| 15 | Injury/rotation conflation in minutes risk | Resolved in v1.1 pipeline | Low — planner uses existing `mins_risk` field |
+| 16 | `form_pts_per90` double-counted in projections | Resolved in v1.1 pipeline | Low — planner consumes `proj_pts_Ngw`, not raw form |
+| 17 | Analytics in TypeScript rather than Python pipeline | Resolved in v1.1 | Active — planner scoring logic must stay in TypeScript engine, not hooks |
+| 18 | Recommendation and transfer engine conflicts | Resolved in v1.1 | Low for planner (separate UI tab) |
+| 19 | Session expiry silent failure | Resolved in v1.1 auth | Active — planner budget accuracy depends on auth; expired session must surface |
+| 20 | Auth in pipeline | Resolved (pipeline has no auth) | Low |
+| 21 | Captaincy safe vs upside not separated | Resolved in v1.1 | Active — planner needs captaincy engine for Triple Captain chip suggestion |
+| 22 | Explainability shows scores not reasons | Resolved in v1.1 | Low for planner (separate feature) |
+| 23 | Projected points normalised to 0–1 | Resolved in v1.1 | Active — planner scoring uses absolute proj_pts values; do not re-normalise |
+| 24 | `selling_price` without `bank` from my-team | Resolved in v1.1 auth | Active — planner budget for current GW must use selling_price + bank from my-team |
+| 25 | DGW double fixture projection | Resolved in v1.1 pipeline | Active — planner must preserve DGW fixture counting when building plan step scores |
+| 26 | Arbitrary Buy/Hold/Sell thresholds | Resolved in v1.1 | Low for planner |
+| 27 | Ownership as "safe" captain proxy | Resolved in v1.1 | Low for planner |
+
+### v1.0 Pitfalls
+
+| Pitfall | v1.3 Regression Risk |
+|---------|----------------------|
+| CORS — all FPL calls via server proxy | Low — proxy exists; planner fetches via same proxy |
+| Sell price ≠ buy price | Active — planner budget must use selling_price, not now_cost, for current GW |
+| DGW/BGW form inflation | Active — planner DGW scoring must not double-count form |
+| FPL API field changes (Zod adapter) | Low — adapter exists |
+| Free Hit / Wildcard chip detection | Active — planner has more complex chip logic than single-GW guard |
+| Position codes — integer not string | Low |
 
 ---
 
 ## Sources
 
-- [xMins (Expected Minutes) — FPL Review Documentation](https://docs.fplreview.com/the-model/projections/xmins/) — non-linear EV, scenario modelling
-- [Modelling xPts in FPL — Marcus Leadboot, Medium](https://medium.com/@marcusleadboot/modelling-xpts-in-fpl-gameweek-1-01fd2179eac6) — injury vs rotation conflation, clean sheet modelling challenges
-- [Fantasy Premier League API Authentication Guide — Bram Vanherle, Medium](https://medium.com/@bram.vanherle1/fantasy-premier-league-api-authentication-guide-2f7aeb2382e4) — session cookie auth flow, required cookies
-- [FPL APIs Explained — Oliver Looney](https://www.oliverlooney.com/blogs/FPL-APIs-Explained) — CORS, authenticated endpoints, `my-team` fields
-- [Enhancing Fantasy Premier League with Explainable AI — Uppsala University](https://uu.diva-portal.org/smash/get/diva2:1972615/FULLTEXT02.pdf) — explainability importance for user trust, natural language vs score display
-- [AIrsenal — Alan Turing Institute GitHub](https://github.com/alan-turing-institute/AIrsenal) — component-based projected points approach (team model + player model)
-- [FPL Expected Points Calculator — Daniel Mehta GitHub](https://github.com/daniel-mehta/FPL-Expected-Points) — xPts formula approaches comparison
-- [Codebase inspection: `pipeline/merge.py`] — `form_pts_per90` = raw FPL `form` field (not per-90 normalised)
-- [Codebase inspection: `src/lib/transfer-engine.ts`] — `bankBalance` parameter, `gem_score` sort logic
-- [Codebase inspection: `src/lib/gem-score.ts`] — min-max normalisation pattern
-- [Codebase inspection: `src/lib/types.ts`] — `MergedPlayer` schema, `minutes_per90 = minutes / starts`
-- [FPL Review on X — xMins model update](https://x.com/fplreview/status/1189252407806627841) — previous "past minutes" model replaced with hierarchical model; pure historical minutes insufficient
+- [FPL Official: How and when to use your chips 2025/26](https://www.premierleague.com/en/news/4362085/how-and-when-to-use-your-chips-in-202526-fantasy) — chip rules verified: 2 sets per season, banked transfers preserved after WC/FH, Free Hit squad reversion (HIGH confidence — official PL source)
+- [FPL Official: What's new in 2025/26 — Two sets of chips](https://www.premierleague.com/en/news/4362027/whats-new-in-202526-fantasy-two-sets-of-chips) — two full chip sets per season, first half expires at GW 19 (HIGH confidence — official)
+- [FPL Official: FPL managers now have FIVE free transfers](https://www.premierleague.com/en/news/4461660/fpl-managers-to-have-five-free-transfers-on-saturday-all-you-need-to-know) — max 5 free transfer banking (HIGH confidence — official)
+- [Fantasy Football Scout: Do I keep my free transfers when I use an FPL Wildcard?](https://www.fantasyfootballscout.co.uk/2024/10/03/do-i-keep-my-free-transfers-when-i-use-an-fpl-wildcard) — banked transfers preserved after WC confirmed (HIGH confidence — specialist press, verified against official)
+- [Fantasy Football Scout: Do I keep my saved transfers when using the Free Hit chip?](https://www.fantasyfootballscout.co.uk/2025/03/13/do-i-keep-my-saved-transfers-when-using-the-free-hit-chip) — banked transfers preserved after FH confirmed (HIGH confidence — specialist press)
+- [fplreview Solver Settings](https://docs.fplreview.com/the-model/solvers/settings/) — time decay, FT value, transfer depth, solver pitfalls (MEDIUM confidence — third-party authoritative tool documentation)
+- [FPL Blank and Double Gameweeks 2025/26](https://www.fantasyfootballhub.co.uk/fpl-blank-double-gameweek-guide) — BGW/DGW fixture confirmation timing, squad planning implications (MEDIUM confidence — specialist press)
+- [FPL API Endpoints Guide — Frenzel Timothy, Medium](https://medium.com/@frenzelts/fantasy-premier-league-api-endpoints-a-detailed-guide-acbd5598eb19) — fixtures?event=N endpoint structure, future fixture availability (MEDIUM confidence — community documentation)
+- [Codebase inspection: `src/lib/transfer-engine.ts`] — existing `ChipState`, `SingleTransfer`, `computeTransferSuggestions` — confirms single-GW greedy model, bankBalance + now_cost approximation (HIGH confidence — source code)
+- [Codebase inspection: `src/lib/squad-adapter.ts`] — `MyTeamPickSchema` with `selling_price`, `EntryHistorySchema` with `bank` — confirms auth data sources (HIGH confidence — source code)
+- [Codebase inspection: `src/lib/types.ts`] — `MergedPlayer.fixtures: FixtureEntry[]`, `proj_pts_1gw/3gw/5gw` — confirms pipeline data available for planner (HIGH confidence — source code)
+- [FPL free hit chip mechanics — BetterFPL](https://www.betterfpl.com/guides/what-is-free-hit-in-fantasy-premier-league) — squad reversion detail including sell price behaviour during FH week (MEDIUM confidence — community guide, consistent with official rules)
 
 ---
 
-*Pitfalls research for: FPL decision engine (v1.1) — projected points, xMins, captaincy, recommendations, explainability, session-cookie auth*
-*Researched: 2026-03-29*
+*Pitfalls research for: FPL Analyst v1.3 Gameweek Planner — multi-GW transfer sequencing*
+*Researched: 2026-04-01*
