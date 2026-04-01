@@ -1,114 +1,147 @@
-# Requirements — v1.2 Mobile
+# Requirements: FPL Analyst
 
-**Milestone:** v1.2 Mobile
-**Goal:** Make the full FPL Analyst app usable on a phone — same URL, desktop layout unchanged.
-**Last updated:** 2026-03-31
+**Defined:** 2026-03-27
+**Core Value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
 
----
+## v1.3 Requirements
 
-## Active Requirements
+### Data Quality
 
-### Navigation
+- [ ] **DQ-01**: Players without Understat xG/xA data use FPL goals/assists as a proxy in the Gem score computation
+- [ ] **DQ-02**: DefCon table shows computed stats where data exists; "Insufficient data" is reserved for genuine edge cases only; minimum games threshold raised
 
-- [x] **MOB-NAV-01**: User sees a fixed bottom tab bar with 5 tabs (Gems, DefCon, Squad, Club Form, Values) on screens narrower than 768px, replacing the top horizontal tab strip
-- [x] **MOB-NAV-02**: Desktop top tab strip is unchanged (≥768px); bottom tab bar is hidden on desktop
-- [x] **MOB-NAV-03**: Bottom tab bar is inset above the iOS home indicator via `env(safe-area-inset-bottom)` so no tab is obscured
+### Auth UX
 
-### Layout
+- [ ] **AUTH-03**: User can log in to FPL directly via email + password in the app (server-side cookie extraction — no manual cookie hunting)
+- [ ] **AUTH-04**: Manual cookie entry is supported with a step-by-step browser guide (Chrome/Firefox/Safari) as fallback
 
-- [x] **MOB-LAY-01**: All tab content renders in a single-column layout at 375px — no side-by-side panels break or overflow horizontally
-- [x] **MOB-LAY-02**: Scrollable content has sufficient bottom padding so the last visible table row is not obscured by the fixed bottom nav bar
+### Value Gems
 
-### Tables
+- [ ] **VG-01**: Pipeline computes pts_last3gw and pts_last5gw per player from FPL element-summary history
+- [ ] **VG-02**: Value Gems table shows three points columns: Total Pts, Pts (last 5 GW), Pts (last 3 GW)
 
-- [x] **MOB-TBL-01**: GemTable shows only priority columns on mobile (Player, Position, Gem score, active Proj Pts column, Risk badge); remaining columns hidden
-- [x] **MOB-TBL-02**: SquadView shows only priority columns on mobile (Player, Price, Risk badge, Rec verdict); remaining columns hidden
-- [x] **MOB-TBL-03**: DefConTables show priority columns on mobile (Player, Team, Hit Rate, Avg DC/90); remaining columns hidden
-- [x] **MOB-TBL-04**: ClubFormTable and ValueGemsTable show priority columns on mobile, reducing to key player identity + primary stat columns
-- [x] **MOB-TBL-05**: Player column is horizontally sticky (locked to left edge) in GemTable and SquadView on mobile so the player name remains visible when scrolling right
-- [x] **MOB-TBL-06**: User can tap a GemTable row on mobile to expand an inline key-value detail panel showing all columns hidden by MOB-TBL-01
+### Gameweek Planner
 
-### Touch & Interaction
+- [ ] **PLAN-01**: User can set a planning horizon of 1–5 gameweeks
+- [ ] **PLAN-02**: System auto-suggests an optimal transfer sequence for the chosen horizon
+- [ ] **PLAN-03**: Transfer sequence scoring accounts for projected points delta, fixture difficulty, DGW/BGW awareness, and -4pt hit cost
+- [ ] **PLAN-04**: User can manually edit the suggested sequence (swap players in/out per GW step)
+- [ ] **PLAN-05**: Output shows a transfer-by-transfer table (GW | Out | In | Cost | Projected gain)
+- [ ] **PLAN-06**: Output shows a squad snapshot for each gameweek in the plan
+- [ ] **PLAN-07**: Chip timing (Wildcard, Free Hit, Triple Captain, Bench Boost) is visible and configurable in the plan
+- [ ] **PLAN-08**: Planner is accessible via a new "Planner" tab in the navigation bar
 
-- [x] **MOB-TOUCH-01**: All interactive elements (position filter pills, column sort headers, row expander arrows, tab bar items, buttons) have a minimum 44×44px tap target
-- [x] **MOB-TOUCH-02**: All `<input>` elements use 16px font size on mobile to prevent iOS Safari from auto-zooming the viewport on focus
-- [x] **MOB-TOUCH-03**: All buttons and tab items apply an `active:scale-95` CSS class to give immediate tap feedback
+## Future Requirements
 
-### Components
+### Gameweek Planner (v2+)
 
-- [x] **MOB-COMP-01**: Transfer suggestion cards use a 2-row structured layout on mobile: row 1 = sell → buy player names with verdict/risk badges; row 2 = gem delta, cost, projected pts change
-- [x] **MOB-COMP-02**: Login/token form inputs stack vertically on mobile with full-width inputs (the form uses a bearer token paste field, not an email field)
-- [x] **MOB-COMP-03**: Captaincy panel renders as a 2-column card grid on mobile instead of a horizontal flex row
+- **PLAN-09**: Planner supports full-season horizon beyond 5 GWs (deferred — fixture data unreliable beyond ~3 GWs)
+- **PLAN-10**: Automated transfer execution via FPL API write endpoints (deferred — undocumented write API; high breakage risk)
+- **PLAN-11**: LP/MILP solver for globally optimal sequences (deferred — greedy is sufficient for personal use)
 
-### Polish
+### Data Quality (v2+)
 
-- [x] **MOB-POL-01**: GW toggle and position filter row is sticky below the top of the viewport on mobile so the user can filter GemTable without scrolling back to the top
-- [x] **MOB-POL-02**: A "back to top" button appears in GemTable on mobile after the user has scrolled past the first screen of rows
-
-### Dark Mode
-
-- [x] **DARK-01**: User can toggle between light and dark mode via a button in the app header; preference persists across sessions (localStorage)
-- [x] **DARK-02**: Dark mode defaults to the system `prefers-color-scheme` preference on first visit
-- [x] **DARK-03**: All components render correctly in dark mode — no illegible text, sufficient contrast, no white flash on load
-
-### Double / Blank Gameweek Awareness
-
-- [x] **DGW-01**: Transfer engine boosts DGW players as buy targets — when a buy candidate has 2 fixtures in the immediately upcoming gameweek, they rank above a same-tier player with only 1 fixture
-- [x] **DGW-02**: Fixture badges and captaincy panel show DGW indicators — FixtureBadges groups badges by gameweek and labels double-GW groups with "DGW"; CaptaincyPanel shows all fixtures for the next GW (not just the first)
-
-### Carry-Forward
-
-- [x] **DAT-01**: Verified automated daily refresh — GitHub Actions cron confirmed operational (deferred from v1.1)
-
----
-
-## Future Requirements (deferred)
-
-- Expandable row detail for SquadView and DefConTables (GemTable priority for v1.2)
-- Progressive Web App manifest + home screen install prompt — v2+
-- Native-style swipe-between-tabs gesture — conflicts with horizontal table scroll; v2+ only
-- Column picker UI (user-selectable mobile columns) — powerful but over-engineered for v1.x defaults
-- "Show top 50" filter pill for GemTable — useful but not blocking
-
----
+- **DQ-03**: Historical xG/xA backfill for players who joined mid-season
 
 ## Out of Scope
 
-- Separate `/mobile` route — same URL, responsive CSS only (per user decision)
-- Card-per-player view replacing tables — destroys ranked comparison density; column priority approach used instead
-- Swipe gestures between tabs — conflicts with horizontal table scroll
-- Landscape-only mode enforcement — responsive approach works in portrait
-- Offline mode / PWA cache — daily refresh is sufficient; no real-time requirement
-
----
+| Feature | Reason |
+|---------|--------|
+| Live in-match updates | Data refreshes daily — not during gameweeks |
+| Mini-league / head-to-head analysis | Squad optimisation focus only |
+| Mobile app | Responsive web covers the mobile use case |
+| Autonomous chip recommendations | Chip visibility in plan is in-scope; auto-timing recommendations are out |
+| Offline mode | Daily refresh is sufficient |
+| Automated transfer execution | FPL write API is undocumented; breakage risk too high |
+| Full-season planner (GW38) | Fixture data unreliable beyond ~3 GWs ahead |
 
 ## Traceability
 
-| REQ-ID | Phase | Status |
-|--------|-------|--------|
-| MOB-NAV-01 | Phase 13 | Complete |
-| MOB-NAV-02 | Phase 13 | Complete |
-| MOB-NAV-03 | Phase 13 | Complete |
-| MOB-LAY-01 | Phase 13 | Complete |
-| MOB-LAY-02 | Phase 13 | Complete |
-| MOB-TOUCH-01 | Phase 13 | Complete |
-| MOB-TOUCH-02 | Phase 13 | Complete |
-| MOB-TOUCH-03 | Phase 13 | Complete |
-| MOB-TBL-01 | Phase 14 | Complete |
-| MOB-TBL-05 (GemTable) | Phase 14 | Pending |
-| MOB-TBL-06 | Phase 14 | Complete |
-| MOB-TBL-02 | Phase 15 | Complete |
-| MOB-TBL-03 | Phase 15 | Complete |
-| MOB-TBL-04 | Phase 15 | Complete |
-| MOB-TBL-05 (SquadView) | Phase 15 | Complete |
-| MOB-COMP-01 | Phase 16 | Complete |
-| MOB-COMP-02 | Phase 16 | Complete |
-| MOB-COMP-03 | Phase 16 | Complete |
-| MOB-POL-01 | Phase 17 | Complete |
-| MOB-POL-02 | Phase 17 | Complete |
-| DAT-01 | Phase 17 | Complete |
-| DGW-01 | Phase 17 | Complete |
-| DGW-02 | Phase 17 | Complete |
-| DARK-01 | Phase 18 | Complete |
-| DARK-02 | Phase 18 | Complete |
-| DARK-03 | Phase 18 | Complete |
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| DQ-01 | — | Pending |
+| DQ-02 | — | Pending |
+| AUTH-03 | — | Pending |
+| AUTH-04 | — | Pending |
+| VG-01 | — | Pending |
+| VG-02 | — | Pending |
+| PLAN-01 | — | Pending |
+| PLAN-02 | — | Pending |
+| PLAN-03 | — | Pending |
+| PLAN-04 | — | Pending |
+| PLAN-05 | — | Pending |
+| PLAN-06 | — | Pending |
+| PLAN-07 | — | Pending |
+| PLAN-08 | — | Pending |
+
+**Coverage:**
+- v1.3 requirements: 14 total
+- Mapped to phases: 0 (roadmap pending)
+- Unmapped: 14 ⚠️
+
+---
+
+## Previously Validated
+
+### v1.0 (MVP)
+
+**Data Pipeline & API Layer**
+- ✓ FPL proxy Route Handler — server-side CORS-free fetches via `/api/fpl/[...proxy]` — v1.0
+- ✓ Zod validation adapter — structured failure on field changes, stale-cache fallback — v1.0
+- ✓ 825-entry `player_id_map.json` (782 matched, 43 null Understat entries) — v1.0
+- ✓ Python pipeline: FPL + Understat xG/xA merged, per-90 normalised, custom FDR — v1.0
+- ✓ `GET /api/players` from Vercel Blob, `usePlayers()` with 6h stale time — v1.0
+- ✓ `cost_change_event` / `cost_change_start` fields in pipeline and `MergedPlayer` type — v1.0
+
+**Gem Rating Table** — v1.0
+- ✓ `computeAllGemScores` scores every player across 7 dimensions with min-max normalisation
+- ✓ Null xG/xA excluded from composite (not zero-filled); displayed as em-dash
+- ✓ Sortable/filterable TanStack Table at `/`, position filter, component scores per row
+
+**DefCon Analysis** — v1.0
+- ✓ Per-match hit rates from `element-summary` (DEF=10, MID/FWD=12 per-match thresholds)
+- ✓ `pipeline/defcon.py` + `defcon_stats.json`, two position-split sortable tables
+
+**Squad View & Transfer Suggestions** — v1.0
+- ✓ Team ID input → squad split by position (GK/DEF/MID/FWD) with price, own%, mins, flags
+- ✓ Transfer engine: position lock, approximate budget, chip guard, save recommendation
+- ✓ Ranked by Gem delta; affordable suggestions sorted before unaffordable
+
+**Club Form, Value Gems & Polish** — v1.0
+- ✓ `computeClubForm()` rolling 5-game window, DGW-safe
+- ✓ `isCheapGem` / `isLowOwned` filter predicates; Value Gems tab with filter pills
+- ✓ `PriceTrendCell` on GemTable, ValueGemsTable, TransferPanel (NaN guards: `?? 0`)
+- ✓ `FixtureBadges` (next 5, colour-coded H/A) on Club Form + Gem Ratings
+- ✓ `LastUpdated` component (amber when stale), `tier()` inversion fixed
+
+### v1.1 (Decision Engine)
+
+- ✓ PROJ-01/02/03: Projected points next 1/3/5 GW per player (Python pipeline) — v1.1
+- ✓ MINS-01: Expected minutes and start probability per player — v1.1
+- ✓ MINS-02: Rotation risk badge (Nailed / Likely start / Rotation risk / Cameo) — v1.1
+- ✓ MINS-03: Transfer suggestions de-prioritise rotation-risk buy candidates — v1.1
+- ✓ PROJ-04: Projected points columns in GemTable (sortable, 1/3/5 GW toggle) + TransferPanel — v1.1
+- ✓ REC-01: Buy / Hold / Sell recommendation per squad player — v1.1
+- ✓ REC-02: Replacement shortlist with projected points delta for Sell candidates — v1.1
+- ✓ CAP-01/02: Captaincy rankings — top-5, safe vs upside, projected captain points — v1.1
+- ✓ EXP-01/02: Explainability panel with natural-language reasons + risk flags — v1.1
+- ✓ AUTH-01/02: Optional FPL session-cookie login, exact sell prices and bank balance — v1.1
+
+### v1.2 (Mobile)
+
+- ✓ MOB-NAV-01/02/03: Fixed bottom tab bar on mobile (5 tabs, CSS-only show/hide, iOS safe area) — v1.2
+- ✓ MOB-LAY-01/02: Single-column layout at 375px, no horizontal overflow on any tab — v1.2
+- ✓ MOB-TOUCH-01/02/03: 44px tap targets, 16px input fonts, active:scale-95 feedback — v1.2
+- ✓ MOB-TBL-01: GemTable 5-column mobile view (Player, Pos, Gem, Proj Pts, Risk) — v1.2
+- ✓ MOB-TBL-02/03/04: DefConTables, ClubFormTable, ValueGemsTable column hiding on mobile — v1.2
+- ✓ MOB-TBL-05: Sticky Player column in GemTable and SquadView on mobile — v1.2
+- ✓ MOB-TBL-06: Tap-to-expand row detail panel in GemTable — v1.2
+- ✓ MOB-COMP-01/02/03: Transfer cards 2-row layout, login form stacking, captaincy 2-col grid — v1.2
+- ✓ MOB-POL-01/02: Sticky GemTable filter bar, back-to-top button — v1.2
+- ✓ DAT-01: GitHub Actions cron confirmed operational, /api/last-updated Blob read path live — v1.2
+- ✓ DGW-01/02: DGW-aware transfer engine tier, DGW labels in FixtureBadges/CaptaincyPanel — v1.2
+- ✓ DARK-01/02/03: Tailwind v4 class-based dark mode, FOUC prevention, ThemeToggle, all components — v1.2
+
+---
+*Requirements defined: 2026-03-27*
+*Last updated: 2026-04-01 — v1.3 requirements added*

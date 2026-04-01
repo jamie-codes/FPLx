@@ -103,17 +103,20 @@ v1.2 Mobile complete — full responsive layout on mobile with fixed bottom tab 
 
 ### Active (v1.3)
 
+- [ ] **DQ-01**: Players without Understat xG/xA data use FPL goals/assists as proxy in Gem score
+- [ ] **DQ-02**: DefCon table shows computed stats where data exists; "Insufficient data" reserved for genuine edge cases; threshold raised
+- [ ] **AUTH-03**: User can log in to FPL directly via email + password (server-side cookie extraction)
+- [ ] **AUTH-04**: Manual cookie entry supported with step-by-step browser guide as fallback
+- [ ] **VG-01**: Pipeline computes pts_last3gw and pts_last5gw per player from FPL element-summary history
+- [ ] **VG-02**: Value Gems table shows Total Pts, Pts (last 5 GW), Pts (last 3 GW) columns
 - [ ] **PLAN-01**: User can set a planning horizon of 1–5 gameweeks
 - [ ] **PLAN-02**: System auto-suggests an optimal transfer sequence for the chosen horizon
-- [ ] **PLAN-03**: User can manually edit the suggested transfer sequence in the UI
-- [ ] **PLAN-04**: Transfer sequence is scored by projected points delta over the horizon
-- [ ] **PLAN-05**: Transfer sequence accounts for fixture difficulty in scoring
-- [ ] **PLAN-06**: Transfer sequence flags DGW/BGW weeks and adjusts scoring accordingly
-- [ ] **PLAN-07**: Transfer cost (-4pt hit vs free transfer) is factored into plan scoring
-- [ ] **PLAN-08**: Chip timing (Wildcard, Free Hit, Triple Captain, Bench Boost) is visible in the plan
-- [ ] **PLAN-09**: Output shows a transfer-by-transfer table (GW, Out, In, Cost, Projected gain)
-- [ ] **PLAN-10**: Output shows a squad snapshot for each gameweek in the plan
-- [ ] **PLAN-11**: Planner is accessible via a new "Planner" tab in the navigation bar
+- [ ] **PLAN-03**: Transfer sequence scored by projected pts delta, fixture difficulty, DGW/BGW awareness, -4pt hit cost
+- [ ] **PLAN-04**: User can manually edit the suggested sequence (swap players in/out per GW step)
+- [ ] **PLAN-05**: Output shows a transfer-by-transfer table (GW | Out | In | Cost | Projected gain)
+- [ ] **PLAN-06**: Output shows a squad snapshot for each gameweek in the plan
+- [ ] **PLAN-07**: Chip timing (Wildcard, Free Hit, TC, BB) is visible and configurable in the plan
+- [ ] **PLAN-08**: Planner is accessible via a new "Planner" tab in the navigation bar
 
 ### Out of Scope
 
