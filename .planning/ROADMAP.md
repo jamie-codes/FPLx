@@ -88,7 +88,10 @@ Plans:
   2. When scrolling SquadView horizontally on mobile, the Player column remains fixed to the left edge
   3. On mobile, DefConTables show exactly: Player, Team, Hit Rate, and Avg DC/90 — all other columns are hidden
   4. On mobile, ClubFormTable and ValueGemsTable show only key player identity and primary stat columns — each table fits comfortably within a 375px screen
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 15-01-PLAN.md — SquadView mobile column hiding + sticky Player column
+- [ ] 15-02-PLAN.md — DefConTables, ClubFormTable, ValueGemsTable mobile column hiding
 **UI hint**: yes
 
 ### Phase 16: Component-Level Mobile
@@ -138,7 +141,7 @@ Plans:
 | 12. FPL Auth + Exact Selling Price | v1.1 | 2/2 | Complete | 2026-03-30 |
 | 13. Navigation + Layout Foundations | v1.2 | 2/2 | Complete    | 2026-04-01 |
 | 14. GemTable Mobile | v1.2 | 1/1 | Complete    | 2026-04-01 |
-| 15. Remaining Tables Mobile | v1.2 | 0/? | Not started | - |
+| 15. Remaining Tables Mobile | v1.2 | 0/2 | Not started | - |
 | 16. Component-Level Mobile | v1.2 | 0/? | Not started | - |
 | 17. Polish + Infrastructure | v1.2 | 0/? | Not started | - |
 | 18. Dark Mode | v1.2 | 0/? | Not started | - |
