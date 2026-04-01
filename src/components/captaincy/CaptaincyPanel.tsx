@@ -60,11 +60,21 @@ export function CaptaincyPanel({ candidates, nextGw }: CaptaincyPanelProps) {
             {/* Team + fixture row */}
             <div className="flex items-center gap-2 text-xs text-zinc-500">
               <span className="text-xs">{c.player.team_short_name}</span>
-              {c.player.fixtures[0] && (
-                <span className="text-xs text-zinc-400 whitespace-nowrap">
-                  {c.player.fixtures[0].is_home ? 'vs' : '@'} {c.player.fixtures[0].opponent_team}
-                </span>
-              )}
+              {c.player.fixtures.length > 0 && (() => {
+                const nextGwId = c.player.fixtures[0].event_id
+                const nextGwFixtures = c.player.fixtures.filter(f => f.event_id === nextGwId)
+                return (
+                  <span className="text-xs text-zinc-400 whitespace-nowrap">
+                    {nextGwFixtures.length >= 2 && <span className="font-semibold text-violet-700 mr-1">DGW</span>}
+                    {nextGwFixtures.map((f, i) => (
+                      <span key={i}>
+                        {i > 0 && <span className="mx-0.5 text-zinc-400">/</span>}
+                        {f.is_home ? 'vs' : '@'} {f.opponent_team}
+                      </span>
+                    ))}
+                  </span>
+                )
+              })()}
             </div>
             {/* Projected pts */}
             <span className="text-sm text-zinc-700 whitespace-nowrap">
