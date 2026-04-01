@@ -17,15 +17,14 @@ export function TransferPanel() {
   const [teamId, setTeamId] = useState<string>('')
   const [submittedId, setSubmittedId] = useState<string | null>(null)
   const [freeTransfers, setFreeTransfers] = useState<number>(1)
-  const [showLoginForm, setShowLoginForm] = useState(false)
-  const [loginEmail, setLoginEmail] = useState('')
-  const [loginPassword, setLoginPassword] = useState('')
+  const [showTokenForm, setShowTokenForm] = useState(false)
+  const [tokenInput, setTokenInput] = useState('')
   const [loginLoading, setLoginLoading] = useState(false)
   const [loginError, setLoginError] = useState<string | null>(null)
 
   const { data: squadData, isLoading: squadLoading, error: squadError } = useSquad(submittedId)
   const { data: playersData, isLoading: playersLoading } = usePlayers()
-  const { isAuthenticated, setAuthenticated, clearAuthenticated } = useAuthStatus()
+  const { isAuthenticated, expiresAt, setAuthenticated, clearAuthenticated } = useAuthStatus()
   const { data: myTeamData } = useMyTeam(isAuthenticated && !!submittedId)
 
   const scoredPlayers = useMemo(
@@ -73,23 +72,22 @@ export function TransferPanel() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+        body: JSON.stringify({ token: tokenInput }),
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        setLoginError(body.error ?? 'Login failed')
+        setLoginError(body.detail ?? body.error ?? 'Invalid token')
         return
       }
       setAuthenticated()
-      setShowLoginForm(false)
-      setLoginEmail('')
-      setLoginPassword('')
+      setShowTokenForm(false)
+      setTokenInput('')
     } catch {
-      setLoginError('Login failed — check your connection')
+      setLoginError('Request failed — check your connection')
     } finally {
       setLoginLoading(false)
     }
-  }, [loginEmail, loginPassword, setAuthenticated])
+  }, [tokenInput, setAuthenticated])
 
   const handleLogout = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -107,10 +105,10 @@ export function TransferPanel() {
 
   return (
     <div className="max-w-7xl space-y-4">
-      {/* Team ID input */}
-      <form onSubmit={handleSubmit} className="rounded border border-zinc-200 p-4 space-y-3">
+      {/* Team ID input + auth */}
+      <div className="rounded border border-zinc-200 p-4 space-y-3">
         <h2 className="text-base font-semibold text-zinc-900">Load Your Squad</h2>
-        <div className="flex gap-2 items-end flex-wrap">
+        <form onSubmit={handleSubmit} className="flex gap-2 items-end flex-wrap">
           <div className="flex flex-col gap-1">
             <label htmlFor="teamId" className="text-sm text-zinc-600">
               FPL Team ID
@@ -123,7 +121,7 @@ export function TransferPanel() {
               value={teamId}
               onChange={e => setTeamId(e.target.value)}
               placeholder="e.g. 1234567"
-              className="border border-zinc-300 rounded px-3 py-1.5 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-40"
+              className="border border-zinc-300 rounded px-3 py-1.5 text-base sm:text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-40"
             />
           </div>
 
@@ -145,18 +143,85 @@ export function TransferPanel() {
               max={5}
               value={freeTransfers}
               onChange={e => setFreeTransfers(Math.max(1, Math.min(5, Number(e.target.value))))}
-              className="border border-zinc-300 rounded px-3 py-1.5 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-20"
+              className="border border-zinc-300 rounded px-3 py-1.5 text-base sm:text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-20"
             />
           </div>
 
           <button
             type="submit"
-            className="px-4 py-1.5 bg-zinc-900 text-white text-sm font-medium rounded hover:bg-zinc-700 transition-colors"
+            className="px-4 py-1.5 bg-zinc-900 text-white text-sm font-medium rounded hover:bg-zinc-700 transition-colors cursor-pointer active:scale-95 transition-transform"
           >
             Load Squad
           </button>
+        </form>
+
+        {/* Auth — available immediately, independent of squad loading */}
+        <div className="border-t border-zinc-100 pt-2">
+          {!isAuthenticated ? (
+            !showTokenForm ? (
+              <button
+                onClick={() => setShowTokenForm(true)}
+                className="text-sm text-blue-600 hover:text-blue-800 underline underline-offset-2 cursor-pointer active:scale-95 transition-transform"
+              >
+                Connect FPL account for exact prices &rarr;
+              </button>
+            ) : (
+              <form onSubmit={handleLogin} className="space-y-2">
+                <p className="text-xs text-zinc-500 leading-snug">
+                  Open{' '}
+                  <span className="font-medium text-zinc-700">fantasy.premierleague.com</span>
+                  {' '}while logged in &rarr; DevTools (F12) &rarr; Network &rarr; click any{' '}
+                  <span className="font-mono text-zinc-700">/api/</span> request &rarr; copy the{' '}
+                  <span className="font-mono text-zinc-700">x-api-authorization</span> header value.
+                </p>
+                <div className="flex gap-2 items-start flex-wrap">
+                  <input
+                    type="text"
+                    placeholder="Paste Bearer token here…"
+                    value={tokenInput}
+                    onChange={e => setTokenInput(e.target.value)}
+                    required
+                    className="border border-zinc-300 rounded px-2 py-1 text-base sm:text-xs flex-1 min-w-48 font-mono"
+                  />
+                  <button
+                    type="submit"
+                    disabled={loginLoading || !tokenInput.trim()}
+                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 cursor-pointer active:scale-95 transition-transform"
+                  >
+                    {loginLoading ? 'Saving…' : 'Save token'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowTokenForm(false); setLoginError(null); setTokenInput('') }}
+                    className="text-sm text-zinc-500 hover:text-zinc-700"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {loginError && <span className="text-sm text-red-600">{loginError}</span>}
+              </form>
+            )
+          ) : (
+            <div className="text-sm text-zinc-600 flex items-center gap-3 flex-wrap">
+              <span>
+                FPL connected
+                {expiresAt && (
+                  <span className="text-zinc-400 ml-1">
+                    &bull; valid until{' '}
+                    {new Date(expiresAt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                )}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="text-blue-600 hover:text-blue-800 underline underline-offset-2"
+              >
+                Disconnect
+              </button>
+            </div>
+          )}
         </div>
-      </form>
+      </div>
 
       {/* Loading state */}
       {isLoading && submittedId && (
@@ -178,67 +243,6 @@ export function TransferPanel() {
           {/* Squad display */}
           <div className="rounded border border-zinc-200 p-4">
             <h2 className="text-base font-semibold text-zinc-900 mb-3">Your Squad</h2>
-
-            {/* Login nudge — D-01 */}
-            {!isAuthenticated && (
-              <div className="mb-3">
-                {!showLoginForm ? (
-                  <button
-                    onClick={() => setShowLoginForm(true)}
-                    className="text-sm text-blue-600 hover:text-blue-800 underline underline-offset-2"
-                  >
-                    Log in for exact prices &rarr;
-                  </button>
-                ) : (
-                  <form onSubmit={handleLogin} className="flex gap-2 items-end flex-wrap">
-                    <input
-                      type="email"
-                      placeholder="FPL email"
-                      value={loginEmail}
-                      onChange={e => setLoginEmail(e.target.value)}
-                      required
-                      className="border border-zinc-300 rounded px-2 py-1 text-sm w-48"
-                    />
-                    <input
-                      type="password"
-                      placeholder="FPL password"
-                      value={loginPassword}
-                      onChange={e => setLoginPassword(e.target.value)}
-                      required
-                      className="border border-zinc-300 rounded px-2 py-1 text-sm w-36"
-                    />
-                    <button
-                      type="submit"
-                      disabled={loginLoading}
-                      className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      {loginLoading ? 'Logging in...' : 'Log in'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setShowLoginForm(false); setLoginError(null) }}
-                      className="text-sm text-zinc-500 hover:text-zinc-700"
-                    >
-                      Cancel
-                    </button>
-                    {loginError && <span className="text-sm text-red-600 w-full">{loginError}</span>}
-                  </form>
-                )}
-              </div>
-            )}
-
-            {/* Logged in indicator — D-01/D-03 */}
-            {isAuthenticated && (
-              <div className="mb-3 text-sm text-zinc-600">
-                Logged in &bull;{' '}
-                <button
-                  onClick={handleLogout}
-                  className="text-blue-600 hover:text-blue-800 underline underline-offset-2"
-                >
-                  Log out
-                </button>
-              </div>
-            )}
 
             <SquadView
               picks={squadData.picks}

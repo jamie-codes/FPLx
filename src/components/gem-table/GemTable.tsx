@@ -82,7 +82,7 @@ export function GemTable() {
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className={`px-2 py-1 font-semibold text-gray-700 whitespace-nowrap ${
+                    className={`px-2 py-2.5 sm:py-1 font-semibold text-gray-700 whitespace-nowrap min-h-[44px] ${
                       header.column.getCanSort() ? 'cursor-pointer select-none' : ''
                     }`}
                     onClick={header.column.getToggleSortingHandler()}
