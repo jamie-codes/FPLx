@@ -4,7 +4,7 @@ milestone: v1.2
 milestone_name: Mobile
 status: verifying
 stopped_at: Completed 18-02-PLAN.md — dark variants on high-complexity components (DARK-03 partial)
-last_updated: "2026-04-01T18:20:52.630Z"
+last_updated: "2026-04-01T18:33:46.013Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 6
@@ -25,8 +25,8 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 
 ## Current Position
 
-Phase: 18 (dark-mode) — EXECUTING
-Plan: 3 of 3
+Phase: 18
+Plan: Not started
 Status: Phase complete — ready for verification
 Last activity: 2026-04-01
 

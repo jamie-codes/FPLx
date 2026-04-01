@@ -158,4 +158,4 @@ Plans:
 | 15. Remaining Tables Mobile | v1.2 | 2/2 | Complete    | 2026-04-01 |
 | 16. Component-Level Mobile | v1.2 | 1/1 | Complete    | 2026-04-01 |
 | 17. Polish + Infrastructure | v1.2 | 3/3 | Complete    | 2026-04-01 |
-| 18. Dark Mode | v1.2 | 3/3 | Complete   | 2026-04-01 |
+| 18. Dark Mode | v1.2 | 3/3 | Complete    | 2026-04-01 |
