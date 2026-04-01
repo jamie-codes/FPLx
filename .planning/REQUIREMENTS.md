@@ -36,9 +36,9 @@
 
 ### Components
 
-- [ ] **MOB-COMP-01**: Transfer suggestion cards use a 2-row structured layout on mobile: row 1 = sell → buy player names with verdict/risk badges; row 2 = gem delta, cost, projected pts change
-- [ ] **MOB-COMP-02**: Login/token form inputs stack vertically on mobile with full-width inputs (the form uses a bearer token paste field, not an email field)
-- [ ] **MOB-COMP-03**: Captaincy panel renders as a 2-column card grid on mobile instead of a horizontal flex row
+- [x] **MOB-COMP-01**: Transfer suggestion cards use a 2-row structured layout on mobile: row 1 = sell → buy player names with verdict/risk badges; row 2 = gem delta, cost, projected pts change
+- [x] **MOB-COMP-02**: Login/token form inputs stack vertically on mobile with full-width inputs (the form uses a bearer token paste field, not an email field)
+- [x] **MOB-COMP-03**: Captaincy panel renders as a 2-column card grid on mobile instead of a horizontal flex row
 
 ### Polish
 
@@ -96,9 +96,9 @@
 | MOB-TBL-03 | Phase 15 | Complete |
 | MOB-TBL-04 | Phase 15 | Complete |
 | MOB-TBL-05 (SquadView) | Phase 15 | Complete |
-| MOB-COMP-01 | Phase 16 | Pending |
-| MOB-COMP-02 | Phase 16 | Pending |
-| MOB-COMP-03 | Phase 16 | Pending |
+| MOB-COMP-01 | Phase 16 | Complete |
+| MOB-COMP-02 | Phase 16 | Complete |
+| MOB-COMP-03 | Phase 16 | Complete |
 | MOB-POL-01 | Phase 17 | Pending |
 | MOB-POL-02 | Phase 17 | Pending |
 | DAT-01 | Phase 17 | Pending |

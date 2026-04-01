@@ -43,7 +43,7 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
 - [x] **Phase 13: Navigation + Layout Foundations** - Bottom tab bar, viewport contract, touch targets, and single-column layout across all tabs (completed 2026-04-01)
 - [x] **Phase 14: GemTable Mobile** - Column prioritisation, sticky Player column, and expandable row detail for GemTable (completed 2026-04-01)
 - [x] **Phase 15: Remaining Tables Mobile** - Column prioritisation for SquadView, DefConTables, ClubFormTable, and ValueGemsTable; sticky Player column in SquadView (completed 2026-04-01)
-- [ ] **Phase 16: Component-Level Mobile** - Transfer suggestion card layout, login form, and captaincy panel grid for mobile
+- [x] **Phase 16: Component-Level Mobile** - Transfer suggestion card layout, login form, and captaincy panel grid for mobile (completed 2026-04-01)
 - [ ] **Phase 17: Polish + Infrastructure** - Sticky filter bar, back-to-top button, and verified GitHub Actions cron
 - [ ] **Phase 18: Dark Mode** - System-preference-aware dark mode with manual toggle; all components themed
 
@@ -104,7 +104,7 @@ Plans:
   3. The captaincy panel renders as a 2-column card grid on mobile — each candidate occupies one card with rank, player name, safe/upside badge, and projected captain pts visible without truncation
 **Plans**: 1 plan
 Plans:
-- [ ] 16-01-PLAN.md — Transfer card 2-row layout, login form stacking, captaincy card grid for mobile
+- [x] 16-01-PLAN.md — Transfer card 2-row layout, login form stacking, captaincy card grid for mobile
 **UI hint**: yes
 
 ### Phase 17: Polish + Infrastructure
@@ -144,6 +144,6 @@ Plans:
 | 13. Navigation + Layout Foundations | v1.2 | 2/2 | Complete    | 2026-04-01 |
 | 14. GemTable Mobile | v1.2 | 1/1 | Complete    | 2026-04-01 |
 | 15. Remaining Tables Mobile | v1.2 | 2/2 | Complete    | 2026-04-01 |
-| 16. Component-Level Mobile | v1.2 | 0/1 | Not started | - |
+| 16. Component-Level Mobile | v1.2 | 1/1 | Complete   | 2026-04-01 |
 | 17. Polish + Infrastructure | v1.2 | 0/? | Not started | - |
 | 18. Dark Mode | v1.2 | 0/? | Not started | - |

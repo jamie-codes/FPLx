@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Mobile
 status: verifying
-stopped_at: Completed 15-02-PLAN.md — DefConTables, ClubFormTable, ValueGemsTable mobile column hiding complete
-last_updated: "2026-04-01T09:28:18.514Z"
+stopped_at: Completed 16-01-PLAN.md — TransferPanel and CaptaincyPanel mobile layouts complete
+last_updated: "2026-04-01T10:29:41.376Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 6
-  completed_phases: 3
-  total_plans: 5
-  completed_plans: 5
+  completed_phases: 4
+  total_plans: 6
+  completed_plans: 6
   percent: 0
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 15 — remaining-tables-mobile
+**Current focus:** Phase 16 — component-level-mobile
 
 ## Current Position
 
-Phase: 16
-Plan: Not started
+Phase: 16 (component-level-mobile) — EXECUTING
+Plan: 1 of 1
 Status: Phase complete — ready for verification
 Last activity: 2026-04-01
 
@@ -57,6 +57,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 14-gemtable-mobile P01 | 15 | 2 tasks | 3 files |
 | Phase 15 P01 | 1 | 1 tasks | 1 files |
 | Phase 15-remaining-tables-mobile P02 | 8 | 2 tasks | 3 files |
+| Phase 16-component-level-mobile P01 | 126 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,8 @@ Recent decisions affecting current work:
 - [Phase 15]: Dynamic colSpan on ExplainPanel (4 mobile / 9 desktop) spans only visible columns
 - [Phase 15-02]: Used window.innerWidth resize listener (not useMediaQuery) consistent with Phase 13/14 pattern to avoid hydration mismatch
 - [Phase 15-02]: DefConTables shares single columnVisibility constant wired to both defTable and midFwdTable instances
+- [Phase 16-component-level-mobile]: hidden sm:inline for season price trend on mobile — GW trend always visible as decision-relevant
+- [Phase 16-component-level-mobile]: Captaincy panel uses grid-cols-2 sm:grid-cols-1 for equal-width cards on narrow screens
 
 ### Pending Todos
 
@@ -91,6 +94,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T09:27:09.311Z
-Stopped at: Completed 15-02-PLAN.md — DefConTables, ClubFormTable, ValueGemsTable mobile column hiding complete
+Last session: 2026-04-01T10:29:41.373Z
+Stopped at: Completed 16-01-PLAN.md — TransferPanel and CaptaincyPanel mobile layouts complete
 Resume file: None
