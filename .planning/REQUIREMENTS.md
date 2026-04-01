@@ -37,7 +37,7 @@
 ### Components
 
 - [ ] **MOB-COMP-01**: Transfer suggestion cards use a 2-row structured layout on mobile: row 1 = sell → buy player names with verdict/risk badges; row 2 = gem delta, cost, projected pts change
-- [ ] **MOB-COMP-02**: Login form inputs stack vertically on mobile with full-width inputs; email field uses `inputMode="email"` to trigger the correct mobile keyboard
+- [ ] **MOB-COMP-02**: Login/token form inputs stack vertically on mobile with full-width inputs (the form uses a bearer token paste field, not an email field)
 - [ ] **MOB-COMP-03**: Captaincy panel renders as a 2-column card grid on mobile instead of a horizontal flex row
 
 ### Polish
