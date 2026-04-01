@@ -100,7 +100,7 @@ export function GemTable() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Gem Ratings</h1>
-      <div className="flex justify-between items-center mb-2">
+      <div className="sticky top-0 sm:static z-40 bg-white py-2 -mx-4 px-4 flex justify-between items-center mb-2 border-b border-gray-100 sm:border-0">
         <PositionFilter active={activePosition} onChange={handlePositionChange} />
         <GwToggle value={gwHorizon} onChange={setGwHorizon} />
       </div>
