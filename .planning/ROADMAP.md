@@ -134,7 +134,7 @@ Plans:
 | 10. Buy/Hold/Sell + Captaincy Engines | v1.1 | 3/3 | Complete | 2026-03-30 |
 | 11. Explainability + Replacement Shortlist | v1.1 | 3/3 | Complete | 2026-03-30 |
 | 12. FPL Auth + Exact Selling Price | v1.1 | 2/2 | Complete | 2026-03-30 |
-| 13. Navigation + Layout Foundations | v1.2 | 2/2 | Complete   | 2026-04-01 |
+| 13. Navigation + Layout Foundations | v1.2 | 2/2 | Complete    | 2026-04-01 |
 | 14. GemTable Mobile | v1.2 | 0/? | Not started | - |
 | 15. Remaining Tables Mobile | v1.2 | 0/? | Not started | - |
 | 16. Component-Level Mobile | v1.2 | 0/? | Not started | - |
