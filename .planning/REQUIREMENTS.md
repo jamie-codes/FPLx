@@ -95,7 +95,7 @@
 | MOB-TBL-02 | Phase 15 | Complete |
 | MOB-TBL-03 | Phase 15 | Complete |
 | MOB-TBL-04 | Phase 15 | Complete |
-| MOB-TBL-05 (SquadView) | Phase 15 | Pending |
+| MOB-TBL-05 (SquadView) | Phase 15 | Complete |
 | MOB-COMP-01 | Phase 16 | Pending |
 | MOB-COMP-02 | Phase 16 | Pending |
 | MOB-COMP-03 | Phase 16 | Pending |
