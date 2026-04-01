@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Mobile
-status: executing
-stopped_at: Completed 17-03-PLAN.md — DGW/BGW awareness in transfer engine and fixture display
-last_updated: "2026-04-01T11:42:09.665Z"
+status: verifying
+stopped_at: Completed 17-02-PLAN.md — last-updated Blob fix and cron verification (DAT-01)
+last_updated: "2026-04-01T11:45:09.097Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 6
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 
 Phase: 17 (polish-infrastructure) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-01
 
 Progress: [░░░░░░░░░░] 0%
@@ -60,6 +60,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 16-component-level-mobile P01 | 126 | 2 tasks | 2 files |
 | Phase 17 P01 | 74 | 2 tasks | 1 files |
 | Phase 17 P03 | 6 | 2 tasks | 3 files |
+| Phase 17 P02 | 15 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -90,6 +91,7 @@ Recent decisions affecting current work:
 - [Phase 17]: Back-to-top button uses dual gating: isMobile state + sm:hidden CSS, consistent with Phase 13/14 pattern
 - [Phase 17]: DGW tier slots between rotation-risk and gem_delta so structural concerns outrank scheduling advantages
 - [Phase 17]: Map.entries() preserves fixture insertion order for DGW badge grouping — no additional sort needed
+- [Phase 17]: Mirror /api/players USE_BLOB pattern for /api/last-updated: list({ prefix }) + fetch for prod, readFile for dev
 
 ### Pending Todos
 
@@ -101,6 +103,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T11:42:09.662Z
-Stopped at: Completed 17-03-PLAN.md — DGW/BGW awareness in transfer engine and fixture display
+Last session: 2026-04-01T11:45:09.094Z
+Stopped at: Completed 17-02-PLAN.md — last-updated Blob fix and cron verification (DAT-01)
 Resume file: None
