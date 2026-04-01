@@ -108,7 +108,7 @@ export function TransferPanel() {
       {/* Team ID input + auth */}
       <div className="rounded border border-zinc-200 p-4 space-y-3">
         <h2 className="text-base font-semibold text-zinc-900">Load Your Squad</h2>
-        <form onSubmit={handleSubmit} className="flex gap-2 items-end flex-wrap">
+        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 sm:items-end">
           <div className="flex flex-col gap-1">
             <label htmlFor="teamId" className="text-sm text-zinc-600">
               FPL Team ID
@@ -121,7 +121,7 @@ export function TransferPanel() {
               value={teamId}
               onChange={e => setTeamId(e.target.value)}
               placeholder="e.g. 1234567"
-              className="border border-zinc-300 rounded px-3 py-1.5 text-base sm:text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-40"
+              className="border border-zinc-300 rounded px-3 py-1.5 text-base sm:text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-full sm:w-40"
             />
           </div>
 
@@ -143,13 +143,13 @@ export function TransferPanel() {
               max={5}
               value={freeTransfers}
               onChange={e => setFreeTransfers(Math.max(1, Math.min(5, Number(e.target.value))))}
-              className="border border-zinc-300 rounded px-3 py-1.5 text-base sm:text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-20"
+              className="border border-zinc-300 rounded px-3 py-1.5 text-base sm:text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-full sm:w-20"
             />
           </div>
 
           <button
             type="submit"
-            className="px-4 py-1.5 bg-zinc-900 text-white text-sm font-medium rounded hover:bg-zinc-700 transition-colors cursor-pointer active:scale-95 transition-transform"
+            className="px-4 py-1.5 bg-zinc-900 text-white text-sm font-medium rounded hover:bg-zinc-700 transition-colors cursor-pointer active:scale-95 transition-transform w-full sm:w-auto"
           >
             Load Squad
           </button>
@@ -174,19 +174,19 @@ export function TransferPanel() {
                   <span className="font-mono text-zinc-700">/api/</span> request &rarr; copy the{' '}
                   <span className="font-mono text-zinc-700">x-api-authorization</span> header value.
                 </p>
-                <div className="flex gap-2 items-start flex-wrap">
+                <div className="flex flex-col sm:flex-row gap-2 sm:items-start">
                   <input
                     type="text"
                     placeholder="Paste Bearer token here…"
                     value={tokenInput}
                     onChange={e => setTokenInput(e.target.value)}
                     required
-                    className="border border-zinc-300 rounded px-2 py-1 text-base sm:text-xs flex-1 min-w-48 font-mono"
+                    className="border border-zinc-300 rounded px-2 py-1 text-base sm:text-xs w-full sm:flex-1 sm:min-w-48 font-mono"
                   />
                   <button
                     type="submit"
                     disabled={loginLoading || !tokenInput.trim()}
-                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 cursor-pointer active:scale-95 transition-transform"
+                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 cursor-pointer active:scale-95 transition-transform w-full sm:w-auto"
                   >
                     {loginLoading ? 'Saving…' : 'Save token'}
                   </button>
@@ -295,35 +295,40 @@ export function TransferPanel() {
                       key={i}
                       className="rounded border border-zinc-100 bg-zinc-50 px-3 py-2 space-y-0.5"
                     >
-                      <div className="text-sm text-zinc-900">
-                        Sell{' '}
-                        <span className="font-medium">{s.sell.web_name}</span>{' '}
-                        <MinsRiskBadge minsRisk={s.sell.mins_risk} />{' '}
+                      {/* Row 1: players + badges */}
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-900">
+                        <span>Sell</span>
+                        <span className="font-medium">{s.sell.web_name}</span>
+                        <MinsRiskBadge minsRisk={s.sell.mins_risk} />
                         <span className="text-zinc-500">({s.sell.gem_score.toFixed(2)})</span>
-                        {/* VAL-03: price trend */}
+                        {/* GW price trend — decision-relevant, always visible */}
                         {(s.sell.cost_change_event ?? 0) > 0 && (
-                          <span className="text-green-600 text-xs ml-1">↑{((s.sell.cost_change_event ?? 0) / 10).toFixed(1)}</span>
+                          <span className="text-green-600 text-xs">↑{((s.sell.cost_change_event ?? 0) / 10).toFixed(1)}</span>
                         )}
                         {(s.sell.cost_change_event ?? 0) < 0 && (
-                          <span className="text-red-600 text-xs ml-1">↓{(Math.abs(s.sell.cost_change_event ?? 0) / 10).toFixed(1)}</span>
+                          <span className="text-red-600 text-xs">↓{(Math.abs(s.sell.cost_change_event ?? 0) / 10).toFixed(1)}</span>
                         )}
+                        {/* Season price trend — hide on mobile */}
                         {(s.sell.cost_change_start ?? 0) !== 0 && (
-                          <span className="text-zinc-400 text-[10px] ml-1">({(s.sell.cost_change_start ?? 0) > 0 ? '+' : '-'}{(Math.abs(s.sell.cost_change_start ?? 0) / 10).toFixed(1)}m season)</span>
+                          <span className="hidden sm:inline text-zinc-400 text-[10px]">({(s.sell.cost_change_start ?? 0) > 0 ? '+' : '-'}{(Math.abs(s.sell.cost_change_start ?? 0) / 10).toFixed(1)}m season)</span>
                         )}
-                        {' '}&rarr; Buy{' '}
-                        <span className="font-medium">{s.buy.web_name}</span>{' '}
+                        <span>&rarr;</span>
+                        <span>Buy</span>
+                        <span className="font-medium">{s.buy.web_name}</span>
                         <span className="text-zinc-500">({s.buy.gem_score.toFixed(2)})</span>
-                        {/* VAL-03: price trend */}
+                        {/* GW price trend — decision-relevant, always visible */}
                         {(s.buy.cost_change_event ?? 0) > 0 && (
-                          <span className="text-green-600 text-xs ml-1">↑{((s.buy.cost_change_event ?? 0) / 10).toFixed(1)}</span>
+                          <span className="text-green-600 text-xs">↑{((s.buy.cost_change_event ?? 0) / 10).toFixed(1)}</span>
                         )}
                         {(s.buy.cost_change_event ?? 0) < 0 && (
-                          <span className="text-red-600 text-xs ml-1">↓{(Math.abs(s.buy.cost_change_event ?? 0) / 10).toFixed(1)}</span>
+                          <span className="text-red-600 text-xs">↓{(Math.abs(s.buy.cost_change_event ?? 0) / 10).toFixed(1)}</span>
                         )}
+                        {/* Season price trend — hide on mobile */}
                         {(s.buy.cost_change_start ?? 0) !== 0 && (
-                          <span className="text-zinc-400 text-[10px] ml-1">({(s.buy.cost_change_start ?? 0) > 0 ? '+' : '-'}{(Math.abs(s.buy.cost_change_start ?? 0) / 10).toFixed(1)}m season)</span>
+                          <span className="hidden sm:inline text-zinc-400 text-[10px]">({(s.buy.cost_change_start ?? 0) > 0 ? '+' : '-'}{(Math.abs(s.buy.cost_change_start ?? 0) / 10).toFixed(1)}m season)</span>
                         )}
                       </div>
+                      {/* Row 2: stats */}
                       <div className="text-xs text-zinc-500">
                         Gem improvement:{' '}
                         <span className="text-zinc-700">+{s.gem_delta.toFixed(2)}</span>
@@ -337,6 +342,7 @@ export function TransferPanel() {
                         {' '}&rarr;{' '}
                         <span className="text-zinc-700">{(s.buy.proj_pts_1gw ?? 0).toFixed(1)}</span>
                       </div>
+                      {/* Row 3: budget badge */}
                       <div>
                         {s.budget_sufficient ? (
                           <span className="inline-block text-xs font-medium text-green-700 bg-green-100 rounded px-1.5 py-0.5">
@@ -361,35 +367,40 @@ export function TransferPanel() {
                       key={i}
                       className="rounded border border-zinc-100 bg-zinc-50 px-3 py-2 space-y-0.5"
                     >
-                      <div className="text-sm text-zinc-900">
-                        Sell{' '}
-                        <span className="font-medium">{s.sell.web_name}</span>{' '}
-                        <MinsRiskBadge minsRisk={s.sell.mins_risk} />{' '}
+                      {/* Row 1: players + badges */}
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-900">
+                        <span>Sell</span>
+                        <span className="font-medium">{s.sell.web_name}</span>
+                        <MinsRiskBadge minsRisk={s.sell.mins_risk} />
                         <span className="text-zinc-500">({s.sell.gem_score.toFixed(2)})</span>
-                        {/* VAL-03: price trend */}
+                        {/* GW price trend — decision-relevant, always visible */}
                         {(s.sell.cost_change_event ?? 0) > 0 && (
-                          <span className="text-green-600 text-xs ml-1">↑{((s.sell.cost_change_event ?? 0) / 10).toFixed(1)}</span>
+                          <span className="text-green-600 text-xs">↑{((s.sell.cost_change_event ?? 0) / 10).toFixed(1)}</span>
                         )}
                         {(s.sell.cost_change_event ?? 0) < 0 && (
-                          <span className="text-red-600 text-xs ml-1">↓{(Math.abs(s.sell.cost_change_event ?? 0) / 10).toFixed(1)}</span>
+                          <span className="text-red-600 text-xs">↓{(Math.abs(s.sell.cost_change_event ?? 0) / 10).toFixed(1)}</span>
                         )}
+                        {/* Season price trend — hide on mobile */}
                         {(s.sell.cost_change_start ?? 0) !== 0 && (
-                          <span className="text-zinc-400 text-[10px] ml-1">({(s.sell.cost_change_start ?? 0) > 0 ? '+' : '-'}{(Math.abs(s.sell.cost_change_start ?? 0) / 10).toFixed(1)}m season)</span>
+                          <span className="hidden sm:inline text-zinc-400 text-[10px]">({(s.sell.cost_change_start ?? 0) > 0 ? '+' : '-'}{(Math.abs(s.sell.cost_change_start ?? 0) / 10).toFixed(1)}m season)</span>
                         )}
-                        {' '}&rarr; Buy{' '}
-                        <span className="font-medium">{s.buy.web_name}</span>{' '}
+                        <span>&rarr;</span>
+                        <span>Buy</span>
+                        <span className="font-medium">{s.buy.web_name}</span>
                         <span className="text-zinc-500">({s.buy.gem_score.toFixed(2)})</span>
-                        {/* VAL-03: price trend */}
+                        {/* GW price trend — decision-relevant, always visible */}
                         {(s.buy.cost_change_event ?? 0) > 0 && (
-                          <span className="text-green-600 text-xs ml-1">↑{((s.buy.cost_change_event ?? 0) / 10).toFixed(1)}</span>
+                          <span className="text-green-600 text-xs">↑{((s.buy.cost_change_event ?? 0) / 10).toFixed(1)}</span>
                         )}
                         {(s.buy.cost_change_event ?? 0) < 0 && (
-                          <span className="text-red-600 text-xs ml-1">↓{(Math.abs(s.buy.cost_change_event ?? 0) / 10).toFixed(1)}</span>
+                          <span className="text-red-600 text-xs">↓{(Math.abs(s.buy.cost_change_event ?? 0) / 10).toFixed(1)}</span>
                         )}
+                        {/* Season price trend — hide on mobile */}
                         {(s.buy.cost_change_start ?? 0) !== 0 && (
-                          <span className="text-zinc-400 text-[10px] ml-1">({(s.buy.cost_change_start ?? 0) > 0 ? '+' : '-'}{(Math.abs(s.buy.cost_change_start ?? 0) / 10).toFixed(1)}m season)</span>
+                          <span className="hidden sm:inline text-zinc-400 text-[10px]">({(s.buy.cost_change_start ?? 0) > 0 ? '+' : '-'}{(Math.abs(s.buy.cost_change_start ?? 0) / 10).toFixed(1)}m season)</span>
                         )}
                       </div>
+                      {/* Row 2: stats */}
                       <div className="text-xs text-zinc-500">
                         Gem improvement:{' '}
                         <span className="text-zinc-700">+{s.gem_delta.toFixed(2)}</span>
