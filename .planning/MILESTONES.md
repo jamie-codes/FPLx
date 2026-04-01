@@ -1,5 +1,26 @@
 # Milestones
 
+## v1.2 Mobile (Shipped: 2026-04-01)
+
+**Phases completed:** 6 phases, 12 plans, 20 tasks
+
+**Key accomplishments:**
+
+- Fixed bottom tab bar (MobileNav) with CSS-only show/hide pattern, iOS safe area viewport contract, and single-column layout guarantee at 375px
+- 44px tap targets, 16px mobile input fonts, and active:scale-95 feedback applied to PositionFilter, GwToggle, GemTable headers, and TransferPanel — completing Phase 13 mobile touch compliance with visual checkpoint approved
+- GemTable mobile-responsive: 5-column view on phones with sticky Player column and tap-to-expand row detail panel showing all 15 hidden columns as labelled key-value pairs
+- SquadView reduced to 4-column mobile layout (Player, Price, Risk, Rec) with sticky Player column and dynamic ExplainPanel colSpan, matching Phase 14 isMobile pattern
+- DefConTables, ClubFormTable, and ValueGemsTable reduced to 4-5 priority columns on mobile via TanStack VisibilityState, matching the GemTable pattern from Phase 14
+- One-liner:
+- One-liner:
+- Blob-aware /api/last-updated route using @vercel/blob list() pattern, mirroring /api/players for production timestamp freshness — GitHub Actions cron confirmed operational
+- Transfer engine (DGW-01):
+- Tailwind v4 @custom-variant dark + FOUC-prevention inline script + ThemeToggle button wired to localStorage and .dark class on <html>
+- One-liner:
+- MinsRiskBadge.tsx
+
+---
+
 ## v1.1 Decision Engine (Shipped: 2026-03-31)
 
 **Phases completed:** 6 phases, 15 plans, 18 tasks

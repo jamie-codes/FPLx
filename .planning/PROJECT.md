@@ -4,30 +4,19 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, and transfer suggestions — all grounded in FPL API data plus Understat xG/xA.
 
-v1.0 shipped as a complete daily-use tool. The manager enters their Team ID and receives ranked transfer suggestions, a Gem Rating table, DefCon analysis, Club Form, and Value Gems — all from a single daily pipeline run.
+v1.2 shipped as a fully mobile-responsive, dark-mode-aware daily-use tool. The manager enters their Team ID and receives ranked transfer suggestions, a Gem Rating table, DefCon analysis, Club Form, and Value Gems — all responsive on any screen size, with dark mode toggle and automated daily pipeline refresh.
 
 ## Core Value
 
 Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
 
-## Current Milestone: v1.2 Mobile
+## Current State (v1.2 shipped 2026-04-01)
 
-**Goal:** Make the full app usable on a phone with a touch-friendly responsive layout — same URL, desktop unchanged.
-
-**Target features:**
-- Responsive single-column layouts for all tabs (Gems, Squad, DefCon, Club Form, Value Gems)
-- Fixed bottom tab bar on mobile (icons + labels, replaces top tab strip)
-- Tables adapted for small screens — column prioritisation, horizontal scroll where needed
-- Transfer suggestions, captaincy panel, and auth flow usable on mobile
-- DAT-01 carry-forward: verify GitHub Actions cron operational
-
-## Current State (v1.2 in progress — Phase 18 complete 2026-04-01)
-
-Phase 18 complete 2026-04-01 — Full dark mode: Tailwind v4 class-based dark variant, FOUC-prevention inline script, ThemeToggle in header; dark: variants across all components (GemTable, TransferPanel, SquadView, MobileNav, badges, tables, ExplainPanel) (DARK-01/02/03). Phase 17 complete 2026-04-01 — GemTable sticky filter bar + back-to-top button (MOB-POL-01/02); DGW-aware transfer engine tier + DGW labels in FixtureBadges/CaptaincyPanel (DGW-01/02); /api/last-updated Blob read path + GitHub Actions cron confirmed (DAT-01). Phase 16 complete 2026-04-01 — TransferPanel cards 2-row flex-wrap mobile layout, login/token form vertical stacking, CaptaincyPanel 2-column grid on mobile (MOB-COMP-01/02/03). Phase 15 complete 2026-04-01 — SquadView/DefConTables/ClubFormTable/ValueGemsTable mobile column hiding; sticky Player in SquadView (MOB-TBL-02/03/04/05). Phase 14 complete 2026-04-01 — GemTable mobile: 5-column mobile view (Player, Pos, Gem, Proj Pts, Risk), sticky Player column, tap-to-expand detail rows (MOB-TBL-01/05/06). Phase 13 complete 2026-04-01 — mobile navigation foundations live: fixed bottom tab bar (5 tabs, `sm:hidden`), iOS viewport contract (`viewportFit: cover`), touch-compliant controls (44px tap targets, 16px inputs, `active:scale-95` feedback), overflow containment at `html/body` level. v1.0 shipped 2026-03-29. Phase 7 complete 2026-03-30 — pipeline computes `proj_pts_1gw/3gw/5gw`, `xmins`, `start_prob`, and `mins_risk` for all 825 players. Phase 8 complete 2026-03-30 — rotation risk badges visible on SquadView, GemTable, and TransferPanel; transfer engine de-prioritises rotation risks. Phase 9 complete 2026-03-30 — GemTable has sortable projected points columns with 1 GW / 3 GW / 5 GW toggle; TransferPanel shows "Proj pts (1 GW): X.X → Y.Y" on every suggestion card. Phase 10 complete — Buy/Hold/Sell recommendations and captaincy rankings engine live. Phase 11 complete 2026-03-30 — Explainability panel (`ExplainPanel.tsx`) wired into SquadView; `computeExplanations` generates natural-language reasons per player; `computeReplacementShortlist` surfaces ranked alternatives for Sell-verdicted players. Phase 12 complete 2026-03-30 — FPL session-cookie auth live: login/logout/status/my-team route handlers, `useAuthStatus`/`useMyTeam` TanStack Query hooks, inline login nudge in TransferPanel, exact sell prices and bank balance in SquadView (AUTH-01, AUTH-02 validated).
+v1.2 Mobile complete — full responsive layout on mobile with fixed bottom tab bar, touch-compliant controls (44px targets, 16px inputs), mobile-optimised tables (column hiding, sticky Player column, expandable rows), DGW-aware transfer engine, FOUC-free dark mode with ThemeToggle, and confirmed GitHub Actions cron for daily refresh.
 
 **Tech stack:** Next.js 16, React 19, TypeScript, TanStack Table v8, TanStack Query, Tailwind CSS v4, Vitest, Python (requests, pandas, soccerdata), Vercel Blob
 
-**Codebase:** ~6,600 LOC, 166 files
+**Codebase:** ~7,000 LOC, ~170 files
 
 **What's running:**
 - `/` — Gem Ratings tab (default), DefCon tab, Squad tab, Club Form tab, Value Gems tab
@@ -35,10 +24,7 @@ Phase 18 complete 2026-04-01 — Full dark mode: Tailwind v4 class-based dark va
 - `/api/defcon` — DefCon stats from pipeline cache
 - `/api/club-form` — club form computed from fixtures
 - `/api/last-updated` — timestamp of last pipeline run
-- `pipeline/run.py` — daily refresh (manual; GitHub Actions cron scaffolded)
-
-**Known gaps carried forward to v1.1:**
-- DAT-01: GitHub Actions daily cron not verified as operational
+- `pipeline/run.py` — daily refresh via GitHub Actions cron (confirmed operational)
 
 ## Requirements
 
@@ -86,16 +72,31 @@ Phase 18 complete 2026-04-01 — Full dark mode: Tailwind v4 class-based dark va
 - ✓ EXP-01/02: Explainability panel with natural-language reasons + risk flags — v1.1
 - ✓ AUTH-01/02: Optional FPL session-cookie login, exact sell prices and bank balance — v1.1
 
-### Active (carry-forward, deferred)
+### Validated (v1.2)
 
-- [ ] DAT-01: Verified automated daily refresh — GitHub Actions cron confirmed operational
+- ✓ MOB-NAV-01/02/03: Fixed bottom tab bar on mobile (5 tabs, CSS-only show/hide, iOS safe area) — v1.2
+- ✓ MOB-LAY-01/02: Single-column layout at 375px, no horizontal overflow on any tab — v1.2
+- ✓ MOB-TOUCH-01/02/03: 44px tap targets, 16px input fonts, active:scale-95 feedback — v1.2
+- ✓ MOB-TBL-01: GemTable 5-column mobile view (Player, Pos, Gem, Proj Pts, Risk) — v1.2
+- ✓ MOB-TBL-02/03/04: DefConTables, ClubFormTable, ValueGemsTable column hiding on mobile — v1.2
+- ✓ MOB-TBL-05: Sticky Player column in GemTable and SquadView on mobile — v1.2
+- ✓ MOB-TBL-06: Tap-to-expand row detail panel in GemTable — v1.2
+- ✓ MOB-COMP-01/02/03: Transfer cards 2-row layout, login form stacking, captaincy 2-col grid — v1.2
+- ✓ MOB-POL-01/02: Sticky GemTable filter bar, back-to-top button — v1.2
+- ✓ DAT-01: GitHub Actions cron confirmed operational, /api/last-updated Blob read path live — v1.2
+- ✓ DGW-01/02: DGW-aware transfer engine tier, DGW labels in FixtureBadges/CaptaincyPanel — v1.2
+- ✓ DARK-01/02/03: Tailwind v4 class-based dark mode, FOUC prevention, ThemeToggle, all components — v1.2
+
+### Active (next milestone)
+
+_(empty — start fresh with `/gsd:new-milestone`)_
 
 ### Out of Scope
 
 - Live in-match updates — data refreshes daily, not during gameweeks
 - Mini-league or head-to-head analysis — squad optimisation focus only
-- Mobile app — web only
-- FPL chip strategy (Wildcard, Free Hit, Triple Captain) — out of scope for v1
+- Mobile app — web only (responsive web covers the mobile use case)
+- FPL chip strategy (Wildcard, Free Hit, Triple Captain) — out of scope for v1.x
 - Offline mode — daily refresh is sufficient
 
 ## Context
@@ -104,7 +105,8 @@ Phase 18 complete 2026-04-01 — Full dark mode: Tailwind v4 class-based dark va
 - **Understat**: Shot-level xG/xA via soccerdata Python library
 - **DefCon rule**: 2025/26 season. DEF threshold=10 defensive contributions, MID/FWD threshold=12. Award=+2 pts.
 - **Transfer rules**: Position-locked. Free transfers accumulate to 2/week; extra cost 4 pts each.
-- **Auth**: Session-cookie auth (not OAuth). v1 uses Team ID only (public API).
+- **Auth**: Session-cookie auth (not OAuth). Team ID only for public API; optional login for exact prices.
+- **Dark mode**: Tailwind v4 `@custom-variant dark` with `.dark` class on `<html>`; localStorage persistence; FOUC prevented by inline script in `<head>`.
 
 ## Constraints
 
@@ -129,8 +131,10 @@ Phase 18 complete 2026-04-01 — Full dark mode: Tailwind v4 class-based dark va
 | Transfer sort: affordable before unaffordable, then gem_delta desc | Actionable suggestions first | ✓ Good — user sees what they can actually do |
 | `tier()` return-value swap (Phase 6 gap) | Thresholds were correct; only return labels were swapped | ✓ Fixed — Man City now shows red (hard) |
 | `?? 0` guards for `cost_change_event/start` | Fields absent from older cached data; Math.abs(undefined)=NaN | ✓ Fixed — price trend never shows NaN |
-| FPL login is v1.x (not v1) | Session-cookie auth complexity deferred | — v1.1 candidate |
-| Daily refresh cadence | FPL data updates post-gameweek; real-time adds complexity | — Accepted constraint |
+| CSS-only mobile nav show/hide (`sm:hidden` / `hidden sm:flex`) | No JS state for nav visibility — CSS media query is simpler and avoids hydration issues | ✓ Good — zero flash on resize |
+| TanStack `columnVisibility` for mobile column hiding | Reuses existing TanStack Table state; no new abstraction needed | ✓ Good — consistent pattern across 4 tables |
+| Tailwind v4 `@custom-variant dark` with `.dark` class (not media query) | Manual toggle requires class-based switching; v4 `@custom-variant` is the correct primitive | ✓ Good — FOUC prevention script works cleanly |
+| FOUC prevention: inline script in `<head>` with `suppressHydrationWarning` | Must run before first paint; React hydration ignores HTML/body attribute mismatch | ✓ Good — no white flash even on slow connections |
 
 ---
 
@@ -145,4 +149,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-01 after Phase 13 (navigation-layout-foundations)*
+*Last updated: 2026-04-01 after v1.2 milestone (Mobile)*

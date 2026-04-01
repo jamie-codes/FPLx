@@ -2,32 +2,32 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Mobile
-status: verifying
-stopped_at: Completed 18-02-PLAN.md — dark variants on high-complexity components (DARK-03 partial)
-last_updated: "2026-04-01T18:33:46.013Z"
+status: complete
+stopped_at: v1.2 milestone shipped 2026-04-01
+last_updated: "2026-04-01T20:00:00.000Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 12
   completed_plans: 12
-  percent: 0
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-31)
+See: .planning/PROJECT.md (updated 2026-04-01 after v1.2)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 18 — dark-mode
+**Current focus:** Planning next milestone — run `/gsd:new-milestone`
 
 ## Current Position
 
-Phase: 18
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 18 (final)
+Plan: All complete
+Status: Milestone v1.2 complete — archived 2026-04-01
 Last activity: 2026-04-01
 
 Progress: [░░░░░░░░░░] 0%
