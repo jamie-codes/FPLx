@@ -45,7 +45,7 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
 - [x] **Phase 15: Remaining Tables Mobile** - Column prioritisation for SquadView, DefConTables, ClubFormTable, and ValueGemsTable; sticky Player column in SquadView (completed 2026-04-01)
 - [x] **Phase 16: Component-Level Mobile** - Transfer suggestion card layout, login form, and captaincy panel grid for mobile (completed 2026-04-01)
 - [x] **Phase 17: Polish + Infrastructure** - Sticky filter bar, back-to-top button, DGW/BGW indicators, and verified GitHub Actions cron (completed 2026-04-01)
-- [ ] **Phase 18: Dark Mode** - System-preference-aware dark mode with manual toggle; all components themed
+- [x] **Phase 18: Dark Mode** - System-preference-aware dark mode with manual toggle; all components themed (completed 2026-04-01)
 
 ## Phase Details
 
@@ -134,7 +134,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 18-01-PLAN.md — Dark mode CSS infrastructure, FOUC prevention script, ThemeToggle component
-- [ ] 18-02-PLAN.md — Dark variants on GemTable, TransferPanel, SquadView, MobileNav, page.tsx tabs
+- [x] 18-02-PLAN.md — Dark variants on GemTable, TransferPanel, SquadView, MobileNav, page.tsx tabs
 - [x] 18-03-PLAN.md — Dark variants on badge components, remaining tables, FixtureBadges, CaptaincyPanel
 
 ## Progress
@@ -158,4 +158,4 @@ Plans:
 | 15. Remaining Tables Mobile | v1.2 | 2/2 | Complete    | 2026-04-01 |
 | 16. Component-Level Mobile | v1.2 | 1/1 | Complete    | 2026-04-01 |
 | 17. Polish + Infrastructure | v1.2 | 3/3 | Complete    | 2026-04-01 |
-| 18. Dark Mode | v1.2 | 2/3 | In Progress|  |
+| 18. Dark Mode | v1.2 | 3/3 | Complete   | 2026-04-01 |
