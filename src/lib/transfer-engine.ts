@@ -5,6 +5,13 @@ function isRotationRisk(p: ScoredPlayer): boolean {
   return p.mins_risk === 'rotation_risk' || p.mins_risk === 'cameo'
 }
 
+/** Count fixtures the player has in their immediately upcoming GW (DGW = 2, BGW = 0). */
+function nextGwFixtureCount(p: ScoredPlayer): number {
+  if (!p.fixtures.length) return 0
+  const nextGwId = p.fixtures[0].event_id
+  return p.fixtures.filter(f => f.event_id === nextGwId).length
+}
+
 export type ChipState = 'freehit' | 'wildcard' | 'bboost' | '3xc' | null
 
 export interface SingleTransfer {
@@ -100,7 +107,11 @@ export function computeTransferSuggestions(
     const aRisk = isRotationRisk(a.buy)
     const bRisk = isRotationRisk(b.buy)
     if (aRisk !== bRisk) return aRisk ? 1 : -1
-    // Tier 3: higher gem_delta first
+    // Tier 3: DGW buy (2 fixtures next GW) before single-fixture buy; BGW (0) ranks last
+    const aDgw = nextGwFixtureCount(a.buy)
+    const bDgw = nextGwFixtureCount(b.buy)
+    if (aDgw !== bDgw) return bDgw - aDgw
+    // Tier 4: higher gem_delta first
     return b.gem_delta - a.gem_delta
   })
 
