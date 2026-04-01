@@ -74,7 +74,9 @@ Plans:
   2. When scrolling GemTable horizontally on mobile, the Player column remains fixed to the left edge so the player name is always visible
   3. Tapping a GemTable row on mobile expands an inline detail panel showing all columns hidden by MOB-TBL-01 as labelled key-value pairs
   4. Desktop GemTable behaviour is unchanged — all columns visible per the existing GW toggle logic
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 14-01-PLAN.md — Mobile column visibility, sticky Player column, expandable row detail
 **UI hint**: yes
 
 ### Phase 15: Remaining Tables Mobile
@@ -135,7 +137,7 @@ Plans:
 | 11. Explainability + Replacement Shortlist | v1.1 | 3/3 | Complete | 2026-03-30 |
 | 12. FPL Auth + Exact Selling Price | v1.1 | 2/2 | Complete | 2026-03-30 |
 | 13. Navigation + Layout Foundations | v1.2 | 2/2 | Complete    | 2026-04-01 |
-| 14. GemTable Mobile | v1.2 | 0/? | Not started | - |
+| 14. GemTable Mobile | v1.2 | 0/1 | Planning | - |
 | 15. Remaining Tables Mobile | v1.2 | 0/? | Not started | - |
 | 16. Component-Level Mobile | v1.2 | 0/? | Not started | - |
 | 17. Polish + Infrastructure | v1.2 | 0/? | Not started | - |
