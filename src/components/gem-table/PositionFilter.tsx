@@ -24,8 +24,8 @@ export function PositionFilter({ active, onChange }: Props) {
           onClick={() => onChange(code)}
           className={`px-3 py-2.5 sm:py-1 rounded text-sm font-medium transition-colors cursor-pointer active:scale-95 transition-transform min-h-[44px] ${
             active === code
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-blue-600 dark:bg-blue-500 text-white'
+              : 'bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-600'
           }`}
         >
           {label}

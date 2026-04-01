@@ -93,7 +93,7 @@ export function GemTable() {
   }
 
   if (isLoading) {
-    return <p className="text-gray-500">Loading players...</p>
+    return <p className="text-gray-500 dark:text-zinc-400">Loading players...</p>
   }
 
   if (error) {
@@ -107,24 +107,24 @@ export function GemTable() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Gem Ratings</h1>
-      <div className="sticky top-0 sm:static z-40 bg-white py-2 -mx-4 px-4 flex justify-between items-center mb-2 border-b border-gray-100 sm:border-0">
+      <div className="sticky top-0 sm:static z-40 bg-white dark:bg-zinc-900 py-2 -mx-4 px-4 flex justify-between items-center mb-2 border-b border-gray-100 dark:border-zinc-800 sm:border-0">
         <PositionFilter active={activePosition} onChange={handlePositionChange} />
         <GwToggle value={gwHorizon} onChange={setGwHorizon} />
       </div>
-      <p className="text-sm text-gray-500 mb-2">
+      <p className="text-sm text-gray-500 dark:text-zinc-400 mb-2">
         {table.getRowModel().rows.length} players
       </p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="sticky top-0 bg-white border-b border-gray-200">
+          <thead className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-700">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className={`px-2 py-2.5 sm:py-1 font-semibold text-gray-700 whitespace-nowrap min-h-[44px] ${
+                    className={`px-2 py-2.5 sm:py-1 font-semibold text-gray-700 dark:text-zinc-300 whitespace-nowrap min-h-[44px] ${
                       header.column.id === 'web_name'
-                        ? 'sticky left-0 z-30 bg-white'
+                        ? 'sticky left-0 z-30 bg-white dark:bg-zinc-900'
                         : 'z-20'
                     } ${
                       header.column.getCanSort() ? 'cursor-pointer select-none' : ''
@@ -148,7 +148,7 @@ export function GemTable() {
             {table.getRowModel().rows.map((row) => (
               <Fragment key={row.id}>
                 <tr
-                  className={`even:bg-gray-50 hover:bg-blue-50 ${isMobile ? 'cursor-pointer active:bg-blue-100' : ''}`}
+                  className={`even:bg-gray-50 dark:even:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-zinc-700 ${isMobile ? 'cursor-pointer active:bg-blue-100' : ''}`}
                   onClick={() => { if (isMobile) row.toggleExpanded() }}
                 >
                   {row.getVisibleCells().map((cell) => (
@@ -156,7 +156,7 @@ export function GemTable() {
                       key={cell.id}
                       className={
                         cell.column.id === 'web_name'
-                          ? 'px-2 py-1 whitespace-nowrap sticky left-0 z-10 bg-white'
+                          ? 'px-2 py-1 whitespace-nowrap sticky left-0 z-10 bg-white dark:bg-zinc-900'
                           : 'px-2 py-1 whitespace-nowrap'
                       }
                     >
@@ -165,14 +165,14 @@ export function GemTable() {
                   ))}
                 </tr>
                 {row.getIsExpanded() && (
-                  <tr className="bg-blue-50 sm:hidden">
+                  <tr className="bg-blue-50 dark:bg-blue-950 sm:hidden">
                     <td colSpan={row.getVisibleCells().length} className="px-3 py-3">
                       <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                         {row.getAllCells()
                           .filter(cell => HIDDEN_COLUMN_LABELS[cell.column.id])
                           .map(cell => (
                             <div key={cell.column.id} className="flex gap-1">
-                              <dt className="text-gray-500 shrink-0">
+                              <dt className="text-gray-500 dark:text-zinc-400 shrink-0">
                                 {HIDDEN_COLUMN_LABELS[cell.column.id]}:
                               </dt>
                               <dd className="font-medium truncate">
@@ -193,7 +193,7 @@ export function GemTable() {
       {isMobile && showBackToTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-24 right-4 z-50 bg-zinc-900 text-white rounded-full w-10 h-10 flex items-center justify-center shadow-lg active:scale-95 transition-transform sm:hidden"
+          className="fixed bottom-24 right-4 z-50 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-full w-10 h-10 flex items-center justify-center shadow-lg active:scale-95 transition-transform sm:hidden"
           aria-label="Back to top"
         >
           ↑
