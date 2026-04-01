@@ -30,9 +30,9 @@
 
 ### Touch & Interaction
 
-- [ ] **MOB-TOUCH-01**: All interactive elements (position filter pills, column sort headers, row expander arrows, tab bar items, buttons) have a minimum 44×44px tap target
-- [ ] **MOB-TOUCH-02**: All `<input>` elements use 16px font size on mobile to prevent iOS Safari from auto-zooming the viewport on focus
-- [ ] **MOB-TOUCH-03**: All buttons and tab items apply an `active:scale-95` CSS class to give immediate tap feedback
+- [x] **MOB-TOUCH-01**: All interactive elements (position filter pills, column sort headers, row expander arrows, tab bar items, buttons) have a minimum 44×44px tap target
+- [x] **MOB-TOUCH-02**: All `<input>` elements use 16px font size on mobile to prevent iOS Safari from auto-zooming the viewport on focus
+- [x] **MOB-TOUCH-03**: All buttons and tab items apply an `active:scale-95` CSS class to give immediate tap feedback
 
 ### Components
 
@@ -86,9 +86,9 @@
 | MOB-NAV-03 | Phase 13 | Complete |
 | MOB-LAY-01 | Phase 13 | Complete |
 | MOB-LAY-02 | Phase 13 | Complete |
-| MOB-TOUCH-01 | Phase 13 | Pending |
-| MOB-TOUCH-02 | Phase 13 | Pending |
-| MOB-TOUCH-03 | Phase 13 | Pending |
+| MOB-TOUCH-01 | Phase 13 | Complete |
+| MOB-TOUCH-02 | Phase 13 | Complete |
+| MOB-TOUCH-03 | Phase 13 | Complete |
 | MOB-TBL-01 | Phase 14 | Pending |
 | MOB-TBL-05 (GemTable) | Phase 14 | Pending |
 | MOB-TBL-06 | Phase 14 | Pending |
