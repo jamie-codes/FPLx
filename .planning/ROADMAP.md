@@ -41,7 +41,7 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
 **Milestone Goal:** Make the full app usable on a phone with a touch-friendly responsive layout — same URL, desktop unchanged.
 
 - [x] **Phase 13: Navigation + Layout Foundations** - Bottom tab bar, viewport contract, touch targets, and single-column layout across all tabs (completed 2026-04-01)
-- [ ] **Phase 14: GemTable Mobile** - Column prioritisation, sticky Player column, and expandable row detail for GemTable
+- [x] **Phase 14: GemTable Mobile** - Column prioritisation, sticky Player column, and expandable row detail for GemTable (completed 2026-04-01)
 - [ ] **Phase 15: Remaining Tables Mobile** - Column prioritisation for SquadView, DefConTables, ClubFormTable, and ValueGemsTable; sticky Player column in SquadView
 - [ ] **Phase 16: Component-Level Mobile** - Transfer suggestion card layout, login form, and captaincy panel grid for mobile
 - [ ] **Phase 17: Polish + Infrastructure** - Sticky filter bar, back-to-top button, and verified GitHub Actions cron
@@ -76,7 +76,7 @@ Plans:
   4. Desktop GemTable behaviour is unchanged — all columns visible per the existing GW toggle logic
 **Plans**: 1 plan
 Plans:
-- [ ] 14-01-PLAN.md — Mobile column visibility, sticky Player column, expandable row detail
+- [x] 14-01-PLAN.md — Mobile column visibility, sticky Player column, expandable row detail
 **UI hint**: yes
 
 ### Phase 15: Remaining Tables Mobile
@@ -137,7 +137,7 @@ Plans:
 | 11. Explainability + Replacement Shortlist | v1.1 | 3/3 | Complete | 2026-03-30 |
 | 12. FPL Auth + Exact Selling Price | v1.1 | 2/2 | Complete | 2026-03-30 |
 | 13. Navigation + Layout Foundations | v1.2 | 2/2 | Complete    | 2026-04-01 |
-| 14. GemTable Mobile | v1.2 | 0/1 | Planning | - |
+| 14. GemTable Mobile | v1.2 | 1/1 | Complete   | 2026-04-01 |
 | 15. Remaining Tables Mobile | v1.2 | 0/? | Not started | - |
 | 16. Component-Level Mobile | v1.2 | 0/? | Not started | - |
 | 17. Polish + Infrastructure | v1.2 | 0/? | Not started | - |

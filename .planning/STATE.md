@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Mobile
 status: verifying
-stopped_at: Completed 13-02-PLAN.md — Phase 13 complete
-last_updated: "2026-04-01T07:08:37.885Z"
+stopped_at: Task 3 checkpoint — visual verification of GemTable mobile features required
+last_updated: "2026-04-01T07:53:32.462Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 6
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  completed_phases: 2
+  total_plans: 3
+  completed_plans: 3
   percent: 0
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 13 — navigation-layout-foundations
+**Current focus:** Phase 14 — gemtable-mobile
 
 ## Current Position
 
-Phase: 14
-Plan: Not started
+Phase: 14 (gemtable-mobile) — EXECUTING
+Plan: 1 of 1
 Status: Phase complete — ready for verification
 Last activity: 2026-04-01
 
@@ -54,6 +54,7 @@ Progress: [░░░░░░░░░░] 0%
 *Updated after each plan completion*
 | Phase 13 P01 | 2 | 3 tasks | 4 files |
 | Phase 13 P02 | 35 | 3 tasks | 7 files |
+| Phase 14-gemtable-mobile P01 | 15 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,8 @@ Recent decisions affecting current work:
 - [Phase 13]: Tab state stays in page.tsx; MobileNav is a controlled component via activeTab/onTabChange props — no context needed
 - [Phase 13]: nav-safe-bottom as named CSS class (not Tailwind arbitrary value) for iOS safe area inset readability
 - [Phase 13]: MobileNav moved to sibling of <main> (not inside it) to avoid contributing to main scrollWidth and causing horizontal overflow
+- [Phase 14-gemtable-mobile]: isMobile via window.innerWidth useEffect (not useMediaQuery) — avoids hydration mismatch, consistent with Phase 13 pattern
+- [Phase 14-gemtable-mobile]: getColumnVisibility spread order: MOBILE_HIDDEN_COLUMNS first, gwVisibility second — active proj_pts column overrides false
 
 ### Pending Todos
 
@@ -82,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T07:08:12.878Z
-Stopped at: Completed 13-02-PLAN.md — Phase 13 complete
+Last session: 2026-04-01T07:53:32.459Z
+Stopped at: Task 3 checkpoint — visual verification of GemTable mobile features required
 Resume file: None

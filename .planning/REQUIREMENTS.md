@@ -21,12 +21,12 @@
 
 ### Tables
 
-- [ ] **MOB-TBL-01**: GemTable shows only priority columns on mobile (Player, Position, Gem score, active Proj Pts column, Risk badge); remaining columns hidden
+- [x] **MOB-TBL-01**: GemTable shows only priority columns on mobile (Player, Position, Gem score, active Proj Pts column, Risk badge); remaining columns hidden
 - [ ] **MOB-TBL-02**: SquadView shows only priority columns on mobile (Player, Price, Risk badge, Rec verdict); remaining columns hidden
 - [ ] **MOB-TBL-03**: DefConTables show priority columns on mobile (Player, Team, Hit Rate, Avg DC/90); remaining columns hidden
 - [ ] **MOB-TBL-04**: ClubFormTable and ValueGemsTable show priority columns on mobile, reducing to key player identity + primary stat columns
-- [ ] **MOB-TBL-05**: Player column is horizontally sticky (locked to left edge) in GemTable and SquadView on mobile so the player name remains visible when scrolling right
-- [ ] **MOB-TBL-06**: User can tap a GemTable row on mobile to expand an inline key-value detail panel showing all columns hidden by MOB-TBL-01
+- [x] **MOB-TBL-05**: Player column is horizontally sticky (locked to left edge) in GemTable and SquadView on mobile so the player name remains visible when scrolling right
+- [x] **MOB-TBL-06**: User can tap a GemTable row on mobile to expand an inline key-value detail panel showing all columns hidden by MOB-TBL-01
 
 ### Touch & Interaction
 
@@ -89,9 +89,9 @@
 | MOB-TOUCH-01 | Phase 13 | Complete |
 | MOB-TOUCH-02 | Phase 13 | Complete |
 | MOB-TOUCH-03 | Phase 13 | Complete |
-| MOB-TBL-01 | Phase 14 | Pending |
+| MOB-TBL-01 | Phase 14 | Complete |
 | MOB-TBL-05 (GemTable) | Phase 14 | Pending |
-| MOB-TBL-06 | Phase 14 | Pending |
+| MOB-TBL-06 | Phase 14 | Complete |
 | MOB-TBL-02 | Phase 15 | Pending |
 | MOB-TBL-03 | Phase 15 | Pending |
 | MOB-TBL-04 | Phase 15 | Pending |
