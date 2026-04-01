@@ -51,6 +51,11 @@
 - [ ] **DARK-02**: Dark mode defaults to the system `prefers-color-scheme` preference on first visit
 - [ ] **DARK-03**: All components render correctly in dark mode — no illegible text, sufficient contrast, no white flash on load
 
+### Double / Blank Gameweek Awareness
+
+- [ ] **DGW-01**: Transfer engine boosts DGW players as buy targets — when a buy candidate has 2 fixtures in the immediately upcoming gameweek, they rank above a same-tier player with only 1 fixture
+- [ ] **DGW-02**: Fixture badges and captaincy panel show DGW indicators — FixtureBadges groups badges by gameweek and labels double-GW groups with "DGW"; CaptaincyPanel shows all fixtures for the next GW (not just the first)
+
 ### Carry-Forward
 
 - [ ] **DAT-01**: Verified automated daily refresh — GitHub Actions cron confirmed operational (deferred from v1.1)
@@ -102,6 +107,8 @@
 | MOB-POL-01 | Phase 17 | Pending |
 | MOB-POL-02 | Phase 17 | Pending |
 | DAT-01 | Phase 17 | Pending |
+| DGW-01 | Phase 17 | Pending |
+| DGW-02 | Phase 17 | Pending |
 | DARK-01 | Phase 18 | Pending |
 | DARK-02 | Phase 18 | Pending |
 | DARK-03 | Phase 18 | Pending |

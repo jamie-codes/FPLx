@@ -42,6 +42,8 @@ created: 2026-04-01
 | 17-01-02 | 01 | 1 | MOB-POL-02 | grep | `grep -n "back-to-top\|scrollY\|scroll" src/components/gems/GemTable.tsx` | ✅ | ⬜ pending |
 | 17-02-01 | 02 | 1 | DAT-01 | grep | `grep -n "blob\|getBlob\|head" src/app/api/last-updated/route.ts` | ✅ | ⬜ pending |
 | 17-02-02 | 02 | 1 | DAT-01 | manual | GitHub Actions run history | N/A | ⬜ pending |
+| 17-03-01 | 03 | 1 | DGW-01 | grep | `grep -n "nextGwFixtureCount" src/lib/transfer-engine.ts` | ✅ | ⬜ pending |
+| 17-03-02 | 03 | 1 | DGW-02 | grep | `grep -n "DGW" src/components/fixtures/FixtureBadges.tsx && grep -n "nextGwFixtures" src/components/captaincy/CaptaincyPanel.tsx` | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -60,6 +62,8 @@ Existing infrastructure covers all phase requirements.
 | Sticky filter bar stays visible while scrolling | MOB-POL-01 | Visual browser test required | Open app at 375px, scroll GemTable, confirm filter row stays at top |
 | Back-to-top button appears after scrolling | MOB-POL-02 | Visual browser test required | Scroll past first screenful of rows, confirm button appears; tap to confirm scroll |
 | GitHub Actions cron ran and updated Blob | DAT-01 | Runtime state — needs live cron trigger or run history check | Check GitHub Actions run history; confirm `merged_players.json` freshness in Vercel Blob |
+| DGW label appears on fixture badges during a DGW | DGW-02 | Requires a live DGW week to see in production | Verify in GemTable next time a team has 2 fixtures in the same GW — "DGW" label should appear in violet before the two badges |
+| CaptaincyPanel shows both fixtures for DGW captains | DGW-02 | Requires a live DGW week | During a DGW, open captaincy panel and confirm players with double fixtures show both opponents separated by "/" |
 
 ---
 

@@ -44,7 +44,7 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
 - [x] **Phase 14: GemTable Mobile** - Column prioritisation, sticky Player column, and expandable row detail for GemTable (completed 2026-04-01)
 - [x] **Phase 15: Remaining Tables Mobile** - Column prioritisation for SquadView, DefConTables, ClubFormTable, and ValueGemsTable; sticky Player column in SquadView (completed 2026-04-01)
 - [x] **Phase 16: Component-Level Mobile** - Transfer suggestion card layout, login form, and captaincy panel grid for mobile (completed 2026-04-01)
-- [ ] **Phase 17: Polish + Infrastructure** - Sticky filter bar, back-to-top button, and verified GitHub Actions cron
+- [ ] **Phase 17: Polish + Infrastructure** - Sticky filter bar, back-to-top button, DGW/BGW indicators, and verified GitHub Actions cron
 - [ ] **Phase 18: Dark Mode** - System-preference-aware dark mode with manual toggle; all components themed
 
 ## Phase Details
@@ -108,17 +108,20 @@ Plans:
 **UI hint**: yes
 
 ### Phase 17: Polish + Infrastructure
-**Goal**: The app is fully polished on mobile with a sticky filter bar, a back-to-top affordance on long tables, and the automated daily pipeline refresh is confirmed operational
+**Goal**: The app is fully polished on mobile with a sticky filter bar, a back-to-top affordance on long tables, DGW/BGW awareness in transfer suggestions and fixture display, and the automated daily pipeline refresh is confirmed operational
 **Depends on**: Phase 16
-**Requirements**: MOB-POL-01, MOB-POL-02, DAT-01
+**Requirements**: MOB-POL-01, MOB-POL-02, DAT-01, DGW-01, DGW-02
 **Success Criteria** (what must be TRUE):
   1. On mobile, the GW toggle and position filter row remains visible at the top of the screen while scrolling GemTable — the user can change filters without scrolling back to the top
   2. After scrolling past the first screen of GemTable rows on mobile, a "back to top" button appears and tapping it scrolls the user back to the top
   3. The GitHub Actions cron job has run at least once and produced an updated `merged_players.json` in Vercel Blob — the LastUpdated component shows a fresh timestamp confirming automated refresh is live
-**Plans**: 2 plans
+  4. A buy candidate with 2 fixtures in the next gameweek ranks above an otherwise equal candidate with 1 fixture in the transfer engine
+  5. FixtureBadges groups double-gameweek fixtures and shows a "DGW" label; CaptaincyPanel shows all fixtures for the upcoming GW
+**Plans**: 3 plans
 Plans:
 - [ ] 17-01-PLAN.md — Sticky filter bar and back-to-top button for GemTable mobile
 - [ ] 17-02-PLAN.md — Last-updated route Blob fix and GitHub Actions cron verification
+- [ ] 17-03-PLAN.md — DGW/BGW awareness in transfer engine and fixture UI
 
 ### Phase 18: Dark Mode
 **Goal**: The full app is usable in dark mode — system preference respected by default, manual toggle in the header, all components correctly themed
