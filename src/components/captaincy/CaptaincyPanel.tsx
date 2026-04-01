@@ -12,14 +12,14 @@ interface CaptainTypeBadgeConfig {
 
 const TYPE_MAP: Record<'safe' | 'upside', CaptainTypeBadgeConfig> = {
   safe: {
-    bg: 'bg-blue-100',
-    text: 'text-blue-800',
+    bg: 'bg-blue-100 dark:bg-blue-900',
+    text: 'text-blue-800 dark:text-blue-200',
     label: 'Safe',
     title: 'Safe pick: nailed starter with consistent high floor',
   },
   upside: {
-    bg: 'bg-amber-100',
-    text: 'text-amber-800',
+    bg: 'bg-amber-100 dark:bg-amber-900',
+    text: 'text-amber-800 dark:text-amber-200',
     label: 'Upside',
     title: 'Upside pick: differential or high ceiling — higher variance',
   },
@@ -44,28 +44,28 @@ interface CaptaincyPanelProps {
 
 export function CaptaincyPanel({ candidates, nextGw }: CaptaincyPanelProps) {
   return (
-    <div className="rounded border border-zinc-200 p-4 space-y-3">
-      <h2 className="text-base font-semibold text-zinc-900 mb-3">Captaincy Picks — GW {nextGw}</h2>
+    <div className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3">
+      <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mb-3">Captaincy Picks — GW {nextGw}</h2>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-2">
         {candidates.map((c, i) => (
           <div
             key={c.player.id}
-            className="rounded border border-zinc-100 bg-zinc-50 px-3 py-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3"
+            className="rounded border border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3"
           >
             {/* Rank + player name row */}
             <div className="flex items-center gap-1.5">
               <span className="text-sm text-zinc-400 w-4 shrink-0">{i + 1}</span>
-              <span className="text-sm font-medium text-zinc-900 sm:flex-1">{c.player.web_name}</span>
+              <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 sm:flex-1">{c.player.web_name}</span>
             </div>
             {/* Team + fixture row */}
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
+            <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
               <span className="text-xs">{c.player.team_short_name}</span>
               {c.player.fixtures.length > 0 && (() => {
                 const nextGwId = c.player.fixtures[0].event_id
                 const nextGwFixtures = c.player.fixtures.filter(f => f.event_id === nextGwId)
                 return (
-                  <span className="text-xs text-zinc-400 whitespace-nowrap">
-                    {nextGwFixtures.length >= 2 && <span className="font-semibold text-violet-700 mr-1">DGW</span>}
+                  <span className="text-xs text-zinc-400 dark:text-zinc-500 whitespace-nowrap">
+                    {nextGwFixtures.length >= 2 && <span className="font-semibold text-violet-700 dark:text-violet-400 mr-1">DGW</span>}
                     {nextGwFixtures.map((f, i) => (
                       <span key={i}>
                         {i > 0 && <span className="mx-0.5 text-zinc-400">/</span>}
@@ -77,7 +77,7 @@ export function CaptaincyPanel({ candidates, nextGw }: CaptaincyPanelProps) {
               })()}
             </div>
             {/* Projected pts */}
-            <span className="text-sm text-zinc-700 whitespace-nowrap">
+            <span className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
               {(isNaN(c.projected_captain_pts) ? 0 : c.projected_captain_pts).toFixed(1)} pts (C)
             </span>
             {/* Badges row */}

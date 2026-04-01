@@ -9,26 +9,26 @@ interface Config {
 
 const BADGE_MAP: Record<Exclude<MinsRisk, 'injured'>, Config> = {
   nailed: {
-    bg: 'bg-green-100',
-    text: 'text-green-800',
+    bg: 'bg-green-100 dark:bg-green-900',
+    text: 'text-green-800 dark:text-green-200',
     label: 'Nailed',
     title: 'Nailed: high start probability (\u226585%)',
   },
   likely_start: {
-    bg: 'bg-blue-100',
-    text: 'text-blue-800',
+    bg: 'bg-blue-100 dark:bg-blue-900',
+    text: 'text-blue-800 dark:text-blue-200',
     label: 'Likely start',
     title: 'Likely start: moderate start probability (65\u201384%)',
   },
   rotation_risk: {
-    bg: 'bg-amber-100',
-    text: 'text-amber-800',
+    bg: 'bg-amber-100 dark:bg-amber-900',
+    text: 'text-amber-800 dark:text-amber-200',
     label: 'Rotation risk',
     title: 'Rotation risk: rotation risk identified',
   },
   cameo: {
-    bg: 'bg-zinc-100',
-    text: 'text-zinc-600',
+    bg: 'bg-zinc-100 dark:bg-zinc-700',
+    text: 'text-zinc-600 dark:text-zinc-300',
     label: 'Cameo',
     title: 'Cameo: low minutes expected',
   },

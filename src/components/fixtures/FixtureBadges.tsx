@@ -3,9 +3,9 @@
 import type { FixtureEntry } from '@/lib/types'
 
 const TIER_COLOURS: Record<string, string> = {
-  easy:   'bg-green-100 text-green-800 border-green-300',
-  medium: 'bg-amber-100 text-amber-800 border-amber-300',
-  hard:   'bg-red-100 text-red-800 border-red-300',
+  easy:   'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700',
+  medium: 'bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-700',
+  hard:   'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-300 dark:border-red-700',
 }
 
 export function FixtureBadges({ fixtures }: { fixtures: FixtureEntry[] }) {
@@ -21,7 +21,7 @@ export function FixtureBadges({ fixtures }: { fixtures: FixtureEntry[] }) {
       {Array.from(grouped.entries()).map(([eventId, gwFixtures]) => (
         <span key={eventId} className="flex items-center gap-0.5">
           {gwFixtures.length >= 2 && (
-            <span className="text-xs font-semibold text-violet-700 mr-0.5">DGW</span>
+            <span className="text-xs font-semibold text-violet-700 dark:text-violet-400 mr-0.5">DGW</span>
           )}
           {gwFixtures.map((f, i) => (
             <span
