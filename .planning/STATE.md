@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Mobile
-status: ready_to_execute
-stopped_at: Phase 13 plans created — ready to execute
-last_updated: "2026-03-31T00:00:00.000Z"
-last_activity: 2026-03-31
+status: executing
+stopped_at: Completed 13-01-PLAN.md
+last_updated: "2026-04-01T06:49:53.570Z"
+last_activity: 2026-04-01
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 2
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 13 — Navigation + Layout Foundations
+**Current focus:** Phase 13 — navigation-layout-foundations
 
 ## Current Position
 
-Phase: 13 of 17 (Navigation + Layout Foundations)
-Plan: —
-Status: Ready to execute (2 plans: 13-01, 13-02)
-Last activity: 2026-03-31 — Phase 13 planned: 2 plans, 8 requirements mapped
+Phase: 13 (navigation-layout-foundations) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-04-01
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -52,6 +52,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 13 P01 | 2 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,9 @@ Recent decisions affecting current work:
 - [v1.2 Roadmap]: Tab state stays in page.tsx; MobileNav receives activeTab/onTabChange as props — no new context needed
 - [v1.2 Roadmap]: Column priority via TanStack Table VisibilityState — extends existing GW toggle pattern in GemTable
 - [v1.2 Roadmap]: MOB-TBL-05 split across Phase 14 (GemTable) and Phase 15 (SquadView) — same requirement, two components
+- [Phase 13]: CSS-only show/hide (sm:hidden / hidden sm:flex) for nav — no useMediaQuery to avoid hydration mismatch
+- [Phase 13]: Tab state stays in page.tsx; MobileNav is a controlled component via activeTab/onTabChange props — no context needed
+- [Phase 13]: nav-safe-bottom as named CSS class (not Tailwind arbitrary value) for iOS safe area inset readability
 
 ### Pending Todos
 
@@ -76,6 +80,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-31
-Stopped at: Roadmap created — 5 phases (13-17), 19 requirements mapped, all files written
+Last session: 2026-04-01T06:49:53.567Z
+Stopped at: Completed 13-01-PLAN.md
 Resume file: None

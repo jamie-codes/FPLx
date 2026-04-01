@@ -10,14 +10,14 @@
 
 ### Navigation
 
-- [ ] **MOB-NAV-01**: User sees a fixed bottom tab bar with 5 tabs (Gems, DefCon, Squad, Club Form, Values) on screens narrower than 768px, replacing the top horizontal tab strip
-- [ ] **MOB-NAV-02**: Desktop top tab strip is unchanged (≥768px); bottom tab bar is hidden on desktop
-- [ ] **MOB-NAV-03**: Bottom tab bar is inset above the iOS home indicator via `env(safe-area-inset-bottom)` so no tab is obscured
+- [x] **MOB-NAV-01**: User sees a fixed bottom tab bar with 5 tabs (Gems, DefCon, Squad, Club Form, Values) on screens narrower than 768px, replacing the top horizontal tab strip
+- [x] **MOB-NAV-02**: Desktop top tab strip is unchanged (≥768px); bottom tab bar is hidden on desktop
+- [x] **MOB-NAV-03**: Bottom tab bar is inset above the iOS home indicator via `env(safe-area-inset-bottom)` so no tab is obscured
 
 ### Layout
 
-- [ ] **MOB-LAY-01**: All tab content renders in a single-column layout at 375px — no side-by-side panels break or overflow horizontally
-- [ ] **MOB-LAY-02**: Scrollable content has sufficient bottom padding so the last visible table row is not obscured by the fixed bottom nav bar
+- [x] **MOB-LAY-01**: All tab content renders in a single-column layout at 375px — no side-by-side panels break or overflow horizontally
+- [x] **MOB-LAY-02**: Scrollable content has sufficient bottom padding so the last visible table row is not obscured by the fixed bottom nav bar
 
 ### Tables
 
@@ -81,11 +81,11 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| MOB-NAV-01 | Phase 13 | Pending |
-| MOB-NAV-02 | Phase 13 | Pending |
-| MOB-NAV-03 | Phase 13 | Pending |
-| MOB-LAY-01 | Phase 13 | Pending |
-| MOB-LAY-02 | Phase 13 | Pending |
+| MOB-NAV-01 | Phase 13 | Complete |
+| MOB-NAV-02 | Phase 13 | Complete |
+| MOB-NAV-03 | Phase 13 | Complete |
+| MOB-LAY-01 | Phase 13 | Complete |
+| MOB-LAY-02 | Phase 13 | Complete |
 | MOB-TOUCH-01 | Phase 13 | Pending |
 | MOB-TOUCH-02 | Phase 13 | Pending |
 | MOB-TOUCH-03 | Phase 13 | Pending |
