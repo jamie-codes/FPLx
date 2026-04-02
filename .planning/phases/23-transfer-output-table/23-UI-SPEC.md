@@ -54,17 +54,17 @@ Source: HorizonSelector.tsx (min-h-[44px]), MobileNav.tsx (py-2 min-h-[44px]), P
 
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
-| Body / table cell | 14px (text-sm) | 400 (font-normal) | 1.5 (Tailwind default) |
+| Body / table cell | 14px (text-sm) | 500 (font-medium) | 1.5 (Tailwind default) |
 | Label / column header | 14px (text-sm) | 500 (font-medium) | 1.5 |
 | Badge / chip label | 12px (text-xs) | 600 (font-semibold) | 1 (single-line badge) |
 | Plan value headline | 20px (text-xl) | 600 (font-semibold) | 1.2 |
 
 Notes:
-- No 4th size is needed — 3 sizes cover all elements in this phase
-- Do NOT use font-bold (700) — the project uses font-medium and font-semibold only, matching PlannerTab.tsx and HorizonSelector.tsx
+- Two weights only: 500 (font-medium) for body and labels; 600 (font-semibold) for badges and the plan value headline
+- Do NOT use font-normal (400) or font-bold (700) — the project uses font-medium and font-semibold only, matching PlannerTab.tsx and HorizonSelector.tsx
 - Plan value headline is the only display-scale element; use text-xl font-semibold
 
-Source: PlannerTab.tsx (text-sm font-medium), HorizonSelector.tsx (text-sm font-medium), FixtureBadges.tsx (text-xs font-semibold), VerdictBadge.tsx (text-xs font-normal)
+Source: PlannerTab.tsx (text-sm font-medium for table content), HorizonSelector.tsx (text-sm font-medium), FixtureBadges.tsx (text-xs font-semibold), VerdictBadge.tsx
 
 ---
 
