@@ -58,7 +58,7 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 - [x] **Phase 19: Data Quality and Value Gems Polish** — Pipeline xG proxy, DefCon threshold fix, historical points columns (completed 2026-04-02)
 - [x] **Phase 20: Auth UX** — Modal-based guided token entry with expiry awareness (completed 2026-04-02)
 - [x] **Phase 21: Planner Tab Shell and State Model** — Nav entry point, types, and foundational state model (completed 2026-04-02)
-- [ ] **Phase 22: Planning Engine** — Auto-suggest algorithm with look-ahead scoring
+- [x] **Phase 22: Planning Engine** — Auto-suggest algorithm with look-ahead scoring (completed 2026-04-02)
 - [ ] **Phase 23: Transfer Output Table** — Transfer-by-transfer table with chip slots and hit cost
 - [ ] **Phase 24: Squad Snapshot** — Per-GW 15-player squad view with accordion UI
 - [ ] **Phase 25: Manual Edit Mode** — Player picker combobox and per-GW override editing
@@ -121,7 +121,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 22-01-PLAN.md — Planning engine TDD (types, tests, generatePlan implementation)
-- [ ] 22-02-PLAN.md — PlannerTab integration and human verification
+- [x] 22-02-PLAN.md — PlannerTab integration and human verification
 
 ### Phase 23: Transfer Output Table
 **Goal**: The planner surfaces a readable transfer-by-transfer table showing each GW's suggested move, chip slot, projected gain, and hit cost
@@ -193,7 +193,7 @@ Plans:
 | 19. Data Quality and Value Gems Polish | v1.3 | 2/2 | Complete    | 2026-04-02 |
 | 20. Auth UX | v1.3 | 2/2 | Complete    | 2026-04-02 |
 | 21. Planner Tab Shell and State Model | v1.3 | 2/2 | Complete    | 2026-04-02 |
-| 22. Planning Engine | v1.3 | 1/2 | In Progress|  |
+| 22. Planning Engine | v1.3 | 2/2 | Complete   | 2026-04-02 |
 | 23. Transfer Output Table | v1.3 | 0/TBD | Not started | - |
 | 24. Squad Snapshot | v1.3 | 0/TBD | Not started | - |
 | 25. Manual Edit Mode | v1.3 | 0/TBD | Not started | - |
