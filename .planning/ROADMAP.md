@@ -55,7 +55,7 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 
 **Milestone Goal:** Let the manager plan 1–5 weeks of transfers ahead with auto-suggested sequences, chip timing, and scored output showing squad state at each gameweek.
 
-- [ ] **Phase 19: Data Quality and Value Gems Polish** — Pipeline xG proxy, DefCon threshold fix, historical points columns
+- [x] **Phase 19: Data Quality and Value Gems Polish** — Pipeline xG proxy, DefCon threshold fix, historical points columns (completed 2026-04-02)
 - [ ] **Phase 20: Auth UX** — Direct email/password login and manual cookie fallback
 - [ ] **Phase 21: Planner Tab Shell and State Model** — Nav entry point, types, and foundational state model
 - [ ] **Phase 22: Planning Engine** — Auto-suggest algorithm with look-ahead scoring
@@ -77,7 +77,7 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 **Plans**: 2 plans
 Plans:
 - [x] 19-01-PLAN.md — Pipeline data quality (xG proxy, DefCon threshold, historical points)
-- [ ] 19-02-PLAN.md — Value Gems points columns UI
+- [x] 19-02-PLAN.md — Value Gems points columns UI
 
 ### Phase 20: Auth UX
 **Goal**: Users can authenticate with FPL using email and password directly in the app, with a guided fallback for manual cookie entry
@@ -89,7 +89,7 @@ Plans:
   3. Authentication state is clearly indicated — user knows whether they are logged in via password or cookie
 **Plans**: 2 plans
 Plans:
-- [ ] 19-01-PLAN.md — Pipeline data quality (xG proxy, DefCon threshold, historical points)
+- [x] 19-01-PLAN.md — Pipeline data quality (xG proxy, DefCon threshold, historical points)
 - [ ] 19-02-PLAN.md — Value Gems points columns UI
 **UI hint**: yes
 
@@ -190,7 +190,7 @@ Plans:
 | 16. Component-Level Mobile | v1.2 | 1/1 | Complete | 2026-04-01 |
 | 17. Polish + Infrastructure | v1.2 | 3/3 | Complete | 2026-04-01 |
 | 18. Dark Mode | v1.2 | 3/3 | Complete | 2026-04-01 |
-| 19. Data Quality and Value Gems Polish | v1.3 | 1/2 | In Progress|  |
+| 19. Data Quality and Value Gems Polish | v1.3 | 2/2 | Complete   | 2026-04-02 |
 | 20. Auth UX | v1.3 | 0/TBD | Not started | - |
 | 21. Planner Tab Shell and State Model | v1.3 | 0/TBD | Not started | - |
 | 22. Planning Engine | v1.3 | 0/TBD | Not started | - |

@@ -18,7 +18,7 @@
 ### Value Gems
 
 - [x] **VG-01**: Pipeline computes pts_last3gw and pts_last5gw per player from FPL element-summary history
-- [ ] **VG-02**: Value Gems table shows three points columns: Total Pts, Pts (last 5 GW), Pts (last 3 GW)
+- [x] **VG-02**: Value Gems table shows three points columns: Total Pts, Pts (last 5 GW), Pts (last 3 GW)
 
 ### Gameweek Planner
 
@@ -62,7 +62,7 @@
 | DQ-01 | Phase 19 | Complete |
 | DQ-02 | Phase 19 | Complete |
 | VG-01 | Phase 19 | Complete |
-| VG-02 | Phase 19 | Pending |
+| VG-02 | Phase 19 | Complete |
 | AUTH-03 | Phase 20 | Pending |
 | AUTH-04 | Phase 20 | Pending |
 | PLAN-01 | Phase 21 | Pending |
