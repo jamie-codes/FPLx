@@ -24,9 +24,9 @@ Give the manager a clear, prioritised view of who to buy and who to sell this we
 
 ---
 
-## Current State (v1.3 in progress — Phase 21 complete 2026-04-02)
+## Current State (v1.3 in progress — Phase 23 complete 2026-04-02)
 
-Phase 21 complete — Planner tab shell landed: `PlannerTab` and `HorizonSelector` components built and wired into desktop and mobile navigation. Core planner types defined (`PlannerHorizon`, `PlannerChip`, `FTState`, `GWStep`, `PlannerState`) and free transfer accumulation engine implemented with 31 tests (TDD). `immer`/`use-immer` installed. PLAN-01 and PLAN-08 satisfied. Phase 22 (Planning Engine) is next.
+Phase 23 complete — Transfer output table live end-to-end: `TransferPlanTable` renders after Generate Plan with per-GW rows (Out, In, Hit, Gain), Hold rows, chip toggles (Immer draft mutations with toggle-off), DGW/BGW badges, plan value headline, red hit-cost styling, and mobile-responsive layout. Human-approved in browser. PLAN-05 and PLAN-07 satisfied. Phase 24 (squad-snapshot) is next.
 
 **Tech stack:** Next.js 16, React 19, TypeScript, TanStack Table v8, TanStack Query, Tailwind CSS v4, Vitest, Python (requests, pandas, soccerdata), Vercel Blob
 
@@ -176,4 +176,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-02 — Phase 19 complete (data quality + Value Gems points columns)*
+*Last updated: 2026-04-02 — Phase 23 complete (transfer output table)*
