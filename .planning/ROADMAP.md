@@ -74,7 +74,10 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
   2. DefCon table shows computed stats for all players who have enough match data; "Insufficient data" appears only for genuine edge cases (new players, very few appearances)
   3. Value Gems table shows three points columns: Total Pts, Pts (last 5 GW), and Pts (last 3 GW)
   4. Sorting by any of the three points columns produces correct ordering
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 19-01-PLAN.md — Pipeline data quality (xG proxy, DefCon threshold, historical points)
+- [ ] 19-02-PLAN.md — Value Gems points columns UI
 
 ### Phase 20: Auth UX
 **Goal**: Users can authenticate with FPL using email and password directly in the app, with a guided fallback for manual cookie entry
@@ -84,7 +87,10 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
   1. User can enter FPL email and password in the app and receive authenticated squad data (exact sell prices, bank balance) without any manual cookie hunting
   2. If direct login fails or is unavailable, user can enter a session cookie manually using a step-by-step browser guide (Chrome, Firefox, and Safari steps shown)
   3. Authentication state is clearly indicated — user knows whether they are logged in via password or cookie
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 19-01-PLAN.md — Pipeline data quality (xG proxy, DefCon threshold, historical points)
+- [ ] 19-02-PLAN.md — Value Gems points columns UI
 **UI hint**: yes
 
 ### Phase 21: Planner Tab Shell and State Model
@@ -96,7 +102,10 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
   2. User can select a planning horizon of 1, 2, 3, 4, or 5 gameweeks using a control on the Planner tab
   3. Free transfer accumulation logic is unit-tested and correct: transfers bank correctly up to the cap, hit costs are calculated accurately, and Free Hit/Wildcard preserve banked transfers per 2025/26 rules
   4. Squad snapshot deep-copy pattern is verified: editing one GW step does not corrupt any other step's state
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 19-01-PLAN.md — Pipeline data quality (xG proxy, DefCon threshold, historical points)
+- [ ] 19-02-PLAN.md — Value Gems points columns UI
 **UI hint**: yes
 
 ### Phase 22: Planning Engine
@@ -109,7 +118,10 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
   3. DGW targets are surfaced appropriately — a justified -4pt hit for a double-gameweek target can appear in suggestions
   4. BGW and unconfirmed fixture GWs are flagged rather than scored on incomplete data
   5. Net projected gain per transfer accounts for -4pt hit cost when a free transfer is not available
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 19-01-PLAN.md — Pipeline data quality (xG proxy, DefCon threshold, historical points)
+- [ ] 19-02-PLAN.md — Value Gems points columns UI
 
 ### Phase 23: Transfer Output Table
 **Goal**: The planner surfaces a readable transfer-by-transfer table showing each GW's suggested move, chip slot, projected gain, and hit cost
@@ -120,7 +132,10 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
   2. DGW and BGW GW labels appear on the relevant rows so the user can see scheduling context at a glance
   3. Chip timing (Wildcard, Free Hit, Triple Captain, Bench Boost) is visible per GW row and the user can toggle a chip on or off for any GW in the plan
   4. A "Plan value" headline above the table shows the total net projected gain across all GW steps
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 19-01-PLAN.md — Pipeline data quality (xG proxy, DefCon threshold, historical points)
+- [ ] 19-02-PLAN.md — Value Gems points columns UI
 **UI hint**: yes
 
 ### Phase 24: Squad Snapshot
@@ -132,7 +147,10 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
   2. Players changed by that GW's transfer are visually highlighted so the user can quickly spot what changed
   3. Bench Boost GWs show all 15 players prominently rather than just the starting XI
   4. Squad snapshots are collapsed by default — the table remains compact until the user expands a specific GW
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 19-01-PLAN.md — Pipeline data quality (xG proxy, DefCon threshold, historical points)
+- [ ] 19-02-PLAN.md — Value Gems points columns UI
 **UI hint**: yes
 
 ### Phase 25: Manual Edit Mode
@@ -144,7 +162,10 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
   2. The player picker shows players sorted by projected points for the relevant GW, with a search/filter input
   3. After the user picks a replacement, the plan re-scores from that GW onwards while preserving manual edits to earlier GWs
   4. The user can switch between "Suggested" and "Manual" mode — switching back to Suggested restores the engine's original recommendation for that row
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 19-01-PLAN.md — Pipeline data quality (xG proxy, DefCon threshold, historical points)
+- [ ] 19-02-PLAN.md — Value Gems points columns UI
 **UI hint**: yes
 
 ## Progress
@@ -169,7 +190,7 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 | 16. Component-Level Mobile | v1.2 | 1/1 | Complete | 2026-04-01 |
 | 17. Polish + Infrastructure | v1.2 | 3/3 | Complete | 2026-04-01 |
 | 18. Dark Mode | v1.2 | 3/3 | Complete | 2026-04-01 |
-| 19. Data Quality and Value Gems Polish | v1.3 | 0/TBD | Not started | - |
+| 19. Data Quality and Value Gems Polish | v1.3 | 0/2 | Not started | - |
 | 20. Auth UX | v1.3 | 0/TBD | Not started | - |
 | 21. Planner Tab Shell and State Model | v1.3 | 0/TBD | Not started | - |
 | 22. Planning Engine | v1.3 | 0/TBD | Not started | - |
