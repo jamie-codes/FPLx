@@ -219,3 +219,29 @@ export interface PlannerState {
   horizon: PlannerHorizon
   planSteps: GWStep[]         // length === horizon; empty in Phase 21
 }
+
+/** Scored transfer candidate within a plan step */
+export interface ScoredTransfer {
+  sellId: number
+  buyId: number
+  gwScore: number         // proj_pts_1gw delta for this GW (buy - sell) * fixtureCount
+  lookAheadScore: number  // discounted GW+1 delta
+  totalScore: number      // gwScore + lookAheadScore
+  hitCost: number         // 0 or -4
+  netGain: number         // totalScore + hitCost
+  affordable: boolean
+}
+
+/** Extended GW step with engine output */
+export interface PlanStep extends GWStep {
+  scoredTransfers: ScoredTransfer[]  // top candidates considered
+  squadAfter: number[]               // player IDs in squad after this step
+  unconfirmedFixtures: boolean       // true if no fixture data exists for this GW
+}
+
+/** Complete plan result from generatePlan */
+export interface PlanResult {
+  steps: PlanStep[]
+  horizon: PlannerHorizon
+  startingGw: number                 // first GW in the plan
+}
