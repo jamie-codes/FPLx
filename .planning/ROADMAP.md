@@ -56,7 +56,7 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 **Milestone Goal:** Let the manager plan 1–5 weeks of transfers ahead with auto-suggested sequences, chip timing, and scored output showing squad state at each gameweek.
 
 - [x] **Phase 19: Data Quality and Value Gems Polish** — Pipeline xG proxy, DefCon threshold fix, historical points columns (completed 2026-04-02)
-- [ ] **Phase 20: Auth UX** — Direct email/password login and manual cookie fallback
+- [ ] **Phase 20: Auth UX** — Modal-based guided token entry with expiry awareness
 - [ ] **Phase 21: Planner Tab Shell and State Model** — Nav entry point, types, and foundational state model
 - [ ] **Phase 22: Planning Engine** — Auto-suggest algorithm with look-ahead scoring
 - [ ] **Phase 23: Transfer Output Table** — Transfer-by-transfer table with chip slots and hit cost
@@ -80,17 +80,17 @@ Plans:
 - [x] 19-02-PLAN.md — Value Gems points columns UI
 
 ### Phase 20: Auth UX
-**Goal**: Users can authenticate with FPL using email and password directly in the app, with a guided fallback for manual cookie entry
+**Goal**: Users can authenticate with FPL via a polished modal-based guided token entry flow, with three-state expiry awareness (normal, warning, expired/reconnect)
 **Depends on**: Phase 18
 **Requirements**: AUTH-03, AUTH-04
 **Success Criteria** (what must be TRUE):
-  1. User can enter FPL email and password in the app and receive authenticated squad data (exact sell prices, bank balance) without any manual cookie hunting
-  2. If direct login fails or is unavailable, user can enter a session cookie manually using a step-by-step browser guide (Chrome, Firefox, and Safari steps shown)
-  3. Authentication state is clearly indicated — user knows whether they are logged in via password or cookie
+  1. User can open a modal with step-by-step Chrome DevTools guide and paste their FPL Bearer token without manual cookie hunting
+  2. Token entry includes a clipboard paste button for reduced friction
+  3. Authentication state shows three-state expiry: normal (> 1hr), amber warning (15min-1hr), expired with reconnect link (< 15min)
 **Plans**: 2 plans
 Plans:
-- [x] 19-01-PLAN.md — Pipeline data quality (xG proxy, DefCon threshold, historical points)
-- [ ] 19-02-PLAN.md — Value Gems points columns UI
+- [ ] 20-01-PLAN.md — Expiry state function (TDD) and AuthModal component
+- [ ] 20-02-PLAN.md — TransferPanel integration and human verification
 **UI hint**: yes
 
 ### Phase 21: Planner Tab Shell and State Model
@@ -191,7 +191,7 @@ Plans:
 | 17. Polish + Infrastructure | v1.2 | 3/3 | Complete | 2026-04-01 |
 | 18. Dark Mode | v1.2 | 3/3 | Complete | 2026-04-01 |
 | 19. Data Quality and Value Gems Polish | v1.3 | 2/2 | Complete    | 2026-04-02 |
-| 20. Auth UX | v1.3 | 0/TBD | Not started | - |
+| 20. Auth UX | v1.3 | 0/2 | Not started | - |
 | 21. Planner Tab Shell and State Model | v1.3 | 0/TBD | Not started | - |
 | 22. Planning Engine | v1.3 | 0/TBD | Not started | - |
 | 23. Transfer Output Table | v1.3 | 0/TBD | Not started | - |
