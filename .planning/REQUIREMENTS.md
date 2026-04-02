@@ -7,8 +7,8 @@
 
 ### Data Quality
 
-- [ ] **DQ-01**: Players without Understat xG/xA data use FPL goals/assists as a proxy in the Gem score computation
-- [ ] **DQ-02**: DefCon table shows computed stats where data exists; "Insufficient data" is reserved for genuine edge cases only; minimum games threshold raised
+- [x] **DQ-01**: Players without Understat xG/xA data use FPL goals/assists as a proxy in the Gem score computation
+- [x] **DQ-02**: DefCon table shows computed stats where data exists; "Insufficient data" is reserved for genuine edge cases only; minimum games threshold raised
 
 ### Auth UX
 
@@ -17,7 +17,7 @@
 
 ### Value Gems
 
-- [ ] **VG-01**: Pipeline computes pts_last3gw and pts_last5gw per player from FPL element-summary history
+- [x] **VG-01**: Pipeline computes pts_last3gw and pts_last5gw per player from FPL element-summary history
 - [ ] **VG-02**: Value Gems table shows three points columns: Total Pts, Pts (last 5 GW), Pts (last 3 GW)
 
 ### Gameweek Planner
@@ -59,9 +59,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DQ-01 | Phase 19 | Pending |
-| DQ-02 | Phase 19 | Pending |
-| VG-01 | Phase 19 | Pending |
+| DQ-01 | Phase 19 | Complete |
+| DQ-02 | Phase 19 | Complete |
+| VG-01 | Phase 19 | Complete |
 | VG-02 | Phase 19 | Pending |
 | AUTH-03 | Phase 20 | Pending |
 | AUTH-04 | Phase 20 | Pending |

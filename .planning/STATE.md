@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Gameweek Planner
-status: ready_to_plan
-stopped_at: ~
-last_updated: "2026-04-01T00:00:00.000Z"
-last_activity: 2026-04-01
+status: executing
+stopped_at: Completed 19-01-PLAN.md — xG proxy, DefCon threshold, pts_last3gw/5gw
+last_updated: "2026-04-02T08:29:56.231Z"
+last_activity: 2026-04-02
 progress:
   total_phases: 7
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 2
+  completed_plans: 1
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-01 after v1.2)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 19 — Data Quality and Value Gems Polish (first phase of v1.3)
+**Current focus:** Phase 19 — data-quality-and-value-gems-polish
 
 ## Current Position
 
-Phase: 19 of 25 (Data Quality and Value Gems Polish)
-Plan: — (not yet planned)
-Status: Ready to plan
-Last activity: 2026-04-01 — v1.3 roadmap created (7 phases, 14 requirements mapped)
+Phase: 19 (data-quality-and-value-gems-polish) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-04-02
 
 Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
 
@@ -52,6 +52,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 19 P01 | 3 | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,8 @@ Recent decisions affecting current work:
 - [v1.3 Roadmap]: PLAN-08 (nav tab) grouped with PLAN-01 (horizon selector) in Phase 21 — tab shell and state model must exist before engine or UI
 - [v1.3 Roadmap]: Manual edit (PLAN-04) is Phase 25 (last) — depends on stable output table (Phase 23) and squad snapshot (Phase 24)
 - [v1.3 Roadmap]: immer + use-immer are the only new packages; install happens in Phase 21
+- [Phase 19]: xG proxy uses FPL goals_scored/assists per-90 formula matching existing Understat approach — ensures all players with minutes get numeric xG/xA
+- [Phase 19]: DefCon threshold raised to < 5 games — eliminates noise from low-appearance players in DefCon table
 
 ### Pending Todos
 
@@ -77,6 +80,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01
-Stopped at: v1.3 roadmap created — ready to plan Phase 19
+Last session: 2026-04-02T08:29:56.228Z
+Stopped at: Completed 19-01-PLAN.md — xG proxy, DefCon threshold, pts_last3gw/5gw
 Resume file: None

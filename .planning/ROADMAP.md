@@ -76,7 +76,7 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
   4. Sorting by any of the three points columns produces correct ordering
 **Plans**: 2 plans
 Plans:
-- [ ] 19-01-PLAN.md — Pipeline data quality (xG proxy, DefCon threshold, historical points)
+- [x] 19-01-PLAN.md — Pipeline data quality (xG proxy, DefCon threshold, historical points)
 - [ ] 19-02-PLAN.md — Value Gems points columns UI
 
 ### Phase 20: Auth UX
@@ -190,7 +190,7 @@ Plans:
 | 16. Component-Level Mobile | v1.2 | 1/1 | Complete | 2026-04-01 |
 | 17. Polish + Infrastructure | v1.2 | 3/3 | Complete | 2026-04-01 |
 | 18. Dark Mode | v1.2 | 3/3 | Complete | 2026-04-01 |
-| 19. Data Quality and Value Gems Polish | v1.3 | 0/2 | Not started | - |
+| 19. Data Quality and Value Gems Polish | v1.3 | 1/2 | In Progress|  |
 | 20. Auth UX | v1.3 | 0/TBD | Not started | - |
 | 21. Planner Tab Shell and State Model | v1.3 | 0/TBD | Not started | - |
 | 22. Planning Engine | v1.3 | 0/TBD | Not started | - |
