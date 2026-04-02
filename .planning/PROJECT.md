@@ -103,12 +103,12 @@ v1.2 Mobile complete — full responsive layout on mobile with fixed bottom tab 
 
 ### Active (v1.3)
 
-- [ ] **DQ-01**: Players without Understat xG/xA data use FPL goals/assists as proxy in Gem score
-- [ ] **DQ-02**: DefCon table shows computed stats where data exists; "Insufficient data" reserved for genuine edge cases; threshold raised
+- [x] **DQ-01**: Players without Understat xG/xA data use FPL goals/assists as proxy in Gem score — Validated in Phase 19: data-quality-and-value-gems-polish
+- [x] **DQ-02**: DefCon table shows computed stats where data exists; "Insufficient data" reserved for genuine edge cases; threshold raised — Validated in Phase 19: data-quality-and-value-gems-polish
 - [ ] **AUTH-03**: User can log in to FPL directly via email + password (server-side cookie extraction)
 - [ ] **AUTH-04**: Manual cookie entry supported with step-by-step browser guide as fallback
-- [ ] **VG-01**: Pipeline computes pts_last3gw and pts_last5gw per player from FPL element-summary history
-- [ ] **VG-02**: Value Gems table shows Total Pts, Pts (last 5 GW), Pts (last 3 GW) columns
+- [x] **VG-01**: Pipeline computes pts_last3gw and pts_last5gw per player from FPL element-summary history — Validated in Phase 19: data-quality-and-value-gems-polish
+- [x] **VG-02**: Value Gems table shows Total Pts, Pts (last 5 GW), Pts (last 3 GW) columns — Validated in Phase 19: data-quality-and-value-gems-polish
 - [ ] **PLAN-01**: User can set a planning horizon of 1–5 gameweeks
 - [ ] **PLAN-02**: System auto-suggests an optimal transfer sequence for the chosen horizon
 - [ ] **PLAN-03**: Transfer sequence scored by projected pts delta, fixture difficulty, DGW/BGW awareness, -4pt hit cost
@@ -176,4 +176,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-01 — v1.3 milestone started (Gameweek Planner)*
+*Last updated: 2026-04-02 — Phase 19 complete (data quality + Value Gems points columns)*
