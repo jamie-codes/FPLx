@@ -104,8 +104,8 @@ Plans:
   4. Squad snapshot deep-copy pattern is verified: editing one GW step does not corrupt any other step's state
 **Plans**: 2 plans
 Plans:
-- [ ] 19-01-PLAN.md — Pipeline data quality (xG proxy, DefCon threshold, historical points)
-- [ ] 19-02-PLAN.md — Value Gems points columns UI
+- [ ] 21-01-PLAN.md — Planner types and free transfer engine (TDD)
+- [ ] 21-02-PLAN.md — Navigation wiring, PlannerTab shell, and horizon selector UI
 **UI hint**: yes
 
 ### Phase 22: Planning Engine
@@ -192,7 +192,7 @@ Plans:
 | 18. Dark Mode | v1.2 | 3/3 | Complete | 2026-04-01 |
 | 19. Data Quality and Value Gems Polish | v1.3 | 2/2 | Complete    | 2026-04-02 |
 | 20. Auth UX | v1.3 | 2/2 | Complete    | 2026-04-02 |
-| 21. Planner Tab Shell and State Model | v1.3 | 0/TBD | Not started | - |
+| 21. Planner Tab Shell and State Model | v1.3 | 0/2 | Not started | - |
 | 22. Planning Engine | v1.3 | 0/TBD | Not started | - |
 | 23. Transfer Output Table | v1.3 | 0/TBD | Not started | - |
 | 24. Squad Snapshot | v1.3 | 0/TBD | Not started | - |
