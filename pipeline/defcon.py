@@ -36,7 +36,7 @@ def compute_defcon_stats(bootstrap: dict, difficulty_scores: dict, summaries: di
 
         history = [m for m in summary.get('history', []) if m['minutes'] > 0]
         games_played = len(history)
-        if games_played == 0:
+        if games_played < 5:
             continue
 
         hits = sum(1 for m in history if m.get('defensive_contribution', 0) >= threshold)

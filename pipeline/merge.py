@@ -124,6 +124,7 @@ def merge_players(
     understat: dict,
     id_map: dict,
     xmins_stats: dict | None = None,
+    summaries: dict | None = None,
 ) -> list:
     """Merge FPL bootstrap + Understat xG/xA into a unified player list.
 
@@ -136,6 +137,9 @@ def merge_players(
                      {xmins, start_prob, mins_risk}. When provided, used to populate
                      the 6 new projected-pts and minutes-risk fields. Defaults to None
                      for backward compatibility.
+        summaries:   Optional dict from run.py mapping player_id (int) -> element-summary
+                     response dict. When provided, used to compute pts_last3gw,
+                     pts_last5gw, and pts_gw_count for each player. Defaults to None.
 
     Returns:
         List of merged player dicts with all D-01 through D-06 fields plus
@@ -306,6 +310,30 @@ def merge_players(
                         xa_per90 = round((xa_val / us_minutes) * 90, 4)
                     # If minutes == 0, leave xg_per90/xa_per90 as None (no data to derive per-90)
 
+        # DQ-01: FPL goals/assists proxy when Understat data missing
+        if xg_per90 is None:
+            fpl_minutes = element.get('minutes', 0)
+            if fpl_minutes > 0:
+                xg_per90 = round((element.get('goals_scored', 0) / fpl_minutes) * 90, 4)
+                xa_per90 = round((element.get('assists', 0) / fpl_minutes) * 90, 4)
+            else:
+                xg_per90 = 0.0
+                xa_per90 = 0.0
+
+        # VG-01: Historical points from element-summary
+        pts_last3gw = 0
+        pts_last5gw = 0
+        total_gws_available = 0
+        if summaries and fpl_id in summaries:
+            history = summaries[fpl_id].get('history', [])
+            # history is chronological — take last N entries
+            if history:
+                total_gws_available = len(history)
+                last3 = history[-3:] if len(history) >= 3 else history
+                last5 = history[-5:] if len(history) >= 5 else history
+                pts_last3gw = sum(m.get('total_points', 0) for m in last3)
+                pts_last5gw = sum(m.get('total_points', 0) for m in last5)
+
         # Per-90 form metrics (D-01)
         minutes = element.get('minutes', 0)
         starts = element.get('starts', 0)
@@ -328,6 +356,8 @@ def merge_players(
             'minutes': minutes,
             'starts': starts,
             'total_points': element['total_points'],
+            'goals_scored': element.get('goals_scored', 0),
+            'assists': element.get('assists', 0),
             # Set-piece / defensive flags
             'defensive_contribution': element.get('defensive_contribution'),
             'clearances_blocks_interceptions': element.get('clearances_blocks_interceptions'),
@@ -345,6 +375,10 @@ def merge_players(
             # Form metrics (D-01)
             'minutes_per90': minutes_per90,
             'form_pts_per90': form_pts_per90,
+            # Historical points (VG-01 — from element-summary history)
+            'pts_last3gw': pts_last3gw,
+            'pts_last5gw': pts_last5gw,
+            'pts_gw_count': total_gws_available,
             # Next 5 fixtures (D-03)
             'fixtures': team_fixtures.get(team_id, []),
         }

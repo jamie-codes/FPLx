@@ -83,7 +83,7 @@ def run(dry_run: bool = False):
         print(f"xmins stats: {len(xmins_stats)} players")
 
         # Merge FPL + Understat data (per-90 normalisation, custom FDR, fixtures)
-        merged = merge_players(bootstrap, fixtures, understat, id_map, xmins_stats=xmins_stats)
+        merged = merge_players(bootstrap, fixtures, understat, id_map, xmins_stats=xmins_stats, summaries=summaries)
         save('merged_players.json', merged)
 
         # Compute DefCon stats from element-summary history (Phase 4)
