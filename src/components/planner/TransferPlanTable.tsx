@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { Fragment, useMemo } from 'react'
 import { ChipToggle } from './ChipToggle'
 import { computePlanValue, formatGain } from './plan-helpers'
 import { fixtureCountForGw } from '@/lib/planning-engine'
@@ -76,8 +76,8 @@ export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle }: T
             }
 
             return (
-              <>
-                <tr key={`step-${i}`} className="border-b border-zinc-200 dark:border-zinc-700">
+              <Fragment key={`step-${i}`}>
+                <tr className="border-b border-zinc-200 dark:border-zinc-700">
                   {/* GW cell */}
                   <td className="px-2 py-2 sm:px-4 text-zinc-900 dark:text-zinc-100 whitespace-nowrap">
                     <span>GW{step.gw}</span>
@@ -150,7 +150,7 @@ export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle }: T
                     />
                   </td>
                 </tr>
-              </>
+              </Fragment>
             )
           })}
         </tbody>

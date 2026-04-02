@@ -16,8 +16,12 @@ import { AuthModal } from '@/components/transfers/AuthModal'
 import { computeAuthExpiryState } from '@/lib/auth-expiry'
 
 export function TransferPanel() {
-  const [teamId, setTeamId] = useState<string>('')
-  const [submittedId, setSubmittedId] = useState<string | null>(null)
+  const [teamId, setTeamId] = useState<string>(() =>
+    typeof window !== 'undefined' ? (localStorage.getItem('fpl_team_id') ?? '') : ''
+  )
+  const [submittedId, setSubmittedId] = useState<string | null>(() =>
+    typeof window !== 'undefined' ? localStorage.getItem('fpl_team_id') : null
+  )
   const [freeTransfers, setFreeTransfers] = useState<number>(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -81,6 +85,7 @@ export function TransferPanel() {
     e.preventDefault()
     if (teamId.trim()) {
       setSubmittedId(teamId.trim())
+      localStorage.setItem('fpl_team_id', teamId.trim())
     }
   }
 
