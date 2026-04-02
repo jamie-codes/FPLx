@@ -1,7 +1,8 @@
 'use client'
 
-import { Fragment, useMemo } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { ChipToggle } from './ChipToggle'
+import { SquadSnapshotRow } from './SquadSnapshotRow'
 import { computePlanValue, formatGain } from './plan-helpers'
 import { fixtureCountForGw } from '@/lib/planning-engine'
 import type { PlanResult, ScoredPlayer, PlannerChip } from '@/lib/types'
@@ -17,6 +18,15 @@ export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle }: T
     () => new Map(scoredPlayers.map((p) => [p.id, p])),
     [scoredPlayers]
   )
+
+  const [openSteps, setOpenSteps] = useState<Set<number>>(new Set())
+  function toggleStep(i: number) {
+    setOpenSteps(prev => {
+      const next = new Set(prev)
+      next.has(i) ? next.delete(i) : next.add(i)
+      return next
+    })
+  }
 
   const totalNetGain = computePlanValue(planResult.steps)
 
@@ -80,7 +90,15 @@ export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle }: T
                 <tr className="border-b border-zinc-200 dark:border-zinc-700">
                   {/* GW cell */}
                   <td className="px-2 py-2 sm:px-4 text-zinc-900 dark:text-zinc-100 whitespace-nowrap">
-                    <span>GW{step.gw}</span>
+                    <button
+                      onClick={() => toggleStep(i)}
+                      className="inline-flex items-center gap-1 hover:text-zinc-600 dark:hover:text-zinc-400"
+                      aria-expanded={openSteps.has(i)}
+                      aria-label={`${openSteps.has(i) ? 'Collapse' : 'Expand'} squad for GW${step.gw}`}
+                    >
+                      <span className="text-xs">{openSteps.has(i) ? '\u25BC' : '\u25B6'}</span>
+                      <span>GW{step.gw}</span>
+                    </button>
                     {isDgw && (
                       <span
                         className="ml-1 text-xs font-semibold text-violet-700 dark:text-violet-400"
@@ -150,6 +168,21 @@ export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle }: T
                     />
                   </td>
                 </tr>
+
+                {/* Squad snapshot accordion row */}
+                {openSteps.has(i) && (
+                  <tr>
+                    <td colSpan={6} className="px-0 py-0">
+                      <SquadSnapshotRow
+                        squadAfter={step.squadAfter}
+                        positionsAfter={step.positionsAfter}
+                        transfersIn={step.transfersIn}
+                        chip={step.chip}
+                        playerMap={playerMap}
+                      />
+                    </td>
+                  </tr>
+                )}
               </Fragment>
             )
           })}

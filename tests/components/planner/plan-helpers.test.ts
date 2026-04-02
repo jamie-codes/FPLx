@@ -23,6 +23,7 @@ function makePlanStep(netGain: number): PlanStep {
       },
     ],
     squadAfter: [],
+    positionsAfter: {},
     unconfirmedFixtures: false,
   }
 }
@@ -37,6 +38,7 @@ function makeHoldStep(): PlanStep {
     hitCost: 0,
     scoredTransfers: [],
     squadAfter: [],
+    positionsAfter: {},
     unconfirmedFixtures: false,
   }
 }
