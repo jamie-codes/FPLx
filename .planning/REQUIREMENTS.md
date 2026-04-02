@@ -12,8 +12,8 @@
 
 ### Auth UX
 
-- [ ] **AUTH-03**: User can log in to FPL directly via email + password in the app (server-side cookie extraction — no manual cookie hunting)
-- [ ] **AUTH-04**: Manual cookie entry is supported with a step-by-step browser guide (Chrome/Firefox/Safari) as fallback
+- [x] **AUTH-03**: User can log in to FPL directly via email + password in the app (server-side cookie extraction — no manual cookie hunting)
+- [x] **AUTH-04**: Manual cookie entry is supported with a step-by-step browser guide (Chrome/Firefox/Safari) as fallback
 
 ### Value Gems
 
@@ -63,8 +63,8 @@
 | DQ-02 | Phase 19 | Complete |
 | VG-01 | Phase 19 | Complete |
 | VG-02 | Phase 19 | Complete |
-| AUTH-03 | Phase 20 | Pending |
-| AUTH-04 | Phase 20 | Pending |
+| AUTH-03 | Phase 20 | Complete |
+| AUTH-04 | Phase 20 | Complete |
 | PLAN-01 | Phase 21 | Pending |
 | PLAN-08 | Phase 21 | Pending |
 | PLAN-02 | Phase 22 | Pending |

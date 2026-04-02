@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Gameweek Planner
-status: verifying
-stopped_at: Completed 19-02-PLAN.md — Value Gems three-column points display
-last_updated: "2026-04-02T08:36:59.977Z"
+status: executing
+stopped_at: Completed 20-01-PLAN.md — Auth expiry utility and AuthModal component
+last_updated: "2026-04-02T09:24:47.738Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 7
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 4
+  completed_plans: 3
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-01 after v1.2)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 19 — data-quality-and-value-gems-polish
+**Current focus:** Phase 20 — auth-ux
 
 ## Current Position
 
-Phase: 20
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 20 (auth-ux) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-02
 
 Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
@@ -54,6 +54,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
 *Updated after each plan completion*
 | Phase 19 P01 | 3 | 2 tasks | 11 files |
 | Phase 19 P02 | 4 | 2 tasks | 2 files |
+| Phase 20 P01 | 2min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,8 @@ Recent decisions affecting current work:
 - [Phase 19]: xG proxy uses FPL goals_scored/assists per-90 formula matching existing Understat approach — ensures all players with minutes get numeric xG/xA
 - [Phase 19]: DefCon threshold raised to < 5 games — eliminates noise from low-appearance players in DefCon table
 - [Phase 19]: pts_gw_count threshold comparison (< 5 / < 3) determines partial window asterisk display per D-11
+- [Phase 20]: dialog::backdrop styled via globals.css CSS rule (not Tailwind backdrop: prefix) — Tailwind v4 backdrop: support unverified in this project config
+- [Phase 20]: AuthModal always rendered in DOM (not conditionally) — prevents showModal() null ref on first open (Pitfall 4 from RESEARCH.md)
 
 ### Pending Todos
 
@@ -82,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T08:32:49.151Z
-Stopped at: Completed 19-02-PLAN.md — Value Gems three-column points display
+Last session: 2026-04-02T09:24:47.735Z
+Stopped at: Completed 20-01-PLAN.md — Auth expiry utility and AuthModal component
 Resume file: None

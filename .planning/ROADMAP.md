@@ -89,7 +89,7 @@ Plans:
   3. Authentication state shows three-state expiry: normal (> 1hr), amber warning (15min-1hr), expired with reconnect link (< 15min)
 **Plans**: 2 plans
 Plans:
-- [ ] 20-01-PLAN.md — Expiry state function (TDD) and AuthModal component
+- [x] 20-01-PLAN.md — Expiry state function (TDD) and AuthModal component
 - [ ] 20-02-PLAN.md — TransferPanel integration and human verification
 **UI hint**: yes
 
@@ -191,7 +191,7 @@ Plans:
 | 17. Polish + Infrastructure | v1.2 | 3/3 | Complete | 2026-04-01 |
 | 18. Dark Mode | v1.2 | 3/3 | Complete | 2026-04-01 |
 | 19. Data Quality and Value Gems Polish | v1.3 | 2/2 | Complete    | 2026-04-02 |
-| 20. Auth UX | v1.3 | 0/2 | Not started | - |
+| 20. Auth UX | v1.3 | 1/2 | In Progress|  |
 | 21. Planner Tab Shell and State Model | v1.3 | 0/TBD | Not started | - |
 | 22. Planning Engine | v1.3 | 0/TBD | Not started | - |
 | 23. Transfer Output Table | v1.3 | 0/TBD | Not started | - |
