@@ -10,8 +10,9 @@ import { LastUpdated } from '@/components/LastUpdated'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { ValueGemsTable } from '@/components/value-gems/ValueGemsTable'
 import { MobileNav } from '@/components/nav/MobileNav'
+import { PlannerTab } from '@/components/planner/PlannerTab'
 
-type Tab = 'gems' | 'defcon' | 'squad' | 'club-form' | 'value-gems'
+type Tab = 'gems' | 'defcon' | 'squad' | 'club-form' | 'value-gems' | 'planner'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('gems')
@@ -79,6 +80,16 @@ export default function Home() {
           >
             Value Gems
           </button>
+          <button
+            className={`pb-2 px-1 text-sm font-medium ${
+              activeTab === 'planner'
+                ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+            }`}
+            onClick={() => setActiveTab('planner')}
+          >
+            Planner
+          </button>
         </div>
 
         {/* Tab content */}
@@ -87,6 +98,7 @@ export default function Home() {
         {activeTab === 'squad' && <TransferPanel />}
         {activeTab === 'club-form' && <ClubFormTable />}
         {activeTab === 'value-gems' && <ValueGemsTable />}
+        {activeTab === 'planner' && <PlannerTab />}
       </main>
       <MobileNav activeTab={activeTab} onTabChange={setActiveTab} />
     </>
