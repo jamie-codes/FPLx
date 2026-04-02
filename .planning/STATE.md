@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Gameweek Planner
-status: verifying
-stopped_at: Completed 21-02-PLAN.md — Task 2 human-verify approved, Planner tab shell phase fully complete
-last_updated: "2026-04-02T11:34:36.915Z"
+status: executing
+stopped_at: Completed 22-01-PLAN.md — planning engine implemented and all tests passing
+last_updated: "2026-04-02T14:27:21.101Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 7
   completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 8
+  completed_plans: 7
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-01 after v1.2)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 21 — planner-tab-shell-and-state-model
+**Current focus:** Phase 22 — planning-engine
 
 ## Current Position
 
-Phase: 22
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 22 (planning-engine) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-02
 
 Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
@@ -59,6 +59,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
 | Phase 20-auth-ux P02 | 5min | 2 tasks | 1 files |
 | Phase 21-planner-tab-shell-and-state-model P01 | 2min | 2 tasks | 3 files |
 | Phase 21 P02 | 128s | 1 tasks | 5 files |
+| Phase 22-planning-engine P01 | 8min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,9 @@ Recent decisions affecting current work:
 - [Phase 21]: snapshotSquad uses structuredClone for deep copy over JSON round-trip or spread
 - [Phase 21]: HorizonSelector styling copied verbatim from GwToggle.tsx — ensures visual consistency across segmented controls
 - [Phase 21]: Tab type updated in both page.tsx and MobileNav.tsx together — these local type definitions must stay in sync
+- [Phase 22-planning-engine]: LOOK_AHEAD_DISCOUNT=0.8 per D-01; greedy + 1-level look-ahead, no deeper recursion
+- [Phase 22-planning-engine]: CANDIDATES_PER_POSITION=20 pre-filter by gem_score to bound candidate search space
+- [Phase 22-planning-engine]: Hit threshold D-03: paid transfer only suggested when netGain > 0 after -4 deduction
 
 ### Pending Todos
 
@@ -96,6 +100,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T11:31:35.167Z
-Stopped at: Completed 21-02-PLAN.md — Task 2 human-verify approved, Planner tab shell phase fully complete
+Last session: 2026-04-02T14:27:21.098Z
+Stopped at: Completed 22-01-PLAN.md — planning engine implemented and all tests passing
 Resume file: None

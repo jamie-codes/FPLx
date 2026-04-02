@@ -120,7 +120,7 @@ Plans:
   5. Net projected gain per transfer accounts for -4pt hit cost when a free transfer is not available
 **Plans**: 2 plans
 Plans:
-- [ ] 22-01-PLAN.md — Planning engine TDD (types, tests, generatePlan implementation)
+- [x] 22-01-PLAN.md — Planning engine TDD (types, tests, generatePlan implementation)
 - [ ] 22-02-PLAN.md — PlannerTab integration and human verification
 
 ### Phase 23: Transfer Output Table
@@ -193,7 +193,7 @@ Plans:
 | 19. Data Quality and Value Gems Polish | v1.3 | 2/2 | Complete    | 2026-04-02 |
 | 20. Auth UX | v1.3 | 2/2 | Complete    | 2026-04-02 |
 | 21. Planner Tab Shell and State Model | v1.3 | 2/2 | Complete    | 2026-04-02 |
-| 22. Planning Engine | v1.3 | 0/2 | Not started | - |
+| 22. Planning Engine | v1.3 | 1/2 | In Progress|  |
 | 23. Transfer Output Table | v1.3 | 0/TBD | Not started | - |
 | 24. Squad Snapshot | v1.3 | 0/TBD | Not started | - |
 | 25. Manual Edit Mode | v1.3 | 0/TBD | Not started | - |
