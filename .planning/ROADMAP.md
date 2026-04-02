@@ -134,7 +134,7 @@ Plans:
   4. A "Plan value" headline above the table shows the total net projected gain across all GW steps
 **Plans**: 2 plans
 Plans:
-- [ ] 23-01-PLAN.md — Pure helpers (TDD), TransferPlanTable and ChipToggle components
+- [x] 23-01-PLAN.md — Pure helpers (TDD), TransferPlanTable and ChipToggle components
 - [ ] 23-02-PLAN.md — PlannerTab integration (useImmer migration) and human verification
 **UI hint**: yes
 
@@ -194,6 +194,6 @@ Plans:
 | 20. Auth UX | v1.3 | 2/2 | Complete    | 2026-04-02 |
 | 21. Planner Tab Shell and State Model | v1.3 | 2/2 | Complete    | 2026-04-02 |
 | 22. Planning Engine | v1.3 | 2/2 | Complete   | 2026-04-02 |
-| 23. Transfer Output Table | v1.3 | 0/2 | Not started | - |
+| 23. Transfer Output Table | v1.3 | 1/2 | In Progress|  |
 | 24. Squad Snapshot | v1.3 | 0/TBD | Not started | - |
 | 25. Manual Edit Mode | v1.3 | 0/TBD | Not started | - |

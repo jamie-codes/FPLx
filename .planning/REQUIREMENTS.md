@@ -26,9 +26,9 @@
 - [x] **PLAN-02**: System auto-suggests an optimal transfer sequence for the chosen horizon
 - [x] **PLAN-03**: Transfer sequence scoring accounts for projected points delta, fixture difficulty, DGW/BGW awareness, and -4pt hit cost
 - [ ] **PLAN-04**: User can manually edit the suggested sequence (swap players in/out per GW step)
-- [ ] **PLAN-05**: Output shows a transfer-by-transfer table (GW | Out | In | Cost | Projected gain)
+- [x] **PLAN-05**: Output shows a transfer-by-transfer table (GW | Out | In | Cost | Projected gain)
 - [ ] **PLAN-06**: Output shows a squad snapshot for each gameweek in the plan
-- [ ] **PLAN-07**: Chip timing (Wildcard, Free Hit, Triple Captain, Bench Boost) is visible and configurable in the plan
+- [x] **PLAN-07**: Chip timing (Wildcard, Free Hit, Triple Captain, Bench Boost) is visible and configurable in the plan
 - [x] **PLAN-08**: Planner is accessible via a new "Planner" tab in the navigation bar
 
 ## Future Requirements
@@ -69,8 +69,8 @@
 | PLAN-08 | Phase 21 | Complete |
 | PLAN-02 | Phase 22 | Complete |
 | PLAN-03 | Phase 22 | Complete |
-| PLAN-05 | Phase 23 | Pending |
-| PLAN-07 | Phase 23 | Pending |
+| PLAN-05 | Phase 23 | Complete |
+| PLAN-07 | Phase 23 | Complete |
 | PLAN-06 | Phase 24 | Pending |
 | PLAN-04 | Phase 25 | Pending |
 
