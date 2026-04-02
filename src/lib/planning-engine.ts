@@ -172,6 +172,12 @@ export function generatePlan(
       transfersUsed = 1
     }
 
+    // Snapshot position map for squad accordion display (per D-04)
+    const positionsAfter: Record<number, number> = {}
+    for (const [id, pos] of positionMap.entries()) {
+      positionsAfter[id] = pos
+    }
+
     // Compute hit cost for the step (actual transfers used)
     const stepHitCost = computeHitCost(currentFT.available, transfersUsed, null)
 
@@ -187,6 +193,7 @@ export function generatePlan(
       hitCost: stepHitCost,
       scoredTransfers: top5,
       squadAfter: [...simulatedSquadIds],
+      positionsAfter,          // NEW — per D-04
       unconfirmedFixtures,
     }
 
