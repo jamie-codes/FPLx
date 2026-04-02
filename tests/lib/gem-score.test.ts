@@ -7,6 +7,8 @@ function makeMergedPlayer(overrides: Partial<MergedPlayer> = {}): MergedPlayer {
     id: 1, web_name: 'Test', team: 1, team_short_name: 'TST',
     element_type: 3, now_cost: 70, selected_by_percent: '10.0',
     form: '5.0', status: 'a', minutes: 900, starts: 10, total_points: 50,
+    goals_scored: 5, assists: 3,
+    pts_last3gw: 15, pts_last5gw: 25, pts_gw_count: 30,
     defensive_contribution: null, clearances_blocks_interceptions: null,
     direct_freekicks_order: null, penalties_order: null,
     corners_and_indirect_freekicks_order: null, news: '',

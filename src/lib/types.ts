@@ -99,6 +99,13 @@ export interface MergedPlayer {
   minutes: number
   starts: number
   total_points: number
+  // FPL scoring fields (used by DQ-01 xG proxy in gem-score.ts)
+  goals_scored: number
+  assists: number
+  // Historical points (VG-01 — from element-summary history)
+  pts_last3gw: number        // sum of points over last 3 GWs (partial if fewer GWs available)
+  pts_last5gw: number        // sum of points over last 5 GWs (partial if fewer GWs available)
+  pts_gw_count: number       // number of GWs of history available (for partial window asterisk)
   defensive_contribution: number | null
   clearances_blocks_interceptions: number | null
   direct_freekicks_order: number | null

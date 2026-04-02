@@ -75,14 +75,16 @@ export function computeAllGemScores(players: MergedPlayer[]): ScoredPlayer[] {
     const form_score = normalise(player.form_pts_per90, stats.form)
     dims.push(form_score)
 
+    // DQ-01: xg_per90/xa_per90 are now always numeric (proxy from goals/assists when Understat missing)
+    // Keep null guard for safety but it should never trigger after pipeline changes
     let xg_score: number | null = null
-    if (player.xg_per90 !== null) {
+    if (player.xg_per90 !== null && player.xg_per90 !== undefined) {
       xg_score = normalise(player.xg_per90, stats.xg)
       dims.push(xg_score)
     }
 
     let xa_score: number | null = null
-    if (player.xa_per90 !== null) {
+    if (player.xa_per90 !== null && player.xa_per90 !== undefined) {
       xa_score = normalise(player.xa_per90, stats.xa)
       dims.push(xa_score)
     }
