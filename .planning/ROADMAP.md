@@ -5,6 +5,7 @@
 - ✅ **v1.0 MVP** — Phases 1-6 (shipped 2026-03-29)
 - ✅ **v1.1 Decision Engine** — Phases 7-12 (shipped 2026-03-30)
 - ✅ **v1.2 Mobile** — Phases 13-18 (shipped 2026-04-01)
+- 🚧 **v1.3 Gameweek Planner** — Phases 19-25 (in progress)
 
 ## Phases
 
@@ -50,6 +51,102 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 
 </details>
 
+### 🚧 v1.3 Gameweek Planner (In Progress)
+
+**Milestone Goal:** Let the manager plan 1–5 weeks of transfers ahead with auto-suggested sequences, chip timing, and scored output showing squad state at each gameweek.
+
+- [ ] **Phase 19: Data Quality and Value Gems Polish** — Pipeline xG proxy, DefCon threshold fix, historical points columns
+- [ ] **Phase 20: Auth UX** — Direct email/password login and manual cookie fallback
+- [ ] **Phase 21: Planner Tab Shell and State Model** — Nav entry point, types, and foundational state model
+- [ ] **Phase 22: Planning Engine** — Auto-suggest algorithm with look-ahead scoring
+- [ ] **Phase 23: Transfer Output Table** — Transfer-by-transfer table with chip slots and hit cost
+- [ ] **Phase 24: Squad Snapshot** — Per-GW 15-player squad view with accordion UI
+- [ ] **Phase 25: Manual Edit Mode** — Player picker combobox and per-GW override editing
+
+## Phase Details
+
+### Phase 19: Data Quality and Value Gems Polish
+**Goal**: Data gaps no longer silently degrade the Gem score or DefCon table, and Value Gems shows recent form points columns
+**Depends on**: Phase 18
+**Requirements**: DQ-01, DQ-02, VG-01, VG-02
+**Success Criteria** (what must be TRUE):
+  1. A player with no Understat xG/xA data still receives a Gem score (FPL goals/assists used as proxy, not excluded)
+  2. DefCon table shows computed stats for all players who have enough match data; "Insufficient data" appears only for genuine edge cases (new players, very few appearances)
+  3. Value Gems table shows three points columns: Total Pts, Pts (last 5 GW), and Pts (last 3 GW)
+  4. Sorting by any of the three points columns produces correct ordering
+**Plans**: TBD
+
+### Phase 20: Auth UX
+**Goal**: Users can authenticate with FPL using email and password directly in the app, with a guided fallback for manual cookie entry
+**Depends on**: Phase 18
+**Requirements**: AUTH-03, AUTH-04
+**Success Criteria** (what must be TRUE):
+  1. User can enter FPL email and password in the app and receive authenticated squad data (exact sell prices, bank balance) without any manual cookie hunting
+  2. If direct login fails or is unavailable, user can enter a session cookie manually using a step-by-step browser guide (Chrome, Firefox, and Safari steps shown)
+  3. Authentication state is clearly indicated — user knows whether they are logged in via password or cookie
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 21: Planner Tab Shell and State Model
+**Goal**: The Planner tab exists in navigation and the foundational types and state model are in place with correct free transfer threading and squad snapshot isolation
+**Depends on**: Phase 20
+**Requirements**: PLAN-01, PLAN-08
+**Success Criteria** (what must be TRUE):
+  1. A "Planner" tab appears in both the desktop tab strip and the mobile bottom nav bar and renders without error
+  2. User can select a planning horizon of 1, 2, 3, 4, or 5 gameweeks using a control on the Planner tab
+  3. Free transfer accumulation logic is unit-tested and correct: transfers bank correctly up to the cap, hit costs are calculated accurately, and Free Hit/Wildcard preserve banked transfers per 2025/26 rules
+  4. Squad snapshot deep-copy pattern is verified: editing one GW step does not corrupt any other step's state
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 22: Planning Engine
+**Goal**: The system can auto-suggest an optimal transfer sequence for the chosen horizon, with scoring that accounts for projected points, fixture difficulty, DGW/BGW awareness, and hit costs
+**Depends on**: Phase 21
+**Requirements**: PLAN-02, PLAN-03
+**Success Criteria** (what must be TRUE):
+  1. Clicking "Generate Plan" produces a sequence of suggested transfers for each GW in the chosen horizon
+  2. Suggested transfers reflect fixture difficulty — players with easier fixtures are preferred over equally-rated players with harder fixtures
+  3. DGW targets are surfaced appropriately — a justified -4pt hit for a double-gameweek target can appear in suggestions
+  4. BGW and unconfirmed fixture GWs are flagged rather than scored on incomplete data
+  5. Net projected gain per transfer accounts for -4pt hit cost when a free transfer is not available
+**Plans**: TBD
+
+### Phase 23: Transfer Output Table
+**Goal**: The planner surfaces a readable transfer-by-transfer table showing each GW's suggested move, chip slot, projected gain, and hit cost
+**Depends on**: Phase 22
+**Requirements**: PLAN-05, PLAN-07
+**Success Criteria** (what must be TRUE):
+  1. Output table shows one row per GW with columns: GW number, chip slot (if any), player out, player in, hit cost, and projected gain
+  2. DGW and BGW GW labels appear on the relevant rows so the user can see scheduling context at a glance
+  3. Chip timing (Wildcard, Free Hit, Triple Captain, Bench Boost) is visible per GW row and the user can toggle a chip on or off for any GW in the plan
+  4. A "Plan value" headline above the table shows the total net projected gain across all GW steps
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 24: Squad Snapshot
+**Goal**: The manager can see the full 15-player squad state after each GW step in the plan
+**Depends on**: Phase 23
+**Requirements**: PLAN-06
+**Success Criteria** (what must be TRUE):
+  1. Each GW row in the plan table has an expandable accordion that reveals the full 15-player squad (GK/DEF/MID/FWD grouping, bench included) after that GW's transfers are applied
+  2. Players changed by that GW's transfer are visually highlighted so the user can quickly spot what changed
+  3. Bench Boost GWs show all 15 players prominently rather than just the starting XI
+  4. Squad snapshots are collapsed by default — the table remains compact until the user expands a specific GW
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 25: Manual Edit Mode
+**Goal**: Users can override any auto-suggested transfer in the plan with their own player selection, and the plan re-scores from that point forward
+**Depends on**: Phase 24
+**Requirements**: PLAN-04
+**Success Criteria** (what must be TRUE):
+  1. Each transfer row has an edit control that opens a player picker filtered to the correct position
+  2. The player picker shows players sorted by projected points for the relevant GW, with a search/filter input
+  3. After the user picks a replacement, the plan re-scores from that GW onwards while preserving manual edits to earlier GWs
+  4. The user can switch between "Suggested" and "Manual" mode — switching back to Suggested restores the engine's original recommendation for that row
+**Plans**: TBD
+**UI hint**: yes
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -72,3 +169,10 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 | 16. Component-Level Mobile | v1.2 | 1/1 | Complete | 2026-04-01 |
 | 17. Polish + Infrastructure | v1.2 | 3/3 | Complete | 2026-04-01 |
 | 18. Dark Mode | v1.2 | 3/3 | Complete | 2026-04-01 |
+| 19. Data Quality and Value Gems Polish | v1.3 | 0/TBD | Not started | - |
+| 20. Auth UX | v1.3 | 0/TBD | Not started | - |
+| 21. Planner Tab Shell and State Model | v1.3 | 0/TBD | Not started | - |
+| 22. Planning Engine | v1.3 | 0/TBD | Not started | - |
+| 23. Transfer Output Table | v1.3 | 0/TBD | Not started | - |
+| 24. Squad Snapshot | v1.3 | 0/TBD | Not started | - |
+| 25. Manual Edit Mode | v1.3 | 0/TBD | Not started | - |

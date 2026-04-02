@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Gameweek Planner
-status: defining_requirements
+status: ready_to_plan
 stopped_at: ~
 last_updated: "2026-04-01T00:00:00.000Z"
 last_activity: 2026-04-01
 progress:
-  total_phases: 0
+  total_phases: 7
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-01 after v1.2)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Planning next milestone — run `/gsd:new-milestone`
+**Current focus:** Phase 19 — Data Quality and Value Gems Polish (first phase of v1.3)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-01 — Milestone v1.3 started
+Phase: 19 of 25 (Data Quality and Value Gems Polish)
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-04-01 — v1.3 roadmap created (7 phases, 14 requirements mapped)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
-- Average duration: -
+- Total plans completed: 0 (v1.3)
+- Average duration: ~30 min (based on v1.2 history)
 - Total execution time: 0 hours
 
 **By Phase:**
@@ -52,18 +52,6 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 *Updated after each plan completion*
-| Phase 13 P01 | 2 | 3 tasks | 4 files |
-| Phase 13 P02 | 35 | 3 tasks | 7 files |
-| Phase 14-gemtable-mobile P01 | 15 | 2 tasks | 3 files |
-| Phase 15 P01 | 1 | 1 tasks | 1 files |
-| Phase 15-remaining-tables-mobile P02 | 8 | 2 tasks | 3 files |
-| Phase 16-component-level-mobile P01 | 126 | 2 tasks | 2 files |
-| Phase 17 P01 | 74 | 2 tasks | 1 files |
-| Phase 17 P03 | 6 | 2 tasks | 3 files |
-| Phase 17 P02 | 15 | 2 tasks | 1 files |
-| Phase 18-dark-mode P01 | 2 | 2 tasks | 4 files |
-| Phase 18-dark-mode P03 | 10 | 2 tasks | 9 files |
-| Phase 18-dark-mode P02 | 347 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -72,37 +60,11 @@ Progress: [░░░░░░░░░░] 0%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [v1.2 Roadmap]: CSS-only show/hide (`hidden sm:flex`, `sm:hidden`) for nav — no `useMediaQuery` hook; avoids hydration mismatch
-- [v1.2 Roadmap]: `sm` breakpoint (640px) chosen for mobile/desktop boundary — phones are <=480px, tablets get full desktop layout
-- [v1.2 Roadmap]: Tab state stays in page.tsx; MobileNav receives activeTab/onTabChange as props — no new context needed
-- [v1.2 Roadmap]: Column priority via TanStack Table VisibilityState — extends existing GW toggle pattern in GemTable
-- [v1.2 Roadmap]: MOB-TBL-05 split across Phase 14 (GemTable) and Phase 15 (SquadView) — same requirement, two components
-- [Phase 13]: CSS-only show/hide (sm:hidden / hidden sm:flex) for nav — no useMediaQuery to avoid hydration mismatch
-- [Phase 13]: Tab state stays in page.tsx; MobileNav is a controlled component via activeTab/onTabChange props — no context needed
-- [Phase 13]: nav-safe-bottom as named CSS class (not Tailwind arbitrary value) for iOS safe area inset readability
-- [Phase 13]: MobileNav moved to sibling of <main> (not inside it) to avoid contributing to main scrollWidth and causing horizontal overflow
-- [Phase 14-gemtable-mobile]: isMobile via window.innerWidth useEffect (not useMediaQuery) — avoids hydration mismatch, consistent with Phase 13 pattern
-- [Phase 14-gemtable-mobile]: getColumnVisibility spread order: MOBILE_HIDDEN_COLUMNS first, gwVisibility second — active proj_pts column overrides false
-- [Phase 15]: hideOnMobile = isMobile ? 'hidden' : '' on manual HTML table — reuses Phase 14 pattern, avoids adding TanStack VisibilityState
-- [Phase 15]: Dynamic colSpan on ExplainPanel (4 mobile / 9 desktop) spans only visible columns
-- [Phase 15-02]: Used window.innerWidth resize listener (not useMediaQuery) consistent with Phase 13/14 pattern to avoid hydration mismatch
-- [Phase 15-02]: DefConTables shares single columnVisibility constant wired to both defTable and midFwdTable instances
-- [Phase 16-component-level-mobile]: hidden sm:inline for season price trend on mobile — GW trend always visible as decision-relevant
-- [Phase 16-component-level-mobile]: Captaincy panel uses grid-cols-2 sm:grid-cols-1 for equal-width cards on narrow screens
-- [Phase 17-polish-infrastructure]: Mirror /api/players USE_BLOB pattern for /api/last-updated: list({ prefix }) + fetch for prod, readFile for dev
-- [Phase 17]: Filter bar z-40 over sticky thead (z-30) prevents player name float-over on mobile GemTable scroll
-- [Phase 17]: Back-to-top button uses dual gating: isMobile state + sm:hidden CSS, consistent with Phase 13/14 pattern
-- [Phase 17]: DGW tier slots between rotation-risk and gem_delta so structural concerns outrank scheduling advantages
-- [Phase 17]: Map.entries() preserves fixture insertion order for DGW badge grouping — no additional sort needed
-- [Phase 17]: Mirror /api/players USE_BLOB pattern for /api/last-updated: list({ prefix }) + fetch for prod, readFile for dev
-- [Phase 18-dark-mode]: Replace @media prefers-color-scheme with .dark class selector — inline script drives system preference into class, media query would conflict
-- [Phase 18-dark-mode]: No next-themes dependency — manual inline script avoids React 19 Encountered a script tag warning
-- [Phase 18-dark-mode]: suppressHydrationWarning on html only — suppresses class mismatch from inline script without disabling child hydration
-- [Phase 18-dark-mode]: Badge dark palette: inverted scheme (dark:bg-*-900 + dark:text-*-200) for all status badge types
-- [Phase 18-dark-mode]: ValueGemsTable active filter pill: fully inverted in dark (dark:bg-white dark:text-zinc-900) for clear selection contrast
-- [Phase 18-dark-mode]: dark:even:bg-zinc-800 on GemTable rows preserves row separation in dark mode
-- [Phase 18-dark-mode]: GwToggle active state inverted (dark:bg-white dark:text-zinc-900) for dark mode contrast
-- [Phase 18-dark-mode]: TransferPanel inputs get dark:bg-zinc-800 + dark:border-zinc-600 (Pitfall 5 input border prevention)
+- [v1.3 Roadmap]: DQ-01/02 and VG-01/02 grouped into Phase 19 — all are pipeline/display polish with no blocking dependencies on each other
+- [v1.3 Roadmap]: AUTH-03/04 is Phase 20 — self-contained; can be built independently of Planner work
+- [v1.3 Roadmap]: PLAN-08 (nav tab) grouped with PLAN-01 (horizon selector) in Phase 21 — tab shell and state model must exist before engine or UI
+- [v1.3 Roadmap]: Manual edit (PLAN-04) is Phase 25 (last) — depends on stable output table (Phase 23) and squad snapshot (Phase 24)
+- [v1.3 Roadmap]: immer + use-immer are the only new packages; install happens in Phase 21
 
 ### Pending Todos
 
@@ -110,10 +72,11 @@ None yet.
 
 ### Blockers/Concerns
 
-None yet.
+- [Research]: Free transfer cap for 2025/26 reported as 5 in SUMMARY.md but 2 in FEATURES.md — must verify against official FPL rules before coding Phase 21 free transfer accumulation logic
+- [Research]: Look-ahead depth (2 vs 3 GWs) and candidate pre-filter counts not empirically verified — settle via Vitest benchmarks during Phase 22
 
 ## Session Continuity
 
-Last session: 2026-04-01T18:20:52.627Z
-Stopped at: Completed 18-02-PLAN.md — dark variants on high-complexity components (DARK-03 partial)
+Last session: 2026-04-01
+Stopped at: v1.3 roadmap created — ready to plan Phase 19
 Resume file: None
