@@ -59,7 +59,7 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 - [x] **Phase 20: Auth UX** — Modal-based guided token entry with expiry awareness (completed 2026-04-02)
 - [x] **Phase 21: Planner Tab Shell and State Model** — Nav entry point, types, and foundational state model (completed 2026-04-02)
 - [x] **Phase 22: Planning Engine** — Auto-suggest algorithm with look-ahead scoring (completed 2026-04-02)
-- [x] **Phase 23: Transfer Output Table** — Transfer-by-transfer table with chip slots and hit cost (completed 2026-04-02)
+- [x] **Phase 23: Transfer Output Table** — Transfer-by-transfer table with chip slots and hit cost (completed 2026-04-02)
 - [ ] **Phase 24: Squad Snapshot** — Per-GW 15-player squad view with accordion UI
 - [ ] **Phase 25: Manual Edit Mode** — Player picker combobox and per-GW override editing
 
@@ -149,8 +149,8 @@ Plans:
   4. Squad snapshots are collapsed by default — the table remains compact until the user expands a specific GW
 **Plans**: 2 plans
 Plans:
-- [ ] 19-01-PLAN.md — Pipeline data quality (xG proxy, DefCon threshold, historical points)
-- [ ] 19-02-PLAN.md — Value Gems points columns UI
+- [ ] 24-01-PLAN.md — PlanStep type extension and positionsAfter TDD
+- [ ] 24-02-PLAN.md — SquadSnapshotRow component and TransferPlanTable accordion wiring
 **UI hint**: yes
 
 ### Phase 25: Manual Edit Mode
@@ -164,8 +164,8 @@ Plans:
   4. The user can switch between "Suggested" and "Manual" mode — switching back to Suggested restores the engine's original recommendation for that row
 **Plans**: 2 plans
 Plans:
-- [ ] 19-01-PLAN.md — Pipeline data quality (xG proxy, DefCon threshold, historical points)
-- [ ] 19-02-PLAN.md — Value Gems points columns UI
+- [ ] 25-01-PLAN.md — TBD
+- [ ] 25-02-PLAN.md — TBD
 **UI hint**: yes
 
 ## Progress
@@ -195,5 +195,5 @@ Plans:
 | 21. Planner Tab Shell and State Model | v1.3 | 2/2 | Complete    | 2026-04-02 |
 | 22. Planning Engine | v1.3 | 2/2 | Complete   | 2026-04-02 |
 | 23. Transfer Output Table | v1.3 | 2/2 | Complete    | 2026-04-02 |
-| 24. Squad Snapshot | v1.3 | 0/TBD | Not started | - |
+| 24. Squad Snapshot | v1.3 | 0/2 | Not started | - |
 | 25. Manual Edit Mode | v1.3 | 0/TBD | Not started | - |
