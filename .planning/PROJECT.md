@@ -24,9 +24,9 @@ Give the manager a clear, prioritised view of who to buy and who to sell this we
 
 ---
 
-## Current State (v1.2 shipped 2026-04-01)
+## Current State (v1.3 in progress — Phase 20 complete 2026-04-02)
 
-v1.2 Mobile complete — full responsive layout on mobile with fixed bottom tab bar, touch-compliant controls (44px targets, 16px inputs), mobile-optimised tables (column hiding, sticky Player column, expandable rows), DGW-aware transfer engine, FOUC-free dark mode with ThemeToggle, and confirmed GitHub Actions cron for daily refresh.
+Phase 20 complete — Auth UX polished: guided modal flow (`AuthModal`) replaces the inline token form in TransferPanel, with 7-step Chrome DevTools guide, clipboard paste, and three-state expiry display (normal / expiring-soon / expired+reconnect). AUTH-03 and AUTH-04 satisfied. Phase 21 (Planner Tab Shell and State Model) is next.
 
 **Tech stack:** Next.js 16, React 19, TypeScript, TanStack Table v8, TanStack Query, Tailwind CSS v4, Vitest, Python (requests, pandas, soccerdata), Vercel Blob
 
@@ -105,8 +105,8 @@ v1.2 Mobile complete — full responsive layout on mobile with fixed bottom tab 
 
 - [x] **DQ-01**: Players without Understat xG/xA data use FPL goals/assists as proxy in Gem score — Validated in Phase 19: data-quality-and-value-gems-polish
 - [x] **DQ-02**: DefCon table shows computed stats where data exists; "Insufficient data" reserved for genuine edge cases; threshold raised — Validated in Phase 19: data-quality-and-value-gems-polish
-- [ ] **AUTH-03**: User can log in to FPL directly via email + password (server-side cookie extraction)
-- [ ] **AUTH-04**: Manual cookie entry supported with step-by-step browser guide as fallback
+- [x] **AUTH-03**: User can log in to FPL directly via email + password (server-side cookie extraction) — Validated in Phase 20: auth-ux
+- [x] **AUTH-04**: Manual cookie entry supported with step-by-step browser guide as fallback — Validated in Phase 20: auth-ux
 - [x] **VG-01**: Pipeline computes pts_last3gw and pts_last5gw per player from FPL element-summary history — Validated in Phase 19: data-quality-and-value-gems-polish
 - [x] **VG-02**: Value Gems table shows Total Pts, Pts (last 5 GW), Pts (last 3 GW) columns — Validated in Phase 19: data-quality-and-value-gems-polish
 - [ ] **PLAN-01**: User can set a planning horizon of 1–5 gameweeks
