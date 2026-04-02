@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Gameweek Planner
-status: executing
-stopped_at: Completed 20-01-PLAN.md — Auth expiry utility and AuthModal component
-last_updated: "2026-04-02T09:24:47.738Z"
+status: verifying
+stopped_at: Completed 20-02-PLAN.md — awaiting human verification of auth UX flow
+last_updated: "2026-04-02T09:27:52.653Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 7
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-01 after v1.2)
 
 Phase: 20 (auth-ux) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-02
 
 Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
 | Phase 19 P01 | 3 | 2 tasks | 11 files |
 | Phase 19 P02 | 4 | 2 tasks | 2 files |
 | Phase 20 P01 | 2min | 2 tasks | 4 files |
+| Phase 20-auth-ux P02 | 5 min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,7 @@ Recent decisions affecting current work:
 - [Phase 19]: pts_gw_count threshold comparison (< 5 / < 3) determines partial window asterisk display per D-11
 - [Phase 20]: dialog::backdrop styled via globals.css CSS rule (not Tailwind backdrop: prefix) — Tailwind v4 backdrop: support unverified in this project config
 - [Phase 20]: AuthModal always rendered in DOM (not conditionally) — prevents showModal() null ref on first open (Pitfall 4 from RESEARCH.md)
+- [Phase 20-auth-ux]: handleAuthSuccess calls setAuthenticated() then closes modal — TanStack Query cache invalidated before modal disappears
 
 ### Pending Todos
 
@@ -85,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T09:24:47.735Z
-Stopped at: Completed 20-01-PLAN.md — Auth expiry utility and AuthModal component
+Last session: 2026-04-02T09:27:52.649Z
+Stopped at: Completed 20-02-PLAN.md — awaiting human verification of auth UX flow
 Resume file: None

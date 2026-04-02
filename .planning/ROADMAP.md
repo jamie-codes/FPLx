@@ -56,7 +56,7 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 **Milestone Goal:** Let the manager plan 1–5 weeks of transfers ahead with auto-suggested sequences, chip timing, and scored output showing squad state at each gameweek.
 
 - [x] **Phase 19: Data Quality and Value Gems Polish** — Pipeline xG proxy, DefCon threshold fix, historical points columns (completed 2026-04-02)
-- [ ] **Phase 20: Auth UX** — Modal-based guided token entry with expiry awareness
+- [x] **Phase 20: Auth UX** — Modal-based guided token entry with expiry awareness (completed 2026-04-02)
 - [ ] **Phase 21: Planner Tab Shell and State Model** — Nav entry point, types, and foundational state model
 - [ ] **Phase 22: Planning Engine** — Auto-suggest algorithm with look-ahead scoring
 - [ ] **Phase 23: Transfer Output Table** — Transfer-by-transfer table with chip slots and hit cost
@@ -90,7 +90,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 20-01-PLAN.md — Expiry state function (TDD) and AuthModal component
-- [ ] 20-02-PLAN.md — TransferPanel integration and human verification
+- [x] 20-02-PLAN.md — TransferPanel integration and human verification
 **UI hint**: yes
 
 ### Phase 21: Planner Tab Shell and State Model
@@ -191,7 +191,7 @@ Plans:
 | 17. Polish + Infrastructure | v1.2 | 3/3 | Complete | 2026-04-01 |
 | 18. Dark Mode | v1.2 | 3/3 | Complete | 2026-04-01 |
 | 19. Data Quality and Value Gems Polish | v1.3 | 2/2 | Complete    | 2026-04-02 |
-| 20. Auth UX | v1.3 | 1/2 | In Progress|  |
+| 20. Auth UX | v1.3 | 2/2 | Complete   | 2026-04-02 |
 | 21. Planner Tab Shell and State Model | v1.3 | 0/TBD | Not started | - |
 | 22. Planning Engine | v1.3 | 0/TBD | Not started | - |
 | 23. Transfer Output Table | v1.3 | 0/TBD | Not started | - |
