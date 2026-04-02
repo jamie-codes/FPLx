@@ -1,18 +1,20 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useImmer } from 'use-immer'
 import { HorizonSelector } from './HorizonSelector'
+import { TransferPlanTable } from './TransferPlanTable'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useSquad } from '@/lib/hooks/useSquad'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
 import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
 import { computeAllGemScores } from '@/lib/gem-score'
 import { generatePlan } from '@/lib/planning-engine'
-import type { PlanResult, FTState, PlannerHorizon } from '@/lib/types'
+import type { PlanResult, FTState, PlannerHorizon, PlannerChip } from '@/lib/types'
 
 export function PlannerTab() {
   const [horizon, setHorizon] = useState<PlannerHorizon>(3)
-  const [planResult, setPlanResult] = useState<PlanResult | null>(null)
+  const [planResult, updatePlanResult] = useImmer<PlanResult | null>(null)
 
   // Team ID from localStorage (Team-ID-only mode — no auth required)
   const [teamId] = useState<string | null>(() =>
@@ -62,7 +64,15 @@ export function PlannerTab() {
       bankBalance,
       sellPrices,
     )
-    setPlanResult(result)
+    updatePlanResult(() => result)
+  }
+
+  function handleChipToggle(stepIndex: number, chip: PlannerChip) {
+    updatePlanResult(draft => {
+      if (!draft) return
+      const step = draft.steps[stepIndex]
+      step.chip = step.chip === chip ? null : chip
+    })
   }
 
   return (
@@ -85,9 +95,11 @@ export function PlannerTab() {
         Generate Plan
       </button>
       {planResult && (
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">
-          Plan generated: {planResult.steps.length} gameweek(s) starting GW{planResult.startingGw}
-        </div>
+        <TransferPlanTable
+          planResult={planResult}
+          scoredPlayers={scoredPlayers}
+          onChipToggle={handleChipToggle}
+        />
       )}
     </div>
   )
