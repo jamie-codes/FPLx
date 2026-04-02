@@ -29,7 +29,7 @@
 - [ ] **PLAN-05**: Output shows a transfer-by-transfer table (GW | Out | In | Cost | Projected gain)
 - [ ] **PLAN-06**: Output shows a squad snapshot for each gameweek in the plan
 - [ ] **PLAN-07**: Chip timing (Wildcard, Free Hit, Triple Captain, Bench Boost) is visible and configurable in the plan
-- [ ] **PLAN-08**: Planner is accessible via a new "Planner" tab in the navigation bar
+- [x] **PLAN-08**: Planner is accessible via a new "Planner" tab in the navigation bar
 
 ## Future Requirements
 
@@ -66,7 +66,7 @@
 | AUTH-03 | Phase 20 | Complete |
 | AUTH-04 | Phase 20 | Complete |
 | PLAN-01 | Phase 21 | Complete |
-| PLAN-08 | Phase 21 | Pending |
+| PLAN-08 | Phase 21 | Complete |
 | PLAN-02 | Phase 22 | Pending |
 | PLAN-03 | Phase 22 | Pending |
 | PLAN-05 | Phase 23 | Pending |

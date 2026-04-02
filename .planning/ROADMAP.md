@@ -57,7 +57,7 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 
 - [x] **Phase 19: Data Quality and Value Gems Polish** — Pipeline xG proxy, DefCon threshold fix, historical points columns (completed 2026-04-02)
 - [x] **Phase 20: Auth UX** — Modal-based guided token entry with expiry awareness (completed 2026-04-02)
-- [ ] **Phase 21: Planner Tab Shell and State Model** — Nav entry point, types, and foundational state model
+- [x] **Phase 21: Planner Tab Shell and State Model** — Nav entry point, types, and foundational state model (completed 2026-04-02)
 - [ ] **Phase 22: Planning Engine** — Auto-suggest algorithm with look-ahead scoring
 - [ ] **Phase 23: Transfer Output Table** — Transfer-by-transfer table with chip slots and hit cost
 - [ ] **Phase 24: Squad Snapshot** — Per-GW 15-player squad view with accordion UI
@@ -105,7 +105,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 21-01-PLAN.md — Planner types and free transfer engine (TDD)
-- [ ] 21-02-PLAN.md — Navigation wiring, PlannerTab shell, and horizon selector UI
+- [x] 21-02-PLAN.md — Navigation wiring, PlannerTab shell, and horizon selector UI
 **UI hint**: yes
 
 ### Phase 22: Planning Engine
@@ -192,7 +192,7 @@ Plans:
 | 18. Dark Mode | v1.2 | 3/3 | Complete | 2026-04-01 |
 | 19. Data Quality and Value Gems Polish | v1.3 | 2/2 | Complete    | 2026-04-02 |
 | 20. Auth UX | v1.3 | 2/2 | Complete    | 2026-04-02 |
-| 21. Planner Tab Shell and State Model | v1.3 | 1/2 | In Progress|  |
+| 21. Planner Tab Shell and State Model | v1.3 | 2/2 | Complete   | 2026-04-02 |
 | 22. Planning Engine | v1.3 | 0/TBD | Not started | - |
 | 23. Transfer Output Table | v1.3 | 0/TBD | Not started | - |
 | 24. Squad Snapshot | v1.3 | 0/TBD | Not started | - |

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Gameweek Planner
-status: executing
-stopped_at: Completed 21-01-PLAN.md — free transfer engine implemented with 31 tests green
-last_updated: "2026-04-02T11:23:32.454Z"
+status: verifying
+stopped_at: Completed 21-02-PLAN.md — Planner tab shell with HorizonSelector wired into desktop and mobile nav
+last_updated: "2026-04-02T11:26:50.400Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 7
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-01 after v1.2)
 
 Phase: 21 (planner-tab-shell-and-state-model) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-02
 
 Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
@@ -58,6 +58,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
 | Phase 20-auth-ux P02 | 5 min | 1 tasks | 1 files |
 | Phase 20-auth-ux P02 | 5min | 2 tasks | 1 files |
 | Phase 21-planner-tab-shell-and-state-model P01 | 2min | 2 tasks | 3 files |
+| Phase 21 P02 | 128s | 1 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,8 @@ Recent decisions affecting current work:
 - [Phase 20-auth-ux]: Inline token form and state (showTokenForm, tokenInput, loginLoading, loginError) removed from TransferPanel — all token-entry logic lives in AuthModal
 - [Phase 21]: computeHitCost returns explicit 0 (not hits * -4 when hits===0) to avoid -0 IEEE754 artifact
 - [Phase 21]: snapshotSquad uses structuredClone for deep copy over JSON round-trip or spread
+- [Phase 21]: HorizonSelector styling copied verbatim from GwToggle.tsx — ensures visual consistency across segmented controls
+- [Phase 21]: Tab type updated in both page.tsx and MobileNav.tsx together — these local type definitions must stay in sync
 
 ### Pending Todos
 
@@ -93,6 +96,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T11:23:32.450Z
-Stopped at: Completed 21-01-PLAN.md — free transfer engine implemented with 31 tests green
+Last session: 2026-04-02T11:26:50.397Z
+Stopped at: Completed 21-02-PLAN.md — Planner tab shell with HorizonSelector wired into desktop and mobile nav
 Resume file: None
