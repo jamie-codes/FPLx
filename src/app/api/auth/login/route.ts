@@ -1,77 +1,59 @@
 import { cookies } from 'next/headers'
 import type { NextRequest } from 'next/server'
-import { extractPlProfile } from '@/lib/fpl-auth'
+import { extractTokenExpiry } from '@/lib/fpl-auth'
 
 /**
  * POST /api/auth/login
  *
- * Forwards FPL credentials to FPL's login endpoint server-side,
- * extracts the pl_profile session cookie, and mirrors it as an
- * HttpOnly fpl_session cookie on our domain (D-02).
+ * Accepts a raw FPL Bearer token (the value of the x-api-authorization header
+ * from any authenticated FPL API request). Validates it is a JWT, decodes the
+ * exp claim, and stores it as an HttpOnly fpl_session cookie.
  *
- * Credentials are strictly request-scoped — consumed once, never stored.
+ * How to get the token:
+ *   1. Open fantasy.premierleague.com while logged in
+ *   2. DevTools → Network → click any /api/ request
+ *   3. Copy the x-api-authorization header value (the part after "Bearer ")
+ *
+ * The token is valid for 8 hours from FPL's login time.
+ * Credentials are not involved — this stores the token only.
  */
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
+    const { token } = await request.json()
 
-    if (!email || !password) {
-      return Response.json(
-        { error: 'Email and password required' },
-        { status: 400 }
-      )
+    if (!token || typeof token !== 'string' || !token.trim()) {
+      return Response.json({ error: 'Token required' }, { status: 400 })
     }
 
-    // Build form-encoded body per FPL login API convention
-    const body = new URLSearchParams({
-      login: email,
-      password,
-      app: 'plfpl-web',
-      redirect_uri: 'https://fantasy.premierleague.com/a/login',
-    })
+    const trimmed = token.trim().replace(/^Bearer\s+/i, '')
 
-    // CRITICAL: redirect: 'manual' — FPL returns 302 on success, not 200.
-    // Without this, fetch follows the redirect and loses the Set-Cookie headers.
-    const fplRes = await fetch('https://users.premierleague.com/accounts/login/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'fplx/1.0',
-      },
-      body: body.toString(),
-      redirect: 'manual',
-    })
-
-    // Use getAll() for multiple Set-Cookie headers (Node 18+ undici fetch).
-    // Safe fallback for environments where getAll is not available.
-    const setCookieHeaders: string[] =
-      (fplRes.headers as unknown as { getAll?: (name: string) => string[] }).getAll?.('set-cookie') ??
-      [fplRes.headers.get('set-cookie') ?? '']
-
-    const plProfile = extractPlProfile(setCookieHeaders)
-
-    if (!plProfile) {
-      return Response.json(
-        { error: 'Invalid FPL credentials' },
-        { status: 401 }
-      )
+    const expiresAt = extractTokenExpiry(trimmed)
+    if (expiresAt === null) {
+      return Response.json({ error: 'Invalid token — must be a JWT' }, { status: 400 })
     }
 
-    // Mirror pl_profile as HttpOnly fpl_session on our domain (D-04)
+    const nowSeconds = Math.floor(Date.now() / 1000)
+    if (expiresAt <= nowSeconds) {
+      return Response.json({ error: 'Token has already expired' }, { status: 400 })
+    }
+
+    const maxAge = expiresAt - nowSeconds
+
     const cookieStore = await cookies()
-    cookieStore.set('fpl_session', plProfile.value, {
+    cookieStore.set('fpl_session', trimmed, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: plProfile.maxAge,
+      maxAge,
     })
 
-    return Response.json({ ok: true })
+    return Response.json({ ok: true, expiresAt })
   } catch (err) {
+    console.error('[auth/login] caught error:', err)
     return Response.json(
       { error: 'Login failed', detail: String(err) },
-      { status: 502 }
+      { status: 500 }
     )
   }
 }

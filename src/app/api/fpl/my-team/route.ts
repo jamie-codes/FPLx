@@ -7,11 +7,10 @@ import { parseMyTeamResponse } from '@/lib/squad-adapter'
  * Proxies FPL's authenticated /api/my-team/ endpoint using the fpl_session
  * HttpOnly cookie set by /api/auth/login.
  *
- * Returns validated MyTeamResponse with picks (including selling_price)
- * and entry_history (including exact bank balance).
+ * Forwards the stored JWT as x-api-authorization: Bearer <token> — the auth
+ * mechanism FPL uses since migrating from cookie-based sessions to OAuth 2.0.
  *
- * No caching — squad data changes and must always be fresh (revalidate: 0).
- * Pitfall 4: sends Cookie: pl_profile=<value>, not Authorization header.
+ * No caching — squad data must always be fresh (revalidate: 0).
  */
 export async function GET() {
   try {
@@ -24,8 +23,8 @@ export async function GET() {
 
     const res = await fetch('https://fantasy.premierleague.com/api/my-team/', {
       headers: {
-        'User-Agent': 'fplx/1.0',
-        'Cookie': `pl_profile=${session.value}`,
+        'User-Agent': 'Mozilla/5.0 (compatible; fplx/1.0)',
+        'x-api-authorization': `Bearer ${session.value}`,
       },
       next: { revalidate: 0 },
     })

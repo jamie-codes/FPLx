@@ -1,49 +1,24 @@
 /**
- * FPL session-cookie helper.
- * Per D-02: credentials are never stored. This file only handles the
- * pl_profile session cookie value — not credentials.
+ * FPL JWT Bearer token helper.
+ * Decodes the exp claim from the JWT payload without signature verification —
+ * this is server-side only; we trust the token was obtained from FPL's own UI.
  */
-
-const DEFAULT_MAX_AGE = 60 * 60 * 24 * 7  // 7 days in seconds
 
 /**
- * Extracts the pl_profile session cookie from an array of Set-Cookie header values.
- *
- * FPL's login endpoint returns multiple Set-Cookie headers on success (pl_profile,
- * csrftoken, sessionid, etc.). The caller should pass all Set-Cookie header values
- * from the response (via headers.getAll?.('set-cookie') or a single-element fallback).
- *
- * Returns { value, maxAge } for the pl_profile cookie, or null if not found.
- * Treats an empty pl_profile value as not found (invalid response).
- *
- * @param setCookieHeaders - Array of Set-Cookie header strings
+ * Extracts the expiry timestamp (Unix seconds) from a JWT Bearer token string.
+ * Returns null if the input is not a valid 3-part JWT or has no numeric exp claim.
  */
-export function extractPlProfile(
-  setCookieHeaders: string[]
-): { value: string; maxAge: number } | null {
-  for (const header of setCookieHeaders) {
-    if (!header) continue
+export function extractTokenExpiry(token: string): number | null {
+  const parts = token.split('.')
+  if (parts.length !== 3) return null
 
-    const parts = header.split(';').map(s => s.trim())
-    const nameVal = parts[0]
-
-    if (!nameVal.startsWith('pl_profile=')) continue
-
-    const value = nameVal.slice('pl_profile='.length)
-
-    // Treat empty value as invalid — cookie exists but has no session data
-    if (!value) continue
-
-    const maxAgePart = parts
-      .slice(1)
-      .find(d => d.toLowerCase().startsWith('max-age='))
-
-    const maxAge = maxAgePart
-      ? parseInt(maxAgePart.split('=')[1], 10)
-      : DEFAULT_MAX_AGE
-
-    return { value, maxAge }
+  try {
+    // JWT payload is base64url — convert to standard base64 and pad
+    const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4)
+    const decoded = JSON.parse(Buffer.from(padded, 'base64').toString('utf-8'))
+    return typeof decoded.exp === 'number' ? decoded.exp : null
+  } catch {
+    return null
   }
-
-  return null
 }

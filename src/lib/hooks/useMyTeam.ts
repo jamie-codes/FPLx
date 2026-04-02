@@ -21,7 +21,7 @@ export function useMyTeam(enabled: boolean) {
       } catch (err) {
         if (err instanceof Error && err.message === 'AUTH_EXPIRED') {
           // Session expired — invalidate auth status per Research Pitfall 5
-          queryClient.setQueryData(['auth-status'], { isAuthenticated: false })
+          queryClient.setQueryData(['auth-status'], { authenticated: false })
         }
         throw err
       }

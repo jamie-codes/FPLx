@@ -6,6 +6,7 @@ const col = createColumnHelper<ScoredPlayer>()
 
 const POS_LABEL: Record<number, string> = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' }
 const fmtScore = (v: number) => (v * 100).toFixed(0)
+const H = (label: string, tip: string) => () => <span title={tip} className="cursor-help">{label}</span>
 
 /** Reusable price trend cell renderer — shows GW change (primary) with season total (secondary sub-text) per CONTEXT.md */
 function PriceTrendCell({ costChangeEvent, costChangeStart }: { costChangeEvent: number; costChangeStart: number }) {
@@ -74,7 +75,7 @@ export const columns = [
     },
   }),
   col.accessor('gem_score', {
-    header: 'Gem',
+    header: H('Gem', 'Composite Gem score (0–100): weighted blend of FDR, form, xG/90, xA/90, differential ownership, minutes reliability, and set-piece role'),
     cell: (info) => fmtScore(info.getValue()),
   }),
   col.display({
