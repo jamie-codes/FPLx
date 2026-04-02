@@ -149,7 +149,7 @@ Plans:
   4. Squad snapshots are collapsed by default — the table remains compact until the user expands a specific GW
 **Plans**: 2 plans
 Plans:
-- [ ] 24-01-PLAN.md — PlanStep type extension and positionsAfter TDD
+- [x] 24-01-PLAN.md — PlanStep type extension and positionsAfter TDD
 - [ ] 24-02-PLAN.md — SquadSnapshotRow component and TransferPlanTable accordion wiring
 **UI hint**: yes
 
@@ -195,5 +195,5 @@ Plans:
 | 21. Planner Tab Shell and State Model | v1.3 | 2/2 | Complete    | 2026-04-02 |
 | 22. Planning Engine | v1.3 | 2/2 | Complete   | 2026-04-02 |
 | 23. Transfer Output Table | v1.3 | 2/2 | Complete    | 2026-04-02 |
-| 24. Squad Snapshot | v1.3 | 0/2 | Not started | - |
+| 24. Squad Snapshot | v1.3 | 1/2 | In Progress|  |
 | 25. Manual Edit Mode | v1.3 | 0/TBD | Not started | - |
