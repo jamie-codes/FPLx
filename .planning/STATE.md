@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Gameweek Planner
 status: executing
-stopped_at: Completed 23-01-PLAN.md
-last_updated: "2026-04-02T19:48:12.976Z"
+stopped_at: Completed 23-02-PLAN.md
+last_updated: "2026-04-02T20:49:42.684Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 7
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
   percent: 0
 ---
 
@@ -63,6 +63,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
 | Phase 22-planning-engine P02 | 5min | 1 tasks | 1 files |
 | Phase 22-planning-engine P02 | 10min | 2 tasks | 1 files |
 | Phase 23-transfer-output-table P01 | 10min | 2 tasks | 4 files |
+| Phase 23-transfer-output-table P02 | 10min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,8 @@ Recent decisions affecting current work:
 - [Phase 22-planning-engine]: useMyTeam(isAuthenticated): actual hook requires boolean enabled arg — pass isAuthenticated from useAuthStatus
 - [Phase 23-transfer-output-table]: formatGain uses U+2212 minus sign for negative values (typographic correctness)
 - [Phase 23-transfer-output-table]: Hold row uses colSpan=2 spanning Out+In columns
+- [Phase 23-transfer-output-table]: useImmer replaces useState for planResult to allow safe nested mutation in handleChipToggle
+- [Phase 23-transfer-output-table]: updatePlanResult(() => result) used in handleGeneratePlan to satisfy Immer recipe signature
 
 ### Pending Todos
 
@@ -107,6 +110,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T19:48:12.973Z
-Stopped at: Completed 23-01-PLAN.md
+Last session: 2026-04-02T20:49:42.681Z
+Stopped at: Completed 23-02-PLAN.md
 Resume file: None
