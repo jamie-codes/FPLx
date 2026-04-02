@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Gameweek Planner
 status: verifying
-stopped_at: Completed 20-02-PLAN.md — awaiting human verification of auth UX flow
-last_updated: "2026-04-02T09:27:52.653Z"
+stopped_at: Completed 20-02-PLAN.md — auth UX flow human-verified and approved
+last_updated: "2026-04-02T09:36:40.925Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 7
@@ -56,6 +56,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
 | Phase 19 P02 | 4 | 2 tasks | 2 files |
 | Phase 20 P01 | 2min | 2 tasks | 4 files |
 | Phase 20-auth-ux P02 | 5 min | 1 tasks | 1 files |
+| Phase 20-auth-ux P02 | 5min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,8 @@ Recent decisions affecting current work:
 - [Phase 20]: dialog::backdrop styled via globals.css CSS rule (not Tailwind backdrop: prefix) — Tailwind v4 backdrop: support unverified in this project config
 - [Phase 20]: AuthModal always rendered in DOM (not conditionally) — prevents showModal() null ref on first open (Pitfall 4 from RESEARCH.md)
 - [Phase 20-auth-ux]: handleAuthSuccess calls setAuthenticated() then closes modal — TanStack Query cache invalidated before modal disappears
+- [Phase 20-auth-ux]: handleAuthSuccess calls setAuthenticated() then closes modal — TanStack Query cache invalidated before modal disappears
+- [Phase 20-auth-ux]: Inline token form and state (showTokenForm, tokenInput, loginLoading, loginError) removed from TransferPanel — all token-entry logic lives in AuthModal
 
 ### Pending Todos
 
@@ -87,6 +90,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T09:27:52.649Z
-Stopped at: Completed 20-02-PLAN.md — awaiting human verification of auth UX flow
+Last session: 2026-04-02T09:36:40.922Z
+Stopped at: Completed 20-02-PLAN.md — auth UX flow human-verified and approved
 Resume file: None

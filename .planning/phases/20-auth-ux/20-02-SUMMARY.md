@@ -28,7 +28,7 @@ decisions:
 metrics:
   duration: "5 minutes"
   completed_date: "2026-04-02"
-  tasks_completed: 1
+  tasks_completed: 2
   files_created: 0
   files_modified: 1
 ---
@@ -42,6 +42,7 @@ metrics:
 | # | Name | Commit | Files |
 |---|------|--------|-------|
 | 1 | Integrate AuthModal and expiry display into TransferPanel | f68b804 | src/components/transfers/TransferPanel.tsx |
+| 2 | Verify complete auth UX flow | human-verify | Approved 2026-04-02 |
 
 ## What Was Built
 
@@ -83,17 +84,18 @@ Modified `src/components/transfers/TransferPanel.tsx` with:
 - No modifications to useAuthStatus hook
 - Inline token form completely removed from TransferPanel
 
-## Awaiting Human Verification (Task 2 — checkpoint:human-verify)
+## Human Verification (Task 2 — checkpoint:human-verify)
 
-Task 2 is a blocking human-verify checkpoint. The following needs manual confirmation:
+**Status: APPROVED by user on 2026-04-02**
 
-1. Start dev server and navigate to Squad tab
-2. Click "Connect FPL account for exact prices" — confirm modal opens with 7-step guide
-3. Verify Cancel, backdrop click, and Escape all close the modal
-4. Verify Paste button fills token input
-5. Save a valid token — confirm modal closes and "FPL connected • valid until HH:MM" appears
-6. Verify dark mode styling on modal and expiry text
-7. Disconnect — confirm "Connect FPL account" link reappears
+Verified:
+1. Modal opens via "Connect FPL account for exact prices" link on Squad tab
+2. 7-step Chrome DevTools guide visible in modal
+3. Cancel, backdrop click, and Escape all close the modal
+4. Paste button fills token input from clipboard
+5. Saving a valid token closes modal and shows "FPL connected • valid until HH:MM"
+6. Dark mode styling correct on modal and expiry text
+7. Disconnect clears auth state and "Connect FPL account" link reappears
 
 ## Deviations from Plan
 
