@@ -35,7 +35,7 @@ export function ValueGemsTable() {
   }, [])
 
   const columnVisibility: VisibilityState = isMobile
-    ? { element_type: false, team_short_name: false, selected_by_percent: false, trend: false, fixtures: false }
+    ? { element_type: false, team_short_name: false, selected_by_percent: false, trend: false, fixtures: false, pts_last5gw: false, pts_last3gw: false }
     : {}
 
   const filteredPlayers = useMemo(() => {
