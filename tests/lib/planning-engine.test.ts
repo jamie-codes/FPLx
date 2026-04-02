@@ -555,3 +555,56 @@ describe('generatePlan — unconfirmed fixtures', () => {
     expect(result.steps[0].unconfirmedFixtures).toBe(false)
   })
 })
+
+// ---------------------------------------------------------------------------
+// describe('generatePlan - positionsAfter')
+// ---------------------------------------------------------------------------
+
+describe('generatePlan - positionsAfter', () => {
+  it('each step includes positionsAfter with 15 entries matching squad positions', () => {
+    const picks = makeDefaultSquad([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15])
+    const allPlayers = Array.from({ length: 15 }, (_, i) =>
+      makeScoredPlayer({
+        id: i + 1,
+        fixtures: [{ opponent_team: 'ARS', is_home: true, event_id: 34, difficulty_score: 0.5, difficulty_tier: 'medium' }],
+      })
+    )
+    const ftState: FTState = { available: 1, banked: 0 }
+    const result = generatePlan(picks, allPlayers, 1, 34, ftState, 0)
+    const pa = result.steps[0].positionsAfter
+    expect(Object.keys(pa)).toHaveLength(15)
+    // Each player ID maps to its original pick position
+    for (let i = 1; i <= 15; i++) {
+      expect(pa[i]).toBe(i)
+    }
+  })
+
+  it('after transfer, bought player inherits sold player position in positionsAfter', () => {
+    const weakPlayer = makeScoredPlayer({ id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, proj_pts_1gw: 1.0 })
+    const strongCandidate = makeScoredPlayer({ id: 100, element_type: 3, now_cost: 50, gem_score: 0.9, proj_pts_1gw: 9.0 })
+    const picks = [makeSquadPick(1, 1), ...Array.from({ length: 14 }, (_, i) => makeSquadPick(i + 2, i + 2))]
+    const allPlayers = [weakPlayer, ...Array.from({ length: 14 }, (_, i) => makeScoredPlayer({ id: i + 2 })), strongCandidate]
+    const ftState: FTState = { available: 1, banked: 0 }
+    const result = generatePlan(picks, allPlayers, 1, 34, ftState, 0)
+    expect(result.steps[0].transfersIn).toContain(100)
+    // Bought player 100 should have position 1 (was player 1's position)
+    expect(result.steps[0].positionsAfter[100]).toBe(1)
+    // Sold player 1 should NOT be in positionsAfter
+    expect(result.steps[0].positionsAfter[1]).toBeUndefined()
+  })
+
+  it('hold step has positionsAfter with all 15 player IDs', () => {
+    const picks = makeDefaultSquad([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15])
+    const allPlayers = Array.from({ length: 15 }, (_, i) =>
+      makeScoredPlayer({
+        id: i + 1,
+        fixtures: [{ opponent_team: 'ARS', is_home: true, event_id: 34, difficulty_score: 0.5, difficulty_tier: 'medium' }],
+      })
+    )
+    const ftState: FTState = { available: 1, banked: 0 }
+    const result = generatePlan(picks, allPlayers, 1, 34, ftState, 0)
+    // All players equal quality -> hold step
+    expect(result.steps[0].transfersIn).toHaveLength(0)
+    expect(Object.keys(result.steps[0].positionsAfter)).toHaveLength(15)
+  })
+})

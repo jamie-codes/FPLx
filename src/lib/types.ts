@@ -236,6 +236,8 @@ export interface ScoredTransfer {
 export interface PlanStep extends GWStep {
   scoredTransfers: ScoredTransfer[]  // top candidates considered
   squadAfter: number[]               // player IDs in squad after this step
+  /** player ID -> FPL squad position (1-11 starting, 12-15 bench) */
+  positionsAfter: Record<number, number>
   unconfirmedFixtures: boolean       // true if no fixture data exists for this GW
 }
 
