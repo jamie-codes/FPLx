@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Gameweek Planner
-status: verifying
-stopped_at: Completed 20-02-PLAN.md — auth UX flow human-verified and approved
-last_updated: "2026-04-02T09:45:06.218Z"
+status: executing
+stopped_at: Completed 21-01-PLAN.md — free transfer engine implemented with 31 tests green
+last_updated: "2026-04-02T11:23:32.454Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 7
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 6
+  completed_plans: 5
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-01 after v1.2)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 20 — auth-ux
+**Current focus:** Phase 21 — planner-tab-shell-and-state-model
 
 ## Current Position
 
-Phase: 21
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 21 (planner-tab-shell-and-state-model) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-02
 
 Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
@@ -57,6 +57,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
 | Phase 20 P01 | 2min | 2 tasks | 4 files |
 | Phase 20-auth-ux P02 | 5 min | 1 tasks | 1 files |
 | Phase 20-auth-ux P02 | 5min | 2 tasks | 1 files |
+| Phase 21-planner-tab-shell-and-state-model P01 | 2min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,8 @@ Recent decisions affecting current work:
 - [Phase 20-auth-ux]: handleAuthSuccess calls setAuthenticated() then closes modal — TanStack Query cache invalidated before modal disappears
 - [Phase 20-auth-ux]: handleAuthSuccess calls setAuthenticated() then closes modal — TanStack Query cache invalidated before modal disappears
 - [Phase 20-auth-ux]: Inline token form and state (showTokenForm, tokenInput, loginLoading, loginError) removed from TransferPanel — all token-entry logic lives in AuthModal
+- [Phase 21]: computeHitCost returns explicit 0 (not hits * -4 when hits===0) to avoid -0 IEEE754 artifact
+- [Phase 21]: snapshotSquad uses structuredClone for deep copy over JSON round-trip or spread
 
 ### Pending Todos
 
@@ -90,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T09:36:40.922Z
-Stopped at: Completed 20-02-PLAN.md — auth UX flow human-verified and approved
+Last session: 2026-04-02T11:23:32.450Z
+Stopped at: Completed 21-01-PLAN.md — free transfer engine implemented with 31 tests green
 Resume file: None

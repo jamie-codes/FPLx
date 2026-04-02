@@ -22,7 +22,7 @@
 
 ### Gameweek Planner
 
-- [ ] **PLAN-01**: User can set a planning horizon of 1–5 gameweeks
+- [x] **PLAN-01**: User can set a planning horizon of 1–5 gameweeks
 - [ ] **PLAN-02**: System auto-suggests an optimal transfer sequence for the chosen horizon
 - [ ] **PLAN-03**: Transfer sequence scoring accounts for projected points delta, fixture difficulty, DGW/BGW awareness, and -4pt hit cost
 - [ ] **PLAN-04**: User can manually edit the suggested sequence (swap players in/out per GW step)
@@ -65,7 +65,7 @@
 | VG-02 | Phase 19 | Complete |
 | AUTH-03 | Phase 20 | Complete |
 | AUTH-04 | Phase 20 | Complete |
-| PLAN-01 | Phase 21 | Pending |
+| PLAN-01 | Phase 21 | Complete |
 | PLAN-08 | Phase 21 | Pending |
 | PLAN-02 | Phase 22 | Pending |
 | PLAN-03 | Phase 22 | Pending |
