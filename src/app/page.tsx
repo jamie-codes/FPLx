@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
 import { GemTable } from '@/components/gem-table/GemTable'
 import { DefConTables } from '@/components/defcon/DefConTables'
 import { TransferPanel } from '@/components/transfers/TransferPanel'
@@ -22,7 +21,7 @@ export default function Home() {
       <main className="max-w-7xl mx-auto px-4 pt-2 pb-8 max-sm:pb-24 overflow-x-hidden">
         {/* Header */}
         <div className="flex items-center gap-3 mb-2">
-          <Image src="/logo.png" alt="fplx logo" width={252} height={120} />
+          <span className="font-[family-name:var(--font-honk)] text-5xl text-zinc-900 dark:text-white leading-none">FPLx</span>
           <div className="ml-auto flex items-center gap-2">
             <LastUpdated />
             <ThemeToggle />
