@@ -78,7 +78,7 @@ New capabilities (auth UX, planner) belong in later phases.
 ### Reusable Assets
 - `summaries` dict in `run.py` (line 66): already fetches element-summary for all `starts > 0` players — pass into `merge_players()` unchanged
 - `columnVisibility` pattern in ValueGemsTable: already used for mobile column hiding — apply same to Pts L5/L3
-- `MergedPlayer.goals_scored` and `MergedPlayer.assists` (types.ts line 181): already present, no pipeline changes needed to expose them
+- `MergedPlayer.goals_scored` and `MergedPlayer.assists`: **NOT currently in MergedPlayer** — they exist only on `ClubForm` (~line 181). Plan 19-01 Task 2 must add them to `MergedPlayer`.
 
 ### Established Patterns
 - Null guard: `?? 0` pattern used for `cost_change_event/start` — use same for partial pts if needed
