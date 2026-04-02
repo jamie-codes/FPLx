@@ -189,3 +189,33 @@ export interface ClubForm {
   goals_conceded: number
   upcoming_fixtures: ClubFormFixture[]   // next 5
 }
+
+// ---------------------------------------------------------------------------
+// Planner types (Phase 21+)
+// ---------------------------------------------------------------------------
+
+export type PlannerHorizon = 1 | 2 | 3 | 4 | 5
+
+export type PlannerChip = 'wildcard' | 'freehit' | 'bboost' | '3xc' | null
+
+/** Free transfer state at a given gameweek */
+export interface FTState {
+  available: number    // FTs available to use this GW (1 or 2)
+  banked: number       // FTs banked (0 or 1)
+}
+
+/** One gameweek step in the multi-GW plan */
+export interface GWStep {
+  gw: number                  // gameweek number
+  chip: PlannerChip
+  transfersIn: number[]       // player IDs being brought in
+  transfersOut: number[]      // player IDs being sold
+  freeTransfersAvailable: number
+  hitCost: number             // 0 or negative (multiples of -4)
+}
+
+/** Top-level planner state (Phase 22+ will populate planSteps) */
+export interface PlannerState {
+  horizon: PlannerHorizon
+  planSteps: GWStep[]         // length === horizon; empty in Phase 21
+}
