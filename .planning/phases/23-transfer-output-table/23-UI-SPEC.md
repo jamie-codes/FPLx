@@ -1,7 +1,7 @@
 ---
 phase: 23
 slug: transfer-output-table
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-04-02
