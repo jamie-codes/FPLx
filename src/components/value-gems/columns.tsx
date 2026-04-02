@@ -46,7 +46,33 @@ export const columns = [
     cell: (info) => `${(info.getValue() / 10).toFixed(1)}`,
   }),
   col.accessor('selected_by_percent', { header: 'Own%' }),
-  col.accessor('total_points', { header: 'Pts' }),
+  col.accessor('total_points', {
+    id: 'total_points',
+    header: 'Total Pts',
+    enableSorting: true,
+  }),
+  col.accessor('pts_last5gw', {
+    id: 'pts_last5gw',
+    header: 'Pts L5',
+    enableSorting: true,
+    cell: (info) => {
+      const value = info.getValue()
+      const gwCount = info.row.original.pts_gw_count
+      // D-11: asterisk for partial window (fewer than 5 GWs of data)
+      return gwCount < 5 ? <span title={`${gwCount} of 5 gameweeks`}>{value}*</span> : value
+    },
+  }),
+  col.accessor('pts_last3gw', {
+    id: 'pts_last3gw',
+    header: 'Pts L3',
+    enableSorting: true,
+    cell: (info) => {
+      const value = info.getValue()
+      const gwCount = info.row.original.pts_gw_count
+      // D-11: asterisk for partial window (fewer than 3 GWs of data)
+      return gwCount < 3 ? <span title={`${gwCount} of 3 gameweeks`}>{value}*</span> : value
+    },
+  }),
   col.accessor('gem_score', {
     header: 'Gem',
     cell: (info) => fmtScore(info.getValue()),
