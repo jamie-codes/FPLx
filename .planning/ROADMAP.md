@@ -61,7 +61,7 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 - [x] **Phase 22: Planning Engine** — Auto-suggest algorithm with look-ahead scoring (completed 2026-04-02)
 - [x] **Phase 23: Transfer Output Table** — Transfer-by-transfer table with chip slots and hit cost (completed 2026-04-02)
 - [x] **Phase 24: Squad Snapshot** — Per-GW 15-player squad view with accordion UI (completed 2026-04-02)
-- [ ] **Phase 25: Manual Edit Mode** — Player picker combobox and per-GW override editing
+- [x] **Phase 25: Manual Edit Mode** — Player picker combobox and per-GW override editing (completed 2026-04-03)
 
 ## Phase Details
 
@@ -165,7 +165,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 25-01-PLAN.md — Type extension, generatePlanFrom engine entry point, re-score tests, PlayerPickerModal component
-- [ ] 25-02-PLAN.md — PlannerTab wiring (handleManualEdit, handleRestoreSuggested) and TransferPlanTable icons + human verification
+- [x] 25-02-PLAN.md — PlannerTab wiring (handleManualEdit, handleRestoreSuggested) and TransferPlanTable icons + human verification
 **UI hint**: yes
 
 ## Progress
@@ -196,4 +196,4 @@ Plans:
 | 22. Planning Engine | v1.3 | 2/2 | Complete   | 2026-04-02 |
 | 23. Transfer Output Table | v1.3 | 2/2 | Complete    | 2026-04-02 |
 | 24. Squad Snapshot | v1.3 | 2/2 | Complete    | 2026-04-03 |
-| 25. Manual Edit Mode | v1.3 | 1/2 | In Progress|  |
+| 25. Manual Edit Mode | v1.3 | 2/2 | Complete   | 2026-04-03 |

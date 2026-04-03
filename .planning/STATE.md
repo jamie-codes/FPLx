@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Gameweek Planner
-status: executing
-stopped_at: Completed 25-01-PLAN.md
-last_updated: "2026-04-03T08:28:06.304Z"
+status: verifying
+stopped_at: "Completed 25-02-PLAN.md — awaiting checkpoint:human-verify"
+last_updated: "2026-04-03T08:32:01.338Z"
 last_activity: 2026-04-03
 progress:
   total_phases: 7
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 14
-  completed_plans: 13
+  completed_plans: 14
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-01 after v1.2)
 
 Phase: 25 (manual-edit-mode) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-03
 
 Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
@@ -67,6 +67,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
 | Phase 24-squad-snapshot P01 | 8min | 2 tasks | 3 files |
 | Phase 24-squad-snapshot P02 | 90s | 1 tasks | 3 files |
 | Phase 25-manual-edit-mode P01 | 12min | 2 tasks | 4 files |
+| Phase 25-manual-edit-mode P02 | 10min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -106,6 +107,8 @@ Recent decisions affecting current work:
 - [Phase 24-squad-snapshot]: colSpan=6 on accordion td matches exact column count (GW|Chip|Out|In|Hit|Gain)
 - [Phase 25-manual-edit-mode]: originalSteps set to [] in generatePlan — Plan 02 (PlannerTab wiring) populates it with structuredClone(result.steps)
 - [Phase 25-manual-edit-mode]: generatePlanFrom casts remainingHorizon as PlannerHorizon — callers ensure value is 1-5 at call sites in Plan 02
+- [Phase 25-manual-edit-mode]: Compute all re-scoring values outside Immer draft callback — single mutation avoids draft-read issues
+- [Phase 25-manual-edit-mode]: originalSteps populated with structuredClone(result.steps) in handleGeneratePlan — only set once, never mutated
 
 ### Pending Todos
 
@@ -118,6 +121,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-03T08:28:06.301Z
-Stopped at: Completed 25-01-PLAN.md
+Last session: 2026-04-03T08:32:01.335Z
+Stopped at: Completed 25-02-PLAN.md — awaiting checkpoint:human-verify
 Resume file: None
