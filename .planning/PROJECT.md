@@ -24,9 +24,9 @@ Give the manager a clear, prioritised view of who to buy and who to sell this we
 
 ---
 
-## Current State (v1.3 in progress — Phase 23 complete 2026-04-02)
+## Current State (v1.3 in progress — Phase 24 complete 2026-04-03)
 
-Phase 23 complete — Transfer output table live end-to-end: `TransferPlanTable` renders after Generate Plan with per-GW rows (Out, In, Hit, Gain), Hold rows, chip toggles (Immer draft mutations with toggle-off), DGW/BGW badges, plan value headline, red hit-cost styling, and mobile-responsive layout. Human-approved in browser. PLAN-05 and PLAN-07 satisfied. Phase 24 (squad-snapshot) is next.
+Phase 24 complete — Squad snapshot accordion live: each GW row in the transfer plan table now has a ▶/▼ chevron that expands to show the full 15-player squad (GK/DEF/MID/FWD grouping, bench dimmed at opacity-50, green IN badge on transferred-in player, full opacity for Bench Boost GWs). `positionsAfter: Record<number, number>` added to `PlanStep` type and planning engine. Human-approved in browser. PLAN-06 satisfied. Phase 25 (manual-edit-mode) is next.
 
 **Tech stack:** Next.js 16, React 19, TypeScript, TanStack Table v8, TanStack Query, Tailwind CSS v4, Vitest, Python (requests, pandas, soccerdata), Vercel Blob
 
@@ -176,4 +176,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-02 — Phase 23 complete (transfer output table)*
+*Last updated: 2026-04-03 — Phase 24 complete (squad snapshot accordion)*
