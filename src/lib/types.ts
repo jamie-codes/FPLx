@@ -244,6 +244,7 @@ export interface PlanStep extends GWStep {
 /** Complete plan result from generatePlan */
 export interface PlanResult {
   steps: PlanStep[]
+  readonly originalSteps: PlanStep[]  // frozen at generation time, never mutated
   horizon: PlannerHorizon
   startingGw: number                 // first GW in the plan
 }

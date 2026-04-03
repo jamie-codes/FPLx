@@ -205,7 +205,82 @@ export function generatePlan(
 
   return {
     steps,
+    originalSteps: [],
     horizon,
     startingGw,
   }
+}
+
+// ---------------------------------------------------------------------------
+// generatePlanFrom
+// ---------------------------------------------------------------------------
+
+/**
+ * Thin wrapper around generatePlan that accepts a mid-plan squad state and
+ * returns only the steps array. Used by manual-edit re-scoring.
+ *
+ * The cast `as PlannerHorizon` is safe because callers ensure remainingHorizon
+ * is 1–5 (or 0, which is handled by the early return).
+ */
+export function generatePlanFrom(
+  picksAfterStep: SquadPick[],
+  allPlayers: ScoredPlayer[],
+  remainingHorizon: number,
+  startingGw: number,
+  ftStateAfterStep: FTState,
+  bankAfterStep: number,
+  sellPrices?: Record<number, number>,
+): PlanStep[] {
+  if (remainingHorizon <= 0) return []
+  const result = generatePlan(
+    picksAfterStep,
+    allPlayers,
+    remainingHorizon as PlannerHorizon,
+    startingGw,
+    ftStateAfterStep,
+    bankAfterStep,
+    sellPrices,
+  )
+  return result.steps
+}
+
+// ---------------------------------------------------------------------------
+// squadPicksFromStep
+// ---------------------------------------------------------------------------
+
+/**
+ * Reconstruct SquadPick[] from a PlanStep's squadAfter + positionsAfter.
+ * Used to seed generatePlanFrom after a manual edit.
+ */
+export function squadPicksFromStep(step: PlanStep): SquadPick[] {
+  return step.squadAfter.map(id => ({
+    element: id,
+    position: step.positionsAfter[id],
+    multiplier: 1,
+    is_captain: false,
+    is_vice_captain: false,
+  }))
+}
+
+// ---------------------------------------------------------------------------
+// ftStateAfterStepIndex
+// ---------------------------------------------------------------------------
+
+/**
+ * Replay FT state transitions from the initial FT state through all steps up
+ * to (and including) upToIndex. Returns the resulting FTState.
+ *
+ * Used to compute the FT state that should seed generatePlanFrom when
+ * re-scoring from step upToIndex+1 onward.
+ */
+export function ftStateAfterStepIndex(
+  steps: PlanStep[],
+  upToIndex: number,
+  initialFT: FTState,
+): FTState {
+  let ft = { ...initialFT }
+  for (let i = 0; i <= upToIndex; i++) {
+    ft = computeNextFTState(ft.available, steps[i].transfersIn.length, steps[i].chip)
+  }
+  return ft
 }
