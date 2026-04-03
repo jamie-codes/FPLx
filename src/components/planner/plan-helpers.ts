@@ -2,10 +2,17 @@ import type { PlanStep } from '@/lib/types'
 
 /**
  * Compute total net gain across all plan steps.
- * Uses the best-scored transfer (index 0) per step; hold steps (no scoredTransfers) count as 0.
+ * - WC/FH chip steps: use chipGain (multi-transfer total, no hit cost)
+ * - BB/3xc chip steps: use transfer gain + bbValue (bench or captain bonus)
+ * - Normal steps: use best-scored transfer netGain
  */
 export function computePlanValue(steps: PlanStep[]): number {
-  return steps.reduce((sum, step) => sum + (step.scoredTransfers[0]?.netGain ?? 0), 0)
+  return steps.reduce((sum, step) => {
+    const transferGain = step.chipGain !== undefined
+      ? step.chipGain
+      : (step.scoredTransfers[0]?.netGain ?? 0)
+    return sum + transferGain + (step.bbValue ?? 0)
+  }, 0)
 }
 
 /**

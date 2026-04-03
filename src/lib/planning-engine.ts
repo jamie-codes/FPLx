@@ -212,6 +212,98 @@ export function generatePlan(
 }
 
 // ---------------------------------------------------------------------------
+// generateChipStep
+// ---------------------------------------------------------------------------
+
+/**
+ * Generate the best multi-transfer suggestions for a Wildcard or Free Hit chip.
+ *
+ * Iteratively picks the most profitable non-conflicting sell→buy pair from the
+ * starting XI until no profitable transfer remains or maxTransfers is reached.
+ * All transfers are free — no hit cost for WC/FH.
+ */
+export function generateChipStep(
+  picks: SquadPick[],
+  allPlayers: ScoredPlayer[],
+  targetGw: number,
+  bankBalance: number,
+  sellPrices?: Record<number, number>,
+  maxTransfers = 3,
+): {
+  transfersIn: number[]
+  transfersOut: number[]
+  squadAfter: number[]
+  positionsAfter: Record<number, number>
+  bankAfter: number
+  chipGain: number
+} {
+  const playerMap = new Map<number, ScoredPlayer>(allPlayers.map(p => [p.id, p]))
+
+  let simulatedIds = picks.map(p => p.element)
+  const positionMap = new Map<number, number>()
+  for (const pick of picks) positionMap.set(pick.element, pick.position)
+  let bank = bankBalance
+
+  const transfersIn: number[] = []
+  const transfersOut: number[] = []
+  let chipGain = 0
+
+  for (let t = 0; t < maxTransfers; t++) {
+    const squadSet = new Set(simulatedIds)
+    const startingXIIds = simulatedIds.filter(id => {
+      const pos = positionMap.get(id)
+      return pos !== undefined && pos >= 1 && pos <= 11
+    })
+
+    let bestGain = 0
+    let bestTransfer: { sellId: number; buyId: number; gain: number } | null = null
+
+    for (const sellId of startingXIIds) {
+      const sellPlayer = playerMap.get(sellId)
+      if (!sellPlayer) continue
+      const sellPrice = sellPrices?.[sellId] ?? sellPlayer.now_cost
+      const budget = bank + sellPrice
+
+      const candidates = allPlayers
+        .filter(p => p.element_type === sellPlayer.element_type && !squadSet.has(p.id))
+        .sort((a, b) => b.gem_score - a.gem_score)
+        .slice(0, CANDIDATES_PER_POSITION)
+
+      for (const buy of candidates) {
+        if (buy.now_cost > budget) continue
+        const gain =
+          buy.proj_pts_1gw * fixtureCountForGw(buy, targetGw) -
+          sellPlayer.proj_pts_1gw * fixtureCountForGw(sellPlayer, targetGw)
+        if (gain > bestGain) {
+          bestGain = gain
+          bestTransfer = { sellId, buyId: buy.id, gain }
+        }
+      }
+    }
+
+    if (!bestTransfer) break
+
+    const buyPlayer = playerMap.get(bestTransfer.buyId)!
+    const sellPrice = sellPrices?.[bestTransfer.sellId] ?? (playerMap.get(bestTransfer.sellId)?.now_cost ?? 0)
+    bank = bank + sellPrice - buyPlayer.now_cost
+    simulatedIds = simulatedIds.map(id => id === bestTransfer!.sellId ? bestTransfer!.buyId : id)
+    const soldPos = positionMap.get(bestTransfer.sellId)
+    if (soldPos !== undefined) {
+      positionMap.delete(bestTransfer.sellId)
+      positionMap.set(bestTransfer.buyId, soldPos)
+    }
+    transfersIn.push(bestTransfer.buyId)
+    transfersOut.push(bestTransfer.sellId)
+    chipGain += bestTransfer.gain
+  }
+
+  const positionsAfter: Record<number, number> = {}
+  for (const [id, pos] of positionMap.entries()) positionsAfter[id] = pos
+
+  return { transfersIn, transfersOut, squadAfter: simulatedIds, positionsAfter, bankAfter: bank, chipGain }
+}
+
+// ---------------------------------------------------------------------------
 // generatePlanFrom
 // ---------------------------------------------------------------------------
 

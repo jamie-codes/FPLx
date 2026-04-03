@@ -94,7 +94,21 @@ export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle, onM
 
             // Gain cell content
             let gainContent: React.ReactNode
-            if (!hasTransfer) {
+            if (step.chip === 'bboost') {
+              gainContent = (
+                <span className="text-emerald-700 dark:text-emerald-400">
+                  Bench: {formatGain(step.bbValue ?? 0)}
+                </span>
+              )
+            } else if (step.chip === '3xc') {
+              gainContent = (
+                <span className="text-violet-700 dark:text-violet-400">
+                  3xC: {formatGain(step.bbValue ?? 0)}
+                </span>
+              )
+            } else if (step.chip === 'wildcard' || step.chip === 'freehit') {
+              gainContent = formatGain(step.chipGain ?? 0)
+            } else if (!hasTransfer) {
               gainContent = <span className="text-zinc-400 dark:text-zinc-500">&mdash;</span>
             } else {
               const gain = step.scoredTransfers[0]?.netGain ?? 0
@@ -155,27 +169,35 @@ export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle, onM
                   {hasTransfer ? (
                     <>
                       <td className="px-2 py-2 sm:px-4 text-zinc-700 dark:text-zinc-300">
-                        {playerMap.get(step.transfersOut[0])?.web_name ?? '\u2014'}
+                        {step.transfersOut.map(id => (
+                          <div key={id}>{playerMap.get(id)?.web_name ?? '\u2014'}</div>
+                        ))}
                       </td>
                       <td className="px-2 py-2 sm:px-4 text-zinc-700 dark:text-zinc-300">
-                        <span className="inline-flex items-center gap-1">
-                          {playerMap.get(step.transfersIn[0])?.web_name ?? '\u2014'}
-                          {planResult.originalSteps[i]?.transfersIn[0] !== undefined &&
-                           step.transfersIn[0] !== planResult.originalSteps[i].transfersIn[0] && (
+                        {step.transfersIn.length === 1 ? (
+                          <span className="inline-flex items-center gap-1">
+                            {playerMap.get(step.transfersIn[0])?.web_name ?? '\u2014'}
+                            {planResult.originalSteps[i]?.transfersIn[0] !== undefined &&
+                             step.transfersIn[0] !== planResult.originalSteps[i].transfersIn[0] && (
+                              <button
+                                onClick={() => onRestoreSuggested(i)}
+                                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 text-xs"
+                                aria-label="Restore suggested player"
+                                title="Restore suggested"
+                              >&#x21A9;</button>
+                            )}
                             <button
-                              onClick={() => onRestoreSuggested(i)}
+                              onClick={() => openPicker(i)}
                               className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 text-xs"
-                              aria-label="Restore suggested player"
-                              title="Restore suggested"
-                            >&#x21A9;</button>
-                          )}
-                          <button
-                            onClick={() => openPicker(i)}
-                            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 text-xs"
-                            aria-label="Edit transfer"
-                            title="Edit"
-                          >&#x270F;</button>
-                        </span>
+                              aria-label="Edit transfer"
+                              title="Edit"
+                            >&#x270F;</button>
+                          </span>
+                        ) : (
+                          step.transfersIn.map(id => (
+                            <div key={id}>{playerMap.get(id)?.web_name ?? '\u2014'}</div>
+                          ))
+                        )}
                       </td>
                     </>
                   ) : (

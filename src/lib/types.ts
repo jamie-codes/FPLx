@@ -239,6 +239,10 @@ export interface PlanStep extends GWStep {
   /** player ID -> FPL squad position (1-11 starting, 12-15 bench) */
   positionsAfter: Record<number, number>
   unconfirmedFixtures: boolean       // true if no fixture data exists for this GW
+  /** WC/FH: total projected pts gain across all chip transfers (replaces scoredTransfers gain) */
+  chipGain?: number
+  /** BB: expected bench pts; 3xc: expected extra captain pts (added on top of transfer gain) */
+  bbValue?: number
 }
 
 /** Complete plan result from generatePlan */

@@ -9,7 +9,8 @@ import { useSquad } from '@/lib/hooks/useSquad'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
 import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
 import { computeAllGemScores } from '@/lib/gem-score'
-import { generatePlan, generatePlanFrom, ftStateAfterStepIndex } from '@/lib/planning-engine'
+import { generatePlan, generatePlanFrom, generateChipStep, ftStateAfterStepIndex, squadPicksFromStep, fixtureCountForGw } from '@/lib/planning-engine'
+import { computeNextFTState } from '@/lib/free-transfer-engine'
 import type { PlanResult, FTState, PlannerHorizon, PlannerChip } from '@/lib/types'
 import type { SquadPick } from '@/lib/squad-adapter'
 
@@ -143,11 +144,158 @@ export function PlannerTab() {
   }
 
   function handleChipToggle(stepIndex: number, chip: PlannerChip) {
-    updatePlanResult(draft => {
-      if (!draft) return
-      const step = draft.steps[stepIndex]
-      step.chip = step.chip === chip ? null : chip
-    })
+    if (!planResult || !startingGw || !picks) return
+
+    const currentStep = planResult.steps[stepIndex]
+    const newChip: PlannerChip = currentStep.chip === chip ? null : chip
+
+    // BB / 3xc: no engine re-generation — just compute bonus value and set chip
+    if (chip === 'bboost' || chip === '3xc') {
+      const playerMap = new Map(scoredPlayers.map(p => [p.id, p]))
+      let bonusValue: number | undefined
+      if (newChip === 'bboost') {
+        bonusValue = Object.entries(currentStep.positionsAfter)
+          .filter(([, pos]) => pos >= 12)
+          .reduce((sum, [idStr]) => {
+            const p = playerMap.get(Number(idStr))
+            return sum + (p ? p.proj_pts_1gw * fixtureCountForGw(p, currentStep.gw) : 0)
+          }, 0)
+      } else if (newChip === '3xc') {
+        const bestCaptainPts = Object.entries(currentStep.positionsAfter)
+          .filter(([, pos]) => pos >= 1 && pos <= 11)
+          .reduce((best, [idStr]) => {
+            const p = playerMap.get(Number(idStr))
+            const pts = p ? p.proj_pts_1gw * fixtureCountForGw(p, currentStep.gw) : 0
+            return pts > best ? pts : best
+          }, 0)
+        bonusValue = bestCaptainPts // extra 1× on top of normal 2× captaincy
+      }
+      updatePlanResult(draft => {
+        if (!draft) return
+        draft.steps[stepIndex].chip = newChip
+        draft.steps[stepIndex].bbValue = bonusValue
+      })
+      return
+    }
+
+    // WC / FH helpers
+    const playerMap = new Map(scoredPlayers.map(p => [p.id, p]))
+
+    function getPicksBeforeStep(): SquadPick[] {
+      if (stepIndex === 0) return picks!
+      return squadPicksFromStep(planResult!.steps[stepIndex - 1])
+    }
+
+    function getBankBeforeStep(): number {
+      let bank = bankBalance
+      for (let i = 0; i < stepIndex; i++) {
+        const s = planResult!.steps[i]
+        for (let j = 0; j < s.transfersOut.length; j++) {
+          const sp = sellPrices?.[s.transfersOut[j]] ?? (playerMap.get(s.transfersOut[j])?.now_cost ?? 0)
+          const bp = playerMap.get(s.transfersIn[j])?.now_cost ?? 0
+          bank = bank + sp - bp
+        }
+      }
+      return bank
+    }
+
+    const ftBeforeStep = stepIndex === 0
+      ? initialFTState
+      : ftStateAfterStepIndex(planResult.steps, stepIndex - 1, initialFTState)
+
+    if (newChip === 'wildcard' || newChip === 'freehit') {
+      const picksBeforeStep = getPicksBeforeStep()
+      const bankBeforeStep = getBankBeforeStep()
+
+      const chipResult = generateChipStep(
+        picksBeforeStep, scoredPlayers, currentStep.gw, bankBeforeStep, sellPrices,
+      )
+
+      const ftAfterChip = computeNextFTState(
+        ftBeforeStep.available, chipResult.transfersIn.length, newChip,
+      )
+
+      // FH reverts squad for subsequent weeks; WC carries the new squad forward
+      const picksForSubseq: SquadPick[] = newChip === 'freehit'
+        ? picksBeforeStep
+        : chipResult.squadAfter.map(id => ({
+            element: id,
+            position: chipResult.positionsAfter[id],
+            multiplier: 1,
+            is_captain: false,
+            is_vice_captain: false,
+          }))
+      const bankForSubseq = newChip === 'freehit' ? bankBeforeStep : chipResult.bankAfter
+
+      const remainingHorizon = planResult.horizon - (stepIndex + 1)
+      const newStepsFromNext = remainingHorizon > 0
+        ? generatePlanFrom(
+            picksForSubseq, scoredPlayers, remainingHorizon,
+            startingGw + stepIndex + 1, ftAfterChip, bankForSubseq, sellPrices,
+          )
+        : []
+
+      updatePlanResult(draft => {
+        if (!draft) return
+        const s = draft.steps[stepIndex]
+        s.chip = newChip
+        s.transfersIn = chipResult.transfersIn
+        s.transfersOut = chipResult.transfersOut
+        s.squadAfter = chipResult.squadAfter
+        s.positionsAfter = chipResult.positionsAfter
+        s.hitCost = 0
+        s.freeTransfersAvailable = ftBeforeStep.available
+        s.chipGain = chipResult.chipGain
+        s.bbValue = undefined
+        draft.steps.splice(stepIndex + 1, draft.steps.length - stepIndex - 1, ...newStepsFromNext)
+      })
+
+    } else {
+      // Toggling WC/FH off — restore original step and re-score downstream
+      const origStep = planResult.originalSteps[stepIndex]
+      if (!origStep) return
+
+      const ftAfterRestored = computeNextFTState(
+        ftBeforeStep.available, origStep.transfersIn.length, null,
+      )
+      const bankBeforeStep = getBankBeforeStep()
+      let bankAfterRestored = bankBeforeStep
+      for (let j = 0; j < origStep.transfersOut.length; j++) {
+        const sp = sellPrices?.[origStep.transfersOut[j]] ?? (playerMap.get(origStep.transfersOut[j])?.now_cost ?? 0)
+        const bp = playerMap.get(origStep.transfersIn[j])?.now_cost ?? 0
+        bankAfterRestored = bankAfterRestored + sp - bp
+      }
+      const picksAfterRestored: SquadPick[] = origStep.squadAfter.map(id => ({
+        element: id,
+        position: origStep.positionsAfter[id],
+        multiplier: 1,
+        is_captain: false,
+        is_vice_captain: false,
+      }))
+
+      const remainingHorizon = planResult.horizon - (stepIndex + 1)
+      const newStepsFromNext = remainingHorizon > 0
+        ? generatePlanFrom(
+            picksAfterRestored, scoredPlayers, remainingHorizon,
+            startingGw + stepIndex + 1, ftAfterRestored, bankAfterRestored, sellPrices,
+          )
+        : []
+
+      updatePlanResult(draft => {
+        if (!draft) return
+        const s = draft.steps[stepIndex]
+        s.chip = null
+        s.transfersIn = origStep.transfersIn
+        s.transfersOut = origStep.transfersOut
+        s.squadAfter = origStep.squadAfter
+        s.positionsAfter = origStep.positionsAfter
+        s.hitCost = origStep.hitCost
+        s.freeTransfersAvailable = origStep.freeTransfersAvailable
+        s.chipGain = undefined
+        s.bbValue = undefined
+        draft.steps.splice(stepIndex + 1, draft.steps.length - stepIndex - 1, ...newStepsFromNext)
+      })
+    }
   }
 
   return (
@@ -169,6 +317,18 @@ export function PlannerTab() {
       >
         Generate Plan
       </button>
+      <details className="text-sm text-zinc-500 dark:text-zinc-400">
+        <summary className="cursor-pointer select-none hover:text-zinc-700 dark:hover:text-zinc-300">
+          How do chips work in the planner?
+        </summary>
+        <ul className="mt-2 ml-4 space-y-1 list-disc">
+          <li><span className="font-medium text-zinc-700 dark:text-zinc-300">Wildcard</span> — re-plans that week with up to 3 free transfers, no hit cost. New squad carries forward.</li>
+          <li><span className="font-medium text-zinc-700 dark:text-zinc-300">Free Hit</span> — same as Wildcard but your squad reverts the following week.</li>
+          <li><span className="font-medium text-zinc-700 dark:text-zinc-300">Bench Boost</span> — shows expected points from your bench players for that week as bonus gain.</li>
+          <li><span className="font-medium text-zinc-700 dark:text-zinc-300">Triple Captain</span> — shows expected extra captain pts (your best XI player&apos;s proj pts, since 3× instead of 2×).</li>
+        </ul>
+      </details>
+
       {planResult && (
         <TransferPlanTable
           planResult={planResult}
