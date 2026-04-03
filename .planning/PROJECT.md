@@ -6,31 +6,19 @@ A personal web app for Fantasy Premier League managers that pulls in your squad 
 
 v1.2 shipped as a fully mobile-responsive, dark-mode-aware daily-use tool. The manager enters their Team ID and receives ranked transfer suggestions, a Gem Rating table, DefCon analysis, Club Form, and Value Gems — all responsive on any screen size, with dark mode toggle and automated daily pipeline refresh.
 
+v1.3 added a Gameweek Planner: the manager can generate a 1–5 GW transfer plan with auto-suggested sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode to override any step.
+
 ## Core Value
 
 Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
 
-## Current Milestone: v1.3 Gameweek Planner
+## Current State (v1.3 Gameweek Planner — shipped 2026-04-03)
 
-**Goal:** Let the manager plan 1–5 weeks of transfers ahead with auto-suggested sequences, chip timing, and scored output showing squad state at each gameweek.
+v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW horizon selector, `generatePlan()` greedy + look-ahead engine, `TransferPlanTable` with chip toggles and DGW/BGW badges, per-GW `SquadSnapshotRow` accordion, and manual edit mode via `PlayerPickerModal` + `generatePlanFrom()` re-scoring. All 14 v1.3 requirements satisfied across 7 phases, 14 plans.
 
-**Target features:**
-- Multi-GW transfer planner (user-set horizon, 1–5 GWs)
-- Auto-suggest optimal transfer sequence + manual edit mode
-- Scoring: projected points delta, fixture difficulty, DGW/BGW awareness, -4pt hit cost
-- Chip timing: Wildcard, Free Hit, Triple Captain, Bench Boost visible in the plan
-- Output: transfer-by-transfer table + squad snapshot per GW
-- New "Planner" tab in the navigation bar
+**Tech stack:** Next.js 16, React 19, TypeScript, TanStack Table v8, TanStack Query, Tailwind CSS v4, Vitest, immer/use-immer, Python (requests, pandas, soccerdata), Vercel Blob
 
----
-
-## Current State (v1.3 complete — Phase 25 complete 2026-04-03)
-
-Phase 25 complete — Manual edit mode live: each transfer row in the planner has a ✏ pencil icon that opens a `PlayerPickerModal` (native `<dialog>`, position-filtered, sorted by `proj_pts_1gw`, suggested player pinned at top, search input). After picking a replacement, `generatePlanFrom()` re-scores all subsequent GWs while preserving earlier manual edits. A ↩ undo icon restores the engine's original suggestion per row. `PlanResult.originalSteps` (frozen via `structuredClone`) tracks originals. PLAN-04 satisfied. All 14 v1.3 plans complete.
-
-**Tech stack:** Next.js 16, React 19, TypeScript, TanStack Table v8, TanStack Query, Tailwind CSS v4, Vitest, Python (requests, pandas, soccerdata), Vercel Blob
-
-**Codebase:** ~7,000 LOC, ~170 files
+**Codebase:** ~11,300 LOC (v1.3 adds ~4,276 lines), ~200+ files
 
 **What's running:**
 - `/` — Gem Ratings tab (default), DefCon tab, Squad tab, Club Form tab, Value Gems tab
@@ -101,29 +89,33 @@ Phase 25 complete — Manual edit mode live: each transfer row in the planner ha
 - ✓ DGW-01/02: DGW-aware transfer engine tier, DGW labels in FixtureBadges/CaptaincyPanel — v1.2
 - ✓ DARK-01/02/03: Tailwind v4 class-based dark mode, FOUC prevention, ThemeToggle, all components — v1.2
 
-### Active (v1.3)
+### Validated (v1.3)
 
-- [x] **DQ-01**: Players without Understat xG/xA data use FPL goals/assists as proxy in Gem score — Validated in Phase 19: data-quality-and-value-gems-polish
-- [x] **DQ-02**: DefCon table shows computed stats where data exists; "Insufficient data" reserved for genuine edge cases; threshold raised — Validated in Phase 19: data-quality-and-value-gems-polish
-- [x] **AUTH-03**: User can log in to FPL directly via email + password (server-side cookie extraction) — Validated in Phase 20: auth-ux
-- [x] **AUTH-04**: Manual cookie entry supported with step-by-step browser guide as fallback — Validated in Phase 20: auth-ux
-- [x] **VG-01**: Pipeline computes pts_last3gw and pts_last5gw per player from FPL element-summary history — Validated in Phase 19: data-quality-and-value-gems-polish
-- [x] **VG-02**: Value Gems table shows Total Pts, Pts (last 5 GW), Pts (last 3 GW) columns — Validated in Phase 19: data-quality-and-value-gems-polish
-- [ ] **PLAN-01**: User can set a planning horizon of 1–5 gameweeks
-- [ ] **PLAN-02**: System auto-suggests an optimal transfer sequence for the chosen horizon
-- [ ] **PLAN-03**: Transfer sequence scored by projected pts delta, fixture difficulty, DGW/BGW awareness, -4pt hit cost
-- [x] **PLAN-04**: User can manually edit the suggested sequence (swap players in/out per GW step) — Validated in Phase 25: manual-edit-mode
-- [ ] **PLAN-05**: Output shows a transfer-by-transfer table (GW | Out | In | Cost | Projected gain)
-- [ ] **PLAN-06**: Output shows a squad snapshot for each gameweek in the plan
-- [ ] **PLAN-07**: Chip timing (Wildcard, Free Hit, TC, BB) is visible and configurable in the plan
-- [ ] **PLAN-08**: Planner is accessible via a new "Planner" tab in the navigation bar
+- ✓ DQ-01: Players without Understat xG/xA use FPL goals/assists as proxy in Gem score — v1.3
+- ✓ DQ-02: DefCon threshold raised to 5 games; "Insufficient data" reserved for genuine edge cases — v1.3
+- ✓ VG-01: Pipeline computes pts_last3gw and pts_last5gw per player from FPL element-summary history — v1.3
+- ✓ VG-02: Value Gems table shows Total Pts, Pts (last 5 GW), Pts (last 3 GW) columns — v1.3
+- ✓ AUTH-03: User can log in to FPL via modal-based guided token entry with step-by-step Chrome DevTools guide — v1.3
+- ✓ AUTH-04: Manual cookie entry supported with clipboard paste button as friction reducer — v1.3
+- ✓ PLAN-01: User can set a planning horizon of 1–5 gameweeks — v1.3
+- ✓ PLAN-02: System auto-suggests an optimal transfer sequence for the chosen horizon — v1.3
+- ✓ PLAN-03: Transfer sequence scored by projected pts delta, fixture difficulty, DGW/BGW awareness, -4pt hit cost — v1.3
+- ✓ PLAN-04: User can manually edit the suggested sequence (swap players in/out per GW step) — v1.3
+- ✓ PLAN-05: Output shows a transfer-by-transfer table (GW | Out | In | Cost | Projected gain) — v1.3
+- ✓ PLAN-06: Output shows a squad snapshot for each gameweek in the plan — v1.3
+- ✓ PLAN-07: Chip timing (Wildcard, Free Hit, TC, BB) is visible and configurable in the plan — v1.3
+- ✓ PLAN-08: Planner accessible via "Planner" tab in the navigation bar — v1.3
+
+### Active
+
+*(None — v1.4 requirements to be defined via `/gsd:new-milestone`)*
 
 ### Out of Scope
 
 - Live in-match updates — data refreshes daily, not during gameweeks
 - Mini-league or head-to-head analysis — squad optimisation focus only
 - Mobile app — web only (responsive web covers the mobile use case)
-- FPL chip strategy (Wildcard, Free Hit, Triple Captain) — out of scope for v1.x
+- Automated chip timing recommendations — chip visibility in plan is in-scope; auto-timing is out
 - Offline mode — daily refresh is sufficient
 
 ## Context
@@ -162,6 +154,12 @@ Phase 25 complete — Manual edit mode live: each transfer row in the planner ha
 | TanStack `columnVisibility` for mobile column hiding | Reuses existing TanStack Table state; no new abstraction needed | ✓ Good — consistent pattern across 4 tables |
 | Tailwind v4 `@custom-variant dark` with `.dark` class (not media query) | Manual toggle requires class-based switching; v4 `@custom-variant` is the correct primitive | ✓ Good — FOUC prevention script works cleanly |
 | FOUC prevention: inline script in `<head>` with `suppressHydrationWarning` | Must run before first paint; React hydration ignores HTML/body attribute mismatch | ✓ Good — no white flash even on slow connections |
+| AuthModal always in DOM (not conditionally rendered) | Prevents `showModal()` null ref on first open; native dialog pitfall | ✓ Good — consistent pattern reused in PlayerPickerModal |
+| `dialog::backdrop` via globals.css (not Tailwind `backdrop:` prefix) | Tailwind v4 `backdrop:` support unverified in this config; CSS rule is guaranteed | ✓ Good — works across Chrome, Firefox, Safari |
+| Greedy + 1-level look-ahead (LOOK_AHEAD_DISCOUNT=0.8) for planning engine | Sufficient for personal-use planning; no deep recursion needed | ✓ Good — fast and produces sensible plans |
+| `positionsAfter: Record<number, number>` (not Map) on PlanStep | Keeps PlanStep JSON-serializable for any future persistence | ✓ Good — plain object passed cleanly through Immer |
+| `readonly originalSteps: PlanStep[]` frozen via `structuredClone` | Compile-time protection against Immer accidentally mutating the plan baseline | ✓ Good — caught mutation bugs at the type level |
+| useImmer for PlannerTab chip toggle + planResult state | Safe nested mutation without manual spread-copy for complex nested state | ✓ Good — `updatePlanResult` recipe pattern reused across handlers |
 
 ---
 
@@ -176,4 +174,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-03 — Phase 24 complete (squad snapshot accordion)*
+*Last updated: 2026-04-03 after v1.3 milestone — Gameweek Planner shipped*

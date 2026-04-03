@@ -1,5 +1,23 @@
 # Milestones
 
+## v1.3 Gameweek Planner (Shipped: 2026-04-03)
+
+**Phases completed:** 7 phases, 14 plans, 19 tasks
+**Timeline:** 2026-04-02 → 2026-04-03 (2 days)
+**Files changed:** 32 files, +4,276 / −44 lines
+
+**Key accomplishments:**
+
+1. xG/xA proxy from FPL goals/assists for all unmatched players, DefCon threshold raised to 5 games, pts_last3gw/pts_last5gw pipeline fields — all v1.3 data quality gaps closed
+2. Native `<dialog>` AuthModal with step-by-step Chrome DevTools guide, clipboard paste button, and three-state expiry display (normal/expiring-soon/expired) — replaces inline token form
+3. Foundational planner type system and pure free transfer engine (31 TDD tests covering banking, wildcard reset, free hit, hit costs) — "Planner" tab wired into desktop and mobile nav with HorizonSelector
+4. `generatePlan()` pure function with greedy + 1-level look-ahead (LOOK_AHEAD_DISCOUNT=0.8), DGW/BGW fixture scoring, hit cost threshold — PLAN-02 and PLAN-03 satisfied with 17-test TDD suite
+5. `TransferPlanTable` with chip toggles, DGW/BGW badges, plan value headline — wired into PlannerTab via useImmer state management
+6. `positionsAfter: Record<number, number>` on PlanStep + `SquadSnapshotRow` accordion — 15-player per-GW squad view with position grouping and transfer highlighting
+7. `generatePlanFrom()` re-scoring engine, `PlayerPickerModal` (native dialog, position-filtered), pencil/undo icons — full manual edit mode with per-row overrides and forward re-scoring
+
+---
+
 ## v1.2 Mobile (Shipped: 2026-04-01)
 
 **Phases completed:** 6 phases, 12 plans, 20 tasks

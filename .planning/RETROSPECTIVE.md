@@ -149,6 +149,54 @@
 
 ---
 
+## Milestone: v1.3 — Gameweek Planner
+
+**Shipped:** 2026-04-03
+**Phases:** 7 (19-25) | **Plans:** 14 | **Timeline:** 2 days (2026-04-02 → 2026-04-03)
+
+### What Was Built
+
+- Data quality: xG proxy for all unmatched players, DefCon threshold raised to 5 games, pts_last3gw/5gw pipeline fields
+- Auth UX: native `<dialog>` AuthModal with step-by-step Chrome DevTools guide, clipboard paste, three-state expiry display
+- Planner tab shell: foundational type system + free transfer engine (31 TDD tests), navigation wiring, HorizonSelector
+- Planning engine: `generatePlan()` pure function with greedy + 1-level look-ahead, DGW/BGW fixture scoring, hit threshold
+- Transfer Output Table: semantic table with chip toggles, DGW/BGW badges, plan value headline, useImmer state
+- Squad Snapshot: `positionsAfter` on PlanStep + `SquadSnapshotRow` accordion — 15-player per-GW view with transfer highlighting
+- Manual Edit Mode: `generatePlanFrom()` re-scoring, `PlayerPickerModal` (native dialog), pencil/undo icons per row
+
+### What Worked
+
+- **Pure function first, UI second**: Phases 21 (free transfer engine), 22 (planning engine), 23 (plan helpers) all built as TDD pure functions before UI wiring — verification was clean with no rework
+- **Native dialog pattern reuse**: `AuthModal` established the `<dialog>` pattern in Phase 20; `PlayerPickerModal` in Phase 25 followed it exactly — zero new concepts
+- **useImmer for nested state**: Chip toggle and `planResult` mutations benefited from Immer — no manual spread-copy needed
+- **Architecture separation**: Engine (Phase 22) → output table (Phase 23) → squad view (Phase 24) → edit mode (Phase 25) had clean interfaces — phases didn't bleed into each other
+
+### What Was Inefficient
+
+- **STATE.md progress counter stale**: Showed 0% / 0 phases despite all 7 phases completing — the percent field wasn't being updated by the executor
+- **Two commits per re-execution on Phase 25-02**: Re-checking required an additional commit cycle — slight overhead
+
+### Patterns Established
+
+- **`generatePlanFrom()` entry point**: Mid-plan re-scoring via `(picksAfterStep, allPlayers, remainingHorizon, startingGw, ftStateAfterStep, bankAfterStep)` — reusable for any future override feature
+- **Always-in-DOM native dialog**: `useRef<HTMLDialogElement>` + `useEffect([open])` → `showModal()/close()` — no null-ref, no conditional rendering
+- **Immer + structuredClone for plan baseline**: `originalSteps` frozen once on generate, Immer mutations are forward-only — never touch the baseline
+
+### Key Lessons
+
+1. **Layered architecture pays off in complex features**: Engine → table → snapshot → edit mode was a clean 4-phase decomposition — each phase had clear acceptance criteria and no ambiguity about what was in scope
+2. **TDD catches IEEE 754 surprises**: `-0 vs 0` in `computeHitCost` and an engine test assumption failure were caught immediately by TDD — would have been silent production bugs without it
+3. **1-level look-ahead is sufficient for personal-use planners**: `LOOK_AHEAD_DISCOUNT=0.8` with GW+1 evaluation is fast enough and produces useful plans — no need for deeper recursion
+4. **`readonly` modifier for Immer protection**: Adding `readonly` to `PlanResult.originalSteps` provides compile-time mutation protection — worth using on any Immer-adjacent baseline field
+
+### Cost Observations
+
+- Model: Sonnet 4.6 throughout (executor + verifier)
+- Sessions: 2 days, ~4-5 sessions
+- Notable: Planning engine phases (21-22) took longest (~8-12min per plan) due to TDD + complex type system; later phases (23-25) were faster once types were stable
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -158,6 +206,7 @@
 | v1.0 | 104 | 6 | First milestone — GSD workflow established |
 | v1.1 | ~45 | 6 | Additive schema extension pattern; pure functions first |
 | v1.2 | ~67 | 6 | CSS-first responsive; TanStack VisibilityState reuse; dark mode without deps |
+| v1.3 | ~55 | 7 | Complex feature architecture (engine → table → snapshot → edit); native dialog pattern; useImmer |
 
 ### Cumulative Quality
 
@@ -166,12 +215,14 @@
 | v1.0 | ~15 | ~6,600 | 1 (06-04) |
 | v1.1 | ~15 | ~6,600 | 0 |
 | v1.2 | 16 | ~7,000 | 0 |
+| v1.3 | ~20 | ~11,300 | 0 |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. TDD-first for pure functions pays back in cheaper UAT and gap closure
-2. DAT/infra requirements need operational smoke tests, not just scaffolding — multi-milestone deferral is a smell
-3. Established patterns (isMobile detection, column visibility, zinc dark scale) compound across phases — invest in getting Phase 1 of a milestone right
+1. TDD-first for pure functions pays back in cheaper UAT and gap closure — confirmed across v1.0, v1.1, v1.3
+2. DAT/infra requirements need operational smoke tests, not just scaffolding — multi-milestone deferral is a smell (DAT-01 v1.0→v1.1→v1.2 before resolution)
+3. Established patterns compound across phases — getting Phase 1 of a milestone right (isMobile, zinc dark scale, native dialog) pays forward 4+ phases later
 4. CSS-first (no JS for show/hide, no library for dark mode) avoids hydration issues and reduces dependencies
+5. Clean architectural layering pays off in complex features — engine → output → visualization → edit mode with clear interfaces means no rework between phases
 
 ---
