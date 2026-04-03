@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Gameweek Planner
-status: verifying
-stopped_at: Completed 24-02-PLAN.md — Phase 24 squad-snapshot complete
-last_updated: "2026-04-03T07:06:59.639Z"
+status: executing
+stopped_at: Completed 25-01-PLAN.md
+last_updated: "2026-04-03T08:28:06.304Z"
 last_activity: 2026-04-03
 progress:
   total_phases: 7
   completed_phases: 6
-  total_plans: 12
-  completed_plans: 12
+  total_plans: 14
+  completed_plans: 13
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-01 after v1.2)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 24 — squad-snapshot
+**Current focus:** Phase 25 — manual-edit-mode
 
 ## Current Position
 
-Phase: 25
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 25 (manual-edit-mode) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-03
 
 Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
@@ -66,6 +66,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
 | Phase 23-transfer-output-table P02 | 10min | 2 tasks | 1 files |
 | Phase 24-squad-snapshot P01 | 8min | 2 tasks | 3 files |
 | Phase 24-squad-snapshot P02 | 90s | 1 tasks | 3 files |
+| Phase 25-manual-edit-mode P01 | 12min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,8 @@ Recent decisions affecting current work:
 - [Phase 24-squad-snapshot]: positionsAfter snapshot taken AFTER positionMap.delete/set block so bought player position is correctly captured
 - [Phase 24-squad-snapshot]: positionsAfter uses Record<number, number> (plain object, not Map) to keep PlanStep JSON-serializable
 - [Phase 24-squad-snapshot]: colSpan=6 on accordion td matches exact column count (GW|Chip|Out|In|Hit|Gain)
+- [Phase 25-manual-edit-mode]: originalSteps set to [] in generatePlan — Plan 02 (PlannerTab wiring) populates it with structuredClone(result.steps)
+- [Phase 25-manual-edit-mode]: generatePlanFrom casts remainingHorizon as PlannerHorizon — callers ensure value is 1-5 at call sites in Plan 02
 
 ### Pending Todos
 
@@ -115,6 +118,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T22:15:06.358Z
-Stopped at: Completed 24-02-PLAN.md — Phase 24 squad-snapshot complete
+Last session: 2026-04-03T08:28:06.301Z
+Stopped at: Completed 25-01-PLAN.md
 Resume file: None

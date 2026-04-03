@@ -164,7 +164,7 @@ Plans:
   4. The user can switch between "Suggested" and "Manual" mode — switching back to Suggested restores the engine's original recommendation for that row
 **Plans**: 2 plans
 Plans:
-- [ ] 25-01-PLAN.md — Type extension, generatePlanFrom engine entry point, re-score tests, PlayerPickerModal component
+- [x] 25-01-PLAN.md — Type extension, generatePlanFrom engine entry point, re-score tests, PlayerPickerModal component
 - [ ] 25-02-PLAN.md — PlannerTab wiring (handleManualEdit, handleRestoreSuggested) and TransferPlanTable icons + human verification
 **UI hint**: yes
 
@@ -196,4 +196,4 @@ Plans:
 | 22. Planning Engine | v1.3 | 2/2 | Complete   | 2026-04-02 |
 | 23. Transfer Output Table | v1.3 | 2/2 | Complete    | 2026-04-02 |
 | 24. Squad Snapshot | v1.3 | 2/2 | Complete    | 2026-04-03 |
-| 25. Manual Edit Mode | v1.3 | 0/TBD | Not started | - |
+| 25. Manual Edit Mode | v1.3 | 1/2 | In Progress|  |
