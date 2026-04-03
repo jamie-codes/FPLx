@@ -9,6 +9,17 @@ from datetime import datetime, timezone, timedelta
 CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cache', 'understat_current.json')
 CACHE_TTL_HOURS = 24
 
+HEADERS = {
+    'User-Agent': (
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+        'AppleWebKit/537.36 (KHTML, like Gecko) '
+        'Chrome/124.0.0.0 Safari/537.36'
+    ),
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-GB,en;q=0.5',
+    'Connection': 'keep-alive',
+}
+
 
 def _current_season_year() -> int:
     """Return the Understat season start year for the current FPL season.
@@ -20,7 +31,6 @@ def _current_season_year() -> int:
 
 
 def _is_cache_fresh() -> bool:
-    """Return True if cache exists and was written within the last 24 hours."""
     if not os.path.exists(CACHE_PATH):
         return False
     try:
@@ -32,26 +42,38 @@ def _is_cache_fresh() -> bool:
         cached_at = datetime.fromisoformat(cached_at_str)
         if cached_at.tzinfo is None:
             cached_at = cached_at.replace(tzinfo=timezone.utc)
-        age = datetime.now(timezone.utc) - cached_at
-        return age < timedelta(hours=CACHE_TTL_HOURS)
+        return datetime.now(timezone.utc) - cached_at < timedelta(hours=CACHE_TTL_HOURS)
     except Exception:
         return False
 
 
 def _load_cache() -> dict:
-    """Load and return cached Understat data (without the _cached_at key)."""
     with open(CACHE_PATH, 'r', encoding='utf-8') as f:
         data = json.load(f)
     return {k: v for k, v in data.items() if k != '_cached_at'}
 
 
 def _write_cache(players: dict) -> None:
-    """Write players dict to cache with a _cached_at timestamp."""
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
     payload = dict(players)
     payload['_cached_at'] = datetime.now(timezone.utc).isoformat()
     with open(CACHE_PATH, 'w', encoding='utf-8') as f:
         json.dump(payload, f, ensure_ascii=False)
+
+
+def _parse_players(html: str) -> dict:
+    """Extract playersData JSON from Understat HTML."""
+    # Try single-quote format first, then double-quote
+    for pattern in [
+        r"var playersData\s*=\s*JSON\.parse\('(.+?)'\)",
+        r'var playersData\s*=\s*JSON\.parse\("(.+?)"\)',
+    ]:
+        match = re.search(pattern, html)
+        if match:
+            encoded = match.group(1)
+            decoded = encoded.encode('raw_unicode_escape').decode('unicode_escape')
+            return json.loads(decoded)
+    return {}
 
 
 def get_understat_players() -> dict:
@@ -60,8 +82,8 @@ def get_understat_players() -> dict:
     Returns a dict keyed by Understat player ID (string) with fields:
         player, team, xG, xA, npxG, npxA, minutes
 
-    Fetches directly from understat.com (JSON embedded in page HTML).
-    Uses a 24h local cache to avoid repeated requests.
+    Returns an empty dict (with a warning) if Understat is unreachable —
+    the pipeline will fall back to FPL goals/assists proxy for xG/xA.
     """
     if _is_cache_fresh():
         print("Understat: using cached data (< 24h old)")
@@ -69,26 +91,23 @@ def get_understat_players() -> dict:
 
     season_year = _current_season_year()
     url = f'https://understat.com/league/EPL/{season_year}'
-    print(f"Understat: fetching fresh data from {url} ...")
+    print(f"Understat: fetching from {url} ...")
 
-    resp = requests.get(
-        url,
-        headers={'User-Agent': 'Mozilla/5.0 (compatible; FPLAnalyst/1.0)'},
-        timeout=30,
-    )
-    resp.raise_for_status()
+    try:
+        resp = requests.get(url, headers=HEADERS, timeout=30)
+        resp.raise_for_status()
+    except Exception as exc:
+        print(f"Understat: HTTP error — {exc}. Falling back to FPL proxy data.")
+        return {}
 
-    # Understat embeds player data as JSON.parse('...') in a <script> tag
-    match = re.search(r"var playersData\s*=\s*JSON\.parse\('(.+?)'\)", resp.text)
-    if not match:
-        raise RuntimeError(
-            "playersData not found in Understat HTML — page structure may have changed"
-        )
+    raw_players = _parse_players(resp.text)
 
-    # The string uses unicode escape sequences — decode them
-    encoded = match.group(1)
-    decoded = encoded.encode('raw_unicode_escape').decode('unicode_escape')
-    raw_players = json.loads(decoded)
+    if not raw_players:
+        # Log first 300 chars to help diagnose (bot protection page, changed format, etc.)
+        preview = resp.text[:300].replace('\n', ' ')
+        print(f"Understat: playersData not found in HTML. Preview: {preview}")
+        print("Understat: falling back to FPL proxy data.")
+        return {}
 
     players = {}
     for p in raw_players:
@@ -96,7 +115,6 @@ def get_understat_players() -> dict:
         if not pid:
             continue
 
-        # team_title can be a list for mid-season transfers — take the last entry
         team = p.get('team_title', '')
         if isinstance(team, list):
             team = team[-1] if team else ''
