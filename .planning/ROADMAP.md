@@ -164,8 +164,8 @@ Plans:
   4. The user can switch between "Suggested" and "Manual" mode — switching back to Suggested restores the engine's original recommendation for that row
 **Plans**: 2 plans
 Plans:
-- [ ] 25-01-PLAN.md — TBD
-- [ ] 25-02-PLAN.md — TBD
+- [ ] 25-01-PLAN.md — Type extension, generatePlanFrom engine entry point, re-score tests, PlayerPickerModal component
+- [ ] 25-02-PLAN.md — PlannerTab wiring (handleManualEdit, handleRestoreSuggested) and TransferPlanTable icons + human verification
 **UI hint**: yes
 
 ## Progress
