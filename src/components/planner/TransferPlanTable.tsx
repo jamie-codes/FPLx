@@ -3,6 +3,7 @@
 import { Fragment, useMemo, useState } from 'react'
 import { ChipToggle } from './ChipToggle'
 import { SquadSnapshotRow } from './SquadSnapshotRow'
+import { PlayerPickerModal } from './PlayerPickerModal'
 import { computePlanValue, formatGain } from './plan-helpers'
 import { fixtureCountForGw } from '@/lib/planning-engine'
 import type { PlanResult, ScoredPlayer, PlannerChip } from '@/lib/types'
@@ -11,9 +12,11 @@ interface TransferPlanTableProps {
   planResult: PlanResult
   scoredPlayers: ScoredPlayer[]
   onChipToggle: (stepIndex: number, chip: PlannerChip) => void
+  onManualEdit: (stepIndex: number, newBuyId: number) => void
+  onRestoreSuggested: (stepIndex: number) => void
 }
 
-export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle }: TransferPlanTableProps) {
+export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle, onManualEdit, onRestoreSuggested }: TransferPlanTableProps) {
   const playerMap = useMemo(
     () => new Map(scoredPlayers.map((p) => [p.id, p])),
     [scoredPlayers]
@@ -25,6 +28,28 @@ export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle }: T
       const next = new Set(prev)
       next.has(i) ? next.delete(i) : next.add(i)
       return next
+    })
+  }
+
+  const [pickerState, setPickerState] = useState<{
+    open: boolean
+    stepIndex: number
+    position: number
+    squadIds: Set<number>
+    suggestedPlayerId: number
+  }>({ open: false, stepIndex: 0, position: 1, squadIds: new Set(), suggestedPlayerId: 0 })
+
+  function openPicker(stepIndex: number) {
+    const step = planResult.steps[stepIndex]
+    if (step.transfersIn.length === 0) return
+    const sellPlayer = playerMap.get(step.transfersOut[0])
+    const position = sellPlayer?.element_type ?? 1
+    setPickerState({
+      open: true,
+      stepIndex,
+      position,
+      squadIds: new Set(step.squadAfter),
+      suggestedPlayerId: planResult.originalSteps[stepIndex]?.transfersIn[0] ?? step.transfersIn[0],
     })
   }
 
@@ -133,7 +158,24 @@ export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle }: T
                         {playerMap.get(step.transfersOut[0])?.web_name ?? '\u2014'}
                       </td>
                       <td className="px-2 py-2 sm:px-4 text-zinc-700 dark:text-zinc-300">
-                        {playerMap.get(step.transfersIn[0])?.web_name ?? '\u2014'}
+                        <span className="inline-flex items-center gap-1">
+                          {playerMap.get(step.transfersIn[0])?.web_name ?? '\u2014'}
+                          {planResult.originalSteps[i]?.transfersIn[0] !== undefined &&
+                           step.transfersIn[0] !== planResult.originalSteps[i].transfersIn[0] && (
+                            <button
+                              onClick={() => onRestoreSuggested(i)}
+                              className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 text-xs"
+                              aria-label="Restore suggested player"
+                              title="Restore suggested"
+                            >&#x21A9;</button>
+                          )}
+                          <button
+                            onClick={() => openPicker(i)}
+                            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 text-xs"
+                            aria-label="Edit transfer"
+                            title="Edit"
+                          >&#x270F;</button>
+                        </span>
                       </td>
                     </>
                   ) : (
@@ -188,6 +230,19 @@ export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle }: T
           })}
         </tbody>
       </table>
+
+      <PlayerPickerModal
+        open={pickerState.open}
+        position={pickerState.position}
+        squadIds={pickerState.squadIds}
+        suggestedPlayerId={pickerState.suggestedPlayerId}
+        scoredPlayers={scoredPlayers}
+        onPick={(playerId) => {
+          onManualEdit(pickerState.stepIndex, playerId)
+          setPickerState(prev => ({ ...prev, open: false }))
+        }}
+        onClose={() => setPickerState(prev => ({ ...prev, open: false }))}
+      />
     </div>
   )
 }

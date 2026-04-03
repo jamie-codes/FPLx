@@ -9,8 +9,9 @@ import { useSquad } from '@/lib/hooks/useSquad'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
 import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
 import { computeAllGemScores } from '@/lib/gem-score'
-import { generatePlan } from '@/lib/planning-engine'
+import { generatePlan, generatePlanFrom, ftStateAfterStepIndex } from '@/lib/planning-engine'
 import type { PlanResult, FTState, PlannerHorizon, PlannerChip } from '@/lib/types'
+import type { SquadPick } from '@/lib/squad-adapter'
 
 export function PlannerTab() {
   const [horizon, setHorizon] = useState<PlannerHorizon>(3)
@@ -64,7 +65,81 @@ export function PlannerTab() {
       bankBalance,
       sellPrices,
     )
-    updatePlanResult(() => result)
+    updatePlanResult(() => ({
+      ...result,
+      originalSteps: structuredClone(result.steps),
+    }))
+  }
+
+  function handleManualEdit(stepIndex: number, newBuyId: number) {
+    if (!planResult || !startingGw) return
+    const playerMap = new Map(scoredPlayers.map(p => [p.id, p]))
+
+    const step = planResult.steps[stepIndex]
+    const origBuyId = step.transfersIn[0]
+    const oldSellId = step.transfersOut[0]
+
+    // New squadAfter for step X: swap the original buy for the new buy
+    const newSquadAfter = step.squadAfter.map(id => id === origBuyId ? newBuyId : id)
+    const newPositionsAfter = { ...step.positionsAfter }
+    const pos = newPositionsAfter[origBuyId]
+    if (pos !== undefined) {
+      delete newPositionsAfter[origBuyId]
+      newPositionsAfter[newBuyId] = pos
+    }
+
+    // Derive bank after step X
+    const sellPrice = sellPrices?.[oldSellId] ?? (playerMap.get(oldSellId)?.now_cost ?? 0)
+    const newBuyCost = playerMap.get(newBuyId)?.now_cost ?? 0
+    let bankBeforeStepX = bankBalance
+    for (let i = 0; i < stepIndex; i++) {
+      const s = planResult.steps[i]
+      if (s.transfersOut.length > 0 && s.transfersIn.length > 0) {
+        const sp = sellPrices?.[s.transfersOut[0]] ?? (playerMap.get(s.transfersOut[0])?.now_cost ?? 0)
+        const bp = playerMap.get(s.transfersIn[0])?.now_cost ?? 0
+        bankBeforeStepX = bankBeforeStepX + sp - bp
+      }
+    }
+    const bankAfterStepX = bankBeforeStepX + sellPrice - newBuyCost
+
+    // FT state after step X
+    const ftAfterX = ftStateAfterStepIndex(planResult.steps, stepIndex, initialFTState)
+
+    // Build synthetic picks from new squad state
+    const syntheticPicks: SquadPick[] = newSquadAfter.map(id => ({
+      element: id,
+      position: newPositionsAfter[id],
+      multiplier: 1,
+      is_captain: false,
+      is_vice_captain: false,
+    }))
+
+    // Re-run engine from step X+1
+    const remainingHorizon = planResult.horizon - (stepIndex + 1)
+    const newStepsFromXPlus1 = remainingHorizon > 0
+      ? generatePlanFrom(
+          syntheticPicks, scoredPlayers, remainingHorizon,
+          startingGw + stepIndex + 1, ftAfterX, bankAfterStepX, sellPrices,
+        )
+      : []
+
+    // Single Immer mutation: update step X + splice in new steps
+    updatePlanResult(draft => {
+      if (!draft) return
+      const draftStep = draft.steps[stepIndex]
+      draftStep.transfersIn = [newBuyId]
+      draftStep.squadAfter = newSquadAfter
+      draftStep.positionsAfter = newPositionsAfter
+      draft.steps.splice(stepIndex + 1, draft.steps.length - stepIndex - 1, ...newStepsFromXPlus1)
+      // DO NOT touch draft.originalSteps — readonly, never mutated
+    })
+  }
+
+  function handleRestoreSuggested(stepIndex: number) {
+    if (!planResult) return
+    const originalBuyId = planResult.originalSteps[stepIndex]?.transfersIn[0]
+    if (originalBuyId === undefined) return
+    handleManualEdit(stepIndex, originalBuyId)
   }
 
   function handleChipToggle(stepIndex: number, chip: PlannerChip) {
@@ -99,6 +174,8 @@ export function PlannerTab() {
           planResult={planResult}
           scoredPlayers={scoredPlayers}
           onChipToggle={handleChipToggle}
+          onManualEdit={handleManualEdit}
+          onRestoreSuggested={handleRestoreSuggested}
         />
       )}
     </div>
