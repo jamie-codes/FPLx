@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Gameweek Planner
 status: verifying
-stopped_at: "Completed 25-02-PLAN.md — awaiting checkpoint:human-verify"
-last_updated: "2026-04-03T08:32:01.338Z"
+stopped_at: Completed 25-02-PLAN.md — phase 25-manual-edit-mode complete
+last_updated: "2026-04-03T09:01:16.360Z"
 last_activity: 2026-04-03
 progress:
   total_phases: 7
@@ -68,6 +68,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3: 0/7 phases)
 | Phase 24-squad-snapshot P02 | 90s | 1 tasks | 3 files |
 | Phase 25-manual-edit-mode P01 | 12min | 2 tasks | 4 files |
 | Phase 25-manual-edit-mode P02 | 10min | 1 tasks | 2 files |
+| Phase 25-manual-edit-mode P02 | 10min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -109,6 +110,8 @@ Recent decisions affecting current work:
 - [Phase 25-manual-edit-mode]: generatePlanFrom casts remainingHorizon as PlannerHorizon — callers ensure value is 1-5 at call sites in Plan 02
 - [Phase 25-manual-edit-mode]: Compute all re-scoring values outside Immer draft callback — single mutation avoids draft-read issues
 - [Phase 25-manual-edit-mode]: originalSteps populated with structuredClone(result.steps) in handleGeneratePlan — only set once, never mutated
+- [Phase 25-manual-edit-mode]: Compute all re-scoring values outside Immer draft callback — single mutation avoids draft-read issues
+- [Phase 25-manual-edit-mode]: originalSteps populated with structuredClone(result.steps) in handleGeneratePlan — only set once, never mutated
 
 ### Pending Todos
 
@@ -121,6 +124,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-03T08:32:01.335Z
-Stopped at: Completed 25-02-PLAN.md — awaiting checkpoint:human-verify
+Last session: 2026-04-03T09:01:16.357Z
+Stopped at: Completed 25-02-PLAN.md — phase 25-manual-edit-mode complete
 Resume file: None
