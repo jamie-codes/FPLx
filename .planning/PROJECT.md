@@ -24,9 +24,9 @@ Give the manager a clear, prioritised view of who to buy and who to sell this we
 
 ---
 
-## Current State (v1.3 in progress — Phase 24 complete 2026-04-03)
+## Current State (v1.3 complete — Phase 25 complete 2026-04-03)
 
-Phase 24 complete — Squad snapshot accordion live: each GW row in the transfer plan table now has a ▶/▼ chevron that expands to show the full 15-player squad (GK/DEF/MID/FWD grouping, bench dimmed at opacity-50, green IN badge on transferred-in player, full opacity for Bench Boost GWs). `positionsAfter: Record<number, number>` added to `PlanStep` type and planning engine. Human-approved in browser. PLAN-06 satisfied. Phase 25 (manual-edit-mode) is next.
+Phase 25 complete — Manual edit mode live: each transfer row in the planner has a ✏ pencil icon that opens a `PlayerPickerModal` (native `<dialog>`, position-filtered, sorted by `proj_pts_1gw`, suggested player pinned at top, search input). After picking a replacement, `generatePlanFrom()` re-scores all subsequent GWs while preserving earlier manual edits. A ↩ undo icon restores the engine's original suggestion per row. `PlanResult.originalSteps` (frozen via `structuredClone`) tracks originals. PLAN-04 satisfied. All 14 v1.3 plans complete.
 
 **Tech stack:** Next.js 16, React 19, TypeScript, TanStack Table v8, TanStack Query, Tailwind CSS v4, Vitest, Python (requests, pandas, soccerdata), Vercel Blob
 
@@ -112,7 +112,7 @@ Phase 24 complete — Squad snapshot accordion live: each GW row in the transfer
 - [ ] **PLAN-01**: User can set a planning horizon of 1–5 gameweeks
 - [ ] **PLAN-02**: System auto-suggests an optimal transfer sequence for the chosen horizon
 - [ ] **PLAN-03**: Transfer sequence scored by projected pts delta, fixture difficulty, DGW/BGW awareness, -4pt hit cost
-- [ ] **PLAN-04**: User can manually edit the suggested sequence (swap players in/out per GW step)
+- [x] **PLAN-04**: User can manually edit the suggested sequence (swap players in/out per GW step) — Validated in Phase 25: manual-edit-mode
 - [ ] **PLAN-05**: Output shows a transfer-by-transfer table (GW | Out | In | Cost | Projected gain)
 - [ ] **PLAN-06**: Output shows a squad snapshot for each gameweek in the plan
 - [ ] **PLAN-07**: Chip timing (Wildcard, Free Hit, TC, BB) is visible and configurable in the plan
