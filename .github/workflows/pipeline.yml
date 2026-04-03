@@ -23,7 +23,9 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install -r pipeline/requirements.txt
+        run: |
+          pip install requests pandas vercel-blob python-dotenv lxml html5lib unidecode
+          pip install --no-deps soccerdata==1.8.8
 
       - name: Run pipeline
         run: python pipeline/run.py
