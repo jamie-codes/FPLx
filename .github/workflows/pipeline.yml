@@ -1,8 +1,8 @@
-name: Daily Data Pipeline
+name: Data Pipeline
 
 on:
   schedule:
-    - cron: '0 7 * * *'
+    - cron: '0 6,12,18,0 * * *'  # 4x daily: 6am, 12pm, 6pm, midnight UTC
   workflow_dispatch:
 
 jobs:
