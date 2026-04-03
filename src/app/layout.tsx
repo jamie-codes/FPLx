@@ -26,7 +26,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: "FPL Analyst",
+  title: "FPLx: The advanced FPL model",
   description: "Fantasy Premier League transfer intelligence — Gem ratings, DefCon analysis, and multi-GW planner.",
 };
 
