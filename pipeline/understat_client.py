@@ -1,11 +1,22 @@
-"""Understat xG/xA data client using soccerdata with 24h local cache."""
+"""Understat xG/xA data client — direct HTTP fetch, no external scraping library."""
 
 import json
 import os
+import re
+import requests
 from datetime import datetime, timezone, timedelta
 
 CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cache', 'understat_current.json')
 CACHE_TTL_HOURS = 24
+
+
+def _current_season_year() -> int:
+    """Return the Understat season start year for the current FPL season.
+
+    FPL seasons run Aug–May, so April 2026 → season start 2025.
+    """
+    now = datetime.now(timezone.utc)
+    return now.year if now.month >= 8 else now.year - 1
 
 
 def _is_cache_fresh() -> bool:
@@ -19,7 +30,6 @@ def _is_cache_fresh() -> bool:
         if not cached_at_str:
             return False
         cached_at = datetime.fromisoformat(cached_at_str)
-        # Ensure timezone-aware comparison
         if cached_at.tzinfo is None:
             cached_at = cached_at.replace(tzinfo=timezone.utc)
         age = datetime.now(timezone.utc) - cached_at
@@ -50,77 +60,55 @@ def get_understat_players() -> dict:
     Returns a dict keyed by Understat player ID (string) with fields:
         player, team, xG, xA, npxG, npxA, minutes
 
-    Uses a 24h local cache (pipeline/cache/understat_current.json) to avoid
-    slow re-fetches on every pipeline run (D-07).
+    Fetches directly from understat.com (JSON embedded in page HTML).
+    Uses a 24h local cache to avoid repeated requests.
     """
     if _is_cache_fresh():
         print("Understat: using cached data (< 24h old)")
         return _load_cache()
 
-    print("Understat: fetching fresh data via soccerdata...")
-    from soccerdata import Understat
+    season_year = _current_season_year()
+    url = f'https://understat.com/league/EPL/{season_year}'
+    print(f"Understat: fetching fresh data from {url} ...")
 
-    us = Understat(leagues="ENG-Premier League", seasons="2425")
-    df = us.read_player_season_stats()
+    resp = requests.get(
+        url,
+        headers={'User-Agent': 'Mozilla/5.0 (compatible; FPLAnalyst/1.0)'},
+        timeout=30,
+    )
+    resp.raise_for_status()
 
-    # Reset index to expose player ID as a column (soccerdata uses multi-index)
-    df = df.reset_index()
+    # Understat embeds player data as JSON.parse('...') in a <script> tag
+    match = re.search(r"var playersData\s*=\s*JSON\.parse\('(.+?)'\)", resp.text)
+    if not match:
+        raise RuntimeError(
+            "playersData not found in Understat HTML — page structure may have changed"
+        )
 
-    # Identify the player ID column — soccerdata uses 'player_id' or the index name
-    # After reset_index, look for 'player_id' or fallback to inspect columns
-    id_col = None
-    for candidate in ('player_id', 'id', 'understat_id'):
-        if candidate in df.columns:
-            id_col = candidate
-            break
-
-    # Identify the player name column
-    name_col = None
-    for candidate in ('player', 'player_name', 'name'):
-        if candidate in df.columns:
-            name_col = candidate
-            break
-
-    # Identify team column
-    team_col = None
-    for candidate in ('team', 'team_name', 'club'):
-        if candidate in df.columns:
-            team_col = candidate
-            break
-
-    def _safe_float(val) -> float:
-        try:
-            return float(val)
-        except (TypeError, ValueError):
-            return 0.0
-
-    def _safe_int(val) -> int:
-        try:
-            return int(val)
-        except (TypeError, ValueError):
-            return 0
+    # The string uses unicode escape sequences — decode them
+    encoded = match.group(1)
+    decoded = encoded.encode('raw_unicode_escape').decode('unicode_escape')
+    raw_players = json.loads(decoded)
 
     players = {}
-    for _, row in df.iterrows():
-        # Determine the ID — use explicit id_col or fall back to row name
-        if id_col:
-            player_id = str(row[id_col])
-        else:
-            # soccerdata may place the player ID as the index even after reset
-            # Try the first level of the original multi-index if available
-            player_id = str(row.name) if hasattr(row, 'name') else str(row.iloc[0])
+    for p in raw_players:
+        pid = str(p.get('id', ''))
+        if not pid:
+            continue
 
-        player_name = str(row[name_col]) if name_col and name_col in row.index else ''
-        team_name = str(row[team_col]) if team_col and team_col in row.index else ''
+        # team_title can be a list for mid-season transfers — take the last entry
+        team = p.get('team_title', '')
+        if isinstance(team, list):
+            team = team[-1] if team else ''
 
-        players[player_id] = {
-            'player': player_name,
-            'team': team_name,
-            'xG': _safe_float(row.get('xG', row.get('xg', 0))),
-            'xA': _safe_float(row.get('xA', row.get('xa', 0))),
-            'npxG': _safe_float(row.get('npxG', row.get('npxg', 0))),
-            'npxA': _safe_float(row.get('npxA', row.get('npxa', 0))),
-            'minutes': _safe_int(row.get('minutes', row.get('time', 0))),
+        players[pid] = {
+            'player':  p.get('player_name', ''),
+            'team':    str(team),
+            'xG':      float(p.get('xG',   0) or 0),
+            'xA':      float(p.get('xA',   0) or 0),
+            'npxG':    float(p.get('npxG', 0) or 0),
+            'npxA':    float(p.get('npxA', 0) or 0),
+            'minutes': int(p.get('time',   0) or 0),
         }
 
     _write_cache(players)

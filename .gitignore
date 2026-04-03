@@ -46,3 +46,13 @@ pipeline/cache/
 # Environment
 .env.local
 .env*.local
+
+# Claude Code internal files
+.claude/
+
+# GSD planning files (dev-only)
+.planning/
+
+# Python bytecode
+pipeline/__pycache__/
+*.pyc
