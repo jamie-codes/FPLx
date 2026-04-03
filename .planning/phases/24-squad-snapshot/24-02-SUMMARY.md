@@ -23,7 +23,7 @@ decisions:
 metrics:
   duration: 90s
   completed: "2026-04-02"
-  tasks_completed: 1
+  tasks_completed: 2
   tasks_total: 2
   files_created: 1
   files_modified: 2
@@ -38,6 +38,7 @@ metrics:
 | Task | Name | Commit | Files |
 |------|------|--------|-------|
 | 1 | Create SquadSnapshotRow and wire accordion into TransferPlanTable | b0512e4 | SquadSnapshotRow.tsx (new), TransferPlanTable.tsx, plan-helpers.test.ts |
+| 2 | Verify squad snapshot accordion in browser | — (human-verify) | — |
 
 ## What Was Built
 
@@ -84,9 +85,16 @@ metrics:
 
 None — `SquadSnapshotRow` reads live data from `playerMap` and `positionsAfter` which are populated by the planning engine from Phase 22/24-01. No hardcoded or placeholder data.
 
-## Checkpoint: Awaiting Human Verification (Task 2)
+## Human Verification (Task 2)
 
-Task 2 is a `checkpoint:human-verify` — browser verification of the accordion UI is required before this plan can be marked complete. See checkpoint message for verification steps.
+Task 2 was a `checkpoint:human-verify`. User reviewed the accordion in the browser and approved all success criteria:
+
+- Accordions collapsed by default on page load — PASSED
+- Chevron click expands to show 15 players grouped by GK/DEF/MID/FWD — PASSED
+- Transferred-in player has green IN badge — PASSED
+- Bench players dimmed with bench label — PASSED
+- Bench Boost GW shows all 15 at full opacity — PASSED
+- Dark mode accordion background distinct from table rows — PASSED
 
 ## Self-Check: PASSED
 
