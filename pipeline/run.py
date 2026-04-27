@@ -28,6 +28,66 @@ def _get_source() -> str:
     return 'blob' if os.getenv('USE_BLOB', '').lower() == 'true' else 'local'
 
 
+def _extract_sp_snapshot(merged: list) -> dict:
+    """Extract primary set-piece taker IDs per team from merged players."""
+    snapshot = {}
+    for player in merged:
+        team = str(player['team'])
+        if team not in snapshot:
+            snapshot[team] = {'penalty': None, 'fk': None, 'corner': None}
+        if player.get('penalties_order') == 1:
+            snapshot[team]['penalty'] = player['id']
+        if player.get('direct_freekicks_order') == 1:
+            snapshot[team]['fk'] = player['id']
+        if player.get('corners_and_indirect_freekicks_order') == 1:
+            snapshot[team]['corner'] = player['id']
+    return snapshot
+
+
+def _diff_sp_snapshots(prev: dict, curr: dict, bootstrap: dict) -> dict:
+    """Diff two snapshots and produce set_piece_changes.json content.
+
+    Returns dict matching the SetPieceChanges TypeScript interface:
+    { has_changes, change_count, teams: [{ team_id, team_short_name, penalty_taker, fk_taker, corner_taker }] }
+    """
+    # Build lookup maps
+    teams_by_id = {str(t['id']): t for t in bootstrap.get('teams', [])}
+    players_by_id = {p['id']: p for p in bootstrap.get('elements', [])}
+
+    changes_count = 0
+    teams_list = []
+
+    for team_id_str, curr_roles in sorted(curr.items(), key=lambda x: int(x[0])):
+        prev_roles = prev.get(team_id_str, {})
+        team_info = teams_by_id.get(team_id_str, {})
+
+        def _taker_entry(role_key, curr_id, prev_id):
+            nonlocal changes_count
+            changed = curr_id != prev_id and not (curr_id is None and prev_id is None)
+            if changed:
+                changes_count += 1
+            player = players_by_id.get(curr_id, {}) if curr_id else {}
+            return {
+                'id': curr_id,
+                'name': player.get('web_name', '\u2014'),
+                'changed': changed,
+            }
+
+        teams_list.append({
+            'team_id': int(team_id_str),
+            'team_short_name': team_info.get('short_name', f'T{team_id_str}'),
+            'penalty_taker': _taker_entry('penalty', curr_roles.get('penalty'), prev_roles.get('penalty')),
+            'fk_taker': _taker_entry('fk', curr_roles.get('fk'), prev_roles.get('fk')),
+            'corner_taker': _taker_entry('corner', curr_roles.get('corner'), prev_roles.get('corner')),
+        })
+
+    return {
+        'has_changes': changes_count > 0,
+        'change_count': changes_count,
+        'teams': teams_list,
+    }
+
+
 def run(dry_run: bool = False):
     """Fetch FPL data and write to cache. On failure, write stale last_updated.json."""
     if dry_run:
@@ -85,6 +145,24 @@ def run(dry_run: bool = False):
         # Merge FPL + Understat data (per-90 normalisation, custom FDR, fixtures)
         merged = merge_players(bootstrap, fixtures, understat, id_map, xmins_stats=xmins_stats, summaries=summaries)
         save('merged_players.json', merged)
+
+        # SP-02: Set-piece snapshot diff
+        print("Computing set-piece snapshot diff...")
+        curr_snapshot = _extract_sp_snapshot(merged)
+
+        # Read previous snapshot (first run: empty dict)
+        sp_snapshot_path = os.path.join(cache_dir, 'set_pieces_snapshot.json')
+        prev_snapshot = {}
+        try:
+            with open(sp_snapshot_path, 'r', encoding='utf-8') as f:
+                prev_snapshot = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            pass
+
+        sp_changes = _diff_sp_snapshots(prev_snapshot, curr_snapshot, bootstrap)
+        save('set_piece_changes.json', sp_changes)
+        save('set_pieces_snapshot.json', curr_snapshot)
+        print(f"Set-piece changes: {sp_changes['change_count']} change(s)")
 
         # Compute DefCon stats from element-summary history (Phase 4)
         print("Computing DefCon stats...")

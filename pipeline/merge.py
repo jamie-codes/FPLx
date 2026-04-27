@@ -364,6 +364,9 @@ def merge_players(
             'direct_freekicks_order': element.get('direct_freekicks_order'),
             'penalties_order': element.get('penalties_order'),
             'corners_and_indirect_freekicks_order': element.get('corners_and_indirect_freekicks_order'),
+            'penalties_text': element.get('penalties_text', ''),
+            'direct_freekicks_text': element.get('direct_freekicks_text', ''),
+            'corners_and_indirect_freekicks_text': element.get('corners_and_indirect_freekicks_text', ''),
             'news': element.get('news', ''),
             # Price trend (VAL-03)
             'cost_change_event': element.get('cost_change_event', 0),
