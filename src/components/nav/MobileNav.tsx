@@ -1,14 +1,15 @@
 'use client'
 
-type Tab = 'gems' | 'defcon' | 'squad' | 'club-form' | 'value-gems' | 'planner'
+type Tab = 'gems' | 'defcon' | 'squad' | 'club-form' | 'value-gems' | 'planner' | 'set-pieces'
 
 const TABS = [
-  { id: 'gems',       label: 'Gems' },
-  { id: 'defcon',     label: 'DefCon' },
-  { id: 'squad',      label: 'Squad' },
-  { id: 'club-form',  label: 'Form' },
-  { id: 'value-gems', label: 'Values' },
-  { id: 'planner',    label: 'Plan' },
+  { id: 'gems',        label: 'Gems' },
+  { id: 'defcon',      label: 'DefCon' },
+  { id: 'squad',       label: 'Squad' },
+  { id: 'club-form',   label: 'Form' },
+  { id: 'set-pieces',  label: 'SP' },
+  { id: 'value-gems',  label: 'Values' },
+  { id: 'planner',     label: 'Plan' },
 ] as const satisfies ReadonlyArray<{ id: Tab; label: string }>
 
 interface MobileNavProps {
