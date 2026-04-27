@@ -19,6 +19,7 @@ import type { PositionCode } from '@/lib/types'
 import { columns } from './columns'
 import { PositionFilter } from './PositionFilter'
 import { GwToggle, getColumnVisibility } from './GwToggle'
+import { LandscapeTip } from '@/components/set-pieces/LandscapeTip'
 
 const HIDDEN_COLUMN_LABELS: Record<string, string> = {
   team_short_name: 'Team',
@@ -51,11 +52,19 @@ export function GemTable() {
   const [gwHorizon, setGwHorizon] = useState<1 | 3 | 5>(1)
 
   const [isMobile, setIsMobile] = useState(false)
+  const [isPortrait, setIsPortrait] = useState(false)
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 640)
+    const check = () => {
+      setIsMobile(window.innerWidth < 640)
+      setIsPortrait(window.innerHeight > window.innerWidth)
+    }
     check()
     window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
+    window.addEventListener('orientationchange', check)
+    return () => {
+      window.removeEventListener('resize', check)
+      window.removeEventListener('orientationchange', check)
+    }
   }, [])
 
   const [showBackToTop, setShowBackToTop] = useState(false)
@@ -111,6 +120,7 @@ export function GemTable() {
         <PositionFilter active={activePosition} onChange={handlePositionChange} />
         <GwToggle value={gwHorizon} onChange={setGwHorizon} />
       </div>
+      <LandscapeTip isMobile={isMobile} isPortrait={isPortrait} />
       <p className="text-sm text-gray-500 dark:text-zinc-400 mb-2">
         {table.getRowModel().rows.length} players
       </p>

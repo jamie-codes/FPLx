@@ -14,6 +14,7 @@ import { useDefCon } from '@/lib/hooks/useDefCon'
 import { splitByPosition } from '@/lib/defcon'
 import type { DefConPlayer } from '@/lib/types'
 import { defconColumns } from './columns'
+import { LandscapeTip } from '@/components/set-pieces/LandscapeTip'
 
 function renderTable(table: Table<DefConPlayer>) {
   return (
@@ -68,11 +69,19 @@ export function DefConTables() {
   )
 
   const [isMobile, setIsMobile] = useState(false)
+  const [isPortrait, setIsPortrait] = useState(false)
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 640)
+    const check = () => {
+      setIsMobile(window.innerWidth < 640)
+      setIsPortrait(window.innerHeight > window.innerWidth)
+    }
     check()
     window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
+    window.addEventListener('orientationchange', check)
+    return () => {
+      window.removeEventListener('resize', check)
+      window.removeEventListener('orientationchange', check)
+    }
   }, [])
 
   const columnVisibility: VisibilityState = isMobile
@@ -109,6 +118,7 @@ export function DefConTables() {
 
   return (
     <div className="space-y-8">
+      <LandscapeTip isMobile={isMobile} isPortrait={isPortrait} />
       {/* DEF table - threshold=10 */}
       <section>
         <h2 className="text-lg font-semibold mb-2">
