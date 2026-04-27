@@ -111,6 +111,9 @@ export interface MergedPlayer {
   direct_freekicks_order: number | null
   penalties_order: number | null
   corners_and_indirect_freekicks_order: number | null
+  penalties_text: string
+  direct_freekicks_text: string
+  corners_and_indirect_freekicks_text: string
   news: string
   // Price trend fields (VAL-03)
   cost_change_event: number                 // tenths of GBP 1m, this GW (0 = no change)
@@ -251,4 +254,25 @@ export interface PlanResult {
   readonly originalSteps: PlanStep[]  // frozen at generation time, never mutated
   horizon: PlannerHorizon
   startingGw: number                 // first GW in the plan
+}
+
+// Set-piece changes data (SP-01/SP-02)
+export interface SetPieceTaker {
+  id: number | null
+  name: string
+  changed: boolean
+}
+
+export interface SetPieceTeam {
+  team_id: number
+  team_short_name: string
+  penalty_taker: SetPieceTaker
+  fk_taker: SetPieceTaker
+  corner_taker: SetPieceTaker
+}
+
+export interface SetPieceChanges {
+  has_changes: boolean
+  change_count: number
+  teams: SetPieceTeam[]
 }
