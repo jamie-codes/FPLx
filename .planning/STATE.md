@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Analytics Engine & Intelligence Layer
-status: executing
-stopped_at: Phase 28 executing — Wave 1 complete, Wave 2 pending checkpoint
-last_updated: "2026-04-28T09:10:00.000Z"
-last_activity: 2026-04-28 -- Phase 28 Wave 1 complete (xPts pipeline + types + tests)
+status: active
+stopped_at: ""
+last_updated: "2026-04-28T10:30:00.000Z"
+last_activity: 2026-04-28 -- Phase 28 complete (xPts Engine shipped)
 progress:
   total_phases: 9
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 6
-  completed_plans: 4
-  percent: 67
+  completed_plans: 6
+  percent: 33
 ---
 
 # Project State
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-27 after v1.3)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.4 Analytics Engine & Intelligence Layer — Phase 27 complete, Phase 28 (xPts Engine) next
+**Current focus:** v1.4 Analytics Engine & Intelligence Layer — Phase 28 complete, Phase 29 (Regression Detector) next
 
 ## Current Position
 
-Phase: 28 - xPts Engine (next)
-Status: Ready to execute
-Last activity: 2026-04-28 -- Phase 28 planning complete
+Phase: 29 - Regression Detector (next)
+Status: Ready to plan
+Last activity: 2026-04-28 -- Phase 28 complete (xPts Engine)
 
-Progress: [█░░░░░░░░░] 11% (v1.4: 1/9 phases)
+Progress: [███░░░░░░░] 33% (v1.4: 3/9 phases)
 
 ## Performance Metrics
 

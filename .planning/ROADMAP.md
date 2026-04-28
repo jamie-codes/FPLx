@@ -16,7 +16,7 @@
 
 - [x] **Phase 26: Quick Wins** - Set-piece intelligence UI, mobile landscape tip, and set-piece pipeline fields *(completed 2026-04-27)*
 - [x] **Phase 27: FDR++ Pipeline** - Attacking vs defensive fixture difficulty per team per fixture *(completed 2026-04-28)*
-- [ ] **Phase 28: xPts Engine** - Expected points per player with component breakdown and variance
+- [x] **Phase 28: xPts Engine** - Expected points per player with component breakdown and variance *(completed 2026-04-28)*
 - [ ] **Phase 29: Regression Detector** - Per-match xG/xA pipeline and buy/sell signals from form vs underlying
 - [ ] **Phase 30: Differential Tracker** - Template-trap and differential flags based on ownership vs expected value
 - [ ] **Phase 31: Captaincy Ceiling** - 90th-percentile and EO-adjusted captain recommendations
@@ -79,7 +79,7 @@ Plans:
 **Wave 1**
 - [x] 28-01-PLAN.md — xPts pipeline math (DATA-02) + MergedPlayer type extension + Vitest cache-skip integration tests
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 28-02-PLAN.md — VarianceBadge + XPtsCell + columns swap proj_pts->xPts (XPTS-01, XPTS-02) + GwToggle key map + component tests + human verify
+- [x] 28-02-PLAN.md — VarianceBadge + XPtsCell + columns swap proj_pts->xPts (XPTS-01, XPTS-02) + GwToggle key map + component tests + human verify
 **UI hint**: yes
 
 ### Phase 29: Regression Detector
@@ -153,9 +153,9 @@ Note: Phase 29 (Regression Detector) can run in parallel with Phases 27-28 if de
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 26. Quick Wins | 0/2 | Not started | - |
-| 27. FDR++ Pipeline | 0/2 | Not started | - |
-| 28. xPts Engine | 0/2 | Not started | - |
+| 26. Quick Wins | 2/2 | Complete | 2026-04-27 |
+| 27. FDR++ Pipeline | 2/2 | Complete | 2026-04-28 |
+| 28. xPts Engine | 2/2 | Complete | 2026-04-28 |
 | 29. Regression Detector | 0/TBD | Not started | - |
 | 30. Differential Tracker | 0/TBD | Not started | - |
 | 31. Captaincy Ceiling | 0/TBD | Not started | - |
