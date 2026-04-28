@@ -30,7 +30,11 @@ Give the manager a clear, prioritised view of who to buy and who to sell this we
 - Team target list with player involvement % and green fixture runs
 - Enhanced chip strategy analysis (BB/TC/FH optimal GW finder)
 
-## Current State (v1.4 Analytics Engine — Phase 27 complete 2026-04-28)
+## Current State (v1.4 Analytics Engine — Phase 29 complete 2026-04-28)
+
+Phase 29 complete — Regression Detector shipped: `_compute_regression_signal()` in `pipeline/merge.py` computes buy/sell signals from FPL element-summary xG/xA (last-5-unique-rounds window, 900-min gate, ±0.5 threshold; D-01/D-02: uses FPL StatsBomb data, not Understat); `MergedPlayer` extended with `regression_signal` and `actual_vs_xg_delta` fields; `RegressionSignalBadge` component renders green BUY pill / amber SELL pill / em-dash; Signal column added to GemTable after xPts_5gw with custom sort (BUY-first ascending); hidden on portrait mobile. All 3 Phase 29 requirements (DATA-03, REG-01, REG-02) satisfied.
+
+Phase 28 complete — xPts Engine shipped: Poisson/Bernoulli xPts pipeline (goal, assist, CS, bonus components); `XPtsCell` with component breakdown tooltip; variance/ceiling indicators; xPts_1gw/3gw/5gw columns in GemTable. All 3 Phase 28 requirements (DATA-02, XPTS-01, XPTS-02) satisfied.
 
 Phase 27 complete — FDR++ pipeline and UI shipped: `pipeline/merge.py` now emits `attacking_difficulty` and `defensive_difficulty` per fixture (3-game goals-scored rolling window, non-inverted); `computeClubForm()` mirrors the math and returns 6 ease aggregates per team (`attacking_ease_{1,3,5}gw`, `defensive_ease_{1,3,5}gw`); `FixtureEaseRankingPanel` ranks all 20 PL teams by fixture ease on the Club Form tab with ATT/DEF + 1/3/5 GW pill toggles. All 3 Phase 27 requirements (DATA-01, FIX-01, FIX-02) satisfied. Existing `difficulty_score` untouched.
 
