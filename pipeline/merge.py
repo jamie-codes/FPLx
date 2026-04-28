@@ -412,6 +412,84 @@ def _compute_differential_flag(
     return None
 
 
+def _compute_captain_picks(result: list, gameweek: int | None = None) -> dict:
+    """Pick ceiling and EO-adjusted captain candidates from the merged player list.
+
+    Both picks require status == 'a' (D-04, D-07).
+
+    Ceiling (D-04): the player with the highest ``xPts_90th_1gw`` (which is
+    ``xPts_1gw + 1.28 * _sigma_1gw`` written by the post-loop block).
+
+    EO-adjusted (D-06/D-08): the highest-xPts_90th_1gw player whose
+    ``selected_by_percent`` is below 25.0; if none qualifies, retry at 35.0;
+    if still none, fall back to the ceiling pick (D-08).
+
+    Phase 31 — CAP-03, CAP-04.
+
+    Args:
+        result:    list of merged player dicts (must already have xPts_90th_1gw).
+        gameweek:  optional GW number to embed in the output payload.
+
+    Returns:
+        Dict matching the captain_picks.json schema (D-09).
+    """
+    from datetime import datetime, timezone
+
+    POSITION_MAP = {1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD'}
+
+    eligible = [p for p in result if p.get('status') == 'a']
+
+    def _pick_dict(p: dict, *, eo_threshold: float | None = None) -> dict:
+        d = {
+            'id': p['id'],
+            'name': p.get('web_name', ''),
+            'team': p.get('team_short_name', ''),
+            'position': POSITION_MAP.get(p.get('element_type'), ''),
+            'now_cost': p.get('now_cost', 0),
+            'xPts_1gw': p.get('xPts_1gw', 0.0),
+            'xPts_90th_1gw': p.get('xPts_90th_1gw', 0.0),
+            'selected_by_percent': p.get('selected_by_percent', '0'),
+        }
+        if eo_threshold is not None:
+            d['eo_threshold_used'] = eo_threshold
+        return d
+
+    if not eligible:
+        return {
+            'generated_at': datetime.now(timezone.utc).isoformat(),
+            'gameweek': gameweek,
+            'ceiling': None,
+            'eo_adjusted': None,
+        }
+
+    ceiling = max(eligible, key=lambda p: p.get('xPts_90th_1gw', 0.0))
+
+    eo = None
+    threshold_used: float | None = None
+    for threshold in (25.0, 35.0):
+        candidates = [
+            p for p in eligible
+            if _safe_float(p.get('selected_by_percent'), 0.0) < threshold
+        ]
+        if candidates:
+            eo = max(candidates, key=lambda p: p.get('xPts_90th_1gw', 0.0))
+            threshold_used = threshold
+            break
+
+    if eo is None:
+        # D-08 final fallback: EO pick = ceiling pick (no threshold annotation).
+        eo_dict = _pick_dict(ceiling)
+    else:
+        eo_dict = _pick_dict(eo, eo_threshold=threshold_used)
+
+    return {
+        'generated_at': datetime.now(timezone.utc).isoformat(),
+        'gameweek': gameweek,
+        'ceiling': _pick_dict(ceiling),
+        'eo_adjusted': eo_dict,
+    }
+
+
 def merge_players(
     bootstrap: dict,
     fixtures: list,
@@ -419,7 +497,7 @@ def merge_players(
     id_map: dict,
     xmins_stats: dict | None = None,
     summaries: dict | None = None,
-) -> list:
+) -> tuple[list, dict]:
     """Merge FPL bootstrap + Understat xG/xA into a unified player list.
 
     Args:
@@ -839,10 +917,23 @@ def merge_players(
         for p in result:
             p[ceiling_key] = bool(p[sigma_key] >= threshold) if n >= 3 else False
 
+    # ---- Captain picks per GW (Phase 31 CAP-03, CAP-04) ----
+    # D-11: write xPts_90th_1gw per player into merged_players.json
+    # so future GemTable sort/filter can use it (Phase 32+).
+    # Z=1.28 is the 90th-percentile z-score (standard normal approximation
+    # of the Poisson xPts variance from Phase 28 _compute_xpts_sigma).
+    for p in result:
+        p['xPts_90th_1gw'] = round(
+            (p.get('xPts_1gw') or 0.0) + 1.28 * (p.get('_sigma_1gw') or 0.0), 3
+        )
+
+    # D-04, D-06, D-08: pick ceiling + EO-adjusted captains for this GW.
+    captain_picks_payload = _compute_captain_picks(result, gameweek=current_gw)
+
     # Strip scratch sigma fields — only the boolean ceiling flags ship in JSON.
     for p in result:
         del p['_sigma_1gw']
         del p['_sigma_3gw']
         del p['_sigma_5gw']
 
-    return result
+    return result, captain_picks_payload

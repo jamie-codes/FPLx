@@ -143,8 +143,10 @@ def run(dry_run: bool = False):
         print(f"xmins stats: {len(xmins_stats)} players")
 
         # Merge FPL + Understat data (per-90 normalisation, custom FDR, fixtures)
-        merged = merge_players(bootstrap, fixtures, understat, id_map, xmins_stats=xmins_stats, summaries=summaries)
+        # Phase 31: merge_players now returns a tuple — (player list, captain picks dict).
+        merged, captain_picks = merge_players(bootstrap, fixtures, understat, id_map, xmins_stats=xmins_stats, summaries=summaries)
         save('merged_players.json', merged)
+        save('captain_picks.json', captain_picks)  # Phase 31 CAP-03/CAP-04
 
         # SP-02: Set-piece snapshot diff
         print("Computing set-piece snapshot diff...")
