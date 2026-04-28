@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Analytics Engine & Intelligence Layer
 status: active
-stopped_at: "Phase 29 planned — ready to execute"
-last_updated: "2026-04-28T12:00:00.000Z"
-last_activity: 2026-04-28 -- Phase 29 planned (Regression Detector, 2 plans)
+stopped_at: "Phase 29 Plan 01 complete — Wave 1 pipeline + types done; Wave 2 UI next"
+last_updated: "2026-04-28T11:27:00.000Z"
+last_activity: 2026-04-28 -- Phase 29 Plan 01 executed (_compute_regression_signal + MergedPlayer fields)
 progress:
   total_phases: 9
   completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
-  percent: 33
+  total_plans: 8
+  completed_plans: 8
+  percent: 89
 ---
 
 # Project State
@@ -26,8 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-27 after v1.3)
 ## Current Position
 
 Phase: 29 - Regression Detector
-Status: Ready to execute — 2 plans created
-Last activity: 2026-04-28 -- Phase 29 planned (2 plans, 2 waves)
+Current Plan: 2 of 2 (29-02-PLAN.md next)
+Status: Plan 01 complete — Wave 1 pipeline + types shipped; Wave 2 UI ready to execute
+Last activity: 2026-04-28 -- 29-01 executed: _compute_regression_signal(), MergedPlayer fields, Wave 0 test stubs
 
 Progress: [███░░░░░░░] 33% (v1.4: 3/9 phases)
 
@@ -90,12 +91,12 @@ None yet.
 ### Blockers/Concerns
 
 - [Research]: xPts double-counting risk -- CS points and DefCon bonus are correlated; must use joint defensive-points model in Phase 28
-- [Research]: Per-match Understat xG/xA fetch is a pipeline gap -- verify soccerdata supports per-match data during Phase 29 planning
+- [RESOLVED Phase 29]: Per-match Understat xG/xA fetch -- FPL element-summary already provides expected_goals/expected_assists per match; soccerdata not needed
 - [Research]: Free Hit optimal squad construction approach (greedy vs solver) needs design research during Phase 34 planning
 - [Research]: merged_players.json size -- currently ~300KB; monitor that v1.4 field additions keep gzipped transfer under 100KB
 
 ## Session Continuity
 
-Last session: 2026-04-27
-Stopped at: Roadmap created for v1.4 milestone
+Last session: 2026-04-28
+Stopped at: Completed 29-01-PLAN.md (Wave 1 pipeline + types)
 Resume file: None

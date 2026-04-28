@@ -94,7 +94,7 @@ Plans:
 Plans:
 
 **Wave 1**
-- [ ] 29-01-PLAN.md — Wave 0 test stubs + _compute_regression_signal() in merge.py (DATA-03) + MergedPlayer type extension (REG-01, REG-02)
+- [x] 29-01-PLAN.md — Wave 0 test stubs + _compute_regression_signal() in merge.py (DATA-03) + MergedPlayer type extension (REG-01, REG-02)
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 29-02-PLAN.md — RegressionSignalBadge + Signal column in columns.tsx (REG-01, REG-02) + GwToggle/GemTable visibility + component tests + human verify
 **Cross-cutting constraints:**
@@ -167,7 +167,7 @@ Note: Phase 29 (Regression Detector) can run in parallel with Phases 27-28 if de
 | 26. Quick Wins | 2/2 | Complete | 2026-04-27 |
 | 27. FDR++ Pipeline | 2/2 | Complete | 2026-04-28 |
 | 28. xPts Engine | 2/2 | Complete | 2026-04-28 |
-| 29. Regression Detector | 0/2 | Ready to execute | - |
+| 29. Regression Detector | 1/2 | Wave 1 complete | - |
 | 30. Differential Tracker | 0/TBD | Not started | - |
 | 31. Captaincy Ceiling | 0/TBD | Not started | - |
 | 32. Team Target List | 0/TBD | Not started | - |
