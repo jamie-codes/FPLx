@@ -21,7 +21,7 @@
 - [x] **Phase 30: Differential Tracker** - Template-trap and differential flags based on ownership vs expected value *(completed 2026-04-28)*
 - [x] **Phase 31: Captaincy Ceiling** - 90th-percentile and EO-adjusted captain recommendations *(completed 2026-04-28)*
 - [x] **Phase 32: Team Target List** - Teams with green fixture runs and top players ranked by xGI involvement *(completed 2026-04-28)*
-- [ ] **Phase 33: Insights Tab** - Data-driven pattern statements with confidence weights
+- [x] **Phase 33: Insights Tab** - Data-driven pattern statements with confidence weights *(completed 2026-04-28)*
 - [ ] **Phase 34: Chip Strategy** - Optimal GW finder for Bench Boost, Triple Captain, and Free Hit
 
 ## Phase Details
@@ -178,9 +178,9 @@ Plans:
 Plans:
 
 **Wave 1**
-- [ ] 33-01-PLAN.md — Wave 0 test stub + pipeline insights.py module (4 category helpers, sample-floor + triviality gates) + run.py wiring + insights.json seed (INS-02, INS-03, INS-04 data layer)
+- [x] 33-01-PLAN.md — Wave 0 test stub + pipeline insights.py module (4 category helpers, sample-floor + triviality gates) + run.py wiring + insights.json seed (INS-02, INS-03, INS-04 data layer)
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 33-02-PLAN.md — Insight type + /api/insights route + useInsights hook + InsightsTab component (4 category sections, tier badge, tooltip) + page.tsx + MobileNav wiring + component tests + human verify (INS-01, INS-02, INS-03, INS-04)
+- [x] 33-02-PLAN.md — Insight type + /api/insights route + useInsights hook + InsightsTab component (4 category sections, tier badge, tooltip) + page.tsx + MobileNav wiring + component tests + human verify (INS-01, INS-02, INS-03, INS-04)
 **Cross-cutting constraints:**
 - Tab union type duplicated in src/app/page.tsx and src/components/nav/MobileNav.tsx — must be updated atomically (RESEARCH Pitfall 3)
 - insights.json seeded as [] in Plan 01 so /api/insights cannot 500 on a fresh checkout
@@ -195,7 +195,19 @@ Plans:
   1. User can see the optimal upcoming GW for Bench Boost based on projected squad xPts across the bench
   2. User can see the optimal upcoming GW for Triple Captain based on player xPts ceiling and fixture ease
   3. User can see the optimal upcoming GW for Free Hit based on upcoming fixture landscape and squad flexibility
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+
+**Wave 1**
+- [ ] 34-01-PLAN.md — chip-strategy-engine pure scorers (BB/TC/FH + greedy 15-player squad with formation rules) + useChipHistory hook with numeric teamId guard (T-34-01) + Wave 0 test stubs
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 34-02-PLAN.md — ChipStrategyPanel UI (panel + 3 chip rows + 5-cell ease bar + FH expand-on-click squad table) + PlannerTab mount + component tests + human verify (CHIP-01, CHIP-02, CHIP-03)
+**Cross-cutting constraints:**
+- All Tailwind classes and copy strings in ChipStrategyPanel.tsx are LOCKED by 34-UI-SPEC.md — no chevron icon library, no accordion, no per-row hue accents
+- Ease polarity is `ease = 1 - attacking_difficulty` (RESEARCH Pitfall 1) — applied at the engine boundary, never at the JSX boundary
+- BGW (no fixture for target GW) yields BGW_NEUTRAL_EASE = 0.5 in BB/TC and 0× weighted xPts in FH; documented in chip-strategy-engine.ts (RESEARCH Pitfall 2)
+- FH greedy enforces formation (2 GK / 3-5 DEF / 2-5 MID / 1-3 FWD), team cap (max 3 per FPL team), and budget = bankBalance + sum(sellPrices ?? now_cost) over current squad (RESEARCH Pitfalls 4-5)
+- Used chips remain visible (D-13) — opacity-40 + "Used GW{N}" label, never hidden
 **UI hint**: yes
 
 ## Progress
@@ -214,5 +226,5 @@ Note: Phase 29 (Regression Detector) can run in parallel with Phases 27-28 if de
 | 30. Differential Tracker | 2/2 | Complete | 2026-04-28 |
 | 31. Captaincy Ceiling | 0/2 | Planned | - |
 | 32. Team Target List | 2/2 | Complete | 2026-04-28 |
-| 33. Insights Tab | 0/TBD | Not started | - |
-| 34. Chip Strategy | 0/TBD | Not started | - |
+| 33. Insights Tab | 2/2 | Complete | 2026-04-28 |
+| 34. Chip Strategy | 0/2 | Planned | - |
