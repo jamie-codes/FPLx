@@ -151,3 +151,20 @@ No new threat surface beyond what was documented in the plan's threat model (T-3
 ---
 *Phase: 33-insights-tab*
 *Completed: 2026-04-28 (Tasks 1-5; Task 6 checkpoint pending)*
+
+## Self-Check: PASSED
+
+Files exist:
+- `src/lib/types.ts` FOUND
+- `src/app/api/insights/route.ts` FOUND
+- `src/lib/hooks/useInsights.ts` FOUND
+- `src/components/insights/InsightsTab.tsx` FOUND
+- `src/components/insights/InsightsTab.test.tsx` FOUND
+- `.planning/phases/33-insights-tab/33-02-SUMMARY.md` FOUND
+
+Commits exist:
+- `7ac3d89` FOUND (Task 1: Insight interface)
+- `7ce7c46` FOUND (Task 2: route + hook)
+- `9287594` FOUND (Task 3: page.tsx + MobileNav.tsx)
+- `8d92c18` FOUND (Task 4: InsightsTab.tsx)
+- `f09a730` FOUND (Task 5: component tests)
