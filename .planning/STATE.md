@@ -2,16 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Analytics Engine & Intelligence Layer
-status: active
-stopped_at: "Phase 29 Plan 01 complete — Wave 1 pipeline + types done; Wave 2 UI next"
-last_updated: "2026-04-28T11:27:00.000Z"
-last_activity: 2026-04-28 -- Phase 29 Plan 01 executed (_compute_regression_signal + MergedPlayer fields)
+current_plan: 2 of 2 (29-02-PLAN.md next)
+status: completed
+stopped_at: "Completed 29-02-PLAN.md (Signal column UI + badge; human-verify pending)"
+last_updated: "2026-04-28T10:30:50.835Z"
+last_activity: "2026-04-28 -- 29-02 executed: RegressionSignalBadge, Signal column, mobile visibility, 271 tests green"
 progress:
   total_phases: 9
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 8
   completed_plans: 8
-  percent: 89
+  percent: 100
 ---
 
 # Project State
@@ -26,11 +27,11 @@ See: .planning/PROJECT.md (updated 2026-04-27 after v1.3)
 ## Current Position
 
 Phase: 29 - Regression Detector
-Current Plan: 2 of 2 (29-02-PLAN.md next)
-Status: Plan 01 complete — Wave 1 pipeline + types shipped; Wave 2 UI ready to execute
-Last activity: 2026-04-28 -- 29-01 executed: _compute_regression_signal(), MergedPlayer fields, Wave 0 test stubs
+Current Plan: 2 of 2 (29-02-PLAN.md complete — human-verify pending)
+Status: Plan 02 automated tasks done — human checkpoint awaiting visual verification
+Last activity: 2026-04-28 -- 29-02 executed: RegressionSignalBadge, Signal column in GemTable, 271 tests green
 
-Progress: [███░░░░░░░] 33% (v1.4: 3/9 phases)
+Progress: [██████████] 100% (v1.4: 4/9 phases)
 
 ## Performance Metrics
 
@@ -97,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-28
+Last session: 2026-04-28T10:30:50.832Z
 Stopped at: Completed 29-01-PLAN.md (Wave 1 pipeline + types)
 Resume file: None

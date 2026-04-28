@@ -17,7 +17,7 @@
 - [x] **Phase 26: Quick Wins** - Set-piece intelligence UI, mobile landscape tip, and set-piece pipeline fields *(completed 2026-04-27)*
 - [x] **Phase 27: FDR++ Pipeline** - Attacking vs defensive fixture difficulty per team per fixture *(completed 2026-04-28)*
 - [x] **Phase 28: xPts Engine** - Expected points per player with component breakdown and variance *(completed 2026-04-28)*
-- [ ] **Phase 29: Regression Detector** - Per-match xG/xA pipeline and buy/sell signals from form vs underlying
+- [x] **Phase 29: Regression Detector** - Per-match xG/xA pipeline and buy/sell signals from form vs underlying (completed 2026-04-28)
 - [ ] **Phase 30: Differential Tracker** - Template-trap and differential flags based on ownership vs expected value
 - [ ] **Phase 31: Captaincy Ceiling** - 90th-percentile and EO-adjusted captain recommendations
 - [ ] **Phase 32: Team Target List** - Teams with green fixture runs and top players ranked by xGI involvement
@@ -96,7 +96,7 @@ Plans:
 **Wave 1**
 - [x] 29-01-PLAN.md — Wave 0 test stubs + _compute_regression_signal() in merge.py (DATA-03) + MergedPlayer type extension (REG-01, REG-02)
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 29-02-PLAN.md — RegressionSignalBadge + Signal column in columns.tsx (REG-01, REG-02) + GwToggle/GemTable visibility + component tests + human verify
+- [x] 29-02-PLAN.md — RegressionSignalBadge + Signal column in columns.tsx (REG-01, REG-02) + GwToggle/GemTable visibility + component tests + human verify
 **Cross-cutting constraints:**
 - D-01/D-02 from CONTEXT.md superseded: FPL element-summary expected_goals/expected_assists used instead of soccerdata; no understat_per_match.json cache needed
 - Signal computation is pure Python in merge.py using existing summaries dict -- zero new HTTP calls, zero new pip dependencies
@@ -167,7 +167,7 @@ Note: Phase 29 (Regression Detector) can run in parallel with Phases 27-28 if de
 | 26. Quick Wins | 2/2 | Complete | 2026-04-27 |
 | 27. FDR++ Pipeline | 2/2 | Complete | 2026-04-28 |
 | 28. xPts Engine | 2/2 | Complete | 2026-04-28 |
-| 29. Regression Detector | 1/2 | Wave 1 complete | - |
+| 29. Regression Detector | 2/2 | Complete   | 2026-04-28 |
 | 30. Differential Tracker | 0/TBD | Not started | - |
 | 31. Captaincy Ceiling | 0/TBD | Not started | - |
 | 32. Team Target List | 0/TBD | Not started | - |
