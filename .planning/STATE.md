@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Analytics Engine & Intelligence Layer
 status: executing
-stopped_at: Phase 31 executing — Wave 1 (plan 31-01) in progress
-last_updated: "2026-04-28T15:30:00.000Z"
-last_activity: 2026-04-28 -- Phase 31 (Captaincy Ceiling) execution started
+stopped_at: Phase 31 complete — Phase 32 (Team Target List) is next
+last_updated: "2026-04-28T16:05:00.000Z"
+last_activity: 2026-04-28 -- Phase 31 (Captaincy Ceiling) complete — CAP-03 and CAP-04 delivered
 progress:
   total_phases: 9
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 14
-  completed_plans: 10
-  percent: 56
+  completed_plans: 12
+  percent: 67
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-27 after v1.3)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.4 Analytics Engine & Intelligence Layer — Phase 29 complete, Phase 30 (Differential Tracker) up next
+**Current focus:** v1.4 Analytics Engine & Intelligence Layer — Phase 31 complete, Phase 32 (Team Target List) up next
 
 ## Current Position
 
-Phase: 31 - Captaincy Ceiling
-Status: Executing — Wave 1 active (plan 31-01)
-Last activity: 2026-04-28 -- Phase 31 execution started (2 plans in 2 waves)
+Phase: 32 - Team Target List
+Status: Ready to plan
+Last activity: 2026-04-28 -- Phase 31 (Captaincy Ceiling) complete; Phase 32 is next
 
 Progress: [█████░░░░░] 56% (v1.4: 5/9 phases)
 

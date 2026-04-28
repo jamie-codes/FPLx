@@ -19,7 +19,7 @@
 - [x] **Phase 28: xPts Engine** - Expected points per player with component breakdown and variance *(completed 2026-04-28)*
 - [x] **Phase 29: Regression Detector** - Per-match xG/xA pipeline and buy/sell signals from form vs underlying (completed 2026-04-28)
 - [x] **Phase 30: Differential Tracker** - Template-trap and differential flags based on ownership vs expected value *(completed 2026-04-28)*
-- [ ] **Phase 31: Captaincy Ceiling** - 90th-percentile and EO-adjusted captain recommendations
+- [x] **Phase 31: Captaincy Ceiling** - 90th-percentile and EO-adjusted captain recommendations *(completed 2026-04-28)*
 - [ ] **Phase 32: Team Target List** - Teams with green fixture runs and top players ranked by xGI involvement
 - [ ] **Phase 33: Insights Tab** - Data-driven pattern statements with confidence weights
 - [ ] **Phase 34: Chip Strategy** - Optimal GW finder for Bench Boost, Triple Captain, and Free Hit
@@ -136,7 +136,7 @@ Plans:
 **Wave 1**
 - [x] 31-01-PLAN.md — Wave 0 test stubs + _compute_captain_picks() helper in merge.py + xPts_90th_1gw per player + run.py tuple unpack + captain_picks.json write (CAP-03, CAP-04) *(completed 2026-04-28)*
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 31-02-PLAN.md — types + /api/captain-picks route + useCaptainPicks hook + CaptainPicksPanel component + page.tsx mount + component tests + human verify (CAP-03, CAP-04)
+- [x] 31-02-PLAN.md — types + /api/captain-picks route + useCaptainPicks hook + CaptainPicksPanel component + page.tsx mount + component tests + human verify (CAP-03, CAP-04) *(completed 2026-04-28)*
 **Cross-cutting constraints:**
 - Captain picks block in pipeline/merge.py MUST run between the xPts ceiling tercile block (line ~840) and the sigma strip (line ~842) — _sigma_1gw is deleted at line 844
 - merge_players() return signature changes to tuple[list, dict] — single call site in run.py (verified)
