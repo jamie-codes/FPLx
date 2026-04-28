@@ -383,6 +383,35 @@ def _compute_regression_signal(
         return None, delta
 
 
+def _compute_differential_flag(
+    xpts_1gw: float,
+    selected_by_percent: str,
+    status: str,
+    position_median: float,
+) -> str | None:
+    """Classify a player as 'diff', 'trap', or None (Phase 30 TMPL-01, TMPL-02).
+
+    DIFF gate (D-03): xpts_1gw > position_median AND ownership < 5.0 AND status == 'a'.
+    TRAP gate (D-04): xpts_1gw < position_median AND ownership > 15.0.
+                      Status exclusion does NOT apply to TRAP (D-12: an injured
+                      template player is still a sell-trap signal).
+
+    D-12 asymmetry: injury/suspension excludes from DIFF only — a 3%-owned injured
+    player is not a buy. The same player below median xPts and >15% owned IS a TRAP.
+
+    Returns:
+        'diff' | 'trap' | None
+    """
+    ownership = _safe_float(selected_by_percent, 0.0)
+    above_median = xpts_1gw > position_median
+
+    if above_median and ownership < 5.0 and status == 'a':
+        return 'diff'
+    if not above_median and ownership > 15.0:
+        return 'trap'
+    return None
+
+
 def merge_players(
     bootstrap: dict,
     fixtures: list,
@@ -769,6 +798,28 @@ def merge_players(
         )
 
         result.append(player)
+
+    # ---- Differential flag (Phase 30 TMPL-01, TMPL-02) ----
+    # D-01: position-relative median across all players in result.
+    # D-05: pre-classify in pipeline; UI reads pre-computed flag (no client-side median).
+    # D-12: status='a' gate is enforced inside _compute_differential_flag for DIFF only.
+    from statistics import median
+    pos_xpts: dict[int, list[float]] = {1: [], 2: [], 3: [], 4: []}
+    for p in result:
+        pos_xpts[p['element_type']].append(p.get('xPts_1gw') or 0.0)
+    pos_median: dict[int, float] = {
+        et: median(vals) if vals else 0.0
+        for et, vals in pos_xpts.items()
+    }
+    for p in result:
+        flag = _compute_differential_flag(
+            p.get('xPts_1gw') or 0.0,
+            p.get('selected_by_percent', '0'),
+            p.get('status', ''),
+            pos_median[p['element_type']],
+        )
+        if flag is not None:
+            p['differential_flag'] = flag
 
     # ---- xPts ceiling classification (Phase 28 XPTS-02 D-09) ----
     # Top-tercile sigma per GW window -> high-ceiling boolean.
