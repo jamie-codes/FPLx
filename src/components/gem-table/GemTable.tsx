@@ -37,6 +37,7 @@ const HIDDEN_COLUMN_LABELS: Record<string, string> = {
   status: 'Status',
   trend: 'Price Trend',
   fixtures: 'Next 5',
+  signal: 'Signal',
 }
 
 export function GemTable() {

@@ -16,6 +16,7 @@ export const MOBILE_HIDDEN_COLUMNS: Record<string, boolean> = {
   status: false,
   trend: false,
   fixtures: false,
+  signal: false,
 }
 
 export function getColumnVisibility(horizon: 1 | 3 | 5, isMobile = false): Record<string, boolean> {

@@ -3,6 +3,7 @@ import type { ScoredPlayer } from '@/lib/types'
 import { FixtureBadges } from '@/components/fixtures/FixtureBadges'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
 import { VarianceBadge } from '@/components/gem-table/VarianceBadge'
+import { RegressionSignalBadge } from '@/components/gem-table/RegressionSignalBadge'
 
 const col = createColumnHelper<ScoredPlayer>()
 
@@ -155,6 +156,22 @@ export const columns = [
       />
     ),
     enableSorting: true,
+  }),
+  col.accessor('regression_signal', {
+    header: H('Signal', 'Regression signal: BUY = underperforming xG+xA over last 5 GW; SELL = overperforming. Min 900 min played. Sort ascending for buy candidates.'),
+    cell: (info) => (
+      <RegressionSignalBadge
+        signal={info.getValue()}
+        delta={info.row.original.actual_vs_xg_delta}
+      />
+    ),
+    enableSorting: true,
+    sortingFn: (rowA, rowB) => {
+      const order: Record<string, number> = { sell: 2, buy: 0 }
+      const a = order[rowA.original.regression_signal ?? ''] ?? 1
+      const b = order[rowB.original.regression_signal ?? ''] ?? 1
+      return a - b
+    },
   }),
   col.display({
     id: 'trend',
