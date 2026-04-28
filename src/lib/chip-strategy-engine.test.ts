@@ -37,20 +37,18 @@ function makeClubForm(team_id: number, fixtures: ClubFormFixture[]): ClubForm {
 
 function makePlayer(overrides: Partial<ScoredPlayer> & { id: number; element_type: 1|2|3|4; team: number }): ScoredPlayer {
   // Cast — only fields used by the engine matter; the test fixture is a partial.
-  return {
+  const base: ScoredPlayer = {
     id: overrides.id,
-    web_name: overrides.web_name ?? `P${overrides.id}`,
+    web_name: `P${overrides.id}`,
     element_type: overrides.element_type,
     team: overrides.team,
-    now_cost: overrides.now_cost ?? 50,
-    status: overrides.status ?? 'a',
-    xPts_1gw: overrides.xPts_1gw ?? 5.0,
-    xPts_90th_1gw: overrides.xPts_90th_1gw,
-    proj_pts_1gw: overrides.proj_pts_1gw ?? 4.0,
-    mins_risk: overrides.mins_risk ?? 'starter',
-    // Required MergedPlayer fields
     team_short_name: `T${overrides.team}`,
-    now_cost: overrides.now_cost ?? 50,
+    now_cost: 50,
+    status: 'a',
+    xPts_1gw: 5.0,
+    xPts_90th_1gw: undefined,
+    proj_pts_1gw: 4.0,
+    mins_risk: 'nailed',
     selected_by_percent: '5.0',
     form: '5.0',
     minutes: 900,
@@ -84,7 +82,6 @@ function makePlayer(overrides: Partial<ScoredPlayer> & { id: number; element_typ
     proj_pts_5gw: 25.0,
     xmins: 90,
     start_prob: 1.0,
-    // ScoredPlayer fields
     gem_score: 0.5,
     fdr_score: 0.5,
     form_score: 0.5,
@@ -93,8 +90,8 @@ function makePlayer(overrides: Partial<ScoredPlayer> & { id: number; element_typ
     ownership_score: 0.5,
     minutes_score: 0.5,
     set_piece_score: 0.0,
-    ...overrides,
-  } as ScoredPlayer
+  }
+  return { ...base, ...overrides }
 }
 
 function makeBenchPick(element: number, position: 12|13|14|15): SquadPick {
