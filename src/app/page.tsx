@@ -12,6 +12,7 @@ import { ValueGemsTable } from '@/components/value-gems/ValueGemsTable'
 import { MobileNav } from '@/components/nav/MobileNav'
 import { PlannerTab } from '@/components/planner/PlannerTab'
 import { SetPieceTakerPanel } from '@/components/set-pieces/SetPieceTakerPanel'
+import { CaptainPicksPanel } from '@/components/captaincy/CaptainPicksPanel'
 
 type Tab = 'gems' | 'defcon' | 'squad' | 'club-form' | 'value-gems' | 'planner' | 'set-pieces'
 
@@ -104,7 +105,12 @@ export default function Home() {
         </div>
 
         {/* Tab content */}
-        {activeTab === 'gems' && <GemTable />}
+        {activeTab === 'gems' && (
+          <>
+            <GemTable />
+            <CaptainPicksPanel />
+          </>
+        )}
         {activeTab === 'defcon' && <DefConTables />}
         {activeTab === 'squad' && <TransferPanel />}
         {activeTab === 'club-form' && (
