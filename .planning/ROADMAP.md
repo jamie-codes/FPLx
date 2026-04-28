@@ -114,7 +114,7 @@ Plans:
 Plans:
 
 **Wave 1**
-- [ ] 30-01-PLAN.md — Wave 0 test stubs + _compute_differential_flag() in merge.py + position-relative median pass + MergedPlayer type extension (TMPL-01, TMPL-02)
+- [x] 30-01-PLAN.md — Wave 0 test stubs + _compute_differential_flag() in merge.py + position-relative median pass + MergedPlayer type extension (TMPL-01, TMPL-02) *(complete 2026-04-28)*
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 30-02-PLAN.md — DifferentialBadge + Diff column in columns.tsx (TMPL-01, TMPL-02) + GwToggle/GemTable visibility + component tests + human verify
 **Cross-cutting constraints:**
