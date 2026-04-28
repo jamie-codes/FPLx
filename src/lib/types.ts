@@ -151,6 +151,13 @@ export interface MergedPlayer {
     cs_pts: number
     bonus_pts: number
   } | null
+  // Regression signal (Phase 29 DATA-03, REG-01, REG-02).
+  // Optional — absent when signal cannot be computed (player has <900 min in 5-GW window,
+  // no history, or pipeline fetch failed per D-03 graceful fallback).
+  // D-01/D-02 deviation: computed from FPL element-summary expected_goals/expected_assists,
+  // not soccerdata/understat_per_match.json (see 29-RESEARCH.md Critical Finding).
+  regression_signal?: 'buy' | 'sell' | null
+  actual_vs_xg_delta?: number | null
 }
 
 // DefCon per-player stats (Phase 4) — populated from pipeline/cache/defcon_stats.json
