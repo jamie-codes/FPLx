@@ -73,7 +73,13 @@ Plans:
   1. Pipeline computes xPts per player per upcoming GW with goal, assist, clean sheet, and bonus components using Poisson/Bernoulli distributions
   2. User can see per-player xPts with component breakdown in GemTable
   3. User can see an xPts variance indicator distinguishing high-ceiling players from consistent scorers
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+
+**Wave 1**
+- [x] 28-01-PLAN.md — xPts pipeline math (DATA-02) + MergedPlayer type extension + Vitest cache-skip integration tests
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 28-02-PLAN.md — VarianceBadge + XPtsCell + columns swap proj_pts->xPts (XPTS-01, XPTS-02) + GwToggle key map + component tests + human verify
 **UI hint**: yes
 
 ### Phase 29: Regression Detector
@@ -149,7 +155,7 @@ Note: Phase 29 (Regression Detector) can run in parallel with Phases 27-28 if de
 |-------|----------------|--------|-----------|
 | 26. Quick Wins | 0/2 | Not started | - |
 | 27. FDR++ Pipeline | 0/2 | Not started | - |
-| 28. xPts Engine | 0/TBD | Not started | - |
+| 28. xPts Engine | 0/2 | Not started | - |
 | 29. Regression Detector | 0/TBD | Not started | - |
 | 30. Differential Tracker | 0/TBD | Not started | - |
 | 31. Captaincy Ceiling | 0/TBD | Not started | - |

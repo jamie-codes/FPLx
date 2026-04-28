@@ -596,7 +596,7 @@ col.accessor('xPts_5gw', {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **CS probability calibration against real data**
    - What we know: linear formula `max(0.10, 0.40 - attacking_difficulty × 0.30)` gives ~25% mean CS rate with a typical attacking_difficulty distribution
