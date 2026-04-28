@@ -163,6 +163,9 @@ export interface MergedPlayer {
   // 'diff': above-median xPts_1gw for position, ownership < 5%, status === 'a' (D-03).
   // 'trap': below-median xPts_1gw for position, ownership > 15% (D-04 — status-agnostic per D-12).
   differential_flag?: 'diff' | 'trap' | null
+  // Captaincy ceiling (Phase 31 CAP-03 D-11). 90th-percentile xPts (xPts_1gw + 1.28*sigma_1gw)
+  // computed in pipeline; persisted per-player to enable future GemTable sort.
+  xPts_90th_1gw?: number
 }
 
 // DefCon per-player stats (Phase 4) — populated from pipeline/cache/defcon_stats.json
@@ -314,4 +317,24 @@ export interface SetPieceChanges {
   has_changes: boolean
   change_count: number
   teams: SetPieceTeam[]
+}
+
+// Captain picks data (Phase 31 CAP-03/CAP-04 — pipeline writes pipeline/cache/captain_picks.json)
+export interface CaptainPick {
+  id: number
+  name: string
+  team: string                 // team_short_name (e.g. "ARS")
+  position: string             // GK | DEF | MID | FWD
+  now_cost: number             // tenths of £m (91 = £9.1m)
+  xPts_1gw: number
+  xPts_90th_1gw: number        // xPts_1gw + 1.28 * sigma_1gw (D-05)
+  selected_by_percent: string  // FPL returns string ("12.4")
+  eo_threshold_used?: number   // present only on eo_adjusted when a threshold (25.0 or 35.0) succeeded
+}
+
+export interface CaptainPicks {
+  generated_at: string
+  gameweek: number | null
+  ceiling: CaptainPick | null
+  eo_adjusted: CaptainPick | null
 }
