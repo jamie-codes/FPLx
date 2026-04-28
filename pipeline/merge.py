@@ -748,7 +748,9 @@ def merge_players(
             reg_signal, reg_delta = _compute_regression_signal(
                 summaries[fpl_id].get('history', [])
             )
-            if reg_signal is not None or reg_delta is not None:
+            # Only write to player dict when a directional signal fired.
+            # Neutral-zone (signal=None, delta in [-0.5, 0.5]) must produce absent fields per D-03.
+            if reg_signal is not None:
                 player['regression_signal'] = reg_signal
                 player['actual_vs_xg_delta'] = reg_delta
 
