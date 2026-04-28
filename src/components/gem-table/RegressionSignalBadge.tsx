@@ -1,3 +1,5 @@
+'use client'
+
 // Phase 29 REG-01, REG-02 — regression signal badge component.
 // Visual envelope matches VarianceBadge.tsx and MinsRiskBadge.tsx (text-xs font-normal rounded px-2 py-1).
 // BUY = green pill, SELL = amber pill, null/undefined = em-dash.
