@@ -14,6 +14,12 @@ export async function GET() {
         return Response.json({ error: 'Insights not available' }, { status: 404 })
       }
       const res = await fetch(blobs[0].url)
+      if (!res.ok) {
+        return Response.json(
+          { error: `Blob fetch failed: ${res.status}` },
+          { status: 502 }
+        )
+      }
       data = await res.text()
     } else {
       const cachePath = join(process.cwd(), 'pipeline', 'cache', 'insights.json')
