@@ -144,26 +144,49 @@ def _proj_pts_ngw(
     return round(total, 2)
 
 
+def _cs_prob(defensive_difficulty: float, xmins: float) -> float:
+    """Compute effective CS probability for a fixture (Phase 28 CR-01, WR-01).
+
+    defensive_difficulty — opponent's attacking threat (0.0=weak attacker, 1.0=strong).
+      Derived from _compute_offensive_difficulty_score (goals-scored rolling average).
+      0.0 → opponent rarely scores → keeper likely to get CS → high cs_prob.
+      1.0 → opponent scores often → CS unlikely → low cs_prob.
+
+    Formula is inverse of defensive_difficulty so direction is correct:
+      dd=0.0 → cs_prob_raw = 0.40 (good CS chance)
+      dd=1.0 → cs_prob_raw = 0.10 (poor CS chance)
+
+    xmins scales down when expected minutes < 60 (FPL awards CS pts at 60+ min only).
+    """
+    cs_prob_raw = max(0.10, min(0.65, 0.40 - defensive_difficulty * 0.30))
+    mins_factor = min(1.0, xmins / 60.0)
+    return cs_prob_raw * mins_factor
+
+
 def _compute_xpts_fixture(
     xg_per90: float,
     xa_per90: float,
     start_prob: float,
     xmins: float,
     element_type: int,
-    attacking_difficulty: float,
+    defensive_difficulty: float,
 ) -> dict:
     """Compute expected FPL points for a single fixture (Phase 28 DATA-02).
 
     Inputs:
       xg_per90, xa_per90      — Understat (or DQ-01 FPL proxy) per-90 rates
       start_prob              — probability of starting (0.0-1.0)
-      xmins                   — expected minutes for this player (0-90)
+      xmins                   — unconditional expected minutes (start_prob already embedded)
       element_type            — FPL position code (1=GK, 2=DEF, 3=MID, 4=FWD)
-      attacking_difficulty    — Phase 27 fixture-level signal (0.0=easiest, 1.0=hardest)
+      defensive_difficulty    — opponent's attacking threat (0.0=weak, 1.0=strong)
 
     Returns dict with keys: total, goal_pts, assist_pts, cs_pts, bonus_pts.
     Components are independently computed — bonus does NOT depend on cs_prob
     (avoids double-counting defensive quality, per STATE.md blocker).
+
+    xmins is treated as unconditional expected minutes (xmins ≈ start_prob × avg_mins).
+    start_prob is therefore NOT re-applied to goal/assist/bonus components — they all
+    use xmins/90.0 as the scaling factor, consistent with lam_g and lam_a (CR-02).
     """
     # Guard against degenerate inputs
     if xmins <= 0 or start_prob <= 0:
@@ -172,7 +195,8 @@ def _compute_xpts_fixture(
     xg = xg_per90 if xg_per90 is not None else 0.0
     xa = xa_per90 if xa_per90 is not None else 0.0
 
-    # Poisson rates: scale per-90 rate to expected for this fixture's minutes
+    # Poisson rates: scale per-90 rate to expected for this fixture's minutes.
+    # xmins is unconditional expected minutes — start_prob already embedded.
     lam_g = xg * (xmins / 90.0)
     lam_a = xa * (xmins / 90.0)
 
@@ -181,22 +205,15 @@ def _compute_xpts_fixture(
     goal_pts = lam_g * GOAL_PTS[element_type]
     assist_pts = lam_a * ASSIST_PTS
 
-    # CS probability: Bernoulli, parameterised from attacking_difficulty.
-    # attacking_difficulty=0.0 (opponent concedes a lot — easy to attack)
-    #   means HARD CS for the defending player (opponent will score) -> low cs_prob.
-    # attacking_difficulty=1.0 (hard to attack) -> high cs_prob.
-    # Calibrated formula: low ad=low cs_prob, high ad=high cs_prob.
-    # Pitfall 2 in 28-RESEARCH.md: direction verified against _compute_difficulty_score.
-    cs_prob = max(0.10, min(0.65, 0.10 + attacking_difficulty * 0.30))
-
-    # Minutes factor: FPL awards CS points only at 60+ minutes.
-    mins_factor = min(1.0, xmins / 60.0)
-    effective_cs_prob = cs_prob * mins_factor
+    # CS probability: Bernoulli, parameterised from defensive_difficulty via helper.
+    # See _cs_prob() docstring for direction rationale (CR-01 fix).
+    effective_cs_prob = _cs_prob(defensive_difficulty, xmins)
     cs_pts = effective_cs_prob * CS_PTS[element_type]
 
-    # Bonus: flat position-average rate, scaled by start_prob and minutes.
-    # NOT a function of cs_prob — independent of fixture defensive quality.
-    bonus_pts = BONUS_RATE[element_type] * start_prob * (xmins / 90.0)
+    # Bonus: flat position-average rate, scaled by expected minutes only.
+    # xmins already encodes start_prob (unconditional semantics) — do NOT
+    # re-apply start_prob here (CR-02 fix: removes double-scaling).
+    bonus_pts = BONUS_RATE[element_type] * (xmins / 90.0)
 
     total = goal_pts + assist_pts + cs_pts + bonus_pts
     return {
@@ -247,7 +264,7 @@ def _xpts_ngw(
                 start_prob,
                 xmins,
                 element_type,
-                fix.get('attacking_difficulty', 0.5),
+                fix.get('defensive_difficulty', 1.0 - fix.get('attacking_difficulty', 0.5)),
             )
             total += result['total']
             if gw_idx == 0 and n_gws == 1:
@@ -296,10 +313,8 @@ def _compute_xpts_sigma(
     total_var = 0.0
     for _event_id, gw_fixtures in grouped[:n_gws]:
         for fix in gw_fixtures:
-            ad = fix.get('attacking_difficulty', 0.5)
-            cs_prob_raw = max(0.10, min(0.65, 0.10 + ad * 0.30))
-            mins_factor = min(1.0, xmins / 60.0)
-            cs_prob = cs_prob_raw * mins_factor
+            dd = fix.get('defensive_difficulty', 1.0 - fix.get('attacking_difficulty', 0.5))
+            cs_prob = _cs_prob(dd, xmins)
 
             lam_g = xg * (xmins / 90.0)
             lam_a = xa * (xmins / 90.0)
@@ -702,7 +717,7 @@ def merge_players(
         else:
             threshold = 0.0
         for p in result:
-            p[ceiling_key] = bool(p[sigma_key] >= threshold) if threshold > 0 else False
+            p[ceiling_key] = bool(p[sigma_key] >= threshold) if n >= 3 else False
 
     # Strip scratch sigma fields — only the boolean ceiling flags ship in JSON.
     for p in result:
