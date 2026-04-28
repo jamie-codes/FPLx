@@ -8,6 +8,10 @@ describe('getColumnVisibility', () => {
       xPts_3gw: false,
       xPts_5gw: false,
     })
+    // Key-swap guard (WR-04): old proj_pts keys must not be present in gwVisibility
+    expect(getColumnVisibility(1)).not.toHaveProperty('proj_pts_1gw')
+    expect(getColumnVisibility(1)).not.toHaveProperty('proj_pts_3gw')
+    expect(getColumnVisibility(1)).not.toHaveProperty('proj_pts_5gw')
   })
 
   it('returns xPts_3gw: true for horizon 3', () => {
@@ -16,6 +20,10 @@ describe('getColumnVisibility', () => {
       xPts_3gw: true,
       xPts_5gw: false,
     })
+    // Key-swap guard (WR-04): old proj_pts keys must not be present in gwVisibility
+    expect(getColumnVisibility(3)).not.toHaveProperty('proj_pts_1gw')
+    expect(getColumnVisibility(3)).not.toHaveProperty('proj_pts_3gw')
+    expect(getColumnVisibility(3)).not.toHaveProperty('proj_pts_5gw')
   })
 
   it('returns xPts_5gw: true for horizon 5', () => {
@@ -24,6 +32,10 @@ describe('getColumnVisibility', () => {
       xPts_3gw: false,
       xPts_5gw: true,
     })
+    // Key-swap guard (WR-04): old proj_pts keys must not be present in gwVisibility
+    expect(getColumnVisibility(5)).not.toHaveProperty('proj_pts_1gw')
+    expect(getColumnVisibility(5)).not.toHaveProperty('proj_pts_3gw')
+    expect(getColumnVisibility(5)).not.toHaveProperty('proj_pts_5gw')
   })
 })
 
