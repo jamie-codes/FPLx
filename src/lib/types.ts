@@ -343,3 +343,15 @@ export interface CaptainPicks {
   ceiling: CaptainPick | null
   eo_adjusted: CaptainPick | null
 }
+
+// Insights data (Phase 33 INS-01/INS-02/INS-03/INS-04 — pipeline writes pipeline/cache/insights.json)
+// The pipeline emits a flat array of Insight (no wrapper object — D-12 + RESEARCH §A1).
+// Tier badge (HIGH/MEDIUM/LOW) is derived client-side from confidence_pct (D-04).
+export interface Insight {
+  id: string                                              // stable pattern key (e.g. 'def_cs_home_vs_away')
+  category: 'defensive' | 'attacking' | 'player' | 'captaincy'
+  statement: string                                       // human-readable, specific, non-trivial
+  confidence_pct: number                                  // 0-100 (rounded to 1 d.p. by pipeline)
+  sample_n: number                                        // numerator (how many times pattern held true)
+  sample_total: number                                    // denominator (>= 10 enforced by pipeline D-03)
+}
