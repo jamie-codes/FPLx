@@ -4,14 +4,14 @@ milestone: v1.4
 milestone_name: Analytics Engine & Intelligence Layer
 status: active
 stopped_at: ""
-last_updated: "2026-04-28T08:15:00.000Z"
+last_updated: "2026-04-28T08:45:00.000Z"
 last_activity: 2026-04-28
 progress:
   total_phases: 9
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 2
-  completed_plans: 3
-  percent: 11
+  completed_plans: 4
+  percent: 22
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-27 after v1.3)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.4 Analytics Engine & Intelligence Layer — Phase 26 complete, Phase 27 (FDR++ Pipeline) next
+**Current focus:** v1.4 Analytics Engine & Intelligence Layer — Phase 27 complete, Phase 28 (xPts Engine) next
 
 ## Current Position
 
-Phase: 27 - FDR++ Pipeline (executing — wave 2 pending)
-Status: Phase 27 executing — Wave 1 complete (27-01), Wave 2 checkpoint (27-02) pending human verify
-Last activity: 2026-04-28 — 27-01 complete: pipeline math, TS mirror, types, 6 FDR++ unit tests, RTL+jsdom infra
+Phase: 28 - xPts Engine (next)
+Status: Phase 27 complete — both plans shipped, verified, approved
+Last activity: 2026-04-28 — Phase 27 complete: FDR++ pipeline, FixtureEaseRankingPanel UI, 254 tests green
 
 Progress: [█░░░░░░░░░] 11% (v1.4: 1/9 phases)
 

@@ -15,7 +15,7 @@
 **Milestone Goal:** Upgrade FPLx from a transfer suggester into a full decision-support platform with data-driven pattern insights, advanced fixture analysis, ownership-aware captaincy, and set-piece/differential intelligence.
 
 - [x] **Phase 26: Quick Wins** - Set-piece intelligence UI, mobile landscape tip, and set-piece pipeline fields *(completed 2026-04-27)*
-- [ ] **Phase 27: FDR++ Pipeline** - Attacking vs defensive fixture difficulty per team per fixture
+- [x] **Phase 27: FDR++ Pipeline** - Attacking vs defensive fixture difficulty per team per fixture *(completed 2026-04-28)*
 - [ ] **Phase 28: xPts Engine** - Expected points per player with component breakdown and variance
 - [ ] **Phase 29: Regression Detector** - Per-match xG/xA pipeline and buy/sell signals from form vs underlying
 - [ ] **Phase 30: Differential Tracker** - Template-trap and differential flags based on ownership vs expected value
@@ -58,7 +58,7 @@ Plans:
 **Wave 1**
 - [x] 27-01-PLAN.md — Pipeline math (DATA-01) + TS mirror in computeClubForm + types extension + Vitest cases + RTL/jsdom infrastructure
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 27-02-PLAN.md — EaseBar + AttDefToggle + FixtureEaseRankingPanel (FIX-01, FIX-02) + page mount + component tests + human verify
+- [x] 27-02-PLAN.md — EaseBar + AttDefToggle + FixtureEaseRankingPanel (FIX-01, FIX-02) + page mount + component tests + human verify
 **Cross-cutting constraints:**
 - `difficulty_score` field must remain untouched in pipeline/merge.py and merged_players.json (6+ consumers)
 - pipeline/merge.py and src/lib/club-form.ts edited as a pair (both re-derive fixture difficulty from raw FPL JSON independently)
