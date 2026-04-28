@@ -158,6 +158,11 @@ export interface MergedPlayer {
   // not soccerdata/understat_per_match.json (see 29-RESEARCH.md Critical Finding).
   regression_signal?: 'buy' | 'sell' | null
   actual_vs_xg_delta?: number | null
+  // Differential flag (Phase 30 TMPL-01, TMPL-02).
+  // Optional — absent when neither DIFF nor TRAP condition met (D-05 graceful fallback).
+  // 'diff': above-median xPts_1gw for position, ownership < 5%, status === 'a' (D-03).
+  // 'trap': below-median xPts_1gw for position, ownership > 15% (D-04 — status-agnostic per D-12).
+  differential_flag?: 'diff' | 'trap' | null
 }
 
 // DefCon per-player stats (Phase 4) — populated from pipeline/cache/defcon_stats.json
