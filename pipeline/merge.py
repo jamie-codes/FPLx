@@ -328,6 +328,61 @@ def _compute_xpts_sigma(
     return math.sqrt(total_var)
 
 
+def _compute_regression_signal(
+    history: list,
+    window_gws: int = 5,
+    min_minutes: int = 900,
+    threshold: float = 0.5,
+) -> tuple:
+    """Compute regression signal from FPL element-summary history.
+
+    Uses per-match expected_goals / expected_assists (StatsBomb model via FPL API).
+    D-01/D-02 deviation: FPL element-summary supersedes soccerdata / understat_per_match.json.
+    See 29-RESEARCH.md Critical Finding.
+
+    Returns (signal, delta) where:
+      signal: 'buy' | 'sell' | None
+      delta:  float (mean actual G+A - mean xG+xA per played match) | None
+
+    Window = last window_gws unique round values present in history.
+    Entries with minutes == 0 excluded from means (DNP entries) but their
+    round still consumes one of the window_gws slots (BGW/benched).
+    """
+    if not history:
+        return None, None
+
+    history_sorted = sorted(history, key=lambda h: h['round'])
+
+    unique_rounds = sorted({h['round'] for h in history_sorted})
+    last_rounds = set(unique_rounds[-window_gws:])
+
+    window = [h for h in history_sorted if h['round'] in last_rounds]
+    played = [h for h in window if h.get('minutes', 0) > 0]
+
+    total_mins = sum(h['minutes'] for h in played)
+    if total_mins < min_minutes:
+        return None, None
+
+    n = len(played)
+    if n == 0:
+        return None, None
+
+    mean_actual = sum(h.get('goals_scored', 0) + h.get('assists', 0) for h in played) / n
+    mean_xgxa = sum(
+        _safe_float(h.get('expected_goals', 0)) + _safe_float(h.get('expected_assists', 0))
+        for h in played
+    ) / n
+
+    delta = round(mean_actual - mean_xgxa, 4)
+
+    if delta < -threshold:
+        return 'buy', delta
+    elif delta > threshold:
+        return 'sell', delta
+    else:
+        return None, delta
+
+
 def merge_players(
     bootstrap: dict,
     fixtures: list,
@@ -684,6 +739,18 @@ def merge_players(
         player['xPts_3gw'] = xpts_3gw
         player['xPts_5gw'] = xpts_5gw
         player['xPts_components_1gw'] = xpts_components_1gw  # may be None for BGW
+
+        # ---- Regression signal (Phase 29 DATA-03, REG-01, REG-02) ----
+        # D-01/D-02 deviation: uses FPL element-summary expected_goals/expected_assists
+        # from existing summaries dict — zero new HTTP calls (see 29-RESEARCH.md).
+        # D-03: if summaries absent/player missing, fields simply omit from dict (no hard-fail).
+        if summaries and fpl_id in summaries:
+            reg_signal, reg_delta = _compute_regression_signal(
+                summaries[fpl_id].get('history', [])
+            )
+            if reg_signal is not None or reg_delta is not None:
+                player['regression_signal'] = reg_signal
+                player['actual_vs_xg_delta'] = reg_delta
 
         # Sigma per window (used for ceiling classification post-loop)
         player['_sigma_1gw'] = _compute_xpts_sigma(
