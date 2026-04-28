@@ -72,13 +72,15 @@ export interface PipelineMetadata {
 // Difficulty tier for fixture visualization (D-05)
 export type DifficultyTier = 'easy' | 'medium' | 'hard'
 
-// Single upcoming fixture entry per player (D-03, D-04)
+// Single upcoming fixture entry per player (D-03, D-04; FDR++ DATA-01)
 export interface FixtureEntry {
   opponent_team: string          // Short name e.g. "ARS"
   is_home: boolean               // True if player's team is home (D-04)
   event_id: number               // Gameweek number
   difficulty_score: number       // 0.0 (easiest) to 1.0 (hardest), from rolling xGA (D-02)
   difficulty_tier: DifficultyTier // Visual tier (D-05)
+  attacking_difficulty?: number  // Phase 27 DATA-01 D-01 — same value as difficulty_score (additive). Optional during pipeline rollout.
+  defensive_difficulty?: number  // Phase 27 DATA-01 D-02 — from 3-game goals-scored rolling window. NOT inverted: high opp goals = HIGH difficulty for opp DEF.
 }
 
 // Minutes risk classification (Phase 7 — MINS-01)
@@ -171,16 +173,18 @@ export interface ScoredPlayer extends MergedPlayer {
   set_piece_score: number     // set piece role (penalty/FK/corner taker)
 }
 
-// Club form fixture (upcoming, per club)
+// Club form fixture (upcoming, per club) — populated by computeClubForm
 export interface ClubFormFixture {
-  opponent_team: string          // short_name e.g. "ARS"
+  opponent_team: string
   is_home: boolean
   event_id: number
   difficulty_score: number
   difficulty_tier: DifficultyTier
+  attacking_difficulty: number   // Phase 27 — required (computed locally)
+  defensive_difficulty: number   // Phase 27 — required
 }
 
-// Club form stats over rolling 5-game window (FFA-03)
+// Club form stats over rolling 5-game window (FFA-03; Phase 27 FIX-01)
 export interface ClubForm {
   team_id: number
   team_name: string
@@ -191,6 +195,15 @@ export interface ClubForm {
   goals_scored: number
   goals_conceded: number
   upcoming_fixtures: ClubFormFixture[]   // next 5
+  // Phase 27 FIX-01 — per-team ease aggregates over upcoming windows.
+  // Convention: 1.0 = easiest, 0.0 = hardest (inverted from *_difficulty).
+  // null when team has zero fixtures in the window (BGW handling).
+  attacking_ease_1gw: number | null
+  attacking_ease_3gw: number | null
+  attacking_ease_5gw: number | null
+  defensive_ease_1gw: number | null
+  defensive_ease_3gw: number | null
+  defensive_ease_5gw: number | null
 }
 
 // ---------------------------------------------------------------------------
