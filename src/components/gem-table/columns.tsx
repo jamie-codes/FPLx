@@ -4,6 +4,7 @@ import { FixtureBadges } from '@/components/fixtures/FixtureBadges'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
 import { VarianceBadge } from '@/components/gem-table/VarianceBadge'
 import { RegressionSignalBadge } from '@/components/gem-table/RegressionSignalBadge'
+import { DifferentialBadge } from '@/components/gem-table/DifferentialBadge'
 
 const col = createColumnHelper<ScoredPlayer>()
 
@@ -170,6 +171,22 @@ export const columns = [
       const order: Record<string, number> = { sell: 2, buy: 0 }
       const a = order[rowA.original.regression_signal ?? ''] ?? 1
       const b = order[rowB.original.regression_signal ?? ''] ?? 1
+      return a - b
+    },
+  }),
+  col.accessor('differential_flag', {
+    header: H('Diff', 'Differential flag: DIFF = low-owned (<5%), above-average xPts for position — rank gain potential. TRAP = high-owned (>15%), below-average xPts — consider selling. Sort ascending for differentials first.'),
+    cell: (info) => (
+      <DifferentialBadge
+        flag={info.getValue()}
+        ownership={parseFloat(info.row.original.selected_by_percent ?? '0')}
+      />
+    ),
+    enableSorting: true,
+    sortingFn: (rowA, rowB) => {
+      const order: Record<string, number> = { diff: 0, trap: 2 }
+      const a = order[rowA.original.differential_flag ?? ''] ?? 1
+      const b = order[rowB.original.differential_flag ?? ''] ?? 1
       return a - b
     },
   }),
