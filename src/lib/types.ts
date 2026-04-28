@@ -137,6 +137,20 @@ export interface MergedPlayer {
   xmins: number               // expected minutes per GW (0-90)
   start_prob: number          // probability of starting next match (0.0-1.0)
   mins_risk: MinsRisk         // rotation risk classification
+  // xPts engine (Phase 28 DATA-02, XPTS-01, XPTS-02 — D-01..D-09).
+  // Optional during pipeline rollout — same convention as Phase 27 attacking_difficulty.
+  xPts_1gw?: number           // expected pts next 1 GW (Poisson goals/assists, Bernoulli CS, flat bonus)
+  xPts_3gw?: number           // expected pts next 3 GWs (DGW-aware sum)
+  xPts_5gw?: number           // expected pts next 5 GWs (DGW-aware sum)
+  xPts_ceiling_1gw?: boolean  // true = top-tercile sigma in 1 GW window (high-ceiling)
+  xPts_ceiling_3gw?: boolean  // true = top-tercile sigma in 3 GW window
+  xPts_ceiling_5gw?: boolean  // true = top-tercile sigma in 5 GW window
+  xPts_components_1gw?: {     // breakdown for 1 GW only (tooltip data); null for BGW
+    goal_pts: number
+    assist_pts: number
+    cs_pts: number
+    bonus_pts: number
+  } | null
 }
 
 // DefCon per-player stats (Phase 4) — populated from pipeline/cache/defcon_stats.json
