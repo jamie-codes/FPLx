@@ -31,8 +31,8 @@
 
 ### Captaincy Enhancements
 
-- [ ] **CAP-03**: User can see a ceiling captain recommendation showing the highest 90th-percentile xPts player (best pick when chasing in a mini-league)
-- [ ] **CAP-04**: User can see an EO-adjusted captain recommendation that accounts for ownership concentration (reduces expected rank variance vs the template)
+- [x] **CAP-03**: User can see a ceiling captain recommendation showing the highest 90th-percentile xPts player (best pick when chasing in a mini-league)
+- [x] **CAP-04**: User can see an EO-adjusted captain recommendation that accounts for ownership concentration (reduces expected rank variance vs the template)
 
 ### Chip Strategy
 
@@ -105,8 +105,8 @@
 | REG-02 | Phase 29 | Complete |
 | TMPL-01 | Phase 30 | Pending |
 | TMPL-02 | Phase 30 | Pending |
-| CAP-03 | Phase 31 | Pending |
-| CAP-04 | Phase 31 | Pending |
+| CAP-03 | Phase 31 | Complete (2026-04-28) |
+| CAP-04 | Phase 31 | Complete (2026-04-28) |
 | CHIP-01 | Phase 34 | Pending |
 | CHIP-02 | Phase 34 | Pending |
 | CHIP-03 | Phase 34 | Pending |

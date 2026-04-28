@@ -30,7 +30,9 @@ Give the manager a clear, prioritised view of who to buy and who to sell this we
 - Team target list with player involvement % and green fixture runs
 - Enhanced chip strategy analysis (BB/TC/FH optimal GW finder)
 
-## Current State (v1.4 Analytics Engine — Phase 30 complete 2026-04-28)
+## Current State (v1.4 Analytics Engine — Phase 31 complete 2026-04-28)
+
+Phase 31 complete — Captaincy Ceiling shipped: `_compute_captain_picks()` helper in `pipeline/merge.py` computes ceiling (max `xPts_90th_1gw` among `status='a'` players) and EO-adjusted picks (threshold ladder 25%→35%→ceiling fallback via `_safe_float(selected_by_percent)`); `xPts_90th_1gw` persisted per-player in `merged_players.json` (D-11, Z=1.28); `captain_picks.json` written by `run.py` alongside `merged_players.json`; `/api/captain-picks` route (USE_BLOB toggle); `useCaptainPicks` hook (6h staleTime); `CaptainPicksPanel` two-card component with locked UI-SPEC Tailwind tokens and copy; mounted on Gems tab below GemTable. CAP-03 and CAP-04 satisfied.
 
 Phase 30 complete — Differential Tracker shipped: `_compute_differential_flag()` in `pipeline/merge.py` computes `differential_flag` per player using position-relative median of `xPts_1gw` per `element_type` (GK/DEF/MID/FWD); DIFF gate (D-03): above-median xPts + owned <5% + status='a'; TRAP gate (D-04): below-median xPts + owned >15%, status-agnostic (D-12 asymmetry); field absent when neither fires (D-05); `MergedPlayer` extended with `differential_flag?: 'diff' | 'trap' | null`; `DifferentialBadge` renders green DIFF pill / amber TRAP pill / em-dash with D-10 ownership % tooltips; `Diff` column added to GemTable after Signal with `{diff:0,trap:2}` sort; hidden on portrait mobile. TMPL-01, TMPL-02 satisfied.
 
