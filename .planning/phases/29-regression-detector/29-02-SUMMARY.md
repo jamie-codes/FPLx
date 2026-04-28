@@ -27,10 +27,11 @@ decisions:
   - "Literal em-dash character (—) used directly in JSX rather than HTML entity &#8212; — matches VarianceBadge.tsx trend column dash pattern"
   - "sortingFn order map: sell=2, null=1 (default), buy=0 — ascending surfaces BUY candidates at top"
   - "Native HTML title attribute used for tooltips (no Radix) — consistent with VarianceBadge.tsx project pattern"
+requirements-completed: [REG-01, REG-02]
 metrics:
-  duration: "~2m"
+  duration: "~10m"
   completed: "2026-04-28"
-  tasks_completed: 2
+  tasks_completed: 3
   files_modified: 5
 ---
 
@@ -38,13 +39,21 @@ metrics:
 
 **One-liner:** RegressionSignalBadge (BUY green pill / SELL amber pill / em-dash fallback) wired into GemTable Signal column with custom ascending-BUY sort, mobile hidden via two-map pattern, and 6 component tests passing.
 
+## Performance
+
+- **Duration:** ~10 min
+- **Started:** 2026-04-28
+- **Completed:** 2026-04-28
+- **Tasks:** 3 (2 automated + 1 human-verify checkpoint, approved)
+- **Files modified:** 5
+
 ## Tasks Completed
 
 | Task | Name | Commit | Files |
 |------|------|--------|-------|
 | 1 | RegressionSignalBadge component + component tests | a7a3cd9 | src/components/gem-table/RegressionSignalBadge.tsx, tests/lib/regression-signal.test.ts |
 | 2 | Signal column in columns.tsx + column visibility | fe688d4 | src/components/gem-table/columns.tsx, src/components/gem-table/GwToggle.tsx, src/components/gem-table/GemTable.tsx |
-| 3 | Human verify checkpoint | pending | — |
+| 3 | Human verify checkpoint | approved | — |
 
 ## What Was Built
 
@@ -97,14 +106,26 @@ None — plan executed exactly as written.
 
 None — all data paths are wired. Signal column renders RegressionSignalBadge with live data from `info.getValue()` and `info.row.original.actual_vs_xg_delta`. Players without pipeline-computed signals will show the em-dash fallback (correct behavior).
 
-## Human Checkpoint Pending
+## Human Checkpoint
 
-Task 3 is a `checkpoint:human-verify` gate. Automated work (Tasks 1 and 2) is complete. Human verification needed:
+Task 3 `checkpoint:human-verify` gate: **APPROVED by user on 2026-04-28.**
+
+Verified:
 - Signal column visible in GemTable after xPts columns and before Trend
 - BUY green pill / SELL amber pill / em-dash fallback rendering
 - Sort behavior: ascending = BUY first, descending = SELL first
 - Mobile portrait: Signal column hidden
 - Tooltips: mention xG+xA, last 5 GW, Consider buying/selling
+
+## Next Phase Readiness
+
+Phase 29 (Regression Detector) is fully complete. Both waves shipped:
+- Wave 1 (29-01): `_compute_regression_signal()` in pipeline/merge.py; `regression_signal` and `actual_vs_xg_delta` fields in MergedPlayer type
+- Wave 2 (29-02): RegressionSignalBadge component; Signal column in GemTable with sort; mobile visibility
+
+Phase 30 (Differential Tracker) depends on Phase 28 (xPts) — both are now complete. Phase 30 can begin.
+
+---
 
 ## Self-Check: PASSED
 

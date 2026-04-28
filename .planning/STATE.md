@@ -4,9 +4,9 @@ milestone: v1.4
 milestone_name: Analytics Engine & Intelligence Layer
 current_plan: 2 of 2 (29-02-PLAN.md next)
 status: completed
-stopped_at: "Completed 29-02-PLAN.md (Signal column UI + badge; human-verify pending)"
-last_updated: "2026-04-28T10:30:50.835Z"
-last_activity: "2026-04-28 -- 29-02 executed: RegressionSignalBadge, Signal column, mobile visibility, 271 tests green"
+stopped_at: "Completed 29-02-PLAN.md (Signal column UI + badge; human-verify approved)"
+last_updated: "2026-04-28T11:00:00.000Z"
+last_activity: "2026-04-28 -- 29-02 complete: human-verify approved; Phase 29 fully shipped"
 progress:
   total_phases: 9
   completed_phases: 4
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-04-27 after v1.3)
 ## Current Position
 
 Phase: 29 - Regression Detector
-Current Plan: 2 of 2 (29-02-PLAN.md complete — human-verify pending)
-Status: Plan 02 automated tasks done — human checkpoint awaiting visual verification
+Current Plan: 2 of 2 (29-02-PLAN.md complete — human-verify approved)
+Status: Phase 29 complete — all plans shipped, human checkpoint approved
 Last activity: 2026-04-28 -- 29-02 executed: RegressionSignalBadge, Signal column in GemTable, 271 tests green
 
 Progress: [██████████] 100% (v1.4: 4/9 phases)
@@ -98,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-28T10:30:50.832Z
-Stopped at: Completed 29-01-PLAN.md (Wave 1 pipeline + types)
+Last session: 2026-04-28T11:00:00.000Z
+Stopped at: Completed 29-02-PLAN.md (human-verify approved; Phase 29 fully done)
 Resume file: None
