@@ -62,7 +62,7 @@ completed: 2026-04-28
 - **Duration:** ~15 min
 - **Started:** 2026-04-28T15:49:00Z
 - **Completed:** 2026-04-28T15:51:30Z
-- **Tasks:** 5/5 (Task 6 is human-verify checkpoint — awaiting user approval)
+- **Tasks:** 6/6 (Task 6 human-verify checkpoint: approved 2026-04-28)
 - **Files modified:** 6
 
 ## Accomplishments
@@ -124,9 +124,15 @@ None — all threat mitigations from plan's threat model applied:
 - T-31-09: staleTime 6h applied
 - T-31-11: all player data rendered via React text nodes (no dangerouslySetInnerHTML)
 
+## Human Verification
+
+**Task 6 (human-verify checkpoint): approved 2026-04-28**
+
+Verified: CaptainPicksPanel renders correctly in Gems tab; Ceiling and EO-Adjusted cards display as per UI-SPEC; loading/error/null states confirmed.
+
 ## Next Phase Readiness
-- CAP-03 and CAP-04 are fully implemented; awaiting human-verify checkpoint (Task 6) approval
-- After approval, Phase 31 complete — ready for `/gsd-verify-work`
+- CAP-03 and CAP-04 are fully implemented and human-verified
+- Phase 31 complete — ready for `/gsd-verify-work`
 - Phase 32 (Team Target List) and Phase 33 (Insights) are unblocked
 
 ---
