@@ -30,7 +30,9 @@ Give the manager a clear, prioritised view of who to buy and who to sell this we
 - Team target list with player involvement % and green fixture runs
 - Enhanced chip strategy analysis (BB/TC/FH optimal GW finder)
 
-## Current State (v1.4 Analytics Engine — Phase 26 complete 2026-04-27)
+## Current State (v1.4 Analytics Engine — Phase 27 complete 2026-04-28)
+
+Phase 27 complete — FDR++ pipeline and UI shipped: `pipeline/merge.py` now emits `attacking_difficulty` and `defensive_difficulty` per fixture (3-game goals-scored rolling window, non-inverted); `computeClubForm()` mirrors the math and returns 6 ease aggregates per team (`attacking_ease_{1,3,5}gw`, `defensive_ease_{1,3,5}gw`); `FixtureEaseRankingPanel` ranks all 20 PL teams by fixture ease on the Club Form tab with ATT/DEF + 1/3/5 GW pill toggles. All 3 Phase 27 requirements (DATA-01, FIX-01, FIX-02) satisfied. Existing `difficulty_score` untouched.
 
 Phase 26 complete — Set-piece intelligence layer shipped: "Set Pieces" tab in nav, `SetPieceTakerPanel` showing penalty/FK/corner takers per PL team, `SetPieceChangeAlert` amber banner for taker changes between pipeline runs, `LandscapeTip` on Gems and DefCon for mobile portrait UX. Pipeline extended with `_text` fields (DATA-04) and `_diff_sp_snapshots` snapshot diff producing `set_piece_changes.json`. All 4 Phase 26 requirements (SP-01, SP-02, MOB-LS-01, DATA-04) satisfied.
 
@@ -195,4 +197,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-27 — Phase 26 complete; set-piece intelligence and landscape tip shipped*
+*Last updated: 2026-04-28 — Phase 27 complete; FDR++ pipeline + FixtureEaseRankingPanel shipped*
