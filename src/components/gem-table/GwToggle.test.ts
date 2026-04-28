@@ -2,27 +2,27 @@ import { describe, it, expect } from 'vitest'
 import { getColumnVisibility, MOBILE_HIDDEN_COLUMNS } from '@/components/gem-table/GwToggle'
 
 describe('getColumnVisibility', () => {
-  it('returns proj_pts_1gw: true for horizon 1', () => {
+  it('returns xPts_1gw: true for horizon 1', () => {
     expect(getColumnVisibility(1)).toEqual({
-      proj_pts_1gw: true,
-      proj_pts_3gw: false,
-      proj_pts_5gw: false,
+      xPts_1gw: true,
+      xPts_3gw: false,
+      xPts_5gw: false,
     })
   })
 
-  it('returns proj_pts_3gw: true for horizon 3', () => {
+  it('returns xPts_3gw: true for horizon 3', () => {
     expect(getColumnVisibility(3)).toEqual({
-      proj_pts_1gw: false,
-      proj_pts_3gw: true,
-      proj_pts_5gw: false,
+      xPts_1gw: false,
+      xPts_3gw: true,
+      xPts_5gw: false,
     })
   })
 
-  it('returns proj_pts_5gw: true for horizon 5', () => {
+  it('returns xPts_5gw: true for horizon 5', () => {
     expect(getColumnVisibility(5)).toEqual({
-      proj_pts_1gw: false,
-      proj_pts_3gw: false,
-      proj_pts_5gw: true,
+      xPts_1gw: false,
+      xPts_3gw: false,
+      xPts_5gw: true,
     })
   })
 })
@@ -49,21 +49,21 @@ describe('getColumnVisibility mobile', () => {
     expect(result.fixtures).toBe(false)
   })
 
-  it('keeps active proj_pts column visible on mobile — isMobile overridden by gwVisibility spread', () => {
-    // isMobile = true but active proj_pts must remain visible via gwVisibility spread order
+  it('keeps active xPts column visible on mobile — isMobile overridden by gwVisibility spread', () => {
+    // isMobile = true but active xPts must remain visible via gwVisibility spread order
     const isMobile = true
     const result1 = getColumnVisibility(1, isMobile)
-    expect(result1.proj_pts_1gw).toBe(true)
-    expect(result1.proj_pts_3gw).toBe(false)
+    expect(result1.xPts_1gw).toBe(true)
+    expect(result1.xPts_3gw).toBe(false)
 
     const result3 = getColumnVisibility(3, isMobile)
-    expect(result3.proj_pts_3gw).toBe(true)
-    expect(result3.proj_pts_1gw).toBe(false)
-    expect(result3.proj_pts_5gw).toBe(false)
+    expect(result3.xPts_3gw).toBe(true)
+    expect(result3.xPts_1gw).toBe(false)
+    expect(result3.xPts_5gw).toBe(false)
 
     const result5 = getColumnVisibility(5, isMobile)
-    expect(result5.proj_pts_5gw).toBe(true)
-    expect(result5.proj_pts_1gw).toBe(false)
+    expect(result5.xPts_5gw).toBe(true)
+    expect(result5.xPts_1gw).toBe(false)
   })
 
   it('does not hide priority columns on mobile — isMobile does not affect web_name/gem_score/element_type/mins_risk', () => {

@@ -2,6 +2,7 @@ import { createColumnHelper } from '@tanstack/react-table'
 import type { ScoredPlayer } from '@/lib/types'
 import { FixtureBadges } from '@/components/fixtures/FixtureBadges'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
+import { VarianceBadge } from '@/components/gem-table/VarianceBadge'
 
 const col = createColumnHelper<ScoredPlayer>()
 
@@ -15,6 +16,40 @@ const fmtDec2 = (v: number | null) => (v === null ? '\u2014' : v.toFixed(2))
 
 // Column header with hover tooltip
 const H = (label: string, tip: string) => () => <span title={tip} className="cursor-help">{label}</span>
+
+// Phase 28 XPTS-01 / XPTS-02 — xPts cell renderer with variance badge + breakdown tooltip.
+export function XPtsCell({
+  value,
+  ceiling,
+  components,
+  window,
+}: {
+  value: number | undefined
+  ceiling: boolean | undefined
+  components: { goal_pts: number; assist_pts: number; cs_pts: number; bonus_pts: number } | undefined
+  window: 1 | 3 | 5
+}) {
+  const display = (value ?? 0).toFixed(1)
+
+  // Empty/zero short-circuit: no badge, no tooltip — matches existing proj_pts `(value ?? 0).toFixed(1)` semantics.
+  if (!value || value === 0) {
+    return <span>{display}</span>
+  }
+
+  // Breakdown tooltip ships only for the 1 GW window per CONTEXT.md (xPts_components_1gw only).
+  // For 3GW/5GW, even if components are passed we suppress the tooltip to keep the contract clear.
+  const showBreakdown = window === 1 && components !== undefined && components !== null
+  const tip = showBreakdown
+    ? `xPts breakdown (${window} GW):\nGoals: ${components!.goal_pts.toFixed(2)}\nAssists: ${components!.assist_pts.toFixed(2)}\nClean sheet: ${components!.cs_pts.toFixed(2)}\nBonus: ${components!.bonus_pts.toFixed(2)}`
+    : undefined
+
+  return (
+    <span title={tip} className={tip ? 'cursor-help' : undefined}>
+      {display}
+      <VarianceBadge ceiling={ceiling} />
+    </span>
+  )
+}
 
 export const columns = [
   col.accessor('web_name', { header: 'Player', enableSorting: true }),
@@ -83,19 +118,40 @@ export const columns = [
     enableSorting: false,
     cell: ({ row }) => <MinsRiskBadge minsRisk={row.original.mins_risk} />,
   }),
-  col.accessor('proj_pts_1gw', {
-    header: H('Proj Pts', 'Projected FPL points next gameweek (FPL expected points × availability). Blank GW or no fixture = 0'),
-    cell: (info) => (info.getValue() ?? 0).toFixed(1),
+  col.accessor('xPts_1gw', {
+    header: H('xPts', 'Expected FPL points next gameweek (Poisson goals/assists, Bernoulli CS/minutes; FDR++ adjusted). Blank GW or no fixture = 0.'),
+    cell: (info) => (
+      <XPtsCell
+        value={info.getValue()}
+        ceiling={info.row.original.xPts_ceiling_1gw}
+        components={info.row.original.xPts_components_1gw ?? undefined}
+        window={1}
+      />
+    ),
     enableSorting: true,
   }),
-  col.accessor('proj_pts_3gw', {
-    header: H('Proj Pts (3)', 'Projected FPL points across next 3 gameweeks (points-per-game × start probability, DGW-aware)'),
-    cell: (info) => (info.getValue() ?? 0).toFixed(1),
+  col.accessor('xPts_3gw', {
+    header: H('xPts (3)', 'Expected FPL points across next 3 gameweeks (DGW-aware sum, FDR++ adjusted).'),
+    cell: (info) => (
+      <XPtsCell
+        value={info.getValue()}
+        ceiling={info.row.original.xPts_ceiling_3gw}
+        components={undefined}
+        window={3}
+      />
+    ),
     enableSorting: true,
   }),
-  col.accessor('proj_pts_5gw', {
-    header: H('Proj Pts (5)', 'Projected FPL points across next 5 gameweeks (points-per-game × start probability, DGW-aware)'),
-    cell: (info) => (info.getValue() ?? 0).toFixed(1),
+  col.accessor('xPts_5gw', {
+    header: H('xPts (5)', 'Expected FPL points across next 5 gameweeks (DGW-aware sum, FDR++ adjusted).'),
+    cell: (info) => (
+      <XPtsCell
+        value={info.getValue()}
+        ceiling={info.row.original.xPts_ceiling_5gw}
+        components={undefined}
+        window={5}
+      />
+    ),
     enableSorting: true,
   }),
   col.display({

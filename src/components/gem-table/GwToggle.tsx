@@ -20,9 +20,9 @@ export const MOBILE_HIDDEN_COLUMNS: Record<string, boolean> = {
 
 export function getColumnVisibility(horizon: 1 | 3 | 5, isMobile = false): Record<string, boolean> {
   const gwVisibility = {
-    proj_pts_1gw: horizon === 1,
-    proj_pts_3gw: horizon === 3,
-    proj_pts_5gw: horizon === 5,
+    xPts_1gw: horizon === 1,
+    xPts_3gw: horizon === 3,
+    xPts_5gw: horizon === 5,
   }
 
   if (!isMobile) {
