@@ -1,11 +1,13 @@
 // Phase 30: Differential Tracker — test stubs
 // Wave 0: stubs created before implementation to satisfy Nyquist rule.
 // Integration tests are skipped (require pipeline run).
-// Component tests are it.todo() until DifferentialBadge.tsx exists (Wave 2 Task 1 of 30-02-PLAN.md).
+// Component tests filled in Wave 2 Task 1 of 30-02-PLAN.md.
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest'
+import { render } from '@testing-library/react'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
+import { DifferentialBadge } from '@/components/gem-table/DifferentialBadge'
 
 describe('Phase 30: Differential flag pipeline output', () => {
   it.skip('differential_flag values are diff, trap, or absent (requires pipeline run)', async () => {
@@ -63,12 +65,56 @@ describe('Phase 30: Differential flag pipeline output', () => {
 })
 
 describe('Phase 30: DifferentialBadge component', () => {
-  it.todo('renders green DIFF pill for flag="diff"')
-  it.todo('renders amber TRAP pill for flag="trap"')
-  it.todo('renders em-dash for flag=null')
-  it.todo('renders em-dash for flag=undefined')
-  it.todo('DIFF tooltip mentions ownership %, "above-average xPts for position" and "rank gain potential"')
-  it.todo('TRAP tooltip mentions ownership %, "below-average xPts for position" and "weak projections"')
+  it('renders green DIFF pill for flag="diff"', () => {
+    const { container } = render(DifferentialBadge({ flag: 'diff', ownership: 3.4 }))
+    const span = container.querySelector('span')
+    expect(span).not.toBeNull()
+    expect(span!.textContent).toBe('DIFF')
+    expect(span!.className).toContain('bg-green-100')
+    expect(span!.className).toContain('text-xs')
+    expect(span!.getAttribute('title')).toMatch(/^Differential:/)
+  })
+
+  it('renders amber TRAP pill for flag="trap"', () => {
+    const { container } = render(DifferentialBadge({ flag: 'trap', ownership: 22.7 }))
+    const span = container.querySelector('span')
+    expect(span).not.toBeNull()
+    expect(span!.textContent).toBe('TRAP')
+    expect(span!.className).toContain('bg-amber-100')
+    expect(span!.getAttribute('title')).toMatch(/^Template trap:/)
+  })
+
+  it('renders em-dash for flag=null', () => {
+    const { container } = render(DifferentialBadge({ flag: null, ownership: 5.0 }))
+    const span = container.querySelector('span')
+    expect(span).not.toBeNull()
+    expect(span!.textContent).toBe('—')
+    expect(span!.className).toContain('text-zinc-400')
+  })
+
+  it('renders em-dash for flag=undefined', () => {
+    const { container } = render(DifferentialBadge({ flag: undefined, ownership: 5.0 }))
+    const span = container.querySelector('span')
+    expect(span).not.toBeNull()
+    expect(span!.textContent).toBe('—')
+    expect(span!.className).toContain('text-zinc-400')
+  })
+
+  it('DIFF tooltip mentions ownership %, "above-average xPts for position" and "rank gain potential"', () => {
+    const { container } = render(DifferentialBadge({ flag: 'diff', ownership: 3.4 }))
+    const title = container.querySelector('span')!.getAttribute('title')
+    expect(title).toMatch(/3\.4% owned/)
+    expect(title).toMatch(/above-average xPts for position/)
+    expect(title).toMatch(/rank gain potential/)
+  })
+
+  it('TRAP tooltip mentions ownership %, "below-average xPts for position" and "weak projections"', () => {
+    const { container } = render(DifferentialBadge({ flag: 'trap', ownership: 22.7 }))
+    const title = container.querySelector('span')!.getAttribute('title')
+    expect(title).toMatch(/22\.7% owned/)
+    expect(title).toMatch(/below-average xPts for position/)
+    expect(title).toMatch(/weak projections/)
+  })
 })
 
 it('Wave 0 stub file created — replace with real tests after implementation', () => {
