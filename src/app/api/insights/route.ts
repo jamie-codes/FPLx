@@ -26,12 +26,10 @@ export async function GET() {
       data = await readFile(cachePath, 'utf-8')
     }
 
-    return new Response(data, {
+    const parsed = JSON.parse(data)
+    return Response.json(parsed, {
       status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
-      },
+      headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
     })
   } catch {
     return Response.json({ error: 'Failed to load insights' }, { status: 500 })
