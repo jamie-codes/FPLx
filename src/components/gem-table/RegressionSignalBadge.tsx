@@ -14,7 +14,7 @@ export function RegressionSignalBadge({
 }) {
   if (!signal) return <span className="text-zinc-400">—</span>
 
-  const deltaStr = delta != null ? delta.toFixed(2) : ''
+  const deltaStr = delta != null ? (delta >= 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2)) : ''
 
   if (signal === 'buy') {
     return (
@@ -30,7 +30,7 @@ export function RegressionSignalBadge({
   return (
     <span
       className="inline-block text-xs font-normal rounded px-2 py-1 bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200"
-      title={`Overperforming xG+xA over last 5 GW (delta +${deltaStr} per match). Actual G+A above expected — may regress downward. Consider selling.`}
+      title={`Overperforming xG+xA over last 5 GW (delta ${deltaStr} per match). Actual G+A above expected — may regress downward. Consider selling.`}
     >
       SELL
     </span>
