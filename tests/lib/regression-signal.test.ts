@@ -1,10 +1,13 @@
 // Phase 29: Regression Detector — test stubs
 // Wave 0: stubs created before implementation to satisfy Nyquist rule.
 // Integration tests are skipped (require pipeline run).
-// Component tests are it.todo() until RegressionSignalBadge.tsx exists (Wave 2 Task 1).
+// Component tests filled in Wave 2 Task 1 when RegressionSignalBadge.tsx was created.
+// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest'
+import { render } from '@testing-library/react'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
+import { RegressionSignalBadge } from '@/components/gem-table/RegressionSignalBadge'
 
 describe('Phase 29: Regression Signal pipeline output', () => {
   it.skip('regression_signal values are buy, sell, null, or absent (requires pipeline run)', async () => {
@@ -66,12 +69,56 @@ describe('Phase 29: Regression Signal pipeline output', () => {
 })
 
 describe('Phase 29: RegressionSignalBadge component', () => {
-  it.todo('renders green BUY pill for signal="buy"')
-  it.todo('renders amber SELL pill for signal="sell"')
-  it.todo('renders em-dash for signal=null')
-  it.todo('renders em-dash for signal=undefined')
-  it.todo('BUY title attribute mentions xG+xA and "Consider buying"')
-  it.todo('SELL title attribute mentions xG+xA and "Consider selling"')
+  it('renders green BUY pill for signal="buy"', () => {
+    const { container } = render(RegressionSignalBadge({ signal: 'buy', delta: -0.75 }))
+    const span = container.querySelector('span')
+    expect(span).not.toBeNull()
+    expect(span!.textContent).toBe('BUY')
+    expect(span!.className).toContain('bg-green-100')
+    expect(span!.className).toContain('text-xs')
+  })
+
+  it('renders amber SELL pill for signal="sell"', () => {
+    const { container } = render(RegressionSignalBadge({ signal: 'sell', delta: 0.82 }))
+    const span = container.querySelector('span')
+    expect(span).not.toBeNull()
+    expect(span!.textContent).toBe('SELL')
+    expect(span!.className).toContain('bg-amber-100')
+  })
+
+  it('renders em-dash for signal=null', () => {
+    const { container } = render(RegressionSignalBadge({ signal: null, delta: null }))
+    const span = container.querySelector('span')
+    expect(span).not.toBeNull()
+    expect(span!.textContent).toBe('—')
+    expect(span!.className).toContain('text-zinc-400')
+  })
+
+  it('renders em-dash for signal=undefined', () => {
+    const { container } = render(RegressionSignalBadge({ signal: undefined, delta: undefined }))
+    const span = container.querySelector('span')
+    expect(span).not.toBeNull()
+    expect(span!.textContent).toBe('—')
+    expect(span!.className).toContain('text-zinc-400')
+  })
+
+  it('BUY title attribute mentions xG+xA and "Consider buying"', () => {
+    const { container } = render(RegressionSignalBadge({ signal: 'buy', delta: -0.75 }))
+    const span = container.querySelector('span')
+    expect(span).not.toBeNull()
+    const title = span!.getAttribute('title')!
+    expect(title).toMatch(/xG\+xA/)
+    expect(title).toMatch(/Consider buying/)
+  })
+
+  it('SELL title attribute mentions xG+xA and "Consider selling"', () => {
+    const { container } = render(RegressionSignalBadge({ signal: 'sell', delta: 0.82 }))
+    const span = container.querySelector('span')
+    expect(span).not.toBeNull()
+    const title = span!.getAttribute('title')!
+    expect(title).toMatch(/xG\+xA/)
+    expect(title).toMatch(/Consider selling/)
+  })
 })
 
 it('Wave 0 stub file created — replace with real tests after implementation', () => {
