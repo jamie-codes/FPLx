@@ -13,8 +13,9 @@ import { MobileNav } from '@/components/nav/MobileNav'
 import { PlannerTab } from '@/components/planner/PlannerTab'
 import { SetPieceTakerPanel } from '@/components/set-pieces/SetPieceTakerPanel'
 import { CaptainPicksPanel } from '@/components/captaincy/CaptainPicksPanel'
+import { InsightsTab } from '@/components/insights/InsightsTab'
 
-type Tab = 'gems' | 'defcon' | 'squad' | 'club-form' | 'value-gems' | 'planner' | 'set-pieces'
+type Tab = 'gems' | 'defcon' | 'squad' | 'club-form' | 'set-pieces' | 'insights' | 'value-gems' | 'planner'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('gems')
@@ -84,6 +85,16 @@ export default function Home() {
           </button>
           <button
             className={`pb-2 px-1 text-sm font-medium ${
+              activeTab === 'insights'
+                ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+            }`}
+            onClick={() => setActiveTab('insights')}
+          >
+            Insights
+          </button>
+          <button
+            className={`pb-2 px-1 text-sm font-medium ${
               activeTab === 'value-gems'
                 ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
                 : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
@@ -120,6 +131,7 @@ export default function Home() {
           </>
         )}
         {activeTab === 'set-pieces' && <SetPieceTakerPanel />}
+        {activeTab === 'insights' && <InsightsTab />}
         {activeTab === 'value-gems' && <ValueGemsTable />}
         {activeTab === 'planner' && <PlannerTab />}
       </main>

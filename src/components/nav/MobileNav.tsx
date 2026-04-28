@@ -1,6 +1,6 @@
 'use client'
 
-type Tab = 'gems' | 'defcon' | 'squad' | 'club-form' | 'value-gems' | 'planner' | 'set-pieces'
+type Tab = 'gems' | 'defcon' | 'squad' | 'club-form' | 'set-pieces' | 'insights' | 'value-gems' | 'planner'
 
 const TABS = [
   { id: 'gems',        label: 'Gems' },
@@ -8,6 +8,7 @@ const TABS = [
   { id: 'squad',       label: 'Squad' },
   { id: 'club-form',   label: 'Form' },
   { id: 'set-pieces',  label: 'SP' },
+  { id: 'insights',    label: 'Insights' },
   { id: 'value-gems',  label: 'Values' },
   { id: 'planner',     label: 'Plan' },
 ] as const satisfies ReadonlyArray<{ id: Tab; label: string }>
