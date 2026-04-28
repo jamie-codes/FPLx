@@ -95,6 +95,38 @@ describe('Phase 28: xPts engine pipeline output', () => {
     }
   })
 
+  it.skip('DGW component accumulation: two fixtures with same event_id are both summed in xPts_components_1gw (requires pipeline run)', async () => {
+    // Verifies WR-02: components guard `gw_idx == 0 and n_gws == 1` correctly
+    // accumulates BOTH fixtures for a DGW player (two events with the same event_id).
+    // A player with a DGW in GW1 should have components summing across both fixtures,
+    // not just the first one.
+    const raw = await readFile(join(process.cwd(), 'pipeline', 'cache', 'merged_players.json'), 'utf-8')
+    const players = JSON.parse(raw) as Record<string, unknown>[]
+    // Find a player with 2 fixtures in the same event_id (DGW player)
+    const dgwPlayers = players.filter((p) => {
+      const fixtures = p.fixtures as Array<{ event_id: number }> | undefined
+      if (!Array.isArray(fixtures) || fixtures.length < 2) return false
+      return fixtures[0].event_id === fixtures[1].event_id
+    })
+    if (dgwPlayers.length === 0) {
+      // No DGW players in cache — skip assertion but do not fail
+      return
+    }
+    for (const p of dgwPlayers) {
+      const c = p.xPts_components_1gw as Record<string, number> | null | undefined
+      if (c === null || c === undefined) continue
+      // For a DGW player with positive xG/xA, components should reflect both fixtures
+      // summed, meaning total > 0 and all component keys are present
+      expect(typeof c.goal_pts).toBe('number')
+      expect(typeof c.assist_pts).toBe('number')
+      expect(typeof c.cs_pts).toBe('number')
+      expect(typeof c.bonus_pts).toBe('number')
+      const sum = c.goal_pts + c.assist_pts + c.cs_pts + c.bonus_pts
+      // DGW sum should equal xPts_1gw (both fixture totals accumulated)
+      expect(Math.abs(sum - (p.xPts_1gw as number))).toBeLessThan(0.05)
+    }
+  })
+
   it('xpts-engine test placeholder passes (pipeline cache not present in this environment)', () => {
     expect(true).toBe(true)
   })
