@@ -167,7 +167,7 @@ Note: Phase 29 (Regression Detector) can run in parallel with Phases 27-28 if de
 | 26. Quick Wins | 2/2 | Complete | 2026-04-27 |
 | 27. FDR++ Pipeline | 2/2 | Complete | 2026-04-28 |
 | 28. xPts Engine | 2/2 | Complete | 2026-04-28 |
-| 29. Regression Detector | 0/2 | Not started | - |
+| 29. Regression Detector | 0/2 | Ready to execute | - |
 | 30. Differential Tracker | 0/TBD | Not started | - |
 | 31. Captaincy Ceiling | 0/TBD | Not started | - |
 | 32. Team Target List | 0/TBD | Not started | - |

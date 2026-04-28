@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Analytics Engine & Intelligence Layer
 status: active
-stopped_at: "Phase 29 context gathered"
-last_updated: "2026-04-28T11:00:00.000Z"
-last_activity: 2026-04-28 -- Phase 29 context gathered (Regression Detector)
+stopped_at: "Phase 29 planned — ready to execute"
+last_updated: "2026-04-28T12:00:00.000Z"
+last_activity: 2026-04-28 -- Phase 29 planned (Regression Detector, 2 plans)
 progress:
   total_phases: 9
   completed_phases: 3
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-27 after v1.3)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.4 Analytics Engine & Intelligence Layer — Phase 29 (Regression Detector) context gathered, ready to plan
+**Current focus:** v1.4 Analytics Engine & Intelligence Layer — Phase 29 (Regression Detector) planned, ready to execute
 
 ## Current Position
 
 Phase: 29 - Regression Detector
-Status: Context gathered — ready to plan
-Last activity: 2026-04-28 -- Phase 29 context gathered
+Status: Ready to execute — 2 plans created
+Last activity: 2026-04-28 -- Phase 29 planned (2 plans, 2 waves)
 
 Progress: [███░░░░░░░] 33% (v1.4: 3/9 phases)
 
