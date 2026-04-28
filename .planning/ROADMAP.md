@@ -59,6 +59,10 @@ Plans:
 - [ ] 27-01-PLAN.md — Pipeline math (DATA-01) + TS mirror in computeClubForm + types extension + Vitest cases + RTL/jsdom infrastructure
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 27-02-PLAN.md — EaseBar + AttDefToggle + FixtureEaseRankingPanel (FIX-01, FIX-02) + page mount + component tests + human verify
+**Cross-cutting constraints:**
+- `difficulty_score` field must remain untouched in pipeline/merge.py and merged_players.json (6+ consumers)
+- pipeline/merge.py and src/lib/club-form.ts edited as a pair (both re-derive fixture difficulty from raw FPL JSON independently)
+- ATT/DEF + GW window state lives only inside FixtureEaseRankingPanel — never hoisted to page.tsx
 **UI hint**: yes
 
 ### Phase 28: xPts Engine
