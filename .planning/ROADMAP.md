@@ -130,7 +130,19 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. User can see a ceiling captain recommendation showing the highest 90th-percentile xPts player
   2. User can see an EO-adjusted captain recommendation that accounts for ownership concentration
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+
+**Wave 1**
+- [ ] 31-01-PLAN.md — Wave 0 test stubs + _compute_captain_picks() helper in merge.py + xPts_90th_1gw per player + run.py tuple unpack + captain_picks.json write (CAP-03, CAP-04)
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 31-02-PLAN.md — types + /api/captain-picks route + useCaptainPicks hook + CaptainPicksPanel component + page.tsx mount + component tests + human verify (CAP-03, CAP-04)
+**Cross-cutting constraints:**
+- Captain picks block in pipeline/merge.py MUST run between the xPts ceiling tercile block (line ~840) and the sigma strip (line ~842) — _sigma_1gw is deleted at line 844
+- merge_players() return signature changes to tuple[list, dict] — single call site in run.py (verified)
+- Component lives in existing src/components/captaincy/ directory (CONTEXT D-13 said captain/ but RESEARCH Pitfall 6 recommends reusing captaincy/ to avoid two confusingly-named dirs)
+- All Tailwind classes and copy strings in CaptainPicksPanel.tsx are LOCKED by 31-UI-SPEC.md — no hue accents on cards
+**UI hint**: yes
 
 ### Phase 32: Team Target List
 **Goal**: User can identify which teams to target for transfers based on green fixture runs and which specific players to buy from those teams
@@ -179,8 +191,8 @@ Note: Phase 29 (Regression Detector) can run in parallel with Phases 27-28 if de
 | 27. FDR++ Pipeline | 2/2 | Complete | 2026-04-28 |
 | 28. xPts Engine | 2/2 | Complete | 2026-04-28 |
 | 29. Regression Detector | 2/2 | Complete   | 2026-04-28 |
-| 30. Differential Tracker | 0/2 | Planned | - |
-| 31. Captaincy Ceiling | 0/TBD | Not started | - |
+| 30. Differential Tracker | 2/2 | Complete | 2026-04-28 |
+| 31. Captaincy Ceiling | 0/2 | Planned | - |
 | 32. Team Target List | 0/TBD | Not started | - |
 | 33. Insights Tab | 0/TBD | Not started | - |
 | 34. Chip Strategy | 0/TBD | Not started | - |
