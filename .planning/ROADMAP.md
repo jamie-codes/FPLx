@@ -174,7 +174,17 @@ Plans:
   2. Each statement displays a confidence weight derived from actual season data
   3. Statements span defensive patterns, attacking patterns, and player-specific patterns
   4. Trivially obvious statements are excluded from the Insights tab
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+
+**Wave 1**
+- [ ] 33-01-PLAN.md — Wave 0 test stub + pipeline insights.py module (4 category helpers, sample-floor + triviality gates) + run.py wiring + insights.json seed (INS-02, INS-03, INS-04 data layer)
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 33-02-PLAN.md — Insight type + /api/insights route + useInsights hook + InsightsTab component (4 category sections, tier badge, tooltip) + page.tsx + MobileNav wiring + component tests + human verify (INS-01, INS-02, INS-03, INS-04)
+**Cross-cutting constraints:**
+- Tab union type duplicated in src/app/page.tsx and src/components/nav/MobileNav.tsx — must be updated atomically (RESEARCH Pitfall 3)
+- insights.json seeded as [] in Plan 01 so /api/insights cannot 500 on a fresh checkout
+- All Tailwind classes and copy strings in InsightsTab.tsx are LOCKED by 33-UI-SPEC.md
 **UI hint**: yes
 
 ### Phase 34: Chip Strategy
