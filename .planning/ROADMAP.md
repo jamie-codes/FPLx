@@ -52,7 +52,13 @@ Plans:
   1. Pipeline output contains attacking_difficulty and defensive_difficulty per team per fixture (existing difficulty_score field unchanged)
   2. User can see all 20 Premier League teams ranked by fixture ease on the Form tab with 1 GW, 3 GW, and 5 GW toggle views
   3. Fixture ease ranking uses the attacking/defensive FDR split appropriate to player position (attacking FDR for MID/FWD, defensive FDR for GK/DEF)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+
+**Wave 1**
+- [ ] 27-01-PLAN.md — Pipeline math (DATA-01) + TS mirror in computeClubForm + types extension + Vitest cases + RTL/jsdom infrastructure
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 27-02-PLAN.md — EaseBar + AttDefToggle + FixtureEaseRankingPanel (FIX-01, FIX-02) + page mount + component tests + human verify
 **UI hint**: yes
 
 ### Phase 28: xPts Engine
@@ -138,7 +144,7 @@ Note: Phase 29 (Regression Detector) can run in parallel with Phases 27-28 if de
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 26. Quick Wins | 0/2 | Not started | - |
-| 27. FDR++ Pipeline | 0/TBD | Not started | - |
+| 27. FDR++ Pipeline | 0/2 | Not started | - |
 | 28. xPts Engine | 0/TBD | Not started | - |
 | 29. Regression Detector | 0/TBD | Not started | - |
 | 30. Differential Tracker | 0/TBD | Not started | - |
