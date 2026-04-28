@@ -130,30 +130,33 @@ def _defensive_patterns(merged: list, bootstrap: dict, fixtures: list) -> list:
             f for f in finished
             if f.get('team_h') in top6_ids or f.get('team_a') in top6_ids
         ]
-        top6_total = len(top6_fixtures)
-        if top6_total >= MIN_SAMPLE_TOTAL:
+        top6_appearances = sum(
+            (1 if f.get('team_h') in top6_ids else 0) + (1 if f.get('team_a') in top6_ids else 0)
+            for f in top6_fixtures
+        )
+        if top6_appearances >= MIN_SAMPLE_TOTAL:
             top6_cs = 0
             for f in top6_fixtures:
                 h = f.get('team_h')
                 a = f.get('team_a')
                 h_score = f.get('team_h_score') or 0
                 a_score = f.get('team_a_score') or 0
-                # CS for the top-6 team in this fixture
+                # CS for each top-6 team in this fixture (independent checks)
                 if h in top6_ids and a_score == 0:
                     top6_cs += 1
-                elif a in top6_ids and h_score == 0:
+                if a in top6_ids and h_score == 0:
                     top6_cs += 1
-            confidence_pct = round(top6_cs / top6_total * 100, 1)
+            confidence_pct = round(top6_cs / top6_appearances * 100, 1)
             out.append({
                 'id': 'def_cs_rate_top6_vs_rest',
                 'category': 'defensive',
                 'statement': (
                     f'Top-6 teams kept clean sheets in {confidence_pct}% of their '
-                    f'finished fixtures ({top6_cs}/{top6_total}).'
+                    f'finished appearances ({top6_cs}/{top6_appearances}).'
                 ),
                 'confidence_pct': confidence_pct,
                 'sample_n': int(top6_cs),
-                'sample_total': int(top6_total),
+                'sample_total': int(top6_appearances),
             })
 
     # def_cs_streak_ge2: fraction of teams with a current 2+ CS streak
