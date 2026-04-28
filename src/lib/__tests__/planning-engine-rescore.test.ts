@@ -23,6 +23,8 @@ function makePlayer(overrides: Partial<ScoredPlayer> & { id: number; element_typ
     total_points: 80,
     goals_scored: 5,
     assists: 3,
+    expected_goals: 0,
+    expected_assists: 0,
     pts_last3gw: 15,
     pts_last5gw: 25,
     pts_gw_count: 5,
