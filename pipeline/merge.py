@@ -22,6 +22,21 @@ def _compute_difficulty_score(team_xga: float, min_xga: float, max_xga: float) -
     return 1.0 - (team_xga - min_xga) / (max_xga - min_xga)
 
 
+def _compute_offensive_difficulty_score(team_xgs: float, min_xgs: float, max_xgs: float) -> float:
+    """Normalise team goals-scored to 0.0–1.0 defensive_difficulty score.
+
+    0.0 = easiest CS (opponent rarely scores — low goals_scored).
+    1.0 = hardest CS (opponent scores often — high goals_scored).
+
+    NOTE: NOT inverted. Unlike `_compute_difficulty_score()` which uses `1.0 - ...`
+    because high-xGA opponents are EASIER to attack, here high-goals-scored
+    opponents are HARDER to keep a clean sheet against, so direction is preserved.
+    """
+    if max_xgs == min_xgs:
+        return 0.5
+    return (team_xgs - min_xgs) / (max_xgs - min_xgs)
+
+
 def _difficulty_tier(score: float, easy_threshold: float, hard_threshold: float) -> str:
     """Map normalised difficulty score to a tier string.
 
@@ -171,7 +186,8 @@ def merge_players(
     # 3. Compute rolling xGA per team (D-02)
     #    FPL fixtures lack true xGA; use goals conceded (6-game rolling avg)
     # ------------------------------------------------------------------ #
-    ROLLING_WINDOW = 6
+    ROLLING_WINDOW = 6        # existing — defensive xGA proxy (goals conceded)
+    OFFENSIVE_ROLLING = 3     # NEW — offensive proxy (goals scored), shorter window for hot-streak reactivity (D-02)
 
     # Collect finished fixtures sorted by event (GW)
     finished = sorted(
@@ -198,6 +214,36 @@ def merge_players(
     for t_id, conceded_list in team_goals_conceded.items():
         last_n = conceded_list[-ROLLING_WINDOW:]
         team_xga[t_id] = sum(last_n) / len(last_n) if last_n else 0.0
+
+    # NEW: parallel goals-scored aggregation for defensive_difficulty (DATA-01, D-02)
+    team_goals_scored: dict[int, list[int]] = {t_id: [] for t_id in teams}
+
+    for fix in finished:
+        h_id = fix['team_h']
+        a_id = fix['team_a']
+        h_score = fix.get('team_h_score') or 0
+        a_score = fix.get('team_a_score') or 0
+
+        if h_id in team_goals_scored:
+            team_goals_scored[h_id].append(h_score)   # home team scored own goals
+        if a_id in team_goals_scored:
+            team_goals_scored[a_id].append(a_score)   # away team scored own goals
+
+    # Rolling 3-game average goals scored — "offensive proxy"
+    team_xgs: dict[int, float] = {}
+    for t_id, scored_list in team_goals_scored.items():
+        last_n = scored_list[-OFFENSIVE_ROLLING:]
+        team_xgs[t_id] = sum(last_n) / len(last_n) if last_n else 0.0
+
+    # Independent normalization across xgs values (D-04)
+    xgs_values = sorted(team_xgs.values())
+    min_xgs = min(xgs_values) if xgs_values else 0.0
+    max_xgs = max(xgs_values) if xgs_values else 1.0
+
+    defensive_difficulty_scores: dict[int, float] = {}
+    for t_id in teams:
+        xgs = team_xgs.get(t_id, 0.0)
+        defensive_difficulty_scores[t_id] = _compute_offensive_difficulty_score(xgs, min_xgs, max_xgs)
 
     # ------------------------------------------------------------------ #
     # 4. Compute difficulty tiers (D-05) via percentile thresholds
@@ -259,8 +305,10 @@ def merge_players(
                 'opponent_team': teams[opp_id]['short_name'] if opp_id in teams else str(opp_id),
                 'is_home': True,
                 'event_id': event_id,
-                'difficulty_score': difficulty_scores.get(opp_id, 0.5),
-                'difficulty_tier': difficulty_tiers.get(opp_id, 'medium'),
+                'difficulty_score': difficulty_scores.get(opp_id, 0.5),                      # UNCHANGED
+                'difficulty_tier': difficulty_tiers.get(opp_id, 'medium'),                   # UNCHANGED
+                'attacking_difficulty': difficulty_scores.get(opp_id, 0.5),                  # NEW (DATA-01, D-01) — same as difficulty_score
+                'defensive_difficulty': defensive_difficulty_scores.get(opp_id, 0.5),        # NEW (DATA-01, D-02)
             })
 
         # Away team perspective
@@ -270,8 +318,10 @@ def merge_players(
                 'opponent_team': teams[opp_id]['short_name'] if opp_id in teams else str(opp_id),
                 'is_home': False,
                 'event_id': event_id,
-                'difficulty_score': difficulty_scores.get(opp_id, 0.5),
-                'difficulty_tier': difficulty_tiers.get(opp_id, 'medium'),
+                'difficulty_score': difficulty_scores.get(opp_id, 0.5),                      # UNCHANGED
+                'difficulty_tier': difficulty_tiers.get(opp_id, 'medium'),                   # UNCHANGED
+                'attacking_difficulty': difficulty_scores.get(opp_id, 0.5),                  # NEW
+                'defensive_difficulty': defensive_difficulty_scores.get(opp_id, 0.5),        # NEW
             })
 
     # ------------------------------------------------------------------ #
