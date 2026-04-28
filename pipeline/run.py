@@ -16,6 +16,7 @@ from understat_client import get_understat_players
 from merge import merge_players
 from defcon import compute_defcon_stats
 from xmins import compute_xmins_stats
+from insights import compute_insights
 
 
 def _get_cache_dir() -> str:
@@ -147,6 +148,11 @@ def run(dry_run: bool = False):
         merged, captain_picks = merge_players(bootstrap, fixtures, understat, id_map, xmins_stats=xmins_stats, summaries=summaries)
         save('merged_players.json', merged)
         save('captain_picks.json', captain_picks)  # Phase 31 CAP-03/CAP-04
+
+        # Phase 33 INS-02/03/04 — pattern statements with confidence weights
+        insights = compute_insights(merged, bootstrap, fixtures, summaries, finished_gws)
+        save('insights.json', insights)
+        print(f"Insights computed: {len(insights)} pattern(s) emitted")
 
         # SP-02: Set-piece snapshot diff
         print("Computing set-piece snapshot diff...")
