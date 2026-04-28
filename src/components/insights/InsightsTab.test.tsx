@@ -135,7 +135,7 @@ describe('Phase 33: InsightsTab component', () => {
     const { container } = render(<InsightsTab />)
     const badge = container.querySelector('span[title]')
     // em-dash U+2014, not a hyphen
-    expect(badge?.getAttribute('title')).toBe('True in 75% of fixtures — 100/308 matches')
+    expect(badge?.getAttribute('title')).toBe('True in 75.0% of fixtures — 100/308 matches')
   })
 
   it('renders footnote about minimum sample floor (INS-02)', () => {

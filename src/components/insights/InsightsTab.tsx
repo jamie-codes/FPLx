@@ -29,7 +29,7 @@ const CATEGORY_LABELS: Record<typeof CATEGORY_ORDER[number], string> = {
 
 function InsightCard({ insight }: { insight: Insight }) {
   const tier = getTier(insight.confidence_pct)
-  const tooltip = `True in ${insight.confidence_pct}% of fixtures — ${insight.sample_n}/${insight.sample_total} matches`
+  const tooltip = `True in ${insight.confidence_pct.toFixed(1)}% of fixtures — ${insight.sample_n}/${insight.sample_total} matches`
   return (
     <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 space-y-2">
       <p className="text-sm">{insight.statement}</p>
