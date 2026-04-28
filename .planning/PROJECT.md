@@ -30,7 +30,9 @@ Give the manager a clear, prioritised view of who to buy and who to sell this we
 - Team target list with player involvement % and green fixture runs
 - Enhanced chip strategy analysis (BB/TC/FH optimal GW finder)
 
-## Current State (v1.4 Analytics Engine — Phase 31 complete 2026-04-28)
+## Current State (v1.4 Analytics Engine — Phase 32 complete 2026-04-28)
+
+Phase 32 complete — Team Target List shipped: `pipeline/merge.py` writes `expected_goals` and `expected_assists` (FPL StatsBomb season totals, float, zero-guard) to every player dict; `MergedPlayer` declares both as non-optional `number`; `src/lib/xgi.ts` exports `computeXgiInvolvement` (two-pass team-share aggregation, zero-division guard); `FixtureEaseRankingPanel` extended with green TARGET badge (teams with 4+ fixtures `attacking_difficulty < 0.5` of next 5), keyboard-operable expand-on-click, inline top-3 player table (columns: Player/Pos/xGI%/xPts/Signal/Diff), single-open invariant. TGT-01, TGT-02, TGT-03 satisfied.
 
 Phase 31 complete — Captaincy Ceiling shipped: `_compute_captain_picks()` helper in `pipeline/merge.py` computes ceiling (max `xPts_90th_1gw` among `status='a'` players) and EO-adjusted picks (threshold ladder 25%→35%→ceiling fallback via `_safe_float(selected_by_percent)`); `xPts_90th_1gw` persisted per-player in `merged_players.json` (D-11, Z=1.28); `captain_picks.json` written by `run.py` alongside `merged_players.json`; `/api/captain-picks` route (USE_BLOB toggle); `useCaptainPicks` hook (6h staleTime); `CaptainPicksPanel` two-card component with locked UI-SPEC Tailwind tokens and copy; mounted on Gems tab below GemTable. CAP-03 and CAP-04 satisfied.
 
@@ -205,4 +207,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-28 — Phase 30 complete; Differential Tracker shipped (differential_flag pipeline, DifferentialBadge, Diff column in GemTable)*
+*Last updated: 2026-04-28 — Phase 32 complete; Team Target List shipped (computeXgiInvolvement utility, TARGET badge + expand-on-click player table on Club Form tab)*
