@@ -104,6 +104,11 @@ export interface MergedPlayer {
   // FPL scoring fields (used by DQ-01 xG proxy in gem-score.ts)
   goals_scored: number
   assists: number
+  // FPL StatsBomb season totals (Phase 32 TGT-02, D-09).
+  // Source: bootstrap elements.expected_goals / expected_assists (string decimals,
+  // converted to float in pipeline/merge.py). Used by src/lib/xgi.ts.
+  expected_goals: number
+  expected_assists: number
   // Historical points (VG-01 — from element-summary history)
   pts_last3gw: number        // sum of points over last 3 GWs (partial if fewer GWs available)
   pts_last5gw: number        // sum of points over last 5 GWs (partial if fewer GWs available)

@@ -765,6 +765,11 @@ def merge_players(
             'total_points': element['total_points'],
             'goals_scored': element.get('goals_scored', 0),
             'assists': element.get('assists', 0),
+            # FPL StatsBomb season-total xG/xA (Phase 32 TGT-02, D-09).
+            # Source: bootstrap elements.expected_goals / expected_assists (string decimals).
+            # Used by src/lib/xgi.ts computeXgiInvolvement for per-player team-share %.
+            'expected_goals': float(element.get('expected_goals', 0) or 0),
+            'expected_assists': float(element.get('expected_assists', 0) or 0),
             # Set-piece / defensive flags
             'defensive_contribution': element.get('defensive_contribution'),
             'clearances_blocks_interceptions': element.get('clearances_blocks_interceptions'),
