@@ -134,7 +134,7 @@ Plans:
 Plans:
 
 **Wave 1**
-- [ ] 31-01-PLAN.md — Wave 0 test stubs + _compute_captain_picks() helper in merge.py + xPts_90th_1gw per player + run.py tuple unpack + captain_picks.json write (CAP-03, CAP-04)
+- [x] 31-01-PLAN.md — Wave 0 test stubs + _compute_captain_picks() helper in merge.py + xPts_90th_1gw per player + run.py tuple unpack + captain_picks.json write (CAP-03, CAP-04) *(completed 2026-04-28)*
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 31-02-PLAN.md — types + /api/captain-picks route + useCaptainPicks hook + CaptainPicksPanel component + page.tsx mount + component tests + human verify (CAP-03, CAP-04)
 **Cross-cutting constraints:**
