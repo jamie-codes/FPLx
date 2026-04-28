@@ -1,11 +1,21 @@
-// Phase 31: Captaincy Ceiling — test stubs
+// Phase 31: Captaincy Ceiling — test stubs + component tests
 // Wave 0: stubs created before implementation to satisfy Nyquist rule.
+// Wave 2 (Plan 02): component tests filled in below.
 // Integration tests are skipped (require pipeline run).
-// Component tests filled in Wave 2 Task 1 of 31-02-PLAN.md.
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
+import { render } from '@testing-library/react'
+
+vi.mock('@/lib/hooks/useCaptainPicks', () => ({
+  useCaptainPicks: vi.fn(),
+}))
+
+import { CaptainPicksPanel } from '@/components/captaincy/CaptainPicksPanel'
+import { useCaptainPicks } from '@/lib/hooks/useCaptainPicks'
+
+const mockedUseCaptainPicks = vi.mocked(useCaptainPicks)
 
 describe('Phase 31: Captain picks pipeline output', () => {
   it.skip('captain_picks.json exists and parses (requires pipeline run)', async () => {
@@ -108,6 +118,101 @@ describe('Phase 31: Captain picks pipeline output', () => {
     const byId = new Map(players.map((p) => [p.id, p]))
     if (picks.ceiling) expect(byId.get(picks.ceiling.id)?.status).toBe('a')
     if (picks.eo_adjusted) expect(byId.get(picks.eo_adjusted.id)?.status).toBe('a')
+  })
+})
+
+describe('Phase 31: CaptainPicksPanel component', () => {
+  beforeEach(() => {
+    mockedUseCaptainPicks.mockReset()
+  })
+
+  const ceilingFixture = {
+    id: 1,
+    name: 'Bukayo Saka',
+    team: 'ARS',
+    position: 'MID',
+    now_cost: 91,
+    xPts_1gw: 7.8,
+    xPts_90th_1gw: 9.2,
+    selected_by_percent: '12.4',
+  }
+
+  const eoFixture = {
+    id: 2,
+    name: 'Ollie Watkins',
+    team: 'AVL',
+    position: 'FWD',
+    now_cost: 86,
+    xPts_1gw: 6.5,
+    xPts_90th_1gw: 7.9,
+    selected_by_percent: '8.1',
+    eo_threshold_used: 25.0,
+  }
+
+  it('renders ceiling card with player name and xPts when data loaded (CAP-03)', () => {
+    mockedUseCaptainPicks.mockReturnValue({
+      data: { generated_at: '2026-04-28T00:00:00Z', gameweek: 30, ceiling: ceilingFixture, eo_adjusted: eoFixture },
+      isLoading: false,
+      error: null,
+    } as ReturnType<typeof useCaptainPicks>)
+    const { container } = render(CaptainPicksPanel({}))
+    expect(container.textContent).toContain('Captain Picks — GW 30')
+    expect(container.textContent).toContain('Bukayo Saka')
+    expect(container.textContent).toContain('ARS')
+    expect(container.textContent).toContain('£9.1m')
+    expect(container.textContent).toContain('12.4% owned')
+    expect(container.textContent).toContain('xPts:')
+    expect(container.textContent).toContain('7.8')
+    expect(container.textContent).toContain('(90th pct: 9.2)')
+  })
+
+  it('renders EO-Adjusted card with player name and ownership (CAP-04)', () => {
+    mockedUseCaptainPicks.mockReturnValue({
+      data: { generated_at: '2026-04-28T00:00:00Z', gameweek: 30, ceiling: ceilingFixture, eo_adjusted: eoFixture },
+      isLoading: false,
+      error: null,
+    } as ReturnType<typeof useCaptainPicks>)
+    const { container } = render(CaptainPicksPanel({}))
+    expect(container.textContent).toContain('EO-Adjusted')
+    expect(container.textContent).toContain('Ollie Watkins')
+    expect(container.textContent).toContain('AVL')
+    expect(container.textContent).toContain('£8.6m')
+    expect(container.textContent).toContain('8.1% owned')
+  })
+
+  it('shows same-player note when ceiling.id === eo_adjusted.id (CAP-03/04 edge case)', () => {
+    mockedUseCaptainPicks.mockReturnValue({
+      data: { generated_at: '2026-04-28T00:00:00Z', gameweek: 30, ceiling: ceilingFixture, eo_adjusted: ceilingFixture },
+      isLoading: false,
+      error: null,
+    } as ReturnType<typeof useCaptainPicks>)
+    const { container } = render(CaptainPicksPanel({}))
+    expect(container.textContent).toContain('Ceiling pick is also low-owned — same player satisfies both criteria this GW.')
+  })
+
+  it('shows loading state with locked copy (CAP-03/04)', () => {
+    mockedUseCaptainPicks.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      error: null,
+    } as unknown as ReturnType<typeof useCaptainPicks>)
+    const { container } = render(CaptainPicksPanel({}))
+    expect(container.textContent).toContain('Loading captain picks…')
+    const p = container.querySelector('p')
+    expect(p?.className).toContain('text-center')
+    expect(p?.className).toContain('py-8')
+  })
+
+  it('shows error state with locked copy (CAP-03/04)', () => {
+    mockedUseCaptainPicks.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new Error('boom'),
+    } as unknown as ReturnType<typeof useCaptainPicks>)
+    const { container } = render(CaptainPicksPanel({}))
+    expect(container.textContent).toContain('Failed to load captain picks. Check the pipeline output and refresh.')
+    const p = container.querySelector('p')
+    expect(p?.className).toContain('text-red-600')
   })
 })
 
