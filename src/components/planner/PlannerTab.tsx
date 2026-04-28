@@ -4,10 +4,12 @@ import { useState, useMemo } from 'react'
 import { useImmer } from 'use-immer'
 import { HorizonSelector } from './HorizonSelector'
 import { TransferPlanTable } from './TransferPlanTable'
+import { ChipStrategyPanel } from './ChipStrategyPanel'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useSquad } from '@/lib/hooks/useSquad'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
 import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
+import { useClubForm } from '@/lib/hooks/useClubForm'
 import { computeAllGemScores } from '@/lib/gem-score'
 import { generatePlan, generatePlanFrom, generateChipStep, ftStateAfterStepIndex, squadPicksFromStep, fixtureCountForGw } from '@/lib/planning-engine'
 import { computeNextFTState } from '@/lib/free-transfer-engine'
@@ -30,6 +32,7 @@ export function PlannerTab() {
   const { data: playersData } = usePlayers()
   const { data: squadData } = useSquad(teamId)
   const { data: myTeamData } = useMyTeam(isAuthenticated)
+  const { data: clubFormData } = useClubForm()
 
   // Convert MergedPlayer[] → ScoredPlayer[] (same pattern as GemTable)
   const scoredPlayers = useMemo(
@@ -300,6 +303,15 @@ export function PlannerTab() {
 
   return (
     <div className="space-y-6">
+      <ChipStrategyPanel
+        teamId={teamId}
+        scoredPlayers={scoredPlayers}
+        clubForm={clubFormData}
+        picks={picks}
+        bankBalance={bankBalance}
+        sellPrices={sellPrices}
+        startingGw={startingGw}
+      />
       <div>
         <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
           Planning Horizon
