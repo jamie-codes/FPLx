@@ -30,7 +30,9 @@ Give the manager a clear, prioritised view of who to buy and who to sell this we
 - Team target list with player involvement % and green fixture runs
 - Enhanced chip strategy analysis (BB/TC/FH optimal GW finder)
 
-## Current State (v1.4 Analytics Engine — Phase 29 complete 2026-04-28)
+## Current State (v1.4 Analytics Engine — Phase 30 complete 2026-04-28)
+
+Phase 30 complete — Differential Tracker shipped: `_compute_differential_flag()` in `pipeline/merge.py` computes `differential_flag` per player using position-relative median of `xPts_1gw` per `element_type` (GK/DEF/MID/FWD); DIFF gate (D-03): above-median xPts + owned <5% + status='a'; TRAP gate (D-04): below-median xPts + owned >15%, status-agnostic (D-12 asymmetry); field absent when neither fires (D-05); `MergedPlayer` extended with `differential_flag?: 'diff' | 'trap' | null`; `DifferentialBadge` renders green DIFF pill / amber TRAP pill / em-dash with D-10 ownership % tooltips; `Diff` column added to GemTable after Signal with `{diff:0,trap:2}` sort; hidden on portrait mobile. TMPL-01, TMPL-02 satisfied.
 
 Phase 29 complete — Regression Detector shipped: `_compute_regression_signal()` in `pipeline/merge.py` computes buy/sell signals from FPL element-summary xG/xA (last-5-unique-rounds window, 900-min gate, ±0.5 threshold; D-01/D-02: uses FPL StatsBomb data, not Understat); `MergedPlayer` extended with `regression_signal` and `actual_vs_xg_delta` fields; `RegressionSignalBadge` component renders green BUY pill / amber SELL pill / em-dash; Signal column added to GemTable after xPts_5gw with custom sort (BUY-first ascending); hidden on portrait mobile. All 3 Phase 29 requirements (DATA-03, REG-01, REG-02) satisfied.
 
@@ -201,4 +203,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-28 — Phase 28 complete; xPts Engine shipped (Poisson/Bernoulli pipeline, VarianceBadge, GemTable xPts columns)*
+*Last updated: 2026-04-28 — Phase 30 complete; Differential Tracker shipped (differential_flag pipeline, DifferentialBadge, Diff column in GemTable)*

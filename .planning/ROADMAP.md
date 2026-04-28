@@ -18,7 +18,7 @@
 - [x] **Phase 27: FDR++ Pipeline** - Attacking vs defensive fixture difficulty per team per fixture *(completed 2026-04-28)*
 - [x] **Phase 28: xPts Engine** - Expected points per player with component breakdown and variance *(completed 2026-04-28)*
 - [x] **Phase 29: Regression Detector** - Per-match xG/xA pipeline and buy/sell signals from form vs underlying (completed 2026-04-28)
-- [ ] **Phase 30: Differential Tracker** - Template-trap and differential flags based on ownership vs expected value
+- [x] **Phase 30: Differential Tracker** - Template-trap and differential flags based on ownership vs expected value *(completed 2026-04-28)*
 - [ ] **Phase 31: Captaincy Ceiling** - 90th-percentile and EO-adjusted captain recommendations
 - [ ] **Phase 32: Team Target List** - Teams with green fixture runs and top players ranked by xGI involvement
 - [ ] **Phase 33: Insights Tab** - Data-driven pattern statements with confidence weights
@@ -116,7 +116,7 @@ Plans:
 **Wave 1**
 - [x] 30-01-PLAN.md — Wave 0 test stubs + _compute_differential_flag() in merge.py + position-relative median pass + MergedPlayer type extension (TMPL-01, TMPL-02) *(complete 2026-04-28)*
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 30-02-PLAN.md — DifferentialBadge + Diff column in columns.tsx (TMPL-01, TMPL-02) + GwToggle/GemTable visibility + component tests + human verify
+- [x] 30-02-PLAN.md — DifferentialBadge + Diff column in columns.tsx (TMPL-01, TMPL-02) + GwToggle/GemTable visibility + component tests + human verify *(complete 2026-04-28)*
 **Cross-cutting constraints:**
 - xPts threshold is position-relative (D-01: median per element_type), not global — avoids systematic bias against DEFs
 - DIFF gate (D-03) requires status='a'; TRAP gate (D-04) is status-agnostic (D-12 asymmetry: injured template player still a sell-trap)
