@@ -55,10 +55,11 @@ Source: codebase scan — `MobileNav.tsx` (min-h-[44px]), `GemTable.tsx` (px-2 p
 
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
-| Body | 14px (text-sm) | 400 (font-normal) | 1.5 |
 | Label | 12px (text-xs) | 400 (font-normal) | 1.4 |
+| Body | 14px (text-sm) | 400 (font-normal) | 1.5 |
 | Heading | 18px (text-lg) | 600 (font-semibold) | 1.2 |
-| Display | 30px (text-2xl) — section titles only | 700 (font-bold) | 1.2 |
+
+> Note: The Display role (30px / text-2xl / font-bold) used for the GemTable `<h1>` belongs to the existing codebase and is not introduced by Phase 26 components. It is excluded from this phase's type scale.
 
 Usage in this phase:
 - **Set-piece panel heading**: text-lg font-semibold (matches DefCon section headings: "Defenders (threshold: 10...)")
@@ -67,7 +68,7 @@ Usage in this phase:
 - **Change alert text**: text-sm font-normal with font-semibold for the alert label
 - **Landscape tip text**: text-xs font-normal
 
-Source: codebase scan — `DefConTables.tsx` (text-lg font-semibold headings), `GemTable.tsx` (text-2xl font-bold h1), `VerdictBadge.tsx` (text-xs font-normal badges).
+Source: codebase scan — `DefConTables.tsx` (text-lg font-semibold headings), `GemTable.tsx` (text-2xl font-bold h1 — existing pattern, out of scope), `VerdictBadge.tsx` (text-xs font-normal badges).
 
 ---
 
