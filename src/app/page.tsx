@@ -5,6 +5,7 @@ import { GemTable } from '@/components/gem-table/GemTable'
 import { DefConTables } from '@/components/defcon/DefConTables'
 import { TransferPanel } from '@/components/transfers/TransferPanel'
 import { ClubFormTable } from '@/components/club-form/ClubFormTable'
+import { FixtureEaseRankingPanel } from '@/components/club-form/FixtureEaseRankingPanel'
 import { LastUpdated } from '@/components/LastUpdated'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { ValueGemsTable } from '@/components/value-gems/ValueGemsTable'
@@ -106,7 +107,12 @@ export default function Home() {
         {activeTab === 'gems' && <GemTable />}
         {activeTab === 'defcon' && <DefConTables />}
         {activeTab === 'squad' && <TransferPanel />}
-        {activeTab === 'club-form' && <ClubFormTable />}
+        {activeTab === 'club-form' && (
+          <>
+            <FixtureEaseRankingPanel />
+            <ClubFormTable />
+          </>
+        )}
         {activeTab === 'set-pieces' && <SetPieceTakerPanel />}
         {activeTab === 'value-gems' && <ValueGemsTable />}
         {activeTab === 'planner' && <PlannerTab />}
