@@ -11,6 +11,17 @@ def _safe_float(val, default: float = 0.0) -> float:
         return default
 
 
+# FPL scoring constants for xPts engine (Phase 28 — DATA-02, D-01..D-09)
+# Position code: 1=GK, 2=DEF, 3=MID, 4=FWD
+GOAL_PTS = {1: 6, 2: 6, 3: 5, 4: 4}
+ASSIST_PTS = 3  # all positions
+CS_PTS = {1: 6, 2: 6, 3: 1, 4: 0}
+# Flat position-average bonus rate (pts/game) — INDEPENDENT of cs_prob to avoid
+# double-counting defensive quality (CS_PTS already pays for defensive quality once).
+# See STATE.md blocker + 28-RESEARCH.md Common Pitfalls Pitfall 1.
+BONUS_RATE = {1: 0.30, 2: 0.40, 3: 0.60, 4: 0.70}
+
+
 def _compute_difficulty_score(team_xga: float, min_xga: float, max_xga: float) -> float:
     """Normalise team xGA to 0.0–1.0 difficulty score.
 
@@ -131,6 +142,175 @@ def _proj_pts_ngw(
             difficulty_modifier = 1.0 - (fix['difficulty_score'] * 0.5)
             total += ppg * start_prob * difficulty_modifier
     return round(total, 2)
+
+
+def _compute_xpts_fixture(
+    xg_per90: float,
+    xa_per90: float,
+    start_prob: float,
+    xmins: float,
+    element_type: int,
+    attacking_difficulty: float,
+) -> dict:
+    """Compute expected FPL points for a single fixture (Phase 28 DATA-02).
+
+    Inputs:
+      xg_per90, xa_per90      — Understat (or DQ-01 FPL proxy) per-90 rates
+      start_prob              — probability of starting (0.0-1.0)
+      xmins                   — expected minutes for this player (0-90)
+      element_type            — FPL position code (1=GK, 2=DEF, 3=MID, 4=FWD)
+      attacking_difficulty    — Phase 27 fixture-level signal (0.0=easiest, 1.0=hardest)
+
+    Returns dict with keys: total, goal_pts, assist_pts, cs_pts, bonus_pts.
+    Components are independently computed — bonus does NOT depend on cs_prob
+    (avoids double-counting defensive quality, per STATE.md blocker).
+    """
+    # Guard against degenerate inputs
+    if xmins <= 0 or start_prob <= 0:
+        return {'total': 0.0, 'goal_pts': 0.0, 'assist_pts': 0.0, 'cs_pts': 0.0, 'bonus_pts': 0.0}
+
+    xg = xg_per90 if xg_per90 is not None else 0.0
+    xa = xa_per90 if xa_per90 is not None else 0.0
+
+    # Poisson rates: scale per-90 rate to expected for this fixture's minutes
+    lam_g = xg * (xmins / 90.0)
+    lam_a = xa * (xmins / 90.0)
+
+    # Expected goal/assist points: linearity of expectation E[c*X] = c*E[X],
+    # and Poisson E[X] = lambda — so E[goal_pts] = lambda_g * pts_per_goal.
+    goal_pts = lam_g * GOAL_PTS[element_type]
+    assist_pts = lam_a * ASSIST_PTS
+
+    # CS probability: Bernoulli, parameterised from attacking_difficulty.
+    # attacking_difficulty=0.0 (opponent concedes a lot — easy to attack)
+    #   means HARD CS for the defending player (opponent will score) -> low cs_prob.
+    # attacking_difficulty=1.0 (hard to attack) -> high cs_prob.
+    # Calibrated formula: low ad=low cs_prob, high ad=high cs_prob.
+    # Pitfall 2 in 28-RESEARCH.md: direction verified against _compute_difficulty_score.
+    cs_prob = max(0.10, min(0.65, 0.10 + attacking_difficulty * 0.30))
+
+    # Minutes factor: FPL awards CS points only at 60+ minutes.
+    mins_factor = min(1.0, xmins / 60.0)
+    effective_cs_prob = cs_prob * mins_factor
+    cs_pts = effective_cs_prob * CS_PTS[element_type]
+
+    # Bonus: flat position-average rate, scaled by start_prob and minutes.
+    # NOT a function of cs_prob — independent of fixture defensive quality.
+    bonus_pts = BONUS_RATE[element_type] * start_prob * (xmins / 90.0)
+
+    total = goal_pts + assist_pts + cs_pts + bonus_pts
+    return {
+        'total': round(total, 3),
+        'goal_pts': round(goal_pts, 3),
+        'assist_pts': round(assist_pts, 3),
+        'cs_pts': round(cs_pts, 3),
+        'bonus_pts': round(bonus_pts, 3),
+    }
+
+
+def _xpts_ngw(
+    xg_per90: float,
+    xa_per90: float,
+    start_prob: float,
+    xmins: float,
+    element_type: int,
+    fixtures: list,
+    n_gws: int,
+) -> tuple:
+    """Project xPts across N upcoming GWs, DGW-aware (Phase 28 DATA-02 D-04, D-06).
+
+    Returns (total_xPts, components_for_first_gw_only_or_none).
+    Components are summed across fixtures within the first GW group
+    (matches DGW behaviour for the 1-GW window). For 3GW and 5GW
+    windows the second tuple element is None — CONTEXT.md specifies
+    xPts_components_1gw only.
+
+    Mirrors _proj_pts_ngw() loop structure (lines 104-133).
+    """
+    from itertools import groupby
+
+    if not fixtures or start_prob == 0 or xmins == 0:
+        return 0.0, None
+
+    grouped = []
+    for event_id, group in groupby(fixtures, key=lambda f: f['event_id']):
+        grouped.append((event_id, list(group)))
+
+    total = 0.0
+    first_gw_components = {'goal_pts': 0.0, 'assist_pts': 0.0, 'cs_pts': 0.0, 'bonus_pts': 0.0}
+
+    for gw_idx, (_event_id, gw_fixtures) in enumerate(grouped[:n_gws]):
+        for fix in gw_fixtures:
+            result = _compute_xpts_fixture(
+                xg_per90 if xg_per90 is not None else 0.0,
+                xa_per90 if xa_per90 is not None else 0.0,
+                start_prob,
+                xmins,
+                element_type,
+                fix.get('attacking_difficulty', 0.5),
+            )
+            total += result['total']
+            if gw_idx == 0 and n_gws == 1:
+                for k in first_gw_components:
+                    first_gw_components[k] += result[k]
+
+    components = first_gw_components if n_gws == 1 else None
+    if components is not None:
+        # Round component sums to 3 decimals to match _compute_xpts_fixture
+        components = {k: round(v, 3) for k, v in components.items()}
+    return round(total, 2), components
+
+
+def _compute_xpts_sigma(
+    xg_per90: float,
+    xa_per90: float,
+    start_prob: float,
+    xmins: float,
+    element_type: int,
+    fixtures: list,
+    n_gws: int,
+) -> float:
+    """Analytical sigma for xPts across an N-GW window (Phase 28 XPTS-02 D-09).
+
+    Var(goals_pts)  = pts_per_goal^2 * lambda_g    (Poisson variance property)
+    Var(assist_pts) = pts_per_assist^2 * lambda_a  (Poisson variance property)
+    Var(cs_pts)     = p*(1-p) * pts_per_cs^2       (Bernoulli variance property)
+    Bonus variance is omitted — small relative to goal/CS variance for most players.
+
+    Variances are additive across independent fixtures (DGW assumed independent),
+    so total Var = sum_fixtures Var_per_fixture; sigma = sqrt(total Var).
+    """
+    import math
+    from itertools import groupby
+
+    if not fixtures or start_prob == 0 or xmins == 0:
+        return 0.0
+
+    xg = xg_per90 if xg_per90 is not None else 0.0
+    xa = xa_per90 if xa_per90 is not None else 0.0
+
+    grouped = []
+    for event_id, group in groupby(fixtures, key=lambda f: f['event_id']):
+        grouped.append((event_id, list(group)))
+
+    total_var = 0.0
+    for _event_id, gw_fixtures in grouped[:n_gws]:
+        for fix in gw_fixtures:
+            ad = fix.get('attacking_difficulty', 0.5)
+            cs_prob_raw = max(0.10, min(0.65, 0.10 + ad * 0.30))
+            mins_factor = min(1.0, xmins / 60.0)
+            cs_prob = cs_prob_raw * mins_factor
+
+            lam_g = xg * (xmins / 90.0)
+            lam_a = xa * (xmins / 90.0)
+
+            var_goal = (GOAL_PTS[element_type] ** 2) * lam_g
+            var_assist = (ASSIST_PTS ** 2) * lam_a
+            var_cs = cs_prob * (1 - cs_prob) * (CS_PTS[element_type] ** 2)
+
+            total_var += var_goal + var_assist + var_cs
+
+    return math.sqrt(total_var)
 
 
 def merge_players(
@@ -472,6 +652,62 @@ def merge_players(
         player['start_prob'] = player_start_prob
         player['mins_risk'] = player_mins_risk
 
+        # ---- xPts engine (Phase 28 DATA-02, XPTS-02, D-01..D-09) ----
+        xpts_1gw, xpts_components_1gw = _xpts_ngw(
+            xg_per90, xa_per90, player_start_prob, player_xmins,
+            element['element_type'], player_fixtures, 1,
+        )
+        xpts_3gw, _ = _xpts_ngw(
+            xg_per90, xa_per90, player_start_prob, player_xmins,
+            element['element_type'], player_fixtures, 3,
+        )
+        xpts_5gw, _ = _xpts_ngw(
+            xg_per90, xa_per90, player_start_prob, player_xmins,
+            element['element_type'], player_fixtures, 5,
+        )
+        player['xPts_1gw'] = xpts_1gw
+        player['xPts_3gw'] = xpts_3gw
+        player['xPts_5gw'] = xpts_5gw
+        player['xPts_components_1gw'] = xpts_components_1gw  # may be None for BGW
+
+        # Sigma per window (used for ceiling classification post-loop)
+        player['_sigma_1gw'] = _compute_xpts_sigma(
+            xg_per90, xa_per90, player_start_prob, player_xmins,
+            element['element_type'], player_fixtures, 1,
+        )
+        player['_sigma_3gw'] = _compute_xpts_sigma(
+            xg_per90, xa_per90, player_start_prob, player_xmins,
+            element['element_type'], player_fixtures, 3,
+        )
+        player['_sigma_5gw'] = _compute_xpts_sigma(
+            xg_per90, xa_per90, player_start_prob, player_xmins,
+            element['element_type'], player_fixtures, 5,
+        )
+
         result.append(player)
+
+    # ---- xPts ceiling classification (Phase 28 XPTS-02 D-09) ----
+    # Top-tercile sigma per GW window -> high-ceiling boolean.
+    for window in (1, 3, 5):
+        sigma_key = f'_sigma_{window}gw'
+        ceiling_key = f'xPts_ceiling_{window}gw'
+        sigmas = [p[sigma_key] for p in result]
+        sorted_sigmas = sorted(sigmas)
+        n = len(sorted_sigmas)
+        if n >= 3:
+            # int(n * 2/3) gives the start-index of the top tercile in a sorted list.
+            # Mirrors _difficulty_tier easy_idx = int(n * 2 / 3) at line 257.
+            tercile_idx = int(n * 2 / 3)
+            threshold = sorted_sigmas[tercile_idx]
+        else:
+            threshold = 0.0
+        for p in result:
+            p[ceiling_key] = bool(p[sigma_key] >= threshold) if threshold > 0 else False
+
+    # Strip scratch sigma fields — only the boolean ceiling flags ship in JSON.
+    for p in result:
+        del p['_sigma_1gw']
+        del p['_sigma_3gw']
+        del p['_sigma_5gw']
 
     return result
