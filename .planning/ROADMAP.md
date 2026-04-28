@@ -110,7 +110,18 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. User can see a differential flag on players with above-average xPts and below-average ownership
   2. User can see a template-trap flag on players with below-average xPts and above-average ownership
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+
+**Wave 1**
+- [ ] 30-01-PLAN.md — Wave 0 test stubs + _compute_differential_flag() in merge.py + position-relative median pass + MergedPlayer type extension (TMPL-01, TMPL-02)
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 30-02-PLAN.md — DifferentialBadge + Diff column in columns.tsx (TMPL-01, TMPL-02) + GwToggle/GemTable visibility + component tests + human verify
+**Cross-cutting constraints:**
+- xPts threshold is position-relative (D-01: median per element_type), not global — avoids systematic bias against DEFs
+- DIFF gate (D-03) requires status='a'; TRAP gate (D-04) is status-agnostic (D-12 asymmetry: injured template player still a sell-trap)
+- differential_flag field absent (not null) when neither DIFF nor TRAP fires (D-05 graceful fallback — same convention as regression_signal)
+**UI hint**: yes
 
 ### Phase 31: Captaincy Ceiling
 **Goal**: User gets distribution-aware captain picks -- a ceiling pick for when chasing rank and an EO-adjusted pick for protecting rank
@@ -168,7 +179,7 @@ Note: Phase 29 (Regression Detector) can run in parallel with Phases 27-28 if de
 | 27. FDR++ Pipeline | 2/2 | Complete | 2026-04-28 |
 | 28. xPts Engine | 2/2 | Complete | 2026-04-28 |
 | 29. Regression Detector | 2/2 | Complete   | 2026-04-28 |
-| 30. Differential Tracker | 0/TBD | Not started | - |
+| 30. Differential Tracker | 0/2 | Planned | - |
 | 31. Captaincy Ceiling | 0/TBD | Not started | - |
 | 32. Team Target List | 0/TBD | Not started | - |
 | 33. Insights Tab | 0/TBD | Not started | - |
