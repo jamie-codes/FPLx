@@ -386,8 +386,8 @@ def _captaincy_patterns(merged: list, summaries: dict) -> list:
         top3 = sorted_by_xpts[:3]
         sum_all_xpts = sum(p.get('xPts_1gw') or 0 for p in available)
         sum_top3_xpts = sum(p.get('xPts_1gw') or 0 for p in top3)
-        sample_total = round(sum_all_xpts)
-        sample_n = round(sum_top3_xpts)
+        sample_total = len(available)       # number of available players
+        sample_n = len(top3)                # always 3 when len(available) >= 3
         if sample_total >= MIN_SAMPLE_TOTAL:
             confidence_pct = round(sum_top3_xpts / sum_all_xpts * 100, 1)
             out.append({
@@ -395,7 +395,7 @@ def _captaincy_patterns(merged: list, summaries: dict) -> list:
                 'category': 'captaincy',
                 'statement': (
                     f'The top 3 captaincy options account for {confidence_pct}% of available '
-                    f'xPts this GW ({sample_n}/{sample_total}).'
+                    f'xPts this GW (from {sample_total} eligible players).'
                 ),
                 'confidence_pct': confidence_pct,
                 'sample_n': int(sample_n),
