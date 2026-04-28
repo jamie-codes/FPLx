@@ -64,7 +64,7 @@ export function InsightsTab() {
 
   if (!data || data.length === 0) {
     return (
-      <section className="mt-6 space-y-2">
+      <section className="mt-6 space-y-2" aria-label="Insights not available">
         <h2 className="text-lg font-semibold">No insights available yet</h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Run the pipeline to generate pattern data for this season.
@@ -87,7 +87,7 @@ export function InsightsTab() {
   }
 
   return (
-    <section className="mt-6 space-y-6">
+    <section className="mt-6 space-y-6" aria-label="Season pattern insights">
       {CATEGORY_ORDER.map((cat) => {
         const items = byCategory[cat]
         if (items.length === 0) return null
