@@ -31,8 +31,10 @@ export function XPtsCell({
 }) {
   const display = (value ?? 0).toFixed(1)
 
-  // Empty/zero short-circuit: no badge, no tooltip — matches existing proj_pts `(value ?? 0).toFixed(1)` semantics.
-  if (!value || value === 0) {
+  // Empty/zero/negative/NaN short-circuit: no badge, no tooltip.
+  // Explicit guards handle NaN and negative values that could arrive during a
+  // partial pipeline failure or BGW cache serve (WR-03: tighten falsy check).
+  if (value === undefined || value === null || value <= 0) {
     return <span>{display}</span>
   }
 
