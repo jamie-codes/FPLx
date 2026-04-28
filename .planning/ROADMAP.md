@@ -152,7 +152,17 @@ Plans:
   1. User can see teams with 4+ favourable upcoming fixtures highlighted on the Club Form tab
   2. User can see top players ranked by xGI involvement percentage for teams with green fixture runs
   3. Buy signals and differential flags are visible alongside team target player data
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+
+**Wave 1**
+- [x] 32-01-PLAN.md — Pipeline expected_goals/expected_assists fields + MergedPlayer type + computeXgiInvolvement utility + unit tests (TGT-02 foundation) ✓ 2026-04-28
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 32-02-PLAN.md — FixtureEaseRankingPanel TARGET badge + expand-on-click player table reusing RegressionSignalBadge/DifferentialBadge (TGT-01, TGT-02, TGT-03) + component tests + human verify
+**Cross-cutting constraints:**
+- expected_goals and expected_assists added to pipeline/merge.py and MergedPlayer in Plan 01 — non-optional, sourced from FPL bootstrap (matches goals_scored/assists convention)
+- TARGET qualification always uses 5GW window + attacking_difficulty < 0.5 regardless of GwToggle/AttDefToggle state (CONTEXT D-02)
+- All extension lives inside FixtureEaseRankingPanel — no changes to src/app/page.tsx (CONTEXT D-05)
 **UI hint**: yes
 
 ### Phase 33: Insights Tab
@@ -193,6 +203,6 @@ Note: Phase 29 (Regression Detector) can run in parallel with Phases 27-28 if de
 | 29. Regression Detector | 2/2 | Complete   | 2026-04-28 |
 | 30. Differential Tracker | 2/2 | Complete | 2026-04-28 |
 | 31. Captaincy Ceiling | 0/2 | Planned | - |
-| 32. Team Target List | 0/TBD | Not started | - |
+| 32. Team Target List | 0/2 | Planned | - |
 | 33. Insights Tab | 0/TBD | Not started | - |
 | 34. Chip Strategy | 0/TBD | Not started | - |
