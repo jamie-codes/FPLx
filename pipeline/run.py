@@ -62,7 +62,7 @@ def _diff_sp_snapshots(prev: dict, curr: dict, bootstrap: dict) -> dict:
         prev_roles = prev.get(team_id_str, {})
         team_info = teams_by_id.get(team_id_str, {})
 
-        def _taker_entry(role_key, curr_id, prev_id):
+        def _taker_entry(curr_id, prev_id):
             nonlocal changes_count
             changed = curr_id != prev_id and not (curr_id is None and prev_id is None)
             if changed:
@@ -77,9 +77,9 @@ def _diff_sp_snapshots(prev: dict, curr: dict, bootstrap: dict) -> dict:
         teams_list.append({
             'team_id': int(team_id_str),
             'team_short_name': team_info.get('short_name', f'T{team_id_str}'),
-            'penalty_taker': _taker_entry('penalty', curr_roles.get('penalty'), prev_roles.get('penalty')),
-            'fk_taker': _taker_entry('fk', curr_roles.get('fk'), prev_roles.get('fk')),
-            'corner_taker': _taker_entry('corner', curr_roles.get('corner'), prev_roles.get('corner')),
+            'penalty_taker': _taker_entry(curr_roles.get('penalty'), prev_roles.get('penalty')),
+            'fk_taker':      _taker_entry(curr_roles.get('fk'),      prev_roles.get('fk')),
+            'corner_taker':  _taker_entry(curr_roles.get('corner'),  prev_roles.get('corner')),
         })
 
     return {
