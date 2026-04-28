@@ -506,7 +506,7 @@ For the badge tooltip, use the same `title` attribute approach:
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Insight seeding before first pipeline run**
    - What we know: `captain_picks.json` and other files do not exist until the pipeline runs.
@@ -515,6 +515,7 @@ For the badge tooltip, use the same `title` attribute approach:
      or let the tab show a graceful error state.
    - Recommendation: Seed `[]` and add an empty-state message to the component — consistent
      with best UX practice.
+   - **RESOLVED:** Seed `pipeline/cache/insights.json` with `[]` in Plan 01 Task 3. Empty-state (`'No insights available yet'`) handled in Plan 02 Task 4 component render.
 
 ---
 
