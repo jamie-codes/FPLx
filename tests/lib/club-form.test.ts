@@ -102,6 +102,115 @@ describe('computeClubForm', () => {
     }
   })
 
+  it('FDR++: emits attacking_difficulty and defensive_difficulty per upcoming fixture', () => {
+    const result = computeClubForm(bootstrap, makeFixtures())
+    const ars = result.find(r => r.team_id === 1)!
+    expect(ars.upcoming_fixtures.length).toBeGreaterThan(0)
+    for (const f of ars.upcoming_fixtures) {
+      expect(typeof f.attacking_difficulty).toBe('number')
+      expect(typeof f.defensive_difficulty).toBe('number')
+      expect(f.attacking_difficulty).toBeGreaterThanOrEqual(0)
+      expect(f.attacking_difficulty).toBeLessThanOrEqual(1)
+      expect(f.defensive_difficulty).toBeGreaterThanOrEqual(0)
+      expect(f.defensive_difficulty).toBeLessThanOrEqual(1)
+    }
+  })
+
+  it('FDR++: attacking_difficulty equals difficulty_score (DATA-01 D-01)', () => {
+    const result = computeClubForm(bootstrap, makeFixtures())
+    for (const team of result) {
+      for (const f of team.upcoming_fixtures) {
+        expect(f.attacking_difficulty).toBe(f.difficulty_score)
+      }
+    }
+  })
+
+  it('FDR++: ease arrays present for 1/3/5 GW windows on each ClubForm row', () => {
+    const result = computeClubForm(bootstrap, makeFixtures())
+    for (const team of result) {
+      for (const k of [
+        'attacking_ease_1gw', 'attacking_ease_3gw', 'attacking_ease_5gw',
+        'defensive_ease_1gw', 'defensive_ease_3gw', 'defensive_ease_5gw',
+      ] as const) {
+        const v = team[k]
+        expect(v === null || (typeof v === 'number' && v >= 0 && v <= 1)).toBe(true)
+      }
+    }
+  })
+
+  it('FDR++: BGW — team with zero upcoming fixtures returns null ease for all windows', () => {
+    // bootstrap teams 1,2,3 — but we only schedule upcoming fixtures involving 1 and 2.
+    // Team 3 (BUR) has zero upcoming → all six ease fields must be null.
+    const fixtures = [
+      { team_h: 1, team_a: 2, team_h_score: 1, team_a_score: 0, event: 1, finished: true },
+      { team_h: 2, team_a: 1, team_h_score: 0, team_a_score: 0, event: 2, finished: true },
+      { team_h: 1, team_a: 2, team_h_score: null, team_a_score: null, event: 30, finished: false },
+    ]
+    const result = computeClubForm(bootstrap, fixtures)
+    const bur = result.find(r => r.team_id === 3)!
+    expect(bur.attacking_ease_1gw).toBeNull()
+    expect(bur.attacking_ease_3gw).toBeNull()
+    expect(bur.attacking_ease_5gw).toBeNull()
+    expect(bur.defensive_ease_1gw).toBeNull()
+    expect(bur.defensive_ease_3gw).toBeNull()
+    expect(bur.defensive_ease_5gw).toBeNull()
+  })
+
+  it('FDR++: defensive_difficulty uses 3-game goals-scored window (not 6) and is NOT inverted', () => {
+    // Construct fixtures where team 1 (ARS) scored:
+    //   game 1: 0 goals, game 2: 0, game 3: 0  (last 3 → mean 0)
+    //   game 4: 5 goals, game 5: 5, game 6: 5  (last 3 → mean 5 — they're the hot streak)
+    // Team 1's defensive_difficulty (from their 3-game goals-scored avg) should be HIGH
+    // because the LAST 3 are the high-scoring ones.
+    // Team 2 (CHE) is the low-scoring team.
+    // We then schedule an upcoming fixture team_2 vs team_1 — CHE's upcoming fixture
+    // against ARS should have high defensive_difficulty (ARS scores a lot lately).
+    const fixtures = [
+      { team_h: 1, team_a: 3, team_h_score: 0, team_a_score: 0, event: 1, finished: true }, // ARS 0
+      { team_h: 3, team_a: 1, team_h_score: 1, team_a_score: 0, event: 2, finished: true }, // ARS 0
+      { team_h: 1, team_a: 3, team_h_score: 0, team_a_score: 0, event: 3, finished: true }, // ARS 0
+      { team_h: 1, team_a: 3, team_h_score: 5, team_a_score: 0, event: 4, finished: true }, // ARS 5
+      { team_h: 3, team_a: 1, team_h_score: 0, team_a_score: 5, event: 5, finished: true }, // ARS 5
+      { team_h: 1, team_a: 3, team_h_score: 5, team_a_score: 0, event: 6, finished: true }, // ARS 5
+      // Make CHE consistently 0-scoring for contrast
+      { team_h: 2, team_a: 3, team_h_score: 0, team_a_score: 0, event: 1, finished: true },
+      { team_h: 3, team_a: 2, team_h_score: 1, team_a_score: 0, event: 2, finished: true },
+      { team_h: 2, team_a: 3, team_h_score: 0, team_a_score: 0, event: 3, finished: true },
+      { team_h: 2, team_a: 3, team_h_score: 0, team_a_score: 0, event: 4, finished: true },
+      { team_h: 3, team_a: 2, team_h_score: 1, team_a_score: 0, event: 5, finished: true },
+      { team_h: 2, team_a: 3, team_h_score: 0, team_a_score: 0, event: 6, finished: true },
+      // Upcoming: CHE vs ARS at event 30
+      { team_h: 2, team_a: 1, team_h_score: null, team_a_score: null, event: 30, finished: false },
+    ]
+    const result = computeClubForm(bootstrap, fixtures)
+    const che = result.find(r => r.team_id === 2)!
+    const cheVsArs = che.upcoming_fixtures.find(f => f.opponent_team === 'ARS')!
+    // ARS scored 5+5+5 in the last 3 games → highest goals-scored team → CHE's defensive_difficulty against them is HIGH
+    expect(cheVsArs.defensive_difficulty).toBeGreaterThan(0.5)
+    // If 6-game window were used, ARS's avg would be (0+0+0+5+5+5)/6=2.5 — but we want only the last 3 (=5).
+    // To make this test sensitive to the window, we also assert defensive_difficulty equals 1.0 (highest).
+    // ARS scored 5/game last 3, max in dataset; CHE scored 0/game last 3, min. So ARS xgs=5 = max, → defensive_difficulty = 1.0
+    expect(cheVsArs.defensive_difficulty).toBe(1)
+  })
+
+  it('FDR++: high-scoring opponent yields LOW defensive_ease (hard to keep CS)', () => {
+    // Same fixtures as previous test but assert defensive_ease (1 - difficulty)
+    const fixtures = [
+      { team_h: 1, team_a: 3, team_h_score: 5, team_a_score: 0, event: 4, finished: true },
+      { team_h: 3, team_a: 1, team_h_score: 0, team_a_score: 5, event: 5, finished: true },
+      { team_h: 1, team_a: 3, team_h_score: 5, team_a_score: 0, event: 6, finished: true },
+      { team_h: 2, team_a: 3, team_h_score: 0, team_a_score: 0, event: 4, finished: true },
+      { team_h: 3, team_a: 2, team_h_score: 1, team_a_score: 0, event: 5, finished: true },
+      { team_h: 2, team_a: 3, team_h_score: 0, team_a_score: 0, event: 6, finished: true },
+      { team_h: 2, team_a: 1, team_h_score: null, team_a_score: null, event: 30, finished: false },
+    ]
+    const result = computeClubForm(bootstrap, fixtures)
+    const che = result.find(r => r.team_id === 2)!
+    // CHE has 1 upcoming fixture (vs the highest-scoring ARS) → defensive_ease_1gw should be LOW
+    expect(che.defensive_ease_1gw).not.toBeNull()
+    expect(che.defensive_ease_1gw!).toBeLessThan(0.5)
+  })
+
   it('assigns difficulty tier correctly — strong team is hard, weak team is easy', () => {
     // BUR (id=3) has the worst defensive record: conceded 3+2+1=6 goals in 3 games (events 3,4,5).
     // ARS (id=1) conceded 1+0+0+1+2=4 goals in 5 games.

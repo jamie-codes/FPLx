@@ -1,5 +1,17 @@
 import type { ClubForm, ClubFormFixture, DifficultyTier } from '@/lib/types'
 
+function meanEase(
+  fixtures: ClubFormFixture[],
+  n: number,
+  key: 'attacking_difficulty' | 'defensive_difficulty'
+): number | null {
+  const slice = fixtures.slice(0, n)
+  const present = slice.filter(f => typeof f[key] === 'number')
+  if (present.length === 0) return null
+  const meanDifficulty = present.reduce((acc, f) => acc + (f[key] as number), 0) / present.length
+  return 1 - meanDifficulty   // invert to ease (1.0 = easiest)
+}
+
 interface RawFixture {
   team_h: number
   team_a: number
@@ -73,6 +85,26 @@ export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[])
     return 'medium'
   }
 
+  // Phase 27 FDR++ — parallel 3-game goals-scored window for defensive_difficulty
+  const OFFENSIVE_ROLLING = 3
+  const teamGoalsScored = new Map<number, number>()
+  for (const [tId, fxs] of teamFinished) {
+    const scored = fxs.map(f =>
+      f.team_h === tId ? (f.team_h_score ?? 0) : (f.team_a_score ?? 0)
+    )
+    const lastN = scored.slice(-OFFENSIVE_ROLLING)
+    teamGoalsScored.set(tId, lastN.length > 0 ? lastN.reduce((a, b) => a + b, 0) / lastN.length : 0)
+  }
+  const xgsValues = [...teamGoalsScored.values()].sort((a, b) => a - b)
+  const minXgs = xgsValues.length > 0 ? Math.min(...xgsValues) : 0
+  const maxXgs = xgsValues.length > 0 ? Math.max(...xgsValues) : 1
+  // NOT inverted (unlike diffScore) — high goals scored = HIGH difficulty for opponent's defenders
+  const defScore = (tId: number) => {
+    const xgs = teamGoalsScored.get(tId) ?? 0
+    if (maxXgs === minXgs) return 0.5
+    return (xgs - minXgs) / (maxXgs - minXgs)
+  }
+
   // 4. Upcoming fixtures per team
   const upcoming = fixtures
     .filter(f => !f.finished && f.event != null)
@@ -92,6 +124,8 @@ export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[])
         event_id: fix.event!,
         difficulty_score: ds,
         difficulty_tier: tier(ds),
+        attacking_difficulty: ds,                    // Phase 27 DATA-01 D-01 — same as difficulty_score
+        defensive_difficulty: defScore(fix.team_a),  // Phase 27 DATA-01 D-02
       })
     }
     const aList = teamUpcoming.get(fix.team_a)
@@ -104,6 +138,8 @@ export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[])
         event_id: fix.event!,
         difficulty_score: ds,
         difficulty_tier: tier(ds),
+        attacking_difficulty: ds,
+        defensive_difficulty: defScore(fix.team_h),
       })
     }
   }
@@ -131,6 +167,13 @@ export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[])
       goals_scored: gs,
       goals_conceded: gc,
       upcoming_fixtures: teamUpcoming.get(tId) ?? [],
+      // Phase 27 FIX-01 — per-team ease aggregates (null when window has zero fixtures — BGW)
+      attacking_ease_1gw: meanEase(teamUpcoming.get(tId) ?? [], 1, 'attacking_difficulty'),
+      attacking_ease_3gw: meanEase(teamUpcoming.get(tId) ?? [], 3, 'attacking_difficulty'),
+      attacking_ease_5gw: meanEase(teamUpcoming.get(tId) ?? [], 5, 'attacking_difficulty'),
+      defensive_ease_1gw: meanEase(teamUpcoming.get(tId) ?? [], 1, 'defensive_difficulty'),
+      defensive_ease_3gw: meanEase(teamUpcoming.get(tId) ?? [], 3, 'defensive_difficulty'),
+      defensive_ease_5gw: meanEase(teamUpcoming.get(tId) ?? [], 5, 'defensive_difficulty'),
     })
   }
   return result
