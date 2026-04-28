@@ -56,7 +56,7 @@ Plans:
 Plans:
 
 **Wave 1**
-- [ ] 27-01-PLAN.md — Pipeline math (DATA-01) + TS mirror in computeClubForm + types extension + Vitest cases + RTL/jsdom infrastructure
+- [x] 27-01-PLAN.md — Pipeline math (DATA-01) + TS mirror in computeClubForm + types extension + Vitest cases + RTL/jsdom infrastructure
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 27-02-PLAN.md — EaseBar + AttDefToggle + FixtureEaseRankingPanel (FIX-01, FIX-02) + page mount + component tests + human verify
 **Cross-cutting constraints:**
