@@ -1,5 +1,7 @@
 'use client'
 
+export type ViewPreset = 'default' | 'compact' | 'analysis'
+
 export const MOBILE_HIDDEN_COLUMNS: Record<string, boolean> = {
   team_short_name: false,
   now_cost: false,
@@ -20,18 +22,64 @@ export const MOBILE_HIDDEN_COLUMNS: Record<string, boolean> = {
   differential_flag: false,
 }
 
-export function getColumnVisibility(horizon: 1 | 3 | 5, isMobile = false): Record<string, boolean> {
+export const PRESET_COLUMN_VISIBILITY: Record<ViewPreset, Record<string, boolean>> = {
+  compact: {
+    team_short_name: false,
+    now_cost: false,
+    fdr_score: false,
+    form_score: false,
+    xg_per90: false,
+    xa_per90: false,
+    xg_score: false,
+    xa_score: false,
+    ownership_score: false,
+    minutes_score: false,
+    set_piece_score: false,
+    selected_by_percent: false,
+    status: false,
+    regression_signal: false,
+    differential_flag: false,
+    trend: false,
+    fixtures: false,
+  },
+  default: {
+    fdr_score: false,
+    form_score: false,
+    xg_per90: false,
+    xa_per90: false,
+    xg_score: false,
+    xa_score: false,
+    ownership_score: false,
+    minutes_score: false,
+    set_piece_score: false,
+  },
+  analysis: {
+    fdr_score: false,
+    form_score: false,
+    xg_score: false,
+    xa_score: false,
+    ownership_score: false,
+    minutes_score: false,
+    set_piece_score: false,
+  },
+}
+
+export function getColumnVisibility(
+  horizon: 1 | 3 | 5,
+  isMobile = false,
+  preset: ViewPreset = 'default'
+): Record<string, boolean> {
   const gwVisibility = {
     xPts_1gw: horizon === 1,
     xPts_3gw: horizon === 3,
     xPts_5gw: horizon === 5,
   }
 
-  if (!isMobile) {
-    return gwVisibility
+  if (isMobile) {
+    return { ...MOBILE_HIDDEN_COLUMNS, ...gwVisibility }
   }
 
-  return { ...MOBILE_HIDDEN_COLUMNS, ...gwVisibility }
+  return { ...PRESET_COLUMN_VISIBILITY[preset], ...gwVisibility }
 }
 
 interface Props {
