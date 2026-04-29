@@ -115,25 +115,25 @@ export default function Home() {
         {/* Spacer when Squad is active — preserves mb-6 gap before content */}
         {activeSection === 'squad' && <div className="mb-6 hidden sm:block" />}
 
-        {/* Tab content */}
+        {/* Tab content — squad guards on section; others guard on sub-tab AND non-squad section */}
         {activeSection === 'squad' && <TransferPanel />}
-        {activeSubTab === 'gems' && (
+        {activeSection !== 'squad' && activeSubTab === 'gems' && (
           <>
             <GemTable />
             <CaptainPicksPanel />
           </>
         )}
-        {activeSubTab === 'defcon' && <DefConTables />}
-        {activeSubTab === 'club-form' && (
+        {activeSection !== 'squad' && activeSubTab === 'defcon' && <DefConTables />}
+        {activeSection !== 'squad' && activeSubTab === 'club-form' && (
           <>
             <FixtureEaseRankingPanel />
             <ClubFormTable />
           </>
         )}
-        {activeSubTab === 'set-pieces' && <SetPieceTakerPanel />}
-        {activeSubTab === 'insights' && <InsightsTab />}
-        {activeSubTab === 'value-gems' && <ValueGemsTable />}
-        {activeSubTab === 'planner' && <PlannerTab />}
+        {activeSection !== 'squad' && activeSubTab === 'set-pieces' && <SetPieceTakerPanel />}
+        {activeSection !== 'squad' && activeSubTab === 'insights' && <InsightsTab />}
+        {activeSection !== 'squad' && activeSubTab === 'value-gems' && <ValueGemsTable />}
+        {activeSection !== 'squad' && activeSubTab === 'planner' && <PlannerTab />}
       </main>
       <MobileNav
         activeSection={activeSection}

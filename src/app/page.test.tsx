@@ -100,4 +100,18 @@ describe('Phase 36: page.tsx state', () => {
     expect(nav?.textContent).not.toContain('Value Gems')
     expect(nav?.textContent).toContain('Planner')
   })
+
+  it('Squad section renders only TransferPanel — no sub-tab content visible (CR-01)', () => {
+    const { container } = render(<Home />)
+    // Navigate to Gems then switch to Squad
+    const squadBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Squad')
+    fireEvent.click(squadBtn!)
+    expect(container.querySelector('[data-testid="transfer-panel"]')).not.toBeNull()
+    // Sub-tab panels must not render while Squad is active
+    expect(container.querySelector('[data-testid="gem-table"]')).toBeNull()
+    expect(container.querySelector('[data-testid="captain-picks"]')).toBeNull()
+    expect(container.querySelector('[data-testid="defcon"]')).toBeNull()
+    expect(container.querySelector('[data-testid="planner"]')).toBeNull()
+    expect(container.querySelector('[data-testid="insights"]')).toBeNull()
+  })
 })
