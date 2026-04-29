@@ -258,6 +258,15 @@ export function ChipStrategyPanel({
       </section>
     )
   }
+  if (!startingGw || clubForm === undefined) {
+    return (
+      <section aria-label="Chip Strategy" className="mt-6 space-y-3" data-testid="chip-strategy-panel">
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 py-4">
+          Loading fixture data…
+        </p>
+      </section>
+    )
+  }
   if (isLoading) {
     return (
       <section aria-label="Chip Strategy" className="mt-6 space-y-3" data-testid="chip-strategy-panel">
