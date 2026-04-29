@@ -314,7 +314,23 @@ Plans:
   3. Modal shows xPts 1GW / 3GW / 5GW and 90th-percentile ceiling for both players side by side
   4. Modal shows all 7 Gem score components for each player side by side
   5. Modal shows next 5 fixtures with colour-coded difficulty for each player, and the BUY/SELL signal, DIFF/TRAP flag, and rotation risk badge for each player
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+
+**Wave 0**
+- [ ] 39-01-PLAN.md — Wave 0 test stubs: PlayerComparisonModal.test.tsx (CMP-01..CMP-06 RED), columns.test.tsx (compare-icon cell RED), page.test.tsx (Phase 39 mount RED)
+**Wave 1** *(blocked on Wave 0 completion)*
+- [ ] 39-02-PLAN.md — PlayerComparisonModal.tsx (native dialog shell + Player B search + xPts/Gem/Fixtures/Signals sections) + columns.tsx fmtScore/fmtScoreNull exports (CMP-02, CMP-03, CMP-04, CMP-05, CMP-06)
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 39-03-PLAN.md — columns.tsx createColumns(onCompare) factory + GemTable.tsx onCompare prop + mobile action sheet + page.tsx state + modal mount + human verify (CMP-01)
+**Cross-cutting constraints:**
+- Native `<dialog>` only — no Radix/Headless UI modal libraries (D-07; mirrors PlayerPickerModal.tsx pattern)
+- web_name column MUST stay `col.accessor('web_name', ...)` (Pitfall 1: switching to col.display kills auto-sort)
+- onCompare stability chain: `useCallback` in page.tsx → `useMemo([handleCompare])` in GemTable for createColumns (Pitfall 2)
+- `comparePlayer` state lives in page.tsx (NOT inside GemTable) so the modal overlays the entire app
+- Modal mounted as sibling of `<main>`/`<MobileNav>`, OUTSIDE the `activeSubTab === 'gems'` guard (survives sub-tab navigation)
+- Single permitted inline style: `style={{ fontSize: '16px' }}` on the search input (Pitfall 5 — iOS zoom guard)
+- All Tailwind classes and copy strings in PlayerComparisonModal.tsx are LOCKED by 39-UI-SPEC.md
 **UI hint**: yes
 
 ### Phase 40: Accuracy Pipeline
@@ -361,6 +377,6 @@ Note: Phase 38 (Data Freshness) depends on Phase 36 (nav) but not on Phase 37 (p
 | 36. Navigation Consolidation | 0/1 | Not started | - |
 | 37. GemTable View Presets | 2/2 | Complete | 2026-04-29 |
 | 38. Data Freshness UX | 0/2 | Not started | - |
-| 39. Player Comparison Modal | 0/? | Not started | - |
+| 39. Player Comparison Modal | 0/3 | Not started | - |
 | 40. Accuracy Pipeline | 0/? | Not started | - |
 | 41. Accuracy UI & Model Rationalisation | 0/? | Not started | - |
