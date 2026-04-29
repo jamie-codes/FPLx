@@ -19,7 +19,9 @@ export function LastUpdatedDisplay({ relativeTime, stale }: { relativeTime: stri
  *  and re-formats every 30s so the label stays fresh within a session (FRE-03). */
 export function LastUpdated() {
   const { data } = useLastUpdated()
-  const [relativeTime, setRelativeTime] = useState<string>('')
+  const [relativeTime, setRelativeTime] = useState<string>(
+    () => (data?.last_updated ? formatRelativeTime(data.last_updated) : '')
+  )
 
   useEffect(() => {
     if (!data?.last_updated) return
