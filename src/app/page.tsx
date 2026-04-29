@@ -15,10 +15,57 @@ import { SetPieceTakerPanel } from '@/components/set-pieces/SetPieceTakerPanel'
 import { CaptainPicksPanel } from '@/components/captaincy/CaptainPicksPanel'
 import { InsightsTab } from '@/components/insights/InsightsTab'
 
-type Tab = 'gems' | 'defcon' | 'squad' | 'club-form' | 'set-pieces' | 'insights' | 'value-gems' | 'planner'
+export type Section = 'analyse' | 'plan' | 'squad'
+export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'club-form' | 'value-gems'
+
+export const SECTIONS = [
+  {
+    id: 'analyse' as Section,
+    label: 'Analyse',
+    subTabs: [
+      { id: 'gems' as SubTab,       label: 'Gem Ratings',     mobileLabel: 'Gems'     },
+      { id: 'insights' as SubTab,   label: 'Insights',        mobileLabel: 'Insights' },
+      { id: 'defcon' as SubTab,     label: 'DefCon Analysis', mobileLabel: 'DefCon'   },
+      { id: 'set-pieces' as SubTab, label: 'Set Pieces',      mobileLabel: 'SP'       },
+    ],
+    defaultSubTab: 'gems' as SubTab,
+  },
+  {
+    id: 'plan' as Section,
+    label: 'Plan',
+    subTabs: [
+      { id: 'planner' as SubTab,    label: 'Planner',    mobileLabel: 'Planner' },
+      { id: 'club-form' as SubTab,  label: 'Club Form',  mobileLabel: 'Form'    },
+      { id: 'value-gems' as SubTab, label: 'Value Gems', mobileLabel: 'Values'  },
+    ],
+    defaultSubTab: 'planner' as SubTab,
+  },
+  {
+    id: 'squad' as Section,
+    label: 'Squad',
+    subTabs: [],
+    defaultSubTab: null,
+  },
+] as const
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<Tab>('gems')
+  const [activeSection, setActiveSection] = useState<Section>('analyse')
+  const [sectionMemory, setSectionMemory] = useState<Record<Section, SubTab | null>>({
+    analyse: 'gems',
+    plan: 'planner',
+    squad: null,
+  })
+
+  const activeSubTab = sectionMemory[activeSection]
+
+  function handleSectionChange(section: Section) {
+    setActiveSection(section)
+    // sectionMemory already holds last sub-tab — D-05 means we DO NOT reset
+  }
+
+  function handleSubTabChange(subTab: SubTab) {
+    setSectionMemory(prev => ({ ...prev, [activeSection]: subTab }))
+  }
 
   return (
     <>
@@ -31,111 +78,69 @@ export default function Home() {
             <ThemeToggle />
           </div>
         </div>
-        {/* Tab navigation */}
-        <div className="hidden sm:flex gap-4 mb-6 border-b border-zinc-200 dark:border-zinc-700">
-          <button
-            className={`pb-2 px-1 text-sm font-medium ${
-              activeTab === 'gems'
-                ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
-            }`}
-            onClick={() => setActiveTab('gems')}
-          >
-            Gem Ratings
-          </button>
-          <button
-            className={`pb-2 px-1 text-sm font-medium ${
-              activeTab === 'defcon'
-                ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
-            }`}
-            onClick={() => setActiveTab('defcon')}
-          >
-            DefCon Analysis
-          </button>
-          <button
-            className={`pb-2 px-1 text-sm font-medium ${
-              activeTab === 'squad'
-                ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
-            }`}
-            onClick={() => setActiveTab('squad')}
-          >
-            Squad & Transfers
-          </button>
-          <button
-            className={`pb-2 px-1 text-sm font-medium ${
-              activeTab === 'club-form'
-                ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
-            }`}
-            onClick={() => setActiveTab('club-form')}
-          >
-            Club Form
-          </button>
-          <button
-            className={`pb-2 px-1 text-sm font-medium ${
-              activeTab === 'set-pieces'
-                ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
-            }`}
-            onClick={() => setActiveTab('set-pieces')}
-          >
-            Set Pieces
-          </button>
-          <button
-            className={`pb-2 px-1 text-sm font-medium ${
-              activeTab === 'insights'
-                ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
-            }`}
-            onClick={() => setActiveTab('insights')}
-          >
-            Insights
-          </button>
-          <button
-            className={`pb-2 px-1 text-sm font-medium ${
-              activeTab === 'value-gems'
-                ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
-            }`}
-            onClick={() => setActiveTab('value-gems')}
-          >
-            Value Gems
-          </button>
-          <button
-            className={`pb-2 px-1 text-sm font-medium ${
-              activeTab === 'planner'
-                ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
-            }`}
-            onClick={() => setActiveTab('planner')}
-          >
-            Planner
-          </button>
-        </div>
+
+        {/* Section navigation */}
+        <nav aria-label="Section navigation" className="hidden sm:flex gap-4 border-b border-zinc-200 dark:border-zinc-700 mb-0">
+          {SECTIONS.map((section) => (
+            <button
+              key={section.id}
+              className={`pb-2 px-1 text-sm font-medium ${activeSection === section.id ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}
+              onClick={() => handleSectionChange(section.id)}
+              aria-current={activeSection === section.id ? 'page' : undefined}
+            >
+              {section.label}
+            </button>
+          ))}
+        </nav>
+
+        {/* Sub-tab row — hidden when Squad is active */}
+        {activeSection !== 'squad' && (() => {
+          const activeSectionDef = SECTIONS.find(s => s.id === activeSection)!
+          return (
+            <nav aria-label={`${activeSectionDef.label} sub-tabs`} className="hidden sm:flex gap-4 mb-6 border-b border-zinc-200 dark:border-zinc-700">
+              {activeSectionDef.subTabs.map((sub) => (
+                <button
+                  key={sub.id}
+                  className={`pb-2 px-1 text-sm font-medium ${activeSubTab === sub.id ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}
+                  onClick={() => handleSubTabChange(sub.id)}
+                  aria-current={activeSubTab === sub.id ? 'page' : undefined}
+                >
+                  {sub.label}
+                </button>
+              ))}
+            </nav>
+          )
+        })()}
+
+        {/* Spacer when Squad is active — preserves mb-6 gap before content */}
+        {activeSection === 'squad' && <div className="mb-6 hidden sm:block" />}
 
         {/* Tab content */}
-        {activeTab === 'gems' && (
+        {activeSection === 'squad' && <TransferPanel />}
+        {activeSubTab === 'gems' && (
           <>
             <GemTable />
             <CaptainPicksPanel />
           </>
         )}
-        {activeTab === 'defcon' && <DefConTables />}
-        {activeTab === 'squad' && <TransferPanel />}
-        {activeTab === 'club-form' && (
+        {activeSubTab === 'defcon' && <DefConTables />}
+        {activeSubTab === 'club-form' && (
           <>
             <FixtureEaseRankingPanel />
             <ClubFormTable />
           </>
         )}
-        {activeTab === 'set-pieces' && <SetPieceTakerPanel />}
-        {activeTab === 'insights' && <InsightsTab />}
-        {activeTab === 'value-gems' && <ValueGemsTable />}
-        {activeTab === 'planner' && <PlannerTab />}
+        {activeSubTab === 'set-pieces' && <SetPieceTakerPanel />}
+        {activeSubTab === 'insights' && <InsightsTab />}
+        {activeSubTab === 'value-gems' && <ValueGemsTable />}
+        {activeSubTab === 'planner' && <PlannerTab />}
       </main>
-      <MobileNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <MobileNav
+        activeSection={activeSection}
+        activeSubTab={activeSubTab}
+        onSectionChange={handleSectionChange}
+        onSubTabChange={handleSubTabChange}
+      />
     </>
   )
 }
