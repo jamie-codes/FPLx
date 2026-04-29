@@ -30,7 +30,7 @@
 
 **Milestone Goal:** Make FPLx's data-dense app feel faster and cleaner — consolidate the 9+ tab navigation into a 3-section hierarchy, add GemTable view presets, surface data freshness on every tab, and introduce a player comparison modal.
 
-- [ ] **Phase 36: Navigation Consolidation** - Reorganise 9+ tabs into three top-level sections (Analyse / Plan / Squad) with sub-tabs on desktop and mobile
+- [x] **Phase 36: Navigation Consolidation** - Reorganise 9+ tabs into three top-level sections (Analyse / Plan / Squad) with sub-tabs on desktop and mobile *(completed 2026-04-29)*
 - [ ] **Phase 37: GemTable View Presets** - Add Default / Compact / Analysis toggle that persists across tab switches in a session
 - [ ] **Phase 38: Data Freshness UX** - Show human-readable "Updated X ago" on every tab without requiring navigation
 - [ ] **Phase 39: Player Comparison Modal** - Side-by-side xPts, Gem breakdown, fixtures, and signals for any two players from GemTable

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: UX & Polish
 status: executing
-stopped_at: v1.5 roadmap created — 6 phases (36-41) defined; 24/24 requirements mapped
-last_updated: "2026-04-29T11:51:06.943Z"
-last_activity: 2026-04-29 -- Phase null planning complete
+stopped_at: Phase 36 Navigation Consolidation complete — 7/7 must-haves verified
+last_updated: "2026-04-29T13:10:00.000Z"
+last_activity: 2026-04-29 -- Phase 36 complete
 progress:
   total_phases: 16
-  completed_phases: 10
-  total_plans: 21
-  completed_plans: 20
+  completed_phases: 11
+  total_plans: 22
+  completed_plans: 21
   percent: 95
 ---
 
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-29 — v1.5 started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.5 UX & Polish — Phase 36 Navigation Consolidation is next
+**Current focus:** v1.5 UX & Polish — Phase 37 GemTable View Presets is next
 
 ## Current Position
 
