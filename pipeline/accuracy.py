@@ -313,8 +313,9 @@ def _reconstruct_xpts(entry: dict, element_type: int, difficulty_score: float) -
     xg_per90 = (xg / minutes) * 90 if minutes > 0 else 0.0
     xa_per90 = (xa / minutes) * 90 if minutes > 0 else 0.0
 
-    # xmins = actual minutes (since start_prob = 1.0, xmins ~= minutes)
-    xmins = float(minutes)
+    # xmins = start_prob × minutes: _compute_xpts_fixture treats xmins as
+    # unconditional expected minutes; for binary start_prob=1.0 this equals minutes.
+    xmins = start_prob * float(minutes)
 
     result = _compute_xpts_fixture(
         xg_per90=xg_per90,
