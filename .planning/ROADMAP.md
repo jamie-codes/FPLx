@@ -31,7 +31,7 @@
 **Milestone Goal:** Make FPLx's data-dense app feel faster and cleaner — consolidate the 9+ tab navigation into a 3-section hierarchy, add GemTable view presets, surface data freshness on every tab, and introduce a player comparison modal.
 
 - [x] **Phase 36: Navigation Consolidation** - Reorganise 9+ tabs into three top-level sections (Analyse / Plan / Squad) with sub-tabs on desktop and mobile *(completed 2026-04-29)*
-- [ ] **Phase 37: GemTable View Presets** - Add Default / Compact / Analysis toggle that persists across tab switches in a session
+- [x] **Phase 37: GemTable View Presets** - Add Default / Compact / Analysis toggle that persists across tab switches in a session *(completed 2026-04-29)*
 - [ ] **Phase 38: Data Freshness UX** - Show human-readable "Updated X ago" on every tab without requiring navigation
 - [ ] **Phase 39: Player Comparison Modal** - Side-by-side xPts, Gem breakdown, fixtures, and signals for any two players from GemTable
 - [ ] **Phase 40: Accuracy Pipeline** - Pipeline backtest of proj_pts vs xPts over the last 5 completed gameweeks
@@ -273,9 +273,14 @@ Plans:
 Plans:
 
 **Wave 1**
-- [ ] 37-01-PLAN.md — ViewPreset type + PRESET_COLUMN_VISIBILITY maps + extended getColumnVisibility + preset tests (GEM-01, GEM-02, GEM-03, GEM-04 logic layer)
+- [x] 37-01-PLAN.md — ViewPreset type + PRESET_COLUMN_VISIBILITY maps + extended getColumnVisibility + preset tests (GEM-01, GEM-02, GEM-03, GEM-04 logic layer)
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 37-02-PLAN.md — PresetToggle component + GemTable prop wiring + page.tsx gemPreset state lift + human verify (GEM-01, GEM-02, GEM-03, GEM-04)
+- [x] 37-02-PLAN.md — PresetToggle component + GemTable prop wiring + page.tsx gemPreset state lift + human verify (GEM-01, GEM-02, GEM-03, GEM-04)
+**Cross-cutting constraints:**
+- `getColumnVisibility` existing 1-arg and 2-arg call signatures must remain unchanged (backward compat with existing tests)
+- Merge order: `{ ...PRESET_COLUMN_VISIBILITY[preset], ...gwVisibility }` — GW columns always win over preset maps
+- Mobile path (`isMobile=true`) ignores preset entirely — MOBILE_HIDDEN_COLUMNS path unchanged
+- `gemPreset` state lives in `page.tsx`, not GemTable local state — required for GEM-04 session persistence
 **UI hint**: yes
 
 ### Phase 38: Data Freshness UX
@@ -286,7 +291,17 @@ Plans:
   1. Every tab displays a "Updated X ago" label that is visible without scrolling or additional interaction
   2. The freshness indicator uses human-readable relative time ("3 hours ago", "2 days ago") rather than an ISO timestamp
   3. The indicator updates in real time within a session as time passes (no stale "0 minutes ago" after an hour)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+
+**Wave 1**
+- [ ] 38-01-PLAN.md — formatRelativeTime utility (FRE-02 logic layer) + Vitest TDD cases for D-01 bands and singular/plural boundaries
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 38-02-PLAN.md — LastUpdated.tsx upgrade (relativeTime prop rename + 30s setInterval tick + cleanup) + RTL tests with fake timers + human verify (FRE-01, FRE-02, FRE-03)
+**Cross-cutting constraints:**
+- Pure/connected DAT-02 split preserved — LastUpdatedDisplay accepts pre-formatted relativeTime: string, never raw ISO timestamp
+- Interval lives in connected component only; effect deps are [data?.last_updated]; clearInterval on unmount is mandatory (T-38-07 mitigation)
+- /api/last-updated route, useLastUpdated hook, and src/app/page.tsx mount site are unchanged (CONTEXT D-04, D-07)
 **UI hint**: yes
 
 ### Phase 39: Player Comparison Modal
@@ -344,8 +359,8 @@ Note: Phase 38 (Data Freshness) depends on Phase 36 (nav) but not on Phase 37 (p
 | 34. Chip Strategy | 2/2 | Complete | 2026-04-28 |
 | 35. Tech Debt Fixes | 2/2 | Complete | 2026-04-29 |
 | 36. Navigation Consolidation | 0/1 | Not started | - |
-| 37. GemTable View Presets | 0/? | Not started | - |
-| 38. Data Freshness UX | 0/? | Not started | - |
+| 37. GemTable View Presets | 2/2 | Complete | 2026-04-29 |
+| 38. Data Freshness UX | 0/2 | Not started | - |
 | 39. Player Comparison Modal | 0/? | Not started | - |
 | 40. Accuracy Pipeline | 0/? | Not started | - |
 | 41. Accuracy UI & Model Rationalisation | 0/? | Not started | - |

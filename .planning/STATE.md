@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: UX & Polish
 status: executing
-stopped_at: Phase 36 Navigation Consolidation complete — 7/7 must-haves verified
-last_updated: "2026-04-29T13:10:00.000Z"
-last_activity: 2026-04-29 -- Phase 36 complete
+stopped_at: Phase 37 UI-SPEC approved (2026-04-29)
+last_updated: "2026-04-29T15:54:08.497Z"
+last_activity: 2026-04-29 -- Phase 38 planning complete
 progress:
   total_phases: 16
-  completed_phases: 11
-  total_plans: 22
-  completed_plans: 21
-  percent: 95
+  completed_phases: 12
+  total_plans: 25
+  completed_plans: 23
+  percent: 92
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-29 — v1.5 started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.5 UX & Polish — Phase 37 GemTable View Presets is next
+**Current focus:** v1.5 UX & Polish — Phase 38 context gathered, ready to plan
 
 ## Current Position
 
-Phase: 36 (not started)
+Phase: 38 (context gathered)
 Plan: —
 Status: Ready to execute
-Last activity: 2026-04-29 -- Phase null planning complete
+Last activity: 2026-04-29 -- Phase 38 planning complete
 
 ## Performance Metrics
 
@@ -70,6 +70,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-29T00:00:00.000Z
-Stopped at: v1.5 roadmap created — 6 phases (36-41) defined; 24/24 requirements mapped
-Resume file: None
+Last session: 2026-04-29T14:00:00.000Z
+Stopped at: Phase 37 UI-SPEC approved (2026-04-29)
+Resume file: .planning/phases/37-gem-table-view-presets/37-UI-SPEC.md
