@@ -896,8 +896,10 @@ def merge_players(
         for et, vals in pos_xpts.items()
     }
     for p in result:
+        if not p.get('xPts_1gw'):  # BGW player — no fixture; skip differential classification
+            continue
         flag = _compute_differential_flag(
-            p.get('xPts_1gw') or 0.0,
+            p['xPts_1gw'],
             p.get('selected_by_percent', '0'),
             p.get('status', ''),
             pos_median[p['element_type']],
