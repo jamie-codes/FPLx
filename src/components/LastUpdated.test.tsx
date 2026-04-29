@@ -82,6 +82,16 @@ describe('LastUpdated (connected)', () => {
     expect(screen.getByText('1 hour ago')).toBeDefined()
   })
 
+  it('does not render a blank label on first paint when data is cached', () => {
+    mockedUseLastUpdated.mockReturnValue({
+      data: { last_updated: isoMinutesBefore(60), stale: false },
+    } as any)
+    const { container } = render(<LastUpdated />)
+    const p = container.querySelector('p')
+    // p should be null (not rendered) or have non-empty text — never an empty <p>
+    if (p) expect(p.textContent).not.toBe('')
+  })
+
   it('re-formats label after 30 seconds elapse crossing a band boundary', async () => {
     mockedUseLastUpdated.mockReturnValue({
       data: { last_updated: isoMinutesBefore(59), stale: false },
