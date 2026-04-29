@@ -301,6 +301,7 @@ export function ChipStrategyPanel({
         <ul className="space-y-1">
           <ChipRow chip="bboost" scores={bbScores} usedAtGw={usedChips.get('bboost')} />
           <ChipRow chip="3xc" scores={tcScores} usedAtGw={usedChips.get('3xc')} />
+          {/* bestGw > 0: FPL GW numbers are always >= 1; 0 only if engine received no fixture data */}
           <FHChipRow
             scores={fhResult.scores}
             bestGw={fhResult.bestGw > 0 ? fhResult.bestGw : null}
