@@ -322,7 +322,7 @@ Plans:
 **Wave 1** *(blocked on Wave 0 completion)*
 - [x] 39-02-PLAN.md — PlayerComparisonModal.tsx (native dialog shell + Player B search + xPts/Gem/Fixtures/Signals sections) + columns.tsx fmtScore/fmtScoreNull exports (CMP-02, CMP-03, CMP-04, CMP-05, CMP-06)
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 39-03-PLAN.md — columns.tsx createColumns(onCompare) factory + GemTable.tsx onCompare prop + mobile action sheet + page.tsx state + modal mount + human verify (CMP-01)
+- [x] 39-03-PLAN.md — columns.tsx createColumns(onCompare) factory + GemTable.tsx onCompare prop + mobile action sheet + page.tsx state + modal mount + human verify (CMP-01)
 **Cross-cutting constraints:**
 - Native `<dialog>` only — no Radix/Headless UI modal libraries (D-07; mirrors PlayerPickerModal.tsx pattern)
 - web_name column MUST stay `col.accessor('web_name', ...)` (Pitfall 1: switching to col.display kills auto-sort)
