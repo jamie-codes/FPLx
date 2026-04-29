@@ -6,7 +6,7 @@
 - v1.1 Decision Engine (Phases 7-12) - shipped 2026-03-31
 - v1.2 Mobile (Phases 13-18) - shipped 2026-04-01
 - v1.3 Gameweek Planner (Phases 19-25) - shipped 2026-04-03
-- v1.4 Analytics Engine & Intelligence Layer (Phases 26-35) - in progress
+- v1.4 Analytics Engine & Intelligence Layer (Phases 26-35) - shipped 2026-04-29
 
 ## Phases
 
@@ -23,7 +23,7 @@
 - [x] **Phase 32: Team Target List** - Teams with green fixture runs and top players ranked by xGI involvement *(completed 2026-04-28)*
 - [x] **Phase 33: Insights Tab** - Data-driven pattern statements with confidence weights *(completed 2026-04-28)*
 - [x] **Phase 34: Chip Strategy** (completed 2026-04-28) - Optimal GW finder for Bench Boost, Triple Captain, and Free Hit
-- [ ] **Phase 35: Tech Debt Fixes** - Correctness and quality fixes from v1.4 audit (mobile column ID, TRAP logic, TS error, zero-count insights, type annotation)
+- [x] **Phase 35: Tech Debt Fixes** - Correctness and quality fixes from v1.4 audit (mobile column ID, TRAP logic, TS error, zero-count insights, type annotation) *(completed 2026-04-29)*
 
 ## Phase Details
 
@@ -224,6 +224,12 @@ Plans:
 - WR-05 (Phase 33): Add `sample_n > 0` guard in `_player_patterns` insights.py to suppress zero-count insight strings
 - WR-06 (cross-phase): Fix `upload.py` type annotation `data: dict` → `data: list | dict` for insights payload accuracy
 - WR-07 (Phase 34): Document `bestGw || null` edge-case rationale — safe since FPL GW numbers are always ≥1
+**Plans**: 2 plans
+Plans:
+
+**Wave 1**
+- [x] 35-01-PLAN.md — Python backend fixes: WR-02 (BGW median), WR-03 (TRAP strict <), WR-05 (zero-count guard), WR-06 (upload type)
+- [x] 35-02-PLAN.md — TypeScript fixes: WR-01 (mobile column ID), WR-04 (Insight[] cast), WR-07 (bestGw comment)
 
 ## Progress
 
@@ -243,4 +249,4 @@ Note: Phase 29 (Regression Detector) can run in parallel with Phases 27-28 if de
 | 32. Team Target List | 2/2 | Complete | 2026-04-28 |
 | 33. Insights Tab | 2/2 | Complete | 2026-04-28 |
 | 34. Chip Strategy | 2/2 | Complete | 2026-04-28 |
-| 35. Tech Debt Fixes | 0/1 | Pending | - |
+| 35. Tech Debt Fixes | 2/2 | Complete | 2026-04-29 |

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Analytics Engine & Intelligence Layer
-status: executing
-stopped_at: Completed 29-02-PLAN.md (human-verify approved; Phase 29 fully done)
-last_updated: "2026-04-28T21:22:17.982Z"
-last_activity: 2026-04-28 -- Phase 34 execution started
+status: complete
+stopped_at: Phase 35 complete — v1.4 milestone fully shipped
+last_updated: "2026-04-29T00:00:00.000Z"
+last_activity: 2026-04-29 -- Phase 35 executed and verified (7 tech-debt fixes, 2 plans, 8/8 must-haves)
 progress:
-  total_phases: 9
-  completed_phases: 8
-  total_plans: 18
-  completed_plans: 17
-  percent: 94
+  total_phases: 10
+  completed_phases: 10
+  total_plans: 20
+  completed_plans: 20
+  percent: 100
 ---
 
 # Project State
@@ -21,15 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-27 after v1.3)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 34 — chip-strategy
+**Current focus:** Phase 35 — tech-debt-fixes
 
 ## Current Position
 
-Phase: 34 (chip-strategy) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 34
-Plans: TBD
-Last activity: 2026-04-28 -- Phase 34 execution started
+Phase: 35 (tech-debt-fixes) — COMPLETE
+Plan: 2 of 2
+Status: v1.4 milestone fully shipped — all 10 phases complete
+Last activity: 2026-04-29 -- Phase 35 executed and verified (7 tech-debt fixes, 8/8 must-haves passed)
 
 Progress: [███████░░░] 78% (v1.4: 7/9 phases)
 
