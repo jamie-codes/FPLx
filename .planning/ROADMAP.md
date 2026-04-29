@@ -7,6 +7,7 @@
 - v1.2 Mobile (Phases 13-18) - shipped 2026-04-01
 - v1.3 Gameweek Planner (Phases 19-25) - shipped 2026-04-03
 - v1.4 Analytics Engine & Intelligence Layer (Phases 26-35) - shipped 2026-04-29
+- v1.5 UX & Polish (Phases 36-41) - in progress
 
 ## Phases
 
@@ -24,6 +25,17 @@
 - [x] **Phase 33: Insights Tab** - Data-driven pattern statements with confidence weights *(completed 2026-04-28)*
 - [x] **Phase 34: Chip Strategy** (completed 2026-04-28) - Optimal GW finder for Bench Boost, Triple Captain, and Free Hit
 - [x] **Phase 35: Tech Debt Fixes** - Correctness and quality fixes from v1.4 audit (mobile column ID, TRAP logic, TS error, zero-count insights, type annotation) *(completed 2026-04-29)*
+
+### v1.5 UX & Polish
+
+**Milestone Goal:** Make FPLx's data-dense app feel faster and cleaner — consolidate the 9+ tab navigation into a 3-section hierarchy, add GemTable view presets, surface data freshness on every tab, and introduce a player comparison modal.
+
+- [ ] **Phase 36: Navigation Consolidation** - Reorganise 9+ tabs into three top-level sections (Analyse / Plan / Squad) with sub-tabs on desktop and mobile
+- [ ] **Phase 37: GemTable View Presets** - Add Default / Compact / Analysis toggle that persists across tab switches in a session
+- [ ] **Phase 38: Data Freshness UX** - Show human-readable "Updated X ago" on every tab without requiring navigation
+- [ ] **Phase 39: Player Comparison Modal** - Side-by-side xPts, Gem breakdown, fixtures, and signals for any two players from GemTable
+- [ ] **Phase 40: Accuracy Pipeline** - Pipeline backtest of proj_pts vs xPts over the last 5 completed gameweeks
+- [ ] **Phase 41: Accuracy UI & Model Rationalisation** - GW accuracy table, haulter comparison, player-level delta view, last-GW actuals column in GemTable, and removal of the weaker model
 
 ## Phase Details
 
@@ -231,12 +243,87 @@ Plans:
 - [x] 35-01-PLAN.md — Python backend fixes: WR-02 (BGW median), WR-03 (TRAP strict <), WR-05 (zero-count guard), WR-06 (upload type)
 - [x] 35-02-PLAN.md — TypeScript fixes: WR-01 (mobile column ID), WR-04 (Insight[] cast), WR-07 (bestGw comment)
 
+### Phase 36: Navigation Consolidation
+**Goal**: User can navigate the full app through three clearly labelled top-level sections — Analyse, Plan, and Squad — each with grouped sub-tabs, on both desktop and mobile
+**Depends on**: Phase 35 (all v1.4 work complete; nav touches every tab)
+**Requirements**: NAV-01, NAV-02, NAV-03, NAV-04, NAV-05
+**Success Criteria** (what must be TRUE):
+  1. User sees three top-level navigation sections (Analyse, Plan, Squad) that replace the flat 9-tab bar on desktop
+  2. Clicking "Analyse" reveals sub-tabs: Gem Ratings, Insights, DefCon Analysis, Set Pieces
+  3. Clicking "Plan" reveals sub-tabs: Planner, Club Form, Value Gems
+  4. Clicking "Squad" shows the Squad & Transfers view directly with no further sub-tab selection required
+  5. On mobile, the bottom nav reflects the same 3-section grouping with accessible in-section sub-tab navigation
+**Plans**: 1 plan
+Plans:
+
+**Wave 1**
+- [ ] 36-01-PLAN.md — Atomic Tab→Section/SubTab type rename + page.tsx desktop two-tier nav + MobileNav two-row layout + Wave 0 test scaffolds (NAV-01, NAV-02, NAV-03, NAV-04, NAV-05) + manual verify checkpoint
+**UI hint**: yes
+
+### Phase 37: GemTable View Presets
+**Goal**: User can switch the GemTable between named column presets that reduce visual noise without losing access to full data, and the chosen preset stays active while navigating between tabs
+**Depends on**: Phase 36 (nav structure settled before adding preset state that may live at a shared level)
+**Requirements**: GEM-01, GEM-02, GEM-03, GEM-04
+**Success Criteria** (what must be TRUE):
+  1. User can toggle between Default, Compact, and Analysis presets via a control on the GemTable
+  2. Compact preset shows only Player, Pos, Gem score, xPts 1GW, and Risk badge — all other columns hidden
+  3. Analysis preset reveals xG and xA detail columns alongside the standard set
+  4. Switching tabs and returning to Gem Ratings restores the previously selected preset without resetting to Default
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 38: Data Freshness UX
+**Goal**: User always knows how stale the data is, on every tab, without navigating to a specific location to find out
+**Depends on**: Phase 36 (nav structure determines where the freshness indicator is anchored)
+**Requirements**: FRE-01, FRE-02, FRE-03
+**Success Criteria** (what must be TRUE):
+  1. Every tab displays a "Updated X ago" label that is visible without scrolling or additional interaction
+  2. The freshness indicator uses human-readable relative time ("3 hours ago", "2 days ago") rather than an ISO timestamp
+  3. The indicator updates in real time within a session as time passes (no stale "0 minutes ago" after an hour)
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 39: Player Comparison Modal
+**Goal**: User can compare any two players side by side — across xPts projections, Gem score components, upcoming fixtures, and buy/sell signals — before committing to a transfer decision
+**Depends on**: Phase 36 (nav stable), Phase 37 (GemTable column structure stable before adding row-level compare icon)
+**Requirements**: CMP-01, CMP-02, CMP-03, CMP-04, CMP-05, CMP-06
+**Success Criteria** (what must be TRUE):
+  1. User can open a comparison modal from any GemTable row using a compare icon on that row
+  2. User can search for and select any second player from the full player list within the modal
+  3. Modal shows xPts 1GW / 3GW / 5GW and 90th-percentile ceiling for both players side by side
+  4. Modal shows all 7 Gem score components for each player side by side
+  5. Modal shows next 5 fixtures with colour-coded difficulty for each player, and the BUY/SELL signal, DIFF/TRAP flag, and rotation risk badge for each player
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 40: Accuracy Pipeline
+**Goal**: Pipeline produces a per-GW backtest record comparing both projection models (proj_pts and xPts) against actual FPL points over the last 5 completed gameweeks, providing the data foundation for accuracy analysis
+**Depends on**: Phase 35 (clean pipeline baseline before adding backtest computation)
+**Requirements**: ACC-01
+**Success Criteria** (what must be TRUE):
+  1. Pipeline writes an accuracy backtest file covering the last 5 completed gameweeks, with per-player predicted vs actual points for both proj_pts_1gw and xPts_1gw
+  2. Backtest data identifies haulters (players who scored 10+ actual points) and records whether each model ranked them highly before that gameweek
+**Plans**: TBD
+
+### Phase 41: Accuracy UI & Model Rationalisation
+**Goal**: User can inspect how well each projection model has performed over the last 5 gameweeks, see actual last-GW points alongside xPts in the GemTable, and use only the model that demonstrably outperforms the other
+**Depends on**: Phase 40 (backtest data must exist before UI can display it)
+**Requirements**: ACC-02, ACC-03, ACC-04, ACC-05, ACC-06
+**Success Criteria** (what must be TRUE):
+  1. User can view a GW-by-GW accuracy table showing predicted haulters vs actual 10+ scorers with a hit rate percentage per model per GW
+  2. User can see a "correctly flagged haulters" list showing players each model got right before the gameweek
+  3. User can view a player-level table of predicted vs actual points with prediction error, sortable by biggest miss
+  4. GemTable shows a last-GW actual points column next to xPts_1gw for at-a-glance calibration
+  5. The weaker projection model is removed from the app; only the better-performing model remains visible to the user
+**Plans**: TBD
+**UI hint**: yes
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 26 -> 27 -> 28 -> 29 -> 30 -> 31 -> 32 -> 33 -> 34
+Phases execute in numeric order: 26 -> 27 -> 28 -> 29 -> 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41
 
-Note: Phase 29 (Regression Detector) can run in parallel with Phases 27-28 if desired, since it depends only on Phase 26 and a separate Understat pipeline. The serial order above is the default.
+Note: Phase 38 (Data Freshness) depends on Phase 36 (nav) but not on Phase 37 (presets) — it can run in parallel with Phase 37 if desired. Phase 40 (Accuracy Pipeline) depends only on Phase 35 and can run in parallel with Phases 36-39 if desired.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -250,3 +337,9 @@ Note: Phase 29 (Regression Detector) can run in parallel with Phases 27-28 if de
 | 33. Insights Tab | 2/2 | Complete | 2026-04-28 |
 | 34. Chip Strategy | 2/2 | Complete | 2026-04-28 |
 | 35. Tech Debt Fixes | 2/2 | Complete | 2026-04-29 |
+| 36. Navigation Consolidation | 0/1 | Not started | - |
+| 37. GemTable View Presets | 0/? | Not started | - |
+| 38. Data Freshness UX | 0/? | Not started | - |
+| 39. Player Comparison Modal | 0/? | Not started | - |
+| 40. Accuracy Pipeline | 0/? | Not started | - |
+| 41. Accuracy UI & Model Rationalisation | 0/? | Not started | - |

@@ -1,0 +1,103 @@
+// Phase 36: page.tsx state — D-05 section memory, D-06 default landing, D-04 mobile pill labels
+// @vitest-environment jsdom
+import { describe, it, expect, vi } from 'vitest'
+import { render, fireEvent } from '@testing-library/react'
+
+vi.mock('@/components/gem-table/GemTable', () => ({ GemTable: () => <div data-testid="gem-table" /> }))
+vi.mock('@/components/defcon/DefConTables', () => ({ DefConTables: () => <div data-testid="defcon" /> }))
+vi.mock('@/components/transfers/TransferPanel', () => ({ TransferPanel: () => <div data-testid="transfer-panel" /> }))
+vi.mock('@/components/club-form/ClubFormTable', () => ({ ClubFormTable: () => <div data-testid="club-form-table" /> }))
+vi.mock('@/components/club-form/FixtureEaseRankingPanel', () => ({ FixtureEaseRankingPanel: () => <div data-testid="fixture-ease" /> }))
+vi.mock('@/components/LastUpdated', () => ({ LastUpdated: () => <div data-testid="last-updated" /> }))
+vi.mock('@/components/theme/ThemeToggle', () => ({ ThemeToggle: () => <div data-testid="theme-toggle" /> }))
+vi.mock('@/components/value-gems/ValueGemsTable', () => ({ ValueGemsTable: () => <div data-testid="value-gems" /> }))
+vi.mock('@/components/planner/PlannerTab', () => ({ PlannerTab: () => <div data-testid="planner" /> }))
+vi.mock('@/components/set-pieces/SetPieceTakerPanel', () => ({ SetPieceTakerPanel: () => <div data-testid="set-piece-taker" /> }))
+vi.mock('@/components/captaincy/CaptainPicksPanel', () => ({ CaptainPicksPanel: () => <div data-testid="captain-picks" /> }))
+vi.mock('@/components/insights/InsightsTab', () => ({ InsightsTab: () => <div data-testid="insights" /> }))
+
+import Home from '@/app/page'
+
+describe('Phase 36: page.tsx state', () => {
+  it('default landing is Analyse section with Gem Ratings sub-tab active (D-06)', () => {
+    const { container } = render(<Home />)
+    const analyseBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Analyse')
+    expect(analyseBtn?.getAttribute('aria-current')).toBe('page')
+    const gemRatingsBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Gem Ratings')
+    expect(gemRatingsBtn?.getAttribute('aria-current')).toBe('page')
+    expect(container.querySelector('[data-testid="gem-table"]')).not.toBeNull()
+    expect(container.querySelector('[data-testid="captain-picks"]')).not.toBeNull()
+  })
+
+  it('restores last active sub-tab when returning to Analyse section (D-05)', () => {
+    const { container } = render(<Home />)
+    // Navigate to Insights sub-tab within Analyse
+    const insightsBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Insights')
+    fireEvent.click(insightsBtn!)
+    expect(container.querySelector('[data-testid="insights"]')).not.toBeNull()
+    // Switch to Squad section
+    const squadBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Squad')
+    fireEvent.click(squadBtn!)
+    expect(container.querySelector('[data-testid="transfer-panel"]')).not.toBeNull()
+    expect(container.querySelector('nav[aria-label="Analyse sub-tabs"]')).toBeNull()
+    expect(container.querySelector('nav[aria-label="Plan sub-tabs"]')).toBeNull()
+    // Return to Analyse — Insights must be restored, not Gem Ratings
+    const analyseBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Analyse')
+    fireEvent.click(analyseBtn!)
+    const analyseSubTabs = container.querySelector('nav[aria-label="Analyse sub-tabs"]')
+    expect(analyseSubTabs).not.toBeNull()
+    const activeSubTabBtn = analyseSubTabs?.querySelector('button[aria-current="page"]')
+    expect(activeSubTabBtn?.textContent).toBe('Insights')
+    expect(container.querySelector('[data-testid="insights"]')).not.toBeNull()
+    expect(container.querySelector('[data-testid="gem-table"]')).toBeNull()
+  })
+
+  it('restores last active sub-tab when returning to Plan section (D-05)', () => {
+    const { container } = render(<Home />)
+    // Switch to Plan section
+    const planBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Plan')
+    fireEvent.click(planBtn!)
+    const planSubTabs = container.querySelector('nav[aria-label="Plan sub-tabs"]')
+    const activePlanBtn = planSubTabs?.querySelector('button[aria-current="page"]')
+    expect(activePlanBtn?.textContent).toBe('Planner')
+    expect(container.querySelector('[data-testid="planner"]')).not.toBeNull()
+    // Switch to Club Form sub-tab
+    const clubFormBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Club Form')
+    fireEvent.click(clubFormBtn!)
+    expect(container.querySelector('[data-testid="fixture-ease"]')).not.toBeNull()
+    expect(container.querySelector('[data-testid="club-form-table"]')).not.toBeNull()
+    // Switch to Squad then back to Plan — Club Form must be restored
+    const squadBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Squad')
+    fireEvent.click(squadBtn!)
+    const planBtn2 = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Plan')
+    fireEvent.click(planBtn2!)
+    const planSubTabs2 = container.querySelector('nav[aria-label="Plan sub-tabs"]')
+    const activeBtn = planSubTabs2?.querySelector('button[aria-current="page"]')
+    expect(activeBtn?.textContent).toBe('Club Form')
+    expect(container.querySelector('[data-testid="fixture-ease"]')).not.toBeNull()
+    expect(container.querySelector('[data-testid="club-form-table"]')).not.toBeNull()
+  })
+
+  it('MobileNav uses abbreviated mobile labels not desktop sub-tab labels (D-04)', () => {
+    const { container } = render(<Home />)
+    const nav = container.querySelector('nav[aria-label="Mobile navigation"]')
+    expect(nav).not.toBeNull()
+    // Analyse active: mobile pills use mobileLabel abbreviations, not desktop labels
+    expect(nav?.textContent).toContain('Gems')
+    expect(nav?.textContent).not.toContain('Gem Ratings')
+    expect(nav?.textContent).toContain('DefCon')
+    expect(nav?.textContent).not.toContain('DefCon Analysis')
+    expect(nav?.textContent).toContain('SP')
+    expect(nav?.textContent).not.toContain('Set Pieces')
+    // Switch to Plan section — plan pills use abbreviated mobileLabels
+    const planBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Plan')
+    fireEvent.click(planBtn!)
+    // When Plan is active, Gems pill must be absent (Analyse-only pill)
+    expect(nav?.textContent).not.toContain('Gems')
+    expect(nav?.textContent).toContain('Form')
+    expect(nav?.textContent).not.toContain('Club Form')
+    expect(nav?.textContent).toContain('Values')
+    expect(nav?.textContent).not.toContain('Value Gems')
+    expect(nav?.textContent).toContain('Planner')
+  })
+})
