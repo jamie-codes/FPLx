@@ -229,7 +229,10 @@ export function ChipStrategyPanel({
 
   const clubFormMap = useMemo(() => buildClubFormMap(clubForm ?? []), [clubForm])
   const benchPicks = useMemo(() => (picks ?? []).filter(p => p.position >= 12), [picks])
-  const currentSquadIds = useMemo(() => (picks ?? []).map(p => p.element), [picks])
+  const currentSquadIds = useMemo(
+    () => picks !== null ? picks.map(p => p.element) : undefined,
+    [picks],
+  )
 
   const bbScores = useMemo(
     () => computeBBScore(benchPicks, scoredPlayers, clubFormMap, startingGw ?? 0),
