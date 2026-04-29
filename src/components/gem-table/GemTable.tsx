@@ -18,7 +18,8 @@ import { computeAllGemScores } from '@/lib/gem-score'
 import type { PositionCode } from '@/lib/types'
 import { columns } from './columns'
 import { PositionFilter } from './PositionFilter'
-import { GwToggle, getColumnVisibility } from './GwToggle'
+import { GwToggle, getColumnVisibility, type ViewPreset } from './GwToggle'
+import { PresetToggle } from './PresetToggle'
 import { LandscapeTip } from '@/components/set-pieces/LandscapeTip'
 
 const HIDDEN_COLUMN_LABELS: Record<string, string> = {
@@ -41,7 +42,12 @@ const HIDDEN_COLUMN_LABELS: Record<string, string> = {
   differential_flag: 'Diff',
 }
 
-export function GemTable() {
+interface GemTableProps {
+  preset?: ViewPreset
+  onPresetChange?: (p: ViewPreset) => void
+}
+
+export function GemTable({ preset = 'default', onPresetChange }: GemTableProps = {}) {
   const { data, isLoading, error } = usePlayers()
 
   const scoredPlayers = useMemo(() => computeAllGemScores(data ?? []), [data])
@@ -78,7 +84,7 @@ export function GemTable() {
 
   const [expanded, setExpanded] = useState<ExpandedState>({})
 
-  const columnVisibility: VisibilityState = getColumnVisibility(gwHorizon, isMobile)
+  const columnVisibility: VisibilityState = getColumnVisibility(gwHorizon, isMobile, isMobile ? 'default' : preset)
 
   const table = useReactTable({
     data: scoredPlayers,
@@ -120,7 +126,10 @@ export function GemTable() {
       <h1 className="text-2xl font-bold mb-4">Gem Ratings</h1>
       <div className="sticky top-0 sm:static z-40 bg-white dark:bg-zinc-900 py-2 -mx-4 px-4 flex justify-between items-center mb-2 border-b border-gray-100 dark:border-zinc-800 sm:border-0">
         <PositionFilter active={activePosition} onChange={handlePositionChange} />
-        <GwToggle value={gwHorizon} onChange={setGwHorizon} />
+        <div className="flex items-center gap-2">
+          <PresetToggle preset={preset} onPresetChange={onPresetChange ?? (() => {})} />
+          <GwToggle value={gwHorizon} onChange={setGwHorizon} />
+        </div>
       </div>
       <LandscapeTip isMobile={isMobile} isPortrait={isPortrait} />
       <p className="text-sm text-gray-500 dark:text-zinc-400 mb-2">

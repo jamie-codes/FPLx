@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { GemTable } from '@/components/gem-table/GemTable'
+import type { ViewPreset } from '@/components/gem-table/GwToggle'
 import { DefConTables } from '@/components/defcon/DefConTables'
 import { TransferPanel } from '@/components/transfers/TransferPanel'
 import { ClubFormTable } from '@/components/club-form/ClubFormTable'
@@ -55,6 +56,7 @@ export default function Home() {
     plan: 'planner',
     squad: null,
   })
+  const [gemPreset, setGemPreset] = useState<ViewPreset>('default')
 
   const activeSubTab = sectionMemory[activeSection]
 
@@ -119,7 +121,7 @@ export default function Home() {
         {activeSection === 'squad' && <TransferPanel />}
         {activeSection !== 'squad' && activeSubTab === 'gems' && (
           <>
-            <GemTable />
+            <GemTable preset={gemPreset} onPresetChange={setGemPreset} />
             <CaptainPicksPanel />
           </>
         )}
