@@ -12,8 +12,8 @@ const col = createColumnHelper<ScoredPlayer>()
 const POS_LABEL: Record<number, string> = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' }
 
 // Format score as 0-100 integer for display
-const fmtScore = (v: number) => (v * 100).toFixed(0)
-const fmtScoreNull = (v: number | null) => (v === null ? '\u2014' : (v * 100).toFixed(0))
+export const fmtScore = (v: number) => (v * 100).toFixed(0)
+export const fmtScoreNull = (v: number | null) => (v === null ? '\u2014' : (v * 100).toFixed(0))
 const fmtDec2 = (v: number | null) => (v === null ? '\u2014' : v.toFixed(2))
 
 // Column header with hover tooltip
