@@ -308,66 +308,70 @@ def _player_patterns(merged: list, summaries: dict, finished_gws: int) -> list:
         # player_buy_signal_count: players with regression_signal == 'buy'
         buy_players = [p for p in qualifying if p.get('regression_signal') == 'buy']
         sample_n_buy = len(buy_players)
-        confidence_pct_buy = round(sample_n_buy / sample_total * 100, 1)
-        out.append({
-            'id': 'player_buy_signal_count',
-            'category': 'player',
-            'statement': (
-                f'{sample_n_buy} of {sample_total} regular starters ({confidence_pct_buy}%) '
-                f'carry a BUY signal — actual returns trail xG+xA over the last 5 GW.'
-            ),
-            'confidence_pct': confidence_pct_buy,
-            'sample_n': int(sample_n_buy),
-            'sample_total': int(sample_total),
-        })
+        if sample_n_buy > 0:
+            confidence_pct_buy = round(sample_n_buy / sample_total * 100, 1)
+            out.append({
+                'id': 'player_buy_signal_count',
+                'category': 'player',
+                'statement': (
+                    f'{sample_n_buy} of {sample_total} regular starters ({confidence_pct_buy}%) '
+                    f'carry a BUY signal — actual returns trail xG+xA over the last 5 GW.'
+                ),
+                'confidence_pct': confidence_pct_buy,
+                'sample_n': int(sample_n_buy),
+                'sample_total': int(sample_total),
+            })
 
         # player_sell_signal_count: players with regression_signal == 'sell'
         sell_players = [p for p in qualifying if p.get('regression_signal') == 'sell']
         sample_n_sell = len(sell_players)
-        confidence_pct_sell = round(sample_n_sell / sample_total * 100, 1)
-        out.append({
-            'id': 'player_sell_signal_count',
-            'category': 'player',
-            'statement': (
-                f'{sample_n_sell} of {sample_total} regular starters ({confidence_pct_sell}%) '
-                f'carry a SELL signal — actual returns outpace xG+xA, regression likely.'
-            ),
-            'confidence_pct': confidence_pct_sell,
-            'sample_n': int(sample_n_sell),
-            'sample_total': int(sample_total),
-        })
+        if sample_n_sell > 0:
+            confidence_pct_sell = round(sample_n_sell / sample_total * 100, 1)
+            out.append({
+                'id': 'player_sell_signal_count',
+                'category': 'player',
+                'statement': (
+                    f'{sample_n_sell} of {sample_total} regular starters ({confidence_pct_sell}%) '
+                    f'carry a SELL signal — actual returns outpace xG+xA, regression likely.'
+                ),
+                'confidence_pct': confidence_pct_sell,
+                'sample_n': int(sample_n_sell),
+                'sample_total': int(sample_total),
+            })
 
         # player_diff_count: players with differential_flag == 'diff'
         diff_players = [p for p in qualifying if p.get('differential_flag') == 'diff']
         sample_n_diff = len(diff_players)
-        confidence_pct_diff = round(sample_n_diff / sample_total * 100, 1)
-        out.append({
-            'id': 'player_diff_count',
-            'category': 'player',
-            'statement': (
-                f'{sample_n_diff} of {sample_total} regular starters ({confidence_pct_diff}%) '
-                f'are differentials — high xPts with low ownership.'
-            ),
-            'confidence_pct': confidence_pct_diff,
-            'sample_n': int(sample_n_diff),
-            'sample_total': int(sample_total),
-        })
+        if sample_n_diff > 0:
+            confidence_pct_diff = round(sample_n_diff / sample_total * 100, 1)
+            out.append({
+                'id': 'player_diff_count',
+                'category': 'player',
+                'statement': (
+                    f'{sample_n_diff} of {sample_total} regular starters ({confidence_pct_diff}%) '
+                    f'are differentials — high xPts with low ownership.'
+                ),
+                'confidence_pct': confidence_pct_diff,
+                'sample_n': int(sample_n_diff),
+                'sample_total': int(sample_total),
+            })
 
         # player_template_trap_count: players with differential_flag == 'trap'
         trap_players = [p for p in qualifying if p.get('differential_flag') == 'trap']
         sample_n_trap = len(trap_players)
-        confidence_pct_trap = round(sample_n_trap / sample_total * 100, 1)
-        out.append({
-            'id': 'player_template_trap_count',
-            'category': 'player',
-            'statement': (
-                f'{sample_n_trap} of {sample_total} regular starters ({confidence_pct_trap}%) '
-                f'are template traps — widely held but underperforming on xPts.'
-            ),
-            'confidence_pct': confidence_pct_trap,
-            'sample_n': int(sample_n_trap),
-            'sample_total': int(sample_total),
-        })
+        if sample_n_trap > 0:
+            confidence_pct_trap = round(sample_n_trap / sample_total * 100, 1)
+            out.append({
+                'id': 'player_template_trap_count',
+                'category': 'player',
+                'statement': (
+                    f'{sample_n_trap} of {sample_total} regular starters ({confidence_pct_trap}%) '
+                    f'are template traps — widely held but underperforming on xPts.'
+                ),
+                'confidence_pct': confidence_pct_trap,
+                'sample_n': int(sample_n_trap),
+                'sample_total': int(sample_total),
+            })
 
     return out
 
