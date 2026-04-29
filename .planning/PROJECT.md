@@ -22,7 +22,11 @@ Give the manager a clear, prioritised view of who to buy and who to sell this we
 - Player comparison panel — side-by-side stats/xPts/fixture view before committing to a transfer
 - Data freshness UX — clear stale-data indicators, prominent "last updated X ago" states, amber/red decay signals
 
-## Current State (v1.4 Analytics Engine — SHIPPED 2026-04-29, all 10 phases complete)
+## Current State (v1.5 UX & Polish — Phase 36 complete 2026-04-29)
+
+Phase 36 complete — Navigation Consolidation shipped: flat 8-tab nav replaced with 3-section hierarchy (Analyse / Plan / Squad). `src/app/page.tsx` exports `Section`, `SubTab`, `SECTIONS` constant; nested state model (`activeSection` + `sectionMemory` Record) implements per-section sub-tab memory (D-05) and default Analyse→Gem Ratings landing (D-06). Desktop two-tier nav: section row + conditional sub-tab row (hidden for Squad). `src/components/nav/MobileNav.tsx` imports shared SECTIONS from page.tsx; renders pill row above section bar (pill row hidden when Squad active). CR-01 fix: all sub-tab content blocks dual-guarded with `activeSection !== 'squad' && activeSubTab === X`. 14 new tests; 362 total pass. NAV-01 through NAV-05 satisfied.
+
+## Previous State (v1.4 Analytics Engine — SHIPPED 2026-04-29, all 10 phases complete)
 
 Phase 35 complete — Tech Debt Fixes shipped: `pipeline/merge.py` BGW exclusion guard added to both the position-median build loop (`if xpts_val:`) and the flag-assignment loop (`if not p.get('xPts_1gw'): continue`); TRAP gate predicate changed from `not above_median` to strict `xpts_1gw < position_median`; `_player_patterns` in `insights.py` guards all four out.append() blocks with `if sample_n_X > 0:`; `upload_json` signature corrected to `data: list | dict`; `MOBILE_HIDDEN_COLUMNS` key renamed `signal` → `regression_signal`; `InsightsTab.test.tsx` empty-state mock cast to `Insight[]`; `ChipStrategyPanel.tsx` bestGw guard documented with invariant comment. All 7 audit items (WR-01–WR-07) resolved; 8/8 must-haves verified.
 
