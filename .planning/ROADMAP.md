@@ -32,7 +32,7 @@
 
 - [x] **Phase 36: Navigation Consolidation** - Reorganise 9+ tabs into three top-level sections (Analyse / Plan / Squad) with sub-tabs on desktop and mobile *(completed 2026-04-29)*
 - [x] **Phase 37: GemTable View Presets** - Add Default / Compact / Analysis toggle that persists across tab switches in a session *(completed 2026-04-29)*
-- [ ] **Phase 38: Data Freshness UX** - Show human-readable "Updated X ago" on every tab without requiring navigation
+- [x] **Phase 38: Data Freshness UX** - Show human-readable "Updated X ago" on every tab without requiring navigation *(complete 2026-04-29)*
 - [ ] **Phase 39: Player Comparison Modal** - Side-by-side xPts, Gem breakdown, fixtures, and signals for any two players from GemTable
 - [ ] **Phase 40: Accuracy Pipeline** - Pipeline backtest of proj_pts vs xPts over the last 5 completed gameweeks
 - [ ] **Phase 41: Accuracy UI & Model Rationalisation** - GW accuracy table, haulter comparison, player-level delta view, last-GW actuals column in GemTable, and removal of the weaker model
@@ -295,9 +295,9 @@ Plans:
 Plans:
 
 **Wave 1**
-- [ ] 38-01-PLAN.md — formatRelativeTime utility (FRE-02 logic layer) + Vitest TDD cases for D-01 bands and singular/plural boundaries
+- [x] 38-01-PLAN.md — formatRelativeTime utility (FRE-02 logic layer) + Vitest TDD cases for D-01 bands and singular/plural boundaries
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 38-02-PLAN.md — LastUpdated.tsx upgrade (relativeTime prop rename + 30s setInterval tick + cleanup) + RTL tests with fake timers + human verify (FRE-01, FRE-02, FRE-03)
+- [x] 38-02-PLAN.md — LastUpdated.tsx upgrade (relativeTime prop rename + 30s setInterval tick + cleanup) + RTL tests with fake timers + human verify (FRE-01, FRE-02, FRE-03)
 **Cross-cutting constraints:**
 - Pure/connected DAT-02 split preserved — LastUpdatedDisplay accepts pre-formatted relativeTime: string, never raw ISO timestamp
 - Interval lives in connected component only; effect deps are [data?.last_updated]; clearInterval on unmount is mandatory (T-38-07 mitigation)
