@@ -12,16 +12,16 @@ const bootstrap = {
 function makeFixtures() {
   return [
     // 6 finished fixtures between ARS and CHE
-    { team_h: 1, team_a: 2, team_h_score: 2, team_a_score: 1, event: 1, finished: true },
-    { team_h: 2, team_a: 1, team_h_score: 0, team_a_score: 0, event: 2, finished: true },
-    { team_h: 1, team_a: 3, team_h_score: 3, team_a_score: 0, event: 3, finished: true },
-    { team_h: 2, team_a: 3, team_h_score: 1, team_a_score: 2, event: 4, finished: true },
-    { team_h: 3, team_a: 1, team_h_score: 1, team_a_score: 1, event: 5, finished: true },
-    { team_h: 1, team_a: 2, team_h_score: 1, team_a_score: 2, event: 6, finished: true },
+    { team_h: 1, team_a: 2, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 2, team_a_score: 1, event: 1, finished: true },
+    { team_h: 2, team_a: 1, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 0, team_a_score: 0, event: 2, finished: true },
+    { team_h: 1, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 3, team_a_score: 0, event: 3, finished: true },
+    { team_h: 2, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 1, team_a_score: 2, event: 4, finished: true },
+    { team_h: 3, team_a: 1, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 1, team_a_score: 1, event: 5, finished: true },
+    { team_h: 1, team_a: 2, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 1, team_a_score: 2, event: 6, finished: true },
     // Upcoming fixtures
-    { team_h: 2, team_a: 1, team_h_score: null, team_a_score: null, event: 30, finished: false },
-    { team_h: 3, team_a: 2, team_h_score: null, team_a_score: null, event: 31, finished: false },
-    { team_h: 1, team_a: 3, team_h_score: null, team_a_score: null, event: 32, finished: false },
+    { team_h: 2, team_a: 1, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: null, team_a_score: null, event: 30, finished: false },
+    { team_h: 3, team_a: 2, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: null, team_a_score: null, event: 31, finished: false },
+    { team_h: 1, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: null, team_a_score: null, event: 32, finished: false },
   ]
 }
 
@@ -61,10 +61,10 @@ describe('computeClubForm', () => {
   it('DGW team with 2 fixtures in 1 GW gets individual fixture entries (not 5 GWs)', () => {
     // ARS plays twice in event 7 (DGW)
     const fixtures = [
-      { team_h: 1, team_a: 2, team_h_score: 2, team_a_score: 0, event: 7, finished: true },
-      { team_h: 3, team_a: 1, team_h_score: 1, team_a_score: 2, event: 7, finished: true },
-      { team_h: 1, team_a: 3, team_h_score: 1, team_a_score: 0, event: 8, finished: true },
-      { team_h: 2, team_a: 1, team_h_score: 0, team_a_score: 3, event: 9, finished: true },
+      { team_h: 1, team_a: 2, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 2, team_a_score: 0, event: 7, finished: true },
+      { team_h: 3, team_a: 1, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 1, team_a_score: 2, event: 7, finished: true },
+      { team_h: 1, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 1, team_a_score: 0, event: 8, finished: true },
+      { team_h: 2, team_a: 1, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 0, team_a_score: 3, event: 9, finished: true },
     ]
     const result = computeClubForm(bootstrap, fixtures)
     const ars = result.find(r => r.team_id === 1)!
@@ -79,8 +79,8 @@ describe('computeClubForm', () => {
 
   it('team with fewer than 5 finished fixtures returns stats for available fixtures only', () => {
     const fixtures = [
-      { team_h: 1, team_a: 2, team_h_score: 1, team_a_score: 0, event: 1, finished: true },
-      { team_h: 1, team_a: 3, team_h_score: 0, team_a_score: 1, event: 2, finished: true },
+      { team_h: 1, team_a: 2, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 1, team_a_score: 0, event: 1, finished: true },
+      { team_h: 1, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 0, team_a_score: 1, event: 2, finished: true },
     ]
     const result = computeClubForm(bootstrap, fixtures)
     const ars = result.find(r => r.team_id === 1)!
@@ -142,9 +142,9 @@ describe('computeClubForm', () => {
     // bootstrap teams 1,2,3 — but we only schedule upcoming fixtures involving 1 and 2.
     // Team 3 (BUR) has zero upcoming → all six ease fields must be null.
     const fixtures = [
-      { team_h: 1, team_a: 2, team_h_score: 1, team_a_score: 0, event: 1, finished: true },
-      { team_h: 2, team_a: 1, team_h_score: 0, team_a_score: 0, event: 2, finished: true },
-      { team_h: 1, team_a: 2, team_h_score: null, team_a_score: null, event: 30, finished: false },
+      { team_h: 1, team_a: 2, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 1, team_a_score: 0, event: 1, finished: true },
+      { team_h: 2, team_a: 1, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 0, team_a_score: 0, event: 2, finished: true },
+      { team_h: 1, team_a: 2, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: null, team_a_score: null, event: 30, finished: false },
     ]
     const result = computeClubForm(bootstrap, fixtures)
     const bur = result.find(r => r.team_id === 3)!
@@ -166,21 +166,21 @@ describe('computeClubForm', () => {
     // We then schedule an upcoming fixture team_2 vs team_1 — CHE's upcoming fixture
     // against ARS should have high defensive_difficulty (ARS scores a lot lately).
     const fixtures = [
-      { team_h: 1, team_a: 3, team_h_score: 0, team_a_score: 0, event: 1, finished: true }, // ARS 0
-      { team_h: 3, team_a: 1, team_h_score: 1, team_a_score: 0, event: 2, finished: true }, // ARS 0
-      { team_h: 1, team_a: 3, team_h_score: 0, team_a_score: 0, event: 3, finished: true }, // ARS 0
-      { team_h: 1, team_a: 3, team_h_score: 5, team_a_score: 0, event: 4, finished: true }, // ARS 5
-      { team_h: 3, team_a: 1, team_h_score: 0, team_a_score: 5, event: 5, finished: true }, // ARS 5
-      { team_h: 1, team_a: 3, team_h_score: 5, team_a_score: 0, event: 6, finished: true }, // ARS 5
+      { team_h: 1, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 0, team_a_score: 0, event: 1, finished: true }, // ARS 0
+      { team_h: 3, team_a: 1, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 1, team_a_score: 0, event: 2, finished: true }, // ARS 0
+      { team_h: 1, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 0, team_a_score: 0, event: 3, finished: true }, // ARS 0
+      { team_h: 1, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 5, team_a_score: 0, event: 4, finished: true }, // ARS 5
+      { team_h: 3, team_a: 1, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 0, team_a_score: 5, event: 5, finished: true }, // ARS 5
+      { team_h: 1, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 5, team_a_score: 0, event: 6, finished: true }, // ARS 5
       // Make CHE consistently 0-scoring for contrast
-      { team_h: 2, team_a: 3, team_h_score: 0, team_a_score: 0, event: 1, finished: true },
-      { team_h: 3, team_a: 2, team_h_score: 1, team_a_score: 0, event: 2, finished: true },
-      { team_h: 2, team_a: 3, team_h_score: 0, team_a_score: 0, event: 3, finished: true },
-      { team_h: 2, team_a: 3, team_h_score: 0, team_a_score: 0, event: 4, finished: true },
-      { team_h: 3, team_a: 2, team_h_score: 1, team_a_score: 0, event: 5, finished: true },
-      { team_h: 2, team_a: 3, team_h_score: 0, team_a_score: 0, event: 6, finished: true },
+      { team_h: 2, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 0, team_a_score: 0, event: 1, finished: true },
+      { team_h: 3, team_a: 2, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 1, team_a_score: 0, event: 2, finished: true },
+      { team_h: 2, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 0, team_a_score: 0, event: 3, finished: true },
+      { team_h: 2, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 0, team_a_score: 0, event: 4, finished: true },
+      { team_h: 3, team_a: 2, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 1, team_a_score: 0, event: 5, finished: true },
+      { team_h: 2, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 0, team_a_score: 0, event: 6, finished: true },
       // Upcoming: CHE vs ARS at event 30
-      { team_h: 2, team_a: 1, team_h_score: null, team_a_score: null, event: 30, finished: false },
+      { team_h: 2, team_a: 1, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: null, team_a_score: null, event: 30, finished: false },
     ]
     const result = computeClubForm(bootstrap, fixtures)
     const che = result.find(r => r.team_id === 2)!
@@ -196,13 +196,13 @@ describe('computeClubForm', () => {
   it('FDR++: high-scoring opponent yields LOW defensive_ease (hard to keep CS)', () => {
     // Same fixtures as previous test but assert defensive_ease (1 - difficulty)
     const fixtures = [
-      { team_h: 1, team_a: 3, team_h_score: 5, team_a_score: 0, event: 4, finished: true },
-      { team_h: 3, team_a: 1, team_h_score: 0, team_a_score: 5, event: 5, finished: true },
-      { team_h: 1, team_a: 3, team_h_score: 5, team_a_score: 0, event: 6, finished: true },
-      { team_h: 2, team_a: 3, team_h_score: 0, team_a_score: 0, event: 4, finished: true },
-      { team_h: 3, team_a: 2, team_h_score: 1, team_a_score: 0, event: 5, finished: true },
-      { team_h: 2, team_a: 3, team_h_score: 0, team_a_score: 0, event: 6, finished: true },
-      { team_h: 2, team_a: 1, team_h_score: null, team_a_score: null, event: 30, finished: false },
+      { team_h: 1, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 5, team_a_score: 0, event: 4, finished: true },
+      { team_h: 3, team_a: 1, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 0, team_a_score: 5, event: 5, finished: true },
+      { team_h: 1, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 5, team_a_score: 0, event: 6, finished: true },
+      { team_h: 2, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 0, team_a_score: 0, event: 4, finished: true },
+      { team_h: 3, team_a: 2, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 1, team_a_score: 0, event: 5, finished: true },
+      { team_h: 2, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: 0, team_a_score: 0, event: 6, finished: true },
+      { team_h: 2, team_a: 1, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: null, team_a_score: null, event: 30, finished: false },
     ]
     const result = computeClubForm(bootstrap, fixtures)
     const che = result.find(r => r.team_id === 2)!

@@ -17,6 +17,8 @@ interface RawFixture {
   team_a: number
   team_h_score: number | null
   team_a_score: number | null
+  team_h_difficulty: number
+  team_a_difficulty: number
   event: number | null
   finished: boolean
 }
@@ -113,32 +115,36 @@ export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[])
   const teamUpcoming = new Map<number, ClubFormFixture[]>()
   for (const t of teams.keys()) teamUpcoming.set(t, [])
 
+  // FPL official difficulty ratings (1=easy, 5=hard) normalised to 0–1 attacking_difficulty.
+  // This replaces the rolling xGA formula which was too noisy over short windows.
+  const fplToAttDiff = (fplDiff: number) => (fplDiff - 1) / 4
+
   for (const fix of upcoming) {
     const hList = teamUpcoming.get(fix.team_h)
     if (hList && hList.length < LOOKAHEAD) {
       const opp = teams.get(fix.team_a)
-      const ds = diffScore(fix.team_a)
+      const attDiff = fplToAttDiff(fix.team_h_difficulty)
       hList.push({
         opponent_team: opp?.short_name ?? String(fix.team_a),
         is_home: true,
         event_id: fix.event!,
-        difficulty_score: ds,
-        difficulty_tier: tier(ds),
-        attacking_difficulty: ds,                    // Phase 27 DATA-01 D-01 — same as difficulty_score
-        defensive_difficulty: defScore(fix.team_a),  // Phase 27 DATA-01 D-02
+        difficulty_score: attDiff,
+        difficulty_tier: tier(1 - attDiff),
+        attacking_difficulty: attDiff,
+        defensive_difficulty: defScore(fix.team_a),
       })
     }
     const aList = teamUpcoming.get(fix.team_a)
     if (aList && aList.length < LOOKAHEAD) {
       const opp = teams.get(fix.team_h)
-      const ds = diffScore(fix.team_h)
+      const attDiff = fplToAttDiff(fix.team_a_difficulty)
       aList.push({
         opponent_team: opp?.short_name ?? String(fix.team_h),
         is_home: false,
         event_id: fix.event!,
-        difficulty_score: ds,
-        difficulty_tier: tier(ds),
-        attacking_difficulty: ds,
+        difficulty_score: attDiff,
+        difficulty_tier: tier(1 - attDiff),
+        attacking_difficulty: attDiff,
         defensive_difficulty: defScore(fix.team_h),
       })
     }
