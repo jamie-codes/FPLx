@@ -1,43 +1,41 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.4
-milestone_name: Analytics Engine & Intelligence Layer
-status: complete
-stopped_at: Phase 35 complete — v1.4 milestone fully shipped
+milestone: v1.5
+milestone_name: UX & Polish
+status: planning
+stopped_at: Milestone v1.5 started — defining requirements
 last_updated: "2026-04-29T00:00:00.000Z"
-last_activity: 2026-04-29 -- Phase 35 executed and verified (7 tech-debt fixes, 2 plans, 8/8 must-haves)
+last_activity: 2026-04-29 -- Milestone v1.5 UX & Polish started
 progress:
-  total_phases: 10
-  completed_phases: 10
-  total_plans: 20
-  completed_plans: 20
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-27 after v1.3)
+See: .planning/PROJECT.md (updated 2026-04-29 — v1.5 started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 35 — tech-debt-fixes
+**Current focus:** Defining requirements for v1.5 UX & Polish
 
 ## Current Position
 
-Phase: 35 (tech-debt-fixes) — COMPLETE
-Plan: 2 of 2
-Status: v1.4 milestone fully shipped — all 10 phases complete
-Last activity: 2026-04-29 -- Phase 35 executed and verified (7 tech-debt fixes, 8/8 must-haves passed)
-
-Progress: [███████░░░] 78% (v1.4: 7/9 phases)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-29 — Milestone v1.5 started
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 2 (v1.4)
-- Average duration: ~30 min (based on v1.2/v1.3 history)
+- Total plans completed: 0 (v1.5)
+- Average duration: ~30 min (based on v1.2/v1.3/v1.4 history)
 - Total execution time: 0 hours
 
 **By Phase:**
@@ -45,26 +43,6 @@ Progress: [███████░░░] 78% (v1.4: 7/9 phases)
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | - | - | - | - |
-
-**Recent Trend (v1.3):**
-
-| Phase 19 P01 | 3 | 2 tasks | 11 files |
-| Phase 19 P02 | 4 | 2 tasks | 2 files |
-| Phase 20 P01 | 2min | 2 tasks | 4 files |
-| Phase 20-auth-ux P02 | 5 min | 1 tasks | 1 files |
-| Phase 20-auth-ux P02 | 5min | 2 tasks | 1 files |
-| Phase 21-planner-tab-shell-and-state-model P01 | 2min | 2 tasks | 3 files |
-| Phase 21 P02 | 128s | 1 tasks | 5 files |
-| Phase 22-planning-engine P01 | 8min | 2 tasks | 3 files |
-| Phase 22-planning-engine P02 | 5min | 1 tasks | 1 files |
-| Phase 22-planning-engine P02 | 10min | 2 tasks | 1 files |
-| Phase 23-transfer-output-table P01 | 10min | 2 tasks | 4 files |
-| Phase 23-transfer-output-table P02 | 10min | 2 tasks | 1 files |
-| Phase 24-squad-snapshot P01 | 8min | 2 tasks | 3 files |
-| Phase 24-squad-snapshot P02 | 90s | 1 tasks | 3 files |
-| Phase 25-manual-edit-mode P01 | 12min | 2 tasks | 4 files |
-| Phase 25-manual-edit-mode P02 | 10min | 1 tasks | 2 files |
-| Phase 25-manual-edit-mode P02 | 10min | 2 tasks | 2 files |
 
 *Updated after each plan completion*
 
@@ -75,28 +53,22 @@ Progress: [███████░░░] 78% (v1.4: 7/9 phases)
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [v1.4 Roadmap]: Phase 26 groups SP-01/SP-02/MOB-LS-01/DATA-04 as quick wins -- zero pipeline blocking changes, ships visible features immediately
-- [v1.4 Roadmap]: FDR++ (Phase 27) must land before xPts (Phase 28) -- CS probability needs opponent attacking difficulty
-- [v1.4 Roadmap]: Phase 29 (regression detector) can run in parallel with Phases 27-28 since it uses a separate Understat per-match pipeline, not FDR++
-- [v1.4 Roadmap]: Differential tracker (Phase 30) depends on xPts (Phase 28) for EV comparison; uses selected_by_percent as EO proxy (no official top-10k API)
-- [v1.4 Roadmap]: Captaincy ceiling (Phase 31) depends on both xPts variance (Phase 28) and ownership data (Phase 30)
-- [v1.4 Roadmap]: Team target list (Phase 32) is a late consumer depending on FDR++, xPts, and regression flags
-- [v1.4 Roadmap]: Insights tab (Phase 33) and chip strategy (Phase 34) are leaf consumers with no downstream dependents -- shipped last
-- [v1.4 Roadmap]: FDR++ is additive -- existing difficulty_score field preserved for 6+ consumers (gem-score, proj_pts, FixtureBadges, ClubFormTable, planning-engine, captaincy-engine)
+- [v1.4 complete]: All 10 phases shipped; 7 tech-debt items resolved; analytics/intelligence layer complete
+- [v1.5 scope]: Tab consolidation — address 9+ tabs overwhelm (grouping, hierarchy, or different nav model)
+- [v1.5 scope]: GemTable column management — column picker or compact mode for data-dense table
+- [v1.5 scope]: Player comparison panel — side-by-side view before committing to a transfer
+- [v1.5 scope]: Data freshness UX — stale data indicators, amber/red decay, "last updated X ago" prominence
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
-- [Research]: xPts double-counting risk -- CS points and DefCon bonus are correlated; must use joint defensive-points model in Phase 28
-- [RESOLVED Phase 29]: Per-match Understat xG/xA fetch -- FPL element-summary already provides expected_goals/expected_assists per match; soccerdata not needed
-- [Research]: Free Hit optimal squad construction approach (greedy vs solver) needs design research during Phase 34 planning
-- [Research]: merged_players.json size -- currently ~300KB; monitor that v1.4 field additions keep gzipped transfer under 100KB
+None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-28T11:00:00.000Z
-Stopped at: Completed 29-02-PLAN.md (human-verify approved; Phase 29 fully done)
+Last session: 2026-04-29T00:00:00.000Z
+Stopped at: Milestone v1.5 started — defining requirements
 Resume file: None

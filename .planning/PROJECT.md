@@ -12,23 +12,15 @@ v1.3 added a Gameweek Planner: the manager can generate a 1–5 GW transfer plan
 
 Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
 
-## Current Milestone: v1.4 Analytics Engine & Intelligence Layer
+## Current Milestone: v1.5 UX & Polish
 
-**Goal:** Upgrade FPLx from a transfer suggester into a full decision-support platform with data-driven pattern insights, advanced fixture analysis, ownership-aware captaincy, and set-piece/differential intelligence.
+**Goal:** Make FPLx's data-dense app feel faster and cleaner — consolidate navigation, slim down the GemTable, add a player comparison panel, and make data freshness unmistakable.
 
 **Target features:**
-- Landscape mode tip for mobile users on data-heavy tabs
-- Team fixture difficulty ranking on Form tab (1GW / 3GW / 5GW)
-- Insights tab — weighted data-driven statements from this season's history
-- Set-piece order data pulled from FPL API (pipeline)
-- FDR++ — separate attacking vs defensive FDR per team
-- xPts engine with component breakdown (goals, assists, CS, BPS) + variance output
-- Captaincy ceiling model (90th-percentile) + EO-adjusted picks
-- Differential/template tracker (top-10k effective ownership)
-- Set-piece intelligence UI (penalty, FK, corner taker tracking)
-- Form vs underlying regression detector (buy/sell signal from xG vs actual)
-- Team target list with player involvement % and green fixture runs
-- Enhanced chip strategy analysis (BB/TC/FH optimal GW finder)
+- Tab consolidation — group/reorganise the 9+ tabs into a manageable navigation model (desktop + mobile)
+- GemTable column management — column picker, compact mode, or smarter column priority
+- Player comparison panel — side-by-side stats/xPts/fixture view before committing to a transfer
+- Data freshness UX — clear stale-data indicators, prominent "last updated X ago" states, amber/red decay signals
 
 ## Current State (v1.4 Analytics Engine — SHIPPED 2026-04-29, all 10 phases complete)
 
@@ -147,7 +139,7 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 
 ### Active
 
-*(v1.4 requirements — see REQUIREMENTS.md)*
+*(v1.5 requirements — see REQUIREMENTS.md)*
 
 ### Out of Scope
 
@@ -213,4 +205,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-28 — Phase 32 complete; Team Target List shipped (computeXgiInvolvement utility, TARGET badge + expand-on-click player table on Club Form tab)*
+*Last updated: 2026-04-29 — v1.4 complete; v1.5 UX & Polish milestone started*
