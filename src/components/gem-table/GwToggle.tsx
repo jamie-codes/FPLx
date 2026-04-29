@@ -16,7 +16,7 @@ export const MOBILE_HIDDEN_COLUMNS: Record<string, boolean> = {
   status: false,
   trend: false,
   fixtures: false,
-  signal: false,
+  regression_signal: false,
   differential_flag: false,
 }
 
