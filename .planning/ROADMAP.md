@@ -269,7 +269,13 @@ Plans:
   2. Compact preset shows only Player, Pos, Gem score, xPts 1GW, and Risk badge — all other columns hidden
   3. Analysis preset reveals xG and xA detail columns alongside the standard set
   4. Switching tabs and returning to Gem Ratings restores the previously selected preset without resetting to Default
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+
+**Wave 1**
+- [ ] 37-01-PLAN.md — ViewPreset type + PRESET_COLUMN_VISIBILITY maps + extended getColumnVisibility + preset tests (GEM-01, GEM-02, GEM-03, GEM-04 logic layer)
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 37-02-PLAN.md — PresetToggle component + GemTable prop wiring + page.tsx gemPreset state lift + human verify (GEM-01, GEM-02, GEM-03, GEM-04)
 **UI hint**: yes
 
 ### Phase 38: Data Freshness UX

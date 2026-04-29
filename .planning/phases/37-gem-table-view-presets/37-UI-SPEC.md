@@ -42,27 +42,32 @@ Declared values (must be multiples of 4):
 | 3xl | 64px | Page-level spacing |
 
 Exceptions:
-- Touch targets: minimum 44px height on mobile (`min-h-[44px]`, `py-2.5` on mobile / `py-1` on desktop). This applies to all buttons in the sticky controls bar including the new preset toggle — source: `GwToggle.tsx` line 54, `PositionFilter.tsx` line 24.
 - Sticky controls bar: `py-2` vertical padding, `-mx-4 px-4` negative-margin bleed for full-width background — source: `GemTable.tsx` line 121.
+
+Note: `py-2.5` (10px, not a multiple of 4) appears in `GwToggle.tsx` and `PositionFilter.tsx` for mobile touch targets, but the PresetToggle introduced by this phase uses `hidden sm:flex` (D-07) and is never rendered on mobile. That mobile sizing is therefore outside this phase's scope and is not a declared spacing commitment here.
 
 ---
 
 ## Typography
 
+Weights introduced or controlled by this phase:
+
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
-| Body / table cell | 14px (text-sm) | 400 (normal) | 1.5 |
 | Control label / button | 14px (text-sm) | 500 (font-medium) | 1.2 |
 | Table header | 14px (text-sm) | 600 (font-semibold) | 1.2 |
-| Page heading | 24px (text-2xl) | 700 (font-bold) | 1.2 |
 
-Source: `GemTable.tsx` (h1 `text-2xl font-bold`; th `font-semibold text-sm`; td `text-sm`), `GwToggle.tsx` (`text-sm font-medium`), `PositionFilter.tsx` (`text-sm font-medium`).
+Note: weights 400 (body/table cells) and 700 (page heading `text-2xl font-bold`) exist in `GemTable.tsx` but are not introduced or modified by this phase — they are existing inherited styles outside phase 37's scope.
 
 The preset toggle buttons use `text-sm font-medium` — matching GwToggle exactly (D-06).
+
+Source: `GemTable.tsx` (th `font-semibold text-sm`), `GwToggle.tsx` (`text-sm font-medium`), `PositionFilter.tsx` (`text-sm font-medium`).
 
 ---
 
 ## Color
+
+Primary visual anchor: the segmented preset toggle group, positioned as the dominant new control in the sticky bar.
 
 | Role | Value | Usage |
 |------|-------|-------|
@@ -94,7 +99,7 @@ Visual pattern: segmented button group — identical to `GwToggle`.
       key={p}
       onClick={() => onPresetChange(p)}
       aria-pressed={preset === p}
-      className={`px-3 py-2.5 sm:py-1 text-sm font-medium transition-all cursor-pointer active:scale-95 min-h-[44px] ${
+      className={`px-3 py-1 text-sm font-medium transition-all cursor-pointer active:scale-95 ${
         preset === p
           ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
           : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
@@ -106,7 +111,7 @@ Visual pattern: segmented button group — identical to `GwToggle`.
 </div>
 ```
 
-Wrapper uses `hidden sm:flex` (D-07): invisible on mobile, flex row on desktop.
+Wrapper uses `hidden sm:flex` (D-07): invisible on mobile, flex row on desktop. No mobile touch-target padding needed.
 
 Labels (sentence-case, concise):
 - `default` → "Default"
