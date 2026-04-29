@@ -129,10 +129,7 @@ export default function Home() {
         {/* Tab content — squad guards on section; others guard on sub-tab AND non-squad section */}
         {activeSection === 'squad' && <TransferPanel />}
         {activeSection !== 'squad' && activeSubTab === 'gems' && (
-          <>
-            <GemTable preset={gemPreset} onPresetChange={setGemPreset} onCompare={handleCompare} />
-            <CaptainPicksPanel />
-          </>
+          <GemTable preset={gemPreset} onPresetChange={setGemPreset} onCompare={handleCompare} />
         )}
         {activeSection !== 'squad' && activeSubTab === 'defcon' && <DefConTables />}
         {activeSection !== 'squad' && activeSubTab === 'club-form' && (
@@ -144,7 +141,12 @@ export default function Home() {
         {activeSection !== 'squad' && activeSubTab === 'set-pieces' && <SetPieceTakerPanel />}
         {activeSection !== 'squad' && activeSubTab === 'insights' && <InsightsTab />}
         {activeSection !== 'squad' && activeSubTab === 'value-gems' && <ValueGemsTable />}
-        {activeSection !== 'squad' && activeSubTab === 'planner' && <PlannerTab />}
+        {activeSection !== 'squad' && activeSubTab === 'planner' && (
+          <>
+            <PlannerTab />
+            <CaptainPicksPanel />
+          </>
+        )}
       </main>
       {comparePlayer && (
         <PlayerComparisonModal
