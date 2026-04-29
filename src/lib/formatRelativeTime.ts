@@ -12,7 +12,9 @@
  * @returns relative time label
  */
 export function formatRelativeTime(isoTimestamp: string, nowMs: number = Date.now()): string {
-  const diffMs = nowMs - new Date(isoTimestamp).getTime()
+  const ts = new Date(isoTimestamp).getTime()
+  if (isNaN(ts)) return 'unknown'
+  const diffMs = nowMs - ts
   const diffMins = Math.floor(diffMs / 60_000)
   if (diffMins < 1) return 'just now'
   if (diffMins < 60) return `${diffMins} min ago`
