@@ -16,8 +16,12 @@ async function fetchChipHistory(teamId: string): Promise<ChipHistoryEntry[]> {
   if (!res.ok) {
     throw new Error(`Chip history fetch failed: ${res.status}`)
   }
-  const data: ChipHistoryResponse = await res.json()
-  return data.chips ?? []
+  const raw = await res.json()
+  if (!raw || typeof raw !== 'object') {
+    throw new Error('Chip history: unexpected response shape')
+  }
+  const data = raw as ChipHistoryResponse
+  return Array.isArray(data.chips) ? data.chips : []
 }
 
 /**
