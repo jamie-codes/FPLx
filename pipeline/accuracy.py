@@ -338,7 +338,7 @@ def _reconstruct_proj_pts(prior_entries: list, current_entry: dict, difficulty_s
     if minutes <= 0:
         return 0.0
 
-    played = [h for h in prior_entries if (h.get('minutes', 0) or 0) > 0]
+    played = [h for h in prior_entries if (h.get('minutes', 0) or 0) >= MIN_MINUTES]
     if not played:
         return 0.0
 
