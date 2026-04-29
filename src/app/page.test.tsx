@@ -3,7 +3,15 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, fireEvent } from '@testing-library/react'
 
-vi.mock('@/components/gem-table/GemTable', () => ({ GemTable: () => <div data-testid="gem-table" /> }))
+vi.mock('@/components/gem-table/GemTable', () => ({
+  GemTable: ({ onCompare }: { onCompare?: (p: any) => void }) => (
+    <div data-testid="gem-table">
+      <button data-testid="gem-table-compare-trigger" onClick={() => onCompare?.({ id: 99, web_name: 'TestPlayer' })}>
+        compare
+      </button>
+    </div>
+  ),
+}))
 vi.mock('@/components/defcon/DefConTables', () => ({ DefConTables: () => <div data-testid="defcon" /> }))
 vi.mock('@/components/transfers/TransferPanel', () => ({ TransferPanel: () => <div data-testid="transfer-panel" /> }))
 vi.mock('@/components/club-form/ClubFormTable', () => ({ ClubFormTable: () => <div data-testid="club-form-table" /> }))
@@ -15,6 +23,10 @@ vi.mock('@/components/planner/PlannerTab', () => ({ PlannerTab: () => <div data-
 vi.mock('@/components/set-pieces/SetPieceTakerPanel', () => ({ SetPieceTakerPanel: () => <div data-testid="set-piece-taker" /> }))
 vi.mock('@/components/captaincy/CaptainPicksPanel', () => ({ CaptainPicksPanel: () => <div data-testid="captain-picks" /> }))
 vi.mock('@/components/insights/InsightsTab', () => ({ InsightsTab: () => <div data-testid="insights" /> }))
+vi.mock('@/components/gem-table/PlayerComparisonModal', () => ({
+  PlayerComparisonModal: ({ open, playerA }: { open: boolean; playerA?: { web_name?: string } }) =>
+    open ? <div data-testid="comparison-modal">{playerA?.web_name}</div> : null,
+}))
 
 import Home from '@/app/page'
 
@@ -113,5 +125,21 @@ describe('Phase 36: page.tsx state', () => {
     expect(container.querySelector('[data-testid="defcon"]')).toBeNull()
     expect(container.querySelector('[data-testid="planner"]')).toBeNull()
     expect(container.querySelector('[data-testid="insights"]')).toBeNull()
+  })
+})
+
+describe('Phase 39: player comparison modal mount', () => {
+  it('clicking GemTable onCompare mounts PlayerComparisonModal with playerA (CMP-01 page-level)', () => {
+    const { container } = render(<Home />)
+    // Modal must NOT be mounted before any compare action
+    expect(container.querySelector('[data-testid="comparison-modal"]')).toBeNull()
+    // Trigger the compare callback exposed by the mocked GemTable
+    const trigger = container.querySelector('[data-testid="gem-table-compare-trigger"]') as HTMLButtonElement
+    expect(trigger).not.toBeNull()
+    fireEvent.click(trigger)
+    // Modal must now be mounted with the test player
+    const modal = container.querySelector('[data-testid="comparison-modal"]')
+    expect(modal).not.toBeNull()
+    expect(modal?.textContent).toBe('TestPlayer')
   })
 })
