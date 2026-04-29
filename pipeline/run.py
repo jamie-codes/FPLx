@@ -30,18 +30,39 @@ def _get_source() -> str:
 
 
 def _extract_sp_snapshot(merged: list) -> dict:
-    """Extract primary set-piece taker IDs per team from merged players."""
-    snapshot = {}
+    """Extract primary set-piece taker IDs per team from merged players.
+
+    Prefers available players (status 'a') ahead of injured/doubtful players.
+    Falls back to the lowest-order player of any status if no one is available.
+    This prevents injured first-choice takers from appearing as the active taker.
+    """
+    AVAILABLE = ('a',)  # only fully-available players preferred
+
+    # Collect ordered candidates per team per role
+    team_candidates: dict = {}
     for player in merged:
         team = str(player['team'])
-        if team not in snapshot:
-            snapshot[team] = {'penalty': None, 'fk': None, 'corner': None}
-        if player.get('penalties_order') == 1:
-            snapshot[team]['penalty'] = player['id']
-        if player.get('direct_freekicks_order') == 1:
-            snapshot[team]['fk'] = player['id']
-        if player.get('corners_and_indirect_freekicks_order') == 1:
-            snapshot[team]['corner'] = player['id']
+        if team not in team_candidates:
+            team_candidates[team] = {'penalty': [], 'fk': [], 'corner': []}
+        for role, key in [
+            ('penalty', 'penalties_order'),
+            ('fk', 'direct_freekicks_order'),
+            ('corner', 'corners_and_indirect_freekicks_order'),
+        ]:
+            order = player.get(key)
+            if order is not None:
+                team_candidates[team][role].append((order, player.get('status', ''), player['id']))
+
+    snapshot = {}
+    for team, roles in team_candidates.items():
+        snapshot[team] = {'penalty': None, 'fk': None, 'corner': None}
+        for role, candidates in roles.items():
+            candidates.sort(key=lambda x: x[0])  # sort by order ascending
+            # Prefer first available player; fall back to first in order
+            available = [c for c in candidates if c[1] in AVAILABLE]
+            chosen = available[0] if available else (candidates[0] if candidates else None)
+            if chosen:
+                snapshot[team][role] = chosen[2]
     return snapshot
 
 
