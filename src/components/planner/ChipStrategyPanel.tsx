@@ -300,7 +300,7 @@ export function ChipStrategyPanel({
           <ChipRow chip="3xc" scores={tcScores} usedAtGw={usedChips.get('3xc')} />
           <FHChipRow
             scores={fhResult.scores}
-            bestGw={fhResult.bestGw || null}
+            bestGw={fhResult.bestGw > 0 ? fhResult.bestGw : null}
             suggestedSquad={fhResult.suggestedSquad}
             usedAtGw={usedChips.get('freehit')}
           />
