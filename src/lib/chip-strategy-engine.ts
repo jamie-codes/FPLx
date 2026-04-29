@@ -407,10 +407,11 @@ export function computeFHResult(
   }
   const bestGwResult = gwResults[bestIdx]
 
-  // Build scores array
+  // Build scores array — normalise to [0, 1] so EaseCellBar renders correctly
+  const maxScore = Math.max(...gwResults.map(r => r.score), 1)
   const scores: GWEaseScore[] = gwResults.map((r, i) => ({
     gw: r.gw,
-    ease: horizonGws.length > 0 ? r.score / Math.max(1, 11) : 0, // normalised approximation
+    ease: horizonGws.length > 0 ? r.score / maxScore : 0, // 0.0–1.0: best GW = 1.0
     isBest: i === bestIdx ? true : undefined,
   }))
 
