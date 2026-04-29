@@ -25,7 +25,7 @@ export function PresetToggle({ preset, onPresetChange }: PresetToggleProps) {
           key={p}
           onClick={() => onPresetChange(p)}
           aria-pressed={preset === p}
-          className={`px-3 py-1 text-sm font-medium transition-all cursor-pointer active:scale-95 ${
+          className={`px-3 py-1 text-sm font-medium transition-all cursor-pointer active:scale-95 min-h-[44px] sm:min-h-0 ${
             preset === p
               ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
               : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
