@@ -4,7 +4,7 @@ import json
 import os
 
 
-def upload_json(pathname: str, data: dict):
+def upload_json(pathname: str, data: list | dict):
     """Upload JSON data to Vercel Blob storage."""
     import vercel_blob
     payload = json.dumps(data, ensure_ascii=False).encode('utf-8')
