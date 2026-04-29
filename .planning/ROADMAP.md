@@ -34,7 +34,7 @@
 - [x] **Phase 37: GemTable View Presets** - Add Default / Compact / Analysis toggle that persists across tab switches in a session *(completed 2026-04-29)*
 - [x] **Phase 38: Data Freshness UX** - Show human-readable "Updated X ago" on every tab without requiring navigation *(complete 2026-04-29)*
 - [ ] **Phase 39: Player Comparison Modal** - Side-by-side xPts, Gem breakdown, fixtures, and signals for any two players from GemTable
-- [ ] **Phase 40: Accuracy Pipeline** - Pipeline backtest of proj_pts vs xPts over the last 5 completed gameweeks
+- [x] **Phase 40: Accuracy Pipeline** - Pipeline backtest of proj_pts vs xPts over the last 5 completed gameweeks *(completed 2026-04-29)*
 - [ ] **Phase 41: Accuracy UI & Model Rationalisation** - GW accuracy table, haulter comparison, player-level delta view, last-GW actuals column in GemTable, and removal of the weaker model
 
 ## Phase Details
@@ -340,7 +340,15 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Pipeline writes an accuracy backtest file covering the last 5 completed gameweeks, with per-player predicted vs actual points for both proj_pts_1gw and xPts_1gw
   2. Backtest data identifies haulters (players who scored 10+ actual points) and records whether each model ranked them highly before that gameweek
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+
+**Wave 0**
+- [x] 40-01-PLAN.md — Wave 0 test scaffold: pipeline/tests package + 7 RED unit tests for compute_accuracy_backtest and build_predictions_snapshot (ACC-01)
+**Wave 1** *(blocked on Wave 0 completion)*
+- [x] 40-02-PLAN.md — pipeline/accuracy.py implementation: compute_accuracy_backtest (D-01..D-10) + build_predictions_snapshot (D-11, D-12); turns 7 tests RED -> GREEN (ACC-01)
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 40-03-PLAN.md — run.py wiring: import accuracy, call both functions after defcon block, save() both files, conditional Blob per-GW upload + human verify (ACC-01)
 
 ### Phase 41: Accuracy UI & Model Rationalisation
 **Goal**: User can inspect how well each projection model has performed over the last 5 gameweeks, see actual last-GW points alongside xPts in the GemTable, and use only the model that demonstrably outperforms the other
@@ -378,5 +386,5 @@ Note: Phase 38 (Data Freshness) depends on Phase 36 (nav) but not on Phase 37 (p
 | 37. GemTable View Presets | 2/2 | Complete | 2026-04-29 |
 | 38. Data Freshness UX | 0/2 | Not started | - |
 | 39. Player Comparison Modal | 0/3 | Not started | - |
-| 40. Accuracy Pipeline | 0/? | Not started | - |
+| 40. Accuracy Pipeline | 3/3 | Complete | 2026-04-29 |
 | 41. Accuracy UI & Model Rationalisation | 0/? | Not started | - |

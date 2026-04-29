@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: UX & Polish
-status: planning
-stopped_at: Phase 40 context gathered (2026-04-29)
-last_updated: "2026-04-29T00:00:00.000Z"
-last_activity: 2026-04-29 -- Phase 40 context gathered (accuracy pipeline)
+status: executing
+stopped_at: Phase 40 complete (2026-04-29)
+last_updated: "2026-04-29T22:30:00.000Z"
+last_activity: 2026-04-29 -- Phase 40 complete (accuracy pipeline)
 progress:
   total_phases: 16
-  completed_phases: 14
-  total_plans: 30
-  completed_plans: 25
-  percent: 93
+  completed_phases: 15
+  total_plans: 34
+  completed_plans: 31
+  percent: 94
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-29 — v1.5 started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.5 UX & Polish — Phase 39 executing (player-comparison-modal)
+**Current focus:** v1.5 UX & Polish — Phase 40 complete; Phase 41 next (accuracy UI)
 
 ## Current Position
 
-Phase: 39 (executing)
-Plan: 1 of 3
-Status: Phase 39 executing — 3 plans, 0/3 complete
-Last activity: 2026-04-29 -- Phase 39 executing (3 plans, 0/3 complete)
+Phase: 41 (planned)
+Plan: 0 of ?
+Status: Ready to plan
+Last activity: 2026-04-29 -- Phase 40 complete (accuracy pipeline)
 
 ## Performance Metrics
 
