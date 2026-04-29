@@ -164,7 +164,7 @@ describe('Phase 33: InsightsTab component', () => {
 
   it('renders empty-state when data is [] (INS-01)', () => {
     mockedUseInsights.mockReturnValue({
-      data: [],
+      data: [] as Insight[],
       isLoading: false,
       error: null,
     } as ReturnType<typeof useInsights>)
