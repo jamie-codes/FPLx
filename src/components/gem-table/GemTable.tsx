@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, Fragment } from 'react'
+import { useState, useMemo, useEffect, useCallback, Fragment } from 'react'
 import {
   flexRender,
   getCoreRowModel,
@@ -15,8 +15,8 @@ import {
 } from '@tanstack/react-table'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { computeAllGemScores } from '@/lib/gem-score'
-import type { PositionCode } from '@/lib/types'
-import { columns } from './columns'
+import type { PositionCode, ScoredPlayer } from '@/lib/types'
+import { createColumns } from './columns'
 import { PositionFilter } from './PositionFilter'
 import { GwToggle, getColumnVisibility, type ViewPreset } from './GwToggle'
 import { PresetToggle } from './PresetToggle'
@@ -45,12 +45,19 @@ const HIDDEN_COLUMN_LABELS: Record<string, string> = {
 interface GemTableProps {
   preset?: ViewPreset
   onPresetChange?: (p: ViewPreset) => void
+  onCompare?: (player: ScoredPlayer) => void
 }
 
-export function GemTable({ preset = 'default', onPresetChange }: GemTableProps = {}) {
+export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemTableProps = {}) {
   const { data, isLoading, error } = usePlayers()
 
   const scoredPlayers = useMemo(() => computeAllGemScores(data ?? []), [data])
+
+  const handleCompare = useCallback((player: ScoredPlayer) => {
+    onCompare?.(player)
+  }, [onCompare])
+
+  const columns = useMemo(() => createColumns(handleCompare), [handleCompare])
 
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'gem_score', desc: true },
@@ -83,6 +90,7 @@ export function GemTable({ preset = 'default', onPresetChange }: GemTableProps =
   }, [])
 
   const [expanded, setExpanded] = useState<ExpandedState>({})
+  const [actionSheetPlayer, setActionSheetPlayer] = useState<ScoredPlayer | null>(null)
 
   const columnVisibility: VisibilityState = getColumnVisibility(gwHorizon, isMobile, isMobile ? 'default' : preset)
 
@@ -177,7 +185,12 @@ export function GemTable({ preset = 'default', onPresetChange }: GemTableProps =
               <Fragment key={row.id}>
                 <tr
                   className={`even:bg-gray-50 dark:even:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-zinc-700 ${isMobile ? 'cursor-pointer active:bg-blue-100' : ''}`}
-                  onClick={() => { if (isMobile) row.toggleExpanded() }}
+                  onClick={() => {
+                    if (isMobile) {
+                      row.toggleExpanded()
+                      setActionSheetPlayer(row.original)
+                    }
+                  }}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td
@@ -195,6 +208,32 @@ export function GemTable({ preset = 'default', onPresetChange }: GemTableProps =
                 {row.getIsExpanded() && (
                   <tr className="bg-blue-50 dark:bg-blue-950 sm:hidden">
                     <td colSpan={row.getVisibleCells().length} className="px-3 py-3">
+                      {actionSheetPlayer?.id === row.original.id && (
+                        <div className="flex gap-2 mt-1 sm:hidden">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onCompare?.(row.original)
+                              setActionSheetPlayer(null)
+                            }}
+                            className="text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 rounded px-2 py-1 cursor-pointer"
+                          >
+                            Compare
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setActionSheetPlayer(null)
+                            }}
+                            className="text-xs text-zinc-400 dark:text-zinc-500 cursor-pointer"
+                            aria-label="Dismiss"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
                       <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                         {row.getAllCells()
                           .filter(cell => HIDDEN_COLUMN_LABELS[cell.column.id])
