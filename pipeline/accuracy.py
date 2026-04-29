@@ -22,8 +22,6 @@ transform over the inputs handed in by run.py.
 from collections import defaultdict
 from datetime import datetime, timezone
 
-from merge import _compute_xpts_fixture  # cross-module private import (existing pattern: run.py line 198)
-
 HAULTER_THRESHOLD = 10       # D-09: actual_pts >= 10 -> haulter
 TOP_N_PREDICTED = 10         # D-10: rank within top 10 -> "flagged"
 BACKTEST_GWS = 5             # D-01: last 5 finished GWs
@@ -298,6 +296,7 @@ def _reconstruct_xpts(entry: dict, element_type: int, difficulty_score: float) -
     Calls merge._compute_xpts_fixture with reconstructed historical inputs.
     Returns 0.0 if minutes < 45 (binary start_prob proxy says "didn't start").
     """
+    from merge import _compute_xpts_fixture  # deferred — matches run.py style; avoids ModuleNotFoundError at import time
     minutes = entry.get('minutes', 0) or 0
     if minutes <= 0:
         return 0.0
