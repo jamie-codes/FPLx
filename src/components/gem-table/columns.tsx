@@ -55,8 +55,25 @@ export function XPtsCell({
   )
 }
 
-export const columns = [
-  col.accessor('web_name', { header: 'Player', enableSorting: true }),
+export function createColumns(onCompare: (player: ScoredPlayer) => void) {
+  return [
+    col.accessor('web_name', {
+      header: 'Player',
+      enableSorting: true,
+      cell: ({ row }) => (
+        <div className="relative group/name flex items-center gap-1">
+          <span>{row.original.web_name}</span>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onCompare(row.original) }}
+            className="opacity-0 group-hover/name:opacity-100 transition-opacity text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 ml-1 text-xs cursor-pointer hidden sm:inline"
+            aria-label={`Compare ${row.original.web_name}`}
+          >
+            ⊞
+          </button>
+        </div>
+      ),
+    }),
   col.accessor('team_short_name', { header: 'Team', enableSorting: false }),
   col.accessor('element_type', {
     header: H('Pos', 'Position: GK / DEF / MID / FWD'),
@@ -226,4 +243,9 @@ export const columns = [
     cell: ({ row }) => <FixtureBadges fixtures={row.original.fixtures.slice(0, 5)} />,
     enableSorting: false,
   }),
-]
+  ]
+}
+
+// Backwards-compat: any code importing { columns } gets a no-op onCompare wrapper.
+// GemTable.tsx switches to createColumns in Plan 03 Task 2; this shim covers stragglers and old tests.
+export const columns = createColumns(() => {})

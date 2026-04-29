@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { GemTable } from '@/components/gem-table/GemTable'
 import type { ViewPreset } from '@/components/gem-table/GwToggle'
+import type { ScoredPlayer } from '@/lib/types'
+import { PlayerComparisonModal } from '@/components/gem-table/PlayerComparisonModal'
 import { DefConTables } from '@/components/defcon/DefConTables'
 import { TransferPanel } from '@/components/transfers/TransferPanel'
 import { ClubFormTable } from '@/components/club-form/ClubFormTable'
@@ -57,6 +59,13 @@ export default function Home() {
     squad: null,
   })
   const [gemPreset, setGemPreset] = useState<ViewPreset>('default')
+  const [comparePlayer, setComparePlayer] = useState<ScoredPlayer | null>(null)
+  const [compareOpen, setCompareOpen] = useState(false)
+
+  const handleCompare = useCallback((player: ScoredPlayer) => {
+    setComparePlayer(player)
+    setCompareOpen(true)
+  }, [])
 
   const activeSubTab = sectionMemory[activeSection]
 
@@ -121,7 +130,7 @@ export default function Home() {
         {activeSection === 'squad' && <TransferPanel />}
         {activeSection !== 'squad' && activeSubTab === 'gems' && (
           <>
-            <GemTable preset={gemPreset} onPresetChange={setGemPreset} />
+            <GemTable preset={gemPreset} onPresetChange={setGemPreset} onCompare={handleCompare} />
             <CaptainPicksPanel />
           </>
         )}
@@ -137,6 +146,13 @@ export default function Home() {
         {activeSection !== 'squad' && activeSubTab === 'value-gems' && <ValueGemsTable />}
         {activeSection !== 'squad' && activeSubTab === 'planner' && <PlannerTab />}
       </main>
+      {comparePlayer && (
+        <PlayerComparisonModal
+          open={compareOpen}
+          playerA={comparePlayer}
+          onClose={() => setCompareOpen(false)}
+        />
+      )}
       <MobileNav
         activeSection={activeSection}
         activeSubTab={activeSubTab}
