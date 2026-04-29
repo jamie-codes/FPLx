@@ -6,7 +6,7 @@
 - v1.1 Decision Engine (Phases 7-12) - shipped 2026-03-31
 - v1.2 Mobile (Phases 13-18) - shipped 2026-04-01
 - v1.3 Gameweek Planner (Phases 19-25) - shipped 2026-04-03
-- v1.4 Analytics Engine & Intelligence Layer (Phases 26-34) - in progress
+- v1.4 Analytics Engine & Intelligence Layer (Phases 26-35) - in progress
 
 ## Phases
 
@@ -22,7 +22,8 @@
 - [x] **Phase 31: Captaincy Ceiling** - 90th-percentile and EO-adjusted captain recommendations *(completed 2026-04-28)*
 - [x] **Phase 32: Team Target List** - Teams with green fixture runs and top players ranked by xGI involvement *(completed 2026-04-28)*
 - [x] **Phase 33: Insights Tab** - Data-driven pattern statements with confidence weights *(completed 2026-04-28)*
-- [ ] **Phase 34: Chip Strategy** - Optimal GW finder for Bench Boost, Triple Captain, and Free Hit
+- [x] **Phase 34: Chip Strategy** (completed 2026-04-28) - Optimal GW finder for Bench Boost, Triple Captain, and Free Hit
+- [ ] **Phase 35: Tech Debt Fixes** - Correctness and quality fixes from v1.4 audit (mobile column ID, TRAP logic, TS error, zero-count insights, type annotation)
 
 ## Phase Details
 
@@ -199,9 +200,9 @@ Plans:
 Plans:
 
 **Wave 1**
-- [ ] 34-01-PLAN.md — chip-strategy-engine pure scorers (BB/TC/FH + greedy 15-player squad with formation rules) + useChipHistory hook with numeric teamId guard (T-34-01) + Wave 0 test stubs
+- [x] 34-01-PLAN.md — chip-strategy-engine pure scorers (BB/TC/FH + greedy 15-player squad with formation rules) + useChipHistory hook with numeric teamId guard (T-34-01) + Wave 0 test stubs
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 34-02-PLAN.md — ChipStrategyPanel UI (panel + 3 chip rows + 5-cell ease bar + FH expand-on-click squad table) + PlannerTab mount + component tests + human verify (CHIP-01, CHIP-02, CHIP-03)
+- [x] 34-02-PLAN.md — ChipStrategyPanel UI (panel + 3 chip rows + 5-cell ease bar + FH expand-on-click squad table) + PlannerTab mount + component tests + human verify (CHIP-01, CHIP-02, CHIP-03)
 **Cross-cutting constraints:**
 - All Tailwind classes and copy strings in ChipStrategyPanel.tsx are LOCKED by 34-UI-SPEC.md — no chevron icon library, no accordion, no per-row hue accents
 - Ease polarity is `ease = 1 - attacking_difficulty` (RESEARCH Pitfall 1) — applied at the engine boundary, never at the JSX boundary
@@ -209,6 +210,20 @@ Plans:
 - FH greedy enforces formation (2 GK / 3-5 DEF / 2-5 MID / 1-3 FWD), team cap (max 3 per FPL team), and budget = bankBalance + sum(sellPrices ?? now_cost) over current squad (RESEARCH Pitfalls 4-5)
 - Used chips remain visible (D-13) — opacity-40 + "Used GW{N}" label, never hidden
 **UI hint**: yes
+
+### Phase 35: Tech Debt Fixes
+**Goal**: Close 7 audit-flagged tech debt items from v1.4 — two correctness bugs, one mobile UX bug, two quality issues, and one cosmetic type annotation fix
+**Depends on**: Phases 26-34 (all complete)
+**Requirements**: None (no new requirements; fixes to existing behaviour)
+**Gap Closure**: Closes tech debt from v1.4 audit (2026-04-29)
+**Items:**
+- WR-01 (Phase 29): Fix `signal: false` → `regression_signal: false` in `MOBILE_HIDDEN_COLUMNS` — TanStack column ID mismatch breaks mobile column hiding
+- WR-02 (Phase 30): Exclude BGW players (xPts_1gw=0, no fixture) from TRAP median calculation to prevent false TRAP flags during blank gameweeks
+- WR-03 (Phase 30): Change TRAP gate from `not above_median` (≤) to strict `<` so exactly-median players are not flagged as template traps
+- WR-04 (Phase 33): Fix `data: [] as Insight[]` in InsightsTab.test.tsx (line 166) — TS2352 `never[]` inference in test only
+- WR-05 (Phase 33): Add `sample_n > 0` guard in `_player_patterns` insights.py to suppress zero-count insight strings
+- WR-06 (cross-phase): Fix `upload.py` type annotation `data: dict` → `data: list | dict` for insights payload accuracy
+- WR-07 (Phase 34): Document `bestGw || null` edge-case rationale — safe since FPL GW numbers are always ≥1
 
 ## Progress
 
@@ -224,7 +239,8 @@ Note: Phase 29 (Regression Detector) can run in parallel with Phases 27-28 if de
 | 28. xPts Engine | 2/2 | Complete | 2026-04-28 |
 | 29. Regression Detector | 2/2 | Complete   | 2026-04-28 |
 | 30. Differential Tracker | 2/2 | Complete | 2026-04-28 |
-| 31. Captaincy Ceiling | 0/2 | Planned | - |
+| 31. Captaincy Ceiling | 2/2 | Complete | 2026-04-28 |
 | 32. Team Target List | 2/2 | Complete | 2026-04-28 |
 | 33. Insights Tab | 2/2 | Complete | 2026-04-28 |
-| 34. Chip Strategy | 0/2 | Planned | - |
+| 34. Chip Strategy | 2/2 | Complete | 2026-04-28 |
+| 35. Tech Debt Fixes | 0/1 | Pending | - |

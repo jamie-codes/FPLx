@@ -403,11 +403,10 @@ def _compute_differential_flag(
         'diff' | 'trap' | None
     """
     ownership = _safe_float(selected_by_percent, 0.0)
-    above_median = xpts_1gw > position_median
 
-    if above_median and ownership < 5.0 and status == 'a':
+    if xpts_1gw > position_median and ownership < 5.0 and status == 'a':
         return 'diff'
-    if not above_median and ownership > 15.0:
+    if xpts_1gw < position_median and ownership > 15.0:
         return 'trap'
     return None
 
@@ -889,7 +888,9 @@ def merge_players(
     from statistics import median
     pos_xpts: dict[int, list[float]] = {1: [], 2: [], 3: [], 4: []}
     for p in result:
-        pos_xpts[p['element_type']].append(p.get('xPts_1gw') or 0.0)
+        xpts_val = p.get('xPts_1gw')
+        if xpts_val:  # exclude BGW players (xPts_1gw=0 or None — no fixture this week)
+            pos_xpts[p['element_type']].append(xpts_val)
     pos_median: dict[int, float] = {
         et: median(vals) if vals else 0.0
         for et, vals in pos_xpts.items()
