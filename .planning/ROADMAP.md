@@ -320,7 +320,7 @@ Plans:
 **Wave 0**
 - [x] 39-01-PLAN.md — Wave 0 test stubs: PlayerComparisonModal.test.tsx (CMP-01..CMP-06 RED), columns.test.tsx (compare-icon cell RED), page.test.tsx (Phase 39 mount RED)
 **Wave 1** *(blocked on Wave 0 completion)*
-- [ ] 39-02-PLAN.md — PlayerComparisonModal.tsx (native dialog shell + Player B search + xPts/Gem/Fixtures/Signals sections) + columns.tsx fmtScore/fmtScoreNull exports (CMP-02, CMP-03, CMP-04, CMP-05, CMP-06)
+- [x] 39-02-PLAN.md — PlayerComparisonModal.tsx (native dialog shell + Player B search + xPts/Gem/Fixtures/Signals sections) + columns.tsx fmtScore/fmtScoreNull exports (CMP-02, CMP-03, CMP-04, CMP-05, CMP-06)
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 39-03-PLAN.md — columns.tsx createColumns(onCompare) factory + GemTable.tsx onCompare prop + mobile action sheet + page.tsx state + modal mount + human verify (CMP-01)
 **Cross-cutting constraints:**
