@@ -193,6 +193,17 @@ def test_dgw_aggregation():
     assert (1, 32) in haulter_ids
 
 
+def test_empty_backtest_when_no_finished_gws():
+    """ACC-01: compute_accuracy_backtest returns valid D-08 shape when finished_gws=0."""
+    summaries, _, bootstrap, fixtures = _build_minimal_inputs({}, finished_gws=0)
+    result = compute_accuracy_backtest(summaries, 0, bootstrap, fixtures)
+    for key in ('generated_at', 'gws_covered', 'summary', 'haulters', 'players'):
+        assert key in result, f"missing top-level key: {key}"
+    assert result['gws_covered'] == []
+    assert result['haulters'] == []
+    assert result['players'] == []
+
+
 def test_snapshot_format():
     """ACC-01 / D-12: build_predictions_snapshot returns correct shape."""
     merged = [
