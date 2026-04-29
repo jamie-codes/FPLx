@@ -17,6 +17,7 @@ from merge import merge_players
 from defcon import compute_defcon_stats
 from xmins import compute_xmins_stats
 from insights import compute_insights
+from accuracy import compute_accuracy_backtest, build_predictions_snapshot
 
 
 def _get_cache_dir() -> str:
@@ -200,6 +201,27 @@ def run(dry_run: bool = False):
         defcon_stats = compute_defcon_stats(bootstrap, difficulty_scores, summaries)
         save('defcon_stats.json', defcon_stats)
         print(f"DefCon stats: {len(defcon_stats)} players analysed")
+
+        # Phase 40 / ACC-01: Accuracy backtest + predictions snapshot
+        print("Computing accuracy backtest...")
+        backtest_data = compute_accuracy_backtest(summaries, finished_gws, bootstrap, fixtures)
+        save('accuracy_backtest.json', backtest_data)
+        print(f"Accuracy backtest: {len(backtest_data.get('gws_covered', []))} GWs covered, "
+              f"{len(backtest_data.get('haulters', []))} haulter entries")
+
+        # D-11/D-12: Predictions snapshot for the current GW
+        # current_gw = next GW (i.e., finished_gws + 1) so the snapshot represents
+        # the predictions made BEFORE that GW is played
+        current_gw = finished_gws + 1
+        print(f"Writing predictions snapshot for GW {current_gw}...")
+        snapshot_data = build_predictions_snapshot(merged, current_gw)
+        save('predictions_snapshot.json', snapshot_data)
+
+        # Blob accumulation (D-12): per-GW named copy so multiple snapshots survive
+        if os.getenv('USE_BLOB', '').lower() == 'true':
+            from upload import upload_json
+            upload_json(f'predictions_snapshot_gw{current_gw}.json', snapshot_data)
+            print(f"Predictions snapshot uploaded to Blob: predictions_snapshot_gw{current_gw}.json")
 
         # Write last_updated.json with success metadata
         from datetime import datetime, timezone
