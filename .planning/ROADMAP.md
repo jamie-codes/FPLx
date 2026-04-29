@@ -318,7 +318,7 @@ Plans:
 Plans:
 
 **Wave 0**
-- [ ] 39-01-PLAN.md — Wave 0 test stubs: PlayerComparisonModal.test.tsx (CMP-01..CMP-06 RED), columns.test.tsx (compare-icon cell RED), page.test.tsx (Phase 39 mount RED)
+- [x] 39-01-PLAN.md — Wave 0 test stubs: PlayerComparisonModal.test.tsx (CMP-01..CMP-06 RED), columns.test.tsx (compare-icon cell RED), page.test.tsx (Phase 39 mount RED)
 **Wave 1** *(blocked on Wave 0 completion)*
 - [ ] 39-02-PLAN.md — PlayerComparisonModal.tsx (native dialog shell + Player B search + xPts/Gem/Fixtures/Signals sections) + columns.tsx fmtScore/fmtScoreNull exports (CMP-02, CMP-03, CMP-04, CMP-05, CMP-06)
 **Wave 2** *(blocked on Wave 1 completion)*
