@@ -127,7 +127,14 @@ export function GemTable({ preset = 'default', onPresetChange }: GemTableProps =
       <div className="sticky top-0 sm:static z-40 bg-white dark:bg-zinc-900 py-2 -mx-4 px-4 flex justify-between items-center mb-2 border-b border-gray-100 dark:border-zinc-800 sm:border-0">
         <PositionFilter active={activePosition} onChange={handlePositionChange} />
         <div className="flex items-center gap-2">
-          <PresetToggle preset={preset} onPresetChange={onPresetChange ?? (() => {})} />
+          <PresetToggle
+            preset={preset}
+            onPresetChange={onPresetChange ?? ((p: ViewPreset) => {
+              if (process.env.NODE_ENV !== 'production') {
+                console.warn('GemTable: onPresetChange not provided; preset change ignored', p)
+              }
+            })}
+          />
           <GwToggle value={gwHorizon} onChange={setGwHorizon} />
         </div>
       </div>
