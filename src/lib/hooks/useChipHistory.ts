@@ -35,7 +35,10 @@ async function fetchChipHistory(teamId: string): Promise<ChipHistoryEntry[]> {
 export function useChipHistory(teamId: string | null) {
   return useQuery<ChipHistoryEntry[]>({
     queryKey: ['chip-history', teamId],
-    queryFn: () => fetchChipHistory(teamId!),
+    queryFn: () => {
+      if (!teamId) throw new Error('teamId is required')
+      return fetchChipHistory(teamId)
+    },
     enabled: !!teamId && /^\d+$/.test(teamId),
     staleTime: 1000 * 60 * 60 * 6, // 6 hours — chip usage rarely changes mid-season
     retry: 1,
