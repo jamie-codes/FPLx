@@ -138,10 +138,9 @@ def run(dry_run: bool = False):
         understat = get_understat_players()
 
         # Load player ID map for FPL<->Understat join
-        import json as _json
         id_map_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'player_id_map.json')
         with open(id_map_path, 'r', encoding='utf-8') as f:
-            id_map = _json.load(f)
+            id_map = json.load(f)
 
         # Shared element-summary cache (Phase 7) — fetched once, used by defcon + xmins
         print("Fetching element summaries...")
