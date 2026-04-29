@@ -284,7 +284,7 @@ def _group_history_by_gw(history: list) -> dict:
         agg = by_round[r]
         agg['round'] = r
         agg['minutes'] += entry.get('minutes', 0) or 0
-        agg['total_points'] += entry.get('total_points', 0) or 0
+        agg['total_points'] += int(entry.get('total_points', 0) or 0)
         agg['expected_goals'] += float(entry.get('expected_goals', 0) or 0)
         agg['expected_assists'] += float(entry.get('expected_assists', 0) or 0)
     return dict(by_round)
