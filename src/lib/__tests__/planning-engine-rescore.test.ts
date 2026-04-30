@@ -49,9 +49,7 @@ function makePlayer(overrides: Partial<ScoredPlayer> & { id: number; element_typ
       { opponent_team: 'OPP', is_home: true, event_id: 31, difficulty_score: 0.3, difficulty_tier: 'easy' },
       { opponent_team: 'OPP', is_home: true, event_id: 32, difficulty_score: 0.3, difficulty_tier: 'easy' },
     ],
-    proj_pts_1gw: overrides.proj_pts_1gw ?? 5.0,
-    proj_pts_3gw: 15.0,
-    proj_pts_5gw: 25.0,
+    xPts_1gw: overrides.xPts_1gw ?? 5.0,
     xmins: 90,
     start_prob: 1.0,
     mins_risk: 'nailed',
@@ -168,18 +166,18 @@ describe('FT state propagation via ftStateAfterStepIndex', () => {
 
   it('Test 3: if step X held (0 transfers used), step X+1 should have freeTransfersAvailable=2 (banked=1)', () => {
     // We need a scenario where no transfer is made (hold).
-    // If we supply a squad with very high proj_pts players, no swap will have positive netGain.
+    // If we supply a squad with very high xPts players, no swap will have positive netGain.
     const picks = makeSquadPicks()
 
-    // Squad players all have proj_pts=10 and same cost, no outside player can beat them
+    // Squad players all have xPts=10 and same cost, no outside player can beat them
     const squadPlayers = makeSquadPlayers().map(p => ({
       ...p,
-      proj_pts_1gw: 10.0,
+      xPts_1gw: 10.0,
       gem_score: 0.8,
     }))
 
-    // Outside candidates with low proj_pts — no positive netGain possible
-    const outsider = makePlayer({ id: 100, element_type: 2, proj_pts_1gw: 1.0, gem_score: 0.1 })
+    // Outside candidates with low xPts — no positive netGain possible
+    const outsider = makePlayer({ id: 100, element_type: 2, xPts_1gw: 1.0, gem_score: 0.1 })
     const allPlayers = [...squadPlayers, outsider]
 
     const ftState: FTState = { available: 1, banked: 0 }

@@ -47,7 +47,6 @@ function makePlayer(overrides: Partial<ScoredPlayer> & { id: number; element_typ
     status: 'a',
     xPts_1gw: 5.0,
     xPts_90th_1gw: undefined,
-    proj_pts_1gw: 4.0,
     mins_risk: 'nailed',
     selected_by_percent: '5.0',
     form: '5.0',
@@ -78,8 +77,6 @@ function makePlayer(overrides: Partial<ScoredPlayer> & { id: number; element_typ
     minutes_per90: 90,
     form_pts_per90: 5.0,
     fixtures: [],
-    proj_pts_3gw: 15.0,
-    proj_pts_5gw: 25.0,
     xmins: 90,
     start_prob: 1.0,
     gem_score: 0.5,
@@ -252,12 +249,12 @@ describe('Phase 34: chip-strategy-engine', () => {
       expect(result[0].ease).toBeCloseTo(0.9, 5)
     })
 
-    it('falls back to proj_pts_1gw when both xPts_90th_1gw and xPts_1gw are undefined', () => {
+    it('falls back gracefully when both xPts_90th_1gw and xPts_1gw are undefined', () => {
       const map = buildClubFormMap([
         makeClubForm(1, [35,36,37,38,39].map(gw => makeFx({ event_id: gw, attacking_difficulty: 0.1 }))),
       ])
       const players = [
-        makePlayer({ id: 1, element_type: 2, team: 1, xPts_1gw: undefined, xPts_90th_1gw: undefined, proj_pts_1gw: 9 }),
+        makePlayer({ id: 1, element_type: 2, team: 1, xPts_1gw: undefined, xPts_90th_1gw: undefined }),
       ]
       // Should still produce valid scores (no crash)
       const result = computeTCScore(players, map, 35)

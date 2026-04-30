@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+﻿import { describe, it, expect } from 'vitest'
 import { generatePlan, fixtureCountForGw } from '@/lib/planning-engine'
 import type { ScoredPlayer, FTState, PlannerHorizon } from '@/lib/types'
 import type { SquadPick } from '@/lib/squad-adapter'
@@ -15,7 +15,7 @@ function makeScoredPlayer(overrides: Partial<ScoredPlayer> = {}): ScoredPlayer {
     team: 1,
     team_short_name: 'TST',
     element_type: 3, // MID
-    now_cost: 50,    // £5.0m in tenths
+    now_cost: 50,    // Â£5.0m in tenths
     selected_by_percent: '10.0',
     form: '5.0',
     status: 'a',
@@ -54,9 +54,9 @@ function makeScoredPlayer(overrides: Partial<ScoredPlayer> = {}): ScoredPlayer {
         difficulty_tier: 'medium',
       },
     ],
-    proj_pts_1gw: 4.0,
-    proj_pts_3gw: 12.0,
-    proj_pts_5gw: 20.0,
+    xPts_1gw: 4.0,
+    xPts_3gw: 12.0,
+    xPts_5gw: 20.0,
     xmins: 90,
     start_prob: 1.0,
     mins_risk: 'nailed',
@@ -92,13 +92,13 @@ function makeDefaultSquad(ids: number[]): SquadPick[] {
 }
 
 // ---------------------------------------------------------------------------
-// describe('generatePlan — basic shape')
+// describe('generatePlan â€” basic shape')
 // ---------------------------------------------------------------------------
 
-describe('generatePlan — basic shape', () => {
+describe('generatePlan â€” basic shape', () => {
   it('returns a PlanResult with steps.length === 1 when horizon === 1', () => {
     const squadPlayer = makeScoredPlayer({ id: 1, element_type: 3, now_cost: 50, gem_score: 0.3 })
-    const candidate = makeScoredPlayer({ id: 100, element_type: 3, now_cost: 50, gem_score: 0.8, proj_pts_1gw: 8.0 })
+    const candidate = makeScoredPlayer({ id: 100, element_type: 3, now_cost: 50, gem_score: 0.8, xPts_1gw: 8.0 })
     const picks = makeDefaultSquad([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
     const allPlayers = [
       squadPlayer,
@@ -141,8 +141,8 @@ describe('generatePlan — basic shape', () => {
 
   it('step 0 includes transfersIn with the better player ID when 1 player worse than a candidate', () => {
     // Player 1 has low proj_pts, player 100 is a strong replacement
-    const weakPlayer = makeScoredPlayer({ id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, proj_pts_1gw: 2.0 })
-    const strongCandidate = makeScoredPlayer({ id: 100, element_type: 3, now_cost: 50, gem_score: 0.9, proj_pts_1gw: 9.0 })
+    const weakPlayer = makeScoredPlayer({ id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, xPts_1gw: 2.0 })
+    const strongCandidate = makeScoredPlayer({ id: 100, element_type: 3, now_cost: 50, gem_score: 0.9, xPts_1gw: 9.0 })
     const picks = [
       makeSquadPick(1, 1),
       ...Array.from({ length: 14 }, (_, i) => makeSquadPick(i + 2, i + 2)),
@@ -161,17 +161,17 @@ describe('generatePlan — basic shape', () => {
 })
 
 // ---------------------------------------------------------------------------
-// describe('generatePlan — DGW/BGW scoring')
+// describe('generatePlan â€” DGW/BGW scoring')
 // ---------------------------------------------------------------------------
 
-describe('generatePlan — DGW/BGW scoring', () => {
+describe('generatePlan â€” DGW/BGW scoring', () => {
   it('DGW player (2 fixtures in target GW) is preferred over equally-rated single-GW player', () => {
     const singleGwCandidate = makeScoredPlayer({
       id: 100,
       element_type: 3,
       now_cost: 50,
       gem_score: 0.8,
-      proj_pts_1gw: 5.0,
+      xPts_1gw: 5.0,
       fixtures: [{ opponent_team: 'ARS', is_home: true, event_id: 34, difficulty_score: 0.5, difficulty_tier: 'medium' }],
     })
     const dgwCandidate = makeScoredPlayer({
@@ -179,13 +179,13 @@ describe('generatePlan — DGW/BGW scoring', () => {
       element_type: 3,
       now_cost: 50,
       gem_score: 0.8, // same gem_score
-      proj_pts_1gw: 5.0, // same proj_pts
+      xPts_1gw: 5.0, // same proj_pts
       fixtures: [
         { opponent_team: 'ARS', is_home: true, event_id: 34, difficulty_score: 0.5, difficulty_tier: 'medium' },
         { opponent_team: 'CHE', is_home: false, event_id: 34, difficulty_score: 0.6, difficulty_tier: 'medium' },
       ],
     })
-    const weakPlayer = makeScoredPlayer({ id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, proj_pts_1gw: 1.0 })
+    const weakPlayer = makeScoredPlayer({ id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, xPts_1gw: 1.0 })
     const picks = [
       makeSquadPick(1, 1),
       ...Array.from({ length: 14 }, (_, i) => makeSquadPick(i + 2, i + 2)),
@@ -211,7 +211,7 @@ describe('generatePlan — DGW/BGW scoring', () => {
       element_type: 3,
       now_cost: 50,
       gem_score: 0.9,
-      proj_pts_1gw: 10.0,
+      xPts_1gw: 10.0,
       // No fixture in GW 34
       fixtures: [{ opponent_team: 'ARS', is_home: true, event_id: 35, difficulty_score: 0.5, difficulty_tier: 'medium' }],
     })
@@ -220,10 +220,10 @@ describe('generatePlan — DGW/BGW scoring', () => {
       element_type: 3,
       now_cost: 50,
       gem_score: 0.5,
-      proj_pts_1gw: 5.0,
+      xPts_1gw: 5.0,
       fixtures: [{ opponent_team: 'CHE', is_home: false, event_id: 34, difficulty_score: 0.6, difficulty_tier: 'medium' }],
     })
-    const weakPlayer = makeScoredPlayer({ id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, proj_pts_1gw: 1.0 })
+    const weakPlayer = makeScoredPlayer({ id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, xPts_1gw: 1.0 })
     const picks = [
       makeSquadPick(1, 1),
       ...Array.from({ length: 14 }, (_, i) => makeSquadPick(i + 2, i + 2)),
@@ -262,13 +262,13 @@ describe('generatePlan — DGW/BGW scoring', () => {
 })
 
 // ---------------------------------------------------------------------------
-// describe('generatePlan — hit cost and FT state')
+// describe('generatePlan â€” hit cost and FT state')
 // ---------------------------------------------------------------------------
 
-describe('generatePlan — hit cost and FT state', () => {
+describe('generatePlan â€” hit cost and FT state', () => {
   it('hitCost === 0 when 1 FT available and engine suggests 1 transfer', () => {
-    const weakPlayer = makeScoredPlayer({ id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, proj_pts_1gw: 1.0 })
-    const strongCandidate = makeScoredPlayer({ id: 100, element_type: 3, now_cost: 50, gem_score: 0.9, proj_pts_1gw: 9.0 })
+    const weakPlayer = makeScoredPlayer({ id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, xPts_1gw: 1.0 })
+    const strongCandidate = makeScoredPlayer({ id: 100, element_type: 3, now_cost: 50, gem_score: 0.9, xPts_1gw: 9.0 })
     const picks = [
       makeSquadPick(1, 1),
       ...Array.from({ length: 14 }, (_, i) => makeSquadPick(i + 2, i + 2)),
@@ -286,9 +286,9 @@ describe('generatePlan — hit cost and FT state', () => {
   })
 
   it('hitCost === -4 when 0 FTs available and engine suggests 1 transfer (only if netGain > 0)', () => {
-    const weakPlayer = makeScoredPlayer({ id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, proj_pts_1gw: 1.0 })
+    const weakPlayer = makeScoredPlayer({ id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, xPts_1gw: 1.0 })
     // Large gain to ensure netGain > 0 after -4 deduction
-    const strongCandidate = makeScoredPlayer({ id: 100, element_type: 3, now_cost: 50, gem_score: 0.9, proj_pts_1gw: 12.0 })
+    const strongCandidate = makeScoredPlayer({ id: 100, element_type: 3, now_cost: 50, gem_score: 0.9, xPts_1gw: 12.0 })
     const picks = [
       makeSquadPick(1, 1),
       ...Array.from({ length: 14 }, (_, i) => makeSquadPick(i + 2, i + 2)),
@@ -306,10 +306,10 @@ describe('generatePlan — hit cost and FT state', () => {
   })
 
   it('hit NOT suggested when netGain <= 0 after -4 deduction (candidate with only +3 delta)', () => {
-    // weakPlayer: proj_pts_1gw = 4.0, strongCandidate: proj_pts_1gw = 7.0 → delta = 3.0
-    // With 0 FTs: hitCost = -4, netGain = 3 - 4 = -1 → no transfer suggested
-    const weakPlayer = makeScoredPlayer({ id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, proj_pts_1gw: 4.0 })
-    const marginalCandidate = makeScoredPlayer({ id: 100, element_type: 3, now_cost: 50, gem_score: 0.8, proj_pts_1gw: 7.0 })
+    // weakPlayer: xPts_1gw = 4.0, strongCandidate: xPts_1gw = 7.0 â†’ delta = 3.0
+    // With 0 FTs: hitCost = -4, netGain = 3 - 4 = -1 â†’ no transfer suggested
+    const weakPlayer = makeScoredPlayer({ id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, xPts_1gw: 4.0 })
+    const marginalCandidate = makeScoredPlayer({ id: 100, element_type: 3, now_cost: 50, gem_score: 0.8, xPts_1gw: 7.0 })
     const picks = [
       makeSquadPick(1, 1),
       ...Array.from({ length: 14 }, (_, i) => makeSquadPick(i + 2, i + 2)),
@@ -328,17 +328,17 @@ describe('generatePlan — hit cost and FT state', () => {
     expect(result.steps[0].transfersOut).toHaveLength(0)
   })
 
-  it('FT state chains correctly: use 1 FT in step 1 → step 2 has 1 FT', () => {
-    // Start with 1 FT, use it in step 1 → computeNextFTState(1, 1, null) = {available:1, banked:0}
+  it('FT state chains correctly: use 1 FT in step 1 â†’ step 2 has 1 FT', () => {
+    // Start with 1 FT, use it in step 1 â†’ computeNextFTState(1, 1, null) = {available:1, banked:0}
     const weakPlayer1 = makeScoredPlayer({
-      id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, proj_pts_1gw: 1.0,
+      id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, xPts_1gw: 1.0,
       fixtures: [
         { opponent_team: 'ARS', is_home: true, event_id: 34, difficulty_score: 0.5, difficulty_tier: 'medium' },
         { opponent_team: 'BHA', is_home: true, event_id: 35, difficulty_score: 0.4, difficulty_tier: 'easy' },
       ],
     })
     const strongCandidate = makeScoredPlayer({
-      id: 100, element_type: 3, now_cost: 50, gem_score: 0.9, proj_pts_1gw: 9.0,
+      id: 100, element_type: 3, now_cost: 50, gem_score: 0.9, xPts_1gw: 9.0,
       fixtures: [
         { opponent_team: 'CHE', is_home: false, event_id: 34, difficulty_score: 0.6, difficulty_tier: 'medium' },
         { opponent_team: 'MCI', is_home: false, event_id: 35, difficulty_score: 0.8, difficulty_tier: 'hard' },
@@ -362,13 +362,13 @@ describe('generatePlan — hit cost and FT state', () => {
 
     const result = generatePlan(picks, allPlayers, 2, 34, ftState, 0)
 
-    // step 1 uses 1 FT → step 2 should have 1 FT available
+    // step 1 uses 1 FT â†’ step 2 should have 1 FT available
     expect(result.steps[0].freeTransfersAvailable).toBe(1)
     expect(result.steps[1].freeTransfersAvailable).toBe(1)
   })
 
-  it('FT state chains correctly: save step 1 FT → step 2 has 2 FTs', () => {
-    // All players equal quality — no beneficial transfer, so FT is saved
+  it('FT state chains correctly: save step 1 FT â†’ step 2 has 2 FTs', () => {
+    // All players equal quality â€” no beneficial transfer, so FT is saved
     const picks = makeDefaultSquad([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
     const allPlayers = Array.from({ length: 15 }, (_, i) =>
       makeScoredPlayer({
@@ -383,40 +383,40 @@ describe('generatePlan — hit cost and FT state', () => {
 
     const result = generatePlan(picks, allPlayers, 2, 34, ftState, 0)
 
-    // No beneficial transfer in step 1 → FT saved → step 2 has 2 FTs
+    // No beneficial transfer in step 1 â†’ FT saved â†’ step 2 has 2 FTs
     expect(result.steps[0].transfersIn).toHaveLength(0)
     expect(result.steps[1].freeTransfersAvailable).toBe(2)
   })
 })
 
 // ---------------------------------------------------------------------------
-// describe('generatePlan — look-ahead')
+// describe('generatePlan â€” look-ahead')
 // ---------------------------------------------------------------------------
 
-describe('generatePlan — look-ahead', () => {
+describe('generatePlan â€” look-ahead', () => {
   it('prefers player with strong GW+1 fixtures over equally-rated player with weak GW+1', () => {
     // Both candidates score the same in target GW (GW 34)
     // But candidate A has a great GW 35; candidate B has a terrible GW 35
     const weakSellPlayer = makeScoredPlayer({
-      id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, proj_pts_1gw: 1.0,
+      id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, xPts_1gw: 1.0,
       fixtures: [
         { opponent_team: 'TST', is_home: true, event_id: 34, difficulty_score: 0.5, difficulty_tier: 'medium' },
         { opponent_team: 'TST', is_home: true, event_id: 35, difficulty_score: 0.5, difficulty_tier: 'medium' },
       ],
     })
     const candidateGoodLookAhead = makeScoredPlayer({
-      id: 100, element_type: 3, now_cost: 50, gem_score: 0.7, proj_pts_1gw: 6.0,
+      id: 100, element_type: 3, now_cost: 50, gem_score: 0.7, xPts_1gw: 6.0,
       fixtures: [
         { opponent_team: 'ARS', is_home: true, event_id: 34, difficulty_score: 0.5, difficulty_tier: 'medium' },
         { opponent_team: 'NOR', is_home: true, event_id: 35, difficulty_score: 0.2, difficulty_tier: 'easy' },
       ],
     })
     const candidateBadLookAhead = makeScoredPlayer({
-      id: 200, element_type: 3, now_cost: 50, gem_score: 0.7, proj_pts_1gw: 6.0,
+      id: 200, element_type: 3, now_cost: 50, gem_score: 0.7, xPts_1gw: 6.0,
       // Same GW34 score, but BGW in GW35
       fixtures: [
         { opponent_team: 'ARS', is_home: true, event_id: 34, difficulty_score: 0.5, difficulty_tier: 'medium' },
-        // No GW35 fixture → BGW next GW
+        // No GW35 fixture â†’ BGW next GW
       ],
     })
     const restOfSquad = Array.from({ length: 14 }, (_, i) =>
@@ -438,16 +438,16 @@ describe('generatePlan — look-ahead', () => {
 })
 
 // ---------------------------------------------------------------------------
-// describe('generatePlan — budget')
+// describe('generatePlan â€” budget')
 // ---------------------------------------------------------------------------
 
-describe('generatePlan — budget', () => {
+describe('generatePlan â€” budget', () => {
   it('unaffordable buy (too expensive) is never in transfersIn', () => {
-    const squadPlayer = makeScoredPlayer({ id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, proj_pts_1gw: 1.0 })
-    // Expensive candidate: costs 150 (£15m), squad player sells for 50 (£5m), bank = 0
-    // budget = 0 + 50 = 50 → 150 > 50 → unaffordable
-    const expensiveCandidate = makeScoredPlayer({ id: 100, element_type: 3, now_cost: 150, gem_score: 0.99, proj_pts_1gw: 20.0 })
-    const affordableCandidate = makeScoredPlayer({ id: 200, element_type: 3, now_cost: 50, gem_score: 0.8, proj_pts_1gw: 9.0 })
+    const squadPlayer = makeScoredPlayer({ id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, xPts_1gw: 1.0 })
+    // Expensive candidate: costs 150 (Â£15m), squad player sells for 50 (Â£5m), bank = 0
+    // budget = 0 + 50 = 50 â†’ 150 > 50 â†’ unaffordable
+    const expensiveCandidate = makeScoredPlayer({ id: 100, element_type: 3, now_cost: 150, gem_score: 0.99, xPts_1gw: 20.0 })
+    const affordableCandidate = makeScoredPlayer({ id: 200, element_type: 3, now_cost: 50, gem_score: 0.8, xPts_1gw: 9.0 })
     const picks = [
       makeSquadPick(1, 1),
       ...Array.from({ length: 14 }, (_, i) => makeSquadPick(i + 2, i + 2)),
@@ -468,31 +468,31 @@ describe('generatePlan — budget', () => {
 
   it('budget updates across steps (sell price reclaimed, buy price deducted from bank)', () => {
     // Step 1: sell player (id=1, cost=50), buy candidate (id=100, cost=80)
-    // bank starts at 40 → after step 1: bank = 40 + 50 - 80 = 10
-    // Step 2: buy candidate (id=200, cost=60) — should be affordable (10 + 80 = 90, and 60 <= 90)
+    // bank starts at 40 â†’ after step 1: bank = 40 + 50 - 80 = 10
+    // Step 2: buy candidate (id=200, cost=60) â€” should be affordable (10 + 80 = 90, and 60 <= 90)
     const weakPlayer1 = makeScoredPlayer({
-      id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, proj_pts_1gw: 1.0,
+      id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, xPts_1gw: 1.0,
       fixtures: [
         { opponent_team: 'TST', is_home: true, event_id: 34, difficulty_score: 0.5, difficulty_tier: 'medium' },
         { opponent_team: 'TST', is_home: true, event_id: 35, difficulty_score: 0.5, difficulty_tier: 'medium' },
       ],
     })
     const weakPlayer2 = makeScoredPlayer({
-      id: 2, element_type: 3, now_cost: 60, gem_score: 0.15, proj_pts_1gw: 1.5,
+      id: 2, element_type: 3, now_cost: 60, gem_score: 0.15, xPts_1gw: 1.5,
       fixtures: [
         { opponent_team: 'TST', is_home: true, event_id: 34, difficulty_score: 0.5, difficulty_tier: 'medium' },
         { opponent_team: 'TST', is_home: true, event_id: 35, difficulty_score: 0.5, difficulty_tier: 'medium' },
       ],
     })
     const candidate1 = makeScoredPlayer({
-      id: 100, element_type: 3, now_cost: 80, gem_score: 0.9, proj_pts_1gw: 9.0,
+      id: 100, element_type: 3, now_cost: 80, gem_score: 0.9, xPts_1gw: 9.0,
       fixtures: [
         { opponent_team: 'ARS', is_home: true, event_id: 34, difficulty_score: 0.5, difficulty_tier: 'medium' },
         { opponent_team: 'BHA', is_home: true, event_id: 35, difficulty_score: 0.4, difficulty_tier: 'easy' },
       ],
     })
     const candidate2 = makeScoredPlayer({
-      id: 200, element_type: 3, now_cost: 60, gem_score: 0.85, proj_pts_1gw: 8.0,
+      id: 200, element_type: 3, now_cost: 60, gem_score: 0.85, xPts_1gw: 8.0,
       fixtures: [
         { opponent_team: 'ARS', is_home: true, event_id: 34, difficulty_score: 0.5, difficulty_tier: 'medium' },
         { opponent_team: 'BHA', is_home: true, event_id: 35, difficulty_score: 0.4, difficulty_tier: 'easy' },
@@ -525,10 +525,10 @@ describe('generatePlan — budget', () => {
 })
 
 // ---------------------------------------------------------------------------
-// describe('generatePlan — unconfirmed fixtures')
+// describe('generatePlan â€” unconfirmed fixtures')
 // ---------------------------------------------------------------------------
 
-describe('generatePlan — unconfirmed fixtures', () => {
+describe('generatePlan â€” unconfirmed fixtures', () => {
   it('step has unconfirmedFixtures === true when no player has fixture data for that GW', () => {
     const picks = makeDefaultSquad([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
     // All players only have fixtures for GW 35, not GW 34
@@ -585,8 +585,8 @@ describe('generatePlan - positionsAfter', () => {
   })
 
   it('after transfer, bought player inherits sold player position in positionsAfter', () => {
-    const weakPlayer = makeScoredPlayer({ id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, proj_pts_1gw: 1.0 })
-    const strongCandidate = makeScoredPlayer({ id: 100, element_type: 3, now_cost: 50, gem_score: 0.9, proj_pts_1gw: 9.0 })
+    const weakPlayer = makeScoredPlayer({ id: 1, element_type: 3, now_cost: 50, gem_score: 0.1, xPts_1gw: 1.0 })
+    const strongCandidate = makeScoredPlayer({ id: 100, element_type: 3, now_cost: 50, gem_score: 0.9, xPts_1gw: 9.0 })
     const picks = [makeSquadPick(1, 1), ...Array.from({ length: 14 }, (_, i) => makeSquadPick(i + 2, i + 2))]
     const allPlayers = [weakPlayer, ...Array.from({ length: 14 }, (_, i) => makeScoredPlayer({ id: i + 2 })), strongCandidate]
     const ftState: FTState = { available: 1, banked: 0 }

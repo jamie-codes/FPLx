@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+﻿import { describe, it, expect } from 'vitest'
 import { computeExplanations } from '@/lib/explain'
 import type { ScoredPlayer } from '@/lib/types'
 
@@ -61,9 +61,9 @@ function makeScoredPlayer(overrides: Partial<ScoredPlayer> = {}): ScoredPlayer {
       { opponent_team: 'BUR', is_home: false, event_id: 11, difficulty_score: 0.3, difficulty_tier: 'easy' },
       { opponent_team: 'NEW', is_home: true, event_id: 12, difficulty_score: 0.5, difficulty_tier: 'medium' },
     ],
-    proj_pts_1gw: 4.5,
-    proj_pts_3gw: 12.0,
-    proj_pts_5gw: 18.5,
+    xPts_1gw: 4.5,
+    xPts_3gw: 12.0,
+    xPts_5gw: 18.5,
     xmins: 78.0,
     start_prob: 0.87,
     mins_risk: 'nailed' as const,
@@ -139,8 +139,8 @@ describe('form reasons', () => {
 // Projected pts test
 // ---------------------------------------------------------------------------
 describe('projected pts', () => {
-  it('player with proj_pts_1gw=7.5 returns "Projected 7.5 pts next GW" reason', () => {
-    const player = makeScoredPlayer({ proj_pts_1gw: 7.5 })
+  it('player with xPts_1gw=7.5 returns "Projected 7.5 pts next GW" reason', () => {
+    const player = makeScoredPlayer({ xPts_1gw: 7.5 })
     const reasons = computeExplanations(player)
     const match = reasons.find(r => r.includes('Projected'))
     expect(match).toBeDefined()

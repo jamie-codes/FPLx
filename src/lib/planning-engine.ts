@@ -111,18 +111,18 @@ export function generatePlan(
           continue // unaffordable
         }
 
-        // Score for target GW (per D-02: proj_pts_1gw * fixtureCount)
+        // Score for target GW (per D-02: xPts_1gw * fixtureCount)
         const gwScore =
-          buyCandidate.proj_pts_1gw * fixtureCountForGw(buyCandidate, targetGw) -
-          sellPlayer.proj_pts_1gw * fixtureCountForGw(sellPlayer, targetGw)
+          (buyCandidate.xPts_1gw ?? 0) * fixtureCountForGw(buyCandidate, targetGw) -
+          (sellPlayer.xPts_1gw ?? 0) * fixtureCountForGw(sellPlayer, targetGw)
 
         // Look-ahead score for GW+1
         let lookAheadScore = 0
         if (nextGw !== null) {
           lookAheadScore =
             LOOK_AHEAD_DISCOUNT *
-            (buyCandidate.proj_pts_1gw * fixtureCountForGw(buyCandidate, nextGw) -
-              sellPlayer.proj_pts_1gw * fixtureCountForGw(sellPlayer, nextGw))
+            ((buyCandidate.xPts_1gw ?? 0) * fixtureCountForGw(buyCandidate, nextGw) -
+              (sellPlayer.xPts_1gw ?? 0) * fixtureCountForGw(sellPlayer, nextGw))
         }
 
         const totalScore = gwScore + lookAheadScore
@@ -272,8 +272,8 @@ export function generateChipStep(
       for (const buy of candidates) {
         if (buy.now_cost > budget) continue
         const gain =
-          buy.proj_pts_1gw * fixtureCountForGw(buy, targetGw) -
-          sellPlayer.proj_pts_1gw * fixtureCountForGw(sellPlayer, targetGw)
+          (buy.xPts_1gw ?? 0) * fixtureCountForGw(buy, targetGw) -
+          (sellPlayer.xPts_1gw ?? 0) * fixtureCountForGw(sellPlayer, targetGw)
         if (gain > bestGain) {
           bestGain = gain
           bestTransfer = { sellId, buyId: buy.id, gain }

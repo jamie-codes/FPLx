@@ -32,7 +32,7 @@ export function computeExplanations(player: ScoredPlayer): string[] {
   }
 
   // Projected points (always show)
-  reasons.push(`Projected ${player.proj_pts_1gw.toFixed(1)} pts next GW`)
+  reasons.push(`Projected ${(player.xPts_1gw ?? 0).toFixed(1)} pts next GW`)
 
   // Start probability
   const startPct = Math.round(player.start_prob * 100)

@@ -177,7 +177,7 @@ export function computeBBScore(
  * Score each upcoming GW for Triple Captain based on the top-3 candidates' fixture ease.
  *
  * Candidates: status === 'a', element_type !== 1, mins_risk !== 'injured'
- * Ranking: xPts_90th_1gw (fallback chain: xPts_1gw -> proj_pts_1gw -> 0) per Pitfall 3
+ * Ranking: xPts_90th_1gw (fallback chain: xPts_1gw -> 0) per Pitfall 3
  * Per-GW score: max ease across TC_CANDIDATE_COUNT candidates (best candidate that week)
  * BGW candidate contributes BGW_NEUTRAL_EASE (Pitfall 2)
  * isBest: set on highest-ease entry; tie-break: earliest GW wins
@@ -204,9 +204,9 @@ export function computeTCScore(
     p => p.status === 'a' && p.element_type !== 1 && p.mins_risk !== 'injured',
   )
 
-  // TC fallback chain (Pitfall 3): xPts_90th_1gw ?? xPts_1gw ?? proj_pts_1gw ?? 0
+  // TC fallback chain (Pitfall 3): xPts_90th_1gw ?? xPts_1gw ?? 0
   const rankingKey = (p: ScoredPlayer): number =>
-    p.xPts_90th_1gw ?? p.xPts_1gw ?? p.proj_pts_1gw ?? 0
+    p.xPts_90th_1gw ?? p.xPts_1gw ?? 0
 
   // Take top TC_CANDIDATE_COUNT by ranking key (descending)
   const candidates = eligible

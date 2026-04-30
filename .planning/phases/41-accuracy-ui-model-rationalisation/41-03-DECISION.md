@@ -27,6 +27,21 @@ Surviving model: **xPts**
 
 xPts outperforms proj_pts in 4 of 5 GWs and has nearly double the overall hit rate (16.7% vs 9.0%). User confirmed removal of proj_pts.
 
-## Next Step
+## Removal Log (Plan 03 Task 2)
 
-Plan 03 Task 2 (proj_pts-removal) executes the file-by-file deletion.
+Completed: 2026-04-30
+
+| File | Change |
+|------|--------|
+| `pipeline/merge.py` | Deleted `_proj_pts_ngw()` function; removed `proj_pts_1gw/3gw/5gw` player dict assignments |
+| `src/lib/types.ts` | Removed `proj_pts_1gw/3gw/5gw` from `MergedPlayer`; updated `ScoredTransfer` comment and `AccuracyGwSummary` comment |
+| `src/lib/planning-engine.ts` | `proj_pts_1gw` → `xPts_1gw ?? 0` (4 callsites) |
+| `src/lib/captaincy-engine.ts` | `proj_pts_1gw` → `xPts_1gw` in filter, score calc, and comments |
+| `src/lib/chip-strategy-engine.ts` | Removed `proj_pts_1gw` from TC fallback chain; updated comments |
+| `src/lib/explain.ts` | `proj_pts_1gw` → `xPts_1gw ?? 0` |
+| `src/lib/replacement-shortlist.ts` | `proj_pts_1gw` → `xPts_1gw ?? 0` (filter + delta calc) |
+| `src/components/planner/PlannerTab.tsx` | `proj_pts_1gw` → `xPts_1gw ?? 0` (BB/TC bonus calc) |
+| `src/components/planner/PlayerPickerModal.tsx` | `proj_pts_1gw` → `xPts_1gw ?? 0` (sort + display) |
+| `src/components/transfers/TransferPanel.tsx` | `proj_pts_1gw` → `xPts_1gw ?? 0`; label updated to "xPts (1 GW)" |
+| `src/components/accuracy/AccuracyTab.tsx` | proj_pts columns removed from GwSummaryTable, HaulterList, PlayerDeltaTable |
+| Test fixtures (9 files) | `proj_pts_1gw/3gw/5gw` → `xPts_*` equivalents |

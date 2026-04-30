@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+﻿import { describe, it, expect } from 'vitest'
 import { computeVerdicts } from '@/lib/recommend'
 import type { ScoredPlayer } from '@/lib/types'
 import type { SquadPick } from '@/lib/squad-adapter'
@@ -47,9 +47,9 @@ function makeScoredPlayer(overrides: Partial<ScoredPlayer> = {}): ScoredPlayer {
     fixtures: [
       { opponent_team: 'ARS', is_home: true, event_id: 10, difficulty_score: 0.6, difficulty_tier: 'medium' },
     ],
-    proj_pts_1gw: 4.5,
-    proj_pts_3gw: 12.0,
-    proj_pts_5gw: 18.5,
+    xPts_1gw: 4.5,
+    xPts_3gw: 12.0,
+    xPts_5gw: 18.5,
     xmins: 78.0,
     start_prob: 0.87,
     mins_risk: 'nailed' as const,
@@ -153,7 +153,7 @@ describe('computeVerdicts', () => {
     const bgPlayers = Array.from({ length: 20 }, (_, i) =>
       makeScoredPlayer({ id: i + 10, element_type: 3, gem_score: 0.50 }),
     )
-    // null xg/xa but valid gem_score — gem_score is what the algorithm uses
+    // null xg/xa but valid gem_score â€” gem_score is what the algorithm uses
     const nullXgPlayer = makeScoredPlayer({
       id: 200,
       element_type: 3,
@@ -181,7 +181,7 @@ describe('computeVerdicts', () => {
 
   it('computes position averages from ALL players, not just squad members', () => {
     // 100 DEFs with gem_score 0.40 (full population avg = 0.40)
-    // Squad DEF with gem_score 0.60 — above full population avg → Buy
+    // Squad DEF with gem_score 0.60 â€” above full population avg â†’ Buy
     const bgDefs = Array.from({ length: 100 }, (_, i) =>
       makeScoredPlayer({ id: i + 10, element_type: 2, gem_score: 0.40 }),
     )
@@ -190,8 +190,8 @@ describe('computeVerdicts', () => {
     const picks = [makeSquadPick({ element: 300, position: 2 })]
 
     const verdicts = computeVerdicts(picks, allPlayers)
-    // Full population avg ≈ 0.40 (with squadDef included, still ~0.40)
-    // 0.60 > 0.40 → buy
+    // Full population avg â‰ˆ 0.40 (with squadDef included, still ~0.40)
+    // 0.60 > 0.40 â†’ buy
     expect(verdicts.get(300)).toBe('buy')
   })
 })

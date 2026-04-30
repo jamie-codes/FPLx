@@ -6,7 +6,7 @@ import type { SquadPick } from '@/lib/squad-adapter'
  */
 export interface CaptaincyCandidate {
   player: ScoredPlayer
-  projected_captain_pts: number  // proj_pts_1gw * 2
+  projected_captain_pts: number  // xPts_1gw * 2
   captain_type: 'safe' | 'upside'
 }
 
@@ -36,8 +36,8 @@ function computePositionAverages(allPlayers: ScoredPlayer[]): Record<number, num
  * Rules:
  * - Only starting-XI picks (position 1-11) are considered
  * - Goalkeepers (element_type === 1) are excluded — captaining a GK is never optimal
- * - Players with proj_pts_1gw <= 0 or mins_risk === 'injured' are excluded
- * - projected_captain_pts = proj_pts_1gw * 2
+ * - Players with xPts_1gw <= 0 or mins_risk === 'injured' are excluded
+ * - projected_captain_pts = xPts_1gw * 2
  * - captain_type is 'safe' when mins_risk === 'nailed' AND gem_score >= position average
  * - captain_type is 'upside' for all other cases
  * - Results sorted by projected_captain_pts descending
@@ -74,10 +74,10 @@ export function computeCaptaincyCandidates(
 
     // Exclude injured or zero/undefined-projection players
     // Note: undefined <= 0 is false in JS, so explicit truthiness check is required
-    if (!player.proj_pts_1gw || player.proj_pts_1gw <= 0) continue
+    if (!player.xPts_1gw || player.xPts_1gw <= 0) continue
     if (player.mins_risk === 'injured') continue
 
-    const projected_captain_pts = (player.proj_pts_1gw ?? 0) * 2
+    const projected_captain_pts = (player.xPts_1gw ?? 0) * 2
 
     // Classify captain type
     const posAvg = positionAvgs[player.element_type] ?? 0.5

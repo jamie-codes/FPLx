@@ -33,11 +33,11 @@ export function computeReplacementShortlist(
         candidate.element_type === sellPlayer.element_type &&
         !squadIds.has(candidate.id) &&
         candidate.id !== sellPlayer.id &&
-        candidate.proj_pts_1gw > 0
+        (candidate.xPts_1gw ?? 0) > 0
     )
     .map(candidate => ({
       player: candidate,
-      pts_delta: candidate.proj_pts_1gw - sellPlayer.proj_pts_1gw,
+      pts_delta: (candidate.xPts_1gw ?? 0) - (sellPlayer.xPts_1gw ?? 0),
       budget_sufficient: candidate.now_cost / 10 <= available_budget,
     }))
     .sort((a, b) => b.pts_delta - a.pts_delta)

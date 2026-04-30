@@ -87,13 +87,13 @@ export function PlayerPickerModal({
   // Suggested player (always pinned at top, ignores search filter)
   const suggestedPlayer = eligiblePlayers.find(p => p.id === suggestedPlayerId) ?? null
 
-  // Rest of eligible players: apply search filter and sort by proj_pts_1gw desc
+  // Rest of eligible players: apply search filter and sort by xPts_1gw desc
   const otherPlayers = eligiblePlayers
     .filter(p => p.id !== suggestedPlayerId)
     .filter(p =>
       search.trim() === '' || p.web_name.toLowerCase().includes(search.toLowerCase())
     )
-    .sort((a, b) => b.proj_pts_1gw - a.proj_pts_1gw)
+    .sort((a, b) => (b.xPts_1gw ?? 0) - (a.xPts_1gw ?? 0))
 
   const handlePick = (playerId: number) => {
     onPick(playerId)
@@ -155,12 +155,12 @@ export function PlayerPickerModal({
                 </span>
               </div>
               <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 shrink-0">
-                {suggestedPlayer.proj_pts_1gw.toFixed(1)} pts
+                {(suggestedPlayer.xPts_1gw ?? 0).toFixed(1)} pts
               </span>
             </button>
           )}
 
-          {/* Remaining players sorted by proj_pts_1gw */}
+          {/* Remaining players sorted by xPts_1gw */}
           {otherPlayers.map(player => (
             <button
               type="button"
@@ -177,7 +177,7 @@ export function PlayerPickerModal({
                 </span>
               </div>
               <span className="text-sm text-zinc-700 dark:text-zinc-300 shrink-0">
-                {player.proj_pts_1gw.toFixed(1)} pts
+                {(player.xPts_1gw ?? 0).toFixed(1)} pts
               </span>
             </button>
           ))}

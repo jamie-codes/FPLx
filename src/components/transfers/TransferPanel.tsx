@@ -310,10 +310,10 @@ export function TransferPanel() {
                           £{s.approx_cost.toFixed(1)}m
                         </span>{' '}
                         <span className="text-zinc-400 dark:text-zinc-500">(approx)</span>
-                        {' '}| Proj pts (1 GW):{' '}
-                        <span className="text-zinc-700 dark:text-zinc-300">{(s.sell.proj_pts_1gw ?? 0).toFixed(1)}</span>
+                        {' '}| xPts (1 GW):{' '}
+                        <span className="text-zinc-700 dark:text-zinc-300">{(s.sell.xPts_1gw ?? 0).toFixed(1)}</span>
                         {' '}&rarr;{' '}
-                        <span className="text-zinc-700 dark:text-zinc-300">{(s.buy.proj_pts_1gw ?? 0).toFixed(1)}</span>
+                        <span className="text-zinc-700 dark:text-zinc-300">{(s.buy.xPts_1gw ?? 0).toFixed(1)}</span>
                       </div>
                       {/* Row 3: budget badge */}
                       <div>
@@ -382,10 +382,10 @@ export function TransferPanel() {
                           £{s.approx_cost.toFixed(1)}m
                         </span>{' '}
                         <span className="text-zinc-400 dark:text-zinc-500">(approx)</span>
-                        {' '}| Proj pts (1 GW):{' '}
-                        <span className="text-zinc-700 dark:text-zinc-300">{(s.sell.proj_pts_1gw ?? 0).toFixed(1)}</span>
+                        {' '}| xPts (1 GW):{' '}
+                        <span className="text-zinc-700 dark:text-zinc-300">{(s.sell.xPts_1gw ?? 0).toFixed(1)}</span>
                         {' '}&rarr;{' '}
-                        <span className="text-zinc-700 dark:text-zinc-300">{(s.buy.proj_pts_1gw ?? 0).toFixed(1)}</span>
+                        <span className="text-zinc-700 dark:text-zinc-300">{(s.buy.xPts_1gw ?? 0).toFixed(1)}</span>
                       </div>
                     </div>
                   ))}

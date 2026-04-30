@@ -43,7 +43,6 @@ function makePlayer(p: { id: number; element_type: 1|2|3|4; team: number;
     status: p.status ?? 'a',
     xPts_1gw: p.xPts_1gw ?? 5.0,
     xPts_90th_1gw: p.xPts_90th_1gw,
-    proj_pts_1gw: 4.0,
     mins_risk: 'nailed',
     fixtures: [],
   } as unknown as ScoredPlayer

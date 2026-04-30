@@ -161,14 +161,14 @@ export function PlannerTab() {
           .filter(([, pos]) => pos >= 12)
           .reduce((sum, [idStr]) => {
             const p = playerMap.get(Number(idStr))
-            return sum + (p ? p.proj_pts_1gw * fixtureCountForGw(p, currentStep.gw) : 0)
+            return sum + (p ? (p.xPts_1gw ?? 0) * fixtureCountForGw(p, currentStep.gw) : 0)
           }, 0)
       } else if (newChip === '3xc') {
         const bestCaptainPts = Object.entries(currentStep.positionsAfter)
           .filter(([, pos]) => pos >= 1 && pos <= 11)
           .reduce((best, [idStr]) => {
             const p = playerMap.get(Number(idStr))
-            const pts = p ? p.proj_pts_1gw * fixtureCountForGw(p, currentStep.gw) : 0
+            const pts = p ? (p.xPts_1gw ?? 0) * fixtureCountForGw(p, currentStep.gw) : 0
             return pts > best ? pts : best
           }, 0)
         bonusValue = bestCaptainPts // extra 1× on top of normal 2× captaincy

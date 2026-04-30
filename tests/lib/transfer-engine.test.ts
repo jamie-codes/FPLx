@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+﻿import { describe, it, expect } from 'vitest'
 import { computeTransferSuggestions } from '@/lib/transfer-engine'
 import type { ChipState } from '@/lib/transfer-engine'
 import type { ScoredPlayer } from '@/lib/types'
@@ -49,9 +49,9 @@ function makeScoredPlayer(overrides: Partial<ScoredPlayer> = {}): ScoredPlayer {
     fixtures: [
       { opponent_team: 'ARS', is_home: true, event_id: 10, difficulty_score: 0.6, difficulty_tier: 'medium' },
     ],
-    proj_pts_1gw: 4.5,
-    proj_pts_3gw: 12.0,
-    proj_pts_5gw: 18.5,
+    xPts_1gw: 4.5,
+    xPts_3gw: 12.0,
+    xPts_5gw: 18.5,
     xmins: 78.0,
     start_prob: 0.87,
     mins_risk: 'nailed' as const,
@@ -97,7 +97,7 @@ function makeSquadOf15(overrides: Partial<SquadPick>[] = []): SquadPick[] {
 // CHIP GUARD TESTS
 // ---------------------------------------------------------------------------
 
-describe('computeTransferSuggestions — chip guard', () => {
+describe('computeTransferSuggestions â€” chip guard', () => {
   it('returns CHIP_WARNING with chip=freehit when activeChip is "freehit"', () => {
     const result = computeTransferSuggestions([], [], 0, 1, 'freehit')
     expect(result.type).toBe('CHIP_WARNING')
@@ -134,9 +134,9 @@ describe('computeTransferSuggestions — chip guard', () => {
 // SELL CANDIDATE TESTS (TRF-01)
 // ---------------------------------------------------------------------------
 
-describe('computeTransferSuggestions — sell candidates (TRF-01)', () => {
+describe('computeTransferSuggestions â€” sell candidates (TRF-01)', () => {
   it('only starting XI players (position 1-11) are sell candidates; bench (12-15) are excluded', () => {
-    // Bench player (position 12) has the worst gem_score — should NOT be in suggestions
+    // Bench player (position 12) has the worst gem_score â€” should NOT be in suggestions
     const benchPlayer = makeScoredPlayer({ id: 12, element_type: 3, gem_score: 0.0 })
     const picks: SquadPick[] = [
       ...Array.from({ length: 11 }, (_, i) => makeSquadPick({ element: i + 1, position: i + 1 })),
@@ -147,7 +147,7 @@ describe('computeTransferSuggestions — sell candidates (TRF-01)', () => {
     ]
     const players = [
       ...Array.from({ length: 11 }, (_, i) => makeScoredPlayer({ id: i + 1, element_type: 3, gem_score: 0.5 + i * 0.01 })),
-      makeScoredPlayer({ id: 12, element_type: 3, gem_score: 0.0 }), // bench — worst but excluded
+      makeScoredPlayer({ id: 12, element_type: 3, gem_score: 0.0 }), // bench â€” worst but excluded
       makeScoredPlayer({ id: 13, element_type: 3, gem_score: 0.4 }),
       makeScoredPlayer({ id: 14, element_type: 3, gem_score: 0.4 }),
       makeScoredPlayer({ id: 15, element_type: 3, gem_score: 0.4 }),
@@ -171,7 +171,7 @@ describe('computeTransferSuggestions — sell candidates (TRF-01)', () => {
     ]
     const sqPlayers = [
       makeScoredPlayer({ id: 1, element_type: 3, gem_score: 0.8 }),
-      makeScoredPlayer({ id: 2, element_type: 3, gem_score: 0.3 }), // worst — should be first sell candidate
+      makeScoredPlayer({ id: 2, element_type: 3, gem_score: 0.3 }), // worst â€” should be first sell candidate
       makeScoredPlayer({ id: 3, element_type: 3, gem_score: 0.6 }),
     ]
     const replacement = makeScoredPlayer({ id: 99, element_type: 3, gem_score: 0.95 })
@@ -186,15 +186,15 @@ describe('computeTransferSuggestions — sell candidates (TRF-01)', () => {
 // REPLACEMENT TESTS (TRF-02, TRF-03)
 // ---------------------------------------------------------------------------
 
-describe('computeTransferSuggestions — replacements (TRF-02, TRF-03)', () => {
+describe('computeTransferSuggestions â€” replacements (TRF-02, TRF-03)', () => {
   it('all replacements for a DEF sell candidate have element_type=2', () => {
     const picks: SquadPick[] = [makeSquadPick({ element: 1, position: 1 })]
     const defender = makeScoredPlayer({ id: 1, element_type: 2, gem_score: 0.2 })
     const replacements = [
-      makeScoredPlayer({ id: 10, element_type: 2, gem_score: 0.9 }), // DEF — valid
-      makeScoredPlayer({ id: 11, element_type: 3, gem_score: 0.9 }), // MID — invalid
-      makeScoredPlayer({ id: 12, element_type: 4, gem_score: 0.9 }), // FWD — invalid
-      makeScoredPlayer({ id: 13, element_type: 1, gem_score: 0.9 }), // GK  — invalid
+      makeScoredPlayer({ id: 10, element_type: 2, gem_score: 0.9 }), // DEF â€” valid
+      makeScoredPlayer({ id: 11, element_type: 3, gem_score: 0.9 }), // MID â€” invalid
+      makeScoredPlayer({ id: 12, element_type: 4, gem_score: 0.9 }), // FWD â€” invalid
+      makeScoredPlayer({ id: 13, element_type: 1, gem_score: 0.9 }), // GK  â€” invalid
     ]
     const result = computeTransferSuggestions(
       picks,
@@ -217,7 +217,7 @@ describe('computeTransferSuggestions — replacements (TRF-02, TRF-03)', () => {
     const squadPlayers = Array.from({ length: 15 }, (_, i) =>
       makeScoredPlayer({ id: i + 1, element_type: 3, gem_score: 0.4 + i * 0.01 })
     )
-    // Player ID 5 is in the squad — should never appear as a buy candidate
+    // Player ID 5 is in the squad â€” should never appear as a buy candidate
     const nonSquadPlayer = makeScoredPlayer({ id: 99, element_type: 3, gem_score: 0.99 })
     const result = computeTransferSuggestions(
       picks,
@@ -288,9 +288,9 @@ describe('computeTransferSuggestions — replacements (TRF-02, TRF-03)', () => {
 // BUDGET TESTS (TRF-04)
 // ---------------------------------------------------------------------------
 
-describe('computeTransferSuggestions — budget (TRF-04)', () => {
+describe('computeTransferSuggestions â€” budget (TRF-04)', () => {
   it('available_budget equals bankBalance/10 + sell.now_cost/10', () => {
-    // bankBalance raw = 20 (2.0m), sell.now_cost = 70 (7.0m) → available = 9.0
+    // bankBalance raw = 20 (2.0m), sell.now_cost = 70 (7.0m) â†’ available = 9.0
     const picks: SquadPick[] = [makeSquadPick({ element: 1, position: 1 })]
     const seller = makeScoredPlayer({ id: 1, element_type: 3, gem_score: 0.3, now_cost: 70 })
     const buyer = makeScoredPlayer({ id: 99, element_type: 3, gem_score: 0.8, now_cost: 80 })
@@ -303,7 +303,7 @@ describe('computeTransferSuggestions — budget (TRF-04)', () => {
   it('budget_sufficient is true when buy.now_cost/10 <= available_budget', () => {
     const picks: SquadPick[] = [makeSquadPick({ element: 1, position: 1 })]
     const seller = makeScoredPlayer({ id: 1, element_type: 3, gem_score: 0.3, now_cost: 70 })
-    // buyer costs 8.0m, available = 2.0 + 7.0 = 9.0 → sufficient
+    // buyer costs 8.0m, available = 2.0 + 7.0 = 9.0 â†’ sufficient
     const buyer = makeScoredPlayer({ id: 99, element_type: 3, gem_score: 0.8, now_cost: 80 })
     const result = computeTransferSuggestions(picks, [seller, buyer], 20, 1, null)
     expect(result.suggestions?.[0].budget_sufficient).toBe(true)
@@ -312,7 +312,7 @@ describe('computeTransferSuggestions — budget (TRF-04)', () => {
   it('budget_sufficient is false when buy.now_cost/10 > available_budget', () => {
     const picks: SquadPick[] = [makeSquadPick({ element: 1, position: 1 })]
     const seller = makeScoredPlayer({ id: 1, element_type: 3, gem_score: 0.3, now_cost: 70 })
-    // buyer costs 15.0m, available = 0 + 7.0 = 7.0 → NOT sufficient
+    // buyer costs 15.0m, available = 0 + 7.0 = 7.0 â†’ NOT sufficient
     const buyer = makeScoredPlayer({ id: 99, element_type: 3, gem_score: 0.8, now_cost: 150 })
     const result = computeTransferSuggestions(picks, [seller, buyer], 0, 1, null)
     expect(result.suggestions?.[0].budget_sufficient).toBe(false)
@@ -342,7 +342,7 @@ describe('computeTransferSuggestions — budget (TRF-04)', () => {
 // MULTI-TRANSFER TESTS (TRF-05)
 // ---------------------------------------------------------------------------
 
-describe('computeTransferSuggestions — multi-transfer combo (TRF-05)', () => {
+describe('computeTransferSuggestions â€” multi-transfer combo (TRF-05)', () => {
   it('two_transfer_combo is populated when freeTransfers >= 2', () => {
     const picks: SquadPick[] = [
       makeSquadPick({ element: 1, position: 1 }),
@@ -418,7 +418,7 @@ describe('computeTransferSuggestions — multi-transfer combo (TRF-05)', () => {
 // SAVE RECOMMENDATION TESTS (TRF-06)
 // ---------------------------------------------------------------------------
 
-describe('computeTransferSuggestions — save recommendation (TRF-06)', () => {
+describe('computeTransferSuggestions â€” save recommendation (TRF-06)', () => {
   it('returns type SAVE with message containing "save" when all gem_delta <= 0', () => {
     // All potential buys have lower gem_score than squad members
     const picks: SquadPick[] = [makeSquadPick({ element: 1, position: 1 })]
@@ -442,14 +442,14 @@ describe('computeTransferSuggestions — save recommendation (TRF-06)', () => {
 // ROTATION RISK PENALTY TESTS (MINS-03)
 // ---------------------------------------------------------------------------
 
-describe('computeTransferSuggestions — rotation risk penalty (MINS-03)', () => {
+describe('computeTransferSuggestions â€” rotation risk penalty (MINS-03)', () => {
   it('non-risk buy ranks above rotation_risk buy at same gem_delta', () => {
     // rotation_risk candidate listed FIRST to prove sort is doing the work (not insertion order)
     const picks: SquadPick[] = [makeSquadPick({ element: 1, position: 1 })]
     const seller = makeScoredPlayer({ id: 1, element_type: 3, gem_score: 0.3, now_cost: 50 })
     const rotationBuy = makeScoredPlayer({ id: 10, element_type: 3, gem_score: 0.8, now_cost: 50, mins_risk: 'rotation_risk' as const })
     const nailedBuy = makeScoredPlayer({ id: 11, element_type: 3, gem_score: 0.8, now_cost: 50, mins_risk: 'nailed' as const })
-    // Pass rotation_risk first — without the rotation-risk tier, it would stay first due to stable sort
+    // Pass rotation_risk first â€” without the rotation-risk tier, it would stay first due to stable sort
     const result = computeTransferSuggestions(picks, [seller, rotationBuy, nailedBuy], 0, 1, null)
     expect(result.type).toBe('SUGGESTIONS')
     const suggestions = result.suggestions ?? []
@@ -463,7 +463,7 @@ describe('computeTransferSuggestions — rotation risk penalty (MINS-03)', () =>
     const seller = makeScoredPlayer({ id: 1, element_type: 3, gem_score: 0.3, now_cost: 50 })
     const cameoBuy = makeScoredPlayer({ id: 10, element_type: 3, gem_score: 0.8, now_cost: 50, mins_risk: 'cameo' as const })
     const likelyBuy = makeScoredPlayer({ id: 11, element_type: 3, gem_score: 0.8, now_cost: 50, mins_risk: 'likely_start' as const })
-    // Pass cameo first — without the rotation-risk tier, it would stay first due to stable sort
+    // Pass cameo first â€” without the rotation-risk tier, it would stay first due to stable sort
     const result = computeTransferSuggestions(picks, [seller, cameoBuy, likelyBuy], 0, 1, null)
     expect(result.type).toBe('SUGGESTIONS')
     const suggestions = result.suggestions ?? []
@@ -471,9 +471,9 @@ describe('computeTransferSuggestions — rotation risk penalty (MINS-03)', () =>
     expect(suggestions[1].buy.mins_risk).toBe('cameo')
   })
 
-  it('budget tier still primary — affordable rotation_risk buy ranks above unaffordable nailed buy', () => {
+  it('budget tier still primary â€” affordable rotation_risk buy ranks above unaffordable nailed buy', () => {
     const picks: SquadPick[] = [makeSquadPick({ element: 1, position: 1 })]
-    // bankBalance=5, sell.now_cost=50 → available = 0.5 + 5.0 = 5.5m
+    // bankBalance=5, sell.now_cost=50 â†’ available = 0.5 + 5.0 = 5.5m
     const seller = makeScoredPlayer({ id: 1, element_type: 3, gem_score: 0.3, now_cost: 50 })
     // Affordable rotation_risk (5.0m <= 5.5m available)
     const affordableRiskBuy = makeScoredPlayer({ id: 10, element_type: 3, gem_score: 0.8, now_cost: 50, mins_risk: 'rotation_risk' as const })
@@ -487,7 +487,7 @@ describe('computeTransferSuggestions — rotation risk penalty (MINS-03)', () =>
     expect(suggestions[0].budget_sufficient).toBe(true)
   })
 
-  it('rotation risk penalty applies to buy side — rotation_risk sell candidates are still returned', () => {
+  it('rotation risk penalty applies to buy side â€” rotation_risk sell candidates are still returned', () => {
     // Two sell candidates: one rotation_risk, one nailed
     const picks: SquadPick[] = [
       makeSquadPick({ element: 1, position: 1 }),
@@ -508,7 +508,7 @@ describe('computeTransferSuggestions — rotation risk penalty (MINS-03)', () =>
 // DUPLICATE PREVENTION (Pitfall 5)
 // ---------------------------------------------------------------------------
 
-describe('computeTransferSuggestions — duplicate prevention', () => {
+describe('computeTransferSuggestions â€” duplicate prevention', () => {
   it('a player already in the squad never appears as a buy candidate', () => {
     const picks = makeSquadOf15()
     // All 15 positions filled; squad IDs 1-15

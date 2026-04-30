@@ -134,10 +134,6 @@ export interface MergedPlayer {
   form_pts_per90: number
   // Upcoming fixtures (D-03: next 5)
   fixtures: FixtureEntry[]
-  // Projected points (Phase 7 — PROJ-01/02/03) — absolute FPL pts, never normalised 0-1
-  proj_pts_1gw: number        // expected pts next 1 GW (ep_next * availability)
-  proj_pts_3gw: number        // expected pts next 3 GWs (ppg-based, DGW-aware sum)
-  proj_pts_5gw: number        // expected pts next 5 GWs (ppg-based, DGW-aware sum)
   // Minutes risk (Phase 7 — MINS-01)
   xmins: number               // expected minutes per GW (0-90)
   start_prob: number          // probability of starting next match (0.0-1.0)
@@ -212,7 +208,7 @@ export interface ScoredPlayer extends MergedPlayer {
 }
 
 // Phase 41 ACC-02/03/04 — accuracy backtest shape from pipeline/cache/accuracy_backtest.json
-// Field naming matches the JSON exactly (lowercase snake_case for xpts_*/proj_pts_*).
+// Field naming matches the JSON exactly (lowercase snake_case for xpts_*).
 export interface AccuracyGwSummary {
   gw: number
   haulter_count: number
@@ -324,7 +320,7 @@ export interface PlannerState {
 export interface ScoredTransfer {
   sellId: number
   buyId: number
-  gwScore: number         // proj_pts_1gw delta for this GW (buy - sell) * fixtureCount
+  gwScore: number         // xPts_1gw delta for this GW (buy - sell) * fixtureCount
   lookAheadScore: number  // discounted GW+1 delta
   totalScore: number      // gwScore + lookAheadScore
   hitCost: number         // 0 or -4
