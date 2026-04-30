@@ -47,7 +47,7 @@ See `.planning/milestones/v1.5-ROADMAP.md` for full details.
 ### v1.6 Squad Optimiser (In Progress)
 
 - [x] **Phase 42: xPts Accuracy Improvements** - Form/momentum signal + backtest gate before optimiser ships — completed 2026-04-30
-- [ ] **Phase 43: Lineup Engine & Navigator** - Core optimiser engine, best XI, captain/VC, bench order, Squad sub-tabs
+- [x] **Phase 43: Lineup Engine & Navigator** - Core optimiser engine, best XI, captain/VC, bench order, Squad sub-tabs — completed 2026-04-30
 - [ ] **Phase 44: Comparison Output** - Side-by-side current vs optimised lineup with xPts delta and diff headline
 - [ ] **Phase 45: Transfer-Aware Mode** - Factor in free transfers; transfer suggestions with hit break-even indicator
 - [ ] **Phase 46: Chip Modes** - Wildcard, Free Hit, and Bench Boost modes extending the optimiser engine
@@ -429,11 +429,11 @@ Plans:
 Plans:
 
 **Wave 1**
-- [ ] 43-01-PLAN.md — Engine + types + Wave 0 RED test stubs + OptimiserPanel stub (OPT-01..OPT-05 logic layer)
+- [x] 43-01-PLAN.md — Engine + types + Wave 0 RED test stubs + OptimiserPanel stub (OPT-01..OPT-05 logic layer)
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 43-02-PLAN.md — Atomic nav wiring: Squad sub-tabs + teamId state lift + TransferPanel controlled refactor + test contract updates (NAV-01)
+- [x] 43-02-PLAN.md — Atomic nav wiring: Squad sub-tabs + teamId state lift + TransferPanel controlled refactor + test contract updates (NAV-01)
 **Wave 3** *(blocked on Wave 2 completion; autonomous: false)*
-- [ ] 43-03-PLAN.md — OptimiserPanel pitch UI + horizon toggle + (C)/(VC) badges + bench row + BGW handling + RTL tests + human-verify (OPT-01..OPT-05)
+- [x] 43-03-PLAN.md — OptimiserPanel pitch UI + horizon toggle + (C)/(VC) badges + bench row + BGW handling + RTL tests + human-verify (OPT-01..OPT-05)
 **UI hint**: yes
 
 ### Phase 44: Comparison Output
