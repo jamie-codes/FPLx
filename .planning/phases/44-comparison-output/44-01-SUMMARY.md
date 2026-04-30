@@ -22,8 +22,8 @@ decisions:
   - "Test fixtures redesigned to use valid single-GK formations (4-3-3, 5-3-2) for deterministic engine output — makeValidSquad 2-GK-in-XI fixture not usable for no-change/single-change assertions"
 metrics:
   duration_seconds: 734
-  completed_at: "2026-04-30T18:58:17Z"
-  tasks_completed: 2
+  completed_at: "2026-04-30T20:05:00Z"
+  tasks_completed: 3
   files_modified: 2
 ---
 
@@ -103,7 +103,7 @@ All non-pitch elements from Phase 43 carried forward unchanged:
 | `src/components/optimiser/OptimiserPanel.tsx` | ~290 | ~190 | +100 |
 | `src/components/optimiser/OptimiserPanel.test.tsx` | ~290 | ~145 | +145 |
 
-**Total commits:** 2 (RED + GREEN)
+**Total commits:** 2 (RED + GREEN) — Task 3 (human-verify checkpoint) approved by user
 
 ---
 

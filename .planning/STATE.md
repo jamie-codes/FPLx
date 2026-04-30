@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-30 — v1.6 started)
 ## Current Position
 
 Phase: 44 of 46 (Comparison Output)
-Plan: 1 of 1 — awaiting human verification (Task 3 checkpoint)
-Status: Executing — checkpoint reached
-Last activity: 2026-04-30 -- Phase 44 Plan 01 tasks 1+2 complete; awaiting Task 3 human visual verify
+Plan: 1 of 1 — COMPLETE
+Status: Phase 44 complete — all 3 tasks done (Tasks 1+2 automated, Task 3 human-verify approved)
+Last activity: 2026-04-30 -- Phase 44 Plan 01 complete; human visual verification approved
 
 Progress: [██████████] 100%
 
@@ -79,6 +79,6 @@ None. DGW xPts aggregation confirmed correct (2026-04-30): `_xpts_ngw` in `pipel
 
 ## Session Continuity
 
-Last session: 2026-04-30T18:58:17Z
-Stopped at: Phase 44 Plan 01 Task 3 — human visual verification checkpoint
+Last session: 2026-04-30T20:05:00Z
+Stopped at: Phase 44 complete — CMP-01, CMP-02, CMP-03 shipped and verified
 Resume file: None

@@ -48,7 +48,7 @@ See `.planning/milestones/v1.5-ROADMAP.md` for full details.
 
 - [x] **Phase 42: xPts Accuracy Improvements** - Form/momentum signal + backtest gate before optimiser ships — completed 2026-04-30
 - [x] **Phase 43: Lineup Engine & Navigator** - Core optimiser engine, best XI, captain/VC, bench order, Squad sub-tabs — completed 2026-04-30
-- [ ] **Phase 44: Comparison Output** - Side-by-side current vs optimised lineup with xPts delta and diff headline
+- [x] **Phase 44: Comparison Output** - Side-by-side current vs optimised lineup with xPts delta and diff headline — completed 2026-04-30
 - [ ] **Phase 45: Transfer-Aware Mode** - Factor in free transfers; transfer suggestions with hit break-even indicator
 - [ ] **Phase 46: Chip Modes** - Wildcard, Free Hit, and Bench Boost modes extending the optimiser engine
 
@@ -448,7 +448,7 @@ Plans:
 Plans:
 
 **Wave 1** *(autonomous: false — human-verify checkpoint at end)*
-- [x] 44-01-PLAN.md — Replace pitch UI in OptimiserPanel with position-grouped comparison table + headline row + mobile card stack; rewrite tests for CMP-01/02/03 (CMP-01, CMP-02, CMP-03) [awaiting human visual verification]
+- [x] 44-01-PLAN.md — Replace pitch UI in OptimiserPanel with position-grouped comparison table + headline row + mobile card stack; rewrite tests for CMP-01/02/03 (CMP-01, CMP-02, CMP-03) [human visual verification approved 2026-04-30]
 **UI hint**: yes
 
 ### Phase 45: Transfer-Aware Mode
@@ -499,7 +499,7 @@ Note: Phase 42 (xPts accuracy) should complete before Phase 43 (lineup engine) s
 | 40. Accuracy Pipeline | 3/3 | Complete | 2026-04-29 |
 | 41. Accuracy UI & Model Rationalisation | 3/3 | Complete | 2026-04-30 |
 | 42. xPts Accuracy Improvements | 2/2 | Complete | 2026-04-30 |
-| 43. Lineup Engine & Navigator | 0/3 | Not started | - |
-| 44. Comparison Output | 0/TBD | Not started | - |
+| 43. Lineup Engine & Navigator | 3/3 | Complete | 2026-04-30 |
+| 44. Comparison Output | 1/1 | Complete | 2026-04-30 |
 | 45. Transfer-Aware Mode | 0/TBD | Not started | - |
 | 46. Chip Modes | 0/TBD | Not started | - |
