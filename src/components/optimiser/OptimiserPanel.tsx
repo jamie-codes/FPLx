@@ -56,9 +56,11 @@ function pairSection(
   const sortedCurrent = isBench ? [...currentIds] : [...currentIds].sort((a, b) => score(b) - score(a))
   const sortedOptimised = isBench ? [...optimisedIds] : [...optimisedIds].sort((a, b) => score(b) - score(a))
   return sortedCurrent.map((currentId, i) => {
-    const optimisedId = sortedOptimised[i]
+    // Guard: formation changes can produce different section lengths; treat missing slot as same player (no change).
+    const optimisedId = sortedOptimised[i] ?? currentId
     const isChanged = currentId !== optimisedId
-    const delta = isChanged && !isBench ? score(optimisedId) - score(currentId) : 0
+    const rawDelta = isChanged && !isBench ? score(optimisedId) - score(currentId) : 0
+    const delta = Math.max(0, rawDelta)
     // isPromoted: the current bench player has been moved into the optimised XI (currentId in starters).
     // The bench slot is now occupied by someone else (a demoted XI player).
     const isPromoted = isBench && isChanged && optimisedStarterIds.has(currentId)
