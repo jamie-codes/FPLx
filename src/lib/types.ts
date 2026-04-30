@@ -219,11 +219,26 @@ export interface AccuracyGwSummary {
   haulter_count: number
   xpts_flagged: number
   xpts_hit_rate: number   // 0.0-1.0
+  // Phase 42 ACC-02 — blended track (optional; absent on pre-Phase-42 backtest files)
+  xpts_blended_flagged?: number
+  xpts_blended_hit_rate?: number
+  // Phase 42 ACC-04 — mid-tier (6-9 pt) track
+  mid_tier_count?: number
+  xpts_mid_flagged?: number
+  xpts_blended_mid_flagged?: number
+  mid_tier_hit_rate?: number
+  mid_tier_blended_hit_rate?: number
 }
 
 export interface AccuracySummary {
   xpts_hit_rate: number
   gws: AccuracyGwSummary[]
+  // Phase 42 ACC-02 / ACC-03 / ACC-04 — optional, present in Phase-42+ backtest files
+  xpts_blended_hit_rate?: number
+  form_signal_enabled?: boolean      // gate flag controlling next merge_players run
+  blend_alpha_used?: number          // alpha used in the blend (default 0.4)
+  mid_tier_hit_rate?: number
+  mid_tier_blended_hit_rate?: number
 }
 
 export interface AccuracyHaulter {
@@ -234,6 +249,10 @@ export interface AccuracyHaulter {
   xpts_predicted: number
   xpts_rank: number
   xpts_flagged: boolean
+  // Phase 42 ACC-02 — optional blended fields
+  xpts_blended_predicted?: number
+  xpts_blended_rank?: number
+  xpts_blended_flagged?: boolean
 }
 
 export interface AccuracyPlayerGw {
@@ -241,6 +260,9 @@ export interface AccuracyPlayerGw {
   actual_pts: number
   xpts_predicted: number
   xpts_delta: number          // actual - predicted; negative = over-prediction
+  // Phase 42 ACC-02 — optional blended fields
+  xpts_blended_predicted?: number
+  xpts_blended_delta?: number
 }
 
 export interface AccuracyPlayer {

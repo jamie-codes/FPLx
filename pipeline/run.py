@@ -166,7 +166,28 @@ def run(dry_run: bool = False):
 
         # Merge FPL + Understat data (per-90 normalisation, custom FDR, fixtures)
         # Phase 31: merge_players now returns a tuple — (player list, captain picks dict).
-        merged, captain_picks = merge_players(bootstrap, fixtures, understat, id_map, xmins_stats=xmins_stats, summaries=summaries)
+
+        # Phase 42 ACC-03: read form-signal gate from previous run's accuracy_backtest.json.
+        # Default (False, 0.4) on cold start (file absent) or corrupt JSON — preserves baseline.
+        form_signal_enabled = False
+        blend_alpha_used = 0.4
+        backtest_path = os.path.join(cache_dir, 'accuracy_backtest.json')
+        try:
+            with open(backtest_path, 'r', encoding='utf-8') as f:
+                prev_backtest = json.load(f)
+            form_signal_enabled = prev_backtest.get('summary', {}).get('form_signal_enabled', False)
+            blend_alpha_used = prev_backtest.get('summary', {}).get('blend_alpha_used', 0.4)
+        except (FileNotFoundError, json.JSONDecodeError):
+            pass
+
+        print(f"Form signal blend: {'ENABLED' if form_signal_enabled else 'DISABLED'} (alpha={blend_alpha_used})")
+
+        merged, captain_picks = merge_players(
+            bootstrap, fixtures, understat, id_map,
+            xmins_stats=xmins_stats, summaries=summaries,
+            form_signal_enabled=form_signal_enabled,
+            blend_alpha=blend_alpha_used,
+        )
         save('merged_players.json', merged)
         save('captain_picks.json', captain_picks)  # Phase 31 CAP-03/CAP-04
 
