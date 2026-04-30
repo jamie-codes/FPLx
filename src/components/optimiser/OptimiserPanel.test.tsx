@@ -177,16 +177,22 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
     })
 
     it('changed starter rows have border-l-2 + border-l-green-500 classes and a delta pill', () => {
-      // Force a starter swap by giving id=8 (MID, XI position=8) a very low xPts and id=12 (MID, bench position=12)
-      // a very high xPts. Engine will swap id=12 into XI, id=8 to bench.
-      const { picks } = makeValidSquad()
-      const elementTypes: (1 | 2 | 3 | 4)[] = [1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4]
+      // Use a fixture with a proper formation in the current XI (1GK+4DEF+3MID+3FWD = 4-3-3).
+      // Make id=6 (MID in XI, pos=6) weak and id=12 (MID bench, pos=12) strong.
+      // Engine swaps id=12 into XI, id=6 to bench. Changed MID rows get border-l-2 + delta pill.
+      // elementTypes: [1,2,2,2,2,3,3,3,4,4,4,1,3,2,2]
+      //   pos 1: GK(1), pos 2-5: DEF(2,3,4,5), pos 6-8: MID(6,7,8), pos 9-11: FWD(9,10,11)
+      //   pos 12: GK bench(12-but make it MID by type), pos 13-15: bench
+      // Simpler: elementTypes = [1,2,2,2,2,3,3,3,4,4,4,1,3,3,3] - keeps 1GK in XI
+      const elementTypes: (1 | 2 | 3 | 4)[] = [1, 2, 2, 2, 2, 3, 3, 3, 4, 4, 4, 1, 3, 3, 3]
+      const picks: SquadPick[] = []
       const players: MergedPlayer[] = []
       for (let i = 0; i < 15; i++) {
         const id = i + 1
+        picks.push(makePick(id, i + 1))
         let p = makePlayer({ id, element_type: elementTypes[i] })
-        if (id === 8) p = { ...p, xPts_1gw: 0.1, xPts_3gw: 0.3, xPts_5gw: 0.5 }
-        if (id === 12) p = { ...p, xPts_1gw: 99, xPts_3gw: 297, xPts_5gw: 495 }
+        if (id === 6) p = { ...p, xPts_1gw: 0.1, xPts_3gw: 0.3, xPts_5gw: 0.5 }   // weak MID in XI
+        if (id === 13) p = { ...p, xPts_1gw: 99, xPts_3gw: 297, xPts_5gw: 495 }   // strong MID on bench
         players.push(p)
       }
       const squadResp: SquadPicksResponse = {
@@ -208,10 +214,22 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
     })
 
     it('unchanged rows have no border-l-green-500 class and no delta-pill', () => {
-      // Default valid squad: every player has xPts_1gw=5.0 -> ties; engine selects deterministically.
-      // The current XI = picks positions 1..11 = ids 1..11. Engine ranks all 15 by xPts equally and
-      // by id ascending (stable sort) -> same ids 1..11 chosen as starters -> no swap.
-      const { players, squadResp } = makeValidSquad()
+      // Use a stable fixture where the current XI matches what the engine would pick.
+      // XI positions 1-11: 1GK + 4DEF + 3MID + 3FWD (formation 4-3-3). Bench: 1GK+1DEF+1MID+1MID.
+      // All xPts equal -> engine picks ids 1-11 exactly -> no swap -> no changed rows.
+      const elementTypes: (1 | 2 | 3 | 4)[] = [1, 2, 2, 2, 2, 3, 3, 3, 4, 4, 4, 1, 2, 3, 3]
+      const picks: SquadPick[] = []
+      const players: MergedPlayer[] = []
+      for (let i = 0; i < 15; i++) {
+        const id = i + 1
+        picks.push(makePick(id, i + 1))
+        players.push(makePlayer({ id, element_type: elementTypes[i] }))
+      }
+      const squadResp: SquadPicksResponse = {
+        active_chip: null,
+        picks,
+        entry_history: { event: 30, bank: 0, event_transfers: 0, event_transfers_cost: 0, value: 1000 },
+      }
       useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
@@ -222,15 +240,18 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
     })
 
     it('bench changed rows show Promoted or Dropped badge instead of a numeric delta', () => {
-      // Force a XI<->bench swap (same fixture as test 2 above). Bench rows that change must show a badge.
-      const { picks } = makeValidSquad()
-      const elementTypes: (1 | 2 | 3 | 4)[] = [1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4]
+      // Use a stable fixture: 1GK+4DEF+3MID+3FWD in XI, bench has 1GK+3MID.
+      // id=6 (MID in XI, pos=6) is weak; id=13 (MID bench, pos=13) is strong.
+      // Engine promotes id=13 into XI. Bench slot previously holding id=13 now gets badge-promoted.
+      const elementTypes: (1 | 2 | 3 | 4)[] = [1, 2, 2, 2, 2, 3, 3, 3, 4, 4, 4, 1, 3, 3, 3]
+      const picks: SquadPick[] = []
       const players: MergedPlayer[] = []
       for (let i = 0; i < 15; i++) {
         const id = i + 1
+        picks.push(makePick(id, i + 1))
         let p = makePlayer({ id, element_type: elementTypes[i] })
-        if (id === 8) p = { ...p, xPts_1gw: 0.1, xPts_3gw: 0.3, xPts_5gw: 0.5 }   // weak MID in XI
-        if (id === 12) p = { ...p, xPts_1gw: 99, xPts_3gw: 297, xPts_5gw: 495 }  // strong MID on bench (position 12)
+        if (id === 6) p = { ...p, xPts_1gw: 0.1, xPts_3gw: 0.3, xPts_5gw: 0.5 }   // weak MID in XI
+        if (id === 13) p = { ...p, xPts_1gw: 99, xPts_3gw: 297, xPts_5gw: 495 }   // strong MID on bench
         players.push(p)
       }
       const squadResp: SquadPicksResponse = {
@@ -245,7 +266,7 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
       const promoted = container.querySelectorAll('[data-testid="badge-promoted"]')
       const dropped = container.querySelectorAll('[data-testid="badge-dropped"]')
       expect(promoted.length + dropped.length).toBeGreaterThan(0)
-      // At least one Promoted exists (id=12 was on bench, gets promoted into XI).
+      // id=13 was on bench and gets promoted into XI — its bench slot shows the Promoted badge.
       expect(promoted.length).toBeGreaterThanOrEqual(1)
     })
   })
@@ -265,9 +286,24 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
     })
 
     it('change count and xPts gain exclude bench-only swaps (D-07)', () => {
-      // Default makeValidSquad: all xPts equal. Current XI = ids 1..11, optimised picks same set.
+      // Build a fixture where the current XI is exactly what the engine would pick (no XI change).
+      // Use element types: [1,2,2,2,2,2,3,3,3,4,4] for positions 1-11 (1 GK, 5 DEF, 3 MID, 2 FWD)
+      // Bench (positions 12-15): [1,3,3,3] (1 GK, 3 MID).
+      // All players equal xPts -> engine picks same 11 as current XI (stable sort by id).
       // No XI changes -> changeCount = 0, xPtsGain = 0.0 in headline.
-      const { players, squadResp } = makeValidSquad()
+      const elementTypes: (1 | 2 | 3 | 4)[] = [1, 2, 2, 2, 2, 2, 3, 3, 3, 4, 4, 1, 3, 3, 3]
+      const picks: SquadPick[] = []
+      const players: MergedPlayer[] = []
+      for (let i = 0; i < 15; i++) {
+        const id = i + 1
+        picks.push(makePick(id, i + 1))
+        players.push(makePlayer({ id, element_type: elementTypes[i] }))
+      }
+      const squadResp: SquadPicksResponse = {
+        active_chip: null,
+        picks,
+        entry_history: { event: 30, bank: 0, event_transfers: 0, event_transfers_cost: 0, value: 1000 },
+      }
       useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
@@ -277,16 +313,20 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
     })
 
     it('singular "player" copy when changeCount === 1', () => {
-      // Construct a fixture with exactly one starter swap.
-      // id=12 (bench MID) very strong; id=8 (XI MID, position=8) very weak. Engine swaps id=12 into XI, id=8 to bench.
-      const { picks } = makeValidSquad()
-      const elementTypes: (1 | 2 | 3 | 4)[] = [1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4]
+      // Construct a fixture with exactly one starter swap and FWDs in the current XI
+      // to prevent the engine from pulling bench FWDs as starters.
+      // Element types: [1,2,2,2,2,2,3,3,3,4,4,1,3,3,3] (XI: 1GK+5DEF+3MID+2FWD; bench: 1GK+3MID)
+      // id=9 (MID, position=9, in XI) gets xPts=0.1; id=13 (MID, position=13, bench) gets xPts=99.
+      // Engine swaps id=13 into XI (for MID), id=9 to bench. Net = 1 starter swap.
+      const elementTypes: (1 | 2 | 3 | 4)[] = [1, 2, 2, 2, 2, 2, 3, 3, 3, 4, 4, 1, 3, 3, 3]
+      const picks: SquadPick[] = []
       const players: MergedPlayer[] = []
       for (let i = 0; i < 15; i++) {
         const id = i + 1
+        picks.push(makePick(id, i + 1))
         let p = makePlayer({ id, element_type: elementTypes[i] })
-        if (id === 8) p = { ...p, xPts_1gw: 0.1, xPts_3gw: 0.3, xPts_5gw: 0.5 }
-        if (id === 12) p = { ...p, xPts_1gw: 99, xPts_3gw: 297, xPts_5gw: 495 }
+        if (id === 9) p = { ...p, xPts_1gw: 0.1, xPts_3gw: 0.3, xPts_5gw: 0.5 }   // weak MID in XI
+        if (id === 13) p = { ...p, xPts_1gw: 99, xPts_3gw: 297, xPts_5gw: 495 }    // strong MID on bench
         players.push(p)
       }
       const squadResp: SquadPicksResponse = {

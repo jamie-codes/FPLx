@@ -1,10 +1,10 @@
 'use client'
 
-// Phase 43: OptimiserPanel — full pitch UI (Plan 03)
-// Replaces the Plan 01 stub. Renders the optimised lineup on a green pitch with FPL convention
-// (GK at bottom, FWD at top). Calls optimiseLineup() pure engine; reuses GwToggle for horizon.
-// All Tailwind classes, copy strings, and layout structure follow 43-UI-SPEC.md.
-import { useState, useMemo } from 'react'
+// Phase 44: OptimiserPanel — comparison table UI (Plan 01)
+// Replaces the Phase 43 pitch rendering block with a position-grouped comparison table.
+// HeadlineRow shows Formation / Changes / xPts gain. ComparisonTable renders desktop <table>
+// and MobileComparisonCards renders mobile card stack. All non-pitch states from Phase 43 preserved.
+import { useState, useMemo, Fragment } from 'react'
 import { useSquad } from '@/lib/hooks/useSquad'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { GwToggle } from '@/components/gem-table/GwToggle'
@@ -30,38 +30,194 @@ const HORIZON_FIELD: Record<OptimiserHorizon, 'xPts_1gw' | 'xPts_3gw' | 'xPts_5g
   5: 'xPts_5gw',
 }
 
-// Renders one player circle (used for both pitch starters and bench slots).
-// isCaptain / isVc / isBench affect badge labels and opacity.
-function PlayerCircle({
-  player,
-  horizonField,
-  isCaptain = false,
-  isVc = false,
-  isBench = false,
+// Per-row data shape produced by pairSection()
+type ComparisonRowData = {
+  currentId: number
+  optimisedId: number
+  isChanged: boolean
+  isBench: boolean
+  isPromoted: boolean   // only meaningful when isChanged && isBench
+  delta: number         // 0 when isBench OR !isChanged
+}
+
+// Pair current lineup slots with optimised slots within a position section.
+// XI sections: sort both sides by xPts desc and pair index-for-index.
+// Bench section: caller passes currentIds already sorted by SquadPick.position asc (12→15).
+function pairSection(
+  currentIds: number[],
+  optimisedIds: number[],
+  playerMap: Map<number, MergedPlayer>,
+  horizonField: 'xPts_1gw' | 'xPts_3gw' | 'xPts_5gw',
+  isBench: boolean,
+  optimisedStarterIds: Set<number>,
+): ComparisonRowData[] {
+  const score = (id: number) => (playerMap.get(id)?.[horizonField] as number | undefined) ?? 0
+  // XI sections sort by xPts desc on BOTH sides; bench preserves index order (caller sorts current bench by position).
+  const sortedCurrent = isBench ? [...currentIds] : [...currentIds].sort((a, b) => score(b) - score(a))
+  const sortedOptimised = isBench ? [...optimisedIds] : [...optimisedIds].sort((a, b) => score(b) - score(a))
+  return sortedCurrent.map((currentId, i) => {
+    const optimisedId = sortedOptimised[i]
+    const isChanged = currentId !== optimisedId
+    const delta = isChanged && !isBench ? score(optimisedId) - score(currentId) : 0
+    // isPromoted: the current bench player has been moved into the optimised XI (currentId in starters).
+    // The bench slot is now occupied by someone else (a demoted XI player).
+    const isPromoted = isBench && isChanged && optimisedStarterIds.has(currentId)
+    return { currentId, optimisedId, isChanged, isBench, isPromoted, delta }
+  })
+}
+
+// Headline row: Formation / Changes / xPts gain summary above the comparison table.
+function HeadlineRow({
+  formation,
+  changeCount,
+  xPtsGain,
 }: {
-  player: MergedPlayer
-  horizonField: 'xPts_1gw' | 'xPts_3gw' | 'xPts_5gw'
-  isCaptain?: boolean
-  isVc?: boolean
-  isBench?: boolean
+  formation: string
+  changeCount: number
+  xPtsGain: number
 }) {
-  const xPts = (player[horizonField] as number | undefined) ?? 0
-  const truncatedName = player.web_name.slice(0, 7)
   return (
-    <div className={`flex flex-col items-center w-16 ${isBench ? 'opacity-75' : ''}`} data-testid={`player-circle-${player.id}`}>
-      <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center relative">
-        <span className="text-[10px] font-semibold text-zinc-900 dark:text-zinc-100 text-center leading-tight px-0.5 truncate max-w-[44px]">
-          {truncatedName}
-        </span>
-      </div>
-      <span className="text-[10px] text-green-300 mt-1">{xPts.toFixed(1)}</span>
-      {isCaptain && (
-        <span className="text-[10px] font-semibold text-amber-400" data-testid={`captain-badge-${player.id}`}>(C)</span>
-      )}
-      {isVc && (
-        <span className="text-[10px] font-semibold text-zinc-400" data-testid={`vc-badge-${player.id}`}>(VC)</span>
-      )}
+    <div
+      className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 py-2 flex-wrap"
+      data-testid="headline-row"
+    >
+      <span><span className="font-semibold">Formation:</span> {formation}</span>
+      <span className="text-zinc-400">│</span>
+      <span><span className="font-semibold">Changes:</span> {changeCount} {changeCount === 1 ? 'player' : 'players'}</span>
+      <span className="text-zinc-400">│</span>
+      <span className="font-semibold text-green-600 dark:text-green-400">+{xPtsGain.toFixed(1)} xPts gain</span>
     </div>
+  )
+}
+
+// Desktop comparison table: position-grouped <table> with section header rows and data rows.
+function ComparisonTable({
+  rows,
+  playerMap,
+  horizonField,
+}: {
+  rows: { section: 'GK' | 'DEF' | 'MID' | 'FWD' | 'Bench'; items: ComparisonRowData[] }[]
+  playerMap: Map<number, MergedPlayer>
+  horizonField: 'xPts_1gw' | 'xPts_3gw' | 'xPts_5gw'
+}) {
+  return (
+    <table className="w-full text-sm border-collapse" data-testid="comparison-table">
+      <thead>
+        <tr className="text-xs text-zinc-500 dark:text-zinc-400">
+          <th className="text-left py-1 pl-2 font-semibold w-[38%]">Current</th>
+          <th className="text-right py-1 w-[10%]">xPts</th>
+          <th className="text-center py-1 w-[4%]">→</th>
+          <th className="text-left py-1 w-[38%]">Optimised</th>
+          <th className="text-right py-1 pr-2 w-[10%]"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map(({ section, items }) => (
+          <Fragment key={section}>
+            <tr>
+              <td
+                colSpan={5}
+                className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400 pt-3 pb-1 pl-2 bg-zinc-50 dark:bg-zinc-800/40"
+                data-testid={`section-header-${section.toLowerCase()}`}
+              >
+                {section}
+              </td>
+            </tr>
+            {items.map((row, i) => {
+              const cur = playerMap.get(row.currentId)
+              const opt = playerMap.get(row.optimisedId)
+              const curXPts = (cur?.[horizonField] as number | undefined) ?? 0
+              const baseRowCls = 'border-b border-zinc-100 dark:border-zinc-800'
+              const changedRowCls = row.isChanged
+                ? `${baseRowCls} border-l-2 border-l-green-500${row.isBench ? ' opacity-80' : ''}`
+                : baseRowCls
+              return (
+                <tr
+                  key={`${section}-${i}`}
+                  className={changedRowCls}
+                  {...(row.isChanged ? { 'data-testid': 'comparison-row-changed' } : {})}
+                >
+                  <td className="py-1.5 pl-2 text-zinc-700 dark:text-zinc-300">{cur?.web_name ?? ''}</td>
+                  <td className="text-right text-zinc-500 dark:text-zinc-400 text-xs">{curXPts.toFixed(1)}</td>
+                  <td className="text-center text-zinc-400">→</td>
+                  <td className={`py-1.5 ${row.isChanged && !row.isBench ? 'text-green-700 dark:text-green-400 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                    {opt?.web_name ?? ''}
+                  </td>
+                  <td className="text-right pr-2">
+                    {!row.isChanged ? null : row.isBench ? (
+                      row.isPromoted ? (
+                        <span className="text-xs font-semibold text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-950 rounded px-1 py-0.5" data-testid="badge-promoted">Promoted</span>
+                      ) : (
+                        <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 rounded px-1 py-0.5" data-testid="badge-dropped">Dropped</span>
+                      )
+                    ) : (
+                      <span className="text-xs font-semibold text-green-400 bg-green-950 rounded px-1 py-0.5" data-testid="delta-pill">+{row.delta.toFixed(1)} xPts</span>
+                    )}
+                  </td>
+                </tr>
+              )
+            })}
+          </Fragment>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
+// Mobile card stack: vertically stacked cards for < sm viewports. Same data as ComparisonTable.
+// Section headers use no data-testid (desktop table section headers already satisfy test assertions).
+function MobileComparisonCards({
+  rows,
+  playerMap,
+  horizonField,
+}: {
+  rows: { section: 'GK' | 'DEF' | 'MID' | 'FWD' | 'Bench'; items: ComparisonRowData[] }[]
+  playerMap: Map<number, MergedPlayer>
+  horizonField: 'xPts_1gw' | 'xPts_3gw' | 'xPts_5gw'
+}) {
+  return (
+    <>
+      {rows.map(({ section, items }) => (
+        <Fragment key={section}>
+          <div className="text-[10px] font-semibold uppercase text-zinc-500 dark:text-zinc-400 pt-3 pb-0.5 bg-zinc-50 dark:bg-zinc-800/40 px-1">
+            {section}
+          </div>
+          {items.map((row, i) => {
+            const cur = playerMap.get(row.currentId)
+            const opt = playerMap.get(row.optimisedId)
+            const curXPts = (cur?.[horizonField] as number | undefined) ?? 0
+            const optXPts = (opt?.[horizonField] as number | undefined) ?? 0
+            return (
+              <div
+                key={`${section}-mobile-${i}`}
+                className={`py-2 border-b border-zinc-100 dark:border-zinc-800${row.isChanged ? ' border-l-2 border-l-green-500 pl-2' : ' opacity-60'}`}
+                {...(row.isChanged ? { 'data-testid': 'comparison-row-changed' } : {})}
+              >
+                <div className="text-xs text-zinc-500 dark:text-zinc-400">{cur?.web_name ?? ''}</div>
+                <div className="text-[10px] text-zinc-400 mb-1">{curXPts.toFixed(1)} xPts</div>
+                <div className="text-xs text-zinc-300 dark:text-zinc-500 mb-0.5">→</div>
+                <div className={`text-xs ${row.isChanged && !row.isBench ? 'text-green-700 dark:text-green-400 font-semibold' : 'text-zinc-500 dark:text-zinc-400'}`}>{opt?.web_name ?? ''}</div>
+                <div className="text-[10px] text-zinc-400">{optXPts.toFixed(1)} xPts</div>
+                {row.isChanged && !row.isBench && (
+                  <div className="text-[10px] mt-1">
+                    <span className="text-xs font-semibold text-green-400 bg-green-950 rounded px-1 py-0.5" data-testid="delta-pill">+{row.delta.toFixed(1)} xPts</span>
+                  </div>
+                )}
+                {row.isChanged && row.isBench && (
+                  <div className="text-[10px] mt-1">
+                    {row.isPromoted ? (
+                      <span className="text-xs font-semibold text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-950 rounded px-1 py-0.5" data-testid="badge-promoted">Promoted</span>
+                    ) : (
+                      <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 rounded px-1 py-0.5" data-testid="badge-dropped">Dropped</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </Fragment>
+      ))}
+    </>
   )
 }
 
@@ -165,15 +321,49 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
     )
   }
 
-  // Lineup is non-null: render formation/horizon row + pitch + bench
+  // Lineup is non-null: build comparison table data
+
+  // Optimised XI groupings by element type
   const starterGks = lineup.starters.filter((id: number) => playerMap.get(id)?.element_type === GK)
   const starterDefs = lineup.starters.filter((id: number) => playerMap.get(id)?.element_type === DEF)
   const starterMids = lineup.starters.filter((id: number) => playerMap.get(id)?.element_type === MID)
   const starterFwds = lineup.starters.filter((id: number) => playerMap.get(id)?.element_type === FWD)
 
-  // Bench: bench[0] is the GK; bench[1..3] are outfield in xPts desc (already ordered by engine).
-  const benchGkPlayer = playerMap.get(lineup.bench[0])!
-  const benchOutfieldPlayers = lineup.bench.slice(1).map((id: number) => playerMap.get(id)!).filter(Boolean)
+  // Current XI and bench from SquadPick.position (D-05)
+  const currentXIIds = squadData.picks
+    .filter(p => p.position <= 11)
+    .map(p => p.element)
+  const currentBenchSorted = [...squadData.picks]
+    .filter(p => p.position >= 12)
+    .sort((a, b) => a.position - b.position)  // 12,13,14,15
+    .map(p => p.element)
+
+  // Derive current XI players per position type
+  const currentByType = (et: number) =>
+    currentXIIds.filter(id => playerMap.get(id)?.element_type === et)
+
+  const optimisedStarterSet = new Set<number>(lineup.starters)
+
+  const sectionsRows: { section: 'GK' | 'DEF' | 'MID' | 'FWD' | 'Bench'; items: ComparisonRowData[] }[] = [
+    { section: 'GK', items: pairSection(currentByType(GK), starterGks, playerMap, horizonField, false, optimisedStarterSet) },
+    { section: 'DEF', items: pairSection(currentByType(DEF), starterDefs, playerMap, horizonField, false, optimisedStarterSet) },
+    { section: 'MID', items: pairSection(currentByType(MID), starterMids, playerMap, horizonField, false, optimisedStarterSet) },
+    { section: 'FWD', items: pairSection(currentByType(FWD), starterFwds, playerMap, horizonField, false, optimisedStarterSet) },
+    { section: 'Bench', items: pairSection(currentBenchSorted, lineup.bench, playerMap, horizonField, true, optimisedStarterSet) },
+  ]
+
+  // D-07: changeCount and xPtsGain EXCLUDE bench.
+  // Use set-difference to count actual player swaps (not pairSection row diffs which may overcount
+  // due to xPts-desc sort reshuffling pairs within the same position group).
+  const currentXISet = new Set<number>(currentXIIds)
+  const changeCount = lineup.starters.filter(id => !currentXISet.has(id)).length
+  // xPtsGain: sum of added starters' xPts minus removed starters' xPts (net real gain).
+  const addedStarters = lineup.starters.filter(id => !currentXISet.has(id))
+  const removedStarters = currentXIIds.filter(id => !optimisedStarterSet.has(id))
+  const xPtsGain = Math.max(0,
+    addedStarters.reduce((s, id) => s + ((playerMap.get(id)?.[horizonField] as number | undefined) ?? 0), 0) -
+    removedStarters.reduce((s, id) => s + ((playerMap.get(id)?.[horizonField] as number | undefined) ?? 0), 0)
+  )
 
   return (
     <section className="mt-6 space-y-3" data-testid="optimiser-panel">
@@ -190,97 +380,22 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
         </div>
       )}
 
-      {/* Formation label + horizon toggle row */}
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300" data-testid="formation-label">
-          Formation: {lineup.formation}
-        </span>
+      {/* Horizon selector row — right-aligned only (formation moved to headline row) */}
+      <div className="flex items-center justify-end">
         <GwToggle value={horizon} onChange={setHorizon} />
       </div>
 
-      {/* Pitch — green background, FWD top, GK bottom (FPL convention) */}
-      <div className="relative rounded-lg overflow-hidden bg-green-950 p-4 min-h-[480px]" data-testid="pitch">
-        {/* FWD row */}
-        <div className="flex justify-center gap-3 mb-3">
-          {starterFwds.map((id: number) => {
-            const p = playerMap.get(id)!
-            return (
-              <PlayerCircle
-                key={id}
-                player={p}
-                horizonField={horizonField}
-                isCaptain={lineup.captainId === id}
-                isVc={lineup.vcId === id}
-              />
-            )
-          })}
-        </div>
-        {/* MID row */}
-        <div className="flex justify-center gap-3 mb-3">
-          {starterMids.map((id: number) => {
-            const p = playerMap.get(id)!
-            return (
-              <PlayerCircle
-                key={id}
-                player={p}
-                horizonField={horizonField}
-                isCaptain={lineup.captainId === id}
-                isVc={lineup.vcId === id}
-              />
-            )
-          })}
-        </div>
-        {/* DEF row */}
-        <div className="flex justify-center gap-3 mb-3">
-          {starterDefs.map((id: number) => {
-            const p = playerMap.get(id)!
-            return (
-              <PlayerCircle
-                key={id}
-                player={p}
-                horizonField={horizonField}
-                isCaptain={lineup.captainId === id}
-                isVc={lineup.vcId === id}
-              />
-            )
-          })}
-        </div>
-        {/* GK row */}
-        <div className="flex justify-center gap-3 mb-3">
-          {starterGks.map((id: number) => {
-            const p = playerMap.get(id)!
-            return (
-              <PlayerCircle
-                key={id}
-                player={p}
-                horizonField={horizonField}
-                isCaptain={lineup.captainId === id}
-                isVc={lineup.vcId === id}
-              />
-            )
-          })}
-        </div>
+      {/* Headline row: Formation / Changes / xPts gain */}
+      <HeadlineRow formation={lineup.formation} changeCount={changeCount} xPtsGain={xPtsGain} />
 
-        {/* Bench row */}
-        <div className="mt-3 pt-3 border-t border-green-900" data-testid="bench-row">
-          <p className="text-xs font-semibold text-green-400 mb-2">Bench</p>
-          <div className="flex justify-center gap-3 items-stretch">
-            {/* Bench GK slot — slot 0, visually labelled */}
-            <div className="flex flex-col items-center" data-testid="bench-gk-slot">
-              <span className="text-[10px] text-green-500 mb-1">GK</span>
-              <PlayerCircle player={benchGkPlayer} horizonField={horizonField} isBench />
-            </div>
-            {/* 1px vertical divider between GK and outfield bench */}
-            <div className="w-px bg-green-900 self-stretch mx-1" data-testid="bench-divider" />
-            {/* Outfield bench slots 1-3 in xPts desc (engine ordering) */}
-            {benchOutfieldPlayers.map(p => (
-              <div className="flex flex-col items-center" key={p.id} data-testid={`bench-outfield-${p.id}`}>
-                <span className="text-[10px] text-green-500 mb-1">&nbsp;</span>
-                <PlayerCircle player={p} horizonField={horizonField} isBench />
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Desktop comparison table */}
+      <div className="hidden sm:block">
+        <ComparisonTable rows={sectionsRows} playerMap={playerMap} horizonField={horizonField} />
+      </div>
+
+      {/* Mobile card stack */}
+      <div className="sm:hidden">
+        <MobileComparisonCards rows={sectionsRows} playerMap={playerMap} horizonField={horizonField} />
       </div>
     </section>
   )
