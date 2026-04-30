@@ -190,6 +190,37 @@ export interface OptimisedLineup {
   formation: string     // e.g. '4-3-3' (DEF-MID-FWD, GK excluded)
 }
 
+// Transfer suggestion (Phase 45 TFR-01..TFR-03) — discriminated union for single
+// transfers and 2-transfer combos. Returned by suggestTransfers() in src/lib/suggest-transfers.ts.
+// Shape locked by .planning/phases/45-transfer-aware-mode/45-UI-SPEC.md §9.
+//
+// Engine invariants the UI relies on:
+// - xPtsGain > 0 for every suggestion (engine MUST filter non-positive gains).
+// - breakEvenGws === null if and only if cost === 0.
+// - breakEvenGws >= 1 when present (engine MUST clamp to a minimum of 1).
+// - All suggestions are budget-feasible (D-10 hard filter applied upstream).
+export type TransferSuggestion =
+  | {
+      kind: 'single'
+      sell: MergedPlayer
+      buy: MergedPlayer
+      cost: 0 | 4              // 0 = FREE, 4 = -4pt hit
+      xPtsGain: number          // always > 0 (filtered by engine)
+      xPtsGainPerGw: number     // xPtsGain / horizon
+      breakEvenGws: number | null  // ceil(4 / xPtsGainPerGw) when cost > 0; null when FREE
+    }
+  | {
+      kind: 'combo'
+      transfers: [
+        { sell: MergedPlayer; buy: MergedPlayer },
+        { sell: MergedPlayer; buy: MergedPlayer }
+      ]
+      cost: 0 | 4              // 0 = FREE (both within ftCount), 4 = one hit
+      xPtsGain: number
+      xPtsGainPerGw: number
+      breakEvenGws: number | null
+    }
+
 // DefCon per-player stats (Phase 4) — populated from pipeline/cache/defcon_stats.json
 export interface DefConPlayer {
   id: number
