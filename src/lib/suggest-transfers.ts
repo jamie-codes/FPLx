@@ -134,17 +134,19 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
         breakEvenGws: breakEven(0, xPtsGainPerGw),
       })
 
-      // HIT variant — represents "spend a -4pt hit on this same pair when FT already used elsewhere".
-      // Always emitted alongside the FREE variant so the UI can rank ALL options.
-      singles.push({
-        kind: 'single',
-        sell,
-        buy,
-        cost: 4,
-        xPtsGain,
-        xPtsGainPerGw,
-        breakEvenGws: breakEven(4, xPtsGainPerGw),
-      })
+      // HIT variant — only relevant when ftCount=1 (spending the FT elsewhere means this costs -4pts).
+      // When ftCount=2, every single transfer is free — no hit entries needed.
+      if (ftCount === 1) {
+        singles.push({
+          kind: 'single',
+          sell,
+          buy,
+          cost: 4,
+          xPtsGain,
+          xPtsGainPerGw,
+          breakEvenGws: breakEven(4, xPtsGainPerGw),
+        })
+      }
     }
   }
 
@@ -170,9 +172,11 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
 
         for (const buy1 of pool1) {
           const gain1 = horizonScore(buy1, field) - sell1Pts
+          if (gain1 <= 0) continue  // each leg must individually improve the squad (CR-02)
           for (const buy2 of pool2) {
             if (buy2.id === buy1.id) continue   // can't buy the same player twice
             const gain2 = horizonScore(buy2, field) - sell2Pts
+            if (gain2 <= 0) continue  // each leg must individually improve the squad (CR-02)
             const xPtsGain = gain1 + gain2
             if (xPtsGain <= 0) continue
 
