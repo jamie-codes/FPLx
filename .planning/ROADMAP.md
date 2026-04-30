@@ -46,7 +46,7 @@ See `.planning/milestones/v1.5-ROADMAP.md` for full details.
 
 ### v1.6 Squad Optimiser (In Progress)
 
-- [ ] **Phase 42: xPts Accuracy Improvements** - Form/momentum signal + backtest gate before optimiser ships
+- [x] **Phase 42: xPts Accuracy Improvements** - Form/momentum signal + backtest gate before optimiser ships — completed 2026-04-30
 - [ ] **Phase 43: Lineup Engine & Navigator** - Core optimiser engine, best XI, captain/VC, bench order, Squad sub-tabs
 - [ ] **Phase 44: Comparison Output** - Side-by-side current vs optimised lineup with xPts delta and diff headline
 - [ ] **Phase 45: Transfer-Aware Mode** - Factor in free transfers; transfer suggestions with hit break-even indicator
@@ -406,7 +406,7 @@ Plans:
 **Wave 1**
 - [x] 42-01-PLAN.md - Wave 0 RED test stubs (test_form_signal.py + test_merge.py) + _compute_form_signal helper in merge.py + MergedPlayer form_xgxa_per90/window_gws fields + form_signal_enabled/blend_alpha kwargs + per-90 blend logic in _xpts_ngw inputs (ACC-01) — completed 2026-04-30
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 42-02-PLAN.md - Wave 0 RED tests (test_accuracy.py extension + test_run.py NEW) + accuracy.py blended track + mid-tier track + gate flag + run.py gate-read + proj_pts cleanup + AccuracySummary types extension + manual pipeline-run checkpoint (ACC-02, ACC-03, ACC-04)
+- [x] 42-02-PLAN.md - Wave 0 RED tests (test_accuracy.py extension + test_run.py NEW) + accuracy.py blended track + mid-tier track + gate flag + run.py gate-read + proj_pts cleanup + AccuracySummary types extension + manual pipeline-run checkpoint (ACC-02, ACC-03, ACC-04) — completed 2026-04-30
 **Cross-cutting constraints:**
 - Plan 02 depends on Plan 01: Plan 01 ships the form-signal helper and the blend kwargs in merge_players; Plan 02 ships the gate that decides whether the kwargs flip on
 - BLEND_ALPHA = 0.4 is constant in both files; Plan 02's accuracy.py BLEND_ALPHA must match merge.py's BLEND_ALPHA
@@ -486,7 +486,7 @@ Note: Phase 42 (xPts accuracy) should complete before Phase 43 (lineup engine) s
 | 39. Player Comparison Modal | 3/3 | Complete | 2026-04-29 |
 | 40. Accuracy Pipeline | 3/3 | Complete | 2026-04-29 |
 | 41. Accuracy UI & Model Rationalisation | 3/3 | Complete | 2026-04-30 |
-| 42. xPts Accuracy Improvements | 1/2 | In Progress | - |
+| 42. xPts Accuracy Improvements | 2/2 | Complete | 2026-04-30 |
 | 43. Lineup Engine & Navigator | 0/TBD | Not started | - |
 | 44. Comparison Output | 0/TBD | Not started | - |
 | 45. Transfer-Aware Mode | 0/TBD | Not started | - |

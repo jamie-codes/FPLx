@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Squad Optimiser
-status: in_progress
+status: planning
 last_updated: "2026-04-30T00:00:00Z"
-last_activity: "2026-04-30 -- Phase 42 execution started (2 plans)"
+last_activity: "2026-04-30 -- Phase 42 complete (2/2 plans)"
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
   completed_plans: 2
   percent: 100
