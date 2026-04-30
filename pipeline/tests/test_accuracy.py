@@ -187,10 +187,10 @@ def test_empty_backtest_when_no_finished_gws():
 
 
 def test_snapshot_format():
-    """ACC-01 / D-12: build_predictions_snapshot returns correct shape."""
+    """ACC-01 / D-12: build_predictions_snapshot returns correct shape (Phase 42: snapshot is xPts-only)."""
     merged = [
-        {'id': 1, 'proj_pts_1gw': 6.5, 'xPts_1gw': 7.2},
-        {'id': 2, 'proj_pts_1gw': 4.0, 'xPts_1gw': 4.8},
+        {'id': 1, 'xPts_1gw': 7.2},
+        {'id': 2, 'xPts_1gw': 4.8},
     ]
     result = build_predictions_snapshot(merged, current_gw=32)
 
@@ -198,8 +198,8 @@ def test_snapshot_format():
     assert isinstance(result['run_at'], str)
     assert 'T' in result['run_at'], "run_at must be ISO 8601"
     assert len(result['players']) == 2
-    assert result['players'][0] == {'id': 1, 'proj_pts_1gw': 6.5, 'xPts_1gw': 7.2}
-    assert result['players'][1] == {'id': 2, 'proj_pts_1gw': 4.0, 'xPts_1gw': 4.8}
+    assert result['players'][0] == {'id': 1, 'xPts_1gw': 7.2}
+    assert result['players'][1] == {'id': 2, 'xPts_1gw': 4.8}
 
 
 # ============================================================================
