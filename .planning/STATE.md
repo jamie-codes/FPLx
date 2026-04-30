@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Squad Optimiser
 status: executing
-stopped_at: Phase 43 complete
-last_updated: "2026-04-30T17:40:00.000Z"
-last_activity: 2026-04-30 -- Phase 43 complete (3/3 plans, human checkpoint approved)
+stopped_at: context exhaustion at 80% (2026-04-30)
+last_updated: "2026-04-30T18:59:43.314Z"
+last_activity: 2026-04-30 -- Phase 44 planned (1 plan, verification passed)
 progress:
   total_phases: 21
-  completed_phases: 17
-  total_plans: 39
-  completed_plans: 36
-  percent: 92
+  completed_phases: 19
+  total_plans: 40
+  completed_plans: 40
+  percent: 100
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-30 — v1.6 started)
 ## Current Position
 
 Phase: 44 of 46 (Comparison Output)
-Plan: Phase 43 complete — ready for Phase 44
-Status: Ready to plan
-Last activity: 2026-04-30 -- Phase 43 complete (3/3 plans shipped, human checkpoint approved)
+Plan: 1 of 1 — awaiting human verification (Task 3 checkpoint)
+Status: Executing — checkpoint reached
+Last activity: 2026-04-30 -- Phase 44 Plan 01 tasks 1+2 complete; awaiting Task 3 human visual verify
 
 Progress: [██████████] 100%
 
@@ -47,6 +47,7 @@ Progress: [██████████] 100%
 | 36 | 1 | - | - |
 | 37 | 1 | - | - |
 | 38 | 2 | ~10 min | ~5 min |
+| 44 | 1 | ~12 min | ~12 min |
 
 *Updated after each plan completion*
 
@@ -64,6 +65,9 @@ Recent decisions affecting current work:
 - [Research]: No new npm/pip deps needed; best-11 = C(15,11)=1,365 subsets, pure TS enumeration <1ms
 - [Research]: Wildcard/Free Hit chip modes extend optimiseLineup with chipMode param; never fork the engine
 - [Research]: Budget arithmetic: always integer tenths; use selling_price (not now_cost) in transfer-aware mode
+- [Phase 44]: changeCount uses set-difference (not pairSection row count) to avoid overcounting when sort reshuffles pairs
+- [Phase 44]: isPromoted uses currentId (bench player promoted into XI) — plan spec had inversion; fixed
+- [Phase 44]: Test fixtures require valid single-GK formations for deterministic no-change/single-change assertions
 
 ### Pending Todos
 
@@ -75,6 +79,6 @@ None. DGW xPts aggregation confirmed correct (2026-04-30): `_xpts_ngw` in `pipel
 
 ## Session Continuity
 
-Last session: 2026-04-30
-Stopped at: Phase 43 context gathered
-Resume file: .planning/phases/43-lineup-engine-navigator/43-CONTEXT.md
+Last session: 2026-04-30T18:58:17Z
+Stopped at: Phase 44 Plan 01 Task 3 — human visual verification checkpoint
+Resume file: None

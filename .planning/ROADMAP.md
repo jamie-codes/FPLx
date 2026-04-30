@@ -448,7 +448,7 @@ Plans:
 Plans:
 
 **Wave 1** *(autonomous: false — human-verify checkpoint at end)*
-- [ ] 44-01-PLAN.md — Replace pitch UI in OptimiserPanel with position-grouped comparison table + headline row + mobile card stack; rewrite tests for CMP-01/02/03 (CMP-01, CMP-02, CMP-03)
+- [x] 44-01-PLAN.md — Replace pitch UI in OptimiserPanel with position-grouped comparison table + headline row + mobile card stack; rewrite tests for CMP-01/02/03 (CMP-01, CMP-02, CMP-03) [awaiting human visual verification]
 **UI hint**: yes
 
 ### Phase 45: Transfer-Aware Mode
