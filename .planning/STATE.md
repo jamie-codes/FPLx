@@ -9,8 +9,8 @@ progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 2
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 50
 ---
 
 # Project State
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-04-30 — v1.6 started)
 ## Current Position
 
 Phase: 42 of 46 (xPts Accuracy Improvements)
-Plan: Wave 1 — Plan 42-01 executing
-Status: In progress (0/2 plans complete)
-Last activity: 2026-04-30 — Phase 42 execution started: 2 plans in 2 waves (Wave 1: form signal + blend; Wave 2: backtest gate + mid-tier + proj_pts cleanup)
+Plan: Wave 2 — Plan 42-02 up next
+Status: In progress (1/2 plans complete)
+Last activity: 2026-04-30 — Plan 42-01 complete: _compute_form_signal, blend kwargs, MergedPlayer form fields, 8 tests green
 
 Progress: [░░░░░░░░░░] 0%
 

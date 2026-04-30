@@ -404,7 +404,7 @@ Plans:
 Plans:
 
 **Wave 1**
-- [ ] 42-01-PLAN.md - Wave 0 RED test stubs (test_form_signal.py + test_merge.py) + _compute_form_signal helper in merge.py + MergedPlayer form_xgxa_per90/window_gws fields + form_signal_enabled/blend_alpha kwargs + per-90 blend logic in _xpts_ngw inputs (ACC-01)
+- [x] 42-01-PLAN.md - Wave 0 RED test stubs (test_form_signal.py + test_merge.py) + _compute_form_signal helper in merge.py + MergedPlayer form_xgxa_per90/window_gws fields + form_signal_enabled/blend_alpha kwargs + per-90 blend logic in _xpts_ngw inputs (ACC-01) — completed 2026-04-30
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 42-02-PLAN.md - Wave 0 RED tests (test_accuracy.py extension + test_run.py NEW) + accuracy.py blended track + mid-tier track + gate flag + run.py gate-read + proj_pts cleanup + AccuracySummary types extension + manual pipeline-run checkpoint (ACC-02, ACC-03, ACC-04)
 **Cross-cutting constraints:**
@@ -486,7 +486,7 @@ Note: Phase 42 (xPts accuracy) should complete before Phase 43 (lineup engine) s
 | 39. Player Comparison Modal | 3/3 | Complete | 2026-04-29 |
 | 40. Accuracy Pipeline | 3/3 | Complete | 2026-04-29 |
 | 41. Accuracy UI & Model Rationalisation | 3/3 | Complete | 2026-04-30 |
-| 42. xPts Accuracy Improvements | 0/2 | Not started | - |
+| 42. xPts Accuracy Improvements | 1/2 | In Progress | - |
 | 43. Lineup Engine & Navigator | 0/TBD | Not started | - |
 | 44. Comparison Output | 0/TBD | Not started | - |
 | 45. Transfer-Aware Mode | 0/TBD | Not started | - |
