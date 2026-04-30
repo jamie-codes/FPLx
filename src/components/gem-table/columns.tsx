@@ -55,7 +55,7 @@ export function XPtsCell({
   )
 }
 
-export function createColumns(onCompare: (player: ScoredPlayer) => void) {
+export function createColumns(onCompare: (player: ScoredPlayer) => void, gwN: number | null = null) {
   return [
     col.accessor('web_name', {
       header: 'Player',
@@ -149,6 +149,20 @@ export function createColumns(onCompare: (player: ScoredPlayer) => void) {
         window={1}
       />
     ),
+    enableSorting: true,
+  }),
+  col.accessor('last_gw_actual_pts', {
+    header: () => (
+      <span title={`Actual FPL points scored in GW${gwN ?? '?'} — from backtest data`} className="cursor-help">
+        {gwN ? `GW${gwN} Pts` : 'GW Pts'}
+      </span>
+    ),
+    cell: (info) => {
+      const v = info.getValue()
+      return v === null || v === undefined
+        ? <span className="text-zinc-400">{'—'}</span>
+        : Math.round(v).toString()
+    },
     enableSorting: true,
   }),
   col.accessor('xPts_3gw', {

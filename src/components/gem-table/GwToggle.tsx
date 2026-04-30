@@ -41,6 +41,7 @@ export const PRESET_COLUMN_VISIBILITY: Record<ViewPreset, Record<string, boolean
     differential_flag: false,
     trend: false,
     fixtures: false,
+    last_gw_actual_pts: false,   // ACC-05 D-10: hidden in Compact preset only
   },
   default: {
     fdr_score: false,

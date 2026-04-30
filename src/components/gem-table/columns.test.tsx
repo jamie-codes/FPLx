@@ -42,3 +42,36 @@ describe('columns — Phase 39 CMP-01 compare icon', () => {
     expect(onCompare).toHaveBeenCalledWith(PLAYER_A)
   })
 })
+
+describe('Phase 41 ACC-05: last_gw_actual_pts column', () => {
+  it('createColumns(noop) without gwN still works (back-compat) and includes last_gw_actual_pts', () => {
+    const cols = createColumns(() => {})
+    const found = cols.find((c: { id?: string; accessorKey?: string }) =>
+      c.id === 'last_gw_actual_pts' || c.accessorKey === 'last_gw_actual_pts'
+    )
+    expect(found).toBeTruthy()
+  })
+
+  it('createColumns(noop, 32) renders the header text "GW32 Pts"', () => {
+    const cols = createColumns(() => {}, 32)
+    const found = cols.find((c: { id?: string; accessorKey?: string }) =>
+      c.id === 'last_gw_actual_pts' || c.accessorKey === 'last_gw_actual_pts'
+    ) as unknown as { header: () => React.ReactElement }
+    const headerEl = found.header()
+    const { container } = render(headerEl)
+    expect(container.textContent).toContain('GW32 Pts')
+  })
+
+  it('cell renderer returns em-dash for null and rounded integer for a number', () => {
+    const cols = createColumns(() => {}, 32)
+    const found = cols.find((c: { id?: string; accessorKey?: string }) =>
+      c.id === 'last_gw_actual_pts' || c.accessorKey === 'last_gw_actual_pts'
+    ) as unknown as { cell: (info: { getValue: () => number | null | undefined }) => React.ReactElement | string }
+    const dashEl = found.cell({ getValue: () => null })
+    const { container: dashC } = render(<>{dashEl}</>)
+    expect(dashC.textContent).toContain('—')
+    const numEl = found.cell({ getValue: () => 7.6 })
+    const { container: numC } = render(<>{numEl}</>)
+    expect(numC.textContent?.trim()).toBe('8')
+  })
+})

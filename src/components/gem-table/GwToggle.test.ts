@@ -171,3 +171,30 @@ describe('getColumnVisibility presets', () => {
     expect(result).not.toHaveProperty('proj_pts_5gw')
   })
 })
+
+describe('Phase 41 ACC-05: last_gw_actual_pts column visibility', () => {
+  it('hides last_gw_actual_pts in compact preset', () => {
+    const v = getColumnVisibility(1, false, 'compact')
+    expect(v.last_gw_actual_pts).toBe(false)
+  })
+
+  it('does NOT set last_gw_actual_pts in default preset (absent = visible)', () => {
+    const v = getColumnVisibility(1, false, 'default')
+    expect(v.last_gw_actual_pts).toBeUndefined()
+  })
+
+  it('does NOT set last_gw_actual_pts in analysis preset (absent = visible)', () => {
+    const v = getColumnVisibility(1, false, 'analysis')
+    expect(v.last_gw_actual_pts).toBeUndefined()
+  })
+
+  it('does NOT gate last_gw_actual_pts by GW horizon (still absent on horizon=3)', () => {
+    const v = getColumnVisibility(3, false, 'default')
+    expect(v.last_gw_actual_pts).toBeUndefined()
+  })
+
+  it('mobile path is unchanged — last_gw_actual_pts not in MOBILE_HIDDEN_COLUMNS', () => {
+    const v = getColumnVisibility(1, true, 'default')
+    expect(v.last_gw_actual_pts).toBeUndefined()
+  })
+})

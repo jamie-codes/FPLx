@@ -171,6 +171,10 @@ export interface MergedPlayer {
   // Captaincy ceiling (Phase 31 CAP-03 D-11). 90th-percentile xPts (xPts_1gw + 1.28*sigma_1gw)
   // computed in pipeline; persisted per-player to enable future GemTable sort.
   xPts_90th_1gw?: number
+  // ACC-05 (Phase 41 D-11): last GW actual points, joined into the player row by /api/players
+  // from accuracy_backtest.json. Optional — null when player has no backtest entry; absent
+  // before Phase 40 pipeline has run. NOT computed by pipeline/merge.py.
+  last_gw_actual_pts?: number | null
 }
 
 // DefCon per-player stats (Phase 4) — populated from pipeline/cache/defcon_stats.json
@@ -205,6 +209,60 @@ export interface ScoredPlayer extends MergedPlayer {
   ownership_score: number     // inverse ownership % (low owned = high score)
   minutes_score: number       // minutes reliability
   set_piece_score: number     // set piece role (penalty/FK/corner taker)
+}
+
+// Phase 41 ACC-02/03/04 — accuracy backtest shape from pipeline/cache/accuracy_backtest.json
+// Field naming matches the JSON exactly (lowercase snake_case for xpts_*/proj_pts_*).
+export interface AccuracyGwSummary {
+  gw: number
+  haulter_count: number
+  xpts_flagged: number
+  proj_pts_flagged: number
+  xpts_hit_rate: number   // 0.0-1.0
+  proj_pts_hit_rate: number
+}
+
+export interface AccuracySummary {
+  xpts_hit_rate: number
+  proj_pts_hit_rate: number
+  gws: AccuracyGwSummary[]
+}
+
+export interface AccuracyHaulter {
+  gw: number
+  player_id: number
+  player_name: string
+  actual_pts: number
+  xpts_predicted: number
+  xpts_rank: number
+  xpts_flagged: boolean
+  proj_pts_predicted: number
+  proj_pts_rank: number
+  proj_pts_flagged: boolean
+}
+
+export interface AccuracyPlayerGw {
+  gw: number
+  actual_pts: number
+  xpts_predicted: number
+  xpts_delta: number          // actual - predicted; negative = over-prediction
+  proj_pts_predicted: number
+  proj_pts_delta: number
+}
+
+export interface AccuracyPlayer {
+  player_id: number
+  player_name: string
+  team: string
+  gws: AccuracyPlayerGw[]
+}
+
+export interface AccuracyBacktest {
+  generated_at: string
+  gws_covered: number[]       // [32, 31, 30, 29, 28] — most recent first
+  summary: AccuracySummary
+  haulters: AccuracyHaulter[]
+  players: AccuracyPlayer[]
 }
 
 // Club form fixture (upcoming, per club) — populated by computeClubForm
@@ -308,6 +366,10 @@ export interface SetPieceTaker {
   id: number | null
   name: string
   changed: boolean
+  now_cost?: number
+  selected_by_percent?: string
+  fixtures?: FixtureEntry[]
+  roles?: string[]  // all primary roles this player holds for their team
 }
 
 export interface SetPieceTeam {
