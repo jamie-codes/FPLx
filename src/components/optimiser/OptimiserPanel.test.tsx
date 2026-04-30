@@ -1,4 +1,4 @@
-// Phase 43 (OPT-01..OPT-05): OptimiserPanel — full RTL integration tests.
+// Phase 44 (CMP-01..CMP-03): OptimiserPanel — comparison table RTL integration tests.
 // Mocks the data hooks; runs the real optimise-lineup engine; asserts UI state for
 // empty / loading / error / BGW / valid-lineup branches.
 // @vitest-environment jsdom
@@ -95,7 +95,7 @@ beforeEach(() => {
   usePlayersMock.mockReset()
 })
 
-describe('Phase 43: OptimiserPanel (UI integration)', () => {
+describe('Phase 44: OptimiserPanel (comparison table)', () => {
   describe('Empty / loading / error states', () => {
     it('renders empty-state copy when teamId is empty (no submission)', () => {
       useSquadMock.mockReturnValue({ data: undefined, isLoading: false, error: null })
@@ -127,40 +127,8 @@ describe('Phase 43: OptimiserPanel (UI integration)', () => {
     })
   })
 
-  describe('OPT-01 pitch + formation render', () => {
-    it('renders the pitch div, the formation label, and a bench row when lineup is valid', () => {
-      const { players, squadResp } = makeValidSquad()
-      useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
-      usePlayersMock.mockReturnValue({ data: players, isLoading: false })
-      const { container } = render(<OptimiserPanel teamId="1234567" />)
-      expect(container.querySelector('[data-testid="pitch"]')).not.toBeNull()
-      expect(container.querySelector('[data-testid="formation-label"]')).not.toBeNull()
-      expect(container.querySelector('[data-testid="formation-label"]')!.textContent).toMatch(/Formation: \d-\d-\d/)
-      expect(container.querySelector('[data-testid="bench-row"]')).not.toBeNull()
-    })
-
-    it('pitch has bg-green-950 class (green field background)', () => {
-      const { players, squadResp } = makeValidSquad()
-      useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
-      usePlayersMock.mockReturnValue({ data: players, isLoading: false })
-      const { container } = render(<OptimiserPanel teamId="1234567" />)
-      const pitch = container.querySelector('[data-testid="pitch"]')
-      expect(pitch?.className).toContain('bg-green-950')
-    })
-
-    it('renders 11 player circles on the pitch (excluding the bench)', () => {
-      const { players, squadResp } = makeValidSquad()
-      useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
-      usePlayersMock.mockReturnValue({ data: players, isLoading: false })
-      const { container } = render(<OptimiserPanel teamId="1234567" />)
-      const allCirclesInPanel = container.querySelectorAll('[data-testid^="player-circle-"]')
-      const benchCircles = container.querySelectorAll('[data-testid="bench-row"] [data-testid^="player-circle-"]')
-      expect(allCirclesInPanel.length - benchCircles.length).toBe(11)
-    })
-  })
-
   describe('OPT-02 horizon toggle re-optimises', () => {
-    it('clicking 5GW changes the formation/lineup output (horizon switch propagates)', () => {
+    it('clicking 5GW changes the comparison table output (horizon switch propagates)', () => {
       // Make horizon 1 lineup distinctly different from horizon 5 lineup.
       // DEF id=3: terrible 1gw, great 5gw. DEF id=7: great 1gw, terrible 5gw.
       const { picks } = makeValidSquad()
@@ -182,68 +150,176 @@ describe('Phase 43: OptimiserPanel (UI integration)', () => {
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
 
-      // Helper: get starter circle ids (pitch > div children EXCLUDING the bench-row)
-      const getStarterCircleIds = () => {
-        const benchRow = container.querySelector('[data-testid="bench-row"]')
-        return Array.from(container.querySelectorAll('[data-testid^="player-circle-"]'))
-          .filter(n => !benchRow?.contains(n))
-          .map(n => n.getAttribute('data-testid'))
-      }
-
-      // Default horizon = 1: id=7 (P7, xPts_1gw=9.9) should be a starter; id=3 (P3, xPts_1gw=0.1) should NOT.
-      const initialStarterIds = getStarterCircleIds()
-      expect(initialStarterIds).toContain('player-circle-7')
-      expect(initialStarterIds).not.toContain('player-circle-3')
-
       // Click the 5GW toggle button (GwToggle renders "5 GW" — note the space)
       const fiveGwBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent?.trim() === '5 GW')
       expect(fiveGwBtn).toBeTruthy()
+
+      const tableText = () => container.querySelector('[data-testid="comparison-table"]')?.textContent ?? ''
+      expect(tableText()).toContain('P7')      // P7 starter at 1GW
+      expect(tableText()).not.toContain('P3 →') // crude guard — P3 is benched at 1GW
       fireEvent.click(fiveGwBtn!)
-
-      // After toggle: id=3 (xPts_5gw=100) should now be a starter; id=7 (xPts_5gw=0.1) should NOT.
-      const after5gwStarterIds = getStarterCircleIds()
-      expect(after5gwStarterIds).toContain('player-circle-3')
-      expect(after5gwStarterIds).not.toContain('player-circle-7')
+      expect(tableText()).toContain('P3')      // P3 starter at 5GW
     })
   })
 
-  describe('OPT-03 captain / VC badges', () => {
-    it('renders exactly one (C) badge and one (VC) badge on the pitch', () => {
+  describe('CMP-01 comparison table renders', () => {
+    it('renders comparison-table and all 5 section headers when lineup is valid', () => {
       const { players, squadResp } = makeValidSquad()
       useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
-      const captainBadges = container.querySelectorAll('[data-testid^="captain-badge-"]')
-      const vcBadges = container.querySelectorAll('[data-testid^="vc-badge-"]')
-      expect(captainBadges).toHaveLength(1)
-      expect(vcBadges).toHaveLength(1)
+      expect(container.querySelector('[data-testid="comparison-table"]')).not.toBeNull()
+      expect(container.querySelector('[data-testid="section-header-gk"]')).not.toBeNull()
+      expect(container.querySelector('[data-testid="section-header-def"]')).not.toBeNull()
+      expect(container.querySelector('[data-testid="section-header-mid"]')).not.toBeNull()
+      expect(container.querySelector('[data-testid="section-header-fwd"]')).not.toBeNull()
+      expect(container.querySelector('[data-testid="section-header-bench"]')).not.toBeNull()
     })
 
-    it('captain badge has amber colour class; VC badge has zinc colour class', () => {
+    it('changed starter rows have border-l-2 + border-l-green-500 classes and a delta pill', () => {
+      // Force a starter swap by giving id=8 (MID, XI position=8) a very low xPts and id=12 (MID, bench position=12)
+      // a very high xPts. Engine will swap id=12 into XI, id=8 to bench.
+      const { picks } = makeValidSquad()
+      const elementTypes: (1 | 2 | 3 | 4)[] = [1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4]
+      const players: MergedPlayer[] = []
+      for (let i = 0; i < 15; i++) {
+        const id = i + 1
+        let p = makePlayer({ id, element_type: elementTypes[i] })
+        if (id === 8) p = { ...p, xPts_1gw: 0.1, xPts_3gw: 0.3, xPts_5gw: 0.5 }
+        if (id === 12) p = { ...p, xPts_1gw: 99, xPts_3gw: 297, xPts_5gw: 495 }
+        players.push(p)
+      }
+      const squadResp: SquadPicksResponse = {
+        active_chip: null,
+        picks,
+        entry_history: { event: 30, bank: 0, event_transfers: 0, event_transfers_cost: 0, value: 1000 },
+      }
+      useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
+      usePlayersMock.mockReturnValue({ data: players, isLoading: false })
+      const { container } = render(<OptimiserPanel teamId="1234567" />)
+      const changedRows = container.querySelectorAll('[data-testid="comparison-row-changed"]')
+      expect(changedRows.length).toBeGreaterThan(0)
+      const firstChanged = changedRows[0] as HTMLElement
+      expect(firstChanged.className).toContain('border-l-2')
+      expect(firstChanged.className).toContain('border-l-green-500')
+      const deltaPill = container.querySelector('[data-testid="delta-pill"]')
+      expect(deltaPill).not.toBeNull()
+      expect(deltaPill!.textContent).toMatch(/^\+\d+\.\d xPts$/)
+    })
+
+    it('unchanged rows have no border-l-green-500 class and no delta-pill', () => {
+      // Default valid squad: every player has xPts_1gw=5.0 -> ties; engine selects deterministically.
+      // The current XI = picks positions 1..11 = ids 1..11. Engine ranks all 15 by xPts equally and
+      // by id ascending (stable sort) -> same ids 1..11 chosen as starters -> no swap.
       const { players, squadResp } = makeValidSquad()
       useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
-      const captainBadge = container.querySelector('[data-testid^="captain-badge-"]')!
-      const vcBadge = container.querySelector('[data-testid^="vc-badge-"]')!
-      expect(captainBadge.className).toContain('text-amber-400')
-      expect(vcBadge.className).toContain('text-zinc-400')
-      expect(captainBadge.textContent).toBe('(C)')
-      expect(vcBadge.textContent).toBe('(VC)')
+      const greenBordered = Array.from(container.querySelectorAll('[data-testid="comparison-table"] *'))
+        .filter(el => (el as HTMLElement).className && (el as HTMLElement).className.toString().includes('border-l-green-500'))
+      expect(greenBordered).toHaveLength(0)
+      expect(container.querySelector('[data-testid="delta-pill"]')).toBeNull()
+    })
+
+    it('bench changed rows show Promoted or Dropped badge instead of a numeric delta', () => {
+      // Force a XI<->bench swap (same fixture as test 2 above). Bench rows that change must show a badge.
+      const { picks } = makeValidSquad()
+      const elementTypes: (1 | 2 | 3 | 4)[] = [1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4]
+      const players: MergedPlayer[] = []
+      for (let i = 0; i < 15; i++) {
+        const id = i + 1
+        let p = makePlayer({ id, element_type: elementTypes[i] })
+        if (id === 8) p = { ...p, xPts_1gw: 0.1, xPts_3gw: 0.3, xPts_5gw: 0.5 }   // weak MID in XI
+        if (id === 12) p = { ...p, xPts_1gw: 99, xPts_3gw: 297, xPts_5gw: 495 }  // strong MID on bench (position 12)
+        players.push(p)
+      }
+      const squadResp: SquadPicksResponse = {
+        active_chip: null,
+        picks,
+        entry_history: { event: 30, bank: 0, event_transfers: 0, event_transfers_cost: 0, value: 1000 },
+      }
+      useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
+      usePlayersMock.mockReturnValue({ data: players, isLoading: false })
+      const { container } = render(<OptimiserPanel teamId="1234567" />)
+      // At least one bench row gets a Promoted or Dropped badge
+      const promoted = container.querySelectorAll('[data-testid="badge-promoted"]')
+      const dropped = container.querySelectorAll('[data-testid="badge-dropped"]')
+      expect(promoted.length + dropped.length).toBeGreaterThan(0)
+      // At least one Promoted exists (id=12 was on bench, gets promoted into XI).
+      expect(promoted.length).toBeGreaterThanOrEqual(1)
     })
   })
 
-  describe('OPT-04 bench row layout', () => {
-    it('bench row has GK slot at position 0 with "GK" label and a divider before outfield', () => {
+  describe('CMP-02 headline row', () => {
+    it('renders headline row with Formation / Changes / xPts gain copy', () => {
       const { players, squadResp } = makeValidSquad()
       useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
-      expect(container.querySelector('[data-testid="bench-gk-slot"]')).not.toBeNull()
-      expect(container.querySelector('[data-testid="bench-gk-slot"]')!.textContent).toContain('GK')
-      expect(container.querySelector('[data-testid="bench-divider"]')).not.toBeNull()
-      const outfieldBenchSlots = container.querySelectorAll('[data-testid^="bench-outfield-"]')
-      expect(outfieldBenchSlots).toHaveLength(3)
+      const headline = container.querySelector('[data-testid="headline-row"]')
+      expect(headline).not.toBeNull()
+      const text = headline!.textContent ?? ''
+      expect(text).toContain('Formation:')
+      expect(text).toContain('Changes:')
+      expect(text).toContain('xPts gain')
+    })
+
+    it('change count and xPts gain exclude bench-only swaps (D-07)', () => {
+      // Default makeValidSquad: all xPts equal. Current XI = ids 1..11, optimised picks same set.
+      // No XI changes -> changeCount = 0, xPtsGain = 0.0 in headline.
+      const { players, squadResp } = makeValidSquad()
+      useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
+      usePlayersMock.mockReturnValue({ data: players, isLoading: false })
+      const { container } = render(<OptimiserPanel teamId="1234567" />)
+      const text = container.querySelector('[data-testid="headline-row"]')!.textContent ?? ''
+      expect(text).toContain('Changes: 0 players')
+      expect(text).toContain('+0.0 xPts gain')
+    })
+
+    it('singular "player" copy when changeCount === 1', () => {
+      // Construct a fixture with exactly one starter swap.
+      // id=12 (bench MID) very strong; id=8 (XI MID, position=8) very weak. Engine swaps id=12 into XI, id=8 to bench.
+      const { picks } = makeValidSquad()
+      const elementTypes: (1 | 2 | 3 | 4)[] = [1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4]
+      const players: MergedPlayer[] = []
+      for (let i = 0; i < 15; i++) {
+        const id = i + 1
+        let p = makePlayer({ id, element_type: elementTypes[i] })
+        if (id === 8) p = { ...p, xPts_1gw: 0.1, xPts_3gw: 0.3, xPts_5gw: 0.5 }
+        if (id === 12) p = { ...p, xPts_1gw: 99, xPts_3gw: 297, xPts_5gw: 495 }
+        players.push(p)
+      }
+      const squadResp: SquadPicksResponse = {
+        active_chip: null,
+        picks,
+        entry_history: { event: 30, bank: 0, event_transfers: 0, event_transfers_cost: 0, value: 1000 },
+      }
+      useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
+      usePlayersMock.mockReturnValue({ data: players, isLoading: false })
+      const { container } = render(<OptimiserPanel teamId="1234567" />)
+      const text = container.querySelector('[data-testid="headline-row"]')!.textContent ?? ''
+      expect(text).toContain('Changes: 1 player')
+      // Sanity: not "1 players"
+      expect(text).not.toMatch(/Changes:\s*1 players/)
+    })
+  })
+
+  describe('CMP-03 mobile layout structure', () => {
+    it('both desktop table and mobile card stack render in DOM (Tailwind toggles via CSS)', () => {
+      const { players, squadResp } = makeValidSquad()
+      useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
+      usePlayersMock.mockReturnValue({ data: players, isLoading: false })
+      const { container } = render(<OptimiserPanel teamId="1234567" />)
+      // Desktop wrapper: hidden sm:block
+      const desktopWrapper = Array.from(container.querySelectorAll('div')).find(
+        el => el.className.includes('hidden') && el.className.includes('sm:block')
+      )
+      expect(desktopWrapper).toBeTruthy()
+      // Mobile wrapper: sm:hidden
+      const mobileWrapper = Array.from(container.querySelectorAll('div')).find(
+        el => el.className.includes('sm:hidden') && !el.className.includes('hidden sm:')
+      )
+      expect(mobileWrapper).toBeTruthy()
     })
   })
 
@@ -272,7 +348,7 @@ describe('Phase 43: OptimiserPanel (UI integration)', () => {
       const { container } = render(<OptimiserPanel teamId="1234567" />)
       expect(container.querySelector('[data-testid="bgw-banner-critical"]')).not.toBeNull()
       expect(container.querySelector('[data-testid="bgw-banner-critical"]')!.textContent).toContain('fewer than 11')
-      expect(container.querySelector('[data-testid="pitch"]')).toBeNull()
+      expect(container.querySelector('[data-testid="comparison-table"]')).toBeNull()
     })
 
     it('renders soft amber banner when some BGW exclusions occur but engine still returns 11 starters', () => {
@@ -298,7 +374,7 @@ describe('Phase 43: OptimiserPanel (UI integration)', () => {
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
       expect(container.querySelector('[data-testid="bgw-banner-soft"]')).not.toBeNull()
-      expect(container.querySelector('[data-testid="pitch"]')).not.toBeNull()
+      expect(container.querySelector('[data-testid="comparison-table"]')).not.toBeNull()
     })
   })
 })
