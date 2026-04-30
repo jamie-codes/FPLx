@@ -128,7 +128,7 @@ export default function Home() {
         {/* Sub-tab row — rendered for any section with subTabs.length > 0 (D-08) */}
         {(() => {
           const activeSectionDef = SECTIONS.find(s => s.id === activeSection)!
-          if (activeSectionDef.subTabs.length === 0) return null
+          if (!activeSectionDef.subTabs.length) return null
           return (
             <nav aria-label={`${activeSectionDef.label} sub-tabs`} className="hidden sm:flex gap-4 mb-6 border-b border-zinc-200 dark:border-zinc-700">
               {activeSectionDef.subTabs.map((sub) => (

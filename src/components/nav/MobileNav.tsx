@@ -17,7 +17,7 @@ export function MobileNav({ activeSection, activeSubTab, onSectionChange, onSubT
     >
       {(() => {
         const activeSectionDef = SECTIONS.find(s => s.id === activeSection)!
-        if (activeSectionDef.subTabs.length === 0) return null
+        if (!activeSectionDef.subTabs.length) return null
         return (
           <div className="flex gap-2 px-4 py-2 border-b border-zinc-200 dark:border-zinc-700">
             {activeSectionDef.subTabs.map((sub) => (
