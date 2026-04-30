@@ -36,7 +36,7 @@ decisions:
 metrics:
   duration: "~12 minutes"
   completed: "2026-04-30"
-  tasks_completed: 3
+  tasks_completed: 4
   tasks_total: 4
   files_created: 1
   files_modified: 2
@@ -128,18 +128,17 @@ None. All data flows are wired: suggestTransfers is mocked at the test layer; in
 
 None. Phase 45 introduces no new network endpoints, no new auth paths, no new persistent storage. All new data flows are read-only from already-authenticated existing endpoints (per plan threat model — mitigations T-45-12 confirmed: stable dep arrays [squadData, playersData, lineup, horizon, ftCount, exactSellPrices]).
 
-## Task 4: Human Verification (PENDING)
+## Task 4: Human Verification (APPROVED)
 
-Task 4 is a `checkpoint:human-verify` gate — requires browser visual verification of:
+Visual verification completed by user. Confirmed:
 - Transfer Suggestions section visible below comparison table
-- FtToggle rendering correctly (1 FT active by default)
-- FREE / -4pts / combo suggestion row variants
-- Empty state copy
-- Dark mode token correctness
-- Mobile (360px) responsive layout
+- FtToggle renders correctly (1 FT active by default)
 - Toggle interaction re-runs engine
+- FREE / -4pts / empty state variants render correctly
+- Dark mode tokens correct
+- Mobile responsive layout correct
 
-Status: AWAITING HUMAN APPROVAL
+Status: APPROVED 2026-04-30
 
 ## Self-Check: PASSED
 
