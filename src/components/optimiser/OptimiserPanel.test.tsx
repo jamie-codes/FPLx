@@ -18,6 +18,21 @@ vi.mock('@/lib/hooks/usePlayers', () => ({
   usePlayers: () => usePlayersMock(),
 }))
 
+// Phase 45 mocks
+const useAuthStatusMock = vi.fn()
+const useMyTeamMock = vi.fn()
+const suggestTransfersMock = vi.fn()
+
+vi.mock('@/lib/hooks/useAuthStatus', () => ({
+  useAuthStatus: () => useAuthStatusMock(),
+}))
+vi.mock('@/lib/hooks/useMyTeam', () => ({
+  useMyTeam: (_enabled: boolean) => useMyTeamMock(),
+}))
+vi.mock('@/lib/suggest-transfers', () => ({
+  suggestTransfers: (...args: unknown[]) => suggestTransfersMock(...args),
+}))
+
 // Import AFTER mocks
 import { OptimiserPanel } from './OptimiserPanel'
 
@@ -93,6 +108,14 @@ function makeValidSquad(): { picks: SquadPick[]; players: MergedPlayer[]; squadR
 beforeEach(() => {
   useSquadMock.mockReset()
   usePlayersMock.mockReset()
+  useAuthStatusMock.mockReset()
+  useMyTeamMock.mockReset()
+  suggestTransfersMock.mockReset()
+  // Default: unauthenticated, no my-team data, engine returns []. These defaults make every
+  // existing Phase 44 test pass without modification (the transfer section becomes empty-state).
+  useAuthStatusMock.mockReturnValue({ isAuthenticated: false, isLoading: false })
+  useMyTeamMock.mockReturnValue({ data: undefined })
+  suggestTransfersMock.mockReturnValue([])
 })
 
 describe('Phase 44: OptimiserPanel (comparison table)', () => {
@@ -416,5 +439,163 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
       expect(container.querySelector('[data-testid="bgw-banner-soft"]')).not.toBeNull()
       expect(container.querySelector('[data-testid="comparison-table"]')).not.toBeNull()
     })
+  })
+})
+
+describe('Phase 45: Transfer-aware mode (transfer suggestions)', () => {
+  function setupValidLineup() {
+    const { players, squadResp } = makeValidSquad()
+    useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
+    usePlayersMock.mockReturnValue({ data: players, isLoading: false })
+  }
+
+  it('renders transfer-suggestions-section when lineup is non-null', () => {
+    setupValidLineup()
+    const { container } = render(<OptimiserPanel teamId="1234567" />)
+    expect(container.querySelector('[data-testid="transfer-suggestions-section"]')).not.toBeNull()
+    expect(container.textContent).toContain('Transfer Suggestions')
+  })
+
+  it('FtToggle defaults to "1 FT" with aria-pressed=true on button 1', () => {
+    setupValidLineup()
+    const { container } = render(<OptimiserPanel teamId="1234567" />)
+    const btn1 = container.querySelector('[data-testid="ft-toggle-1"]') as HTMLButtonElement | null
+    const btn2 = container.querySelector('[data-testid="ft-toggle-2"]') as HTMLButtonElement | null
+    expect(btn1).not.toBeNull()
+    expect(btn2).not.toBeNull()
+    expect(btn1!.getAttribute('aria-pressed')).toBe('true')
+    expect(btn2!.getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('clicking "2 FTs" updates aria-pressed and re-invokes suggestTransfers with ftCount=2', () => {
+    setupValidLineup()
+    const { container } = render(<OptimiserPanel teamId="1234567" />)
+    const btn2 = container.querySelector('[data-testid="ft-toggle-2"]') as HTMLButtonElement
+    suggestTransfersMock.mockClear()  // clear initial mount call
+    fireEvent.click(btn2)
+    expect(btn2.getAttribute('aria-pressed')).toBe('true')
+    // suggestTransfers called at least once after the click with ftCount: 2
+    const calls = suggestTransfersMock.mock.calls
+    expect(calls.length).toBeGreaterThan(0)
+    const lastCall = calls[calls.length - 1][0] as { ftCount: 1 | 2 }
+    expect(lastCall.ftCount).toBe(2)
+  })
+
+  it('renders empty state with locked copy when suggestTransfers returns []', () => {
+    setupValidLineup()
+    suggestTransfersMock.mockReturnValue([])
+    const { container } = render(<OptimiserPanel teamId="1234567" />)
+    const empty = container.querySelector('[data-testid="suggestions-empty-state"]')
+    expect(empty).not.toBeNull()
+    expect(empty!.textContent).toBe('Your current squad is already optimal for this horizon.')
+  })
+
+  it('renders FREE single suggestion row with Out/In names, FREE pill, and +X.X xPts; no break-even subline', () => {
+    setupValidLineup()
+    const { players } = makeValidSquad()
+    suggestTransfersMock.mockReturnValue([
+      {
+        kind: 'single',
+        sell: { ...players[0], id: 999, web_name: 'OutGuy' },
+        buy: { ...players[0], id: 1000, web_name: 'InGuy' },
+        cost: 0,
+        xPtsGain: 2.5,
+        xPtsGainPerGw: 2.5,
+        breakEvenGws: null,
+      },
+    ])
+    const { container } = render(<OptimiserPanel teamId="1234567" />)
+    const row = container.querySelector('[data-testid="suggestion-row"]') as HTMLElement
+    expect(row).not.toBeNull()
+    expect(row.getAttribute('data-variant')).toBe('free')
+    expect(row.textContent).toContain('OutGuy')
+    expect(row.textContent).toContain('InGuy')
+    expect(row.textContent).toContain('+2.5 xPts')
+    expect(container.querySelector('[data-testid="cost-pill-free"]')).not.toBeNull()
+    expect(container.querySelector('[data-testid="cost-pill-free"]')!.textContent).toBe('FREE')
+    // FREE rows have no break-even subline
+    expect(container.querySelector('[data-testid="break-even"]')).toBeNull()
+  })
+
+  it('renders -4pts hit single suggestion with break-even subline (plural "GWs" when N > 1)', () => {
+    setupValidLineup()
+    const { players } = makeValidSquad()
+    suggestTransfersMock.mockReturnValue([
+      {
+        kind: 'single',
+        sell: { ...players[0], id: 999, web_name: 'OutHit' },
+        buy: { ...players[0], id: 1000, web_name: 'InHit' },
+        cost: 4,
+        xPtsGain: 3.0,
+        xPtsGainPerGw: 1.0,
+        breakEvenGws: 4,
+      },
+    ])
+    const { container } = render(<OptimiserPanel teamId="1234567" />)
+    const row = container.querySelector('[data-testid="suggestion-row"]') as HTMLElement
+    expect(row.getAttribute('data-variant')).toBe('hit')
+    const pill = container.querySelector('[data-testid="cost-pill-hit"]')
+    expect(pill).not.toBeNull()
+    expect(pill!.textContent).toBe('-4pts')
+    const breakEven = container.querySelector('[data-testid="break-even"]')
+    expect(breakEven).not.toBeNull()
+    expect(breakEven!.textContent).toBe('Breaks even in 4 GWs')
+  })
+
+  it('uses singular "GW" copy when breakEvenGws === 1', () => {
+    setupValidLineup()
+    const { players } = makeValidSquad()
+    suggestTransfersMock.mockReturnValue([
+      {
+        kind: 'single',
+        sell: { ...players[0], id: 999, web_name: 'OutHit' },
+        buy: { ...players[0], id: 1000, web_name: 'InHit' },
+        cost: 4,
+        xPtsGain: 4.5,
+        xPtsGainPerGw: 4.5,
+        breakEvenGws: 1,
+      },
+    ])
+    const { container } = render(<OptimiserPanel teamId="1234567" />)
+    const breakEven = container.querySelector('[data-testid="break-even"]')
+    expect(breakEven).not.toBeNull()
+    expect(breakEven!.textContent).toBe('Breaks even in 1 GW')
+    expect(breakEven!.textContent).not.toContain('GWs')
+  })
+
+  it('does not render transfer-suggestions-section when lineup is null (BGW critical state)', () => {
+    // Force lineup === null by giving 5 BGW players → engine returns null in OptimiserPanel.
+    const { picks } = makeValidSquad()
+    const elementTypes: (1 | 2 | 3 | 4)[] = [1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4]
+    const players: MergedPlayer[] = []
+    for (let i = 0; i < 15; i++) {
+      const id = i + 1
+      const isBgw = [1, 3, 5, 8, 13].includes(id)
+      players.push(makePlayer({ id, element_type: elementTypes[i], xPts_1gw: isBgw ? 0 : 5.0 }))
+    }
+    const squadResp: SquadPicksResponse = {
+      active_chip: null,
+      picks,
+      entry_history: { event: 30, bank: 0, event_transfers: 0, event_transfers_cost: 0, value: 1000 },
+    }
+    useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
+    usePlayersMock.mockReturnValue({ data: players, isLoading: false })
+    const { container } = render(<OptimiserPanel teamId="1234567" />)
+    // Transfer section not rendered in BGW-critical branch
+    expect(container.querySelector('[data-testid="transfer-suggestions-section"]')).toBeNull()
+  })
+
+  it('passes empty Map for sellPrices when unauthenticated (D-11 fallback)', () => {
+    useAuthStatusMock.mockReturnValue({ isAuthenticated: false, isLoading: false })
+    useMyTeamMock.mockReturnValue({ data: undefined })
+    setupValidLineup()
+    suggestTransfersMock.mockClear()
+    render(<OptimiserPanel teamId="1234567" />)
+    // suggestTransfers should have been called at least once with sellPrices being a Map of size 0
+    const calls = suggestTransfersMock.mock.calls
+    expect(calls.length).toBeGreaterThan(0)
+    const params = calls[calls.length - 1][0] as { sellPrices: Map<number, number> }
+    expect(params.sellPrices).toBeInstanceOf(Map)
+    expect(params.sellPrices.size).toBe(0)
   })
 })
