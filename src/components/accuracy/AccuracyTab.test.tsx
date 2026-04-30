@@ -20,31 +20,31 @@ const fixtureBacktest: AccuracyBacktest = {
   gws_covered: [32, 31, 30, 29, 28],
   summary: {
     xpts_hit_rate: 0.42,
-    proj_pts_hit_rate: 0.35,
+
     gws: [
-      { gw: 32, haulter_count: 8, xpts_flagged: 4, proj_pts_flagged: 2, xpts_hit_rate: 0.50, proj_pts_hit_rate: 0.25 },
-      { gw: 31, haulter_count: 6, xpts_flagged: 2, proj_pts_flagged: 3, xpts_hit_rate: 0.33, proj_pts_hit_rate: 0.50 },
-      { gw: 30, haulter_count: 5, xpts_flagged: 1, proj_pts_flagged: 1, xpts_hit_rate: 0.20, proj_pts_hit_rate: 0.20 },
-      { gw: 29, haulter_count: 7, xpts_flagged: 3, proj_pts_flagged: 2, xpts_hit_rate: 0.43, proj_pts_hit_rate: 0.29 },
-      { gw: 28, haulter_count: 4, xpts_flagged: 2, proj_pts_flagged: 1, xpts_hit_rate: 0.50, proj_pts_hit_rate: 0.25 },
+      { gw: 32, haulter_count: 8, xpts_flagged: 4, xpts_hit_rate: 0.50 },
+      { gw: 31, haulter_count: 6, xpts_flagged: 2, xpts_hit_rate: 0.33 },
+      { gw: 30, haulter_count: 5, xpts_flagged: 1, xpts_hit_rate: 0.20 },
+      { gw: 29, haulter_count: 7, xpts_flagged: 3, xpts_hit_rate: 0.43 },
+      { gw: 28, haulter_count: 4, xpts_flagged: 2, xpts_hit_rate: 0.50 },
     ],
   },
   haulters: [
-    { gw: 32, player_id: 1, player_name: 'Salah', actual_pts: 18, xpts_predicted: 8.2, xpts_rank: 2, xpts_flagged: true, proj_pts_predicted: 6.1, proj_pts_rank: 4, proj_pts_flagged: false },
-    { gw: 32, player_id: 2, player_name: 'Haaland', actual_pts: 12, xpts_predicted: 7.5, xpts_rank: 5, xpts_flagged: false, proj_pts_predicted: 7.0, proj_pts_rank: 6, proj_pts_flagged: false },
+    { gw: 32, player_id: 1, player_name: 'Salah', actual_pts: 18, xpts_predicted: 8.2, xpts_rank: 2, xpts_flagged: true },
+    { gw: 32, player_id: 2, player_name: 'Haaland', actual_pts: 12, xpts_predicted: 7.5, xpts_rank: 5, xpts_flagged: false },
   ],
   players: [
     {
       player_id: 1, player_name: 'Salah', team: 'LIV',
       gws: [
-        { gw: 32, actual_pts: 18, xpts_predicted: 8.2, xpts_delta: 9.8, proj_pts_predicted: 6.1, proj_pts_delta: 11.9 },
-        { gw: 31, actual_pts: 2, xpts_predicted: 12.0, xpts_delta: -10.0, proj_pts_predicted: 11.0, proj_pts_delta: -9.0 },
+        { gw: 32, actual_pts: 18, xpts_predicted: 8.2, xpts_delta: 9.8 },
+        { gw: 31, actual_pts: 2, xpts_predicted: 12.0, xpts_delta: -10.0 },
       ],
     },
     {
       player_id: 2, player_name: 'Haaland', team: 'MCI',
       gws: [
-        { gw: 32, actual_pts: 1, xpts_predicted: 9.0, xpts_delta: -8.0, proj_pts_predicted: 8.5, proj_pts_delta: -7.5 },
+        { gw: 32, actual_pts: 1, xpts_predicted: 9.0, xpts_delta: -8.0 },
       ],
     },
   ],

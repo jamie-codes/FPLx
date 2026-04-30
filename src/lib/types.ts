@@ -217,14 +217,11 @@ export interface AccuracyGwSummary {
   gw: number
   haulter_count: number
   xpts_flagged: number
-  proj_pts_flagged: number
   xpts_hit_rate: number   // 0.0-1.0
-  proj_pts_hit_rate: number
 }
 
 export interface AccuracySummary {
   xpts_hit_rate: number
-  proj_pts_hit_rate: number
   gws: AccuracyGwSummary[]
 }
 
@@ -236,9 +233,6 @@ export interface AccuracyHaulter {
   xpts_predicted: number
   xpts_rank: number
   xpts_flagged: boolean
-  proj_pts_predicted: number
-  proj_pts_rank: number
-  proj_pts_flagged: boolean
 }
 
 export interface AccuracyPlayerGw {
@@ -246,8 +240,6 @@ export interface AccuracyPlayerGw {
   actual_pts: number
   xpts_predicted: number
   xpts_delta: number          // actual - predicted; negative = over-prediction
-  proj_pts_predicted: number
-  proj_pts_delta: number
 }
 
 export interface AccuracyPlayer {

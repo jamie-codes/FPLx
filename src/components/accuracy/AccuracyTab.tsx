@@ -61,8 +61,6 @@ function GwSummaryTable({ data }: { data: AccuracyBacktest }) {
             <th scope="col" className={TH_CLS}>Haulters</th>
             <th scope="col" className={TH_CLS}>xPts Flagged</th>
             <th scope="col" className={TH_CLS}>xPts Hit Rate</th>
-            <th scope="col" className={TH_CLS}>proj_pts Flagged</th>
-            <th scope="col" className={TH_CLS}>proj_pts Hit Rate</th>
           </tr>
         </thead>
         <tbody>
@@ -72,8 +70,6 @@ function GwSummaryTable({ data }: { data: AccuracyBacktest }) {
               <td className={TD_CLS}>{r.haulter_count}</td>
               <td className={TD_CLS}>{r.xpts_flagged}</td>
               <td className={TD_CLS}><HitRateBadge rate={r.xpts_hit_rate} /></td>
-              <td className={TD_CLS}>{r.proj_pts_flagged}</td>
-              <td className={TD_CLS}><HitRateBadge rate={r.proj_pts_hit_rate} /></td>
             </tr>
           ))}
           <tr className="font-semibold bg-zinc-50 dark:bg-zinc-800">
@@ -81,8 +77,6 @@ function GwSummaryTable({ data }: { data: AccuracyBacktest }) {
             <td className={TD_CLS}>—</td>
             <td className={TD_CLS}>—</td>
             <td className={TD_CLS}><HitRateBadge rate={data.summary.xpts_hit_rate} /></td>
-            <td className={TD_CLS}>—</td>
-            <td className={TD_CLS}><HitRateBadge rate={data.summary.proj_pts_hit_rate} /></td>
           </tr>
         </tbody>
       </table>
@@ -107,9 +101,6 @@ function HaulterList({ data }: { data: AccuracyBacktest }) {
             <th scope="col" className={TH_CLS}>xPts Pred</th>
             <th scope="col" className={TH_CLS} title="Player's rank by xPts prediction in this GW (lower = higher predicted score)">xPts Rank</th>
             <th scope="col" className={TH_CLS} title="Model predicted this player would score 10+ points in this GW">xPts</th>
-            <th scope="col" className={TH_CLS}>proj_pts Pred</th>
-            <th scope="col" className={TH_CLS} title="Player's rank by proj_pts prediction in this GW">proj_pts Rank</th>
-            <th scope="col" className={TH_CLS} title="Projection model predicted this player would score 10+ points in this GW">proj_pts</th>
           </tr>
         </thead>
         <tbody>
@@ -121,9 +112,6 @@ function HaulterList({ data }: { data: AccuracyBacktest }) {
               <td className={TD_CLS}>{h.xpts_predicted.toFixed(1)}</td>
               <td className={TD_CLS}>{h.xpts_rank}</td>
               <td className={TD_CLS}><FlaggedCell flagged={h.xpts_flagged} /></td>
-              <td className={TD_CLS}>{h.proj_pts_predicted.toFixed(1)}</td>
-              <td className={TD_CLS}>{h.proj_pts_rank}</td>
-              <td className={TD_CLS}><FlaggedCell flagged={h.proj_pts_flagged} /></td>
             </tr>
           ))}
         </tbody>
@@ -139,11 +127,9 @@ type DeltaRow = {
   actual_pts: number
   xpts_predicted: number
   xpts_delta: number
-  proj_pts_predicted: number
-  proj_pts_delta: number
 }
 
-type SortKey = 'player_name' | 'gw' | 'actual_pts' | 'xpts_predicted' | 'xpts_delta' | 'proj_pts_predicted' | 'proj_pts_delta'
+type SortKey = 'player_name' | 'gw' | 'actual_pts' | 'xpts_predicted' | 'xpts_delta'
 type SortDir = 'asc' | 'desc'
 
 function PlayerDeltaTable({ data }: { data: AccuracyBacktest }) {
@@ -161,8 +147,6 @@ function PlayerDeltaTable({ data }: { data: AccuracyBacktest }) {
           actual_pts: g.actual_pts,
           xpts_predicted: g.xpts_predicted,
           xpts_delta: g.xpts_delta,
-          proj_pts_predicted: g.proj_pts_predicted,
-          proj_pts_delta: g.proj_pts_delta,
         })
       }
     }
@@ -213,8 +197,6 @@ function PlayerDeltaTable({ data }: { data: AccuracyBacktest }) {
             <th scope="col" className={sortableHeaderCls('actual_pts')} aria-sort={ariaSort('actual_pts')} onClick={() => handleSort('actual_pts')}>Actual Pts</th>
             <th scope="col" className={sortableHeaderCls('xpts_predicted')} aria-sort={ariaSort('xpts_predicted')} onClick={() => handleSort('xpts_predicted')}>xPts Pred</th>
             <th scope="col" className={sortableHeaderCls('xpts_delta')} aria-sort={ariaSort('xpts_delta')} onClick={() => handleSort('xpts_delta')}>xPts Δ</th>
-            <th scope="col" className={sortableHeaderCls('proj_pts_predicted')} aria-sort={ariaSort('proj_pts_predicted')} onClick={() => handleSort('proj_pts_predicted')}>proj_pts Pred</th>
-            <th scope="col" className={sortableHeaderCls('proj_pts_delta')} aria-sort={ariaSort('proj_pts_delta')} onClick={() => handleSort('proj_pts_delta')}>proj_pts Δ</th>
           </tr>
         </thead>
         <tbody>
@@ -226,8 +208,6 @@ function PlayerDeltaTable({ data }: { data: AccuracyBacktest }) {
               <td className={TD_CLS}>{'​'}{r.actual_pts}{'​'}</td>
               <td className={TD_CLS}>{r.xpts_predicted.toFixed(1)}</td>
               <td className={TD_CLS}><DeltaCell delta={r.xpts_delta} /></td>
-              <td className={TD_CLS}>{r.proj_pts_predicted.toFixed(1)}</td>
-              <td className={TD_CLS}><DeltaCell delta={r.proj_pts_delta} /></td>
             </tr>
           ))}
         </tbody>

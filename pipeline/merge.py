@@ -112,36 +112,6 @@ def _compute_difficulty_scores(bootstrap: dict, fixtures: list) -> dict[int, flo
     return difficulty_scores
 
 
-def _proj_pts_ngw(
-    ppg: float,
-    start_prob: float,
-    fixtures: list,
-    n_gws: int,
-) -> float:
-    """Project points across N upcoming GWs, DGW-aware.
-
-    Groups fixtures by event_id. A DGW produces 2 fixtures in the same
-    event_id group — both contribute to that GW's projected points.
-    BGW gaps are implicit (team simply has no fixture for that GW).
-    """
-    from itertools import groupby
-
-    if not fixtures or ppg == 0 or start_prob == 0:
-        return 0.0
-
-    # Group by event_id (fixtures are pre-sorted by event in merge_players)
-    grouped = []
-    for event_id, group in groupby(fixtures, key=lambda f: f['event_id']):
-        grouped.append((event_id, list(group)))
-
-    total = 0.0
-    for _event_id, gw_fixtures in grouped[:n_gws]:
-        for fix in gw_fixtures:
-            # difficulty_modifier: easy fixtures (low score) -> more expected pts
-            # score 0.0 -> modifier 1.0 (easiest), score 1.0 -> modifier 0.5 (hardest)
-            difficulty_modifier = 1.0 - (fix['difficulty_score'] * 0.5)
-            total += ppg * start_prob * difficulty_modifier
-    return round(total, 2)
 
 
 def _cs_prob(defensive_difficulty: float, xmins: float) -> float:
@@ -242,7 +212,7 @@ def _xpts_ngw(
     windows the second tuple element is None — CONTEXT.md specifies
     xPts_components_1gw only.
 
-    Mirrors _proj_pts_ngw() loop structure (lines 104-133).
+    Mirrors the per-fixture loop pattern.
     """
     from itertools import groupby
 
@@ -797,23 +767,7 @@ def merge_players(
             'fixtures': team_fixtures.get(team_id, []),
         }
 
-        # ---- Projected points (PROJ-01/02/03) ----
-        ep_next = float(element.get('ep_next', 0) or 0)
-        chance = element.get('chance_of_playing_next_round')
-        availability = (chance / 100.0) if chance is not None else 1.0
-        proj_pts_1gw = round(ep_next * availability, 2)
-
-        ppg = float(element.get('points_per_game', 0) or 0)
         player_fixtures = team_fixtures.get(team_id, [])
-
-        # Get start_prob from xmins_stats if available, else estimate from bootstrap
-        if xmins_stats and fpl_id in xmins_stats:
-            sp = xmins_stats[fpl_id]['start_prob']
-        else:
-            sp = (starts / current_gw) if current_gw and starts > 0 else 0.0
-
-        proj_pts_3gw = _proj_pts_ngw(ppg, sp, player_fixtures, 3)
-        proj_pts_5gw = _proj_pts_ngw(ppg, sp, player_fixtures, 5)
 
         # ---- Minutes risk fields (MINS-01) ----
         if xmins_stats and fpl_id in xmins_stats:
@@ -826,9 +780,6 @@ def merge_players(
             player_start_prob = 0.0
             player_mins_risk = 'injured'
 
-        player['proj_pts_1gw'] = proj_pts_1gw
-        player['proj_pts_3gw'] = proj_pts_3gw
-        player['proj_pts_5gw'] = proj_pts_5gw
         player['xmins'] = player_xmins
         player['start_prob'] = player_start_prob
         player['mins_risk'] = player_mins_risk
