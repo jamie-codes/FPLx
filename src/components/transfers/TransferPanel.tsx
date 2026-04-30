@@ -15,13 +15,17 @@ import { CaptaincyPanel } from '@/components/captaincy/CaptaincyPanel'
 import { AuthModal } from '@/components/transfers/AuthModal'
 import { computeAuthExpiryState } from '@/lib/auth-expiry'
 
-export function TransferPanel() {
-  const [teamId, setTeamId] = useState<string>(() =>
-    typeof window !== 'undefined' ? (localStorage.getItem('fpl_team_id') ?? '') : ''
-  )
-  const [submittedId, setSubmittedId] = useState<string | null>(() =>
-    typeof window !== 'undefined' ? localStorage.getItem('fpl_team_id') : null
-  )
+// Phase 43 D-11: teamId / submittedId / onSubmit lifted to page.tsx so OptimiserPanel
+// can receive teamId via props and share the useSquad cache. freeTransfers + isModalOpen
+// remain local — they are not used by OptimiserPanel.
+interface TransferPanelProps {
+  teamId: string
+  onTeamIdChange: (id: string) => void
+  submittedId: string | null
+  onSubmit: () => void
+}
+
+export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }: TransferPanelProps) {
   const [freeTransfers, setFreeTransfers] = useState<number>(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -81,14 +85,6 @@ export function TransferPanel() {
     clearAuthenticated()
   }, [clearAuthenticated])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (teamId.trim()) {
-      setSubmittedId(teamId.trim())
-      localStorage.setItem('fpl_team_id', teamId.trim())
-    }
-  }
-
   const isLoading = squadLoading || playersLoading
 
   return (
@@ -96,7 +92,7 @@ export function TransferPanel() {
       {/* Team ID input + auth */}
       <div className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Load Your Squad</h2>
-        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 sm:items-end">
+        <form onSubmit={(e) => { e.preventDefault(); onSubmit() }} className="flex flex-col sm:flex-row gap-2 sm:items-end">
           <div className="flex flex-col gap-1">
             <label htmlFor="teamId" className="text-sm text-zinc-600 dark:text-zinc-400">
               FPL Team ID
@@ -107,7 +103,7 @@ export function TransferPanel() {
               pattern="[0-9]*"
               inputMode="numeric"
               value={teamId}
-              onChange={e => setTeamId(e.target.value)}
+              onChange={e => onTeamIdChange(e.target.value)}
               placeholder="e.g. 1234567"
               className="border border-zinc-300 dark:border-zinc-600 rounded px-3 py-1.5 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-full sm:w-40"
             />

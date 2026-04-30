@@ -13,7 +13,8 @@ vi.mock('@/components/gem-table/GemTable', () => ({
   ),
 }))
 vi.mock('@/components/defcon/DefConTables', () => ({ DefConTables: () => <div data-testid="defcon" /> }))
-vi.mock('@/components/transfers/TransferPanel', () => ({ TransferPanel: () => <div data-testid="transfer-panel" /> }))
+vi.mock('@/components/transfers/TransferPanel', () => ({ TransferPanel: (_props: { teamId: string; onTeamIdChange: (id: string) => void; submittedId: string | null; onSubmit: () => void }) => <div data-testid="transfer-panel" /> }))
+vi.mock('@/components/optimiser/OptimiserPanel', () => ({ OptimiserPanel: (_props: { teamId: string }) => <div data-testid="optimiser-panel" /> }))
 vi.mock('@/components/club-form/ClubFormTable', () => ({ ClubFormTable: () => <div data-testid="club-form-table" /> }))
 vi.mock('@/components/club-form/FixtureEaseRankingPanel', () => ({ FixtureEaseRankingPanel: () => <div data-testid="fixture-ease" /> }))
 vi.mock('@/components/LastUpdated', () => ({ LastUpdated: () => <div data-testid="last-updated" /> }))
@@ -113,18 +114,30 @@ describe('Phase 36: page.tsx state', () => {
     expect(nav?.textContent).toContain('Planner')
   })
 
-  it('Squad section renders only TransferPanel — no sub-tab content visible (CR-01)', () => {
+  it('Squad section default sub-tab is Transfers; TransferPanel visible, OptimiserPanel hidden, sub-tab nav present (D-05, D-07, D-08)', () => {
     const { container } = render(<Home />)
-    // Navigate to Gems then switch to Squad
     const squadBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Squad')
     fireEvent.click(squadBtn!)
+    // TransferPanel visible (default sub-tab = 'transfers' per D-07)
     expect(container.querySelector('[data-testid="transfer-panel"]')).not.toBeNull()
-    // Sub-tab panels must not render while Squad is active
-    expect(container.querySelector('[data-testid="gem-table"]')).toBeNull()
-    expect(container.querySelector('[data-testid="captain-picks"]')).toBeNull()
-    expect(container.querySelector('[data-testid="defcon"]')).toBeNull()
-    expect(container.querySelector('[data-testid="planner"]')).toBeNull()
-    expect(container.querySelector('[data-testid="insights"]')).toBeNull()
+    // OptimiserPanel NOT visible until user navigates to Optimiser sub-tab
+    expect(container.querySelector('[data-testid="optimiser-panel"]')).toBeNull()
+    // Squad sub-tab nav IS now present (D-08 removed the activeSection !== 'squad' guard)
+    expect(container.querySelector('nav[aria-label="Squad sub-tabs"]')).not.toBeNull()
+    // Sub-tab nav contains both Transfers and Optimiser buttons
+    const subTabs = container.querySelector('nav[aria-label="Squad sub-tabs"]')
+    const subTabBtns = Array.from(subTabs!.querySelectorAll('button')).map(b => b.textContent)
+    expect(subTabBtns).toEqual(['Transfers', 'Optimiser'])
+  })
+
+  it('Squad Optimiser sub-tab shows OptimiserPanel and hides TransferPanel (NAV-01, D-09)', () => {
+    const { container } = render(<Home />)
+    const squadBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Squad')
+    fireEvent.click(squadBtn!)
+    const optimiserBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Optimiser')
+    fireEvent.click(optimiserBtn!)
+    expect(container.querySelector('[data-testid="optimiser-panel"]')).not.toBeNull()
+    expect(container.querySelector('[data-testid="transfer-panel"]')).toBeNull()
   })
 })
 
