@@ -171,6 +171,11 @@ export interface MergedPlayer {
   // from accuracy_backtest.json. Optional — null when player has no backtest entry; absent
   // before Phase 40 pipeline has run. NOT computed by pipeline/merge.py.
   last_gw_actual_pts?: number | null
+  // Form signal (Phase 42 ACC-01): recency-weighted xG+xA per 90 over last 3-5 GWs.
+  // Optional/nullable — null when player has fewer than 3 played GWs or fewer than 270 min in window.
+  // Source: pipeline/merge.py:_compute_form_signal; written by merge_players when summaries dict is provided.
+  form_xgxa_per90?: number | null
+  form_xgxa_window_gws?: number       // count of GWs the form signal spans (3-5); 0 when form_xgxa_per90 is null
 }
 
 // DefCon per-player stats (Phase 4) — populated from pipeline/cache/defcon_stats.json

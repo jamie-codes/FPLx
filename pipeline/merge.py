@@ -21,6 +21,11 @@ CS_PTS = {1: 6, 2: 6, 3: 1, 4: 0}
 # See STATE.md blocker + 28-RESEARCH.md Common Pitfalls Pitfall 1.
 BONUS_RATE = {1: 0.30, 2: 0.40, 3: 0.60, 4: 0.70}
 
+# Phase 42 ACC-01: blend coefficient for form-signal-into-xPts. 0.4 means
+# form contributes 40% of the per-90 input. Tunable via merge_players kwarg —
+# pipeline/run.py reads the runtime value from accuracy_backtest.json.summary.blend_alpha_used.
+BLEND_ALPHA = 0.4
+
 
 def _compute_difficulty_score(team_xga: float, min_xga: float, max_xga: float) -> float:
     """Normalise team xGA to 0.0–1.0 difficulty score.
@@ -298,6 +303,66 @@ def _compute_xpts_sigma(
     return math.sqrt(total_var)
 
 
+def _compute_form_signal(
+    history: list,
+    window_gws: int = 5,
+    min_minutes: int = 270,
+) -> tuple:
+    """Compute recency-weighted xG+xA per-90 over the last window_gws unique rounds (Phase 42 ACC-01).
+
+    Returns (form_xgxa_per90, gws_used) or (None, 0) when insufficient data.
+
+    Insufficient = fewer than 3 played rounds in window, OR sum(minutes) < min_minutes.
+    Rationale: form requires at least 3 GWs of signal; <270 min total is too noisy.
+    Mirrors _compute_regression_signal's data shape (history list from FPL element-summary)
+    but uses recency weighting and per-90 normalisation rather than mean delta.
+
+    Recency weight: linear from 1.0 (most recent round in window) to 0.5 (oldest in window).
+    Linear is inspectable; no backtest evidence supports exotic decay (RESEARCH.md Pitfall 8).
+
+    DGW handling: entries sharing a round are summed (minutes + xG + xA), not double-counted,
+    so n == unique rounds played, not number of history entries.
+    """
+    if not history:
+        return None, 0
+
+    history_sorted = sorted(history, key=lambda h: h['round'])
+    unique_rounds = sorted({h['round'] for h in history_sorted})
+    last_rounds = set(unique_rounds[-window_gws:])
+
+    # DGW aggregation — same shape as accuracy._group_history_by_gw
+    by_round: dict = {}
+    for entry in history_sorted:
+        r = entry.get('round')
+        if r is None or r not in last_rounds:
+            continue
+        agg = by_round.setdefault(r, {'minutes': 0, 'expected_goals': 0.0, 'expected_assists': 0.0})
+        agg['minutes'] += entry.get('minutes', 0) or 0
+        agg['expected_goals'] += float(entry.get('expected_goals', 0) or 0)
+        agg['expected_assists'] += float(entry.get('expected_assists', 0) or 0)
+
+    played = [by_round[r] for r in sorted(by_round.keys()) if by_round[r]['minutes'] > 0]
+    total_mins = sum(p['minutes'] for p in played)
+    if len(played) < 3 or total_mins < min_minutes:
+        return None, 0
+
+    # Linear recency weights: oldest=0.5, most recent=1.0
+    n = len(played)
+    weights = [0.5 + 0.5 * (i / max(n - 1, 1)) for i in range(n)]
+
+    weighted_xgxa = sum(
+        (p['expected_goals'] + p['expected_assists']) * w
+        for p, w in zip(played, weights)
+    )
+    weighted_mins = sum(p['minutes'] * w for p, w in zip(played, weights))
+
+    if weighted_mins <= 0:
+        return None, 0
+
+    form_per90 = round((weighted_xgxa / weighted_mins) * 90, 4)
+    return form_per90, len(played)
+
+
 def _compute_regression_signal(
     history: list,
     window_gws: int = 5,
@@ -466,6 +531,8 @@ def merge_players(
     id_map: dict,
     xmins_stats: dict | None = None,
     summaries: dict | None = None,
+    form_signal_enabled: bool = False,
+    blend_alpha: float = BLEND_ALPHA,
 ) -> tuple[list, dict]:
     """Merge FPL bootstrap + Understat xG/xA into a unified player list.
 
@@ -481,6 +548,15 @@ def merge_players(
         summaries:   Optional dict from run.py mapping player_id (int) -> element-summary
                      response dict. When provided, used to compute pts_last3gw,
                      pts_last5gw, and pts_gw_count for each player. Defaults to None.
+        form_signal_enabled: Phase 42 ACC-01 gate. When True AND a player has a
+                             valid form_xgxa_per90, blend the form signal into
+                             the per-90 inputs of _xpts_ngw before computing
+                             xPts. Default False — preserves baseline.
+        blend_alpha:         Phase 42 ACC-01. Weight of form signal in blended
+                             per-90 (0.0=pure season, 1.0=pure form). Default
+                             BLEND_ALPHA=0.4. run.py overrides this with the
+                             value persisted by accuracy.compute_accuracy_backtest
+                             (which is whatever Plan 02 ships — currently a fixed 0.4).
 
     Returns:
         List of merged player dicts with all D-01 through D-06 fields plus
@@ -784,17 +860,51 @@ def merge_players(
         player['start_prob'] = player_start_prob
         player['mins_risk'] = player_mins_risk
 
+        # ---- Form signal (Phase 42 ACC-01) ----
+        # Recency-weighted xG+xA per-90 over last 3-5 GWs from element-summary history.
+        # Always write the field (None + 0 when insufficient) so MergedPlayer is shape-consistent
+        # across players and downstream consumers can rely on the key being present.
+        # PLACEMENT NOTE: this block sits BEFORE the xPts engine because Task 4 reads
+        # `form_per90` as a local variable inside the engine block to drive the blend.
+        if summaries and fpl_id in summaries:
+            form_per90, form_n_gws = _compute_form_signal(
+                summaries[fpl_id].get('history', [])
+            )
+        else:
+            form_per90, form_n_gws = None, 0
+        player['form_xgxa_per90'] = form_per90
+        player['form_xgxa_window_gws'] = form_n_gws
+
         # ---- xPts engine (Phase 28 DATA-02, XPTS-02, D-01..D-09) ----
+        # Phase 42 ACC-01: optionally blend form signal into per-90 inputs before scoring.
+        # When form_signal_enabled is False OR form_xgxa_per90 is None, use season per-90 unchanged.
+        # When True AND form is available, blend = (1-alpha)*season + alpha*form, then re-split
+        # the blended xGI total proportionally to the season xG/xA ratio so goal-heavy strikers
+        # do not erroneously gain assist points (RESEARCH.md Pitfall 2).
+        xpts_xg_per90 = xg_per90 if xg_per90 is not None else 0.0
+        xpts_xa_per90 = xa_per90 if xa_per90 is not None else 0.0
+        if form_signal_enabled and form_per90 is not None:
+            season_xgxa_per90 = xpts_xg_per90 + xpts_xa_per90
+            blended_xgxa_per90 = (1.0 - blend_alpha) * season_xgxa_per90 + blend_alpha * form_per90
+            if season_xgxa_per90 > 0:
+                xg_share = xpts_xg_per90 / season_xgxa_per90
+                xpts_xg_per90 = blended_xgxa_per90 * xg_share
+                xpts_xa_per90 = blended_xgxa_per90 * (1.0 - xg_share)
+            else:
+                # No season data (promoted-team players) — split 50/50.
+                xpts_xg_per90 = blended_xgxa_per90 * 0.5
+                xpts_xa_per90 = blended_xgxa_per90 * 0.5
+
         xpts_1gw, xpts_components_1gw = _xpts_ngw(
-            xg_per90, xa_per90, player_start_prob, player_xmins,
+            xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 1,
         )
         xpts_3gw, _ = _xpts_ngw(
-            xg_per90, xa_per90, player_start_prob, player_xmins,
+            xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 3,
         )
         xpts_5gw, _ = _xpts_ngw(
-            xg_per90, xa_per90, player_start_prob, player_xmins,
+            xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 5,
         )
         player['xPts_1gw'] = xpts_1gw

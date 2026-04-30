@@ -400,7 +400,20 @@ Plans:
   2. Any new signal is automatically backtested via the existing compute_accuracy_backtest pipeline before being enabled
   3. A new signal only becomes active if backtesting confirms the hit rate improves above 16.7%; otherwise it is disabled and the baseline is preserved
   4. The model reliably surfaces 6-8 pt mid-tier scorers (clean-sheet defenders, assist/bonus accumulators) alongside 10+ haulters in accuracy output
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+
+**Wave 1**
+- [ ] 42-01-PLAN.md - Wave 0 RED test stubs (test_form_signal.py + test_merge.py) + _compute_form_signal helper in merge.py + MergedPlayer form_xgxa_per90/window_gws fields + form_signal_enabled/blend_alpha kwargs + per-90 blend logic in _xpts_ngw inputs (ACC-01)
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 42-02-PLAN.md - Wave 0 RED tests (test_accuracy.py extension + test_run.py NEW) + accuracy.py blended track + mid-tier track + gate flag + run.py gate-read + proj_pts cleanup + AccuracySummary types extension + manual pipeline-run checkpoint (ACC-02, ACC-03, ACC-04)
+**Cross-cutting constraints:**
+- Plan 02 depends on Plan 01: Plan 01 ships the form-signal helper and the blend kwargs in merge_players; Plan 02 ships the gate that decides whether the kwargs flip on
+- BLEND_ALPHA = 0.4 is constant in both files; Plan 02's accuracy.py BLEND_ALPHA must match merge.py's BLEND_ALPHA
+- form-signal reconstruction in accuracy.py uses STRICTLY prior GWs (round < current_gw) to avoid leak (Pitfall 6)
+- Gate margin: GATE_MARGIN_PP = 0.02 (anti-flap); gate flips True only when blended beats baseline by >= 2pp
+- Mid-tier ranking uses TOP_N_PREDICTED_MID = 30 (vs 10 for haulters) so CS defenders / bonus accumulators have a realistic chance of being flagged
+- proj_pts is removed from accuracy.py and test_accuracy.py during Plan 02 (Pitfall 1 cleanup; Phase 41 missed these two files)
 
 ### Phase 43: Lineup Engine & Navigator
 **Goal**: User can see the optimal starting XI, bench order, captain, and vice-captain from their current 15-player squad — scored over a selectable 1/3/5 GW horizon — inside a new Optimiser sub-tab under Squad
@@ -473,7 +486,7 @@ Note: Phase 42 (xPts accuracy) should complete before Phase 43 (lineup engine) s
 | 39. Player Comparison Modal | 3/3 | Complete | 2026-04-29 |
 | 40. Accuracy Pipeline | 3/3 | Complete | 2026-04-29 |
 | 41. Accuracy UI & Model Rationalisation | 3/3 | Complete | 2026-04-30 |
-| 42. xPts Accuracy Improvements | 0/TBD | Not started | - |
+| 42. xPts Accuracy Improvements | 0/2 | Not started | - |
 | 43. Lineup Engine & Navigator | 0/TBD | Not started | - |
 | 44. Comparison Output | 0/TBD | Not started | - |
 | 45. Transfer-Aware Mode | 0/TBD | Not started | - |

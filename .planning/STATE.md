@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Squad Optimiser
-status: roadmap_complete
+status: in_progress
 last_updated: "2026-04-30T00:00:00Z"
-last_activity: "2026-04-30 -- Roadmap created (Phases 42-46)"
+last_activity: "2026-04-30 -- Phase 42 execution started (2 plans)"
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
+  total_plans: 2
   completed_plans: 0
   percent: 0
 ---
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-30 — v1.6 started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.6 Squad Optimiser — Phase 42 ready to plan
+**Current focus:** v1.6 Squad Optimiser — Phase 42 executing
 
 ## Current Position
 
 Phase: 42 of 46 (xPts Accuracy Improvements)
-Plan: —
-Status: Ready to plan
-Last activity: 2026-04-30 — Roadmap created, 5 phases defined (42-46), 19 requirements mapped
+Plan: Wave 1 — Plan 42-01 executing
+Status: In progress (0/2 plans complete)
+Last activity: 2026-04-30 — Phase 42 execution started: 2 plans in 2 waves (Wave 1: form signal + blend; Wave 2: backtest gate + mid-tier + proj_pts cleanup)
 
 Progress: [░░░░░░░░░░] 0%
 
