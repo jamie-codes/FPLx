@@ -9,8 +9,8 @@ progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 2
-  completed_plans: 1
-  percent: 50
+  completed_plans: 2
+  percent: 100
 ---
 
 # Project State
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-04-30 — v1.6 started)
 ## Current Position
 
 Phase: 42 of 46 (xPts Accuracy Improvements)
-Plan: Wave 2 — Plan 42-02 up next
-Status: In progress (1/2 plans complete)
-Last activity: 2026-04-30 — Plan 42-01 complete: _compute_form_signal, blend kwargs, MergedPlayer form fields, 8 tests green
+Plan: Phase 42 complete — all 2 plans done
+Status: Complete (2/2 plans)
+Last activity: 2026-04-30 — Plan 42-02 complete: blended backtest track, gate flag, mid-tier track, proj_pts purge, types.ts forward-compat, live pipeline verified
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -75,5 +75,5 @@ None. DGW xPts aggregation confirmed correct (2026-04-30): `_xpts_ngw` in `pipel
 ## Session Continuity
 
 Last session: 2026-04-30
-Stopped at: Roadmap written for v1.6 (Phases 42-46); ready to plan Phase 42
+Stopped at: Phase 42 complete — both plans shipped and verified
 Resume file: None

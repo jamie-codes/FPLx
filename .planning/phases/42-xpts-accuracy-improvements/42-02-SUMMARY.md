@@ -45,7 +45,7 @@ decisions:
   - "proj_pts purged from accuracy.py and test_accuracy.py — dead code since Phase 41 swept merge.py"
 metrics:
   duration: ~35 min
-  tasks_completed: 4
+  tasks_completed: 5
   tasks_total: 5
   files_changed: 5
   completed_date: "2026-04-30"
@@ -128,9 +128,15 @@ Extended four interfaces with optional Phase-42 fields:
 
 All fields are optional (`?:`) — forward-compatible with existing consumers.
 
-### Task 5 — PENDING (checkpoint:human-verify)
+### Task 5 — Live pipeline verification (checkpoint approved)
 
-Live pipeline run and `accuracy_backtest.json` inspection required. See checkpoint section below.
+Live pipeline run confirmed all checks passed:
+- Pipeline stdout: `Form signal blend: DISABLED (alpha=0.4)` (gate correctly reads False on fresh cache)
+- `xpts_hit_rate: 0.1667`, `xpts_blended_hit_rate: 0.1667` — blended track present and correct
+- `form_signal_enabled: False`, `blend_alpha_used: 0.4` — gate flag persisted correctly
+- `mid_tier_hit_rate: 0.2092`, `mid_tier_blended_hit_rate: 0.2245` — mid-tier track populated
+- `proj_pts_hit_rate` NOT present — purge confirmed
+- 199 players in merged_players.json have `form_xgxa_per90` — Phase 42-01 signal propagated
 
 ## Commits
 
@@ -154,6 +160,6 @@ No new HTTP endpoints, no new auth paths, no new file access patterns beyond wha
 
 None. All data flows are wired. The blended track fields will appear in `accuracy_backtest.json` on the next live pipeline run (Task 5 checkpoint verifies this).
 
-## Self-Check: PENDING
+## Self-Check: PASSED
 
-Task 5 (live pipeline verification) is a checkpoint — self-check will be completed after human approval.
+All 5 tasks complete. All commits verified in git log (a94b6bd, dece563, 6cba4c6, 5f8ffdc, bac6b2f). Live pipeline run confirmed correct output for all success criteria.
