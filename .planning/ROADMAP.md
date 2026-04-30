@@ -8,6 +8,7 @@
 - v1.3 Gameweek Planner (Phases 19-25) - shipped 2026-04-03
 - v1.4 Analytics Engine & Intelligence Layer (Phases 26-35) - shipped 2026-04-29
 - ✅ v1.5 UX & Polish (Phases 36-41) - shipped 2026-04-30
+- v1.6 Squad Optimiser (Phases 42-46) - in progress
 
 ## Phases
 
@@ -42,6 +43,14 @@ See `.planning/milestones/v1.4-ROADMAP.md` for full details.
 See `.planning/milestones/v1.5-ROADMAP.md` for full details.
 
 </details>
+
+### v1.6 Squad Optimiser (In Progress)
+
+- [ ] **Phase 42: xPts Accuracy Improvements** - Form/momentum signal + backtest gate before optimiser ships
+- [ ] **Phase 43: Lineup Engine & Navigator** - Core optimiser engine, best XI, captain/VC, bench order, Squad sub-tabs
+- [ ] **Phase 44: Comparison Output** - Side-by-side current vs optimised lineup with xPts delta and diff headline
+- [ ] **Phase 45: Transfer-Aware Mode** - Factor in free transfers; transfer suggestions with hit break-even indicator
+- [ ] **Phase 46: Chip Modes** - Wildcard, Free Hit, and Bench Boost modes extending the optimiser engine
 
 ## Phase Details
 
@@ -382,28 +391,90 @@ Plans:
 - `last_gw_actual_pts: false` added to `PRESET_COLUMN_VISIBILITY.compact` only — absence from default/analysis maps = visible (TanStack Table convention)
 **UI hint**: yes
 
+### Phase 42: xPts Accuracy Improvements
+**Goal**: The xPts model surfaces in-form players via a recency-weighted signal, and that signal only ships if backtesting proves it lifts the hit rate above the current 16.7% baseline
+**Depends on**: Phase 41 (accuracy pipeline and backtest infrastructure must exist)
+**Requirements**: ACC-01, ACC-02, ACC-03, ACC-04
+**Success Criteria** (what must be TRUE):
+  1. Pipeline computes a recency-weighted form signal (last 3-5 GW xG+xA) per player that can be combined with fixture-based xPts
+  2. Any new signal is automatically backtested via the existing compute_accuracy_backtest pipeline before being enabled
+  3. A new signal only becomes active if backtesting confirms the hit rate improves above 16.7%; otherwise it is disabled and the baseline is preserved
+  4. The model reliably surfaces 6-8 pt mid-tier scorers (clean-sheet defenders, assist/bonus accumulators) alongside 10+ haulters in accuracy output
+**Plans**: TBD
+
+### Phase 43: Lineup Engine & Navigator
+**Goal**: User can see the optimal starting XI, bench order, captain, and vice-captain from their current 15-player squad — scored over a selectable 1/3/5 GW horizon — inside a new Optimiser sub-tab under Squad
+**Depends on**: Phase 42 (improved xPts signal feeds the optimiser from the start)
+**Requirements**: OPT-01, OPT-02, OPT-03, OPT-04, OPT-05, NAV-01
+**Success Criteria** (what must be TRUE):
+  1. User can navigate to Squad > Optimiser via a sub-tab in both desktop and mobile nav
+  2. User can see the best starting XI and bench order from their 15-player squad, with auto-selected formation, scored by xPts
+  3. User can switch between 1 GW, 3 GW, and 5 GW scoring horizons and the lineup updates accordingly
+  4. Captain and vice-captain are clearly identified within the optimised lineup (captain = highest xPts_90th_1gw starter)
+  5. BGW players are excluded from the starting XI and a warning is shown when fewer than 11 eligible starters exist
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 44: Comparison Output
+**Goal**: User can immediately see which players would move between the XI and bench versus their current lineup, and the total xPts gain of the optimised selection
+**Depends on**: Phase 43 (optimiser engine and OptimisedLineup type must exist)
+**Requirements**: CMP-01, CMP-02, CMP-03
+**Success Criteria** (what must be TRUE):
+  1. User can see a side-by-side current vs optimised lineup view with per-slot xPts delta highlighted
+  2. A summary headline shows the number of player changes and the total xPts gain ("Changes: N players | +X.X xPts gain")
+  3. On mobile, the current and optimised lineups stack vertically with a Changes badge; only changed rows are highlighted
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 45: Transfer-Aware Mode
+**Goal**: User can see which transfers would most improve their lineup given their available free transfers, including the cost of each hit and how many gameweeks it takes to break even
+**Depends on**: Phase 43 (optimiser engine) and Phase 44 (comparison UI pattern)
+**Requirements**: TFR-01, TFR-02, TFR-03
+**Success Criteria** (what must be TRUE):
+  1. User can enable transfer-aware mode that factors in 1 or 2 available free transfers when optimising
+  2. User can see a ranked list of transfer suggestions alongside the optimised lineup (Out | In | Cost | xPts gain per suggestion)
+  3. Each suggestion that requires a -4pt hit shows how many gameweeks it takes to break even based on projected xPts gain
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 46: Chip Modes
+**Goal**: User can simulate Wildcard, Free Hit, and Bench Boost decisions from within the optimiser to understand which chip would gain the most points this or upcoming gameweeks
+**Depends on**: Phase 45 (transfer-aware budget tracking is the foundation chip modes extend)
+**Requirements**: CHIP-01, CHIP-02, CHIP-03
+**Success Criteria** (what must be TRUE):
+  1. User can activate Wildcard mode and see the best 15-player squad from all available players (within budget, formation rules, 3-per-club cap), with the best XI highlighted
+  2. User can activate Free Hit mode and see the best single-GW squad from the full player pool, clearly labelled as this-GW-only with a reversion notice
+  3. User can activate Bench Boost mode and see the optimised bench order with expected bench xPts displayed as a dedicated view
+**Plans**: TBD
+**UI hint**: yes
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 26 -> 27 -> 28 -> 29 -> 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41
+Phases execute in numeric order: 42 → 43 → 44 → 45 → 46
 
-Note: Phase 38 (Data Freshness) depends on Phase 36 (nav) but not on Phase 37 (presets) — it can run in parallel with Phase 37 if desired. Phase 40 (Accuracy Pipeline) depends only on Phase 35 and can run in parallel with Phases 36-39 if desired.
+Note: Phase 42 (xPts accuracy) should complete before Phase 43 (lineup engine) so the optimiser uses improved xPts from the start.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 26. Quick Wins | 2/2 | Complete | 2026-04-27 |
 | 27. FDR++ Pipeline | 2/2 | Complete | 2026-04-28 |
 | 28. xPts Engine | 2/2 | Complete | 2026-04-28 |
-| 29. Regression Detector | 2/2 | Complete   | 2026-04-28 |
+| 29. Regression Detector | 2/2 | Complete | 2026-04-28 |
 | 30. Differential Tracker | 2/2 | Complete | 2026-04-28 |
 | 31. Captaincy Ceiling | 2/2 | Complete | 2026-04-28 |
 | 32. Team Target List | 2/2 | Complete | 2026-04-28 |
 | 33. Insights Tab | 2/2 | Complete | 2026-04-28 |
 | 34. Chip Strategy | 2/2 | Complete | 2026-04-28 |
 | 35. Tech Debt Fixes | 2/2 | Complete | 2026-04-29 |
-| 36. Navigation Consolidation | 0/1 | Not started | - |
+| 36. Navigation Consolidation | 1/1 | Complete | 2026-04-29 |
 | 37. GemTable View Presets | 2/2 | Complete | 2026-04-29 |
-| 38. Data Freshness UX | 0/2 | Not started | - |
-| 39. Player Comparison Modal | 0/3 | Not started | - |
+| 38. Data Freshness UX | 2/2 | Complete | 2026-04-29 |
+| 39. Player Comparison Modal | 3/3 | Complete | 2026-04-29 |
 | 40. Accuracy Pipeline | 3/3 | Complete | 2026-04-29 |
-| 41. Accuracy UI & Model Rationalisation | 0/3 | Ready to execute | - |
+| 41. Accuracy UI & Model Rationalisation | 3/3 | Complete | 2026-04-30 |
+| 42. xPts Accuracy Improvements | 0/TBD | Not started | - |
+| 43. Lineup Engine & Navigator | 0/TBD | Not started | - |
+| 44. Comparison Output | 0/TBD | Not started | - |
+| 45. Transfer-Aware Mode | 0/TBD | Not started | - |
+| 46. Chip Modes | 0/TBD | Not started | - |

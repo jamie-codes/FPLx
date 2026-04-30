@@ -70,26 +70,24 @@
 
 ## Traceability
 
-*(Filled by roadmapper)*
-
 | REQ-ID | Phase |
 |--------|-------|
-| OPT-01 | — |
-| OPT-02 | — |
-| OPT-03 | — |
-| OPT-04 | — |
-| OPT-05 | — |
-| CMP-01 | — |
-| CMP-02 | — |
-| CMP-03 | — |
-| TFR-01 | — |
-| TFR-02 | — |
-| TFR-03 | — |
-| CHIP-01 | — |
-| CHIP-02 | — |
-| CHIP-03 | — |
-| NAV-01 | — |
-| ACC-01 | — |
-| ACC-02 | — |
-| ACC-03 | — |
-| ACC-04 | — |
+| OPT-01 | Phase 43 |
+| OPT-02 | Phase 43 |
+| OPT-03 | Phase 43 |
+| OPT-04 | Phase 43 |
+| OPT-05 | Phase 43 |
+| CMP-01 | Phase 44 |
+| CMP-02 | Phase 44 |
+| CMP-03 | Phase 44 |
+| TFR-01 | Phase 45 |
+| TFR-02 | Phase 45 |
+| TFR-03 | Phase 45 |
+| CHIP-01 | Phase 46 |
+| CHIP-02 | Phase 46 |
+| CHIP-03 | Phase 46 |
+| NAV-01 | Phase 43 |
+| ACC-01 | Phase 42 |
+| ACC-02 | Phase 42 |
+| ACC-03 | Phase 42 |
+| ACC-04 | Phase 42 |

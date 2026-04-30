@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Squad Optimiser
-status: planning
+status: roadmap_complete
 last_updated: "2026-04-30T00:00:00Z"
-last_activity: "2026-04-30 -- Milestone v1.6 started"
+last_activity: "2026-04-30 -- Roadmap created (Phases 42-46)"
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,17 +17,19 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-29 — v1.5 started)
+See: .planning/PROJECT.md (updated 2026-04-30 — v1.6 started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.5 complete — ready for next milestone (/gsd-new-milestone)
+**Current focus:** v1.6 Squad Optimiser — Phase 42 ready to plan
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 42 of 46 (xPts Accuracy Improvements)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-30 — Milestone v1.6 started
+Status: Ready to plan
+Last activity: 2026-04-30 — Roadmap created, 5 phases defined (42-46), 19 requirements mapped
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -54,13 +56,13 @@ Last activity: 2026-04-30 — Milestone v1.6 started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [v1.4 complete]: All 10 phases shipped; 7 tech-debt items resolved; analytics/intelligence layer complete
-- [v1.5 scope]: Tab consolidation — address 9+ tabs overwhelm with 3-section hierarchy (Analyse/Plan/Squad)
-- [v1.5 scope]: GemTable view presets — Default/Compact/Analysis toggle, session-persistent
-- [v1.5 scope]: Player comparison panel — side-by-side xPts/Gem/fixtures/signals modal from GemTable rows
-- [v1.5 scope]: Data freshness UX — always-visible "Updated X ago" relative time on every tab
-- [v1.5 scope]: Projection accuracy — pipeline backtest (Phase 40) before accuracy UI (Phase 41); ACC-06 removes weaker model
-- [Phase 38 decisions]: relativeTime prop (not timestamp) on LastUpdatedDisplay; 30s tick interval; D-02 no prefix, colour-only stale signal
+- [v1.5 complete]: All 6 phases shipped; proj_pts removed (xPts 16.7% vs 9.0% hit rate); 3-section nav in place
+- [v1.6 scope]: ACC phases ship before OPT engine — ensures optimiser uses improved xPts from the start
+- [v1.6 scope]: NAV-01 (Squad sub-tabs) ships in Phase 43 alongside the OptimiserPanel that requires it
+- [v1.6 scope]: CHIP modes (Phase 46) depend on TFR budget tracking (Phase 45) — not standalone
+- [Research]: No new npm/pip deps needed; best-11 = C(15,11)=1,365 subsets, pure TS enumeration <1ms
+- [Research]: Wildcard/Free Hit chip modes extend optimiseLineup with chipMode param; never fork the engine
+- [Research]: Budget arithmetic: always integer tenths; use selling_price (not now_cost) in transfer-aware mode
 
 ### Pending Todos
 
@@ -68,10 +70,10 @@ None.
 
 ### Blockers/Concerns
 
-Code review WR-01/WR-02 open: first-paint blank flash and NaN input guard. Advisory — not blocking.
+- Confirm xPts_1gw aggregates over all fixtures in a DGW (not just first fixture) before Phase 43 starts. If single-fixture only, pipeline fix is needed upstream.
 
 ## Session Continuity
 
-Last session: 2026-04-30T08:55:03.611Z
-Stopped at: context exhaustion at 75% (2026-04-30)
+Last session: 2026-04-30
+Stopped at: Roadmap written for v1.6 (Phases 42-46); ready to plan Phase 42
 Resume file: None
