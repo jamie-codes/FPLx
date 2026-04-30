@@ -425,7 +425,15 @@ Plans:
   3. User can switch between 1 GW, 3 GW, and 5 GW scoring horizons and the lineup updates accordingly
   4. Captain and vice-captain are clearly identified within the optimised lineup (captain = highest xPts_90th_1gw starter)
   5. BGW players are excluded from the starting XI and a warning is shown when fewer than 11 eligible starters exist
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+
+**Wave 1**
+- [ ] 43-01-PLAN.md — Engine + types + Wave 0 RED test stubs + OptimiserPanel stub (OPT-01..OPT-05 logic layer)
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 43-02-PLAN.md — Atomic nav wiring: Squad sub-tabs + teamId state lift + TransferPanel controlled refactor + test contract updates (NAV-01)
+**Wave 3** *(blocked on Wave 2 completion; autonomous: false)*
+- [ ] 43-03-PLAN.md — OptimiserPanel pitch UI + horizon toggle + (C)/(VC) badges + bench row + BGW handling + RTL tests + human-verify (OPT-01..OPT-05)
 **UI hint**: yes
 
 ### Phase 44: Comparison Output
@@ -487,7 +495,7 @@ Note: Phase 42 (xPts accuracy) should complete before Phase 43 (lineup engine) s
 | 40. Accuracy Pipeline | 3/3 | Complete | 2026-04-29 |
 | 41. Accuracy UI & Model Rationalisation | 3/3 | Complete | 2026-04-30 |
 | 42. xPts Accuracy Improvements | 2/2 | Complete | 2026-04-30 |
-| 43. Lineup Engine & Navigator | 0/TBD | Not started | - |
+| 43. Lineup Engine & Navigator | 0/3 | Not started | - |
 | 44. Comparison Output | 0/TBD | Not started | - |
 | 45. Transfer-Aware Mode | 0/TBD | Not started | - |
 | 46. Chip Modes | 0/TBD | Not started | - |
