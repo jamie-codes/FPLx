@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Squad Optimiser
-status: planning
-last_updated: "2026-04-30T00:00:00Z"
-last_activity: "2026-04-30 -- Phase 42 complete (2/2 plans)"
+status: executing
+stopped_at: Phase 43 context gathered
+last_updated: "2026-04-30T15:38:56.204Z"
+last_activity: 2026-04-30 -- Phase 43 planning complete
 progress:
-  total_phases: 5
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 100
+  total_phases: 21
+  completed_phases: 17
+  total_plans: 39
+  completed_plans: 36
+  percent: 92
 ---
 
 # Project State
@@ -24,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-30 — v1.6 started)
 
 ## Current Position
 
-Phase: 42 of 46 (xPts Accuracy Improvements)
-Plan: Phase 42 complete — all 2 plans done
-Status: Complete (2/2 plans)
-Last activity: 2026-04-30 — Plan 42-02 complete: blended backtest track, gate flag, mid-tier track, proj_pts purge, types.ts forward-compat, live pipeline verified
+Phase: 43 of 46 (Lineup Engine & Navigator)
+Plan: Phase 43 context gathered — ready for planning
+Status: Ready to execute
+Last activity: 2026-04-30 -- Phase 43 planning complete
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -75,5 +76,5 @@ None. DGW xPts aggregation confirmed correct (2026-04-30): `_xpts_ngw` in `pipel
 ## Session Continuity
 
 Last session: 2026-04-30
-Stopped at: Phase 42 complete — both plans shipped and verified
-Resume file: None
+Stopped at: Phase 43 context gathered
+Resume file: .planning/phases/43-lineup-engine-navigator/43-CONTEXT.md
