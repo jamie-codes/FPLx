@@ -5,7 +5,7 @@ milestone_name: Squad Optimiser
 status: executing
 stopped_at: context exhaustion at 80% (2026-04-30)
 last_updated: "2026-04-30T18:59:43.314Z"
-last_activity: 2026-04-30 -- Phase 44 planned (1 plan, verification passed)
+last_activity: 2026-04-30 -- Phase 45 planned (3 plans, verification passed)
 progress:
   total_phases: 21
   completed_phases: 19
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-30 — v1.6 started)
 
 ## Current Position
 
-Phase: 44 of 46 (Comparison Output)
-Plan: 1 of 1 — COMPLETE
-Status: Phase 44 complete — all 3 tasks done (Tasks 1+2 automated, Task 3 human-verify approved)
-Last activity: 2026-04-30 -- Phase 44 Plan 01 complete; human visual verification approved
+Phase: 45 of 46 (Transfer-Aware Mode)
+Plan: 0 of 3 — READY TO EXECUTE
+Status: Phase 45 planned — 3 plans across 3 waves (Wave 0: test stubs + types, Wave 1: engine, Wave 2: UI)
+Last activity: 2026-04-30 -- Phase 45 planned (3 plans, verification passed)
 
 Progress: [██████████] 100%
 

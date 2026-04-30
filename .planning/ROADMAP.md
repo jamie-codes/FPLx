@@ -459,7 +459,15 @@ Plans:
   1. User can enable transfer-aware mode that factors in 1 or 2 available free transfers when optimising
   2. User can see a ranked list of transfer suggestions alongside the optimised lineup (Out | In | Cost | xPts gain per suggestion)
   3. Each suggestion that requires a -4pt hit shows how many gameweeks it takes to break even based on projected xPts gain
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+
+**Wave 0**
+- [ ] 45-01-PLAN.md — Wave 0 RED test stubs + skeleton suggest-transfers.ts + TransferSuggestion type (TFR-01, TFR-02, TFR-03)
+**Wave 1** *(blocked on Wave 0 completion)*
+- [ ] 45-02-PLAN.md — Real suggestTransfers engine (top-30 pool, budget filter, break-even, 2-FT combo) + OptimiserPanel housekeeping (HORIZON_FIELD import + CR-01 bounds fix) (TFR-01, TFR-02, TFR-03)
+**Wave 2** *(blocked on Wave 1 completion; autonomous: false)*
+- [ ] 45-03-PLAN.md — FtToggle component + OptimiserPanel transfer section JSX + 9 RTL test cases + human visual verify (TFR-01, TFR-02, TFR-03)
 **UI hint**: yes
 
 ### Phase 46: Chip Modes
