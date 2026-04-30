@@ -6,7 +6,7 @@ predictions_snapshot.json (current GW projections for future backtest replay).
 
 Locked decisions honoured (per .planning/phases/40-accuracy-pipeline/40-CONTEXT.md):
   D-01 last 5 finished GWs, D-02 history-based xG/xA, D-03 FPL 1-5 -> 0-1 difficulty,
-  D-04 binary start_prob (>=45 min), D-05/D-06 rolling-PPG proj_pts reconstruction,
+  D-04 binary start_prob (>=45 min),
   D-07/D-08 output shape, D-09 haulter threshold = 10, D-10 top-10 = "flagged",
   D-11/D-12 snapshot file shape.
 
@@ -23,9 +23,15 @@ from collections import defaultdict
 from datetime import datetime, timezone
 
 HAULTER_THRESHOLD = 10       # D-09: actual_pts >= 10 -> haulter
+MID_TIER_THRESHOLD = 6       # Phase 42 ACC-04: 6 <= actual_pts < 10 -> mid-tier scorer
 TOP_N_PREDICTED = 10         # D-10: rank within top 10 -> "flagged"
+TOP_N_PREDICTED_MID = 30     # Phase 42 ACC-04: top-30 net for mid-tier (CS defenders, bonus accumulators)
 BACKTEST_GWS = 5             # D-01: last 5 finished GWs
 MIN_MINUTES = 10             # Claude's Discretion: skip <10-min entries (filters DNPs and noise from late subs)
+GATE_MARGIN_PP = 0.02        # Phase 42 ACC-03 / Pitfall 3: require 2pp margin to flip gate (anti-flap)
+BLEND_ALPHA = 0.4            # Phase 42 ACC-01: form-signal blend coefficient (matches merge.BLEND_ALPHA)
+FORM_WINDOW_GWS = 5          # Phase 42 ACC-01: same window as merge._compute_form_signal default
+FORM_MIN_MINUTES = 270       # Phase 42 ACC-01: same minutes floor as merge._compute_form_signal default
 
 
 # ============================================================================
@@ -73,7 +79,7 @@ def compute_accuracy_backtest(
     # First pass: build per-player, per-GW reconstructed predictions.
     # We need this BEFORE ranking because ranking happens per-GW across all players.
     # Structure: per_gw_rows[gw] -> list of dicts { player_id, name, team_short,
-    #     element_type, actual_pts, minutes, xpts_predicted, proj_pts_predicted }
+    #     element_type, actual_pts, minutes, xpts_predicted, xpts_blended_predicted, proj_pts_predicted }
     per_gw_rows: dict = {gw: [] for gw in target_gws}
 
     for element in bootstrap.get('elements', []):
@@ -106,6 +112,12 @@ def compute_accuracy_backtest(
 
             xpts_predicted = _reconstruct_xpts(entry, element_type, difficulty_score)
 
+            # Phase 42 ACC-02: blended xPts using strictly prior-GW form signal (no leak)
+            form_per90_at_gw = _reconstruct_form_signal(grouped, gw)
+            xpts_blended_predicted = _reconstruct_xpts_with_form(
+                entry, element_type, difficulty_score, form_per90_at_gw,
+            )
+
             # D-05: prior 5 GW window (entries strictly before `gw`)
             prior_entries = [grouped[g] for g in sorted(grouped.keys()) if g < gw]
             prior_window = prior_entries[-5:]
@@ -118,7 +130,8 @@ def compute_accuracy_backtest(
                 'element_type': element_type,
                 'actual_pts': actual_pts,
                 'xpts_predicted': xpts_predicted,
-                'proj_pts_predicted': proj_pts_predicted,
+                'xpts_blended_predicted': xpts_blended_predicted,    # Phase 42
+                'proj_pts_predicted': proj_pts_predicted,            # legacy (Task 3 removes)
             })
 
     # Second pass: per-GW ranking and haulter flagging
@@ -126,7 +139,12 @@ def compute_accuracy_backtest(
     gw_summaries: list = []
     total_haulters = 0
     total_xpts_flagged = 0
-    total_proj_flagged = 0
+    total_xpts_blended_flagged = 0   # Phase 42 ACC-02
+    total_proj_flagged = 0           # legacy — Task 3 removes
+    # Phase 42 ACC-04 mid-tier
+    total_mid_tier = 0
+    total_xpts_mid_flagged = 0
+    total_xpts_blended_mid_flagged = 0
 
     for gw in target_gws_desc:
         rows = per_gw_rows.get(gw, [])
@@ -135,9 +153,16 @@ def compute_accuracy_backtest(
                 'gw': gw,
                 'haulter_count': 0,
                 'xpts_flagged': 0,
-                'proj_pts_flagged': 0,
+                'xpts_blended_flagged': 0,                # Phase 42
+                'proj_pts_flagged': 0,                    # legacy
                 'xpts_hit_rate': 0.0,
-                'proj_pts_hit_rate': 0.0,
+                'xpts_blended_hit_rate': 0.0,             # Phase 42
+                'proj_pts_hit_rate': 0.0,                 # legacy
+                'mid_tier_count': 0,                      # Phase 42 ACC-04
+                'xpts_mid_flagged': 0,                    # Phase 42 ACC-04
+                'xpts_blended_mid_flagged': 0,            # Phase 42 ACC-04
+                'mid_tier_hit_rate': 0.0,                 # Phase 42 ACC-04
+                'mid_tier_blended_hit_rate': 0.0,         # Phase 42 ACC-04
             })
             continue
 
@@ -147,21 +172,37 @@ def compute_accuracy_backtest(
         xpts_rank_by_id = {r['player_id']: i + 1 for i, r in enumerate(xpts_ranked)}
         proj_rank_by_id = {r['player_id']: i + 1 for i, r in enumerate(proj_ranked)}
 
+        # Phase 42 ACC-02: blended ranking
+        xpts_blended_ranked = sorted(rows, key=lambda r: r['xpts_blended_predicted'], reverse=True)
+        xpts_blended_rank_by_id = {r['player_id']: i + 1 for i, r in enumerate(xpts_blended_ranked)}
+
         gw_haulters = [r for r in rows if r['actual_pts'] >= HAULTER_THRESHOLD]
         haulter_count = len(gw_haulters)
+
+        # Phase 42 ACC-04: mid-tier subset (6 <= actual_pts < 10)
+        gw_mid_tier = [r for r in rows if MID_TIER_THRESHOLD <= r['actual_pts'] < HAULTER_THRESHOLD]
+        mid_tier_count = len(gw_mid_tier)
+        xpts_mid_flagged_count = 0
+        xpts_blended_mid_flagged_count = 0
+
         xpts_flagged_count = 0
-        proj_flagged_count = 0
+        xpts_blended_flagged_count = 0    # Phase 42 ACC-02
+        proj_flagged_count = 0            # legacy
 
         for r in gw_haulters:
             pid = r['player_id']
             xrank = xpts_rank_by_id.get(pid, 9999)
+            xbrank = xpts_blended_rank_by_id.get(pid, 9999)   # Phase 42
             prank = proj_rank_by_id.get(pid, 9999)
             xflagged = xrank <= TOP_N_PREDICTED
+            xbflagged = xbrank <= TOP_N_PREDICTED              # Phase 42
             pflagged = prank <= TOP_N_PREDICTED
             if xflagged:
                 xpts_flagged_count += 1
+            if xbflagged:
+                xpts_blended_flagged_count += 1                 # Phase 42
             if pflagged:
-                proj_flagged_count += 1
+                proj_flagged_count += 1                         # legacy
             haulters.append({
                 'gw': gw,
                 'player_id': pid,
@@ -170,26 +211,51 @@ def compute_accuracy_backtest(
                 'xpts_predicted': r['xpts_predicted'],
                 'xpts_rank': xrank,
                 'xpts_flagged': xflagged,
-                'proj_pts_predicted': r['proj_pts_predicted'],
-                'proj_pts_rank': prank,
-                'proj_pts_flagged': pflagged,
+                'xpts_blended_predicted': r['xpts_blended_predicted'],    # Phase 42
+                'xpts_blended_rank': xbrank,                              # Phase 42
+                'xpts_blended_flagged': xbflagged,                        # Phase 42
+                'proj_pts_predicted': r['proj_pts_predicted'],            # legacy
+                'proj_pts_rank': prank,                                   # legacy
+                'proj_pts_flagged': pflagged,                             # legacy
             })
 
+        # Phase 42 ACC-04: flag mid-tier scorers using TOP_N_PREDICTED_MID = 30
+        for r in gw_mid_tier:
+            pid = r['player_id']
+            if xpts_rank_by_id.get(pid, 9999) <= TOP_N_PREDICTED_MID:
+                xpts_mid_flagged_count += 1
+            if xpts_blended_rank_by_id.get(pid, 9999) <= TOP_N_PREDICTED_MID:
+                xpts_blended_mid_flagged_count += 1
+
         xpts_hit = xpts_flagged_count / haulter_count if haulter_count > 0 else 0.0
+        xpts_blended_hit = xpts_blended_flagged_count / haulter_count if haulter_count > 0 else 0.0
         proj_hit = proj_flagged_count / haulter_count if haulter_count > 0 else 0.0
+        mid_tier_hit = xpts_mid_flagged_count / mid_tier_count if mid_tier_count > 0 else 0.0
+        mid_tier_blended_hit = xpts_blended_mid_flagged_count / mid_tier_count if mid_tier_count > 0 else 0.0
 
         gw_summaries.append({
             'gw': gw,
             'haulter_count': haulter_count,
             'xpts_flagged': xpts_flagged_count,
-            'proj_pts_flagged': proj_flagged_count,
+            'xpts_blended_flagged': xpts_blended_flagged_count,            # Phase 42
+            'proj_pts_flagged': proj_flagged_count,                        # legacy
             'xpts_hit_rate': round(xpts_hit, 4),
-            'proj_pts_hit_rate': round(proj_hit, 4),
+            'xpts_blended_hit_rate': round(xpts_blended_hit, 4),           # Phase 42
+            'proj_pts_hit_rate': round(proj_hit, 4),                       # legacy
+            'mid_tier_count': mid_tier_count,                              # Phase 42 ACC-04
+            'xpts_mid_flagged': xpts_mid_flagged_count,                    # Phase 42 ACC-04
+            'xpts_blended_mid_flagged': xpts_blended_mid_flagged_count,    # Phase 42 ACC-04
+            'mid_tier_hit_rate': round(mid_tier_hit, 4),                   # Phase 42 ACC-04
+            'mid_tier_blended_hit_rate': round(mid_tier_blended_hit, 4),   # Phase 42 ACC-04
         })
 
         total_haulters += haulter_count
         total_xpts_flagged += xpts_flagged_count
-        total_proj_flagged += proj_flagged_count
+        total_xpts_blended_flagged += xpts_blended_flagged_count   # Phase 42
+        total_proj_flagged += proj_flagged_count                   # legacy
+        total_mid_tier += mid_tier_count                           # Phase 42 ACC-04
+        total_xpts_mid_flagged += xpts_mid_flagged_count           # Phase 42 ACC-04
+        total_xpts_blended_mid_flagged += xpts_blended_mid_flagged_count   # Phase 42 ACC-04
 
     # Per-player history (Claude's Discretion: positive delta = surprise haul -> actual - predicted)
     per_player: dict = {}
@@ -208,19 +274,32 @@ def compute_accuracy_backtest(
                 'actual_pts': r['actual_pts'],
                 'xpts_predicted': r['xpts_predicted'],
                 'xpts_delta': round(r['actual_pts'] - r['xpts_predicted'], 2),
-                'proj_pts_predicted': r['proj_pts_predicted'],
-                'proj_pts_delta': round(r['actual_pts'] - r['proj_pts_predicted'], 2),
+                'xpts_blended_predicted': r['xpts_blended_predicted'],                          # Phase 42
+                'xpts_blended_delta': round(r['actual_pts'] - r['xpts_blended_predicted'], 2),  # Phase 42
+                'proj_pts_predicted': r['proj_pts_predicted'],                                  # legacy
+                'proj_pts_delta': round(r['actual_pts'] - r['proj_pts_predicted'], 2),          # legacy
             })
 
     overall_xpts_hit = total_xpts_flagged / total_haulters if total_haulters > 0 else 0.0
+    overall_xpts_blended_hit = total_xpts_blended_flagged / total_haulters if total_haulters > 0 else 0.0
     overall_proj_hit = total_proj_flagged / total_haulters if total_haulters > 0 else 0.0
+    overall_mid_tier_hit = total_xpts_mid_flagged / total_mid_tier if total_mid_tier > 0 else 0.0
+    overall_mid_tier_blended_hit = total_xpts_blended_mid_flagged / total_mid_tier if total_mid_tier > 0 else 0.0
+
+    # Phase 42 ACC-03: gate flag — blended must beat baseline by STRICTLY MORE THAN GATE_MARGIN_PP (2pp). Strict `>` per PATTERNS.md and RESEARCH.md Pitfall 3 (anti-flap).
+    form_signal_enabled = (overall_xpts_blended_hit - overall_xpts_hit) > GATE_MARGIN_PP
 
     return {
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'gws_covered': target_gws_desc,
         'summary': {
             'xpts_hit_rate': round(overall_xpts_hit, 4),
-            'proj_pts_hit_rate': round(overall_proj_hit, 4),
+            'xpts_blended_hit_rate': round(overall_xpts_blended_hit, 4),         # Phase 42 ACC-02
+            'form_signal_enabled': form_signal_enabled,                          # Phase 42 ACC-03
+            'blend_alpha_used': BLEND_ALPHA,                                     # Phase 42 ACC-03
+            'mid_tier_hit_rate': round(overall_mid_tier_hit, 4),                 # Phase 42 ACC-04
+            'mid_tier_blended_hit_rate': round(overall_mid_tier_blended_hit, 4), # Phase 42 ACC-04
+            'proj_pts_hit_rate': round(overall_proj_hit, 4),                     # legacy — Task 3 removes
             'gws': gw_summaries,
         },
         'haulters': haulters,
@@ -261,7 +340,16 @@ def _empty_backtest() -> dict:
     return {
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'gws_covered': [],
-        'summary': {'xpts_hit_rate': 0.0, 'proj_pts_hit_rate': 0.0, 'gws': []},
+        'summary': {
+            'xpts_hit_rate': 0.0,
+            'xpts_blended_hit_rate': 0.0,             # Phase 42
+            'form_signal_enabled': False,             # Phase 42
+            'blend_alpha_used': BLEND_ALPHA,          # Phase 42
+            'mid_tier_hit_rate': 0.0,                 # Phase 42
+            'mid_tier_blended_hit_rate': 0.0,         # Phase 42
+            'proj_pts_hit_rate': 0.0,                 # legacy
+            'gws': [],
+        },
         'haulters': [],
         'players': [],
     }
@@ -319,6 +407,101 @@ def _reconstruct_xpts(entry: dict, element_type: int, difficulty_score: float) -
     result = _compute_xpts_fixture(
         xg_per90=xg_per90,
         xa_per90=xa_per90,
+        start_prob=start_prob,
+        xmins=xmins,
+        element_type=element_type,
+        defensive_difficulty=difficulty_score,
+    )
+    return round(result['total'], 2)
+
+
+def _reconstruct_form_signal(
+    grouped: dict,
+    current_gw: int,
+    window_gws: int = FORM_WINDOW_GWS,
+    min_minutes: int = FORM_MIN_MINUTES,
+) -> 'float | None':
+    """Reconstruct the form signal at GW `current_gw` from STRICTLY PRIOR rounds (Phase 42 ACC-02).
+
+    `grouped` is the output of _group_history_by_gw — DGW already aggregated.
+    We must NOT include `current_gw` itself: the player's GW-N actuals are the
+    thing we are predicting; including them is a leak (Pitfall 6).
+
+    Returns None when fewer than 3 prior played GWs exist in the window or
+    total minutes < min_minutes. Otherwise returns recency-weighted xG+xA
+    per-90 (linear weights 0.5..1.0, oldest..most recent).
+
+    Mirrors merge._compute_form_signal but operates on grouped dict + GW filter.
+    """
+    prior_gws = [g for g in sorted(grouped.keys()) if g < current_gw]
+    if not prior_gws:
+        return None
+    last_gws = prior_gws[-window_gws:]
+    played = [grouped[g] for g in last_gws if grouped[g]['minutes'] > 0]
+    total_mins = sum(p['minutes'] for p in played)
+    if len(played) < 3 or total_mins < min_minutes:
+        return None
+
+    n = len(played)
+    weights = [0.5 + 0.5 * (i / max(n - 1, 1)) for i in range(n)]
+    weighted_xgxa = sum(
+        (p['expected_goals'] + p['expected_assists']) * w
+        for p, w in zip(played, weights)
+    )
+    weighted_mins = sum(p['minutes'] * w for p, w in zip(played, weights))
+    if weighted_mins <= 0:
+        return None
+    return round((weighted_xgxa / weighted_mins) * 90, 4)
+
+
+def _reconstruct_xpts_with_form(
+    entry: dict,
+    element_type: int,
+    difficulty_score: float,
+    form_per90: 'float | None',
+    blend_alpha: float = BLEND_ALPHA,
+) -> float:
+    """Reconstruct xPts with optional form blend (Phase 42 ACC-02).
+
+    When form_per90 is None, identical to _reconstruct_xpts (graceful fallback).
+    When form_per90 is provided, blends season per-90 (derived from this
+    entry's xG/xA/minutes) with form per-90 using:
+        blended_xgxa = (1-alpha)*season + alpha*form
+    Then re-splits proportionally to the season xG/xA ratio (50/50 fallback
+    for zero-season players) so goal-heavy strikers do not gain assists
+    and vice versa (Pitfall 2).
+    """
+    if form_per90 is None:
+        return _reconstruct_xpts(entry, element_type, difficulty_score)
+
+    from merge import _compute_xpts_fixture
+
+    minutes = entry.get('minutes', 0) or 0
+    if minutes <= 0:
+        return 0.0
+    start_prob = 1.0 if minutes >= 45 else 0.0
+    if start_prob == 0.0:
+        return 0.0
+
+    xg = float(entry.get('expected_goals', 0) or 0)
+    xa = float(entry.get('expected_assists', 0) or 0)
+    xg_per90 = (xg / minutes) * 90 if minutes > 0 else 0.0
+    xa_per90 = (xa / minutes) * 90 if minutes > 0 else 0.0
+    season_xgxa_per90 = xg_per90 + xa_per90
+
+    blended_xgxa_per90 = (1.0 - blend_alpha) * season_xgxa_per90 + blend_alpha * form_per90
+    if season_xgxa_per90 > 0:
+        xg_share = xg_per90 / season_xgxa_per90
+        blended_xg_per90 = blended_xgxa_per90 * xg_share
+        blended_xa_per90 = blended_xgxa_per90 * (1.0 - xg_share)
+    else:
+        blended_xg_per90 = blended_xgxa_per90 * 0.5
+        blended_xa_per90 = blended_xgxa_per90 * 0.5
+
+    xmins = start_prob * float(minutes)
+    result = _compute_xpts_fixture(
+        xg_per90=blended_xg_per90,
+        xa_per90=blended_xa_per90,
         start_prob=start_prob,
         xmins=xmins,
         element_type=element_type,
