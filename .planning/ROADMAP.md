@@ -444,7 +444,11 @@ Plans:
   1. User can see a side-by-side current vs optimised lineup view with per-slot xPts delta highlighted
   2. A summary headline shows the number of player changes and the total xPts gain ("Changes: N players | +X.X xPts gain")
   3. On mobile, the current and optimised lineups stack vertically with a Changes badge; only changed rows are highlighted
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+
+**Wave 1** *(autonomous: false — human-verify checkpoint at end)*
+- [ ] 44-01-PLAN.md — Replace pitch UI in OptimiserPanel with position-grouped comparison table + headline row + mobile card stack; rewrite tests for CMP-01/02/03 (CMP-01, CMP-02, CMP-03)
 **UI hint**: yes
 
 ### Phase 45: Transfer-Aware Mode
