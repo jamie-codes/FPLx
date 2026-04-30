@@ -13,11 +13,9 @@ function makePick(element: number, position: number): SquadPick {
 type PlayerOverrides = Partial<MergedPlayer> & { id: number; element_type: 1 | 2 | 3 | 4 }
 function makePlayer(overrides: PlayerOverrides): MergedPlayer {
   return {
-    id: overrides.id,
     web_name: `P${overrides.id}`,
     team: 1,
     team_short_name: 'T1',
-    element_type: overrides.element_type,
     now_cost: 50,
     selected_by_percent: '5.0',
     form: '0.0',
