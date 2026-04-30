@@ -360,7 +360,20 @@ Plans:
   3. User can view a player-level table of predicted vs actual points with prediction error, sortable by biggest miss
   4. GemTable shows a last-GW actual points column next to xPts_1gw for at-a-glance calibration
   5. The weaker projection model is removed from the app; only the better-performing model remains visible to the user
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+
+**Wave 0**
+- [ ] 41-01-PLAN.md — Wave 0: AccuracyBacktest types + useAccuracy hook + /api/accuracy route + /api/players join + GemTable last_gw_actual_pts column + RED test stubs (ACC-02, ACC-03, ACC-04, ACC-05)
+**Wave 1** *(blocked on Wave 0 completion)*
+- [ ] 41-02-PLAN.md — AccuracyTab component (GwSummaryTable + HaulterList + PlayerDeltaTable) + page.tsx nav wire-in + GemTable createColumns gwN parameter (ACC-02, ACC-03, ACC-04, ACC-05)
+**Wave 2** *(blocked on Wave 1 completion; autonomous: false)*
+- [ ] 41-03-PLAN.md — Human checkpoint reviewing live hit rates + asymmetric loser-model removal (xpts vs proj_pts branches) + decision audit log (ACC-06)
+**Cross-cutting constraints:**
+- `useAccuracy` hook MUST use TanStack Query `useQuery` (not SWR, not useEffect) — matches codebase convention in useInsights.ts
+- `/api/players` MUST NOT 500 when `accuracy_backtest.json` is absent — every player falls back to `last_gw_actual_pts: null`
+- `proj_pts_1gw` is NOT a GemTable column — ACC-06 proj_pts removal has no `columns.tsx` GemTable impact (pipeline/types/AccuracyTab only); xPts removal has significantly larger scope (3 GemTable columns + 4 merge.py functions)
+- `last_gw_actual_pts: false` added to `PRESET_COLUMN_VISIBILITY.compact` only — absence from default/analysis maps = visible (TanStack Table convention)
 **UI hint**: yes
 
 ## Progress
@@ -387,4 +400,4 @@ Note: Phase 38 (Data Freshness) depends on Phase 36 (nav) but not on Phase 37 (p
 | 38. Data Freshness UX | 0/2 | Not started | - |
 | 39. Player Comparison Modal | 0/3 | Not started | - |
 | 40. Accuracy Pipeline | 3/3 | Complete | 2026-04-29 |
-| 41. Accuracy UI & Model Rationalisation | 0/? | Not started | - |
+| 41. Accuracy UI & Model Rationalisation | 0/3 | Ready to execute | - |

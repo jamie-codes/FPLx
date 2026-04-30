@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: UX & Polish
-status: executing
-stopped_at: Phase 40 complete (2026-04-29)
-last_updated: "2026-04-29T22:30:00.000Z"
-last_activity: 2026-04-29 -- Phase 40 complete (accuracy pipeline)
+status: ready-to-execute
+stopped_at: Phase 41 planned (3 plans)
+last_updated: "2026-04-30T00:00:00.000Z"
+last_activity: 2026-04-30 -- Phase 41 planned (3 plans, Wave 0/1/2)
 progress:
   total_phases: 16
   completed_phases: 15
   total_plans: 34
   completed_plans: 31
-  percent: 94
+  percent: 91
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-29 — v1.5 started)
 ## Current Position
 
 Phase: 41 (planned)
-Plan: 0 of ?
-Status: Ready to plan
-Last activity: 2026-04-29 -- Phase 40 complete (accuracy pipeline)
+Plan: 0 of 3
+Status: Ready to execute
+Last activity: 2026-04-30 -- Phase 41 planned (3 plans: Wave 0 types/infra, Wave 1 AccuracyTab + nav, Wave 2 human checkpoint + model removal)
 
 ## Performance Metrics
 
@@ -73,6 +73,6 @@ Code review WR-01/WR-02 open: first-paint blank flash and NaN input guard. Advis
 
 ## Session Continuity
 
-Last session: 2026-04-29T17:30:00.000Z
-Stopped at: Phase 38 complete (2026-04-29)
-Resume file: .planning/phases/38-data-freshness-ux/38-VERIFICATION.md
+Last session: 2026-04-30T00:00:00.000Z
+Stopped at: Phase 41 plans verified — ready to execute
+Resume file: None
