@@ -844,6 +844,21 @@ def merge_players(
         player['start_prob'] = player_start_prob
         player['mins_risk'] = player_mins_risk
 
+        # ---- Form signal (Phase 42 ACC-01) ----
+        # Recency-weighted xG+xA per-90 over last 3-5 GWs from element-summary history.
+        # Always write the field (None + 0 when insufficient) so MergedPlayer is shape-consistent
+        # across players and downstream consumers can rely on the key being present.
+        # PLACEMENT NOTE: this block sits BEFORE the xPts engine because Task 4 reads
+        # `form_per90` as a local variable inside the engine block to drive the blend.
+        if summaries and fpl_id in summaries:
+            form_per90, form_n_gws = _compute_form_signal(
+                summaries[fpl_id].get('history', [])
+            )
+        else:
+            form_per90, form_n_gws = None, 0
+        player['form_xgxa_per90'] = form_per90
+        player['form_xgxa_window_gws'] = form_n_gws
+
         # ---- xPts engine (Phase 28 DATA-02, XPTS-02, D-01..D-09) ----
         xpts_1gw, xpts_components_1gw = _xpts_ngw(
             xg_per90, xa_per90, player_start_prob, player_xmins,
