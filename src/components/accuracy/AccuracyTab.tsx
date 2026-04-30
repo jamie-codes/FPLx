@@ -58,7 +58,7 @@ function GwSummaryTable({ data }: { data: AccuracyBacktest }) {
         <thead>
           <tr>
             <th scope="col" className={TH_CLS}>GW</th>
-            <th scope="col" className={TH_CLS}>Haulters</th>
+            <th scope="col" className={TH_CLS}>Haulers</th>
             <th scope="col" className={TH_CLS}>xPts Flagged</th>
             <th scope="col" className={TH_CLS}>xPts Hit Rate</th>
           </tr>
@@ -91,7 +91,7 @@ function HaulterList({ data }: { data: AccuracyBacktest }) {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold mb-2">Correctly Flagged Haulters</h2>
+      <h2 className="text-lg font-semibold mb-2">Correctly Flagged Haulers</h2>
       <table className={TABLE_CLS}>
         <thead>
           <tr>
