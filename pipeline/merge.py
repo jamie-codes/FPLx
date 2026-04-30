@@ -21,6 +21,11 @@ CS_PTS = {1: 6, 2: 6, 3: 1, 4: 0}
 # See STATE.md blocker + 28-RESEARCH.md Common Pitfalls Pitfall 1.
 BONUS_RATE = {1: 0.30, 2: 0.40, 3: 0.60, 4: 0.70}
 
+# Phase 42 ACC-01: blend coefficient for form-signal-into-xPts. 0.4 means
+# form contributes 40% of the per-90 input. Tunable via merge_players kwarg —
+# pipeline/run.py reads the runtime value from accuracy_backtest.json.summary.blend_alpha_used.
+BLEND_ALPHA = 0.4
+
 
 def _compute_difficulty_score(team_xga: float, min_xga: float, max_xga: float) -> float:
     """Normalise team xGA to 0.0–1.0 difficulty score.
@@ -526,6 +531,8 @@ def merge_players(
     id_map: dict,
     xmins_stats: dict | None = None,
     summaries: dict | None = None,
+    form_signal_enabled: bool = False,
+    blend_alpha: float = BLEND_ALPHA,
 ) -> tuple[list, dict]:
     """Merge FPL bootstrap + Understat xG/xA into a unified player list.
 
@@ -541,6 +548,15 @@ def merge_players(
         summaries:   Optional dict from run.py mapping player_id (int) -> element-summary
                      response dict. When provided, used to compute pts_last3gw,
                      pts_last5gw, and pts_gw_count for each player. Defaults to None.
+        form_signal_enabled: Phase 42 ACC-01 gate. When True AND a player has a
+                             valid form_xgxa_per90, blend the form signal into
+                             the per-90 inputs of _xpts_ngw before computing
+                             xPts. Default False — preserves baseline.
+        blend_alpha:         Phase 42 ACC-01. Weight of form signal in blended
+                             per-90 (0.0=pure season, 1.0=pure form). Default
+                             BLEND_ALPHA=0.4. run.py overrides this with the
+                             value persisted by accuracy.compute_accuracy_backtest
+                             (which is whatever Plan 02 ships — currently a fixed 0.4).
 
     Returns:
         List of merged player dicts with all D-01 through D-06 fields plus
@@ -860,16 +876,35 @@ def merge_players(
         player['form_xgxa_window_gws'] = form_n_gws
 
         # ---- xPts engine (Phase 28 DATA-02, XPTS-02, D-01..D-09) ----
+        # Phase 42 ACC-01: optionally blend form signal into per-90 inputs before scoring.
+        # When form_signal_enabled is False OR form_xgxa_per90 is None, use season per-90 unchanged.
+        # When True AND form is available, blend = (1-alpha)*season + alpha*form, then re-split
+        # the blended xGI total proportionally to the season xG/xA ratio so goal-heavy strikers
+        # do not erroneously gain assist points (RESEARCH.md Pitfall 2).
+        xpts_xg_per90 = xg_per90 if xg_per90 is not None else 0.0
+        xpts_xa_per90 = xa_per90 if xa_per90 is not None else 0.0
+        if form_signal_enabled and form_per90 is not None:
+            season_xgxa_per90 = xpts_xg_per90 + xpts_xa_per90
+            blended_xgxa_per90 = (1.0 - blend_alpha) * season_xgxa_per90 + blend_alpha * form_per90
+            if season_xgxa_per90 > 0:
+                xg_share = xpts_xg_per90 / season_xgxa_per90
+                xpts_xg_per90 = blended_xgxa_per90 * xg_share
+                xpts_xa_per90 = blended_xgxa_per90 * (1.0 - xg_share)
+            else:
+                # No season data (promoted-team players) — split 50/50.
+                xpts_xg_per90 = blended_xgxa_per90 * 0.5
+                xpts_xa_per90 = blended_xgxa_per90 * 0.5
+
         xpts_1gw, xpts_components_1gw = _xpts_ngw(
-            xg_per90, xa_per90, player_start_prob, player_xmins,
+            xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 1,
         )
         xpts_3gw, _ = _xpts_ngw(
-            xg_per90, xa_per90, player_start_prob, player_xmins,
+            xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 3,
         )
         xpts_5gw, _ = _xpts_ngw(
-            xg_per90, xa_per90, player_start_prob, player_xmins,
+            xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 5,
         )
         player['xPts_1gw'] = xpts_1gw

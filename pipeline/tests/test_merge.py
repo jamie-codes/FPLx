@@ -117,13 +117,35 @@ def test_merge_writes_form_signal():
     assert p2['form_xgxa_window_gws'] == 0
 
 
+def _build_minimal_inputs_override(player_history_by_id, finished_gws=10,
+                                    goals_scored=5, assists=3):
+    """Variant of _build_minimal_inputs with configurable goals_scored/assists."""
+    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_minimal_inputs(
+        player_history_by_id, finished_gws=finished_gws
+    )
+    # Override goals_scored/assists for player 1 to control season per-90 rate
+    for el in bootstrap['elements']:
+        if el['id'] == 1:
+            el['goals_scored'] = goals_scored
+            el['assists'] = assists
+    return bootstrap, fixtures, understat, id_map, xmins_stats, summaries
+
+
 def test_blend_changes_xpts_when_enabled():
-    """ACC-01: form_signal_enabled=True with hot form lifts xPts_1gw above the disabled baseline."""
+    """ACC-01: form_signal_enabled=True with hot form lifts xPts_1gw above the disabled baseline.
+
+    Season per-90 (from goals_scored/assists): (1+0)/900*90 = 0.1 per 90 (cold player).
+    Form per-90 (from last 5 GWs): only GW10 has xG=2.0+xA=1.0 => ~0.8 per 90 (hot form).
+    Blend = (0.6)*0.1 + (0.4)*0.8 = 0.38 != 0.1, so xPts must change.
+    """
     # 9 cold GWs (xG+xA = 0), 1 very hot GW
     history = [_hist(gw, 90, 6, xg=0.0, xa=0.0) for gw in range(1, 10)]
     history.append(_hist(10, 90, 6, xg=2.0, xa=1.0))
 
-    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_minimal_inputs({1: history})
+    # Use very low season goals/assists so season per-90 (0.1/90) != form per-90 (0.8/90)
+    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_minimal_inputs_override(
+        {1: history}, goals_scored=1, assists=0
+    )
 
     merged_baseline, _ = merge_players(bootstrap, fixtures, understat, id_map,
                                         xmins_stats=xmins_stats, summaries=summaries,
