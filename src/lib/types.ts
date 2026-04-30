@@ -178,6 +178,18 @@ export interface MergedPlayer {
   form_xgxa_window_gws?: number       // count of GWs the form signal spans (3-5); 0 when form_xgxa_per90 is null
 }
 
+// Optimiser horizon (Phase 43 OPT-01..OPT-05) — maps to xPts_1gw / xPts_3gw / xPts_5gw fields
+export type OptimiserHorizon = 1 | 3 | 5
+
+// Optimised lineup result (Phase 43 OPT-01..OPT-05) — returned by optimiseLineup pure function
+export interface OptimisedLineup {
+  starters: number[]    // 11 element IDs
+  bench: number[]       // 4 element IDs; bench[0] = non-starting GK
+  captainId: number
+  vcId: number
+  formation: string     // e.g. '4-3-3' (DEF-MID-FWD, GK excluded)
+}
+
 // DefCon per-player stats (Phase 4) — populated from pipeline/cache/defcon_stats.json
 export interface DefConPlayer {
   id: number
