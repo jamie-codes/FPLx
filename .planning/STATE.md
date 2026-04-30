@@ -70,7 +70,7 @@ None.
 
 ### Blockers/Concerns
 
-- Confirm xPts_1gw aggregates over all fixtures in a DGW (not just first fixture) before Phase 43 starts. If single-fixture only, pipeline fix is needed upstream.
+None. DGW xPts aggregation confirmed correct (2026-04-30): `_xpts_ngw` in `pipeline/merge.py` groups fixtures by `event_id` and sums xPts over all fixtures within each GW — DGW players naturally score higher. No pipeline fix needed before Phase 43.
 
 ## Session Continuity
 
