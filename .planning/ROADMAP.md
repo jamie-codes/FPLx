@@ -7,35 +7,41 @@
 - v1.2 Mobile (Phases 13-18) - shipped 2026-04-01
 - v1.3 Gameweek Planner (Phases 19-25) - shipped 2026-04-03
 - v1.4 Analytics Engine & Intelligence Layer (Phases 26-35) - shipped 2026-04-29
-- v1.5 UX & Polish (Phases 36-41) - in progress
+- ✅ v1.5 UX & Polish (Phases 36-41) - shipped 2026-04-30
 
 ## Phases
 
-### v1.4 Analytics Engine & Intelligence Layer
+<details>
+<summary>✅ v1.4 Analytics Engine & Intelligence Layer (Phases 26-35) — SHIPPED 2026-04-29</summary>
 
-**Milestone Goal:** Upgrade FPLx from a transfer suggester into a full decision-support platform with data-driven pattern insights, advanced fixture analysis, ownership-aware captaincy, and set-piece/differential intelligence.
+- [x] Phase 26: Quick Wins (1/1 plan) — completed 2026-04-27
+- [x] Phase 27: FDR++ Pipeline (2/2 plans) — completed 2026-04-28
+- [x] Phase 28: xPts Engine (2/2 plans) — completed 2026-04-28
+- [x] Phase 29: Regression Detector (2/2 plans) — completed 2026-04-28
+- [x] Phase 30: Differential Tracker (2/2 plans) — completed 2026-04-28
+- [x] Phase 31: Captaincy Ceiling (2/2 plans) — completed 2026-04-28
+- [x] Phase 32: Team Target List (2/2 plans) — completed 2026-04-28
+- [x] Phase 33: Insights Tab (2/2 plans) — completed 2026-04-28
+- [x] Phase 34: Chip Strategy (2/2 plans) — completed 2026-04-28
+- [x] Phase 35: Tech Debt Fixes (2/2 plans) — completed 2026-04-29
 
-- [x] **Phase 26: Quick Wins** - Set-piece intelligence UI, mobile landscape tip, and set-piece pipeline fields *(completed 2026-04-27)*
-- [x] **Phase 27: FDR++ Pipeline** - Attacking vs defensive fixture difficulty per team per fixture *(completed 2026-04-28)*
-- [x] **Phase 28: xPts Engine** - Expected points per player with component breakdown and variance *(completed 2026-04-28)*
-- [x] **Phase 29: Regression Detector** - Per-match xG/xA pipeline and buy/sell signals from form vs underlying (completed 2026-04-28)
-- [x] **Phase 30: Differential Tracker** - Template-trap and differential flags based on ownership vs expected value *(completed 2026-04-28)*
-- [x] **Phase 31: Captaincy Ceiling** - 90th-percentile and EO-adjusted captain recommendations *(completed 2026-04-28)*
-- [x] **Phase 32: Team Target List** - Teams with green fixture runs and top players ranked by xGI involvement *(completed 2026-04-28)*
-- [x] **Phase 33: Insights Tab** - Data-driven pattern statements with confidence weights *(completed 2026-04-28)*
-- [x] **Phase 34: Chip Strategy** (completed 2026-04-28) - Optimal GW finder for Bench Boost, Triple Captain, and Free Hit
-- [x] **Phase 35: Tech Debt Fixes** - Correctness and quality fixes from v1.4 audit (mobile column ID, TRAP logic, TS error, zero-count insights, type annotation) *(completed 2026-04-29)*
+See `.planning/milestones/v1.4-ROADMAP.md` for full details.
 
-### v1.5 UX & Polish
+</details>
 
-**Milestone Goal:** Make FPLx's data-dense app feel faster and cleaner — consolidate the 9+ tab navigation into a 3-section hierarchy, add GemTable view presets, surface data freshness on every tab, and introduce a player comparison modal.
+<details>
+<summary>✅ v1.5 UX & Polish (Phases 36-41) — SHIPPED 2026-04-30</summary>
 
-- [x] **Phase 36: Navigation Consolidation** - Reorganise 9+ tabs into three top-level sections (Analyse / Plan / Squad) with sub-tabs on desktop and mobile *(completed 2026-04-29)*
-- [x] **Phase 37: GemTable View Presets** - Add Default / Compact / Analysis toggle that persists across tab switches in a session *(completed 2026-04-29)*
-- [x] **Phase 38: Data Freshness UX** - Show human-readable "Updated X ago" on every tab without requiring navigation *(complete 2026-04-29)*
-- [ ] **Phase 39: Player Comparison Modal** - Side-by-side xPts, Gem breakdown, fixtures, and signals for any two players from GemTable
-- [x] **Phase 40: Accuracy Pipeline** - Pipeline backtest of proj_pts vs xPts over the last 5 completed gameweeks *(completed 2026-04-29)*
-- [ ] **Phase 41: Accuracy UI & Model Rationalisation** - GW accuracy table, haulter comparison, player-level delta view, last-GW actuals column in GemTable, and removal of the weaker model
+- [x] Phase 36: Navigation Consolidation (1/1 plan) — completed 2026-04-29
+- [x] Phase 37: GemTable View Presets (2/2 plans) — completed 2026-04-29
+- [x] Phase 38: Data Freshness UX (2/2 plans) — completed 2026-04-29
+- [x] Phase 39: Player Comparison Modal (3/3 plans) — completed 2026-04-29
+- [x] Phase 40: Accuracy Pipeline (3/3 plans) — completed 2026-04-29
+- [x] Phase 41: Accuracy UI & Model Rationalisation (3/3 plans) — completed 2026-04-30
+
+See `.planning/milestones/v1.5-ROADMAP.md` for full details.
+
+</details>
 
 ## Phase Details
 

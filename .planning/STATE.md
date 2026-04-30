@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: UX & Polish
-status: ready-to-execute
-stopped_at: Phase 41 planned (3 plans)
-last_updated: "2026-04-30T00:00:00.000Z"
-last_activity: 2026-04-30 -- Phase 41 planned (3 plans, Wave 0/1/2)
+status: complete
+last_updated: "2026-04-30T10:30:00Z"
+last_activity: "2026-04-30 -- v1.5 UX & Polish milestone complete. All 6 phases (36-41) shipped, 14 plans, 22 requirements satisfied. proj_pts model removed. git tag v1.5 created."
 progress:
   total_phases: 16
-  completed_phases: 15
+  completed_phases: 16
   total_plans: 34
-  completed_plans: 31
-  percent: 91
+  completed_plans: 34
+  percent: 100
 ---
 
 # Project State
@@ -21,7 +20,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-29 — v1.5 started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.5 UX & Polish — Phase 40 complete; Phase 41 next (accuracy UI)
+**Current focus:** v1.5 complete — ready for next milestone (/gsd-new-milestone)
 
 ## Current Position
 
@@ -73,6 +72,6 @@ Code review WR-01/WR-02 open: first-paint blank flash and NaN input guard. Advis
 
 ## Session Continuity
 
-Last session: 2026-04-30T00:00:00.000Z
-Stopped at: Phase 41 plans verified — ready to execute
+Last session: 2026-04-30T08:55:03.611Z
+Stopped at: context exhaustion at 75% (2026-04-30)
 Resume file: None

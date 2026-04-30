@@ -12,17 +12,15 @@ v1.3 added a Gameweek Planner: the manager can generate a 1–5 GW transfer plan
 
 Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
 
-## Current Milestone: v1.5 UX & Polish
+## Current State (v1.5 UX & Polish — SHIPPED 2026-04-30)
 
-**Goal:** Make FPLx's data-dense app feel faster and cleaner — consolidate navigation, slim down the GemTable, add a player comparison panel, and make data freshness unmistakable.
+v1.5 complete (2026-04-30) — All 6 phases shipped: 3-section nav hierarchy (Analyse/Plan/Squad), GemTable view presets (Default/Compact/Analysis), data freshness "Updated X ago" live ticker, player comparison modal, accuracy pipeline backtest, AccuracyTab UI. proj_pts model removed (xPts 16.7% vs proj_pts 9.0% hit rate). 22 files swept. See `.planning/milestones/v1.5-ROADMAP.md`.
 
-**Target features:**
-- Tab consolidation — group/reorganise the 9+ tabs into a manageable navigation model (desktop + mobile)
-- GemTable column management — column picker, compact mode, or smarter column priority
-- Player comparison panel — side-by-side stats/xPts/fixture view before committing to a transfer
-- Data freshness UX — clear stale-data indicators, prominent "last updated X ago" states, amber/red decay signals
+Phase 41 complete — Accuracy UI & Model Rationalisation shipped: AccuracyTab (GwSummaryTable + HaulterList + PlayerDeltaTable), useAccuracy hook, /api/accuracy route, last_gw_actual_pts column in GemTable, proj_pts sweep complete.
 
-## Current State (v1.5 UX & Polish — Phase 38 complete 2026-04-29)
+Phase 40 complete — Accuracy Pipeline shipped: pipeline/accuracy.py with compute_accuracy_backtest() and build_predictions_snapshot(), wired into run.py, accuracy_backtest.json written to cache.
+
+Phase 39 complete — Player Comparison Modal shipped: PlayerComparisonModal (native dialog, 4 sections: xPts, Gem breakdown, fixtures, signals), createColumns(onCompare) factory, mobile action sheet, comparePlayer state at page.tsx.
 
 Phase 38 complete — Data Freshness UX shipped: `formatRelativeTime(isoTimestamp, nowMs?)` pure utility added at `src/lib/formatRelativeTime.ts` — four time bands per D-01 ("just now" / "X min ago" / "X hours ago" / "X days ago") with injected `nowMs` for deterministic testing (13 Vitest cases, TDD RED→GREEN). `LastUpdated.tsx` upgraded: `LastUpdatedDisplay` now accepts `relativeTime: string` (pre-formatted, DAT-02 split preserved); connected `LastUpdated` ticks every 30s via `setInterval`, clears on unmount, effect deps `[data?.last_updated]`. Stale colour: amber (`text-amber-600 dark:text-amber-500`), fresh: zinc (`text-zinc-400`). No "Data as of" prefix, no "(stale)" suffix. 11 RTL tests (display, colour, fake-timer tick, unmount cleanup spy); 397 total pass. FRE-01, FRE-02, FRE-03 satisfied. Human verified on all sections and sub-tabs, desktop and mobile.
 
@@ -145,9 +143,18 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 - ✓ PLAN-07: Chip timing (Wildcard, Free Hit, TC, BB) is visible and configurable in the plan — v1.3
 - ✓ PLAN-08: Planner accessible via "Planner" tab in the navigation bar — v1.3
 
+### Validated (v1.5)
+
+- ✓ NAV-01/02/03/04/05: 3-section nav hierarchy (Analyse/Plan/Squad) with sub-tabs — v1.5
+- ✓ GEM-01/02/03/04: GemTable view presets (Default/Compact/Analysis), session-persistent — v1.5
+- ✓ FRE-01/02/03: "Updated X ago" live ticker on every tab, amber stale colour — v1.5
+- ✓ CMP-01/02/03/04/05/06: Player comparison modal (xPts, Gem, fixtures, signals) from GemTable — v1.5
+- ✓ ACC-01: Accuracy pipeline backtest (5 GWs, proj_pts vs xPts hit rates) — v1.5
+- ✓ ACC-02/03/04/05/06: AccuracyTab UI, last-GW actuals column, proj_pts removed (9.0% vs xPts 16.7%) — v1.5
+
 ### Active
 
-*(v1.5 requirements — see REQUIREMENTS.md)*
+*(next milestone — run /gsd-new-milestone to define)*
 
 ### Out of Scope
 
@@ -213,4 +220,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-29 — v1.4 complete; v1.5 UX & Polish milestone started*
+*Last updated: 2026-04-30 — v1.5 UX & Polish complete; ready for next milestone*
