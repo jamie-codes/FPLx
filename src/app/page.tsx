@@ -18,9 +18,10 @@ import { SetPieceTakerPanel } from '@/components/set-pieces/SetPieceTakerPanel'
 import { CaptainPicksPanel } from '@/components/captaincy/CaptainPicksPanel'
 import { InsightsTab } from '@/components/insights/InsightsTab'
 import { AccuracyTab } from '@/components/accuracy/AccuracyTab'
+import { OptimiserPanel } from '@/components/optimiser/OptimiserPanel'
 
 export type Section = 'analyse' | 'plan' | 'squad'
-export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'club-form' | 'value-gems' | 'accuracy'
+export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'club-form' | 'value-gems' | 'accuracy' | 'transfers' | 'optimiser'
 
 export const SECTIONS = [
   {
@@ -48,8 +49,11 @@ export const SECTIONS = [
   {
     id: 'squad' as Section,
     label: 'Squad',
-    subTabs: [],
-    defaultSubTab: null,
+    subTabs: [
+      { id: 'transfers' as SubTab, label: 'Transfers', mobileLabel: 'Transfers' },
+      { id: 'optimiser' as SubTab, label: 'Optimiser', mobileLabel: 'Optimiser' },
+    ],
+    defaultSubTab: 'transfers' as SubTab,
   },
 ] as const
 
@@ -58,11 +62,26 @@ export default function Home() {
   const [sectionMemory, setSectionMemory] = useState<Record<Section, SubTab | null>>({
     analyse: 'gems',
     plan: 'planner',
-    squad: null,
+    squad: 'transfers',
   })
   const [gemPreset, setGemPreset] = useState<ViewPreset>('default')
   const [comparePlayer, setComparePlayer] = useState<ScoredPlayer | null>(null)
   const [compareOpen, setCompareOpen] = useState(false)
+
+  // Phase 43 D-11: teamId / submittedId lifted from TransferPanel so both Transfers
+  // and Optimiser sub-tabs share the squad fetch via TanStack Query cache.
+  const [teamId, setTeamId] = useState<string>(() =>
+    typeof window !== 'undefined' ? (localStorage.getItem('fpl_team_id') ?? '') : ''
+  )
+  const [submittedId, setSubmittedId] = useState<string | null>(() =>
+    typeof window !== 'undefined' ? localStorage.getItem('fpl_team_id') : null
+  )
+  const handleTeamIdSubmit = useCallback(() => {
+    if (teamId.trim()) {
+      setSubmittedId(teamId.trim())
+      localStorage.setItem('fpl_team_id', teamId.trim())
+    }
+  }, [teamId])
 
   const handleCompare = useCallback((player: ScoredPlayer) => {
     setComparePlayer(player)
@@ -106,9 +125,10 @@ export default function Home() {
           ))}
         </nav>
 
-        {/* Sub-tab row — hidden when Squad is active */}
-        {activeSection !== 'squad' && (() => {
+        {/* Sub-tab row — rendered for any section with subTabs.length > 0 (D-08) */}
+        {(() => {
           const activeSectionDef = SECTIONS.find(s => s.id === activeSection)!
+          if (activeSectionDef.subTabs.length === 0) return null
           return (
             <nav aria-label={`${activeSectionDef.label} sub-tabs`} className="hidden sm:flex gap-4 mb-6 border-b border-zinc-200 dark:border-zinc-700">
               {activeSectionDef.subTabs.map((sub) => (
@@ -125,11 +145,18 @@ export default function Home() {
           )
         })()}
 
-        {/* Spacer when Squad is active — preserves mb-6 gap before content */}
-        {activeSection === 'squad' && <div className="mb-6 hidden sm:block" />}
-
-        {/* Tab content — squad guards on section; others guard on sub-tab AND non-squad section */}
-        {activeSection === 'squad' && <TransferPanel />}
+        {/* Tab content — squad guards on section + sub-tab; others guard on sub-tab AND non-squad section */}
+        {activeSection === 'squad' && activeSubTab === 'transfers' && (
+          <TransferPanel
+            teamId={teamId}
+            onTeamIdChange={setTeamId}
+            submittedId={submittedId}
+            onSubmit={handleTeamIdSubmit}
+          />
+        )}
+        {activeSection === 'squad' && activeSubTab === 'optimiser' && (
+          <OptimiserPanel teamId={submittedId ?? ''} />
+        )}
         {activeSection !== 'squad' && activeSubTab === 'gems' && (
           <GemTable preset={gemPreset} onPresetChange={setGemPreset} onCompare={handleCompare} />
         )}
