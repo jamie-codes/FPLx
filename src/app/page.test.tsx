@@ -38,7 +38,7 @@ describe('Phase 36: page.tsx state', () => {
     const gemRatingsBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Gem Ratings')
     expect(gemRatingsBtn?.getAttribute('aria-current')).toBe('page')
     expect(container.querySelector('[data-testid="gem-table"]')).not.toBeNull()
-    expect(container.querySelector('[data-testid="captain-picks"]')).not.toBeNull()
+    // CaptainPicksPanel was moved to Planner tab (b81c240) — not rendered on default Gems tab
   })
 
   it('restores last active sub-tab when returning to Analyse section (D-05)', () => {
