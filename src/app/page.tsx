@@ -70,16 +70,16 @@ export default function Home() {
 
   // Phase 43 D-11: teamId / submittedId lifted from TransferPanel so both Transfers
   // and Optimiser sub-tabs share the squad fetch via TanStack Query cache.
-  const [teamId, setTeamId] = useState<string>(() =>
-    typeof window !== 'undefined' ? (localStorage.getItem('fpl_team_id') ?? '') : ''
-  )
-  const [submittedId, setSubmittedId] = useState<string | null>(() =>
-    typeof window !== 'undefined' ? localStorage.getItem('fpl_team_id') : null
-  )
+  const [teamId, setTeamId] = useState<string>(() => {
+    try { return localStorage.getItem('fpl_team_id') ?? '' } catch { return '' }
+  })
+  const [submittedId, setSubmittedId] = useState<string | null>(() => {
+    try { return localStorage.getItem('fpl_team_id') } catch { return null }
+  })
   const handleTeamIdSubmit = useCallback(() => {
     if (teamId.trim()) {
       setSubmittedId(teamId.trim())
-      localStorage.setItem('fpl_team_id', teamId.trim())
+      try { localStorage.setItem('fpl_team_id', teamId.trim()) } catch {}
     }
   }, [teamId])
 
