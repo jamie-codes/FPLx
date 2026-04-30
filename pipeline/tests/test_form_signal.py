@@ -27,10 +27,11 @@ def test_form_signal_recency_weighting():
     ]
     history.append({'round': 5, 'minutes': 90, 'expected_goals': 0.8, 'expected_assists': 0.2})
     form, n = _compute_form_signal(history, window_gws=5)
-    # Without recency: simple mean = 1.0/5 = 0.222 per 90.
-    # With linear weights 0.5..1.0 most-recent-weighted: form > 0.30
+    # Without recency (equal weights): per-90 = 1.0/5 * 90/90 = 0.2 per GW per 90.
+    # With linear weights 0.5..1.0 most-recent-weighted: form > 0.2 (above non-recency baseline).
+    # Exact calculation: weighted_xgxa=1.0, weighted_mins=337.5, form=0.2667.
     assert form is not None
-    assert form > 0.30
+    assert form > 0.22  # recency boost confirmed: 0.2667 > 0.22 > non-recency 0.2
     assert n == 5
 
 

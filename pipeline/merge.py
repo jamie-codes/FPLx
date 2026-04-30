@@ -298,6 +298,66 @@ def _compute_xpts_sigma(
     return math.sqrt(total_var)
 
 
+def _compute_form_signal(
+    history: list,
+    window_gws: int = 5,
+    min_minutes: int = 270,
+) -> tuple:
+    """Compute recency-weighted xG+xA per-90 over the last window_gws unique rounds (Phase 42 ACC-01).
+
+    Returns (form_xgxa_per90, gws_used) or (None, 0) when insufficient data.
+
+    Insufficient = fewer than 3 played rounds in window, OR sum(minutes) < min_minutes.
+    Rationale: form requires at least 3 GWs of signal; <270 min total is too noisy.
+    Mirrors _compute_regression_signal's data shape (history list from FPL element-summary)
+    but uses recency weighting and per-90 normalisation rather than mean delta.
+
+    Recency weight: linear from 1.0 (most recent round in window) to 0.5 (oldest in window).
+    Linear is inspectable; no backtest evidence supports exotic decay (RESEARCH.md Pitfall 8).
+
+    DGW handling: entries sharing a round are summed (minutes + xG + xA), not double-counted,
+    so n == unique rounds played, not number of history entries.
+    """
+    if not history:
+        return None, 0
+
+    history_sorted = sorted(history, key=lambda h: h['round'])
+    unique_rounds = sorted({h['round'] for h in history_sorted})
+    last_rounds = set(unique_rounds[-window_gws:])
+
+    # DGW aggregation — same shape as accuracy._group_history_by_gw
+    by_round: dict = {}
+    for entry in history_sorted:
+        r = entry.get('round')
+        if r is None or r not in last_rounds:
+            continue
+        agg = by_round.setdefault(r, {'minutes': 0, 'expected_goals': 0.0, 'expected_assists': 0.0})
+        agg['minutes'] += entry.get('minutes', 0) or 0
+        agg['expected_goals'] += float(entry.get('expected_goals', 0) or 0)
+        agg['expected_assists'] += float(entry.get('expected_assists', 0) or 0)
+
+    played = [by_round[r] for r in sorted(by_round.keys()) if by_round[r]['minutes'] > 0]
+    total_mins = sum(p['minutes'] for p in played)
+    if len(played) < 3 or total_mins < min_minutes:
+        return None, 0
+
+    # Linear recency weights: oldest=0.5, most recent=1.0
+    n = len(played)
+    weights = [0.5 + 0.5 * (i / max(n - 1, 1)) for i in range(n)]
+
+    weighted_xgxa = sum(
+        (p['expected_goals'] + p['expected_assists']) * w
+        for p, w in zip(played, weights)
+    )
+    weighted_mins = sum(p['minutes'] * w for p, w in zip(played, weights))
+
+    if weighted_mins <= 0:
+        return None, 0
+
+    form_per90 = round((weighted_xgxa / weighted_mins) * 90, 4)
+    return form_per90, len(played)
+
+
 def _compute_regression_signal(
     history: list,
     window_gws: int = 5,
