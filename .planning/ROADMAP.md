@@ -49,7 +49,7 @@ See `.planning/milestones/v1.5-ROADMAP.md` for full details.
 - [x] **Phase 42: xPts Accuracy Improvements** - Form/momentum signal + backtest gate before optimiser ships — completed 2026-04-30
 - [x] **Phase 43: Lineup Engine & Navigator** - Core optimiser engine, best XI, captain/VC, bench order, Squad sub-tabs — completed 2026-04-30
 - [x] **Phase 44: Comparison Output** - Side-by-side current vs optimised lineup with xPts delta and diff headline — completed 2026-04-30
-- [ ] **Phase 45: Transfer-Aware Mode** - Factor in free transfers; transfer suggestions with hit break-even indicator
+- [x] **Phase 45: Transfer-Aware Mode** - Factor in free transfers; transfer suggestions with hit break-even indicator — completed 2026-04-30
 - [ ] **Phase 46: Chip Modes** - Wildcard, Free Hit, and Bench Boost modes extending the optimiser engine
 
 ## Phase Details

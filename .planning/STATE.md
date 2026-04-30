@@ -3,14 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Squad Optimiser
 status: executing
-stopped_at: context exhaustion at 80% (2026-04-30)
-last_updated: "2026-04-30T18:59:43.314Z"
-last_activity: 2026-04-30 -- Phase 45 planned (3 plans, verification passed)
+last_updated: "2026-04-30T22:46:00.000Z"
+last_activity: 2026-04-30 -- Phase 45 complete (3/3 plans, verified, CR-01/CR-02 fixed)
 progress:
   total_phases: 21
-  completed_phases: 19
-  total_plans: 40
-  completed_plans: 40
+  completed_phases: 20
+  total_plans: 43
+  completed_plans: 43
   percent: 100
 ---
 
