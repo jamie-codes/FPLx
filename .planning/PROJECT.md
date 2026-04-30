@@ -12,7 +12,20 @@ v1.3 added a Gameweek Planner: the manager can generate a 1–5 GW transfer plan
 
 Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
 
-## Current State (v1.5 UX & Polish — SHIPPED 2026-04-30)
+## Current Milestone: v1.6 Squad Optimiser
+
+**Goal:** Give the manager a data-backed lineup, captain, and transfer decision for each gameweek — with a configurable horizon and optional wildcard/standalone squad-building mode.
+
+**Target features:**
+- Lineup optimiser: best 11 + bench order + auto formation from current squad, scored over configurable 1/3/5 GW horizon
+- Captain / VC recommendation: prominent and data-backed, surfaced from existing xPts ceiling data
+- Transfer-aware mode: factor in 1–2 free transfers; side-by-side current vs optimised comparison
+- Wildcard / Free Hit mode: chip toggle removes transfer constraints — "best squad if I wildcarded today"
+- Standalone squad builder: budget-only squad construction for planning (independent of current team)
+
+---
+
+## Previous State (v1.5 UX & Polish — SHIPPED 2026-04-30)
 
 v1.5 complete (2026-04-30) — All 6 phases shipped: 3-section nav hierarchy (Analyse/Plan/Squad), GemTable view presets (Default/Compact/Analysis), data freshness "Updated X ago" live ticker, player comparison modal, accuracy pipeline backtest, AccuracyTab UI. proj_pts model removed (xPts 16.7% vs proj_pts 9.0% hit rate). 22 files swept. See `.planning/milestones/v1.5-ROADMAP.md`.
 
@@ -152,9 +165,9 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 - ✓ ACC-01: Accuracy pipeline backtest (5 GWs, proj_pts vs xPts hit rates) — v1.5
 - ✓ ACC-02/03/04/05/06: AccuracyTab UI, last-GW actuals column, proj_pts removed (9.0% vs xPts 16.7%) — v1.5
 
-### Active
+### Active (v1.6)
 
-*(next milestone — run /gsd-new-milestone to define)*
+*(requirements to be defined — run /gsd-new-milestone to scope)*
 
 ### Out of Scope
 
@@ -220,4 +233,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-30 — v1.5 UX & Polish complete; ready for next milestone*
+*Last updated: 2026-04-30 — v1.6 Squad Optimiser started*

@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.5
-milestone_name: UX & Polish
-status: complete
-last_updated: "2026-04-30T10:30:00Z"
-last_activity: "2026-04-30 -- v1.5 UX & Polish milestone complete. All 6 phases (36-41) shipped, 14 plans, 22 requirements satisfied. proj_pts model removed. git tag v1.5 created."
+milestone: v1.6
+milestone_name: Squad Optimiser
+status: planning
+last_updated: "2026-04-30T00:00:00Z"
+last_activity: "2026-04-30 -- Milestone v1.6 started"
 progress:
-  total_phases: 16
-  completed_phases: 16
-  total_plans: 34
-  completed_plans: 34
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-04-29 — v1.5 started)
 
 ## Current Position
 
-Phase: 41 (planned)
-Plan: 0 of 3
-Status: Ready to execute
-Last activity: 2026-04-30 -- Phase 41 planned (3 plans: Wave 0 types/infra, Wave 1 AccuracyTab + nav, Wave 2 human checkpoint + model removal)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-30 — Milestone v1.6 started
 
 ## Performance Metrics
 
