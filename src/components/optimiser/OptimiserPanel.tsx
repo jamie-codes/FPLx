@@ -8,7 +8,7 @@ import { useState, useMemo, Fragment } from 'react'
 import { useSquad } from '@/lib/hooks/useSquad'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { GwToggle } from '@/components/gem-table/GwToggle'
-import { optimiseLineup } from '@/lib/optimise-lineup'
+import { optimiseLineup, HORIZON_FIELD } from '@/lib/optimise-lineup'
 import type { OptimiserHorizon, MergedPlayer } from '@/lib/types'
 
 interface OptimiserPanelProps {
@@ -22,13 +22,6 @@ const GK = 1
 const DEF = 2
 const MID = 3
 const FWD = 4
-
-// Field name lookup for horizon-aware xPts display (matches HORIZON_FIELD in the engine)
-const HORIZON_FIELD: Record<OptimiserHorizon, 'xPts_1gw' | 'xPts_3gw' | 'xPts_5gw'> = {
-  1: 'xPts_1gw',
-  3: 'xPts_3gw',
-  5: 'xPts_5gw',
-}
 
 // Per-row data shape produced by pairSection()
 type ComparisonRowData = {
@@ -57,7 +50,7 @@ function pairSection(
   const sortedOptimised = isBench ? [...optimisedIds] : [...optimisedIds].sort((a, b) => score(b) - score(a))
   return sortedCurrent.map((currentId, i) => {
     // Guard: formation changes can produce different section lengths; treat missing slot as same player (no change).
-    const optimisedId = sortedOptimised[i] ?? currentId
+    const optimisedId = i < sortedOptimised.length ? sortedOptimised[i] : currentId
     const isChanged = currentId !== optimisedId
     const rawDelta = isChanged && !isBench ? score(optimisedId) - score(currentId) : 0
     const delta = Math.max(0, rawDelta)
