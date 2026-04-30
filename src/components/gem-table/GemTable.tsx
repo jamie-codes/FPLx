@@ -14,6 +14,7 @@ import {
   type VisibilityState,
 } from '@tanstack/react-table'
 import { usePlayers } from '@/lib/hooks/usePlayers'
+import { useAccuracy } from '@/lib/hooks/useAccuracy'
 import { computeAllGemScores } from '@/lib/gem-score'
 import type { PositionCode, ScoredPlayer } from '@/lib/types'
 import { createColumns } from './columns'
@@ -51,13 +52,18 @@ interface GemTableProps {
 export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemTableProps = {}) {
   const { data, isLoading, error } = usePlayers()
 
+  // Phase 41 ACC-05: derive the most-recent backtest GW so the last_gw_actual_pts column header
+  // can render "GW{N} Pts". Accuracy hook is cached at 6h staleTime — essentially free here.
+  const { data: accuracyData } = useAccuracy()
+  const lastGwActualGwN: number | null = accuracyData?.gws_covered?.[0] ?? null
+
   const scoredPlayers = useMemo(() => computeAllGemScores(data ?? []), [data])
 
   const handleCompare = useCallback((player: ScoredPlayer) => {
     onCompare?.(player)
   }, [onCompare])
 
-  const columns = useMemo(() => createColumns(handleCompare), [handleCompare])
+  const columns = useMemo(() => createColumns(handleCompare, lastGwActualGwN), [handleCompare, lastGwActualGwN])
 
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'gem_score', desc: true },
