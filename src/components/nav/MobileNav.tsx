@@ -15,8 +15,9 @@ export function MobileNav({ activeSection, activeSubTab, onSectionChange, onSubT
       className="sm:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-700 nav-safe-bottom z-50"
       aria-label="Mobile navigation"
     >
-      {activeSection !== 'squad' && (() => {
+      {(() => {
         const activeSectionDef = SECTIONS.find(s => s.id === activeSection)!
+        if (activeSectionDef.subTabs.length === 0) return null
         return (
           <div className="flex gap-2 px-4 py-2 border-b border-zinc-200 dark:border-zinc-700">
             {activeSectionDef.subTabs.map((sub) => (
