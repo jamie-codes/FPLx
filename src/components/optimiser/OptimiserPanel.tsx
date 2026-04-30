@@ -9,7 +9,11 @@ import { useSquad } from '@/lib/hooks/useSquad'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { GwToggle } from '@/components/gem-table/GwToggle'
 import { optimiseLineup, HORIZON_FIELD } from '@/lib/optimise-lineup'
-import type { OptimiserHorizon, MergedPlayer } from '@/lib/types'
+import type { OptimiserHorizon, MergedPlayer, TransferSuggestion } from '@/lib/types'
+import { suggestTransfers } from '@/lib/suggest-transfers'
+import { useMyTeam } from '@/lib/hooks/useMyTeam'
+import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
+import { FtToggle } from './FtToggle'
 
 interface OptimiserPanelProps {
   // teamId is the SUBMITTED team id (page.tsx passes `submittedId ?? ''`). Empty string means
@@ -218,11 +222,14 @@ function MobileComparisonCards({
 
 export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
   const [horizon, setHorizon] = useState<OptimiserHorizon>(1)
+  const [ftCount, setFtCount] = useState<1 | 2>(1)  // D-02: default is 1 FT
 
   // teamId is the submitted id from page.tsx. Pass null to useSquad when empty so the query is disabled.
   const submittedId = teamId.trim() === '' ? null : teamId.trim()
   const { data: squadData, isLoading: squadLoading, error: squadError } = useSquad(submittedId)
   const { data: playersData, isLoading: playersLoading } = usePlayers()
+  const { isAuthenticated } = useAuthStatus()
+  const { data: myTeamData } = useMyTeam(isAuthenticated && submittedId !== null)
 
   const isLoading = squadLoading || playersLoading
   const horizonField = HORIZON_FIELD[horizon]
@@ -242,6 +249,27 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
     const result = optimiseLineup(squadData.picks, playersData, horizon)
     return { playerMap: map, lineup: result, eligibleCount: eligible, totalPlayersInSquad: squadData.picks.length }
   }, [squadData, playersData, horizon])
+
+  // selling_price map from useMyTeam (authenticated path D-09). Empty Map when unauthenticated
+  // → suggestTransfers falls back to now_cost (D-11). Mirrors TransferPanel.tsx pattern.
+  const exactSellPrices = useMemo(() => {
+    if (!myTeamData) return new Map<number, number>()
+    return new Map<number, number>(myTeamData.picks.map(p => [p.element, p.selling_price]))
+  }, [myTeamData])
+
+  // Phase 45 (TFR-01..TFR-03): rank transfer suggestions for the current horizon + ftCount.
+  // Returns [] when squad/players/lineup are not yet ready, or when no improvements exist.
+  const transferSuggestions: TransferSuggestion[] = useMemo(() => {
+    if (!squadData || !playersData || !lineup) return []
+    return suggestTransfers({
+      currentPicks: squadData.picks,
+      players: playersData,
+      horizon,
+      ftCount,
+      bank: squadData.entry_history.bank,
+      sellPrices: exactSellPrices,
+    })
+  }, [squadData, playersData, lineup, horizon, ftCount, exactSellPrices])
 
   // Empty state: no team id submitted
   if (submittedId === null) {
@@ -392,6 +420,102 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
       <div className="sm:hidden">
         <MobileComparisonCards rows={sectionsRows} playerMap={playerMap} horizonField={horizonField} />
       </div>
+
+      {/* Phase 45: Transfer Suggestions section (TFR-01, TFR-02, TFR-03) */}
+      <section
+        className="pt-4 space-y-3 border-t border-zinc-200 dark:border-zinc-700"
+        data-testid="transfer-suggestions-section"
+      >
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+          Transfer Suggestions
+        </h3>
+        <FtToggle value={ftCount} onChange={setFtCount} />
+        {transferSuggestions.length === 0 ? (
+          <div
+            className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/40 px-3 py-3 text-sm text-zinc-500 dark:text-zinc-400 text-center"
+            data-testid="suggestions-empty-state"
+          >
+            Your current squad is already optimal for this horizon.
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {transferSuggestions.map((sug, idx) => {
+              const isCombo = sug.kind === 'combo'
+              const isHit = sug.cost === 4
+              const variantAttr: 'free' | 'hit' | 'combo' = isCombo ? 'combo' : (isHit ? 'hit' : 'free')
+              const costPillClass = isHit
+                ? 'text-xs font-semibold text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950 border border-amber-400 rounded px-1 py-0.5'
+                : 'text-xs font-semibold text-green-400 bg-green-950 rounded px-1 py-0.5'
+              const costPillTestId = isHit ? 'cost-pill-hit' : 'cost-pill-free'
+              const costPillCopy = isHit ? '-4pts' : 'FREE'
+
+              if (sug.kind === 'single') {
+                return (
+                  <div
+                    key={`sug-${idx}`}
+                    className="border-b border-zinc-100 dark:border-zinc-800 py-1.5"
+                    data-testid="suggestion-row"
+                    data-variant={variantAttr}
+                  >
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                      <span className="text-zinc-500 dark:text-zinc-400">Out:</span>
+                      <span className="text-zinc-700 dark:text-zinc-300">{sug.sell.web_name}</span>
+                      <span className="text-zinc-400 dark:text-zinc-500">→</span>
+                      <span className="text-zinc-500 dark:text-zinc-400">In:</span>
+                      <span className="text-green-700 dark:text-green-400">{sug.buy.web_name}</span>
+                      <span className="text-zinc-400 dark:text-zinc-500">│</span>
+                      <span className={costPillClass} data-testid={costPillTestId}>{costPillCopy}</span>
+                      <span className="text-zinc-400 dark:text-zinc-500">│</span>
+                      <span className="font-semibold text-green-600 dark:text-green-400">+{sug.xPtsGain.toFixed(1)} xPts</span>
+                    </div>
+                    {sug.breakEvenGws !== null && (
+                      <div
+                        className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 ml-0 sm:ml-[3.25rem]"
+                        data-testid="break-even"
+                      >
+                        Breaks even in {sug.breakEvenGws} {sug.breakEvenGws === 1 ? 'GW' : 'GWs'}
+                      </div>
+                    )}
+                  </div>
+                )
+              }
+
+              // Combo (2-transfer) variant
+              return (
+                <div
+                  key={`sug-${idx}`}
+                  className="border-b border-zinc-100 dark:border-zinc-800 py-2 px-2 bg-zinc-50/50 dark:bg-zinc-800/30 rounded"
+                  data-testid="suggestion-row"
+                  data-variant="combo"
+                >
+                  {sug.transfers.map((t, ti) => (
+                    <div key={`t-${ti}`} className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-sm${ti > 0 ? ' mt-0.5' : ''}`}>
+                      <span className="text-zinc-500 dark:text-zinc-400">Out:</span>
+                      <span className="text-zinc-700 dark:text-zinc-300">{t.sell.web_name}</span>
+                      <span className="text-zinc-400 dark:text-zinc-500">→</span>
+                      <span className="text-zinc-500 dark:text-zinc-400">In:</span>
+                      <span className="text-green-700 dark:text-green-400">{t.buy.web_name}</span>
+                    </div>
+                  ))}
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm mt-1 pt-1 border-t border-zinc-200 dark:border-zinc-700">
+                    <span className={costPillClass} data-testid={costPillTestId}>{costPillCopy}</span>
+                    <span className="text-zinc-400 dark:text-zinc-500">│</span>
+                    <span className="font-semibold text-green-600 dark:text-green-400">+{sug.xPtsGain.toFixed(1)} xPts</span>
+                  </div>
+                  {sug.breakEvenGws !== null && (
+                    <div
+                      className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5"
+                      data-testid="break-even"
+                    >
+                      Breaks even in {sug.breakEvenGws} {sug.breakEvenGws === 1 ? 'GW' : 'GWs'}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
     </section>
   )
 }
