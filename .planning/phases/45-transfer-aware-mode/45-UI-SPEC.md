@@ -1,7 +1,8 @@
 ---
 phase: 45
 slug: transfer-aware-mode
-status: draft
+status: approved
+reviewed_at: 2026-04-30
 shadcn_initialized: false
 preset: none
 created: 2026-04-30
@@ -62,13 +63,13 @@ Inherited from 44-UI-SPEC.md. Additional roles for Phase 45 transfer-suggestion 
 | Section header — "Transfer Suggestions" | 14px (`text-sm`) | 600 semibold | 1.3 |
 | FT toggle button text ("1 FT" / "2 FTs") | 12px (`text-xs`) | 600 semibold (when active) / 400 regular (when inactive) | 1.4 |
 | FT toggle label ("Free transfers:") | 12px (`text-xs`) | 400 regular | 1.4 |
-| Transfer suggestion — primary row text (Out / In names) | 14px (`text-sm`) | 400 regular; player names `font-medium` (500) | 1.5 |
+| Transfer suggestion — primary row text (Out / In names) | 14px (`text-sm`) | 400 regular | 1.5 |
 | Transfer suggestion — cost pill (`FREE` / `-4pts`) | 12px (`text-xs`) | 600 semibold | 1.4 |
 | Transfer suggestion — xPts gain | 14px (`text-sm`) | 600 semibold | 1.5 |
 | Transfer suggestion — break-even line | 12px (`text-xs`) | 400 regular | 1.4 |
 | Empty state message | 14px (`text-sm`) | 400 regular | 1.5 |
 
-Weight discipline: only 400 (regular), 500 (medium for player names — already used in TransferPanel.tsx existing patterns), and 600 (semibold) appear. The 500 weight is an inherited carry from `TransferPanel.tsx` (`<span className="font-medium">{s.sell.web_name}</span>`) and is preserved here for consistency with the established transfer-row visual identity. No new weights are introduced.
+Weight discipline: only 400 (regular) and 600 (semibold) appear. Two weights maximum — matches Phase 44 approved baseline.
 
 ---
 
@@ -83,7 +84,7 @@ Inherited from 44-UI-SPEC.md. Phase 45 introduces ONE new semantic role and reus
 | FT toggle — inactive button | `text-zinc-700` `bg-zinc-100` | `dark:text-zinc-300 dark:bg-zinc-800` | Inactive pill (matches `GwToggle` inactive style) |
 | Transfer Suggestions section header | `text-zinc-900` | `dark:text-zinc-100` | Section heading text |
 | Suggestion row — Out player name | `text-zinc-700` | `dark:text-zinc-300` | Player being transferred out |
-| Suggestion row — In player name | `text-green-700` `font-medium` | `dark:text-green-400 font-medium` | Player being transferred in (re-uses Phase 44 changed-row green) |
+| Suggestion row — In player name | `text-green-700` | `dark:text-green-400` | Player being transferred in (re-uses Phase 44 changed-row green) |
 | Suggestion row — arrow separator | `text-zinc-400` | `dark:text-zinc-500` | `→` glyph (re-uses Phase 44 arrow color) |
 | Suggestion row — pipe separator | `text-zinc-400` | `dark:text-zinc-500` | `│` glyph between cost and xPts (re-uses Phase 44 headline pipe) |
 | **Cost pill — FREE** | `text-green-400 bg-green-950` | `text-green-400 bg-green-950` (same — already cross-mode in Phase 44) | "FREE" label on no-hit suggestions. Re-uses the Phase 44 delta-pill token EXACTLY. |
@@ -265,10 +266,10 @@ Each suggestion is a row inside a vertically-stacked list. Two visual variants: 
   data-variant="free"
 >
   <span className="text-zinc-500 dark:text-zinc-400">Out:</span>
-  <span className="font-medium text-zinc-700 dark:text-zinc-300">{sellName}</span>
+  <span className="text-zinc-700 dark:text-zinc-300">{sellName}</span>
   <span className="text-zinc-400 dark:text-zinc-500">→</span>
   <span className="text-zinc-500 dark:text-zinc-400">In:</span>
-  <span className="font-medium text-green-700 dark:text-green-400">{buyName}</span>
+  <span className="text-green-700 dark:text-green-400">{buyName}</span>
   <span className="text-zinc-400 dark:text-zinc-500">│</span>
   <span
     className="text-xs font-semibold text-green-400 bg-green-950 rounded px-1 py-0.5"
@@ -290,10 +291,10 @@ Each suggestion is a row inside a vertically-stacked list. Two visual variants: 
 >
   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
     <span className="text-zinc-500 dark:text-zinc-400">Out:</span>
-    <span className="font-medium text-zinc-700 dark:text-zinc-300">{sellName}</span>
+    <span className="text-zinc-700 dark:text-zinc-300">{sellName}</span>
     <span className="text-zinc-400 dark:text-zinc-500">→</span>
     <span className="text-zinc-500 dark:text-zinc-400">In:</span>
-    <span className="font-medium text-green-700 dark:text-green-400">{buyName}</span>
+    <span className="text-green-700 dark:text-green-400">{buyName}</span>
     <span className="text-zinc-400 dark:text-zinc-500">│</span>
     <span
       className="text-xs font-semibold text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950 border border-amber-400 rounded px-1 py-0.5"
@@ -359,18 +360,18 @@ When `ftCount = 2` and the engine returns a 2-transfer suggestion, both transfer
   {/* Transfer 1 */}
   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
     <span className="text-zinc-500 dark:text-zinc-400">Out:</span>
-    <span className="font-medium text-zinc-700 dark:text-zinc-300">{sell1.web_name}</span>
+    <span className="text-zinc-700 dark:text-zinc-300">{sell1.web_name}</span>
     <span className="text-zinc-400 dark:text-zinc-500">→</span>
     <span className="text-zinc-500 dark:text-zinc-400">In:</span>
-    <span className="font-medium text-green-700 dark:text-green-400">{buy1.web_name}</span>
+    <span className="text-green-700 dark:text-green-400">{buy1.web_name}</span>
   </div>
   {/* Transfer 2 */}
   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm mt-0.5">
     <span className="text-zinc-500 dark:text-zinc-400">Out:</span>
-    <span className="font-medium text-zinc-700 dark:text-zinc-300">{sell2.web_name}</span>
+    <span className="text-zinc-700 dark:text-zinc-300">{sell2.web_name}</span>
     <span className="text-zinc-400 dark:text-zinc-500">→</span>
     <span className="text-zinc-500 dark:text-zinc-400">In:</span>
-    <span className="font-medium text-green-700 dark:text-green-400">{buy2.web_name}</span>
+    <span className="text-green-700 dark:text-green-400">{buy2.web_name}</span>
   </div>
   {/* Aggregate cost / gain row */}
   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm mt-1 pt-1 border-t border-zinc-200 dark:border-zinc-700">
@@ -609,11 +610,11 @@ Free transfers:  [1 FT]●  [2 FTs]
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS (FLAG: inherited 6px exceptions — non-blocking)
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-04-30
