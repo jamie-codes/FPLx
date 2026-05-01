@@ -47,8 +47,10 @@ describe('VarianceBadge', () => {
 })
 
 describe('XPtsCell', () => {
-  it('renders value (toFixed 1), VarianceBadge ⬆, and breakdown tooltip when components + ceiling=true', () => {
-    const components = { goal_pts: 1.2, assist_pts: 0.8, cs_pts: 0.4, bonus_pts: 2.1 }
+  // Phase 48: XPtsCell now renders a CSS hover card instead of a native title tooltip.
+  // Tests updated to verify hover card DOM structure (XPT-01 / D-03).
+  it('renders value (toFixed 1), VarianceBadge ⬆, and hover card with all row labels when components + ceiling=true', () => {
+    const components = { goal_pts: 1.2, assist_pts: 0.8, cs_pts: 0.4, bonus_pts: 2.1, appearance_pts: 1.8 }
     const { container } = render(
       <XPtsCell value={4.5} ceiling={true} components={components} window={1} />,
     )
@@ -56,71 +58,66 @@ describe('XPtsCell', () => {
     // Variance badge ⬆ present
     const badge = Array.from(container.querySelectorAll('span')).find((s) => s.textContent === '⬆')
     expect(badge).toBeDefined()
-    // Wrapping span carries the breakdown tooltip
-    const wrap = container.querySelector('span[title*="xPts breakdown"]')
+    // Hover card wrapper uses group/xpts and cursor-help
+    const wrap = container.querySelector('.cursor-help')
     expect(wrap).not.toBeNull()
-    const tip = wrap!.getAttribute('title')!
-    expect(tip).toContain('xPts breakdown (1 GW):')
-    expect(tip).toContain('Goals: 1.20')
-    expect(tip).toContain('Assists: 0.80')
-    expect(tip).toContain('Clean sheet: 0.40')
-    expect(tip).toContain('Bonus: 2.10')
-    expect(wrap!.className).toContain('cursor-help')
+    // Hover card renders labeled rows
+    expect(container.textContent).toContain('Appearance')
+    expect(container.textContent).toContain('Goals')
+    expect(container.textContent).toContain('Assists')
+    expect(container.textContent).toContain('Clean sheet')
+    expect(container.textContent).toContain('Bonus')
+    expect(container.textContent).toContain('Total')
   })
 
-  it('renders "0.0" with no badge and no tooltip when value is undefined', () => {
+  it('renders "0.0" with no badge and no hover card when value is undefined', () => {
     const { container } = render(
       <XPtsCell value={undefined} ceiling={undefined} components={undefined} window={1} />,
     )
     expect(screen.getByText('0.0')).toBeTruthy()
     // No variance badge
     expect(container.querySelectorAll('span').length).toBe(1)
-    // The single span has no breakdown tooltip
-    const span = container.querySelector('span')!
-    expect(span.getAttribute('title')).toBeNull()
+    // No hover card labels
+    expect(container.textContent).not.toContain('Appearance')
   })
 
-  it('renders "0.0" with no badge and no tooltip when value is exactly 0', () => {
+  it('renders "0.0" with no badge and no hover card when value is exactly 0', () => {
     const { container } = render(
-      <XPtsCell value={0} ceiling={true} components={{ goal_pts: 0, assist_pts: 0, cs_pts: 0, bonus_pts: 0 }} window={1} />,
+      <XPtsCell value={0} ceiling={true} components={{ goal_pts: 0, assist_pts: 0, cs_pts: 0, bonus_pts: 0, appearance_pts: 0 }} window={1} />,
     )
     expect(screen.getByText('0.0')).toBeTruthy()
-    // Zero-value short-circuit: no badge, no tooltip even when components present
+    // Zero-value short-circuit: no badge, no hover card even when components present
     expect(container.querySelectorAll('span').length).toBe(1)
-    const span = container.querySelector('span')!
-    expect(span.getAttribute('title')).toBeNull()
+    expect(container.textContent).not.toContain('Appearance')
   })
 
-  it('renders number + VarianceBadge but no breakdown tooltip when components are undefined (3GW/5GW)', () => {
+  it('renders number + VarianceBadge but no hover card when components are undefined (3GW/5GW)', () => {
     const { container } = render(
       <XPtsCell value={12.4} ceiling={false} components={undefined} window={3} />,
     )
     expect(screen.getByText('12.4')).toBeTruthy()
-    const wrap = container.querySelector('span[title*="xPts breakdown"]')
-    expect(wrap).toBeNull()
+    // No hover card labels
+    expect(container.textContent).not.toContain('Appearance')
     const badge = Array.from(container.querySelectorAll('span')).find((s) => s.textContent === '=')
     expect(badge).toBeDefined()
   })
 
-  it('renders 3 GW window value with no breakdown tooltip even if components passed', () => {
-    // Components are spec'd to only ship for 1 GW; if a caller passes them on 3GW we still suppress the tooltip.
-    const components = { goal_pts: 1.2, assist_pts: 0.8, cs_pts: 0.4, bonus_pts: 2.1 }
+  it('renders 3 GW window value with no hover card even if components passed', () => {
+    // Components are spec'd to only ship for 1 GW; if a caller passes them on 3GW we still suppress the card.
+    const components = { goal_pts: 1.2, assist_pts: 0.8, cs_pts: 0.4, bonus_pts: 2.1, appearance_pts: 1.8 }
     const { container } = render(
       <XPtsCell value={12.4} ceiling={true} components={components} window={3} />,
     )
-    const wrap = container.querySelector('span[title*="xPts breakdown"]')
-    expect(wrap).toBeNull()
+    expect(container.textContent).not.toContain('Appearance')
   })
 
-  it('breakdown tooltip uses sentence case "Clean sheet" (not "Clean Sheet")', () => {
-    const components = { goal_pts: 1.2, assist_pts: 0.8, cs_pts: 0.4, bonus_pts: 2.1 }
+  it('hover card uses sentence case "Clean sheet" (not "Clean Sheet") as row label', () => {
+    const components = { goal_pts: 1.2, assist_pts: 0.8, cs_pts: 0.4, bonus_pts: 2.1, appearance_pts: 1.8 }
     const { container } = render(
       <XPtsCell value={4.5} ceiling={true} components={components} window={1} />,
     )
-    const wrap = container.querySelector('span[title*="xPts breakdown"]')!
-    const tip = wrap.getAttribute('title')!
-    expect(tip).toContain('Clean sheet')
-    expect(tip).not.toContain('Clean Sheet')
-    expect(tip).not.toContain('CS:')
+    expect(container.textContent).toContain('Clean sheet')
+    expect(container.textContent).not.toContain('Clean Sheet')
+    expect(container.textContent).not.toContain('CS:')
   })
 })
