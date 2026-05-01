@@ -971,15 +971,15 @@ def merge_players(
 
         # Sigma per window (used for ceiling classification post-loop)
         player['_sigma_1gw'] = _compute_xpts_sigma(
-            xg_per90, xa_per90, player_start_prob, player_xmins,
+            xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 1,
         )
         player['_sigma_3gw'] = _compute_xpts_sigma(
-            xg_per90, xa_per90, player_start_prob, player_xmins,
+            xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 3,
         )
         player['_sigma_5gw'] = _compute_xpts_sigma(
-            xg_per90, xa_per90, player_start_prob, player_xmins,
+            xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 5,
         )
 
