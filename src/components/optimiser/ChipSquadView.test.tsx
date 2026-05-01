@@ -1,19 +1,10 @@
-// Phase 46 (CHIP-01..CHIP-02): ChipSquadView RTL tests — RED in Wave 0.
+// Phase 46 (CHIP-01..CHIP-02): ChipSquadView RTL tests — RED in Wave 0, GREEN in Wave 2.
 // Wave 2 creates ChipSquadView.tsx and turns these GREEN.
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest'
 import { render } from '@testing-library/react'
 import type { ChipSquadResult } from '@/lib/types'
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let ChipSquadView: any
-
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  ChipSquadView = require('./ChipSquadView').ChipSquadView
-} catch {
-  ChipSquadView = null
-}
+import { ChipSquadView } from './ChipSquadView'
 
 // Fixture: minimal valid ChipSquadResult
 const MOCK_SQUAD: ChipSquadResult = {
@@ -50,7 +41,6 @@ describe('ChipSquadView — Wave 0 (RED)', () => {
   })
 
   it('renders with data-testid="chip-squad-view"', () => {
-    if (!ChipSquadView) throw new Error('ChipSquadView not yet implemented')
     const { getByTestId } = render(
       <ChipSquadView result={MOCK_SQUAD} chipMode="wildcard" />
     )
@@ -58,7 +48,6 @@ describe('ChipSquadView — Wave 0 (RED)', () => {
   })
 
   it('renders headline with formation string', () => {
-    if (!ChipSquadView) throw new Error('ChipSquadView not yet implemented')
     const { getByTestId } = render(
       <ChipSquadView result={MOCK_SQUAD} chipMode="wildcard" />
     )
@@ -67,7 +56,6 @@ describe('ChipSquadView — Wave 0 (RED)', () => {
   })
 
   it('renders "Wildcard" in headline when chipMode is wildcard (D-17)', () => {
-    if (!ChipSquadView) throw new Error('ChipSquadView not yet implemented')
     const { getByTestId } = render(
       <ChipSquadView result={MOCK_SQUAD} chipMode="wildcard" />
     )
@@ -75,7 +63,6 @@ describe('ChipSquadView — Wave 0 (RED)', () => {
   })
 
   it('renders "Free Hit" and FH reversion notice when chipMode is free-hit (D-17, D-18)', () => {
-    if (!ChipSquadView) throw new Error('ChipSquadView not yet implemented')
     const { getByTestId } = render(
       <ChipSquadView result={MOCK_SQUAD} chipMode="free-hit" />
     )
@@ -85,7 +72,6 @@ describe('ChipSquadView — Wave 0 (RED)', () => {
   })
 
   it('renders budget used in headline (D-17)', () => {
-    if (!ChipSquadView) throw new Error('ChipSquadView not yet implemented')
     const { getByTestId } = render(
       <ChipSquadView result={MOCK_SQUAD} chipMode="wildcard" />
     )
@@ -94,7 +80,6 @@ describe('ChipSquadView — Wave 0 (RED)', () => {
   })
 
   it('XI players have green accent border (border-l-2 border-green-500) (D-16)', () => {
-    if (!ChipSquadView) throw new Error('ChipSquadView not yet implemented')
     const { container } = render(
       <ChipSquadView result={MOCK_SQUAD} chipMode="wildcard" />
     )
@@ -106,7 +91,6 @@ describe('ChipSquadView — Wave 0 (RED)', () => {
   })
 
   it('bench players (not in bestXI) have opacity-60 class (D-16)', () => {
-    if (!ChipSquadView) throw new Error('ChipSquadView not yet implemented')
     const { container } = render(
       <ChipSquadView result={MOCK_SQUAD} chipMode="wildcard" />
     )

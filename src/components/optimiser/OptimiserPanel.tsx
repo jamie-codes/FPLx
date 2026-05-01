@@ -14,6 +14,10 @@ import { suggestTransfers } from '@/lib/suggest-transfers'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
 import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
 import { FtToggle } from './FtToggle'
+import type { ChipMode, ChipSquadResult } from '@/lib/types'
+import { buildOptimalSquad, computeBenchBoostXPts, CHIP_DEFAULT_BUDGET_TENTHS } from '@/lib/chip-modes'
+import { ChipModeToggle } from './ChipModeToggle'
+import { ChipSquadView } from './ChipSquadView'
 
 interface OptimiserPanelProps {
   // teamId is the SUBMITTED team id (page.tsx passes `submittedId ?? ''`). Empty string means
@@ -94,10 +98,12 @@ function ComparisonTable({
   rows,
   playerMap,
   horizonField,
+  isBenchBoost = false,
 }: {
   rows: { section: 'GK' | 'DEF' | 'MID' | 'FWD' | 'Bench'; items: ComparisonRowData[] }[]
   playerMap: Map<number, MergedPlayer>
   horizonField: 'xPts_1gw' | 'xPts_3gw' | 'xPts_5gw'
+  isBenchBoost?: boolean
 }) {
   return (
     <table className="w-full text-sm border-collapse" data-testid="comparison-table">
@@ -128,7 +134,7 @@ function ComparisonTable({
               const curXPts = (cur?.[horizonField] as number | undefined) ?? 0
               const baseRowCls = 'border-b border-zinc-100 dark:border-zinc-800'
               const changedRowCls = row.isChanged
-                ? `${baseRowCls} border-l-2 border-l-green-500${row.isBench ? ' opacity-80' : ''}`
+                ? `${baseRowCls} border-l-2 border-l-green-500${row.isBench && !isBenchBoost ? ' opacity-80' : ''}`
                 : baseRowCls
               return (
                 <tr
@@ -169,10 +175,12 @@ function MobileComparisonCards({
   rows,
   playerMap,
   horizonField,
+  isBenchBoost = false,
 }: {
   rows: { section: 'GK' | 'DEF' | 'MID' | 'FWD' | 'Bench'; items: ComparisonRowData[] }[]
   playerMap: Map<number, MergedPlayer>
   horizonField: 'xPts_1gw' | 'xPts_3gw' | 'xPts_5gw'
+  isBenchBoost?: boolean
 }) {
   return (
     <>
@@ -189,7 +197,7 @@ function MobileComparisonCards({
             return (
               <div
                 key={`${section}-mobile-${i}`}
-                className={`py-2 border-b border-zinc-100 dark:border-zinc-800${row.isChanged ? ' border-l-2 border-l-green-500 pl-2' : ' opacity-60'}`}
+                className={`py-2 border-b border-zinc-100 dark:border-zinc-800${row.isChanged ? ' border-l-2 border-l-green-500 pl-2' : (isBenchBoost && row.isBench ? '' : ' opacity-60')}`}
                 {...(row.isChanged ? { 'data-testid': 'comparison-row-changed' } : {})}
               >
                 <div className="text-xs text-zinc-500 dark:text-zinc-400">{cur?.web_name ?? ''}</div>
@@ -223,6 +231,7 @@ function MobileComparisonCards({
 export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
   const [horizon, setHorizon] = useState<OptimiserHorizon>(1)
   const [ftCount, setFtCount] = useState<1 | 2>(1)  // D-02: default is 1 FT
+  const [chipMode, setChipMode] = useState<ChipMode>('none')  // D-04: resets on page reload
 
   // teamId is the submitted id from page.tsx. Pass null to useSquad when empty so the query is disabled.
   const submittedId = teamId.trim() === '' ? null : teamId.trim()
@@ -270,6 +279,23 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
       sellPrices: exactSellPrices,
     })
   }, [squadData, playersData, lineup, horizon, ftCount, exactSellPrices])
+
+  // Phase 46 (CHIP-01, CHIP-02): chip squad for WC/FH modes. null when chip not active or < 15 eligible.
+  const chipSquad: ChipSquadResult | null = useMemo(() => {
+    if (chipMode !== 'wildcard' && chipMode !== 'free-hit') return null
+    if (!playersData) return null
+    // D-08 (Pitfall 2): Free Hit ALWAYS uses horizon: 1 regardless of user's selected horizon
+    const effectiveHorizon = chipMode === 'free-hit' ? 1 : horizon
+    // D-11: Auth budget = sell prices + bank; unauth = CHIP_DEFAULT_BUDGET_TENTHS (£100m)
+    let budget = CHIP_DEFAULT_BUDGET_TENTHS
+    if (squadData && myTeamData) {
+      const sellPricesSum = squadData.picks.reduce((s, pick) => {
+        return s + (exactSellPrices.get(pick.element) ?? (playerMap.get(pick.element)?.now_cost ?? 0))
+      }, 0)
+      budget = sellPricesSum + squadData.entry_history.bank
+    }
+    return buildOptimalSquad({ players: playersData, budget, horizon: effectiveHorizon })
+  }, [chipMode, playersData, squadData, myTeamData, horizon, exactSellPrices, playerMap])
 
   // Empty state: no team id submitted
   if (submittedId === null) {
@@ -403,74 +429,178 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
         </div>
       )}
 
-      {/* Horizon selector row — right-aligned only (formation moved to headline row) */}
+      {/* Horizon selector row — disabled when FH active (D-08) */}
       <div className="flex items-center justify-end">
-        <GwToggle value={horizon} onChange={setHorizon} />
+        <GwToggle value={horizon} onChange={setHorizon} disabled={chipMode === 'free-hit'} />
       </div>
 
-      {/* Headline row: Formation / Changes / xPts gain */}
-      <HeadlineRow formation={lineup.formation} changeCount={changeCount} xPtsGain={xPtsGain} />
+      {/* Chip mode toggle (D-01) — always visible when squad loaded */}
+      <ChipModeToggle value={chipMode} onChange={setChipMode} />
 
-      {/* Desktop comparison table */}
-      <div className="hidden sm:block">
-        <ComparisonTable rows={sectionsRows} playerMap={playerMap} horizonField={horizonField} />
-      </div>
-
-      {/* Mobile card stack */}
-      <div className="sm:hidden">
-        <MobileComparisonCards rows={sectionsRows} playerMap={playerMap} horizonField={horizonField} />
-      </div>
-
-      {/* Phase 45: Transfer Suggestions section (TFR-01, TFR-02, TFR-03) */}
-      <section
-        className="pt-4 space-y-3 border-t border-zinc-200 dark:border-zinc-700"
-        data-testid="transfer-suggestions-section"
-      >
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-          Transfer Suggestions
-        </h3>
-        <FtToggle value={ftCount} onChange={setFtCount} />
-        {transferSuggestions.length === 0 ? (
+      {/* WC / FH: ChipSquadView replaces comparison table (D-03) */}
+      {(chipMode === 'wildcard' || chipMode === 'free-hit') ? (
+        chipSquad === null ? (
           <div
-            className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/40 px-3 py-3 text-sm text-zinc-500 dark:text-zinc-400 text-center"
-            data-testid="suggestions-empty-state"
+            className="rounded border border-amber-400 bg-amber-50 dark:bg-amber-950 px-3 py-2 text-sm text-amber-800 dark:text-amber-200"
+            data-testid="chip-squad-null-banner"
           >
-            Your current squad is already optimal for this horizon.
+            <span className="font-semibold">Unable to build optimal squad:</span>{' '}
+            fewer than 15 eligible players available in the player pool.
           </div>
         ) : (
-          <div className="space-y-1">
-            {transferSuggestions.map((sug, idx) => {
-              const isCombo = sug.kind === 'combo'
-              const isHit = sug.cost === 4
-              const variantAttr: 'free' | 'hit' | 'combo' = isCombo ? 'combo' : (isHit ? 'hit' : 'free')
-              const costPillClass = isHit
-                ? 'text-xs font-semibold text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950 border border-amber-400 rounded px-1 py-0.5'
-                : 'text-xs font-semibold text-green-400 bg-green-950 rounded px-1 py-0.5'
-              const costPillTestId = isHit ? 'cost-pill-hit' : 'cost-pill-free'
-              const costPillCopy = isHit ? '-4pts' : 'FREE'
+          <ChipSquadView result={chipSquad} chipMode={chipMode} />
+        )
+      ) : (
+        <>
+          {/* None / BB: existing comparison table with optional BB modifications */}
 
-              if (sug.kind === 'single') {
+          {/* BB headline (D-13) — replaces HeadlineRow when BB active */}
+          {chipMode === 'bench-boost' ? (
+            <div
+              className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 py-2 flex-wrap"
+              data-testid="bb-headline-row"
+            >
+              <span className="font-semibold">Bench Boost</span>
+              <span className="text-zinc-400">│</span>
+              <span>
+                <span className="font-semibold">Bench xPts:</span>{' '}
+                {computeBenchBoostXPts(lineup.bench, playersData, horizon).toFixed(1)}
+              </span>
+              <span className="text-zinc-400">│</span>
+              <span>
+                <span className="font-semibold">Start xPts:</span>{' '}
+                {lineup.starters.reduce((s, id) => s + ((playerMap.get(id)?.[horizonField] as number | undefined) ?? 0), 0).toFixed(1)}
+              </span>
+              <span className="text-zinc-400">│</span>
+              <span className="font-semibold text-green-600 dark:text-green-400">
+                Total: {(
+                  computeBenchBoostXPts(lineup.bench, playersData, horizon) +
+                  lineup.starters.reduce((s, id) => s + ((playerMap.get(id)?.[horizonField] as number | undefined) ?? 0), 0)
+                ).toFixed(1)}
+              </span>
+            </div>
+          ) : (
+            <HeadlineRow formation={lineup.formation} changeCount={changeCount} xPtsGain={xPtsGain} />
+          )}
+
+          {/* BB notice (D-15) */}
+          {chipMode === 'bench-boost' && (
+            <p
+              className="text-xs text-zinc-500 dark:text-zinc-400 italic"
+              data-testid="bb-notice"
+            >
+              All 15 players score points — bench contributions included above.
+            </p>
+          )}
+
+          {/* Desktop comparison table — pass isBenchBoost for bench opacity (D-14, Pitfall 6) */}
+          <div className="hidden sm:block">
+            <ComparisonTable
+              rows={sectionsRows}
+              playerMap={playerMap}
+              horizonField={horizonField}
+              isBenchBoost={chipMode === 'bench-boost'}
+            />
+          </div>
+
+          {/* Mobile card stack */}
+          <div className="sm:hidden">
+            <MobileComparisonCards
+              rows={sectionsRows}
+              playerMap={playerMap}
+              horizonField={horizonField}
+              isBenchBoost={chipMode === 'bench-boost'}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Transfer Suggestions: hidden when WC/FH active (chips rebuild entire squad) (D-02, D-03) */}
+      {chipMode !== 'wildcard' && chipMode !== 'free-hit' && (
+        <section
+          className="pt-4 space-y-3 border-t border-zinc-200 dark:border-zinc-700"
+          data-testid="transfer-suggestions-section"
+        >
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            Transfer Suggestions
+          </h3>
+          {/* FT toggle: visible only when None or BB active (D-02, Pitfall 3) */}
+          <FtToggle value={ftCount} onChange={setFtCount} />
+          {transferSuggestions.length === 0 ? (
+            <div
+              className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/40 px-3 py-3 text-sm text-zinc-500 dark:text-zinc-400 text-center"
+              data-testid="suggestions-empty-state"
+            >
+              Your current squad is already optimal for this horizon.
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {transferSuggestions.map((sug, idx) => {
+                const isCombo = sug.kind === 'combo'
+                const isHit = sug.cost === 4
+                const variantAttr: 'free' | 'hit' | 'combo' = isCombo ? 'combo' : (isHit ? 'hit' : 'free')
+                const costPillClass = isHit
+                  ? 'text-xs font-semibold text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950 border border-amber-400 rounded px-1 py-0.5'
+                  : 'text-xs font-semibold text-green-400 bg-green-950 rounded px-1 py-0.5'
+                const costPillTestId = isHit ? 'cost-pill-hit' : 'cost-pill-free'
+                const costPillCopy = isHit ? '-4pts' : 'FREE'
+
+                if (sug.kind === 'single') {
+                  return (
+                    <div
+                      key={`sug-${idx}`}
+                      className="border-b border-zinc-100 dark:border-zinc-800 py-1.5"
+                      data-testid="suggestion-row"
+                      data-variant={variantAttr}
+                    >
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                        <span className="text-zinc-500 dark:text-zinc-400">Out:</span>
+                        <span className="text-zinc-700 dark:text-zinc-300">{sug.sell.web_name}</span>
+                        <span className="text-zinc-400 dark:text-zinc-500">→</span>
+                        <span className="text-zinc-500 dark:text-zinc-400">In:</span>
+                        <span className="text-green-700 dark:text-green-400">{sug.buy.web_name}</span>
+                        <span className="text-zinc-400 dark:text-zinc-500">│</span>
+                        <span className={costPillClass} data-testid={costPillTestId}>{costPillCopy}</span>
+                        <span className="text-zinc-400 dark:text-zinc-500">│</span>
+                        <span className="font-semibold text-green-600 dark:text-green-400">+{sug.xPtsGain.toFixed(1)} xPts</span>
+                      </div>
+                      {sug.breakEvenGws !== null && (
+                        <div
+                          className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 ml-0 sm:ml-[3.25rem]"
+                          data-testid="break-even"
+                        >
+                          Breaks even in {sug.breakEvenGws} {sug.breakEvenGws === 1 ? 'GW' : 'GWs'}
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
+
+                // Combo (2-transfer) variant
                 return (
                   <div
                     key={`sug-${idx}`}
-                    className="border-b border-zinc-100 dark:border-zinc-800 py-1.5"
+                    className="border-b border-zinc-100 dark:border-zinc-800 py-2 px-2 bg-zinc-50/50 dark:bg-zinc-800/30 rounded"
                     data-testid="suggestion-row"
-                    data-variant={variantAttr}
+                    data-variant="combo"
                   >
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-                      <span className="text-zinc-500 dark:text-zinc-400">Out:</span>
-                      <span className="text-zinc-700 dark:text-zinc-300">{sug.sell.web_name}</span>
-                      <span className="text-zinc-400 dark:text-zinc-500">→</span>
-                      <span className="text-zinc-500 dark:text-zinc-400">In:</span>
-                      <span className="text-green-700 dark:text-green-400">{sug.buy.web_name}</span>
-                      <span className="text-zinc-400 dark:text-zinc-500">│</span>
+                    {sug.transfers.map((t, ti) => (
+                      <div key={`t-${ti}`} className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-sm${ti > 0 ? ' mt-0.5' : ''}`}>
+                        <span className="text-zinc-500 dark:text-zinc-400">Out:</span>
+                        <span className="text-zinc-700 dark:text-zinc-300">{t.sell.web_name}</span>
+                        <span className="text-zinc-400 dark:text-zinc-500">→</span>
+                        <span className="text-zinc-500 dark:text-zinc-400">In:</span>
+                        <span className="text-green-700 dark:text-green-400">{t.buy.web_name}</span>
+                      </div>
+                    ))}
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm mt-1 pt-1 border-t border-zinc-200 dark:border-zinc-700">
                       <span className={costPillClass} data-testid={costPillTestId}>{costPillCopy}</span>
                       <span className="text-zinc-400 dark:text-zinc-500">│</span>
                       <span className="font-semibold text-green-600 dark:text-green-400">+{sug.xPtsGain.toFixed(1)} xPts</span>
                     </div>
                     {sug.breakEvenGws !== null && (
                       <div
-                        className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 ml-0 sm:ml-[3.25rem]"
+                        className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5"
                         data-testid="break-even"
                       >
                         Breaks even in {sug.breakEvenGws} {sug.breakEvenGws === 1 ? 'GW' : 'GWs'}
@@ -478,44 +608,11 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
                     )}
                   </div>
                 )
-              }
-
-              // Combo (2-transfer) variant
-              return (
-                <div
-                  key={`sug-${idx}`}
-                  className="border-b border-zinc-100 dark:border-zinc-800 py-2 px-2 bg-zinc-50/50 dark:bg-zinc-800/30 rounded"
-                  data-testid="suggestion-row"
-                  data-variant="combo"
-                >
-                  {sug.transfers.map((t, ti) => (
-                    <div key={`t-${ti}`} className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-sm${ti > 0 ? ' mt-0.5' : ''}`}>
-                      <span className="text-zinc-500 dark:text-zinc-400">Out:</span>
-                      <span className="text-zinc-700 dark:text-zinc-300">{t.sell.web_name}</span>
-                      <span className="text-zinc-400 dark:text-zinc-500">→</span>
-                      <span className="text-zinc-500 dark:text-zinc-400">In:</span>
-                      <span className="text-green-700 dark:text-green-400">{t.buy.web_name}</span>
-                    </div>
-                  ))}
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm mt-1 pt-1 border-t border-zinc-200 dark:border-zinc-700">
-                    <span className={costPillClass} data-testid={costPillTestId}>{costPillCopy}</span>
-                    <span className="text-zinc-400 dark:text-zinc-500">│</span>
-                    <span className="font-semibold text-green-600 dark:text-green-400">+{sug.xPtsGain.toFixed(1)} xPts</span>
-                  </div>
-                  {sug.breakEvenGws !== null && (
-                    <div
-                      className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5"
-                      data-testid="break-even"
-                    >
-                      Breaks even in {sug.breakEvenGws} {sug.breakEvenGws === 1 ? 'GW' : 'GWs'}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </section>
+              })}
+            </div>
+          )}
+        </section>
+      )}
     </section>
   )
 }
