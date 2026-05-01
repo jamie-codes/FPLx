@@ -44,12 +44,12 @@ export function XPtsCell({
   window: 1 | 3 | 5
 }) {
   const [open, setOpen] = useState(false)
-  const display = (value ?? 0).toFixed(1)
+  const display = Number.isFinite(value ?? 0) ? (value ?? 0).toFixed(1) : '0.0'
 
   // Empty/zero/negative/NaN short-circuit: no badge, no hover card (BGW = D-06).
   // Explicit guards handle NaN and negative values that could arrive during a
   // partial pipeline failure or BGW cache serve (WR-03: tighten falsy check).
-  if (value === undefined || value === null || value <= 0) {
+  if (value === undefined || value === null || !Number.isFinite(value) || value <= 0) {
     return <span>{display}</span>
   }
 
