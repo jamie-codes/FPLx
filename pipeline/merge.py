@@ -138,6 +138,41 @@ def _cs_prob(defensive_difficulty: float, xmins: float) -> float:
     return cs_prob_raw * mins_factor
 
 
+def _cs_prob_1gw_for_fixtures(fixtures: list, xmins: float) -> float:
+    """Aggregate clean-sheet probability for the next 1 GW (Phase 47 CS-01, CS-02).
+
+    Mirrors _xpts_ngw groupby semantics so DGW handling is consistent:
+    - Single-fixture GW: returns _cs_prob(dd, xmins) for that fixture.
+    - DGW (>=2 fixtures in same event_id group): returns combined probability
+      1 - product(1 - p_i) over the i fixtures in the FIRST event group.
+    - BGW (no upcoming fixtures): returns 0.0 (D-10).
+    - xmins == 0: returns 0.0 (no minutes -> no CS chance, mirrors mins_factor in _cs_prob).
+
+    Only the FIRST event_id group counts toward the 1GW window; later GWs are ignored.
+    """
+    from itertools import groupby
+
+    if not fixtures or xmins <= 0:
+        return 0.0
+
+    # Take the first event_id group only (the upcoming 1GW).
+    first_group = []
+    for _event_id, group in groupby(fixtures, key=lambda f: f['event_id']):
+        first_group = list(group)
+        break
+
+    if not first_group:
+        return 0.0
+
+    # Combined probability across DGW: 1 - prod(1 - p_i)
+    prob_no_cs = 1.0
+    for fix in first_group:
+        dd = fix.get('defensive_difficulty', 1.0 - fix.get('attacking_difficulty', 0.5))
+        p = _cs_prob(dd, xmins)
+        prob_no_cs *= (1.0 - p)
+    return round(1.0 - prob_no_cs, 6)
+
+
 def _compute_xpts_fixture(
     xg_per90: float,
     xa_per90: float,
@@ -911,6 +946,9 @@ def merge_players(
         player['xPts_3gw'] = xpts_3gw
         player['xPts_5gw'] = xpts_5gw
         player['xPts_components_1gw'] = xpts_components_1gw  # may be None for BGW
+        # Phase 47 CS-01/CS-02 (D-08/D-10): expose cs_prob_1gw alongside xPts_1gw.
+        # BGW players: 0.0 (no fixture). DGW players: combined 1-(1-p1)*(1-p2).
+        player['cs_prob_1gw'] = _cs_prob_1gw_for_fixtures(player_fixtures, player_xmins)
 
         # ---- Regression signal (Phase 29 DATA-03, REG-01, REG-02) ----
         # D-01/D-02 deviation: uses FPL element-summary expected_goals/expected_assists
