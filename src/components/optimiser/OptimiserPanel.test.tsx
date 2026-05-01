@@ -33,6 +33,35 @@ vi.mock('@/lib/suggest-transfers', () => ({
   suggestTransfers: (...args: unknown[]) => suggestTransfersMock(...args),
 }))
 
+// Phase 46 mocks
+const buildOptimalSquadMock = vi.fn()
+const computeBenchBoostXPtsMock = vi.fn()
+
+vi.mock('@/lib/chip-modes', () => ({
+  buildOptimalSquad: (...args: unknown[]) => buildOptimalSquadMock(...args),
+  computeBenchBoostXPts: (...args: unknown[]) => computeBenchBoostXPtsMock(...args),
+  CHIP_DEFAULT_BUDGET_TENTHS: 1000,
+}))
+
+// ChipSquadView mock — renders a simple testid so we can verify conditional rendering
+vi.mock('./ChipSquadView', () => ({
+  ChipSquadView: ({ chipMode }: { chipMode: string }) => (
+    <div data-testid="chip-squad-view-mock" data-chipmode={chipMode}>ChipSquadView</div>
+  ),
+}))
+
+// ChipModeToggle mock — renders testid buttons that fire real onChange calls
+vi.mock('./ChipModeToggle', () => ({
+  ChipModeToggle: ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+    <div data-testid="chip-mode-toggle-mock">
+      <button data-testid="chip-toggle-wildcard-mock" onClick={() => onChange('wildcard')}>Wildcard</button>
+      <button data-testid="chip-toggle-freehit-mock" onClick={() => onChange('free-hit')}>Free Hit</button>
+      <button data-testid="chip-toggle-benchboost-mock" onClick={() => onChange('bench-boost')}>Bench Boost</button>
+      <button data-testid="chip-toggle-none-mock" onClick={() => onChange('none')}>None</button>
+    </div>
+  ),
+}))
+
 // Import AFTER mocks
 import { OptimiserPanel } from './OptimiserPanel'
 
@@ -116,6 +145,9 @@ beforeEach(() => {
   useAuthStatusMock.mockReturnValue({ isAuthenticated: false, isLoading: false })
   useMyTeamMock.mockReturnValue({ data: undefined })
   suggestTransfersMock.mockReturnValue([])
+  // Phase 46 defaults
+  buildOptimalSquadMock.mockReturnValue(null)
+  computeBenchBoostXPtsMock.mockReturnValue(0)
 })
 
 describe('Phase 44: OptimiserPanel (comparison table)', () => {
@@ -597,5 +629,123 @@ describe('Phase 45: Transfer-aware mode (transfer suggestions)', () => {
     const params = calls[calls.length - 1][0] as { sellPrices: Map<number, number> }
     expect(params.sellPrices).toBeInstanceOf(Map)
     expect(params.sellPrices.size).toBe(0)
+  })
+})
+
+describe('Phase 46: Chip Modes (CHIP-01, CHIP-02, CHIP-03)', () => {
+  // Shared valid lineup fixture (reuse from Phase 44/45 pattern — 2GK 5DEF 5MID 3FWD)
+  function setupValidLineup() {
+    // 15-player squad with a valid optimisable lineup
+    const players = [
+      makePlayer({ id: 1, element_type: 1, xPts_1gw: 4.0 }),
+      makePlayer({ id: 2, element_type: 1, xPts_1gw: 2.0 }),
+      makePlayer({ id: 3, element_type: 2, xPts_1gw: 5.0 }),
+      makePlayer({ id: 4, element_type: 2, xPts_1gw: 4.5 }),
+      makePlayer({ id: 5, element_type: 2, xPts_1gw: 4.0 }),
+      makePlayer({ id: 6, element_type: 2, xPts_1gw: 3.5 }),
+      makePlayer({ id: 7, element_type: 2, xPts_1gw: 3.0 }),
+      makePlayer({ id: 8, element_type: 3, xPts_1gw: 8.0 }),
+      makePlayer({ id: 9, element_type: 3, xPts_1gw: 7.0 }),
+      makePlayer({ id: 10, element_type: 3, xPts_1gw: 6.0 }),
+      makePlayer({ id: 11, element_type: 3, xPts_1gw: 5.0 }),
+      makePlayer({ id: 12, element_type: 3, xPts_1gw: 4.0 }),
+      makePlayer({ id: 13, element_type: 4, xPts_1gw: 7.0 }),
+      makePlayer({ id: 14, element_type: 4, xPts_1gw: 6.0 }),
+      makePlayer({ id: 15, element_type: 4, xPts_1gw: 5.0 }),
+    ]
+    const picks = players.map((p, i) => makePick(p.id, i + 1))
+    const squadData: SquadPicksResponse = {
+      active_chip: null,
+      picks,
+      entry_history: { event: 33, bank: 20, value: 1020, event_transfers: 1, event_transfers_cost: 0 },
+    }
+    useSquadMock.mockReturnValue({ data: squadData, isLoading: false, error: null })
+    usePlayersMock.mockReturnValue({ data: players, isLoading: false })
+    return { players, picks, squadData }
+  }
+
+  it('ChipModeToggle renders when squad is loaded (D-01)', () => {
+    setupValidLineup()
+    const { getByTestId } = render(<OptimiserPanel teamId="123" />)
+    expect(getByTestId('chip-mode-toggle-mock')).toBeTruthy()
+  })
+
+  it('activating Wildcard calls buildOptimalSquad and renders ChipSquadView (CHIP-01, D-03)', () => {
+    setupValidLineup()
+    const mockChipResult = {
+      squad: [],
+      bestXI: [1, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14],
+      formation: '5-3-2',
+      budgetUsed: 800,
+    }
+    buildOptimalSquadMock.mockReturnValue(mockChipResult)
+    const { getByTestId } = render(<OptimiserPanel teamId="123" />)
+    fireEvent.click(getByTestId('chip-toggle-wildcard-mock'))
+    expect(getByTestId('chip-squad-view-mock')).toBeTruthy()
+    expect(getByTestId('chip-squad-view-mock').getAttribute('data-chipmode')).toBe('wildcard')
+  })
+
+  it('activating Wildcard hides the FT toggle (D-02, Pitfall 3)', () => {
+    setupValidLineup()
+    buildOptimalSquadMock.mockReturnValue({ squad: [], bestXI: [], formation: '4-3-3', budgetUsed: 800 })
+    const { queryByTestId, getByTestId } = render(<OptimiserPanel teamId="123" />)
+    // FT toggle visible initially (None mode)
+    expect(queryByTestId('ft-toggle')).toBeTruthy()
+    fireEvent.click(getByTestId('chip-toggle-wildcard-mock'))
+    // FT toggle hidden in WC mode
+    expect(queryByTestId('ft-toggle')).toBeNull()
+  })
+
+  it('activating Free Hit renders ChipSquadView with chipMode="free-hit" (CHIP-02)', () => {
+    setupValidLineup()
+    buildOptimalSquadMock.mockReturnValue({ squad: [], bestXI: [], formation: '4-4-2', budgetUsed: 850 })
+    const { getByTestId } = render(<OptimiserPanel teamId="123" />)
+    fireEvent.click(getByTestId('chip-toggle-freehit-mock'))
+    expect(getByTestId('chip-squad-view-mock').getAttribute('data-chipmode')).toBe('free-hit')
+  })
+
+  it('activating Bench Boost preserves comparison table and shows bb-headline-row (CHIP-03, D-13)', () => {
+    setupValidLineup()
+    computeBenchBoostXPtsMock.mockReturnValue(8.5)
+    const { getByTestId, queryByTestId } = render(<OptimiserPanel teamId="123" />)
+    fireEvent.click(getByTestId('chip-toggle-benchboost-mock'))
+    // Comparison table still rendered
+    expect(getByTestId('comparison-table')).toBeTruthy()
+    // BB headline replaces normal headline
+    expect(getByTestId('bb-headline-row')).toBeTruthy()
+    expect(queryByTestId('headline-row')).toBeNull()
+  })
+
+  it('activating Bench Boost shows BB notice (D-15)', () => {
+    setupValidLineup()
+    computeBenchBoostXPtsMock.mockReturnValue(6.0)
+    const { getByTestId } = render(<OptimiserPanel teamId="123" />)
+    fireEvent.click(getByTestId('chip-toggle-benchboost-mock'))
+    expect(getByTestId('bb-notice')).toBeTruthy()
+    expect(getByTestId('bb-notice').textContent).toContain('All 15 players score points')
+  })
+
+  it('activating Bench Boost keeps FT toggle visible (D-02)', () => {
+    setupValidLineup()
+    computeBenchBoostXPtsMock.mockReturnValue(5.0)
+    const { getByTestId } = render(<OptimiserPanel teamId="123" />)
+    fireEvent.click(getByTestId('chip-toggle-benchboost-mock'))
+    expect(getByTestId('ft-toggle')).toBeTruthy()
+  })
+
+  it("buildOptimalSquad returning null shows amber warning banner (Claude's Discretion)", () => {
+    setupValidLineup()
+    buildOptimalSquadMock.mockReturnValue(null)
+    const { getByTestId } = render(<OptimiserPanel teamId="123" />)
+    fireEvent.click(getByTestId('chip-toggle-wildcard-mock'))
+    expect(getByTestId('chip-squad-null-banner')).toBeTruthy()
+  })
+
+  it('Transfer Suggestions section is hidden when WC is active (D-03)', () => {
+    setupValidLineup()
+    buildOptimalSquadMock.mockReturnValue({ squad: [], bestXI: [], formation: '4-3-3', budgetUsed: 900 })
+    const { queryByTestId, getByTestId } = render(<OptimiserPanel teamId="123" />)
+    fireEvent.click(getByTestId('chip-toggle-wildcard-mock'))
+    expect(queryByTestId('transfer-suggestions-section')).toBeNull()
   })
 })
