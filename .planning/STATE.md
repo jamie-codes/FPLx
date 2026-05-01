@@ -2,14 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Squad Optimiser
-status: executing
-last_updated: "2026-04-30T22:46:00.000Z"
-last_activity: 2026-04-30 -- Phase 45 complete (3/3 plans, verified, CR-01/CR-02 fixed)
+status: "v1.6 COMPLETE — milestone archived 2026-05-01"
+stopped_at: ""
+last_updated: "2026-05-01T00:00:00.000Z"
+last_activity: 2026-05-01 -- v1.6 milestone archived; ready for /gsd-new-milestone
 progress:
   total_phases: 21
-  completed_phases: 20
-  total_plans: 43
-  completed_plans: 43
+  completed_phases: 21
+  total_plans: 46
+  completed_plans: 46
   percent: 100
 ---
 
@@ -17,17 +18,16 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-30 — v1.6 started)
+See: .planning/PROJECT.md (updated 2026-05-01 — after v1.6 milestone)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.6 Squad Optimiser — Phase 42 executing
+**Current focus:** Between milestones — run /gsd-new-milestone to scope v1.7
 
 ## Current Position
 
-Phase: 45 of 46 (Transfer-Aware Mode)
-Plan: 0 of 3 — READY TO EXECUTE
-Status: Phase 45 planned — 3 plans across 3 waves (Wave 0: test stubs + types, Wave 1: engine, Wave 2: UI)
-Last activity: 2026-04-30 -- Phase 45 planned (3 plans, verification passed)
+Milestone v1.6 Squad Optimiser — ARCHIVED 2026-05-01
+Phases 42-46 complete (12 plans)
+Tag: v1.6
 
 Progress: [██████████] 100%
 
@@ -54,19 +54,7 @@ Progress: [██████████] 100%
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- [v1.5 complete]: All 6 phases shipped; proj_pts removed (xPts 16.7% vs 9.0% hit rate); 3-section nav in place
-- [v1.6 scope]: ACC phases ship before OPT engine — ensures optimiser uses improved xPts from the start
-- [v1.6 scope]: NAV-01 (Squad sub-tabs) ships in Phase 43 alongside the OptimiserPanel that requires it
-- [v1.6 scope]: CHIP modes (Phase 46) depend on TFR budget tracking (Phase 45) — not standalone
-- [Research]: No new npm/pip deps needed; best-11 = C(15,11)=1,365 subsets, pure TS enumeration <1ms
-- [Research]: Wildcard/Free Hit chip modes extend optimiseLineup with chipMode param; never fork the engine
-- [Research]: Budget arithmetic: always integer tenths; use selling_price (not now_cost) in transfer-aware mode
-- [Phase 44]: changeCount uses set-difference (not pairSection row count) to avoid overcounting when sort reshuffles pairs
-- [Phase 44]: isPromoted uses currentId (bench player promoted into XI) — plan spec had inversion; fixed
-- [Phase 44]: Test fixtures require valid single-GK formations for deterministic no-change/single-change assertions
+All v1.6 decisions logged in PROJECT.md Key Decisions table and `.planning/milestones/v1.6-ROADMAP.md`.
 
 ### Pending Todos
 
@@ -74,10 +62,10 @@ None.
 
 ### Blockers/Concerns
 
-None. DGW xPts aggregation confirmed correct (2026-04-30): `_xpts_ngw` in `pipeline/merge.py` groups fixtures by `event_id` and sums xPts over all fixtures within each GW — DGW players naturally score higher. No pipeline fix needed before Phase 43.
+None.
 
 ## Session Continuity
 
-Last session: 2026-04-30T20:05:00Z
-Stopped at: Phase 44 complete — CMP-01, CMP-02, CMP-03 shipped and verified
+Last session: 2026-05-01 (milestone close)
+Stopped at: N/A — milestone archived, ready for /gsd-new-milestone
 Resume file: None

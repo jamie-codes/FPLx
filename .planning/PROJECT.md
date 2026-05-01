@@ -2,26 +2,21 @@
 
 ## What This Is
 
-A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, and transfer suggestions — all grounded in FPL API data plus Understat xG/xA.
+A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
-v1.2 shipped as a fully mobile-responsive, dark-mode-aware daily-use tool. The manager enters their Team ID and receives ranked transfer suggestions, a Gem Rating table, DefCon analysis, Club Form, and Value Gems — all responsive on any screen size, with dark mode toggle and automated daily pipeline refresh.
+v1.6 (current) completed the Squad Optimiser: the manager sees the best starting 11 + bench order + auto formation from their squad, scored over a configurable 1/3/5 GW horizon. Captain and VC are auto-identified. Transfer-aware mode suggests 1–2 optimal transfers with break-even indicators. Chip modes (Wildcard, Free Hit, Bench Boost) extend the optimiser to the full player pool. The entire engine is client-side TypeScript with no backend changes.
 
-v1.3 added a Gameweek Planner: the manager can generate a 1–5 GW transfer plan with auto-suggested sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode to override any step.
+v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
 ## Core Value
 
 Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
 
-## Current Milestone: v1.6 Squad Optimiser
+## Current State (v1.6 Squad Optimiser — SHIPPED 2026-05-01)
 
-**Goal:** Give the manager a data-backed lineup, captain, and transfer decision for each gameweek — with a configurable horizon and optional wildcard/standalone squad-building mode.
+v1.6 complete — 5 phases (42-46), 12 plans. Full in-browser squad optimiser shipped: `optimiseLineup()` C(15,11) enumeration, configurable 1/3/5 GW horizon, captain/VC selection, ComparisonTable with xPts delta per slot, `suggestTransfers()` transfer-aware engine with hit break-even, and `buildOptimalSquad()` greedy chip engine (Wildcard/Free Hit/Bench Boost). Form signal added to xPts pipeline with accuracy gate. See `.planning/milestones/v1.6-ROADMAP.md`.
 
-**Target features:**
-- Lineup optimiser: best 11 + bench order + auto formation from current squad, scored over configurable 1/3/5 GW horizon
-- Captain / VC recommendation: prominent and data-backed, surfaced from existing xPts ceiling data
-- Transfer-aware mode: factor in 1–2 free transfers; side-by-side current vs optimised comparison
-- Wildcard / Free Hit mode: chip toggle removes transfer constraints — "best squad if I wildcarded today"
-- Standalone squad builder: budget-only squad construction for planning (independent of current team)
+**Next milestone:** Run `/gsd-new-milestone` to scope v1.7.
 
 ---
 
@@ -165,9 +160,19 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 - ✓ ACC-01: Accuracy pipeline backtest (5 GWs, proj_pts vs xPts hit rates) — v1.5
 - ✓ ACC-02/03/04/05/06: AccuracyTab UI, last-GW actuals column, proj_pts removed (9.0% vs xPts 16.7%) — v1.5
 
-### Active (v1.6)
+### Validated (v1.6)
 
-*(requirements to be defined — run /gsd-new-milestone to scope)*
+- ✓ OPT-01/02/03/04/05: Lineup optimiser — best 11 + bench, 1/3/5 GW horizon, captain/VC, BGW exclusion — v1.6
+- ✓ NAV-01 (v1.6): Squad sub-tabs (Transfers | Optimiser), MobileNav pill row — v1.6
+- ✓ CMP-01/02/03 (v1.6): Current vs optimised comparison table, xPts delta per slot, headline change count — v1.6
+- ✓ TFR-01/02/03: Transfer-aware mode — 1–2 FT suggestions, hit break-even indicator — v1.6
+- ✓ CHIP-01/02/03: Wildcard/Free Hit/Bench Boost chip modes — `buildOptimalSquad()` greedy engine — v1.6
+- ✓ ACC-01/02/04 (v1.6): xPts form signal (BLEND_ALPHA=0.4), accuracy gate in pipeline, mid-tier track — v1.6
+- ⚠ ACC-03 (v1.6): Gate logic ships; production hit-rate validation pending live pipeline run — v1.6
+
+### Active (v1.7)
+
+*(requirements to be defined — run /gsd-new-milestone to scope v1.7)*
 
 ### Out of Scope
 
@@ -218,7 +223,29 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 | Greedy + 1-level look-ahead (LOOK_AHEAD_DISCOUNT=0.8) for planning engine | Sufficient for personal-use planning; no deep recursion needed | ✓ Good — fast and produces sensible plans |
 | `positionsAfter: Record<number, number>` (not Map) on PlanStep | Keeps PlanStep JSON-serializable for any future persistence | ✓ Good — plain object passed cleanly through Immer |
 | `readonly originalSteps: PlanStep[]` frozen via `structuredClone` | Compile-time protection against Immer accidentally mutating the plan baseline | ✓ Good — caught mutation bugs at the type level |
-| useImmer for PlannerTab chip toggle + planResult state | Safe nested mutation without manual spread-copy for complex nested state | ✓ Good — `updatePlanResult` recipe pattern reused across handlers |
+| useImmer for PlannerTab chip toggle + planResult state | Safe nested mutation without manual spread-copy for complex nested state | ✓ Good — `updatePlanResult` recipe pattern reused across markers |
+| Pure TS enumeration for optimiser (C(15,11)=1,365 subsets, <1ms) | No WASM solver needed; `glpk.js` ruled out (WASM issues in Next.js, ~1MB bundle) | ✓ Good — fast, zero-dependency, fully testable |
+| `optimiseLineup` extended via `chipMode` param, not forked | Chip modes share the same engine; no parallel code path to maintain | ✓ Good — Wildcard/Free Hit/BB all resolved in one call |
+| Form signal gated by `form_signal_enabled` in `accuracy_backtest.json` | Never blend without measurable improvement; gate prevents regression | — Pending — production pipeline run needed to confirm |
+| `suggestTransfers()` 2-FT gain uses additive approximation | Full `optimiseLineup` re-run per combo not warranted for personal tool | ✓ Good — fast enough; minor accuracy loss acceptable |
+| `changeCount` via set-difference (not pairSection row count) | Avoids overcounting when xPts sort reshuffles pairs within same position | ✓ Good — fixed in execution after spec inconsistency caught |
+| `isPromoted` uses `currentId` (player who moved from bench to XI) | Plan spec had inversion; corrected during execution | ✓ Fixed — caught by TDD test assertions |
+| Test fixtures require valid single-GK formations (4-3-3, 5-3-2) | `optimiseLineup` is deterministic only with valid formations; 2-GK-in-XI fixtures aren't | ✓ Good — prevents flaky test failures |
+
+---
+
+## Context
+
+**Tech stack:** Next.js 16, React 19, TypeScript, TanStack Table v8, TanStack Query, Tailwind CSS v4, Vitest, immer/use-immer, Python (requests, pandas, soccerdata), Vercel Blob
+
+**Codebase:** ~17,774 LOC (14,372 TypeScript + 3,402 Python), ~200+ files
+
+**What's running (v1.6):**
+- `/` — Gem Ratings tab (default), DefCon tab, Squad tab (Transfers | Optimiser sub-tabs), Club Form tab, Value Gems tab, Set Pieces tab, Insights tab, Accuracy tab
+- `/api/players` — merged FPL+Understat dataset from Vercel Blob
+- `/api/accuracy` — accuracy backtest data including form signal gate
+- Squad Optimiser — fully client-side; `optimiseLineup()`, `suggestTransfers()`, `buildOptimalSquad()` all pure TypeScript
+- `pipeline/run.py` — daily refresh via GitHub Actions cron; writes form signal gate to `accuracy_backtest.json`
 
 ---
 
@@ -226,11 +253,11 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 
 This document evolves at phase transitions and milestone boundaries.
 
-**After each milestone** (via `/gsd:complete-milestone`):
+**After each milestone** (via `/gsd-complete-milestone`):
 1. Full review of all sections
 2. Core Value check — still the right priority?
 3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-30 — v1.6 Squad Optimiser started*
+*Last updated: 2026-05-01 — after v1.6 milestone*

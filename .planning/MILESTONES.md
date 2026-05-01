@@ -1,5 +1,22 @@
 # Milestones
 
+## v1.6 Squad Optimiser (Shipped: 2026-05-01)
+
+**Phases completed:** 5 phases (42-46), 12 plans
+**Timeline:** 2026-04-28 → 2026-05-01 (4 days)
+**Files changed:** 68 files, +17,511 / −646 lines
+
+**Key accomplishments:**
+
+1. xPts form signal: recency-weighted xG+xA per-90 (BLEND_ALPHA=0.4, 5-GW window) gated by accuracy backtest — `form_signal_enabled` gate in `accuracy_backtest.json` — Phase 42
+2. Pure TS lineup optimiser: C(15,11)=1,365 subset enumeration (<1ms), configurable 1/3/5 GW horizon, captain/VC selection (`xPts_90th_1gw`), BGW exclusion — Phase 43
+3. Squad navigator: Transfers+Optimiser sub-tabs; `teamId` lifted to `page.tsx`; `OptimiserPanel` pitch UI (FPL convention: FWD/MID/DEF/GK rows) — Phase 43
+4. Comparison table: current vs optimised side-by-side; xPts delta pill per changed row; HeadlineRow with formation + change count + gain; Promoted/Dropped bench badges — Phase 44
+5. Transfer-aware mode: `suggestTransfers()` pure engine (1-FT and 2-FT, FREE+HIT variants); `FtToggle` pill; hit break-even GW indicator — Phase 45
+6. Chip modes: `buildOptimalSquad()` greedy engine (100m budget, 3-per-club cap); Wildcard/Free Hit/Bench Boost via `ChipModeToggle` 4-button pill; `ChipSquadView` position-grouped display — Phase 46
+
+---
+
 ## v1.5 UX & Polish (Shipped: 2026-04-30)
 
 **Phases completed:** 6 phases (36-41), 14 plans
