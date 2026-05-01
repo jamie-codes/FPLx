@@ -100,7 +100,7 @@ See `.planning/milestones/v1.6-ROADMAP.md` for full phase details.
 <details>
 <summary>🔄 v1.7 Decision Assistant (Phases 47-51) — IN PROGRESS</summary>
 
-- [ ] **Phase 47: Fixture Swing Detector & Clean Sheet Probability** — foundation signal engines that unblock phases 48, 49, and 51
+- [x] **Phase 47: Fixture Swing Detector & Clean Sheet Probability** — foundation signal engines that unblock phases 48, 49, and 51
 - [ ] **Phase 48: Explainable xPts Breakdown** — per-component xPts breakdown card using CS-01 data
 - [ ] **Phase 49: Player Lifecycle Labels** — granular timing labels beyond Buy/Hold/Sell, using fixture swing context
 - [ ] **Phase 50: Transfer Opportunity Cost Simulator** — Roll/1-FT/2-FT/Hit comparison table across 1/3/5 GW horizons
@@ -121,11 +121,17 @@ See `.planning/milestones/v1.6-ROADMAP.md` for full phase details.
   4. User can see CS% per fixture for GK/DEF-relevant teams on the Club Form tab or a dedicated panel, derived from rolling xGA
   5. DGW fixtures show combined CS% using the `1 - (1-p1)*(1-p2)` formula so double-gameweek opportunity is correctly represented
 **Plans**: 5 plans (3 waves)
-  - [ ] 47-01-PLAN.md — extend ClubForm + MergedPlayer types (past_ease_3gw, swing_*gw, cs_prob_1gw)
-  - [ ] 47-02-PLAN.md — TDD: implement past_ease_3gw and swing deltas in computeClubForm
-  - [ ] 47-03-PLAN.md — TDD: add cs_prob_1gw aggregation (single/DGW/BGW) to pipeline/merge.py
-  - [ ] 47-04-PLAN.md — add CS% column to GemTable (Analysis preset only, mobile hidden)
-  - [ ] 47-05-PLAN.md — build FixtureSwingDetector panel + mount + human-verify checkpoint
+  **Wave 1**
+  - [x] 47-01-PLAN.md — extend ClubForm + MergedPlayer types (past_ease_3gw, swing_*gw, cs_prob_1gw)
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [x] 47-02-PLAN.md — TDD: implement past_ease_3gw and swing deltas in computeClubForm
+  - [x] 47-03-PLAN.md — TDD: add cs_prob_1gw aggregation (single/DGW/BGW) to pipeline/merge.py
+  - [x] 47-04-PLAN.md — add CS% column to GemTable (Analysis preset only, mobile hidden)
+  **Wave 3** *(blocked on Wave 2 completion)*
+  - [x] 47-05-PLAN.md — build FixtureSwingDetector panel + mount + human-verify checkpoint
+  **Cross-cutting constraints:**
+  - `cs_prob_1gw?: number` must be written to every player in pipeline before GemTable column can render (Plans 01→03→04)
+  - `ClubForm.swing_*gw` fields must be typed (Plan 01) and computed (Plan 02) before FixtureSwingDetector can consume them (Plan 05)
 **Phase notes**: Fixture swing threshold (recommended 0.20 delta, 4+4 team cap) must be confirmed in the plan spec before coding. Group by `event_id` to avoid DGW double-counting in ease aggregates. BGW teams must show zero CS%. `cs_prob_1gw` field addition to `merged_players.json` (~5 pipeline lines) required.
 **UI hint**: yes
 

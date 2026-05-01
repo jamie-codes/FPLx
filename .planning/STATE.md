@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.7
-milestone_name: Decision Assistant
-status: context gathered — ready for phase 47 planning
-stopped_at: Phase 47 context gathered (2026-05-01)
-last_updated: "2026-05-01T00:00:00.000Z"
+milestone_name: milestone
+status: Phase 47 complete — Phase 48 is next
+stopped_at: Phase 47 execution complete (5 plans, 3 waves, human-verified)
+last_updated: "2026-05-01T15:00:00.000Z"
 progress:
   total_phases: 5
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 1
+  total_plans: 5
+  completed_plans: 5
+  percent: 20
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Previous milestone: v1.6 Squad Optimiser (Phases 42-46, shipped 2026-05-01)
 
 Progress: [░░░░░░░░░░] 0% (0/5 phases)
 
-Next action: `/gsd-plan-phase 47` (context captured at `.planning/phases/47-fixture-swing-cs-prob/47-CONTEXT.md`)
+Next action: `/gsd-discuss-phase 48` — discuss Phase 48 (Explainable xPts Breakdown) before planning
 
 ## Performance Metrics
 
@@ -44,7 +44,7 @@ Next action: `/gsd-plan-phase 47` (context captured at `.planning/phases/47-fixt
 
 | Phase | Name | Plans | Status | Completed |
 |-------|------|-------|--------|-----------|
-| 47 | Fixture Swing Detector & CS Probability | TBD | Not started | - |
+| 47 | Fixture Swing Detector & CS Probability | 5 | Complete | 2026-05-01 |
 | 48 | Explainable xPts Breakdown | TBD | Not started | - |
 | 49 | Player Lifecycle Labels | TBD | Not started | - |
 | 50 | Transfer Opportunity Cost Simulator | TBD | Not started | - |
@@ -74,6 +74,6 @@ v1.7 decisions to be logged during execution.
 
 ## Session Continuity
 
-Last session: 2026-05-01 — Phase 47 context gathered
-Stopped at: Phase 47 context captured; ready for planning
-Resume file: .planning/phases/47-fixture-swing-cs-prob/47-CONTEXT.md
+Last session: 2026-05-01T12:28:49.482Z
+Stopped at: Phase 47 UI-SPEC approved
+Resume file: .planning/phases/47-fixture-swing-cs-prob/47-UI-SPEC.md
