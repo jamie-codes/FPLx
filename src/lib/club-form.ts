@@ -181,6 +181,9 @@ export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[])
       attacking_difficulty: fplToAttDiff(f.team_h === tId ? f.team_h_difficulty : f.team_a_difficulty),
       defensive_difficulty: 0,
     }))
+    // meanEase returns null only when no fixtures have a numeric attacking_difficulty.
+    // fplToAttDiff always produces a number, so null here is only possible if finishedFx
+    // is built from an external source with missing values. Swing fields null-guard downstream.
     const past_ease_3gw = finishedFx.length >= 3
       ? meanEase(finishedFx, 3, 'attacking_difficulty')
       : null
