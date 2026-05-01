@@ -132,7 +132,8 @@ export function computeLifecycleLabel(
     gem >= posAvg * SELL_SOON_THRESHOLD &&
     gem <= posAvg &&
     clubForm !== null &&
-    (clubForm.swing_3gw ?? 0) >= SWING_THRESHOLD
+    (clubForm.swing_3gw ?? 0) >= SWING_THRESHOLD &&
+    player.regression_signal !== 'sell'
   ) {
     return 'hold_one_more'
   }
