@@ -1,8 +1,9 @@
 ---
 phase: 48-explainable-xpts-breakdown
 verified: 2026-05-01T18:40:00Z
-status: gaps_found
-score: 6/8 must-haves verified
+re_verified: 2026-05-01
+status: verified
+score: 8/8 must-haves verified
 gaps:
   - truth: "User hovering an xPts_1gw cell sees a styled panel with 5 labeled rows: Appearance, Goals, Assists, Clean sheet, Bonus — plus a Total row"
     status: partial
@@ -38,8 +39,8 @@ human_verification:
 
 **Phase Goal:** Give users a hover card showing all 5 scored components (appearance, goals, assists, clean sheet, bonus) that sum to the headline xPts value.
 **Verified:** 2026-05-01T18:40:00Z
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Status:** verified
+**Re-verification:** Yes — pipeline re-run 2026-05-01, all 8 truths now verified
 
 ## Goal Achievement
 
@@ -51,12 +52,12 @@ human_verification:
 | 2 | `appearance_pts = start_prob × 2` (not minute-scaled) | VERIFIED | `pipeline/merge.py` line 230: `appearance_pts = start_prob * 2`. pytest test `test_appearance_pts_formula` asserts this with `pytest.approx(0.8 * 2, abs=0.001)` — 4 tests pass. |
 | 3 | Sum of all five components equals total within ±0.01 | VERIFIED | Pipeline code: `total = goal_pts + assist_pts + cs_pts + bonus_pts + appearance_pts` (line 232). `test_xpts_components_sum_to_total_single_fixture` and `test_xpts_components_sum_to_total_dgw` both pass. Full pytest suite: 37 passed. |
 | 4 | `MergedPlayer.xPts_components_1gw` type includes `appearance_pts: number` | VERIFIED | `src/lib/types.ts` lines 149-155: field `appearance_pts: number` present as 5th field with comment `// Phase 48 XPT-01/XPT-02: start_prob × 2 per fixture`. Comment updated from "tooltip data" to "hover card data". |
-| 5 | User hovering an xPts_1gw cell sees a styled panel with 5 labeled rows | PARTIAL — BLOCKER | XPtsCell implementation correct: `group/xpts`, hover card div, `z-50`, 5 rows rendered. But `pipeline/cache/merged_players.json` (gitignored, stale) has `xPts_components_1gw` with only 4 keys — `appearance_pts` absent. `c.appearance_pts.toFixed(2)` will throw `TypeError` in the live app. The 8 vitest tests pass because they use in-test mocks. |
-| 6 | Total row computed from sum(components), not from xPts_1gw | PARTIAL | Code correct (columns.tsx line 71-73). Blocked by same stale cache — `c.appearance_pts` is `undefined` at runtime. |
+| 5 | User hovering an xPts_1gw cell sees a styled panel with 5 labeled rows | VERIFIED | XPtsCell implementation correct: `group/xpts`, hover card div, `z-50`, 5 rows rendered. Pipeline re-run 2026-05-01: `appearance_pts` now present in all 385 players' `xPts_components_1gw`. Runtime TypeError resolved. Human visual verification still recommended. |
+| 6 | Total row computed from sum(components), not from xPts_1gw | VERIFIED | Code correct (columns.tsx line 71-73). Cache now includes `appearance_pts` — `cardTotal` computation will work at runtime. |
 | 7 | BGW players (null components) show no hover card | VERIFIED | `showBreakdown = window === 1 && components !== undefined && components !== null` (line 58). Early return renders `<span>{display}<VarianceBadge /></span>` with no hover card. Test `renders no hover card when components is undefined` passes. |
 | 8 | XPtsCell hover card uses group/xpts named group (no CSS conflict) and z-50 | VERIFIED | `columns.tsx` line 85: `className="relative group/xpts inline-block cursor-help"`. Line 95: `absolute bottom-full left-0 mb-1 w-44 z-50`. Grep confirms 2 `group/xpts` matches, 1 `z-50` match. |
 
-**Score:** 6/8 truths verified (2 partial/blocked by stale cache)
+**Score:** 8/8 truths verified (stale cache resolved by pipeline re-run 2026-05-01)
 
 ### Required Artifacts
 
@@ -68,14 +69,14 @@ human_verification:
 | `src/components/gem-table/PlayerComparisonModal.test.tsx` | Both mock objects include appearance_pts | VERIFIED | Line 73: `appearance_pts: 1.96`. Line 144: `appearance_pts: 1.94`. |
 | `src/components/gem-table/columns.tsx` | XPtsCell with 'use client', hover card, useState, minsRisk prop | VERIFIED | Line 1: `'use client'`. useState at line 46. hover card at lines 83-119. minsRisk prop declared (line 31) and wired at call site (line 213). |
 | `src/components/gem-table/columns.test.tsx` | 4 new XPtsCell tests in Phase 48 describe block | VERIFIED | 132 lines. 4 tests in `describe('Phase 48 XPT-01 — XPtsCell hover card', ...)`. All 8 tests (4 existing + 4 new) pass green. |
-| `pipeline/cache/merged_players.json` | xPts_components_1gw includes appearance_pts for all players | FAILED | 386 players have `xPts_components_1gw` with only 4 keys: `goal_pts, assist_pts, cs_pts, bonus_pts`. `appearance_pts` is absent. Cache is gitignored and was not regenerated after Phase 48 pipeline changes. |
+| `pipeline/cache/merged_players.json` | xPts_components_1gw includes appearance_pts for all players | VERIFIED | Pipeline re-run 2026-05-01. 385 players have `xPts_components_1gw` with all 5 keys: `goal_pts, assist_pts, cs_pts, bonus_pts, appearance_pts`. 0 missing. |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 |------|----|-----|--------|---------|
 | `_compute_xpts_fixture` return dict | `_xpts_ngw` first_gw_components accumulator | `for k in first_gw_components: first_gw_components[k] += result[k]` | VERIFIED | `first_gw_components` at line 272 includes `appearance_pts: 0.0`. Loop at lines 285-287 picks it up automatically. |
-| `pipeline/merge.py` | `merged_players.json` xPts_components_1gw | `merge_players()` writes player `xPts_components_1gw` | PARTIAL | Code wiring is correct. Cache output does not include `appearance_pts` because pipeline has not been re-run since Phase 48 changes. |
+| `pipeline/merge.py` | `merged_players.json` xPts_components_1gw | `merge_players()` writes player `xPts_components_1gw` | VERIFIED | Code wiring correct. Pipeline re-run 2026-05-01: 385 players have `appearance_pts` in `xPts_components_1gw`. 0 missing. |
 | `src/lib/types.ts` xPts_components_1gw | `XPtsCell` components prop type | TypeScript type inference | VERIFIED | `XPtsCell` prop (columns.tsx line 37-42) matches updated type: `{ goal_pts, assist_pts, cs_pts, bonus_pts, appearance_pts: number }`. |
 | `XPtsCell` | `group/xpts` wrapper div | CSS class: `relative group/xpts inline-block cursor-help` | VERIFIED | Confirmed in columns.tsx line 85. |
 | Hover card div | z-50 positioning | `absolute bottom-full left-0 mb-1 w-44 z-50` | VERIFIED | Confirmed in columns.tsx line 95. |
@@ -85,7 +86,7 @@ human_verification:
 
 | Artifact | Data Variable | Source | Produces Real Data | Status |
 |----------|---------------|--------|--------------------|--------|
-| `columns.tsx` XPtsCell | `components` (xPts_components_1gw) | `/api/players` → `merged_players.json` → `pipeline/merge.py` | Stale: missing `appearance_pts` | HOLLOW — pipeline code produces real data, but cache is stale (gitignored, not regenerated). Runtime: `c.appearance_pts` is `undefined`, causes `TypeError`. |
+| `columns.tsx` XPtsCell | `components` (xPts_components_1gw) | `/api/players` → `merged_players.json` → `pipeline/merge.py` | Flowing — `appearance_pts` present in all 385 players | VERIFIED — pipeline re-run 2026-05-01. Runtime TypeError resolved. |
 | `columns.tsx` XPtsCell | `minsRisk` (mins_risk) | `info.row.original.mins_risk` from same API response | Flowing | VERIFIED |
 
 ### Behavioral Spot-Checks
@@ -97,7 +98,7 @@ human_verification:
 | 8 columns.test.tsx tests pass | `npx vitest run src/components/gem-table/columns.test.tsx` | 8 passed | PASS |
 | XPtsCell.test.tsx passes (migrated from title tooltip) | `npx vitest run tests/components/gem-table/XPtsCell.test.tsx` | 9 passed | PASS |
 | Full vitest suite | `npx vitest run` | 521 passed, 1 pre-existing failure (club-form.test.ts), 34 skipped | PASS (pre-existing failure is unrelated to Phase 48) |
-| `appearance_pts` in live cache data | `python -c "... print('appearance_pts present:', 'appearance_pts' in c)"` | `appearance_pts present: False` | FAIL — stale cache |
+| `appearance_pts` in live cache data | `python -c "... print('appearance_pts present:', 'appearance_pts' in c)"` | `appearance_pts present: True` — 0/385 missing | PASS — pipeline re-run 2026-05-01 |
 
 ### Requirements Coverage
 
