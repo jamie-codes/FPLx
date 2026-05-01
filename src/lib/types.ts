@@ -221,6 +221,30 @@ export type TransferSuggestion =
       breakEvenGws: number | null
     }
 
+// Chip modes (Phase 46 CHIP-01..CHIP-03) — selector state in OptimiserPanel (D-04).
+// 'none' = current behaviour; 'wildcard' / 'free-hit' call buildOptimalSquad();
+// 'bench-boost' calls optimiseLineup() with modified headline.
+export type ChipMode = 'none' | 'wildcard' | 'free-hit' | 'bench-boost'
+
+// Single player in a chip squad result (slimmer than MergedPlayer — only fields needed for ChipSquadView).
+export interface ChipSquadPlayer {
+  id: number
+  web_name: string
+  element_type: PositionCode
+  team: number
+  now_cost: number      // tenths of £1m
+  xPts: number          // scored by the active horizon at build time
+}
+
+// Result returned by buildOptimalSquad() in src/lib/chip-modes.ts (D-10).
+// null returned instead when < 15 eligible players found (D-06).
+export interface ChipSquadResult {
+  squad: ChipSquadPlayer[]  // all 15 players (XI + bench)
+  bestXI: number[]          // 11 element IDs derived from optimiseLineup() call
+  formation: string         // e.g. '4-3-3' (outfield only, GK excluded per optimise-lineup.ts convention)
+  budgetUsed: number        // tenths of £1m (sum of now_cost of all 15 players)
+}
+
 // DefCon per-player stats (Phase 4) — populated from pipeline/cache/defcon_stats.json
 export interface DefConPlayer {
   id: number
