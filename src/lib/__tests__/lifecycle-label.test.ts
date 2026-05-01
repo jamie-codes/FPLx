@@ -181,6 +181,15 @@ describe('computeLifecycleLabel — individual labels', () => {
     expect(computeLifecycleLabel(player, posAvg, form)).toBe('hold')
   })
 
+  it('Test 8b: Hold One More blocked by regression_signal=sell — returns hold', () => {
+    const player = makePlayer({
+      gem_score: posAvg * 0.95, // in hold band
+      regression_signal: 'sell',
+    })
+    const form = makeClubForm({ swing_1gw: 0.05, swing_3gw: 0.30 })
+    expect(computeLifecycleLabel(player, posAvg, form)).toBe('hold')
+  })
+
   it('Test 9: Minutes Trap blocked by price gate — now_cost=65, returns non-minutes_trap', () => {
     const player = makePlayer({
       now_cost: 65,
