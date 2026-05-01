@@ -77,3 +77,107 @@ def test_appearance_pts_formula():
         defensive_difficulty=0.5,
     )
     assert result['appearance_pts'] == pytest.approx(0.8 * 2, abs=0.001)
+
+
+# ---- Integration test (WR-03) ----
+# Verifies that merge_players writes xPts_components_1gw with all five required keys
+# and that the component sum equals xPts_1gw within tolerance.
+
+from merge import merge_players
+
+
+def _build_minimal_inputs_for_components():
+    """Minimal bootstrap/fixtures/understat suitable for xPts_components_1gw integration check."""
+    pid = 1
+    elements = [{
+        'id': pid,
+        'web_name': 'PlayerA',
+        'element_type': 3,
+        'team': 14,
+        'now_cost': 70,
+        'selected_by_percent': '5.0',
+        'form': '0',
+        'status': 'a',
+        'minutes': 900,
+        'starts': 10,
+        'total_points': 60,
+        'goals_scored': 5,
+        'assists': 3,
+        'expected_goals': '4.5',
+        'expected_assists': '2.5',
+        'cost_change_event': 0,
+        'cost_change_start': 0,
+        'penalties_text': '',
+        'direct_freekicks_text': '',
+        'corners_and_indirect_freekicks_text': '',
+        'news': '',
+        'defensive_contribution': None,
+        'clearances_blocks_interceptions': None,
+        'direct_freekicks_order': None,
+        'penalties_order': None,
+        'corners_and_indirect_freekicks_order': None,
+    }]
+    finished_gws = 10
+    bootstrap = {
+        'elements': elements,
+        'teams': [
+            {'id': 14, 'short_name': 'LIV'},
+            {'id': 1, 'short_name': 'ARS'},
+        ],
+        'events': [{'id': i, 'finished': i <= finished_gws, 'is_current': False}
+                   for i in range(1, finished_gws + 6)],
+    }
+    for ev in bootstrap['events']:
+        if not ev['finished']:
+            ev['is_current'] = True
+            break
+
+    fixtures = []
+    for gw in range(1, finished_gws + 1):
+        fixtures.append({
+            'event': gw, 'team_h': 14, 'team_a': 1,
+            'team_h_difficulty': 3, 'team_a_difficulty': 3,
+            'finished': True, 'team_h_score': 1, 'team_a_score': 1,
+        })
+    for gw in range(finished_gws + 1, finished_gws + 6):
+        fixtures.append({
+            'event': gw, 'team_h': 14, 'team_a': 1,
+            'team_h_difficulty': 3, 'team_a_difficulty': 3,
+            'finished': False,
+        })
+
+    understat = {}
+    id_map = {str(pid): {'understat_id': None}}
+    xmins_stats = {pid: {'xmins': 81.0, 'start_prob': 0.9, 'mins_risk': 'safe'}}
+    summaries = {}
+    return bootstrap, fixtures, understat, id_map, xmins_stats, summaries
+
+
+def test_merge_players_writes_xpts_components_1gw():
+    """WR-03 integration: merge_players must write xPts_components_1gw with all five keys,
+    and component sum must equal xPts_1gw within ±0.01 (XPT-02 sum invariant)."""
+    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = (
+        _build_minimal_inputs_for_components()
+    )
+    merged, _ = merge_players(bootstrap, fixtures, understat, id_map, xmins_stats, summaries)
+    assert len(merged) == 1, "Expected exactly one player in output"
+    player = merged[0]
+
+    # Field must be present
+    assert 'xPts_components_1gw' in player, (
+        "xPts_components_1gw missing from merge_players output — pipeline integration broken"
+    )
+    components = player['xPts_components_1gw']
+
+    # All five required keys must be present
+    required_keys = {'appearance_pts', 'goal_pts', 'assist_pts', 'cs_pts', 'bonus_pts'}
+    assert required_keys == set(components.keys()), (
+        f"xPts_components_1gw has unexpected keys: {set(components.keys())}"
+    )
+
+    # Sum invariant: components sum == xPts_1gw within ±0.01
+    xpts_1gw = player.get('xPts_1gw', 0.0) or 0.0
+    component_sum = sum(components.values())
+    assert abs(component_sum - xpts_1gw) < 0.01, (
+        f"Component sum {component_sum:.4f} != xPts_1gw {xpts_1gw:.4f} (delta > 0.01)"
+    )
