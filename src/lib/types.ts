@@ -146,11 +146,12 @@ export interface MergedPlayer {
   xPts_ceiling_1gw?: boolean  // true = top-tercile sigma in 1 GW window (high-ceiling)
   xPts_ceiling_3gw?: boolean  // true = top-tercile sigma in 3 GW window
   xPts_ceiling_5gw?: boolean  // true = top-tercile sigma in 5 GW window
-  xPts_components_1gw?: {     // breakdown for 1 GW only (tooltip data); null for BGW
+  xPts_components_1gw?: {     // breakdown for 1 GW only (hover card data); null for BGW
     goal_pts: number
     assist_pts: number
     cs_pts: number
     bonus_pts: number
+    appearance_pts: number    // Phase 48 XPT-01/XPT-02: start_prob × 2 per fixture
   } | null
   // Regression signal (Phase 29 DATA-03, REG-01, REG-02).
   // Optional — absent when signal cannot be computed (player has <900 min in 5-GW window,
