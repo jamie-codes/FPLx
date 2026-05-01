@@ -7,27 +7,18 @@ Tests cover the three branches:
   - Zero xmins (injured / no play time expected)
   - Multi-GW span (only the first event group counts)
   - DGW + later GW interleave (only first event group combined)
-
-RED phase: these tests fail until Task 2 adds _cs_prob_1gw_for_fixtures to merge.py.
 """
 
 import pytest
 
 # Import using bare name — conftest.py inserts pipeline/ onto sys.path.
-# _cs_prob_1gw_for_fixtures is the symbol under test (does not exist yet in RED phase).
-from merge import _cs_prob
-
-_cs_prob_1gw_for_fixtures = getattr(
-    __import__('merge', fromlist=['_cs_prob_1gw_for_fixtures']),
-    '_cs_prob_1gw_for_fixtures',
-    None,
-)
+from merge import _cs_prob, _cs_prob_1gw_for_fixtures
 
 
 def test_symbol_exists():
     """Precondition: _cs_prob_1gw_for_fixtures must be importable from merge."""
     assert _cs_prob_1gw_for_fixtures is not None, (
-        "_cs_prob_1gw_for_fixtures not found in merge.py — RED phase confirms function is not yet implemented"
+        "_cs_prob_1gw_for_fixtures not found in merge.py"
     )
 
 
