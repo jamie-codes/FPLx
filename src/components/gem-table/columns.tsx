@@ -221,6 +221,28 @@ export function createColumns(onCompare: (player: ScoredPlayer) => void, gwN: nu
       return a - b
     },
   }),
+  // Phase 47 CS-01 / CS-03 (D-08): Clean sheet probability for the next fixture.
+  // GK (element_type=1) and DEF (element_type=2) show the percentage.
+  // MID (element_type=3) and FWD (element_type=4) show em-dash (this metric is not
+  // attacking-relevant). BGW players (cs_prob_1gw === 0) show "0%" — that is the
+  // correct meaningful value, not an absence of data, per UI-SPEC.
+  col.accessor('cs_prob_1gw', {
+    header: H('CS%', 'Clean sheet probability for next fixture, derived from rolling xGA. DGW players show combined CS%: 1-(1-p1)(1-p2).'),
+    cell: (info) => {
+      const position = info.row.original.element_type
+      // GK (1) and DEF (2) get a percentage; MID (3) and FWD (4) get em-dash.
+      if (position === 1 || position === 2) {
+        const csProb = info.getValue()
+        if (csProb === null || csProb === undefined) {
+          return <span className="text-zinc-400">—</span>
+        }
+        // 0% is meaningful (BGW or zero xmins) — render explicitly, not as em-dash.
+        return `${(csProb * 100).toFixed(0)}%`
+      }
+      return <span className="text-zinc-400">—</span>
+    },
+    enableSorting: true,
+  }),
   col.display({
     id: 'trend',
     header: H('Trend', 'Price trend: this GW change (↑/↓) and season-to-date change'),
