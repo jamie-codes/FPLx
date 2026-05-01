@@ -144,8 +144,16 @@ See `.planning/milestones/v1.6-ROADMAP.md` for full phase details.
   2. The sum of displayed components matches the headline xPts_1gw value (within ±0.01 rounding tolerance) — the breakdown total is the canonical figure shown, not both simultaneously
   3. The clean sheet component in the breakdown reflects the CS% for that player's specific upcoming fixture (from Phase 47), not a generic season average
   4. The breakdown is accessible for any player without requiring authentication — no login gate
-**Plans**: TBD
-**Phase notes**: The appearance points resolution (add `appearance_pts` as an explicit component, or document its absence in the UI) must be decided in the plan spec before UI design. Render sum-of-components as the total to avoid the components-don't-sum pitfall. DGW players may show "breakdown unavailable" if components can't be cleanly attributed.
+**Plans**: 3 plans (2 waves)
+  **Wave 1** *(parallel)*
+  - [ ] 48-01-PLAN.md — TDD: extend pipeline _compute_xpts_fixture + _xpts_ngw with appearance_pts; test_merge_xpts_components.py
+  - [ ] 48-02-PLAN.md — extend xPts_components_1gw type in types.ts; update PlayerComparisonModal.test.tsx mocks
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 48-03-PLAN.md — refactor XPtsCell with CSS-only hover card, useState mobile toggle, minsRisk prop; extend columns.test.tsx
+  **Cross-cutting constraints:**
+  - `appearance_pts: number` must be in types.ts (Plan 02) before XPtsCell can render it (Plan 03)
+  - Pipeline must produce `appearance_pts` in xPts_components_1gw (Plan 01) before full integration is possible
+**Phase notes**: appearance_pts resolved as explicit component (D-01). DGW: summed breakdown (D-05). BGW: no hover card (D-06). Native title tooltip removed and replaced with hover card (D-03). MinsRiskBadge shown below Total row to satisfy XPT-01 minutes risk requirement (D-02).
 **UI hint**: yes
 
 ### Phase 49: Player Lifecycle Labels
@@ -200,7 +208,7 @@ See `.planning/milestones/v1.6-ROADMAP.md` for full phase details.
 | 36-41 | v1.5 | 14 | Complete | 2026-04-30 |
 | 42-46 | v1.6 | 12 | Complete | 2026-05-01 |
 | 47 | v1.7 | 0/5 | Not started | - |
-| 48 | v1.7 | 0/TBD | Not started | - |
+| 48 | v1.7 | 0/3 | Not started | - |
 | 49 | v1.7 | 0/TBD | Not started | - |
 | 50 | v1.7 | 0/TBD | Not started | - |
 | 51 | v1.7 | 0/TBD | Not started | - |

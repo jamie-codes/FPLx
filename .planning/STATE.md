@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: milestone
-status: Phase 47 complete — Phase 48 is next
-stopped_at: context exhaustion at 76% (2026-05-01)
-last_updated: "2026-05-01T14:27:50.323Z"
+status: Phase 48 planned — Ready to execute
+stopped_at: ""
+last_updated: "2026-05-01T00:00:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 5
+  total_plans: 8
   completed_plans: 5
-  percent: 100
+  percent: 20
 ---
 
 # Project State
@@ -20,7 +20,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-01 — after v1.6 milestone)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.7 Decision Assistant — Phase 47 is next (Fixture Swing Detector & Clean Sheet Probability)
+**Current focus:** v1.7 Decision Assistant — Phase 48 planned (Explainable xPts Breakdown), ready to execute
 
 ## Current Position
 
@@ -30,7 +30,7 @@ Previous milestone: v1.6 Squad Optimiser (Phases 42-46, shipped 2026-05-01)
 
 Progress: [░░░░░░░░░░] 0% (0/5 phases)
 
-Next action: `/gsd-discuss-phase 48` — discuss Phase 48 (Explainable xPts Breakdown) before planning
+Next action: `/gsd-execute-phase 48` — execute Phase 48 (Explainable xPts Breakdown), 3 plans in 2 waves
 
 ## Performance Metrics
 
@@ -45,7 +45,7 @@ Next action: `/gsd-discuss-phase 48` — discuss Phase 48 (Explainable xPts Brea
 | Phase | Name | Plans | Status | Completed |
 |-------|------|-------|--------|-----------|
 | 47 | Fixture Swing Detector & CS Probability | 5 | Complete | 2026-05-01 |
-| 48 | Explainable xPts Breakdown | TBD | Not started | - |
+| 48 | Explainable xPts Breakdown | 3 | Ready to execute | - |
 | 49 | Player Lifecycle Labels | TBD | Not started | - |
 | 50 | Transfer Opportunity Cost Simulator | TBD | Not started | - |
 | 51 | Weekly Decision Summary | TBD | Not started | - |
@@ -62,7 +62,7 @@ v1.7 decisions to be logged during execution.
 
 ### Pending Todos
 
-- Run `/gsd-plan-phase 47` to begin Phase 47 (Fixture Swing Detector & Clean Sheet Probability)
+- Run `/gsd-execute-phase 48` to begin Phase 48 (Explainable xPts Breakdown)
 
 ### Blockers/Concerns
 
