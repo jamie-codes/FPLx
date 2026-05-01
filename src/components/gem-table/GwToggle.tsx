@@ -20,6 +20,7 @@ export const MOBILE_HIDDEN_COLUMNS: Record<string, boolean> = {
   fixtures: false,
   regression_signal: false,
   differential_flag: false,
+  cs_prob_1gw: false,   // Phase 47 D-09: hidden on mobile (consistent with secondary numeric columns)
 }
 
 export const PRESET_COLUMN_VISIBILITY: Record<ViewPreset, Record<string, boolean>> = {
@@ -42,6 +43,7 @@ export const PRESET_COLUMN_VISIBILITY: Record<ViewPreset, Record<string, boolean
     trend: false,
     fixtures: false,
     last_gw_actual_pts: false,   // ACC-05 D-10: hidden in Compact preset only
+    cs_prob_1gw: false,   // Phase 47 D-09: hidden in Compact preset
   },
   default: {
     fdr_score: false,
@@ -53,6 +55,7 @@ export const PRESET_COLUMN_VISIBILITY: Record<ViewPreset, Record<string, boolean
     ownership_score: false,
     minutes_score: false,
     set_piece_score: false,
+    cs_prob_1gw: false,   // Phase 47 D-09: hidden in Default preset
   },
   analysis: {
     fdr_score: false,
