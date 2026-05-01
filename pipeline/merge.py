@@ -200,7 +200,7 @@ def _compute_xpts_fixture(
     """
     # Guard against degenerate inputs
     if xmins <= 0 or start_prob <= 0:
-        return {'total': 0.0, 'goal_pts': 0.0, 'assist_pts': 0.0, 'cs_pts': 0.0, 'bonus_pts': 0.0}
+        return {'total': 0.0, 'goal_pts': 0.0, 'assist_pts': 0.0, 'cs_pts': 0.0, 'bonus_pts': 0.0, 'appearance_pts': 0.0}
 
     xg = xg_per90 if xg_per90 is not None else 0.0
     xa = xa_per90 if xa_per90 is not None else 0.0
@@ -225,13 +225,18 @@ def _compute_xpts_fixture(
     # re-apply start_prob here (CR-02 fix: removes double-scaling).
     bonus_pts = BONUS_RATE[element_type] * (xmins / 90.0)
 
-    total = goal_pts + assist_pts + cs_pts + bonus_pts
+    # Appearance: FPL awards 2pts for starting; D-01 Phase 48. NOT scaled by xmins/90 —
+    # appearance points are per game started, not per minute.
+    appearance_pts = start_prob * 2
+
+    total = goal_pts + assist_pts + cs_pts + bonus_pts + appearance_pts
     return {
         'total': round(total, 3),
         'goal_pts': round(goal_pts, 3),
         'assist_pts': round(assist_pts, 3),
         'cs_pts': round(cs_pts, 3),
         'bonus_pts': round(bonus_pts, 3),
+        'appearance_pts': round(appearance_pts, 3),
     }
 
 
@@ -264,7 +269,7 @@ def _xpts_ngw(
         grouped.append((event_id, list(group)))
 
     total = 0.0
-    first_gw_components = {'goal_pts': 0.0, 'assist_pts': 0.0, 'cs_pts': 0.0, 'bonus_pts': 0.0}
+    first_gw_components = {'goal_pts': 0.0, 'assist_pts': 0.0, 'cs_pts': 0.0, 'bonus_pts': 0.0, 'appearance_pts': 0.0}
 
     for gw_idx, (_event_id, gw_fixtures) in enumerate(grouped[:n_gws]):
         for fix in gw_fixtures:
