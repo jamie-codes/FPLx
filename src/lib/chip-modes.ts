@@ -77,8 +77,11 @@ export function buildOptimalSquad(params: BuildOptimalSquadParams): ChipSquadRes
     runningCost += player.now_cost
   }
 
-  // D-06: return null when fewer than 15 slots could be filled
+  // D-06: return null when fewer than 15 slots could be filled, or any MIN_SLOTS position unmet
   if (squad.length < 15) return null
+  for (const pos of [1, 2, 3, 4] as const) {
+    if ((filledSlots[pos] ?? 0) < MIN_SLOTS[pos]) return null
+  }
 
   // D-10: derive bestXI by calling optimiseLineup() on the 15 squad players.
   // CRITICAL (Pitfall 1): pass full MergedPlayer[] for the 15 squad members, NOT ChipSquadPlayer[]
@@ -127,5 +130,3 @@ export type { SquadPick }
 // ChipSquadPlayer and ChipSquadResult re-exported from types for convenience.
 export type { ChipSquadPlayer, ChipSquadResult }
 
-// MIN_SLOTS used for validation callers — not currently re-exported (internal use).
-void MIN_SLOTS

@@ -197,7 +197,7 @@ function MobileComparisonCards({
             return (
               <div
                 key={`${section}-mobile-${i}`}
-                className={`py-2 border-b border-zinc-100 dark:border-zinc-800${row.isChanged ? ' border-l-2 border-l-green-500 pl-2' : (isBenchBoost && row.isBench ? '' : ' opacity-60')}`}
+                className={`py-2 border-b border-zinc-100 dark:border-zinc-800${row.isChanged ? ' border-l-2 border-l-green-500 pl-2' : (row.isBench && !isBenchBoost ? ' opacity-60' : '')}`}
                 {...(row.isChanged ? { 'data-testid': 'comparison-row-changed' } : {})}
               >
                 <div className="text-xs text-zinc-500 dark:text-zinc-400">{cur?.web_name ?? ''}</div>
@@ -448,7 +448,7 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
             fewer than 15 eligible players available in the player pool.
           </div>
         ) : (
-          <ChipSquadView result={chipSquad} chipMode={chipMode} />
+          <ChipSquadView result={chipSquad} chipMode={chipMode as 'wildcard' | 'free-hit'} />
         )
       ) : (
         <>
