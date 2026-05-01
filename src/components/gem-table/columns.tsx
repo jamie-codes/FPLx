@@ -112,7 +112,7 @@ export function XPtsCell({
           <span className="font-mono">{cardTotal}</span>
         </div>
         <div className="mt-1">
-          <MinsRiskBadge minsRisk={minsRisk ?? null} />
+          <MinsRiskBadge minsRisk={minsRisk} />
         </div>
       </div>
     </div>
