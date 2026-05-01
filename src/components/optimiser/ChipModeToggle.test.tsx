@@ -1,21 +1,9 @@
-// Phase 46 (CHIP-01..CHIP-02): ChipModeToggle RTL tests — RED in Wave 0.
+// Phase 46 (CHIP-01..CHIP-02): ChipModeToggle RTL tests — RED in Wave 0, GREEN in Wave 2.
 // Wave 2 creates ChipModeToggle.tsx and turns these GREEN.
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest'
 import { render, fireEvent } from '@testing-library/react'
-
-// Dynamic import so missing file produces import error (RED) not parse error
-// Wave 2 creates the file — import becomes valid.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let ChipModeToggle: any
-
-try {
-  // Will throw in Wave 0 (file does not exist)
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  ChipModeToggle = require('./ChipModeToggle').ChipModeToggle
-} catch {
-  ChipModeToggle = null
-}
+import { ChipModeToggle } from './ChipModeToggle'
 
 describe('ChipModeToggle — Wave 0 (RED)', () => {
   it('file exists and ChipModeToggle is exported', () => {
@@ -23,7 +11,6 @@ describe('ChipModeToggle — Wave 0 (RED)', () => {
   })
 
   it('renders 4 buttons: None, Wildcard, Free Hit, Bench Boost', () => {
-    if (!ChipModeToggle) throw new Error('ChipModeToggle not yet implemented')
     const onChange = vi.fn()
     const { getByTestId } = render(
       <ChipModeToggle value="none" onChange={onChange} />
@@ -35,7 +22,6 @@ describe('ChipModeToggle — Wave 0 (RED)', () => {
   })
 
   it('aria-pressed is true on the active button and false on others', () => {
-    if (!ChipModeToggle) throw new Error('ChipModeToggle not yet implemented')
     const onChange = vi.fn()
     const { getByTestId } = render(
       <ChipModeToggle value="wildcard" onChange={onChange} />
@@ -47,7 +33,6 @@ describe('ChipModeToggle — Wave 0 (RED)', () => {
   })
 
   it('calls onChange with "wildcard" when Wildcard button is clicked', () => {
-    if (!ChipModeToggle) throw new Error('ChipModeToggle not yet implemented')
     const onChange = vi.fn()
     const { getByTestId } = render(
       <ChipModeToggle value="none" onChange={onChange} />
@@ -57,7 +42,6 @@ describe('ChipModeToggle — Wave 0 (RED)', () => {
   })
 
   it('calls onChange with "free-hit" when Free Hit button is clicked', () => {
-    if (!ChipModeToggle) throw new Error('ChipModeToggle not yet implemented')
     const onChange = vi.fn()
     const { getByTestId } = render(
       <ChipModeToggle value="none" onChange={onChange} />
@@ -67,7 +51,6 @@ describe('ChipModeToggle — Wave 0 (RED)', () => {
   })
 
   it('calls onChange with "bench-boost" when Bench Boost button is clicked', () => {
-    if (!ChipModeToggle) throw new Error('ChipModeToggle not yet implemented')
     const onChange = vi.fn()
     const { getByTestId } = render(
       <ChipModeToggle value="none" onChange={onChange} />
@@ -77,7 +60,6 @@ describe('ChipModeToggle — Wave 0 (RED)', () => {
   })
 
   it('has role="group" wrapper with aria-label="Chip mode"', () => {
-    if (!ChipModeToggle) throw new Error('ChipModeToggle not yet implemented')
     const onChange = vi.fn()
     const { container } = render(
       <ChipModeToggle value="none" onChange={onChange} />
