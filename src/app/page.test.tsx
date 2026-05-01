@@ -17,6 +17,7 @@ vi.mock('@/components/transfers/TransferPanel', () => ({ TransferPanel: (_props:
 vi.mock('@/components/optimiser/OptimiserPanel', () => ({ OptimiserPanel: (_props: { teamId: string }) => <div data-testid="optimiser-panel" /> }))
 vi.mock('@/components/club-form/ClubFormTable', () => ({ ClubFormTable: () => <div data-testid="club-form-table" /> }))
 vi.mock('@/components/club-form/FixtureEaseRankingPanel', () => ({ FixtureEaseRankingPanel: () => <div data-testid="fixture-ease" /> }))
+vi.mock('@/components/club-form/FixtureSwingDetector', () => ({ FixtureSwingDetector: () => <div data-testid="fixture-swing" /> }))
 vi.mock('@/components/LastUpdated', () => ({ LastUpdated: () => <div data-testid="last-updated" /> }))
 vi.mock('@/components/theme/ThemeToggle', () => ({ ThemeToggle: () => <div data-testid="theme-toggle" /> }))
 vi.mock('@/components/value-gems/ValueGemsTable', () => ({ ValueGemsTable: () => <div data-testid="value-gems" /> }))

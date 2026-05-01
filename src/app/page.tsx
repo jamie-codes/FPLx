@@ -9,6 +9,7 @@ import { DefConTables } from '@/components/defcon/DefConTables'
 import { TransferPanel } from '@/components/transfers/TransferPanel'
 import { ClubFormTable } from '@/components/club-form/ClubFormTable'
 import { FixtureEaseRankingPanel } from '@/components/club-form/FixtureEaseRankingPanel'
+import { FixtureSwingDetector } from '@/components/club-form/FixtureSwingDetector'
 import { LastUpdated } from '@/components/LastUpdated'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { ValueGemsTable } from '@/components/value-gems/ValueGemsTable'
@@ -164,6 +165,7 @@ export default function Home() {
         {activeSection !== 'squad' && activeSubTab === 'club-form' && (
           <>
             <FixtureEaseRankingPanel />
+            <FixtureSwingDetector />
             <ClubFormTable />
           </>
         )}
