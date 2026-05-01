@@ -256,7 +256,7 @@ def _xpts_ngw(
     """
     from itertools import groupby
 
-    if not fixtures or start_prob == 0 or xmins == 0:
+    if not fixtures or start_prob <= 0 or xmins <= 0:
         return 0.0, None
 
     grouped = []
@@ -310,7 +310,7 @@ def _compute_xpts_sigma(
     import math
     from itertools import groupby
 
-    if not fixtures or start_prob == 0 or xmins == 0:
+    if not fixtures or start_prob <= 0 or xmins <= 0:
         return 0.0
 
     xg = xg_per90 if xg_per90 is not None else 0.0
