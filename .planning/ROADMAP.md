@@ -101,8 +101,8 @@ See `.planning/milestones/v1.6-ROADMAP.md` for full phase details.
 <summary>🔄 v1.7 Decision Assistant (Phases 47-51) — IN PROGRESS</summary>
 
 - [x] **Phase 47: Fixture Swing Detector & Clean Sheet Probability** — foundation signal engines that unblock phases 48, 49, and 51
-- [ ] **Phase 48: Explainable xPts Breakdown** — per-component xPts breakdown card using CS-01 data
-- [ ] **Phase 49: Player Lifecycle Labels** — granular timing labels beyond Buy/Hold/Sell, using fixture swing context
+- [x] **Phase 48: Explainable xPts Breakdown** — per-component xPts breakdown card using CS-01 data
+- [x] **Phase 49: Player Lifecycle Labels** — granular timing labels beyond Buy/Hold/Sell, using fixture swing context
 - [ ] **Phase 50: Transfer Opportunity Cost Simulator** — Roll/1-FT/2-FT/Hit comparison table across 1/3/5 GW horizons
 - [ ] **Phase 51: Weekly Decision Summary** — one-screen decision view composing all preceding v1.7 engines
 
@@ -146,10 +146,10 @@ See `.planning/milestones/v1.6-ROADMAP.md` for full phase details.
   4. The breakdown is accessible for any player without requiring authentication — no login gate
 **Plans**: 3 plans (2 waves)
   **Wave 1** *(parallel)*
-  - [ ] 48-01-PLAN.md — TDD: extend pipeline _compute_xpts_fixture + _xpts_ngw with appearance_pts; test_merge_xpts_components.py
-  - [ ] 48-02-PLAN.md — extend xPts_components_1gw type in types.ts; update PlayerComparisonModal.test.tsx mocks
+  - [x] 48-01-PLAN.md — TDD: extend pipeline _compute_xpts_fixture + _xpts_ngw with appearance_pts; test_merge_xpts_components.py
+  - [x] 48-02-PLAN.md — extend xPts_components_1gw type in types.ts; update PlayerComparisonModal.test.tsx mocks
   **Wave 2** *(blocked on Wave 1 completion)*
-  - [ ] 48-03-PLAN.md — refactor XPtsCell with CSS-only hover card, useState mobile toggle, minsRisk prop; extend columns.test.tsx
+  - [x] 48-03-PLAN.md — refactor XPtsCell with CSS-only hover card, useState mobile toggle, minsRisk prop; extend columns.test.tsx
   **Cross-cutting constraints:**
   - `appearance_pts: number` must be in types.ts (Plan 02) before XPtsCell can render it (Plan 03)
   - Pipeline must produce `appearance_pts` in xPts_components_1gw (Plan 01) before full integration is possible
@@ -164,8 +164,15 @@ See `.planning/milestones/v1.6-ROADMAP.md` for full phase details.
   1. Each squad player in the Transfers view displays exactly one lifecycle label from the set: Buy Next Week, Hold One More, Sell Soon, Minutes Trap, Fixture Trap, Hold, Sell — never two simultaneously
   2. When multiple label conditions apply to the same player, the priority hierarchy resolves to the single highest-priority label (priority order defined in plan spec)
   3. Labels are computed in pure TypeScript over existing `MergedPlayer` fields — loading a squad triggers label computation with no additional API call
-**Plans**: TBD
-**Phase notes**: The full label taxonomy, priority map, and hysteresis thresholds (e.g., gem_score must fall below 85% of position average before flipping Hold to Sell) must be defined in the plan spec before any code is written. Minutes trap should be gated at £7.0m+ price to avoid misfiring on cheap rotators. Architecture is clear; business rules need precise spec-level definition.
+**Plans**: 2 plans (2 waves)
+  **Wave 1**
+  - [x] 049-01-PLAN.md — TDD: src/lib/lifecycle-label.ts + lifecycle-label.test.ts (7-label engine, threshold constants, computeLifecycleLabel + computeLifecycleLabels with priority cascade)
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [x] 049-02-PLAN.md — LifecycleLabelBadge component + TransferPanel useClubForm wiring + SquadView labels prop swap + sell|sell_soon shortlist trigger + human-verify checkpoint
+  **Cross-cutting constraints:**
+  - `LifecycleLabel` type and `computeLifecycleLabels` function must exist (Plan 01) before LifecycleLabelBadge can import the union and TransferPanel can call the engine (Plan 02)
+  - Plan 02 retains `computeVerdicts` and `Verdict` exports in `src/lib/recommend.ts` so Phase 51 (Decision Summary) can reuse them
+**Phase notes**: Label taxonomy locked in 049-RESEARCH.md §"Label Taxonomy". Hysteresis: SELL_THRESHOLD = 0.85 (replaces recommend.ts 0.90 for this engine), SELL_SOON_THRESHOLD = 0.90, SWING_THRESHOLD = 0.20 (Phase 47 D-01), MINUTES_TRAP_MIN_COST = 70 (£7.0m gate), MINUTES_TRAP_START_PROB = 0.65. Priority cascade: Minutes Trap > Fixture Trap > Buy Next Week > Hold One More > Sell Soon > Sell > Hold. Bench excluded (pick.position >= 12). Null clubForm degrades gracefully (gem-only labels, no crash).
 **UI hint**: yes
 
 ### Phase 50: Transfer Opportunity Cost Simulator
@@ -207,8 +214,8 @@ See `.planning/milestones/v1.6-ROADMAP.md` for full phase details.
 | 26-35 | v1.4 | 10 | Complete | 2026-04-29 |
 | 36-41 | v1.5 | 14 | Complete | 2026-04-30 |
 | 42-46 | v1.6 | 12 | Complete | 2026-05-01 |
-| 47 | v1.7 | 0/5 | Not started | - |
-| 48 | v1.7 | 0/3 | Not started | - |
-| 49 | v1.7 | 0/TBD | Not started | - |
+| 47 | v1.7 | 5/5 | Complete | 2026-05-01 |
+| 48 | v1.7 | 3/3 | Complete | 2026-05-01 |
+| 49 | v1.7 | 0/2 | Planned | - |
 | 50 | v1.7 | 0/TBD | Not started | - |
 | 51 | v1.7 | 0/TBD | Not started | - |
