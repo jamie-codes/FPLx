@@ -10,7 +10,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, fireEvent, screen } from '@testing-library/react'
 import type { ScoredPlayer } from '@/lib/types'
-import { createColumns } from './columns'
+import { createColumns, XPtsCell } from './columns'
 
 const PLAYER_A = {
   id: 1,
@@ -40,6 +40,61 @@ describe('columns — Phase 39 CMP-01 compare icon', () => {
     // Clicking it fires onCompare with PLAYER_A
     fireEvent.click(btn)
     expect(onCompare).toHaveBeenCalledWith(PLAYER_A)
+  })
+})
+
+const FULL_COMPONENTS = {
+  appearance_pts: 1.8,
+  goal_pts: 1.2,
+  assist_pts: 0.5,
+  cs_pts: 1.5,
+  bonus_pts: 0.5,
+}
+
+describe('Phase 48 XPT-01 — XPtsCell hover card', () => {
+  it('renders hover card panel with all 5 component row labels when components provided', () => {
+    const { getByText } = render(
+      <XPtsCell value={5.5} ceiling={false} components={FULL_COMPONENTS} window={1} />
+    )
+    expect(getByText('Appearance')).toBeTruthy()
+    expect(getByText('Goals')).toBeTruthy()
+    expect(getByText('Assists')).toBeTruthy()
+    expect(getByText('Clean sheet')).toBeTruthy()
+    expect(getByText('Bonus')).toBeTruthy()
+    expect(getByText('Total')).toBeTruthy()
+  })
+
+  it('hover card shows correct numeric values — Total is computed sum of components', () => {
+    const { getByText } = render(
+      <XPtsCell value={5.5} ceiling={false} components={FULL_COMPONENTS} window={1} />
+    )
+    // Appearance row value
+    expect(getByText('1.80')).toBeTruthy()
+    // Total = 1.8 + 1.2 + 0.5 + 1.5 + 0.5 = 5.50
+    expect(getByText('5.50')).toBeTruthy()
+  })
+
+  it('renders no hover card when components is undefined (BGW null guard — D-06)', () => {
+    const { container } = render(
+      <XPtsCell value={0} ceiling={undefined} components={undefined} window={1} />
+    )
+    // No breakdown labels present
+    expect(container.textContent).not.toContain('Appearance')
+    expect(container.textContent).not.toContain('Goals')
+  })
+
+  it('renders MinsRiskBadge inside card when minsRisk is rotation_risk (D-02)', () => {
+    const { container } = render(
+      <XPtsCell
+        value={5.5}
+        ceiling={false}
+        components={FULL_COMPONENTS}
+        minsRisk="rotation_risk"
+        window={1}
+      />
+    )
+    // MinsRiskBadge renders a span with rotation_risk label text "Rotation risk"
+    expect(container.textContent).toContain('Rotation risk')
   })
 })
 
