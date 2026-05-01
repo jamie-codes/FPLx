@@ -1,5 +1,8 @@
+'use client'
+
+import { useState } from 'react'
 import { createColumnHelper } from '@tanstack/react-table'
-import type { ScoredPlayer } from '@/lib/types'
+import type { ScoredPlayer, MinsRisk } from '@/lib/types'
 import { FixtureBadges } from '@/components/fixtures/FixtureBadges'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
 import { VarianceBadge } from '@/components/gem-table/VarianceBadge'
@@ -19,39 +22,100 @@ const fmtDec2 = (v: number | null) => (v === null ? '\u2014' : v.toFixed(2))
 // Column header with hover tooltip
 const H = (label: string, tip: string) => () => <span title={tip} className="cursor-help">{label}</span>
 
-// Phase 28 XPTS-01 / XPTS-02 — xPts cell renderer with variance badge + breakdown tooltip.
+// Phase 48 XPT-01 / XPT-02 — xPts cell renderer with CSS-only hover card breakdown.
+// Replaces native title tooltip per D-03. 'use client' required for useState mobile toggle.
 export function XPtsCell({
   value,
   ceiling,
   components,
+  minsRisk,
   window,
 }: {
   value: number | undefined
   ceiling: boolean | undefined
-  components: { goal_pts: number; assist_pts: number; cs_pts: number; bonus_pts: number } | undefined
+  components: {
+    goal_pts: number
+    assist_pts: number
+    cs_pts: number
+    bonus_pts: number
+    appearance_pts: number
+  } | undefined
+  minsRisk?: MinsRisk
   window: 1 | 3 | 5
 }) {
+  const [open, setOpen] = useState(false)
   const display = (value ?? 0).toFixed(1)
 
-  // Empty/zero/negative/NaN short-circuit: no badge, no tooltip.
+  // Empty/zero/negative/NaN short-circuit: no badge, no hover card (BGW = D-06).
   // Explicit guards handle NaN and negative values that could arrive during a
   // partial pipeline failure or BGW cache serve (WR-03: tighten falsy check).
   if (value === undefined || value === null || value <= 0) {
     return <span>{display}</span>
   }
 
-  // Breakdown tooltip ships only for the 1 GW window per CONTEXT.md (xPts_components_1gw only).
-  // For 3GW/5GW, even if components are passed we suppress the tooltip to keep the contract clear.
+  // Breakdown hover card ships only for the 1 GW window (xPts_components_1gw only).
+  // For 3GW/5GW, even if components are passed we suppress the card to keep the contract clear.
   const showBreakdown = window === 1 && components !== undefined && components !== null
-  const tip = showBreakdown
-    ? `xPts breakdown (${window} GW):\nGoals: ${components!.goal_pts.toFixed(2)}\nAssists: ${components!.assist_pts.toFixed(2)}\nClean sheet: ${components!.cs_pts.toFixed(2)}\nBonus: ${components!.bonus_pts.toFixed(2)}`
-    : undefined
+
+  if (!showBreakdown) {
+    return (
+      <span>
+        {display}
+        <VarianceBadge ceiling={ceiling} />
+      </span>
+    )
+  }
+
+  const c = components!
+  // Total computed from components — NOT from xPts_1gw. Satisfies XPT-02 sum invariant.
+  const cardTotal = (
+    c.appearance_pts + c.goal_pts + c.assist_pts + c.cs_pts + c.bonus_pts
+  ).toFixed(2)
+
+  const rows: [string, string][] = [
+    ['Appearance', c.appearance_pts.toFixed(2)],
+    ['Goals',      c.goal_pts.toFixed(2)],
+    ['Assists',    c.assist_pts.toFixed(2)],
+    ['Clean sheet', c.cs_pts.toFixed(2)],
+    ['Bonus',      c.bonus_pts.toFixed(2)],
+  ]
 
   return (
-    <span title={tip} className={tip ? 'cursor-help' : undefined}>
-      {display}
-      <VarianceBadge ceiling={ceiling} />
-    </span>
+    <div
+      className="relative group/xpts inline-block cursor-help"
+      onClick={() => setOpen(o => !o)}
+    >
+      <span>
+        {display}
+        <VarianceBadge ceiling={ceiling} />
+      </span>
+      {/* Hover card: visible on desktop hover (CSS) or mobile tap (state). z-50 clears sticky web_name z-10. */}
+      <div
+        className={[
+          'absolute bottom-full left-0 mb-1 w-44 z-50',
+          'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700',
+          'rounded shadow-lg p-2 text-xs',
+          'invisible opacity-0 group-hover/xpts:visible group-hover/xpts:opacity-100',
+          'transition-opacity',
+          open ? 'visible opacity-100' : '',
+        ].join(' ')}
+      >
+        {rows.map(([label, val]) => (
+          <div key={label} className="flex justify-between">
+            <span className="text-zinc-500 dark:text-zinc-400">{label}</span>
+            <span className="font-mono">{val}</span>
+          </div>
+        ))}
+        <hr className="my-1 border-zinc-200 dark:border-zinc-600" />
+        <div className="flex justify-between font-semibold">
+          <span>Total</span>
+          <span className="font-mono">{cardTotal}</span>
+        </div>
+        <div className="mt-1">
+          <MinsRiskBadge minsRisk={minsRisk ?? null} />
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -146,6 +210,7 @@ export function createColumns(onCompare: (player: ScoredPlayer) => void, gwN: nu
         value={info.getValue()}
         ceiling={info.row.original.xPts_ceiling_1gw}
         components={info.row.original.xPts_components_1gw ?? undefined}
+        minsRisk={info.row.original.mins_risk}
         window={1}
       />
     ),
