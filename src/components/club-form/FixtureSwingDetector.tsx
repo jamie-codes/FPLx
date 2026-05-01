@@ -156,8 +156,8 @@ export function FixtureSwingDetector() {
             }
             title={
               direction === 'IMPROVING'
-                ? `Fixture run improving: upcoming ${win}GW ease ${(row.swing * 100).toFixed(0)}% above past 3GW average. Potential buy signal for ${row.team.team_short_name} defenders.`
-                : `Fixture run worsening: upcoming ${win}GW ease ${(row.swing * 100).toFixed(0)}% below past 3GW average. Consider selling ${row.team.team_short_name} defenders.`
+                ? `Fixture run improving: upcoming ${win}GW ease ${Math.abs(row.swing * 100).toFixed(0)}% above past 3GW average. Potential buy signal for ${row.team.team_short_name} defenders.`
+                : `Fixture run worsening: upcoming ${win}GW ease ${Math.abs(row.swing * 100).toFixed(0)}% below past 3GW average. Consider selling ${row.team.team_short_name} defenders.`
             }
             data-testid={`swing-direction-${row.team.team_short_name}`}
           >
