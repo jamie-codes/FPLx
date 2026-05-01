@@ -12,11 +12,23 @@ v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scor
 
 Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
 
-## Current State (v1.6 Squad Optimiser — SHIPPED 2026-05-01)
+## Current Milestone: v1.7 Decision Assistant
+
+**Goal:** Turn the app from an analytics dashboard into a weekly decision engine — answering "what should I actually do with my team this week?" for transfers, captaincy, chips, and bench.
+
+**Target features:**
+- Transfer Opportunity Cost Simulator — compare Roll / 1-FT / 2-FT / Hit across 1/3/5 GW horizons for your actual squad
+- Weekly Decision Summary — one-screen view with captain rec, transfer rec, bench order, chip timing, risks, and opportunities
+- Fixture Swing Detector — teams with materially improving/worsening upcoming fixtures, surfaced as proactive buy/sell signals
+- Player Lifecycle Labels — richer timing advice (Buy next week, Hold one more, Sell soon, Minutes trap, Fixture trap, etc.)
+- Explainable xPts Breakdown — component breakdown of any player's projected score (appearance + goals + assists + CS + DefCon + bonus + minutes risk)
+- Clean Sheet Probability — per-fixture CS% for all teams computed from xGA, improving defensive/GK picks
+
+---
+
+## Previous State (v1.6 Squad Optimiser — SHIPPED 2026-05-01)
 
 v1.6 complete — 5 phases (42-46), 12 plans. Full in-browser squad optimiser shipped: `optimiseLineup()` C(15,11) enumeration, configurable 1/3/5 GW horizon, captain/VC selection, ComparisonTable with xPts delta per slot, `suggestTransfers()` transfer-aware engine with hit break-even, and `buildOptimalSquad()` greedy chip engine (Wildcard/Free Hit/Bench Boost). Form signal added to xPts pipeline with accuracy gate. See `.planning/milestones/v1.6-ROADMAP.md`.
-
-**Next milestone:** Run `/gsd-new-milestone` to scope v1.7.
 
 ---
 

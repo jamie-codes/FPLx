@@ -1,16 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.6
-milestone_name: Squad Optimiser
-status: "v1.6 COMPLETE — milestone archived 2026-05-01"
-stopped_at: ""
-last_updated: "2026-05-01T00:00:00.000Z"
-last_activity: 2026-05-01 -- v1.6 milestone archived; ready for /gsd-new-milestone
+milestone: v1.7
+milestone_name: milestone
+status: planning — requirements and roadmap pending
+stopped_at: context exhaustion at 75% (2026-05-01)
+last_updated: "2026-05-01T09:23:58.358Z"
 progress:
-  total_phases: 21
-  completed_phases: 21
-  total_plans: 46
-  completed_plans: 46
+  total_phases: 16
+  completed_phases: 16
+  total_plans: 34
+  completed_plans: 34
   percent: 100
 ---
 
@@ -66,6 +65,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-01 (milestone close)
-Stopped at: N/A — milestone archived, ready for /gsd-new-milestone
+Last session: 2026-05-01T09:23:58.354Z
+Stopped at: context exhaustion at 75% (2026-05-01)
 Resume file: None
