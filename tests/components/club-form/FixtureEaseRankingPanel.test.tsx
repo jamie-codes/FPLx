@@ -45,6 +45,10 @@ function makeClubForm(overrides: Partial<ClubForm> & { team_id: number; team_sho
     defensive_ease_1gw: overrides.defensive_ease_1gw ?? null,
     defensive_ease_3gw: overrides.defensive_ease_3gw ?? null,
     defensive_ease_5gw: overrides.defensive_ease_5gw ?? null,
+    past_ease_3gw: overrides.past_ease_3gw ?? null,
+    swing_1gw: overrides.swing_1gw ?? null,
+    swing_3gw: overrides.swing_3gw ?? null,
+    swing_5gw: overrides.swing_5gw ?? null,
   }
 }
 

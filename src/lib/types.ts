@@ -176,6 +176,12 @@ export interface MergedPlayer {
   // Source: pipeline/merge.py:_compute_form_signal; written by merge_players when summaries dict is provided.
   form_xgxa_per90?: number | null
   form_xgxa_window_gws?: number       // count of GWs the form signal spans (3-5); 0 when form_xgxa_per90 is null
+  // Phase 47 CS-01 (D-08/D-10): clean sheet probability for the next 1 GW fixture.
+  // Optional during pipeline rollout (same convention as xPts_1gw). Range: 0.0–1.0.
+  // BGW players: cs_prob_1gw = 0 (no fixture, no CS chance).
+  // DGW players: combined probability `1 - (1-p1)*(1-p2)` aggregated across the GW group.
+  // GK (element_type=1) and DEF (element_type=2) consume this field; MID/FWD show em-dash in UI.
+  cs_prob_1gw?: number
 }
 
 // Optimiser horizon (Phase 43 OPT-01..OPT-05) — maps to xPts_1gw / xPts_3gw / xPts_5gw fields
@@ -378,6 +384,15 @@ export interface ClubForm {
   defensive_ease_1gw: number | null
   defensive_ease_3gw: number | null
   defensive_ease_5gw: number | null
+  // Phase 47 SWG-01..SWG-03 (D-03/D-04/D-05): fixture swing computation.
+  // past_ease_3gw is computed from the most recent 3 finished fixtures using the same
+  // meanEase() helper used for the upcoming windows; null when fewer than 3 finished
+  // fixtures with attacking_difficulty exist (early season). The swing deltas use
+  // attacking ease (D-04) and are null when either side of the subtraction is null.
+  past_ease_3gw: number | null
+  swing_1gw: number | null   // attacking_ease_1gw - past_ease_3gw
+  swing_3gw: number | null   // attacking_ease_3gw - past_ease_3gw
+  swing_5gw: number | null   // attacking_ease_5gw - past_ease_3gw
 }
 
 // ---------------------------------------------------------------------------

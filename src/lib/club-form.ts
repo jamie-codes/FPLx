@@ -165,6 +165,26 @@ export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[])
       else if (scored === conceded) draws++
       else losses++
     }
+    const upcomingFx = teamUpcoming.get(tId) ?? []
+    const attacking_ease_1gw = meanEase(upcomingFx, 1, 'attacking_difficulty')
+    const attacking_ease_3gw = meanEase(upcomingFx, 3, 'attacking_difficulty')
+    const attacking_ease_5gw = meanEase(upcomingFx, 5, 'attacking_difficulty')
+
+    // Phase 47 SWG-01..SWG-03 (D-03/D-04): past ease from most recent 3 finished fixtures.
+    // Build ClubFormFixture-compatible objects from RawFixture for the meanEase() helper.
+    const finishedFx = (teamFinished.get(tId) ?? []).slice(-3).map(f => ({
+      opponent_team: '',
+      is_home: f.team_h === tId,
+      event_id: f.event ?? 0,
+      difficulty_score: 0,
+      difficulty_tier: 'medium' as const,
+      attacking_difficulty: fplToAttDiff(f.team_h === tId ? f.team_h_difficulty : f.team_a_difficulty),
+      defensive_difficulty: 0,
+    }))
+    const past_ease_3gw = finishedFx.length >= 3
+      ? meanEase(finishedFx, 3, 'attacking_difficulty')
+      : null
+
     result.push({
       team_id: tId,
       team_name: t.name,
@@ -172,14 +192,19 @@ export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[])
       wins, draws, losses,
       goals_scored: gs,
       goals_conceded: gc,
-      upcoming_fixtures: teamUpcoming.get(tId) ?? [],
+      upcoming_fixtures: upcomingFx,
       // Phase 27 FIX-01 — per-team ease aggregates (null when window has zero fixtures — BGW)
-      attacking_ease_1gw: meanEase(teamUpcoming.get(tId) ?? [], 1, 'attacking_difficulty'),
-      attacking_ease_3gw: meanEase(teamUpcoming.get(tId) ?? [], 3, 'attacking_difficulty'),
-      attacking_ease_5gw: meanEase(teamUpcoming.get(tId) ?? [], 5, 'attacking_difficulty'),
-      defensive_ease_1gw: meanEase(teamUpcoming.get(tId) ?? [], 1, 'defensive_difficulty'),
-      defensive_ease_3gw: meanEase(teamUpcoming.get(tId) ?? [], 3, 'defensive_difficulty'),
-      defensive_ease_5gw: meanEase(teamUpcoming.get(tId) ?? [], 5, 'defensive_difficulty'),
+      attacking_ease_1gw,
+      attacking_ease_3gw,
+      attacking_ease_5gw,
+      defensive_ease_1gw: meanEase(upcomingFx, 1, 'defensive_difficulty'),
+      defensive_ease_3gw: meanEase(upcomingFx, 3, 'defensive_difficulty'),
+      defensive_ease_5gw: meanEase(upcomingFx, 5, 'defensive_difficulty'),
+      // Phase 47 SWG-01..SWG-03 (D-03/D-04/D-05): fixture swing fields
+      past_ease_3gw,
+      swing_1gw: attacking_ease_1gw != null && past_ease_3gw != null ? attacking_ease_1gw - past_ease_3gw : null,
+      swing_3gw: attacking_ease_3gw != null && past_ease_3gw != null ? attacking_ease_3gw - past_ease_3gw : null,
+      swing_5gw: attacking_ease_5gw != null && past_ease_3gw != null ? attacking_ease_5gw - past_ease_3gw : null,
     })
   }
   return result
