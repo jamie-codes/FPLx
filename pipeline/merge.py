@@ -167,7 +167,7 @@ def _cs_prob_1gw_for_fixtures(fixtures: list, xmins: float) -> float:
     # Combined probability across DGW: 1 - prod(1 - p_i)
     prob_no_cs = 1.0
     for fix in first_group:
-        dd = fix.get('defensive_difficulty', 1.0 - fix.get('attacking_difficulty', 0.5))
+        dd = fix.get('defensive_difficulty', 0.5)
         p = _cs_prob(dd, xmins)
         prob_no_cs *= (1.0 - p)
     return round(1.0 - prob_no_cs, 6)
@@ -274,7 +274,7 @@ def _xpts_ngw(
                 start_prob,
                 xmins,
                 element_type,
-                fix.get('defensive_difficulty', 1.0 - fix.get('attacking_difficulty', 0.5)),
+                fix.get('defensive_difficulty', 0.5),
             )
             total += result['total']
             if gw_idx == 0 and n_gws == 1:
@@ -323,7 +323,7 @@ def _compute_xpts_sigma(
     total_var = 0.0
     for _event_id, gw_fixtures in grouped[:n_gws]:
         for fix in gw_fixtures:
-            dd = fix.get('defensive_difficulty', 1.0 - fix.get('attacking_difficulty', 0.5))
+            dd = fix.get('defensive_difficulty', 0.5)
             cs_prob = _cs_prob(dd, xmins)
 
             lam_g = xg * (xmins / 90.0)
