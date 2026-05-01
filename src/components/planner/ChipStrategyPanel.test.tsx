@@ -29,6 +29,7 @@ function makeClubForm(team_id: number, fixtures: ClubFormFixture[]): ClubForm {
     upcoming_fixtures: fixtures,
     attacking_ease_1gw: null, attacking_ease_3gw: null, attacking_ease_5gw: null,
     defensive_ease_1gw: null, defensive_ease_3gw: null, defensive_ease_5gw: null,
+    past_ease_3gw: null, swing_1gw: null, swing_3gw: null, swing_5gw: null,
   }
 }
 
