@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: Decision Assistant
-status: roadmap planned — ready for phase 47
-stopped_at: roadmap created (2026-05-01)
+status: context gathered — ready for phase 47 planning
+stopped_at: Phase 47 context gathered (2026-05-01)
 last_updated: "2026-05-01T00:00:00.000Z"
 progress:
   total_phases: 5
@@ -30,7 +30,7 @@ Previous milestone: v1.6 Squad Optimiser (Phases 42-46, shipped 2026-05-01)
 
 Progress: [░░░░░░░░░░] 0% (0/5 phases)
 
-Next action: `/gsd-plan-phase 47`
+Next action: `/gsd-plan-phase 47` (context captured at `.planning/phases/47-fixture-swing-cs-prob/47-CONTEXT.md`)
 
 ## Performance Metrics
 
@@ -74,6 +74,6 @@ v1.7 decisions to be logged during execution.
 
 ## Session Continuity
 
-Last session: 2026-05-01 — roadmap created for v1.7
-Stopped at: roadmap written; ready for phase planning
-Resume file: None
+Last session: 2026-05-01 — Phase 47 context gathered
+Stopped at: Phase 47 context captured; ready for planning
+Resume file: .planning/phases/47-fixture-swing-cs-prob/47-CONTEXT.md
