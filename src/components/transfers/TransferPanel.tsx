@@ -7,7 +7,9 @@ import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
 import { computeAllGemScores } from '@/lib/gem-score'
 import { computeTransferSuggestions, type ChipState, type SingleTransfer } from '@/lib/transfer-engine'
-import { computeVerdicts } from '@/lib/recommend'
+import { useClubForm } from '@/lib/hooks/useClubForm'
+import { computeLifecycleLabels } from '@/lib/lifecycle-label'
+import type { ClubForm } from '@/lib/types'
 import { computeCaptaincyCandidates } from '@/lib/captaincy-engine'
 import { SquadView } from '@/components/squad/SquadView'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
@@ -31,6 +33,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
 
   const { data: squadData, isLoading: squadLoading, error: squadError } = useSquad(submittedId)
   const { data: playersData, isLoading: playersLoading } = usePlayers()
+  const { data: clubFormData } = useClubForm()
   const { isAuthenticated, expiresAt, setAuthenticated, clearAuthenticated } = useAuthStatus()
   const { data: myTeamData } = useMyTeam(isAuthenticated && !!submittedId)
 
@@ -52,10 +55,15 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
     )
   }, [squadData, scoredPlayers, freeTransfers])
 
-  const verdicts = useMemo(() => {
+  const clubFormMap = useMemo(() => {
+    if (!clubFormData) return new Map<number, ClubForm>()
+    return new Map(clubFormData.map(cf => [cf.team_id, cf]))
+  }, [clubFormData])
+
+  const lifecycleLabels = useMemo(() => {
     if (!squadData || scoredPlayers.length === 0) return new Map()
-    return computeVerdicts(squadData.picks, scoredPlayers)
-  }, [squadData, scoredPlayers])
+    return computeLifecycleLabels(squadData.picks, scoredPlayers, clubFormMap)
+  }, [squadData, scoredPlayers, clubFormMap])
 
   const captaincyCandidates = useMemo(() => {
     if (!squadData || scoredPlayers.length === 0) return []
@@ -217,7 +225,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
               picks={squadData.picks}
               allPlayers={scoredPlayers}
               entryHistory={effectiveEntryHistory ?? squadData.entry_history}
-              verdicts={verdicts}
+              labels={lifecycleLabels}
               exactSellPrices={exactSellPrices}
               isAuthenticated={isAuthenticated}
             />

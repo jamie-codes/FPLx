@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react'
 import type { ScoredPlayer } from '@/lib/types'
 import type { SquadPick, EntryHistory } from '@/lib/squad-adapter'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
-import { VerdictBadge } from '@/components/shared/VerdictBadge'
-import type { Verdict } from '@/lib/recommend'
+import { LifecycleLabelBadge } from '@/components/shared/LifecycleLabelBadge'
+import type { LifecycleLabel } from '@/lib/lifecycle-label'
 import { computeExplanations } from '@/lib/explain'
 import { computeReplacementShortlist } from '@/lib/replacement-shortlist'
 import { ExplainPanel } from '@/components/squad/ExplainPanel'
@@ -14,7 +14,7 @@ interface SquadViewProps {
   picks: SquadPick[]
   allPlayers: ScoredPlayer[]
   entryHistory: EntryHistory
-  verdicts?: Map<number, Verdict>
+  labels?: Map<number, LifecycleLabel>
   exactSellPrices?: Map<number, number>
   isAuthenticated?: boolean
 }
@@ -52,7 +52,7 @@ function StatusBadge({ status, news }: { status: string; news: string }) {
   )
 }
 
-export function SquadView({ picks, allPlayers, entryHistory, verdicts, exactSellPrices, isAuthenticated }: SquadViewProps) {
+export function SquadView({ picks, allPlayers, entryHistory, labels, exactSellPrices, isAuthenticated }: SquadViewProps) {
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
 
   const [isMobile, setIsMobile] = useState(false)
@@ -202,15 +202,15 @@ export function SquadView({ picks, allPlayers, entryHistory, verdicts, exactSell
                           <MinsRiskBadge minsRisk={player.mins_risk} />
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap">
-                          {!isBench && verdicts?.get(pick.element) ? (
-                            <VerdictBadge verdict={verdicts.get(pick.element)!} />
+                          {!isBench ? (
+                            <LifecycleLabelBadge label={labels?.get(pick.element) ?? null} />
                           ) : null}
                         </td>
                       </tr>
                       {!isBench && expandedIds.has(pick.element) && (() => {
                         const reasons = computeExplanations(player)
-                        const verdict = verdicts?.get(pick.element)
-                        const shortlist = verdict === 'sell'
+                        const label = labels?.get(pick.element)
+                        const shortlist = (label === 'sell' || label === 'sell_soon')
                           ? computeReplacementShortlist(player, allPlayers, squadIds, entryHistory.bank)
                           : null
                         return (
