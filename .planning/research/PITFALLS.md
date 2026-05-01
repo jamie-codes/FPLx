@@ -1,405 +1,358 @@
-# Domain Pitfalls: Squad Optimiser (v1.6)
+# Domain Pitfalls: Decision Assistant (v1.7)
 
-**Domain:** Adding squad optimisation to an existing FPL personal analyst tool
-**Researched:** 2026-04-30
-**Project context:** Next.js 16 + React 19 + TypeScript, existing xPts engine (Poisson/Bernoulli), greedy + look-ahead transfer planner, FPL squad fetching via Team ID
-
----
-
-## Section 1 — FPL Rule Edge Cases
-
-### Pitfall 1: Formation constraints are six rules, not one
-
-**What goes wrong:** Treating "formation" as a single selector (4-3-3, 3-5-2, etc.) and storing it as a string. The optimiser then picks the best 11 from a flat list, ignoring the combinatorial constraint that valid FPL lineups must simultaneously satisfy six hard bounds.
-
-**The actual rules (HIGH confidence — official FPL):**
-- Exactly 1 GK in the starting 11
-- At least 3 DEF starters (max 5)
-- At least 2 MID starters (max 5)
-- At least 1 FWD starter (max 3)
-- Exactly 10 outfield starters (11 total minus GK)
-- The resulting formation must be consistent (3+5+2=10, 3+4+3=10, etc.)
-
-**Why it happens:** "Best 11 by xPts" without constraints regularly produces outputs like 1 GK + 5 DEF + 5 MID + 0 FWD — mathematically optimal given a squad weighted to defenders, but invalid in FPL.
-
-**Consequences:** Every recommended lineup is wrong for a midfielder-heavy or forward-light squad. The user immediately distrusts the tool.
-
-**Prevention:** Model formation as six integer inequality constraints on position counts. Sort players by xPts within each position, then solve as a constrained selection (greedy or MILP). The lineup optimiser phase must encode all six constraints before any xPts ranking.
-
-**Detection:** Unit test: pass a squad with 5 defenders and 3 forwards, assert the output never contains 0 forwards.
+**Domain:** Adding decision-assistant features to an existing FPL analytics system
+**Researched:** 2026-05-01
+**Project context:** Next.js 16 + React 19 + TypeScript + Python pipeline, existing xPts engine (Poisson/Bernoulli), `suggestTransfers()`, `optimiseLineup()`, `computeClubForm()`, `computeVerdicts()`, `computeExplanations()`, Vercel Blob storage
 
 ---
 
-### Pitfall 2: Three-player-per-club cap applies to the full 15, not just the XI
+## Section 1 — Transfer Opportunity Cost Simulator
 
-**What goes wrong:** Enforcing the club constraint only on the starting 11. A standalone squad builder that allows a bench of 4 Chelsea players alongside 2 starters passes lineup-level validation but is illegal at squad level.
+### Pitfall 1: Not anchoring to actual FT state at decision time
 
-**The actual rule:** No more than 3 players from the same Premier League club in the 15-player squad (squad level, not starting XI level).
+**What goes wrong:** The simulator asks the user "how many FTs do you have?" but does not cross-reference the FPL API's actual `entry-history` or `my-team` data. If the user forgets they rolled a transfer last week, the simulator will show "Roll saves a FT" on a squad already at the 2-FT cap — which is impossible. Worse, when auth is absent, the system silently uses `ftCount=1` as the default, making "Roll" always look attractive.
 
-**Why it happens:** The lineup optimiser and the squad builder are often written as separate modules. The squad builder forgets that the constraint is on the full 15.
+**Why it happens:** `suggestTransfers()` already takes `ftCount: 1 | 2` as a parameter. The UI is responsible for providing the correct value. It is tempting to default to 1 rather than fetch from `my-team`.
 
-**Consequences:** The standalone squad builder produces squads that the FPL game itself would reject. The wildcard/free-hit mode may suggest transfers that violate this cap.
+**Consequences:** The "Roll" column shows a phantom benefit. The manager takes no action believing they will gain a free transfer they already have.
 
 **Prevention:**
-- Always apply the club count constraint at squad level (all 15 players) in both the lineup optimiser and the squad builder.
-- In transfer-aware mode: when simulating a transfer in, check that the target player's club count in the post-transfer squad would not exceed 3.
-- Add an assertion: `assert max(club_counts.values()) <= 3` before emitting any recommendation.
+- When the user is authenticated (`useMyTeam` enabled), derive `ftCount` from the FPL `my-team` API field `free_transfers` (already available on the `MyTeamPick` response in `squad-adapter.ts`). Do not let the UI override it.
+- When unauthenticated, show a FT selector (1 or 2) that is visually prominent and clearly labelled "Set your free transfers."
+- Add a note: "FPL caps banked transfers at 2. Rolling when you already have 2 FTs gains nothing."
 
-**Detection:** Unit test: squad with 3 Arsenal players — optimiser must not suggest bringing in a 4th Arsenal player regardless of their xPts.
+**Detection:** Integration test: authenticated squad with 2 FTs — assert "Roll" column shows `+0 FTs` or is suppressed entirely.
 
 ---
 
-### Pitfall 3: Bench order and the goalkeeper-only sub rule
+### Pitfall 2: Free transfer banking produces infinite deferral loop
 
-**What goes wrong:** Treating the bench as an ordered list [GK_sub, outfield_1, outfield_2, outfield_3] and assuming autosubs work like a priority queue — first unavailable starter replaced by first eligible bench player.
+**What goes wrong:** The simulator compares Roll / 1-FT / 2-FT / Hit on a 1/3/5 GW horizon. On a 1 GW horizon, rolling always appears attractive when xPtsGain is below threshold — the next GW's numbers are not shown. The manager perpetually rolls, never transfers, and the simulator never surfaces the compounding opportunity cost of inaction.
 
-**The actual autosub rules (HIGH confidence):**
-- The bench GK (slot 0) can only replace the starting GK, and only if the starting GK plays 0 minutes.
-- The bench GK never replaces outfield starters, regardless of position or bench priority.
-- Outfield subs (bench slots 1-3) replace outfield starters only, in bench order (slot 1 first), subject to the valid formation constraint — the sub must not produce an illegal formation.
-- If no bench player can enter without making the formation invalid, the substitution is skipped.
+**Why it happens:** The opportunity cost of banking is not modelled as a future expected loss. The simulator shows "gain from rolling = +1 FT in bank" but does not show "expected points loss from deferring the best available transfer for N GWs."
 
-**Why it happens:** Optimisers often treat bench weight as a flat scalar (e.g., GK_sub x 0.1, sub1 x 0.2, sub2 x 0.1, sub3 x 0.05). This is reasonable as an approximation, but gets the GK-sub semantics wrong: a high-xPts outfield player ranked first on the bench cannot sub for a non-playing GK.
-
-**Consequences:**
-- The bench ordering optimiser places a high-scoring outfield player in the GK slot, expecting autosub value that can never materialise.
-- Bench boost mode calculates expected bench points incorrectly if it conflates GK-sub with outfield-sub roles.
+**Consequences:** The simulation systematically favours deferral, under-indexing on immediate upgrades that would pay off within the scoring horizon.
 
 **Prevention:**
-- Keep the GK sub as an isolated slot. Never rank it against outfield bench players.
-- For bench order optimisation: score the three outfield bench slots by `xPts x start_prob x formation_sub_probability`. Do not include the GK sub in this ranking.
-- For bench boost: `bench_pts = GK_sub_xPts x (1 - starter_GK_start_prob) + sum(outfield_bench_xPts x autosub_prob_i)`.
+- On the 1 GW horizon view, show the top-1 transfer suggestion's `xPtsGain` explicitly as the "cost of rolling." The UI framing should be: "Rolling costs you ~X xPts if this transfer is available next week."
+- Extend the 3 GW and 5 GW horizon calculations to include the projected gain from making the transfer now vs deferring. Use the existing `suggestTransfers()` output: `xPtsGain` on the 3/5 GW field is already the forward-looking gain.
+- Never show "Roll" as the dominant recommendation without quantifying the deferral cost.
 
-**Detection:** Unit test: starting GK plays 0 minutes — assert only GK sub enters, not the outfield bench leader even if bench leader has higher xPts.
+**Detection:** Scenario test: squad with one clear upgrade (xPtsGain > 4 over 3 GW) — assert the simulator flags rolling as a net-negative on the 3 GW view.
 
 ---
 
-### Pitfall 4: Captain/VC autosub rules are not modelled
+### Pitfall 3: Hit break-even inconsistency across horizons
 
-**What goes wrong:** The optimiser recommends a captain, scores the lineup as captain_xPts x 2, and ships it. It does not account for the FPL rule that if the captain plays 0 minutes, the captaincy transfers to the VC.
+**What goes wrong:** The simulator displays `breakEvenGws` using the formula `ceil(4 / xPtsGainPerGw)`. But `xPtsGainPerGw = xPtsGain / horizon`. When the user toggles from 1 GW to 3 GW horizon, `breakEvenGws` changes — not because the player's underlying quality changed, but because the denominator changed. This confuses users and gives the impression the hit becomes "more worthwhile" on a longer horizon, even if the player's per-GW rate is identical.
 
-**Why it matters:** For a horizon-based optimiser, failing to account for the VC multiplier means:
-- A risky captain pick (75% start probability) is over-valued relative to a safe one (95%)
-- Wildcard/free-hit mode optimising for bench boost may fail to notice that captain + VC both being rotation-risk players is worse than one safe captain
+**Why it happens:** The existing `suggestTransfers()` engine correctly implements this formula per `45-UI-SPEC.md §9`. The pitfall is in how the Opportunity Cost Simulator presents three separate outputs (1/3/5 GW) without explaining that break-even figures are horizon-relative.
+
+**Consequences:** The manager makes a hit based on "break-even in 2 GWs" shown on the 3 GW view, not realising the 1 GW view would have shown "break-even in 4 GWs" for the exact same transfer pair.
 
 **Prevention:**
-- Model expected captain contribution as `captain_xPts x 2 x start_prob + vc_xPts x 2 x (1 - start_prob) x vc_start_prob`.
-- Surface the VC alongside the captain recommendation in the UI.
-- For triple captain chip: same model, factor x 3 not x 2.
-
-**Detection:** Snapshot test: captain at 50% start_prob, VC at 90% start_prob — assert VC expected contribution factor is surfaced and non-trivial.
+- Add a single shared `breakEvenGws` displayed prominently, computed from the 1 GW `xPtsGainPerGw` only. Label it: "Break-even using 1 GW gain rate."
+- The horizon toggle on the simulator controls which population of players is shown (broader 5 GW fixture view = different ranking), not the break-even arithmetic.
+- Write a unit test asserting that changing `horizon` alone does not change the displayed break-even for the same (sell, buy) pair where the player's 1 GW xPts are held constant.
 
 ---
 
-### Pitfall 5: Price arithmetic must stay in integer tenths throughout
+### Pitfall 4: Additive 2-transfer approximation inflates combo gains
 
-**What goes wrong:** Converting player prices from tenths of GBP 1m (FPL's internal format) to floats for budget arithmetic. `now_cost = 65` becomes `6.5` and then `6.5 + 7.4 = 13.899999...` creates phantom budget due to floating-point rounding.
+**What goes wrong:** `suggestTransfers()` uses an additive approximation for 2-FT combos: `xPtsGain = gain1 + gain2`. This is documented in `45-RESEARCH.md §Risk 7` as intentional. However, the Opportunity Cost Simulator presents the combo gain as if it were independently verified. When the two transfers interact (e.g., both bring in a player from the same team, reducing squad flexibility), the additive gain is optimistic.
 
-**This project's existing pattern:** `planning-engine.ts` and `free-transfer-engine.ts` already use tenths throughout — `if (buyCandidate.now_cost > simulatedBank + sellPrice)` compares integers. The standalone squad builder must follow this same pattern.
+**Why it happens:** Full re-running of `optimiseLineup()` per combo is the accurate approach but was ruled out for performance (per `CLAUDE.md` Key Decisions). The approximation is fine for the existing Transfer Suggestions UI, but the Opportunity Cost Simulator frames the output as a precise decision tool.
 
-**The standalone squad builder constraint:**
-- Budget: 1000 tenths (GBP 100.0m)
-- All comparisons must be integer tenths; render as `(cost / 10).toFixed(1)` only at display time
+**Consequences:** The simulator recommends a 2-FT hit that appears to gain 4.2 xPts, but the actual gain post-bench-order-update is 3.4 xPts — insufficient to cover the -4pt hit cost.
 
 **Prevention:**
-- Enforce a type alias or branded type `Tenths = number` to make the unit explicit in function signatures.
-- Never divide by 10 inside budget calculation loops; only divide at render.
-- Add a validation assertion: `Number.isInteger(budget)` in squad builder entry points.
-
-**The sell-price haircut:** FPL takes 50% of price rises. Transfer-aware mode must use `selling_price` (from authenticated `my-team` endpoint, already in `MyTeamPickSchema`) not `now_cost` as the sell value. Without auth, fall back to `now_cost` but warn the user the budget may be slightly off.
-
-**Detection:** Unit test: player bought at 65, now_cost 67 — sell proceeds must be 66 (not 67).
+- In the Opportunity Cost Simulator UI, label 2-FT combo gains with a caveat: "Estimated — individual gains summed."
+- When the combo gain is within 1.0 xPts of the hit cost break-even (i.e., breakEvenGws = 1), suppress the suggestion or flag it as "marginal — verify."
+- Do not promise precision that the approximation cannot deliver.
 
 ---
 
-### Pitfall 6: Chip interactions change the constraint landscape
+## Section 2 — Weekly Decision Summary
 
-**What goes wrong:** Wildcard and Free Hit are treated as "unlimited transfers this GW" but the optimiser does not update the constraint set accordingly.
+### Pitfall 5: Conflicting recommendations from different engines
 
-**Wildcard differences:**
-- No transfer limit, no hit cost for this GW
-- Player sells still apply the haircut (selling_price, not now_cost)
-- After the wildcard GW, free transfers reset to 1 (not 2)
+**What goes wrong:** The Decision Summary aggregates outputs from four existing engines: `computeVerdicts()` (BUY/HOLD/SELL from gem_score), `suggestTransfers()` (specific sell+buy pair), `CaptainPicksPanel` (ceiling + EO-adjusted captain), and `chip-strategy-engine.ts` (BB/TC/FH timing). These engines are not coordinated. It is entirely possible for the Decision Summary to show:
 
-**Free Hit differences:**
-- Squad reverts to pre-Free-Hit state the following GW — the optimiser must NOT carry forward the Free Hit squad as the next GW's starting squad
-- Free Hit does not reset the free transfer bank; the transfer bank passes through as if this GW was skipped
-- Existing `computeNextFTState()` in `free-transfer-engine.ts` already handles the Free Hit bank-passthrough correctly — squad reversion is the new risk
+- Verdict: HOLD for Player X
+- Transfer suggestion: SELL Player X
+- Captain suggestion: Captain Player X
 
-**Bench Boost:**
-- Changes scoring: all 15 players score (bench contributes fully)
-- Does NOT change selection rules or formation constraints
-- Optimiser should identify the best GW to play BB by finding the GW where `sum(all 15 xPts)` is highest, weighted by fixture count (DGW is the prime candidate)
+**Why it happens:** Each engine uses a different signal source and threshold. `computeVerdicts()` uses `gem_score` (composite). `suggestTransfers()` uses `xPts_NgW` delta. `CaptainPicksPanel` uses `xPts_90th_1gw`. They are genuinely optimising different things — this is by design in the existing tab-by-tab architecture.
 
-**Triple Captain:**
-- Captain factor becomes x 3, not x 2
-- Does NOT change any selection constraint
+**Consequences:** The Decision Summary surface presents three contradictory signals about the same player. The user loses trust in the system's authority.
 
 **Prevention:**
-- Model chip as a mode enum (`'normal' | 'wildcard' | 'freehit' | 'bboost' | 'triple_captain'`) that gates constraint application.
-- Free Hit mode: display a warning that the built squad is temporary and will not persist to the next GW.
-- Wildcard mode: carry forward the post-wildcard squad correctly — it becomes the new base squad.
+- Establish a strict priority hierarchy for the Decision Summary: Transfer engine overrides Verdict engine when they conflict on the same player. Captain engine is an independent signal (not a conflict).
+- If `suggestTransfers()` says SELL Player X and `computeVerdicts()` says HOLD, the Decision Summary should say "Transfer out recommended" and suppress the HOLD verdict for that player in this view.
+- Do not surface all four engine outputs simultaneously on the same player without reconciliation. Use the summary to pick one authoritative recommendation per dimension (captain, transfer, chip, bench).
+- Add a reconciliation layer: `resolveDecisionSummary(captainPicks, transferSuggestions, verdicts, chipScores) → DecisionSummary` that implements the priority hierarchy.
+
+**Phase to address:** Decision Summary phase, from the initial spec. This is the highest-risk pitfall for user trust in this milestone.
 
 ---
 
-## Section 2 — Performance Pitfalls
+### Pitfall 6: Information overload on a single screen
 
-### Pitfall 7: Standalone squad builder has combinatorial explosion if done naively
+**What goes wrong:** The Decision Summary tries to show everything at once: captain recommendation, bench order, 2 transfer suggestions, chip timing, risks, and opportunities. The FPL deadline is Friday 11:30am. The user has 3 minutes. They cannot process 8 panels.
 
-**What goes wrong:** Brute-forcing the optimal 15-player squad from approximately 650 players. Without constraints, C(650,15) is approximately 10^29 combinations. Even with position constraints, the naive enumeration is intractable in-browser.
+**Why it happens:** The design impulse is to surface all available intelligence. The app already has 12+ tabs of analysis. Assembling them on one screen creates a decision dashboard that demands more attention than the deadline allows.
 
-**Practical scale (MEDIUM confidence):**
-- Adding position constraints (2 GK, 5 DEF, 5 MID, 3 FWD) plus the 3-per-club constraint creates a 26-dimensional knapsack. Pure dynamic programming is impractical at this scale.
-- MILP (Mixed Integer Linear Programming) is the correct approach for full optimality at 650 players.
-
-**Prevention for this project:** Three approaches work at different scopes:
-1. **Greedy with position passes:** Fill each position greedily by xPts within budget. O(n log n) per position, fast in-browser, good enough for the 15-player lineup optimiser and transfer-aware mode.
-2. **MILP via Python backend:** Add a `/api/optimise-squad` route that calls the existing Python pipeline (PuLP or scipy with HiGHS). Adds 1-3s latency but gives optimal results. Required for the standalone squad builder.
-3. **Beam search:** Keep top-K partial squads at each step. K=100 gives near-optimal in milliseconds. A reasonable middle ground.
-
-**Recommendation:** Use greedy for the lineup optimiser and transfer-aware mode (bounded to 15 existing players). Use MILP Python backend for the standalone squad builder only — it has the full 650-player search space.
-
-**Detection:** Benchmark greedy approach: time the standalone builder against 650 mock players — must complete in under 500ms in-browser.
-
----
-
-### Pitfall 8: Lineup optimiser must not re-run on every render
-
-**What goes wrong:** The lineup optimiser is triggered by a React state change (horizon toggle, tab switch), runs synchronously on the render thread, and freezes the UI.
-
-**Why it happens:** Even a greedy lineup optimiser over 15 players with formation checking requires iterating valid position combinations — this can take 50-200ms if done naively.
+**Consequences:** The manager reads the first panel, ignores the rest, and the Decision Summary delivers no value beyond the existing individual tabs.
 
 **Prevention:**
-- Run the optimiser inside a `useMemo` keyed only on `[picks, allPlayers, horizon, chip]` — not on transient UI state.
-- For the standalone squad builder (650 players), post to the Python `/api/optimise-squad` route, not in-browser.
-- Wrap in React 19's `startTransition` if using concurrent mode — marks the update as non-urgent so the UI stays responsive.
-
-**Detection:** Verify via React DevTools profiler that the optimiser computation only fires when inputs change, not on every tab switch.
+- Limit the Decision Summary to exactly 4 outputs: (1) Captain rec, (2) Transfer rec, (3) Bench order, (4) Chip rec (if applicable) or a "No chip" confirmation.
+- Every recommendation should have a single-sentence rationale and a confidence indicator. No tables, no breakdowns.
+- Deep-dive links ("See full transfer analysis →") should open the relevant existing tab, not expand inline.
+- Apply a "newspaper front page" mental model: one headline per dimension, nothing below the fold on first render.
 
 ---
 
-## Section 3 — UX and Trust Pitfalls
+### Pitfall 7: Stale data across aggregated sources in the Decision Summary
 
-### Pitfall 9: Optimal lineup contradicts user intuition with no explanation
+**What goes wrong:** The Decision Summary pulls from multiple queries: `usePlayers()` (6h stale), `useCaptainPicks()` (6h stale), `useClubForm()` (6h stale), `useInsights()` (6h stale), `useSquad()` (5 min stale). These queries can have different cache ages. If `usePlayers` was last fetched 5h ago and `useSquad` was fetched 30s ago, the Decision Summary is simultaneously showing a squad from one moment and player data from another.
 
-**What goes wrong:** The optimiser recommends benching a player the user always starts (e.g., a 12%-owned premium midfielder with great form). The user sees the result, distrusts the tool, and stops using the optimiser.
+**Why it happens:** TanStack Query caches each key independently. The existing app shows freshness at the tab level, not the summary level. When aggregating, freshness is the minimum of all contributing queries.
 
-**Root cause:** The user cannot see why the optimiser made the choice. Did the player have a hard fixture? Low xPts? Formation constraint forced the decision?
+**Consequences:** A transfer suggestion derived from 5h-old player xPts against a squad fetched 30s ago is technically a cross-time-point comparison. If a player's `status` changed between the two fetches, the recommendation is invalid.
 
 **Prevention:**
-- For every bench/start decision, show the primary reason: xPts score, fixture difficulty, formation constraint, club cap, or minutes risk. A single reason string per player is sufficient.
-- Show the xPts score for each player alongside their lineup position — the user can directly see the numeric trade-off.
-- Never silently constrain without telling the user. If a player is benched due to the 3-club cap, say so.
-- This project already has `xPts_components_1gw` breakdown (goal_pts, assist_pts, cs_pts, bonus_pts) — surface this as a tooltip on the optimised lineup card, reusing the existing `XPtsCell` pattern.
-
-**Phase to address:** Lineup Optimiser phase, from day one. Trust is lost immediately if the first run produces unexplained counterintuitive results.
+- Track the `last_updated` timestamp from each data source. The Decision Summary should display: "Decision based on data from [oldest timestamp]."
+- Flag the entire summary as stale if any contributing source is more than 8h old (the pipeline runs daily — 8h is a reasonable staleness cutoff post-pipeline).
+- Add an explicit "Refresh all data" button that invalidates all TanStack Query cache keys simultaneously before the user acts on the summary.
 
 ---
 
-### Pitfall 10: The optimiser always suggests a change even when the current lineup is near-optimal
+## Section 3 — Fixture Swing Detector
 
-**What goes wrong:** The transfer-aware optimiser always suggests a change, even when the current lineup is near-optimal. The user interprets this as the tool being aggressive or unreliable.
+### Pitfall 8: Defining "swing" too loosely — noise vs signal
 
-**Why it happens:** The scoring model always finds some delta between current and optimal. The threshold for "good enough" is not modelled.
+**What goes wrong:** A "fixture swing" is defined as a team whose next-N-GW difficulty changes materially. But `attacking_difficulty` from `club-form.ts` is derived from FPL's official integer ratings (1-5), normalised to 0-1. An integer-rating change of 1 step (e.g., from 3→2 out of 5, i.e., 0.5→0.25 normalised) triggers a "swing" alert for every team every gameweek as fixtures rotate — producing alert fatigue.
+
+**Why it happens:** The `attacking_ease` aggregates in `ClubForm` summarise across 1/3/5 GW windows. Any team gaining or losing a relatively easy game will show a changed aggregate. Without a meaningful delta threshold, every fixture change is a "swing."
+
+**Consequences:** The Fixture Swing Detector fires on 12 of 20 teams every week. The user learns to ignore it.
 
 **Prevention:**
-- Implement a minimum-gain threshold: only suggest a transfer if the expected net gain exceeds the hit cost plus a meaningful buffer (e.g., > 1.0 xPts net gain, not just > 0).
-- Show the delta explicitly: "Keeping your current lineup. Best possible gain from a transfer is 0.3 xPts — below the 1.0 xPts threshold."
-- This project's existing `planning-engine.ts` already uses `netGain > 0` as the gate — consider raising this threshold or making it configurable.
+- Define "swing" as a change in the GW-window aggregate ease score exceeding a minimum threshold. Based on the normalisation formula (FPL 1-5 ratings → 0-1 scale), a meaningful swing is a delta of ≥ 0.20 in the 3 GW window mean ease score.
+- Only compare week-on-week deltas: `ease_3gw(this_pipeline_run) - ease_3gw(last_pipeline_run)`. This requires storing the previous pipeline run's club form data.
+- As an alternative for the first implementation (without historical pipeline state): compare each team's next-3-GW ease against their season average ease. Only teams more than 1 standard deviation above or below their season average qualify as swings.
+- Set a hard cap: surface at most 4 improving teams and 4 worsening teams per GW.
 
-**Phase to address:** Transfer-aware optimiser phase.
+**Detection:** Backtested scenario: GW with no material schedule changes — detector must fire on zero teams (not 5 due to noise threshold).
 
 ---
 
-### Pitfall 11: Side-by-side current vs optimised is unreadable on mobile
+### Pitfall 9: BGW and DGW distort fixture swing scores
 
-**What goes wrong:** The "current lineup vs optimised" comparison shows two 11-player lists side by side. On mobile (375px), this is unreadable.
+**What goes wrong:** A team with a BGW has `attacking_ease_3gw = null` in the current `ClubForm` type. A team with a DGW has a 3 GW window that contains two fixtures from one gameweek. The ease aggregate treats both fixtures as separate GWs — meaning a DGW team may appear to have "two easy weeks in a row" when in reality it is one gameweek counted twice.
 
-**Why it matters:** This project has extensive mobile-responsive infrastructure. A side-by-side layout for two squad views requires a different mobile pattern.
+**Why it happens:** `meanEase()` in `club-form.ts` slices `upcoming_fixtures` by count (not by `event_id`). If a team has a DGW with 2 fixtures, they appear at `slice(0, 3)` as GW_n, GW_n, GW_n+1 — three entries covering two gameweeks. The 3 GW ease score is then biased by the DGW doubling.
+
+**Consequences:** A team with a DGW in GW+1 followed by one medium game in GW+2 will appear as "strong fixture run" on the 3 GW view when the reality is one favorable double gameweek and then medium.
 
 **Prevention:**
-- On mobile: stack current above optimised with a divider and a "Changes: X players" summary badge.
-- Highlight only the diff (players who changed position: bench to start or start to bench) using a colour-coded indicator, not a full re-render of both squads.
-- Reuse the `SquadSnapshotRow` accordion pattern from the existing Planner tab — it already handles per-GW squad display in a mobile-friendly way.
+- Aggregate `ease` per `event_id`, not per fixture entry. Mean ease for GW+1 with two fixtures should average the two fixture difficulties, not count them twice.
+- For BGW (`ease = null`): exclude blank gameweeks from the swing denominator. A team's fixture run should be assessed on their non-blank gameweeks.
+- Add a `hasDGW: boolean` and `hasBGW: boolean` flag to the swing output so the UI can annotate: "Improving run includes a Double GW" or "Worsening run — team has a Blank GW."
 
-**Phase to address:** Transfer-aware optimiser phase (same phase as the comparison UI).
+**Detection:** Unit test with a team having a DGW fixture list — assert the 3 GW ease is averaged per event_id, not per fixture entry.
 
 ---
 
-## Section 4 — Integration Pitfalls
+## Section 4 — Player Lifecycle Labels
 
-### Pitfall 12: Sharing squad state between the existing Planner and the new Optimiser
+### Pitfall 10: Label instability — flipping every GW
 
-**What goes wrong:** The Planner tab holds its own squad simulation state (from `generatePlan()`). The Optimiser tab needs the current squad from `useSquad()` / `useMyTeam()`. When both tabs are mounted and the user has edited the planner manually, the two sources of truth diverge.
+**What goes wrong:** Player lifecycle labels (e.g., "Buy next week", "Hold one more", "Sell soon", "Minutes trap", "Fixture trap") are computed from continuous signals: `gem_score`, `xPts_1gw`, fixture difficulty, `mins_risk`, `regression_signal`. These signals all change weekly as new FPL data arrives. A player may be labelled "Buy next week" after GW30, then "Hold one more" after GW31, then "Buy next week" again after GW32 — with no real change in their underlying situation.
 
-**The existing pattern in this codebase:**
-- `useSquad(teamId)` — TanStack Query, 5 min staleTime — the canonical current squad
-- `useMyTeam(enabled)` — TanStack Query, authenticated sell prices
-- The Planner holds `planResult` in component state (Immer), a derived simulation from the canonical squad
+**Why it happens:** Threshold-based classification on continuous signals is inherently brittle near boundaries. `computeVerdicts()` already has this problem with BUY/SELL/HOLD — players near the `positionAvg` boundary flip weekly. Lifecycle labels are a strictly harder problem because they involve more signals and more categories.
 
-**Risk:** If the Optimiser reads from `planResult.steps[0].squadAfter` instead of `useSquad`, it will optimise a projected future squad, not the user's actual current squad. This produces confusing results ("the optimiser recommends a player I already have").
+**Consequences:** The manager receives contradictory advice from week to week. They lose confidence in the labels and stop reading them.
 
 **Prevention:**
-- The Optimiser must always read from `useSquad` / `useMyTeam` as its source of truth, never from the Planner's simulated state.
-- Clearly label: "Optimising your current squad as of [last_updated timestamp]."
-- If the user wants to optimise a post-wildcard squad, that is a separate Wildcard mode entry point with its own state — not a flag on the existing Optimiser.
+- Implement hysteresis: once a label is assigned, require the signal to cross a wider band before a different label is applied. Example: to move from "Hold" to "Sell soon", require gem_score to fall below 85% of position average (not just 90%).
+- Define label persistence rules: a label can only change if: (a) the underlying signal has changed by more than X% or (b) a different categorical signal (e.g., `mins_risk`) has changed.
+- Log the primary reason for each label as a structured field. The UI shows the reason alongside the label, so the manager can evaluate whether the label change is meaningful.
+- Accept that lifecycle labels are inherently less stable than point-in-time analytics. Surface them as "context" rather than "commands." Framing matters: "Fixture trap concern" vs "SELL."
 
-**Phase to address:** Every optimiser phase that fetches squad data.
+**Phase to address:** Player Lifecycle Labels phase — define the hysteresis thresholds in the spec, not during implementation.
 
 ---
 
-### Pitfall 13: xPts data stale between pipeline run and optimiser display
+### Pitfall 11: Overlapping with existing BUY/SELL/DIFF/TRAP signals
 
-**What goes wrong:** The daily pipeline runs at midnight. By 11pm the next day, xPts is nearly 24 hours old. If team news drops between pipeline runs (injury, rotation rest), the optimiser may recommend a player who is now doubtful.
+**What goes wrong:** The app already has four signals per player: `regression_signal` (buy/sell from xG delta), `differential_flag` (diff/trap from ownership + xPts), `computeVerdicts()` (BUY/HOLD/SELL from gem_score), and `recommend.ts` buy/hold/sell for squad players. Lifecycle labels are a fifth signal. The UI ends up showing five different indicators on the same player row, some of which may conflict.
 
-**The existing freshness system:** This project already has the `LastUpdated` component with amber stale colour, but it is display-only. The optimiser needs to act on staleness.
+**Why it happens:** Each signal was added independently to address a different research question (regression: over/underperformance; differential: ownership-relative value; verdict: squad management). Lifecycle labels are meant to synthesise these into a single forward-looking label. But if the synthesis is not explicit, they become additive noise.
 
-**Risk areas:**
-- `status` field: player becomes `'d'` (doubtful) or `'i'` (injured) between pipeline runs. The optimiser picks them for the starting 11 without flagging the risk.
-- `start_prob` and `xmins` are pipeline-computed. Post-pipeline team news is not reflected.
-- BGW players in the 15 who have no fixture in the target GW score 0 — the optimiser must use `fixtureCountForGw() === 0` to exclude them from the starting 11.
+**Consequences:** The GemTable row for a player shows: BUY (verdict), SELL (regression), DIFF (differential), "Sell soon" (lifecycle), "Fixture trap" (lifecycle). Five contradictory or overlapping badges. The user gives up.
 
 **Prevention:**
-- Before running the optimiser, filter out players with `status === 'i'` or `status === 's'` (suspended) from the starting 11 candidates. Bench-position candidates should be flagged but not hard-excluded.
-- Players with `fixtureCountForGw(player, targetGw) === 0` (BGW) must be benched — they contribute 0 xPts in that GW regardless.
-- Show a "Data as of [timestamp], check team news before deadline" warning at the top of every optimiser output.
-- Add the existing `news` field (injury news text from `MergedPlayer`) as a warning badge on any player not status `'a'`.
+- Position lifecycle labels as a replacement for (not addition to) the existing individual signals in the Decision Summary view. In the GemTable, keep only the existing signals. The lifecycle label appears only in the Decision Summary and the squad transfer context.
+- Define lifecycle labels as a synthesis function: `computeLifecycleLabel(verdicts, regressionSignal, differentialFlag, minsRisk, fixtures) → LifecycleLabel`. The function must be deterministic and replace, not supplement, the individual inputs in the output.
+- Document which existing signal wins when signals conflict (e.g., `regression_signal = 'sell'` overrides `differential_flag = 'diff'`).
 
-**Detection:** Unit test: squad contains a player with `status: 'i'` — assert they are never placed in starting 11.
+**Phase to address:** Player Lifecycle Labels phase — explicitly map from existing signals to the new label taxonomy before any code is written.
 
 ---
 
-### Pitfall 14: The standalone squad builder competes visually with Transfer Suggestions
+### Pitfall 12: "Minutes trap" label misfires on rotation-risk players who start regularly
 
-**What goes wrong:** The standalone builder recommends a squad that conflicts with what the Transfer Suggestions tab shows. Both features showing different "best players" creates confusion about which signal to follow.
+**What goes wrong:** `mins_risk = 'rotation_risk'` is assigned when `start_prob < 0.65`. But a player with `start_prob = 0.60` may start 3 out of 5 GWs — perfectly acceptable for a budget player. The "Minutes trap" lifecycle label fires on any `rotation_risk` player, even those who are solid value at their price point.
+
+**Why it happens:** `mins_risk` was calibrated for the Transfer Suggestions engine, which de-prioritises rotation-risk buy candidates. It is a population-relative signal, not an absolute one. Applied to a lifecycle label, it implies the player is a liability even when they are a good budget option.
 
 **Prevention:**
-- Position the standalone builder clearly as a "fresh start" tool — "Build your ideal squad from scratch (ignores your current team)". Label it with an explicit caveat.
-- Do not surface Transfer Suggestions-style BUY/SELL verdict badges inside the standalone builder — those assume the user has an existing squad.
-- The Wildcard mode sits between the two: "Optimise within your current budget, starting fresh but costing transfers." Make the Wildcard entry point explicit.
-
-**Phase to address:** Standalone squad builder phase.
+- Add a price-adjusted filter: "Minutes trap" should fire only when `start_prob < 0.65 AND now_cost > 70` (tenths, i.e., £7.0m+). Budget rotation-risk players (e.g., £4.5m) are expected to rotate — this is priced in.
+- Cross-reference with `xPts_1gw / now_cost` ratio: if xPts per £m is above position average despite rotation risk, the player is still value — suppress "Minutes trap."
+- Consider renaming to "Rotation concern" for players above £7.0m, where the premium price implies reliable minutes.
 
 ---
 
-### Pitfall 15: Budget computation differs across the three optimiser modes
+## Section 5 — Explainable xPts Breakdown
 
-**What goes wrong:** The lineup optimiser (picking best 11 from an existing 15) has no budget constraint. The transfer-aware optimiser has a budget: ITB + sell proceeds. The standalone builder has the full GBP 100m. Conflating these three modes in a single budget variable causes wrong results.
+### Pitfall 13: Components do not sum to the displayed total
+
+**What goes wrong:** `xPts_components_1gw` stores `{goal_pts, assist_pts, cs_pts, bonus_pts}` rounded to 3 decimal places. `xPts_1gw` is the `round(total, 2)` of the same computation. With rounding at different steps, `goal_pts + assist_pts + cs_pts + bonus_pts` (each rounded to 3dp) may not equal `xPts_1gw` (rounded to 2dp) when displayed.
+
+**Why it happens:** `_compute_xpts_fixture()` in `merge.py` returns each component rounded to `round(v, 3)`. The total is rounded to `round(total, 3)`, then `_xpts_ngw()` rounds the accumulated total to `round(total, 2)`. Multi-fixture aggregation (DGW) sums component-level 3dp values and can accumulate small floating-point error.
+
+**Concrete example:** `goal_pts=1.111 + assist_pts=0.333 + cs_pts=0.612 + bonus_pts=0.267 = 2.323` but `xPts_1gw = 2.32`. The displayed breakdown shows 2.323 summing to 2.32 — a 0.003 discrepancy visible in the UI.
+
+**Consequences:** The user sees the breakdown components sum to a number different from the headline. They lose trust in the model's arithmetic.
 
 **Prevention:**
-- Three clearly separated budget contexts in the type system:
-  - `LineupMode`: no budget; constraints are formation + club cap only
-  - `TransferMode`: budget = `bank_balance + sum(selling_prices_of_players_out)` per transfer step
-  - `StandaloneMode`: budget = 1000 tenths (GBP 100.0m)
-- Each mode should have its own function signature with `budget?: Tenths` typed accordingly.
-- `TransferMode` with 2 transfers: apply each transfer's budget update sequentially — the second transfer uses the post-first-transfer bank balance.
+- In the UI breakdown display, derive the sum from the stored components (not from `xPts_1gw`) and display that sum as the total. Never display both `sum(components)` and `xPts_1gw` simultaneously — pick one as the canonical value.
+- If the deviation between `sum(components)` and `xPts_1gw` exceeds 0.05 for any player, log it as a pipeline quality warning.
+- For DGW players with `xPts_components_1gw = null` (multi-GW components are not stored per `types.ts`), show "Detailed breakdown unavailable for DGW" rather than a partial breakdown.
+
+**Detection:** Unit test: for every player in a mock pipeline run, assert `abs(sum(components.values()) - xPts_1gw) < 0.05`.
 
 ---
 
-### Pitfall 16: Free Hit squad reversion is not persisted in the Planner
+### Pitfall 14: Appearance points are not included in the breakdown
 
-**What goes wrong:** The Planner correctly models Free Hit as "unlimited transfers this GW" via `computeNextFTState('freehit', ...)`. But the Optimiser must also track that the squad reverts next GW. If both independently model the post-Free-Hit state, they may show different squad projections for the following GW.
+**What goes wrong:** The existing `xPts_components_1gw` breaks down `goal_pts`, `assist_pts`, `cs_pts`, `bonus_pts`. The FPL scoring system also awards 2 pts for playing 1-60 minutes and 3 pts for playing 60+ minutes. These appearance points are not modelled in `_compute_xpts_fixture()` — the engine relies on `xmins` scaling all components, but does not add the explicit appearance point contribution.
+
+**Why it happens:** The original xPts engine design (Phase 28 `28-RESEARCH.md`) treated appearance points as implicit in the `xmins` scaling of all other components. This is a reasonable modelling simplification. But the breakdown UI claims to show "all the components of a player's xPts" — which it does not.
+
+**Consequences:** The Explainable xPts Breakdown shows a player with `goal_pts=0, assist_pts=0, cs_pts=0, bonus_pts=0.3` implying their expected score is 0.3 pts. The user knows they will get at least 2 pts for playing. The model appears badly wrong.
 
 **Prevention:**
-- The Optimiser's Free Hit mode should be explicitly scoped to "this GW only" — show the temporary squad and mark each player in it with "Free Hit only".
-- Do not carry the Free Hit squad forward as the persistent squad state in either the Optimiser or the Planner.
-- If the user has the Planner open with a Free Hit chip toggled, read the post-Free-Hit squad reversion from the Planner's `originalSteps[0].squadAfter` (which represents the pre-chip squad) — not the chip-mode squad.
+- Add `appearance_pts: number` to `xPts_components_1gw`. Compute it as `2 * start_prob * xmins/90 + 1 * start_prob * (1 - xmins/60)` (approximate — 3pts for 60+ min, 2pts for 1-60 min, probability-weighted).
+- Alternatively, acknowledge in the UI that "Appearance points are included in the per-minute scaling of all components and are not separately shown." Either approach is acceptable; silence is not.
+
+**Phase to address:** Explainable xPts Breakdown phase — resolve the missing appearance component in the spec before the UI design is finalised.
 
 ---
 
-## Section 5 — Data Pitfalls
+### Pitfall 15: Overwhelming detail in the breakdown UI
 
-### Pitfall 17: BGW players must be hard-excluded from the starting 11, not just penalised
-
-**What goes wrong:** The optimiser scores BGW players with 0 xPts for the blank GW and ranks them last in formation selection. But a greedy algorithm may still place them in the starting 11 if all players in a position happen to have low xPts (e.g., a GK-heavy squad in a blank).
-
-**The correct approach:** BGW players must be hard-excluded from the starting 11 for the blank GW. They score exactly 0 points in FPL — not "probably 0", guaranteed 0.
+**What goes wrong:** The breakdown shows 4-5 numeric components per player. For a GK (likely to have `goal_pts=0, assist_pts=0, cs_pts=3.2, bonus_pts=0.3`), the detail is useful. For a MID/FWD, the useful components are goal and assist, while cs_pts is near-zero noise. Showing all 4 components for every player in a dense table creates cognitive load without proportional value.
 
 **Prevention:**
-- Pre-filter: `const starters = squad.filter(p => fixtureCountForGw(p, targetGw) > 0)`.
-- If this leaves fewer than 11 eligible players (heavy BGW), the optimiser must place all BGW players on the bench and pick the best valid formation from whoever has a fixture — even if the formation is weak.
-- Show a warning: "Your squad has only [N] players with a fixture in GW[X]. Bench selections are limited."
-
-**Detection:** Unit test: squad with 8 players blanking — assert starting 11 contains only the 7 non-blankers and formation constraint is still valid.
+- For GK/DEF: emphasise `cs_pts` and `bonus_pts`. Suppress `goal_pts` and `assist_pts` if both are < 0.10.
+- For MID/FWD: emphasise `goal_pts` and `assist_pts`. Suppress `cs_pts` if it is < 0.10.
+- Use a visual bar (proportional to component magnitude) rather than raw numbers. The bar communicates relative composition immediately; the number is a hover tooltip.
+- This reuses the `XPtsCell` tooltip pattern already in the codebase — extend it rather than creating a new component.
 
 ---
 
-### Pitfall 18: Doubtful players should reduce expected value, not be hard-excluded
+## Section 6 — Clean Sheet Probability
 
-**What goes wrong:** Treating `status === 'd'` (doubtful) the same as `status === 'i'` (injured) — hard-excluding doubtful players from the starting 11. A 75% chance of playing doubtful player is still better than a 90%-start-probability mediocre replacement.
+### Pitfall 16: Conflating team-level CS% with individual player CS probability
 
-**The correct model:** Expected contribution = `xPts x start_prob`. The `start_prob` field already exists in `MergedPlayer` — use it as the multiplier.
+**What goes wrong:** The pipeline computes `_cs_prob(defensive_difficulty, xmins)` at the player level, but the underlying model is effectively a team-level CS probability modified by xmins. A GK and a DEF on the same team with identical `xmins` receive identical `cs_prob`. This is correct mathematically, but the displayed "Clean Sheet Probability" will show the same value for all players on a team — which makes it appear like a team stat, not a player stat.
 
-**But:** `start_prob` in the pipeline is computed from historical minutes patterns, not from current injury news. For a player freshly flagged as `'d'`, the pipeline's `start_prob` may be stale.
+**Why it happens:** CS in FPL is awarded per team result. CS probability fundamentally is a team-level event. The player-level adjustment is only `xmins` (did they play the full game?). The existing `_cs_prob()` formula correctly models this.
+
+**Consequences:** The CS Probability feature appears to add no per-player intelligence. The GK at 30% CS probability and the first-choice CB at 30% CS probability are identical, even though the CB may be more likely to play the full 90.
 
 **Prevention:**
-- For players with `status === 'd'`, cap `start_prob` at the FPL-reported `chance_of_playing_next_round` if that field is available in the bootstrap. If not, use a conservative cap (e.g., 0.5 for doubtful, 0.25 for major doubt).
-- Expose the effective xPts (after start_prob adjustment) in the optimiser output so the user can see the discounting.
-
-**Note on this codebase:** `FPLElement` does not currently parse `chance_of_playing_next_round` from the FPL bootstrap. Adding this field to the Zod schema and `MergedPlayer` is a prerequisite for proper doubtful-player handling in the optimiser.
+- Present CS probability as a team-level stat, grouped by team, with per-player modification for `start_prob` and `xmins`.
+- The displayed figure for a player should be: `cs_prob_team * (xmins / 90)` — explicitly showing the minute-scaling adjustment.
+- Add a footnote: "CS probability is team-level. Individual probability adjusts for expected minutes played."
+- Do not imply that a GK and a CB on the same team have different inherent CS probabilities — they do not in this model.
 
 ---
 
-### Pitfall 19: Multi-GW horizon xPts degrades but the optimiser treats all GWs equally
+### Pitfall 17: Small sample size in the defensive_difficulty rolling average
 
-**What goes wrong:** A 5-GW optimiser scores each gameweek equally. In reality, GW+4 predictions are substantially less reliable than GW+1 predictions — injury rates are higher, form can change, rotation risk accumulates.
+**What goes wrong:** `_compute_offensive_difficulty_score()` in `merge.py` uses a 3-game rolling window for goals-scored. At the start of the season (GW1-GW3), this window contains 1-3 data points. A team that conceded a fluke 4-0 in their first game has a `defensive_difficulty = 1.0` (hardest) and every DEF/GK on that team receives a near-zero `cs_pts` for the next 3 GWs. By GW4, the anomaly is diluted.
 
-**The existing planner already discounts:** `LOOK_AHEAD_DISCOUNT = 0.8` in `planning-engine.ts`. The optimiser must apply the same principle.
+**Why it happens:** A 3-game window is a deliberate design choice for responsiveness (see `merge.py` comment: "Phase 27 DATA-01 D-02"). Responsiveness trades off against stability.
+
+**Consequences:** Early-season CS probability figures are unreliable. A player newly flagged as "great CS prospect" may have a `defensive_difficulty` biased by one anomalous result.
 
 **Prevention:**
-- Apply a per-GW discount factor: `xPts_gw_n = xPts_1gw x discount^(n-1)` where `discount = LOOK_AHEAD_DISCOUNT`.
-- For BGW-aware scoring: the existing `fixtureCountForGw()` already handles DGW (returns 2) and BGW (returns 0). Use it as the multiplier at each GW step.
-- Match the discount constant to `LOOK_AHEAD_DISCOUNT` from `planning-engine.ts` — do not invent a new constant.
+- Add a `sample_size: number` field to the CS probability output when surfaced in the UI. For teams with fewer than 5 games played, show a warning: "Limited data — CS probability estimate may be unreliable."
+- Consider extending the rolling window to 5 for CS probability specifically (separate from the existing 3-game `defensive_difficulty` used in xPts). This gives more stable CS% for the dedicated CS feature without disrupting the xPts calibration.
+- At season start (GW1-GW5), fall back to the FPL official defensive difficulty rating as a prior for the rolling window initialisation.
 
 ---
 
-## Section 6 — Testing Pitfalls
+### Pitfall 18: BGW distortion of CS probability display
 
-### Pitfall 20: Engine correctness testing is skipped in favour of visual testing
+**What goes wrong:** A team with a BGW has no fixture in the target GW. Their `cs_prob` for that GW is effectively 0 (no game = no CS). But the CS Probability panel may display their season-average or rolling CS% without flagging the blank. The manager reads "40% CS chance" and starts their GK without checking the fixture list.
 
-**What goes wrong:** The optimiser is tested end-to-end by looking at the UI ("it shows 11 players, looks right"). The underlying combinatorial logic is never unit-tested, so edge cases are silently wrong.
-
-**Prevention — required test cases for the lineup optimiser:**
-
-| Test case | Assertion |
-|-----------|-----------|
-| All-MID squad (no FWDs) | Output has at least 1 FWD; constraint enforced or error thrown |
-| 3-club-cap squad | Optimiser does not recommend a 4th player from any club |
-| Full BGW squad | All 11 starters have a fixture; warning shown |
-| 8 of 15 players blanking | Starts only the 7 non-blankers; valid formation still asserted |
-| Injured GK | Bench GK starts; formation still valid |
-| Suspended starter | Suspended player is not placed in starting 11 |
-| Doubtful player | xPts discounted by start_prob, not hard-excluded |
-| Wildcard mode | No transfer limit; club cap still enforced; FT bank reset to 1 next GW |
-| Free Hit | Post-FH squad is not carried forward to next GW calculation |
-| Captain plays 0 mins | VC takes captain multiplier in expected score calculation |
-| Bench order | GK sub never ranked with outfield bench for autosub probability |
-| Budget arithmetic (lineup) | No budget constraint applied; formation-only |
-| Budget arithmetic (transfers) | All cost comparisons in integer tenths; no float rounding |
-| Transfer with sell-price haircut | Proceeds = selling_price (not now_cost) when player price rose |
-
-**Prevention — required test cases for the standalone squad builder:**
-
-| Test case | Assertion |
-|-----------|-----------|
-| Valid 15-player squad composition | Exactly 2 GK, 5 DEF, 5 MID, 3 FWD |
-| Under budget | Total cost <= 1000 tenths |
-| Club cap at squad level | No club has more than 3 players across all 15 |
-| No injured/suspended picks | No `status === 'i'` or `status === 's'` players in recommended squad |
-| Performance | Completes in under 500ms for 650 mock players (greedy) |
-
-**Phase to address:** Every optimiser phase should have unit tests passing before any UI work. Engine test suite must be green before the UX is wired up.
-
----
-
-### Pitfall 21: New optimiser inadvertently breaks existing planner engine
-
-**What goes wrong:** The lineup optimiser reuses or wraps `planning-engine.ts`, inadvertently changing shared utility functions (`fixtureCountForGw`, `computeHitCost`, `snapshotSquad`). Existing planner tests pass but the planner behaviour changes subtly.
+**Why it happens:** The `xPts_components_1gw` is `null` for BGW players (per the existing BGW exclusion in `optimiseLineup()`), but a standalone CS Probability panel may compute independently from the `defensive_difficulty` rolling average without BGW awareness.
 
 **Prevention:**
-- Keep the new optimiser engine in a separate file (`src/lib/lineup-engine.ts`, `src/lib/squad-builder-engine.ts`).
-- Import shared utilities from `planning-engine.ts` and `free-transfer-engine.ts` — do not fork or copy them.
-- Run the existing planning-engine test suite (`src/lib/__tests__/planning-engine-rescore.test.ts`) as part of every optimiser phase's verification gate.
+- Before computing or displaying any CS probability for a player, check `fixtures.filter(f => f.event_id === targetGw).length > 0`. If zero, display `—` (no fixture) rather than a percentage.
+- Add a BGW badge to any team/player in the CS panel who has no fixture in the target GW.
+- The CS panel must read from the same `fixtures` array used by the xPts engine — do not compute CS% from rolling averages alone.
+
+---
+
+### Pitfall 19: CS probability contradicting the existing `cs_pts` in xPts breakdown
+
+**What goes wrong:** The Explainable xPts Breakdown shows `cs_pts = 1.8` for a DEF (30% team CS × 6 pts). The dedicated Clean Sheet Probability panel for the same player shows "30% CS chance." These numbers are mathematically consistent but the user sees "1.8 pts" and "30%" and is unsure if they are measuring the same thing.
+
+**Why it happens:** The user's mental model of CS probability is "will they keep a clean sheet?" (yes/no percentage). The xPts `cs_pts` component is "expected points from CS" (probability × FPL points). They are the same model rendered in different units.
+
+**Prevention:**
+- In both the xPts breakdown and the CS probability panel, show the intermediate computation: "30% CS chance → 1.8 expected pts (6pts × 30%)." Make the formula explicit.
+- Use consistent terminology: "CS probability" always means the percentage; "CS contribution" always means the expected points. Never use the same label for both.
+
+---
+
+## Section 7 — Integration Pitfalls (Cross-Feature)
+
+### Pitfall 20: Decision Summary horizon mismatch with Squad Optimiser horizon
+
+**What goes wrong:** The Squad Optimiser (v1.6) has a configurable 1/3/5 GW horizon for `optimiseLineup()`. The Decision Summary uses a fixed horizon to produce its captain, transfer, and bench recommendations. If the Decision Summary defaults to 1 GW but the user has the Optimiser set to 5 GW, the two panels recommend different players for the same positions.
+
+**Prevention:**
+- Lift the active horizon into shared state (e.g., via a context provider or a URL query param) so that all decision features use the same horizon simultaneously.
+- Alternatively, make the Decision Summary horizon-independent by showing the recommendation for the 1 GW horizon only (next-GW decisions) and labelling it explicitly. The user adjusts the Optimiser horizon separately for multi-GW planning.
+
+---
+
+### Pitfall 21: Player Lifecycle Labels redundant with existing Planner output
+
+**What goes wrong:** The Gameweek Planner (v1.3) already produces a 1-5 GW transfer sequence with BUY/SELL recommendations per GW. Lifecycle labels like "Buy next week" or "Sell soon" duplicate the Planner's output for the common case (1-2 GW horizon). The user sees the same recommendation in two places, expressed differently.
+
+**Prevention:**
+- Scope lifecycle labels to players outside the Planner's active transfer window — they are best used for players the Planner is not already recommending. If the Planner has "Sell [Player X] in GW+1", the lifecycle label for Player X should say "Sell soon" but link to the Planner output rather than presenting an independent recommendation.
+- Do not build lifecycle labels as a standalone engine if the Planner already covers the same ground. Instead, derive the label from `planResult.steps` when a plan is active: the Planner's output is more sophisticated (multi-step, FT-aware) than a lifecycle heuristic.
+
+---
+
+### Pitfall 22: Pipeline output schema changes breaking downstream Decision features
+
+**What goes wrong:** Each v1.7 feature requires new fields in `merged_players.json` or new JSON outputs from the pipeline. The existing `MergedPlayer` TypeScript interface in `types.ts` already has 40+ fields. Adding CS probability, lifecycle label inputs, and fixture swing data as new fields — without a versioning strategy — risks breaking the Zod schema validation in `fpl-adapter.ts` and causing stale-cache fallback on first pipeline run.
+
+**Why it happens:** This project's pattern (from Key Decisions in `PROJECT.md`) is to add optional fields (`?:`) to `MergedPlayer` during pipeline rollout. This is the correct pattern. The risk is forgetting the optional guard or the Zod schema update.
+
+**Prevention:**
+- All new fields added to `merged_players.json` must be declared as optional (`?`) in both the `MergedPlayer` TypeScript interface and the Zod schema simultaneously.
+- New JSON outputs (e.g., `fixture_swings.json`, `lifecycle_labels.json`) must have a seeded empty version committed to `pipeline/cache/` before the pipeline writes to it. This prevents 500 errors on the first pipeline run (per the pattern established in Phase 33 for `insights.json`).
+- After each pipeline change, verify: `cat pipeline/cache/[new-file].json | python -m json.tool` produces valid JSON (empty `{}` or `[]`, not absent).
 
 ---
 
@@ -407,30 +360,31 @@
 
 | Phase topic | Likely pitfall | Mitigation |
 |-------------|----------------|------------|
-| Lineup optimiser (best 11 from 15) | Formation constraint silently violated | Encode all 6 constraints before xPts ranking; unit test with degenerate squads |
-| Lineup optimiser (captain) | VC autosub not modelled | Add start_prob-weighted captain model from day one |
-| Transfer-aware optimiser | Budget uses now_cost not selling_price | Always read from `MyTeamPickSchema.selling_price` when authenticated |
-| Transfer-aware optimiser | 2-transfer sequencing violates club cap | Check club cap after each simulated transfer, not just at the end |
-| Wildcard / Free Hit mode | Free Hit squad leaks into next-GW state | Scope Free Hit output as "this GW only"; never carry forward |
-| Standalone squad builder | Combinatorial explosion in-browser | Use Python MILP backend for full 650-player search; greedy only for 15-player lineup |
-| Standalone squad builder | Club cap at squad level missed | Apply club cap to all 15, not just starting 11 |
-| All optimiser outputs | No explanation for counterintuitive picks | Show xPts + reason string for every bench/start decision |
-| All optimiser outputs | Stale xPts after injury news | Show data timestamp; flag doubtful players; surface `news` field |
-| BGW weeks | BGW players in starting 11 | Hard-filter `fixtureCountForGw === 0` before formation selection |
-| Mobile UI | Side-by-side current vs optimised unusable | Stack vertically on mobile; show diff badge only |
-| Integration | Optimiser reads from Planner simulated state | Always source from `useSquad` / `useMyTeam`, never from `planResult` |
-| Multi-GW scoring | All GWs weighted equally | Apply `LOOK_AHEAD_DISCOUNT` per GW step, matching existing planner constant |
+| Transfer Opportunity Cost Simulator | FT count sourced from UI default instead of `my-team` | Read `ftCount` from authenticated `my-team` API; UI selector only for unauthenticated state |
+| Transfer Opportunity Cost Simulator | Rolling shows as universally beneficial | Show deferral cost explicitly: "Rolling costs ~X xPts if this transfer is still available next week" |
+| Transfer Opportunity Cost Simulator | Break-even inconsistent across horizon toggle | Compute `breakEvenGws` from 1 GW rate only; label horizon-relative caveat |
+| Transfer Opportunity Cost Simulator | 2-FT additive combo over-promise | Flag combo gains within 1.0 xPts of hit break-even as "marginal — verify" |
+| Weekly Decision Summary | Engine conflicts (SELL vs HOLD for same player) | Implement priority hierarchy: Transfer engine overrides Verdict engine for the same player in the summary |
+| Weekly Decision Summary | Information overload | Hard limit: 4 outputs (captain, transfer, bench, chip). No inline expansion. |
+| Weekly Decision Summary | Cross-query staleness | Track oldest source timestamp; "Refresh all" button invalidates all query caches |
+| Fixture Swing Detector | Alert fires on 12+ teams from noise | Delta threshold ≥ 0.20 on 3 GW ease; max 4 improving + 4 worsening surfaces |
+| Fixture Swing Detector | DGW double-counting in ease aggregate | Group fixtures by `event_id`; average per GW, not per fixture entry |
+| Player Lifecycle Labels | Weekly label instability / flipping | Hysteresis bands; require signal to cross wider threshold before label changes |
+| Player Lifecycle Labels | Overlap with existing 4 signal systems | Labels replace (not add to) existing signals in Decision Summary; synthesis function with explicit priority map |
+| Player Lifecycle Labels | "Minutes trap" misfires on cheap rotators | Price-gate: fire only above £7.0m; cross-reference xPts-per-£m ratio |
+| Explainable xPts Breakdown | Components don't sum to displayed total | Display sum-of-components as the total; never show both sum(components) and xPts_1gw simultaneously |
+| Explainable xPts Breakdown | Appearance points missing from breakdown | Add `appearance_pts` component or document its absence explicitly in the UI |
+| Explainable xPts Breakdown | DGW players show null components | "Detailed breakdown unavailable for DGW" — do not show partial breakdown |
+| Clean Sheet Probability | Team-level stat appears per-player | Group by team; individual modification for xmins; add explicit formula annotation |
+| Clean Sheet Probability | Early-season small sample bias | Show `sample_size` warning for teams with < 5 games; consider 5-game window for CS vs 3-game for xPts |
+| Clean Sheet Probability | BGW team shown with non-zero CS% | Check `fixtures.filter(f => f.event_id === targetGw).length > 0` before displaying any CS% |
+| All pipeline changes | New fields break Zod schema | All new fields optional in both TS interface and Zod schema; seed empty cache files before pipeline runs |
+| Decision Summary + Optimiser | Horizon mismatch between panels | Lift active horizon to shared state; or pin Decision Summary to 1 GW with explicit labelling |
 
 ---
 
 ## Sources
 
-- [FPL Official Help — Rules](https://fantasy.premierleague.com/help/rules)
-- [FPL Review Transfer Solver vs Linear Optimiser](https://docs.fplreview.com/the-model/solvers/solver-comparison/)
-- [Linearly Optimising FPL Teams — Joseph O'Connor](https://medium.com/@joseph.m.oconnor.88/linearly-optimising-fantasy-premier-league-teams-3b76e9694877)
-- [FPL Optimisation with Julia and JuMP — Ruban](https://www.skruban.com/essays/fpl-optimisation/)
-- [Hindsight Optimization for FPL — AlpsCode](https://alpscode.com/blog/hindsight-optimization/)
-- [FPL Auto Subs: How Automatic Substitutions Work — LiveFPL](https://www.livefpl.com/blog/fpl-auto-subs)
-- [Fantasy Football as a Data Scientist Part 2: Knapsack Problem](https://medium.com/@kangeugine/fantasy-football-as-a-data-scientist-part-2-knapsack-problem-6b7083955e93)
-- [FPL Basics: How to Make Transfers](https://www.premierleague.com/en/news/2174907)
-- Codebase inspection: `src/lib/planning-engine.ts`, `src/lib/free-transfer-engine.ts`, `src/lib/squad-adapter.ts`, `src/lib/types.ts`
+- Codebase inspection: `src/lib/suggest-transfers.ts`, `src/lib/optimise-lineup.ts`, `src/lib/recommend.ts`, `src/lib/explain.ts`, `src/lib/chip-strategy-engine.ts`, `src/lib/club-form.ts`, `src/lib/free-transfer-engine.ts`, `src/lib/types.ts`, `pipeline/merge.py`
+- Project context: `.planning/PROJECT.md` — existing engine invariants and Key Decisions table
+- Prior art pitfall: v1.6 PITFALLS.md pitfalls on BGW exclusion, sell-price haircut, stale xPts, FT bank modelling — all integration risks that carry forward to v1.7 decision features
