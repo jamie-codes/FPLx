@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.7
-milestone_name: milestone
-status: planning — requirements and roadmap pending
-stopped_at: context exhaustion at 75% (2026-05-01)
-last_updated: "2026-05-01T09:23:58.358Z"
+milestone_name: Decision Assistant
+status: roadmap planned — ready for phase 47
+stopped_at: roadmap created (2026-05-01)
+last_updated: "2026-05-01T00:00:00.000Z"
 progress:
-  total_phases: 16
-  completed_phases: 16
-  total_plans: 34
-  completed_plans: 34
-  percent: 100
+  total_phases: 5
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -20,32 +20,35 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-01 — after v1.6 milestone)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Between milestones — run /gsd-new-milestone to scope v1.7
+**Current focus:** v1.7 Decision Assistant — Phase 47 is next (Fixture Swing Detector & Clean Sheet Probability)
 
 ## Current Position
 
-Milestone v1.6 Squad Optimiser — ARCHIVED 2026-05-01
-Phases 42-46 complete (12 plans)
-Tag: v1.6
+Milestone v1.7 Decision Assistant — ROADMAP PLANNED 2026-05-01
+5 phases planned (47-51), 0 complete
+Previous milestone: v1.6 Squad Optimiser (Phases 42-46, shipped 2026-05-01)
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0% (0/5 phases)
+
+Next action: `/gsd-plan-phase 47`
 
 ## Performance Metrics
 
-**Velocity:**
+**Velocity (from v1.6 baseline):**
 
-- Total plans completed: 4 (v1.5 — Phases 36-38)
-- Average duration: ~30 min (based on v1.2/v1.3/v1.4 history)
-- Total execution time: ~2 hours
+- Average plan duration: ~30 min
+- v1.6 phases completed: 5 phases, 12 plans
+- v1.6 timeline: 4 days (2026-04-28 → 2026-05-01)
 
-**By Phase:**
+**v1.7 Phase Tracking:**
 
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 36 | 1 | - | - |
-| 37 | 1 | - | - |
-| 38 | 2 | ~10 min | ~5 min |
-| 44 | 1 | ~12 min | ~12 min |
+| Phase | Name | Plans | Status | Completed |
+|-------|------|-------|--------|-----------|
+| 47 | Fixture Swing Detector & CS Probability | TBD | Not started | - |
+| 48 | Explainable xPts Breakdown | TBD | Not started | - |
+| 49 | Player Lifecycle Labels | TBD | Not started | - |
+| 50 | Transfer Opportunity Cost Simulator | TBD | Not started | - |
+| 51 | Weekly Decision Summary | TBD | Not started | - |
 
 *Updated after each plan completion*
 
@@ -55,16 +58,22 @@ Progress: [██████████] 100%
 
 All v1.6 decisions logged in PROJECT.md Key Decisions table and `.planning/milestones/v1.6-ROADMAP.md`.
 
+v1.7 decisions to be logged during execution.
+
 ### Pending Todos
 
-None.
+- Run `/gsd-plan-phase 47` to begin Phase 47 (Fixture Swing Detector & Clean Sheet Probability)
 
 ### Blockers/Concerns
 
-None.
+**Phase 47 (Fixture Swing & CS Prob):** Fixture swing threshold (delta >= 0.20, 4+4 team cap) must be confirmed in plan spec. Standard patterns otherwise — no phase research agent needed.
+
+**Phase 49 (Lifecycle Labels):** Label taxonomy, priority map, and hysteresis thresholds must be defined in plan spec before any code. Architecture clear; business rules not yet specified.
+
+**Phase 51 (Decision Summary):** `resolveDecisionSummary()` priority hierarchy and full conflict matrix must be specced before implementation. This is the highest-risk design decision in v1.7. Hard limit of 4 outputs; horizon pinning strategy (1 GW explicit vs shared state) must be chosen.
 
 ## Session Continuity
 
-Last session: 2026-05-01T09:23:58.354Z
-Stopped at: context exhaustion at 75% (2026-05-01)
+Last session: 2026-05-01 — roadmap created for v1.7
+Stopped at: roadmap written; ready for phase planning
 Resume file: None

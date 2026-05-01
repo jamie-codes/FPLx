@@ -82,9 +82,27 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| CS-01, CS-02, CS-03 | — | Pending |
-| SWG-01, SWG-02, SWG-03, SWG-04 | — | Pending |
-| LCL-01, LCL-02, LCL-03 | — | Pending |
-| XPT-01, XPT-02, XPT-03, XPT-04 | — | Pending |
-| OCS-01, OCS-02, OCS-03, OCS-04, OCS-05 | — | Pending |
-| WDS-01, WDS-02, WDS-03, WDS-04, WDS-05 | — | Pending |
+| CS-01 | Phase 47 | Pending |
+| CS-02 | Phase 47 | Pending |
+| CS-03 | Phase 47 | Pending |
+| SWG-01 | Phase 47 | Pending |
+| SWG-02 | Phase 47 | Pending |
+| SWG-03 | Phase 47 | Pending |
+| SWG-04 | Phase 47 | Pending |
+| XPT-01 | Phase 48 | Pending |
+| XPT-02 | Phase 48 | Pending |
+| XPT-03 | Phase 48 | Pending |
+| XPT-04 | Phase 48 | Pending |
+| LCL-01 | Phase 49 | Pending |
+| LCL-02 | Phase 49 | Pending |
+| LCL-03 | Phase 49 | Pending |
+| OCS-01 | Phase 50 | Pending |
+| OCS-02 | Phase 50 | Pending |
+| OCS-03 | Phase 50 | Pending |
+| OCS-04 | Phase 50 | Pending |
+| OCS-05 | Phase 50 | Pending |
+| WDS-01 | Phase 51 | Pending |
+| WDS-02 | Phase 51 | Pending |
+| WDS-03 | Phase 51 | Pending |
+| WDS-04 | Phase 51 | Pending |
+| WDS-05 | Phase 51 | Pending |
