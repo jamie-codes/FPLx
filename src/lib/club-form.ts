@@ -129,7 +129,7 @@ export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[])
         is_home: true,
         event_id: fix.event!,
         difficulty_score: attDiff,
-        difficulty_tier: tier(1 - attDiff),
+        difficulty_tier: tier(attDiff),
         attacking_difficulty: attDiff,
         defensive_difficulty: defScore(fix.team_a),
       })
@@ -143,7 +143,7 @@ export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[])
         is_home: false,
         event_id: fix.event!,
         difficulty_score: attDiff,
-        difficulty_tier: tier(1 - attDiff),
+        difficulty_tier: tier(attDiff),
         attacking_difficulty: attDiff,
         defensive_difficulty: defScore(fix.team_h),
       })
