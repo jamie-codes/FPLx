@@ -120,7 +120,12 @@ See `.planning/milestones/v1.6-ROADMAP.md` for full phase details.
   3. User's own squad players belonging to high-swing teams are visually highlighted in the fixture swing panel
   4. User can see CS% per fixture for GK/DEF-relevant teams on the Club Form tab or a dedicated panel, derived from rolling xGA
   5. DGW fixtures show combined CS% using the `1 - (1-p1)*(1-p2)` formula so double-gameweek opportunity is correctly represented
-**Plans**: TBD
+**Plans**: 5 plans (3 waves)
+  - [ ] 47-01-PLAN.md — extend ClubForm + MergedPlayer types (past_ease_3gw, swing_*gw, cs_prob_1gw)
+  - [ ] 47-02-PLAN.md — TDD: implement past_ease_3gw and swing deltas in computeClubForm
+  - [ ] 47-03-PLAN.md — TDD: add cs_prob_1gw aggregation (single/DGW/BGW) to pipeline/merge.py
+  - [ ] 47-04-PLAN.md — add CS% column to GemTable (Analysis preset only, mobile hidden)
+  - [ ] 47-05-PLAN.md — build FixtureSwingDetector panel + mount + human-verify checkpoint
 **Phase notes**: Fixture swing threshold (recommended 0.20 delta, 4+4 team cap) must be confirmed in the plan spec before coding. Group by `event_id` to avoid DGW double-counting in ease aggregates. BGW teams must show zero CS%. `cs_prob_1gw` field addition to `merged_players.json` (~5 pipeline lines) required.
 **UI hint**: yes
 
@@ -188,7 +193,7 @@ See `.planning/milestones/v1.6-ROADMAP.md` for full phase details.
 | 26-35 | v1.4 | 10 | Complete | 2026-04-29 |
 | 36-41 | v1.5 | 14 | Complete | 2026-04-30 |
 | 42-46 | v1.6 | 12 | Complete | 2026-05-01 |
-| 47 | v1.7 | 0/TBD | Not started | - |
+| 47 | v1.7 | 0/5 | Not started | - |
 | 48 | v1.7 | 0/TBD | Not started | - |
 | 49 | v1.7 | 0/TBD | Not started | - |
 | 50 | v1.7 | 0/TBD | Not started | - |
