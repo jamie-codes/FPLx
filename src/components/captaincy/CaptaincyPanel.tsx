@@ -83,7 +83,7 @@ export function CaptaincyPanel({ candidates, nextGw }: CaptaincyPanelProps) {
             {/* Badges row */}
             <div className="flex items-center gap-1.5">
               <CaptainTypeBadge type={c.captain_type} />
-              <MinsRiskBadge minsRisk={c.player.mins_risk} />
+              <MinsRiskBadge minsRisk={c.player.mins_risk} mins60Prob={c.player.mins_60_prob} />
             </div>
           </div>
         ))}

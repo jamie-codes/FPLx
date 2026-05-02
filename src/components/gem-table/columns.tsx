@@ -29,6 +29,7 @@ export function XPtsCell({
   ceiling,
   components,
   minsRisk,
+  mins60Prob,
   window,
 }: {
   value: number | undefined
@@ -41,6 +42,7 @@ export function XPtsCell({
     appearance_pts: number
   } | undefined
   minsRisk?: MinsRisk
+  mins60Prob?: number
   window: 1 | 3 | 5
 }) {
   const [open, setOpen] = useState(false)
@@ -112,7 +114,7 @@ export function XPtsCell({
           <span className="font-mono">{cardTotal}</span>
         </div>
         <div className="mt-1">
-          <MinsRiskBadge minsRisk={minsRisk} />
+          <MinsRiskBadge minsRisk={minsRisk} mins60Prob={mins60Prob} />
         </div>
       </div>
     </div>
@@ -195,7 +197,19 @@ export function createColumns(onCompare: (player: ScoredPlayer) => void, gwN: nu
   col.accessor('status', {
     header: H('Status', 'Player availability: blank = available, D = doubtful, I = injured, S = suspended, N = unavailable'),
     enableSorting: false,
-    cell: (info) => info.getValue() === 'a' ? '' : info.getValue().toUpperCase(),
+    cell: (info) => {
+      const s = info.getValue()
+      if (s === 'a') return null
+      const cfg: Record<string, { label: string; cls: string }> = {
+        d: { label: 'D', cls: 'bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200' },
+        i: { label: 'I', cls: 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' },
+        s: { label: 'S', cls: 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' },
+        u: { label: 'U', cls: 'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300' },
+        n: { label: 'N', cls: 'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300' },
+      }
+      const c = cfg[s] ?? { label: s.toUpperCase(), cls: 'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300' }
+      return <span className={`inline-block text-xs font-normal rounded px-2 py-1 ${c.cls}`}>{c.label}</span>
+    },
   }),
   col.display({
     id: 'mins_risk',
@@ -211,6 +225,7 @@ export function createColumns(onCompare: (player: ScoredPlayer) => void, gwN: nu
         ceiling={info.row.original.xPts_ceiling_1gw}
         components={info.row.original.xPts_components_1gw ?? undefined}
         minsRisk={info.row.original.mins_risk}
+        mins60Prob={info.row.original.mins_60_prob}
         window={1}
       />
     ),

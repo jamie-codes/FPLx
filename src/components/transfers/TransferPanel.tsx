@@ -332,7 +332,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-900 dark:text-zinc-100">
                         <span>Sell</span>
                         <span className="font-medium">{s.sell.web_name}</span>
-                        <MinsRiskBadge minsRisk={s.sell.mins_risk} />
+                        <MinsRiskBadge minsRisk={s.sell.mins_risk} mins60Prob={s.sell.mins_60_prob} />
                         <span className="text-zinc-500 dark:text-zinc-400">({s.sell.gem_score.toFixed(2)})</span>
                         {/* GW price trend — decision-relevant, always visible */}
                         {(s.sell.cost_change_event ?? 0) > 0 && (
@@ -404,7 +404,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-900 dark:text-zinc-100">
                         <span>Sell</span>
                         <span className="font-medium">{s.sell.web_name}</span>
-                        <MinsRiskBadge minsRisk={s.sell.mins_risk} />
+                        <MinsRiskBadge minsRisk={s.sell.mins_risk} mins60Prob={s.sell.mins_60_prob} />
                         <span className="text-zinc-500 dark:text-zinc-400">({s.sell.gem_score.toFixed(2)})</span>
                         {/* GW price trend — decision-relevant, always visible */}
                         {(s.sell.cost_change_event ?? 0) > 0 && (
