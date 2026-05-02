@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: Predictive Intelligence
-status: ready_to_execute
-stopped_at: phase_52_planned
-last_updated: "2026-05-02T00:00:00.000Z"
+status: executing
+stopped_at: Completed 052-01-PLAN.md
+last_updated: "2026-05-02T11:00:00Z"
+last_activity: "2026-05-02 — Phase 52 Plan 01 executed: _compute_player_xmins + MergedPlayer extended"
 progress:
-  total_phases: 1
-  completed_phases: 0
-  total_plans: 4
-  completed_plans: 0
-  percent: 0
+  total_phases: 9
+  completed_phases: 5
+  total_plans: 22
+  completed_plans: 17
+  percent: 77
 ---
 
 # Project State
@@ -24,16 +25,19 @@ See: .planning/PROJECT.md (updated 2026-05-02 — v1.8 started)
 
 ## Current Position
 
-Phase: 52 — xMins Confidence Engine (Ready to execute — 4 plans, 2 waves)
-Plan: —
-Status: Ready to execute
-Last activity: 2026-05-02 — Phase 52 planned (4 plans: 052-01 through 052-04)
+Phase: 52 — xMins Confidence Engine
+Plan: 1 of 4 complete
+Status: Executing
+Last activity: 2026-05-02 — Plan 052-01 complete: POSITION_PRIOR, mins_60_prob, sub_risk_label added
 
 ## Performance Metrics
 
-*Will be updated after first phase completes.*
+| Phase | Plan | Duration | Tasks | Files |
+|-------|------|----------|-------|-------|
+| 052 | 01 | 5 min | 3 | 3 |
 
 **Previous milestone (v1.7) velocity:**
+
 - 5 phases, 14 plans
 - 2 days (2026-05-01 → 2026-05-02)
 - 88 commits, 323 files changed
@@ -42,7 +46,8 @@ Last activity: 2026-05-02 — Phase 52 planned (4 plans: 052-01 through 052-04)
 
 ### Decisions
 
-*No decisions yet — milestone just started.*
+- [052-01] Used `starts==1` exclusively for start counting; removed `minutes>0` history filter to allow 0-minute non-start entries to contribute to `start_prob` denominators
+- [052-01] Changed `recent_start_rate < 0.25` to `start_prob < 0.25` in `mins_risk` cameo check to avoid NameError when position-prior branch fires
 
 ### Pending Todos
 
@@ -57,6 +62,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-02T05:30:00.000Z
-Stopped at: milestone planning in progress
+Last session: 2026-05-02T11:00:00Z
+Stopped at: Completed 052-01-PLAN.md
 Resume file: None
