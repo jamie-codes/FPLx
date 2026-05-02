@@ -17,6 +17,7 @@ from merge import merge_players
 from defcon import compute_defcon_stats
 from xmins import compute_xmins_stats
 from bonus import compute_bonus_predictions
+from price_changes import compute_price_change_predictions
 from insights import compute_insights
 from accuracy import compute_accuracy_backtest, build_predictions_snapshot
 
@@ -229,6 +230,21 @@ def run(dry_run: bool = False):
         save('set_piece_changes.json', sp_changes)
         save('set_pieces_snapshot.json', curr_snapshot)
         print(f"Set-piece changes: {sp_changes['change_count']} change(s)")
+
+        # PRC-01: Price-change snapshot and predictions
+        print("Computing price change predictions...")
+        pc_snapshot_path = os.path.join(cache_dir, 'price_changes_snapshot.json')
+        prev_pc_snapshot = {}
+        try:
+            with open(pc_snapshot_path, 'r', encoding='utf-8') as f:
+                prev_pc_snapshot = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            pass
+
+        pc_predictions, curr_pc_snapshot = compute_price_change_predictions(bootstrap, prev_pc_snapshot)
+        save('price_changes.json', pc_predictions)
+        save('price_changes_snapshot.json', curr_pc_snapshot)
+        print(f"Price change predictions: {len(pc_predictions.get('predictions', []))} player(s) with direction signal")
 
         # Compute DefCon stats from element-summary history (Phase 4)
         print("Computing DefCon stats...")
