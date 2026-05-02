@@ -27,6 +27,19 @@ def _read_gate(cache_dir: str) -> tuple[bool, float]:
     return form_signal_enabled, blend_alpha_used
 
 
+def _read_xmins_v2_gate(cache_dir: str) -> bool:
+    """Replica of the Phase 52 xmins_v2_enabled gate-read in run.py (MIN-01 contract test)."""
+    backtest_path = os.path.join(cache_dir, 'accuracy_backtest.json')
+    xmins_v2_enabled = False
+    try:
+        with open(backtest_path, 'r', encoding='utf-8') as f:
+            prev_backtest = json.load(f)
+        xmins_v2_enabled = prev_backtest.get('summary', {}).get('xmins_v2_enabled', False)
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+    return xmins_v2_enabled
+
+
 def test_form_signal_gate_default_false():
     """ACC-03 / Pattern 5: when accuracy_backtest.json is absent, gate defaults to False."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -89,3 +102,49 @@ def test_run_py_uses_gate_read_pattern():
     merge_idx = src.find('merge_players(')
     assert gate_idx != -1 and gate_idx < merge_idx, \
         "Gate must be read BEFORE merge_players is called"
+
+
+def test_xmins_v2_enabled_defaults_false_when_backtest_missing():
+    """Phase 52 MIN-01: missing accuracy_backtest.json -> xmins_v2_enabled = False (no crash)."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        flag = _read_xmins_v2_gate(tmpdir)
+        assert flag is False
+
+
+def test_xmins_v2_enabled_reads_true_from_backtest():
+    """Phase 52 MIN-01: accuracy_backtest.json with summary.xmins_v2_enabled=True is read as True."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        backtest_path = os.path.join(tmpdir, 'accuracy_backtest.json')
+        backtest_data = {
+            'generated_at': '2026-05-02T12:00:00Z',
+            'gws_covered': [28, 29, 30, 31, 32],
+            'summary': {
+                'xpts_hit_rate': 0.18,
+                'xpts_blended_hit_rate': 0.21,
+                'form_signal_enabled': False,
+                'blend_alpha_used': 0.4,
+                'xmins_v2_enabled': True,
+            },
+            'haulters': [],
+            'players': [],
+        }
+        with open(backtest_path, 'w', encoding='utf-8') as f:
+            json.dump(backtest_data, f)
+
+        flag = _read_xmins_v2_gate(tmpdir)
+        assert flag is True
+
+
+def test_xmins_v2_enabled_run_py_source_check():
+    """Phase 52 MIN-01: run.py source contains xmins_v2_enabled gate pattern (string-level guard)."""
+    run_path = os.path.join(os.path.dirname(__file__), '..', 'run.py')
+    with open(run_path, 'r', encoding='utf-8') as f:
+        src = f.read()
+    assert "xmins_v2_enabled = False" in src, \
+        "run.py must declare xmins_v2_enabled default False"
+    assert "xmins_v2_enabled = prev_backtest.get('summary', {}).get('xmins_v2_enabled', False)" in src, \
+        "run.py must read xmins_v2_enabled from accuracy_backtest.json.summary"
+    assert "xmins_v2_enabled=xmins_v2_enabled" in src, \
+        "run.py must pass xmins_v2_enabled to merge_players"
+    assert "xMins v2" in src, \
+        "run.py must print xMins v2 status"

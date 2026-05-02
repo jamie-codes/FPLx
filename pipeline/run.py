@@ -79,6 +79,7 @@ def _diff_sp_snapshots(prev: dict, curr: dict, bootstrap: dict) -> dict:
 
     changes_count = 0
     teams_list = []
+    is_first_run = not bool(prev)
 
     for team_id_str, curr_roles in sorted(curr.items(), key=lambda x: int(x[0])):
         prev_roles = prev.get(team_id_str, {})
@@ -86,7 +87,7 @@ def _diff_sp_snapshots(prev: dict, curr: dict, bootstrap: dict) -> dict:
 
         def _taker_entry(curr_id, prev_id):
             nonlocal changes_count
-            changed = curr_id != prev_id and not (curr_id is None and prev_id is None)
+            changed = (not is_first_run) and curr_id != prev_id and not (curr_id is None and prev_id is None)
             if changed:
                 changes_count += 1
             player = players_by_id.get(curr_id, {}) if curr_id else {}
@@ -171,22 +172,26 @@ def run(dry_run: bool = False):
         # Default (False, 0.4) on cold start (file absent) or corrupt JSON — preserves baseline.
         form_signal_enabled = False
         blend_alpha_used = 0.4
+        xmins_v2_enabled = False  # Phase 52 D-02 — default OFF; flips ON after non-regression shadow run
         backtest_path = os.path.join(cache_dir, 'accuracy_backtest.json')
         try:
             with open(backtest_path, 'r', encoding='utf-8') as f:
                 prev_backtest = json.load(f)
             form_signal_enabled = prev_backtest.get('summary', {}).get('form_signal_enabled', False)
             blend_alpha_used = prev_backtest.get('summary', {}).get('blend_alpha_used', 0.4)
+            xmins_v2_enabled = prev_backtest.get('summary', {}).get('xmins_v2_enabled', False)
         except (FileNotFoundError, json.JSONDecodeError):
             pass
 
         print(f"Form signal blend: {'ENABLED' if form_signal_enabled else 'DISABLED'} (alpha={blend_alpha_used})")
+        print(f"xMins v2 (mins_60_prob in _cs_prob): {'ENABLED' if xmins_v2_enabled else 'DISABLED'}")
 
         merged, captain_picks = merge_players(
             bootstrap, fixtures, understat, id_map,
             xmins_stats=xmins_stats, summaries=summaries,
             form_signal_enabled=form_signal_enabled,
             blend_alpha=blend_alpha_used,
+            xmins_v2_enabled=xmins_v2_enabled,
         )
         save('merged_players.json', merged)
         save('captain_picks.json', captain_picks)  # Phase 31 CAP-03/CAP-04
