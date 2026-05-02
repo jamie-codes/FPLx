@@ -20,6 +20,7 @@ import { SetPieceTakerPanel } from '@/components/set-pieces/SetPieceTakerPanel'
 import { CaptainPicksPanel } from '@/components/captaincy/CaptainPicksPanel'
 import { InsightsTab } from '@/components/insights/InsightsTab'
 import { AccuracyTab } from '@/components/accuracy/AccuracyTab'
+import { PriceChangePanel } from '@/components/price-changes/PriceChangePanel'
 import { OptimiserPanel } from '@/components/optimiser/OptimiserPanel'
 import { DecisionSummaryTab } from '@/components/squad/DecisionSummaryTab'
 
@@ -44,7 +45,7 @@ class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: 
 }
 
 export type Section = 'analyse' | 'plan' | 'squad'
-export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'club-form' | 'value-gems' | 'accuracy' | 'decision' | 'transfers' | 'optimiser'
+export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'club-form' | 'value-gems' | 'accuracy' | 'decision' | 'transfers' | 'optimiser' | 'price-changes'
 
 export const SECTIONS = [
   {
@@ -55,7 +56,8 @@ export const SECTIONS = [
       { id: 'insights' as SubTab,   label: 'Insights',        mobileLabel: 'Insights' },
       { id: 'defcon' as SubTab,     label: 'DefCon Analysis', mobileLabel: 'DefCon'   },
       { id: 'set-pieces' as SubTab, label: 'Set Pieces',      mobileLabel: 'SP'       },
-      { id: 'accuracy' as SubTab,   label: 'Accuracy',        mobileLabel: 'Acc'      },
+      { id: 'accuracy' as SubTab,      label: 'Accuracy',        mobileLabel: 'Acc'      },
+      { id: 'price-changes' as SubTab, label: 'Price Changes',   mobileLabel: 'Prices'   },
     ],
     defaultSubTab: 'gems' as SubTab,
   },
@@ -205,6 +207,7 @@ export default function Home() {
         {activeSection !== 'squad' && activeSubTab === 'set-pieces' && <SetPieceTakerPanel />}
         {activeSection !== 'squad' && activeSubTab === 'insights' && <InsightsTab />}
         {activeSection !== 'squad' && activeSubTab === 'accuracy' && <AccuracyTab />}
+        {activeSection !== 'squad' && activeSubTab === 'price-changes' && <PriceChangePanel />}
         {activeSection !== 'squad' && activeSubTab === 'value-gems' && <ValueGemsTable />}
         {activeSection !== 'squad' && activeSubTab === 'planner' && (
           <>
