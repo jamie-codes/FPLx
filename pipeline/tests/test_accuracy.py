@@ -323,3 +323,57 @@ def test_mid_tier_uses_wider_top_n():
     # alone does not prove top-30. The summary key existence in the previous test is the
     # contract; this one asserts the wider-net is meaningful (> 0 mid-tier hit rate).)
     assert result['summary']['mid_tier_hit_rate'] > 0.0
+
+
+# ============================================================================
+# Phase 53 BPS-01 — bonus_predictor_enabled flag persistence
+# ============================================================================
+
+def test_backtest_writes_bonus_predictor_flag():
+    """Phase 53 BPS-01: top-level summary includes bonus_predictor_enabled (bool)."""
+    history = [_hist(gw, 90, 6, xg=0.4, xa=0.2) for gw in range(1, 33)]
+    summaries, fg, bootstrap, fixtures = _build_minimal_inputs({1: history})
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures)
+
+    assert 'bonus_predictor_enabled' in result['summary'], (
+        "summary must contain 'bonus_predictor_enabled' key (Phase 53 BPS-01)"
+    )
+    assert isinstance(result['summary']['bonus_predictor_enabled'], bool), (
+        f"bonus_predictor_enabled must be bool, got {type(result['summary']['bonus_predictor_enabled'])}"
+    )
+
+
+def test_bonus_predictor_flag_defaults_false_cold_start(tmp_path):
+    """Phase 53 BPS-01: bonus_predictor_enabled defaults to False when no prior backtest exists."""
+    history = [_hist(gw, 90, 6, xg=0.4, xa=0.2) for gw in range(1, 33)]
+    summaries, fg, bootstrap, fixtures = _build_minimal_inputs({1: history})
+    # tmp_path is an empty directory — no accuracy_backtest.json present
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures, cache_dir=str(tmp_path))
+
+    assert result['summary']['bonus_predictor_enabled'] is False, (
+        "Cold-start (no prior accuracy_backtest.json) must default bonus_predictor_enabled to False"
+    )
+
+
+def test_bonus_predictor_flag_persists_across_runs(tmp_path):
+    """Phase 53 BPS-01: when prior accuracy_backtest.json has bonus_predictor_enabled: true,
+    the next compute_accuracy_backtest call must preserve True (manual-flip pattern)."""
+    import json as _json
+
+    # Seed tmp_path with a prior accuracy_backtest.json that has the flag flipped ON.
+    prior_path = tmp_path / 'accuracy_backtest.json'
+    prior_path.write_text(_json.dumps({
+        'summary': {
+            'bonus_predictor_enabled': True,
+            # Other keys may be absent — the helper only reads bonus_predictor_enabled.
+        },
+    }))
+
+    history = [_hist(gw, 90, 6, xg=0.4, xa=0.2) for gw in range(1, 33)]
+    summaries, fg, bootstrap, fixtures = _build_minimal_inputs({1: history})
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures, cache_dir=str(tmp_path))
+
+    assert result['summary']['bonus_predictor_enabled'] is True, (
+        "When prior accuracy_backtest.json has bonus_predictor_enabled: true, "
+        "subsequent backtest must preserve True (Phase 52 D-02 mirror pattern)"
+    )
