@@ -146,7 +146,9 @@ def _cs_prob(defensive_difficulty: float, xmins: float, mins_60_prob: float | No
     return cs_prob_raw * mins_factor
 
 
-def _cs_prob_1gw_for_fixtures(fixtures: list, xmins: float) -> float:
+def _cs_prob_1gw_for_fixtures(fixtures: list, xmins: float,
+                               xmins_v2_enabled: bool = False,
+                               mins_60_prob: float | None = None) -> float:
     """Aggregate clean-sheet probability for the next 1 GW (Phase 47 CS-01, CS-02).
 
     Mirrors _xpts_ngw groupby semantics so DGW handling is consistent:
@@ -176,7 +178,7 @@ def _cs_prob_1gw_for_fixtures(fixtures: list, xmins: float) -> float:
     prob_no_cs = 1.0
     for fix in first_group:
         dd = fix.get('defensive_difficulty', 0.5)
-        p = _cs_prob(dd, xmins)
+        p = _cs_prob(dd, xmins, mins_60_prob=mins_60_prob if xmins_v2_enabled else None)
         prob_no_cs *= (1.0 - p)
     return round(1.0 - prob_no_cs, 6)
 
@@ -188,6 +190,8 @@ def _compute_xpts_fixture(
     xmins: float,
     element_type: int,
     defensive_difficulty: float,
+    xmins_v2_enabled: bool = False,
+    mins_60_prob: float | None = None,
 ) -> dict:
     """Compute expected FPL points for a single fixture (Phase 28 DATA-02).
 
@@ -225,7 +229,8 @@ def _compute_xpts_fixture(
 
     # CS probability: Bernoulli, parameterised from defensive_difficulty via helper.
     # See _cs_prob() docstring for direction rationale (CR-01 fix).
-    effective_cs_prob = _cs_prob(defensive_difficulty, xmins)
+    effective_cs_prob = _cs_prob(defensive_difficulty, xmins,
+                                 mins_60_prob=mins_60_prob if xmins_v2_enabled else None)
     cs_pts = effective_cs_prob * CS_PTS[element_type]
 
     # Bonus: flat position-average rate, scaled by expected minutes only.
@@ -256,6 +261,8 @@ def _xpts_ngw(
     element_type: int,
     fixtures: list,
     n_gws: int,
+    xmins_v2_enabled: bool = False,
+    mins_60_prob: float | None = None,
 ) -> tuple:
     """Project xPts across N upcoming GWs, DGW-aware (Phase 28 DATA-02 D-04, D-06).
 
@@ -288,6 +295,8 @@ def _xpts_ngw(
                 xmins,
                 element_type,
                 fix.get('defensive_difficulty', 0.5),
+                xmins_v2_enabled=xmins_v2_enabled,
+                mins_60_prob=mins_60_prob,
             )
             total += result['total']
             if gw_idx == 0 and n_gws == 1:
@@ -309,6 +318,8 @@ def _compute_xpts_sigma(
     element_type: int,
     fixtures: list,
     n_gws: int,
+    xmins_v2_enabled: bool = False,
+    mins_60_prob: float | None = None,
 ) -> float:
     """Analytical sigma for xPts across an N-GW window (Phase 28 XPTS-02 D-09).
 
@@ -337,7 +348,7 @@ def _compute_xpts_sigma(
     for _event_id, gw_fixtures in grouped[:n_gws]:
         for fix in gw_fixtures:
             dd = fix.get('defensive_difficulty', 0.5)
-            cs_prob = _cs_prob(dd, xmins)
+            cs_prob = _cs_prob(dd, xmins, mins_60_prob=mins_60_prob if xmins_v2_enabled else None)
 
             lam_g = xg * (xmins / 90.0)
             lam_a = xa * (xmins / 90.0)
@@ -583,6 +594,7 @@ def merge_players(
     summaries: dict | None = None,
     form_signal_enabled: bool = False,
     blend_alpha: float = BLEND_ALPHA,
+    xmins_v2_enabled: bool = False,
 ) -> tuple[list, dict]:
     """Merge FPL bootstrap + Understat xG/xA into a unified player list.
 
@@ -910,6 +922,17 @@ def merge_players(
         player['start_prob'] = player_start_prob
         player['mins_risk'] = player_mins_risk
 
+        # Phase 52 D-03: mins_60_prob and sub_risk_label always written (consumed by BENCH-01, MinsRiskBadge tooltip).
+        # Only the _cs_prob formula swap (below) is gated by xmins_v2_enabled.
+        if xmins_stats and fpl_id in xmins_stats:
+            xm = xmins_stats[fpl_id]
+            player['mins_60_prob'] = xm.get('mins_60_prob', 0.0)
+            player['sub_risk_label'] = xm.get('sub_risk_label', 'injured')
+        else:
+            player['mins_60_prob'] = 0.0
+            player['sub_risk_label'] = 'injured'
+        player_mins_60_prob = player['mins_60_prob']
+
         # ---- Form signal (Phase 42 ACC-01) ----
         # Recency-weighted xG+xA per-90 over last 3-5 GWs from element-summary history.
         # Always write the field (None + 0 when insufficient) so MergedPlayer is shape-consistent
@@ -948,14 +971,17 @@ def merge_players(
         xpts_1gw, xpts_components_1gw = _xpts_ngw(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 1,
+            xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
         )
         xpts_3gw, _ = _xpts_ngw(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 3,
+            xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
         )
         xpts_5gw, _ = _xpts_ngw(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 5,
+            xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
         )
         player['xPts_1gw'] = xpts_1gw
         player['xPts_3gw'] = xpts_3gw
@@ -963,7 +989,10 @@ def merge_players(
         player['xPts_components_1gw'] = xpts_components_1gw  # may be None for BGW
         # Phase 47 CS-01/CS-02 (D-08/D-10): expose cs_prob_1gw alongside xPts_1gw.
         # BGW players: 0.0 (no fixture). DGW players: combined 1-(1-p1)*(1-p2).
-        player['cs_prob_1gw'] = _cs_prob_1gw_for_fixtures(player_fixtures, player_xmins)
+        player['cs_prob_1gw'] = _cs_prob_1gw_for_fixtures(
+            player_fixtures, player_xmins,
+            xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
+        )
 
         # ---- Regression signal (Phase 29 DATA-03, REG-01, REG-02) ----
         # D-01/D-02 deviation: uses FPL element-summary expected_goals/expected_assists
@@ -983,14 +1012,17 @@ def merge_players(
         player['_sigma_1gw'] = _compute_xpts_sigma(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 1,
+            xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
         )
         player['_sigma_3gw'] = _compute_xpts_sigma(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 3,
+            xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
         )
         player['_sigma_5gw'] = _compute_xpts_sigma(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 5,
+            xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
         )
 
         result.append(player)
