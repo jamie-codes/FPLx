@@ -96,3 +96,39 @@ def test_dgw_plus_later_gw_only_first_event_group_combined():
     p2 = _cs_prob(0.5, 90.0)
     expected = 1.0 - (1.0 - p1) * (1.0 - p2)
     assert result == pytest.approx(expected, abs=1e-6)
+
+
+def test_cs_prob_backward_compat_no_mins_60_prob():
+    """Phase 52 D-01: _cs_prob with no mins_60_prob arg uses existing min(1.0, xmins/60) formula."""
+    result = _cs_prob(0.5, 45.0)
+    cs_raw = max(0.10, min(0.65, 0.40 - 0.5 * 0.30))   # = 0.25
+    expected = cs_raw * min(1.0, 45.0 / 60.0)          # = 0.25 * 0.75 = 0.1875
+    assert result == pytest.approx(expected)
+
+
+def test_cs_prob_mins_60_prob_used_when_provided():
+    """Phase 52 D-01: _cs_prob(dd, xmins, mins_60_prob=X) uses X as mins_factor (xmins ignored for mins_factor)."""
+    result = _cs_prob(0.5, 45.0, mins_60_prob=0.90)
+    cs_raw = max(0.10, min(0.65, 0.40 - 0.5 * 0.30))   # = 0.25
+    expected = cs_raw * 0.90                            # = 0.225
+    assert result == pytest.approx(expected)
+
+
+def test_cs_prob_mins_60_prob_none_fallback():
+    """Phase 52 D-01: explicit mins_60_prob=None matches no-arg call (default None preserved)."""
+    result_explicit_none = _cs_prob(0.5, 45.0, mins_60_prob=None)
+    result_no_arg = _cs_prob(0.5, 45.0)
+    assert result_explicit_none == pytest.approx(result_no_arg)
+
+
+def test_cs_prob_mins_60_prob_zero_gates_to_zero():
+    """Phase 52 D-01: mins_60_prob=0.0 fully gates the CS contribution (semantically: never starts -> never gets CS pts)."""
+    result = _cs_prob(0.5, 45.0, mins_60_prob=0.0)
+    assert result == pytest.approx(0.0)
+
+
+def test_cs_prob_mins_60_prob_one_full_credit():
+    """Phase 52 D-01: mins_60_prob=1.0 gives full cs_raw credit (always reaches 60 min)."""
+    result = _cs_prob(0.5, 45.0, mins_60_prob=1.0)
+    cs_raw = max(0.10, min(0.65, 0.40 - 0.5 * 0.30))
+    assert result == pytest.approx(cs_raw)
