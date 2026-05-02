@@ -20,9 +20,10 @@ import { CaptainPicksPanel } from '@/components/captaincy/CaptainPicksPanel'
 import { InsightsTab } from '@/components/insights/InsightsTab'
 import { AccuracyTab } from '@/components/accuracy/AccuracyTab'
 import { OptimiserPanel } from '@/components/optimiser/OptimiserPanel'
+import { DecisionSummaryTab } from '@/components/squad/DecisionSummaryTab'
 
 export type Section = 'analyse' | 'plan' | 'squad'
-export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'club-form' | 'value-gems' | 'accuracy' | 'transfers' | 'optimiser'
+export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'club-form' | 'value-gems' | 'accuracy' | 'decision' | 'transfers' | 'optimiser'
 
 export const SECTIONS = [
   {
@@ -51,10 +52,11 @@ export const SECTIONS = [
     id: 'squad' as Section,
     label: 'Squad',
     subTabs: [
+      { id: 'decision' as SubTab,  label: 'Decision',  mobileLabel: 'Decision'  },
       { id: 'transfers' as SubTab, label: 'Transfers', mobileLabel: 'Transfers' },
       { id: 'optimiser' as SubTab, label: 'Optimiser', mobileLabel: 'Optimiser' },
     ],
-    defaultSubTab: 'transfers' as SubTab,
+    defaultSubTab: 'decision' as SubTab,
   },
 ] as const
 
@@ -63,7 +65,7 @@ export default function Home() {
   const [sectionMemory, setSectionMemory] = useState<Record<Section, SubTab | null>>({
     analyse: 'gems',
     plan: 'planner',
-    squad: 'transfers',
+    squad: 'decision',
   })
   const [gemPreset, setGemPreset] = useState<ViewPreset>('default')
   const [comparePlayer, setComparePlayer] = useState<ScoredPlayer | null>(null)
@@ -147,6 +149,14 @@ export default function Home() {
         })()}
 
         {/* Tab content — squad guards on section + sub-tab; others guard on sub-tab AND non-squad section */}
+        {activeSection === 'squad' && activeSubTab === 'decision' && (
+          <DecisionSummaryTab
+            teamId={teamId}
+            onTeamIdChange={setTeamId}
+            submittedId={submittedId}
+            onSubmit={handleTeamIdSubmit}
+          />
+        )}
         {activeSection === 'squad' && activeSubTab === 'transfers' && (
           <TransferPanel
             teamId={teamId}

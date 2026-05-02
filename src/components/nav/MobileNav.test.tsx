@@ -67,20 +67,22 @@ describe('Phase 36: MobileNav component', () => {
     expect(pillButtons[2].textContent).toBe('Values')
   })
 
-  it('Squad active: pill row shows 2 pills Transfers and Optimiser; total 5 buttons in DOM (NAV-04 / NAV-01)', () => {
+  it('Squad active: pill row shows 3 pills Decision, Transfers and Optimiser; total 6 buttons in DOM (NAV-04 / NAV-01, updated D-10/Phase51)', () => {
     const { container } = render(
       <MobileNav {...makeProps({ activeSection: 'squad' as Section, activeSubTab: 'transfers' as SubTab })} />
     )
     const allButtons = Array.from(container.querySelectorAll('button'))
-    // 3 section buttons + 2 Squad pills = 5 total
-    expect(allButtons).toHaveLength(5)
-    const pillButtons = allButtons.filter(b => ['Transfers', 'Optimiser'].includes(b.textContent ?? ''))
-    expect(pillButtons).toHaveLength(2)
-    expect(pillButtons[0].textContent).toBe('Transfers')
-    expect(pillButtons[1].textContent).toBe('Optimiser')
-    // Active sub-tab pill has aria-current; inactive does not
-    expect(pillButtons[0].getAttribute('aria-current')).toBe('page')
-    expect(pillButtons[1].getAttribute('aria-current')).not.toBe('page')
+    // 3 section buttons + 3 Squad pills = 6 total
+    expect(allButtons).toHaveLength(6)
+    const pillButtons = allButtons.filter(b => ['Decision', 'Transfers', 'Optimiser'].includes(b.textContent ?? ''))
+    expect(pillButtons).toHaveLength(3)
+    expect(pillButtons[0].textContent).toBe('Decision')
+    expect(pillButtons[1].textContent).toBe('Transfers')
+    expect(pillButtons[2].textContent).toBe('Optimiser')
+    // Active sub-tab pill (Transfers) has aria-current; others do not
+    expect(pillButtons[0].getAttribute('aria-current')).not.toBe('page')
+    expect(pillButtons[1].getAttribute('aria-current')).toBe('page')
+    expect(pillButtons[2].getAttribute('aria-current')).not.toBe('page')
   })
 
   it('clicking section buttons calls onSectionChange with correct id (NAV-05)', () => {
