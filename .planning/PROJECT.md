@@ -4,7 +4,9 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
-v1.6 (current) completed the Squad Optimiser: the manager sees the best starting 11 + bench order + auto formation from their squad, scored over a configurable 1/3/5 GW horizon. Captain and VC are auto-identified. Transfer-aware mode suggests 1–2 optimal transfers with break-even indicators. Chip modes (Wildcard, Free Hit, Bench Boost) extend the optimiser to the full player pool. The entire engine is client-side TypeScript with no backend changes.
+v1.7 (current) completed the Decision Assistant: the manager sees a single-screen Decision Summary composing captain picks, transfer opportunity cost, chip timing, and risk flags — all with High/Medium/Low severity signals. New engines: Fixture Swing Detector (buy/sell signals from ease delta), CS% per fixture (rolling xGA), explainable xPts breakdown (component hover card), player lifecycle labels (7-label taxonomy beyond Buy/Hold/Sell), and the Transfer Opportunity Cost Simulator (Roll/1-FT/2-FT/Hit comparison with break-even weeks). The Decision tab is now the default Squad landing page.
+
+v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto formation, configurable 1/3/5 GW horizon, transfer-aware mode, and chip modes (Wildcard, Free Hit, Bench Boost).
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
@@ -12,17 +14,9 @@ v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scor
 
 Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
 
-## Current Milestone: v1.7 Decision Assistant
+## Previous State (v1.7 Decision Assistant — SHIPPED 2026-05-02)
 
-**Goal:** Turn the app from an analytics dashboard into a weekly decision engine — answering "what should I actually do with my team this week?" for transfers, captaincy, chips, and bench.
-
-**Target features:**
-- Transfer Opportunity Cost Simulator — compare Roll / 1-FT / 2-FT / Hit across 1/3/5 GW horizons for your actual squad
-- Weekly Decision Summary — one-screen view with captain rec, transfer rec, bench order, chip timing, risks, and opportunities
-- Fixture Swing Detector — teams with materially improving/worsening upcoming fixtures, surfaced as proactive buy/sell signals
-- Player Lifecycle Labels — richer timing advice (Buy next week, Hold one more, Sell soon, Minutes trap, Fixture trap, etc.)
-- Explainable xPts Breakdown — component breakdown of any player's projected score (appearance + goals + assists + CS + DefCon + bonus + minutes risk)
-- Clean Sheet Probability — per-fixture CS% for all teams computed from xGA, improving defensive/GK picks
+v1.7 complete — 5 phases (47-51), 14 plans. Full weekly decision engine shipped. All six target features delivered: Fixture Swing Detector with 1/3/5 GW toggle and owned-player highlighting; CS% per fixture (rolling xGA, DGW combined formula); Explainable xPts Breakdown (CSS-only hover card, 5 components + Total); Player Lifecycle Labels (7-label taxonomy with priority cascade); Transfer Opportunity Cost Simulator (Roll/1-FT/2-FT/Hit table, break-even weeks, named player pairs, auto-FT detection); Weekly Decision Summary composing all engines into 4 severity-badged cards, default Squad landing. See `.planning/milestones/v1.7-ROADMAP.md`.
 
 ---
 
@@ -182,9 +176,18 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 - ✓ ACC-01/02/04 (v1.6): xPts form signal (BLEND_ALPHA=0.4), accuracy gate in pipeline, mid-tier track — v1.6
 - ⚠ ACC-03 (v1.6): Gate logic ships; production hit-rate validation pending live pipeline run — v1.6
 
-### Active (v1.7)
+### Validated (v1.7)
 
-*(requirements to be defined — run /gsd-new-milestone to scope v1.7)*
+- ✓ CS-01/02/03: CS% per fixture from rolling xGA; DGW combined formula; GemTable Analysis column — v1.7
+- ✓ SWG-01/02/03/04: Fixture Swing Detector — buy/sell signals, 1/3/5 GW toggle, owned-player highlight — v1.7
+- ✓ XPT-01/02/03/04: Explainable xPts Breakdown — component hover card (appearance+goals+assists+CS+bonus), sum integrity, CS grounded in fixture — v1.7
+- ✓ LCL-01/02/03: Player Lifecycle Labels — 7-label taxonomy, pure TS over MergedPlayer, priority cascade — v1.7
+- ✓ OCS-01/02/03/04/05: Transfer Opportunity Cost Simulator — Roll/1-FT/2-FT/Hit table, break-even weeks, named pairs, FT count auto-detection — v1.7
+- ✓ WDS-01/02/03/04/05: Weekly Decision Summary — 4-card single screen, priority order, severity badges, no-squad degradation, DGW/BGW context flags — v1.7
+
+### Active (v1.8)
+
+*(requirements to be defined — run /gsd-new-milestone to scope v1.8)*
 
 ### Out of Scope
 
@@ -250,14 +253,16 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 
 **Tech stack:** Next.js 16, React 19, TypeScript, TanStack Table v8, TanStack Query, Tailwind CSS v4, Vitest, immer/use-immer, Python (requests, pandas, soccerdata), Vercel Blob
 
-**Codebase:** ~17,774 LOC (14,372 TypeScript + 3,402 Python), ~200+ files
+**Codebase:** ~21,200 LOC (~17,800 TypeScript + ~3,400 Python), ~320+ files
 
-**What's running (v1.6):**
-- `/` — Gem Ratings tab (default), DefCon tab, Squad tab (Transfers | Optimiser sub-tabs), Club Form tab, Value Gems tab, Set Pieces tab, Insights tab, Accuracy tab
-- `/api/players` — merged FPL+Understat dataset from Vercel Blob
+**What's running (v1.7):**
+- `/` — Gem Ratings tab (default), DefCon tab, Squad tab (Decision | Transfers | Optimiser sub-tabs, Decision is default), Club Form tab, Value Gems tab, Set Pieces tab, Insights tab, Accuracy tab
+- `/api/players` — merged FPL+Understat dataset from Vercel Blob (includes cs_prob_1gw, xPts_components_1gw with appearance_pts)
 - `/api/accuracy` — accuracy backtest data including form signal gate
+- Decision Summary — fully client-side; composes all v1.7 engines into 4-card severity-badged view
 - Squad Optimiser — fully client-side; `optimiseLineup()`, `suggestTransfers()`, `buildOptimalSquad()` all pure TypeScript
-- `pipeline/run.py` — daily refresh via GitHub Actions cron; writes form signal gate to `accuracy_backtest.json`
+- Transfer OCS — `computeOpportunityCostRows()` over `suggestTransfers()` output; Roll/1-FT/2-FT/Hit with break-even
+- `pipeline/run.py` — daily refresh via GitHub Actions cron; writes cs_prob_1gw and appearance_pts to merged_players.json
 
 ---
 
@@ -272,4 +277,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-01 — after v1.6 milestone*
+*Last updated: 2026-05-02 — after v1.7 milestone*

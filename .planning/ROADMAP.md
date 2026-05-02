@@ -9,7 +9,7 @@
 - ✅ **v1.4 Analytics Engine** — Phases 26-35 (shipped 2026-04-29)
 - ✅ **v1.5 UX & Polish** — Phases 36-41 (shipped 2026-04-30)
 - ✅ **v1.6 Squad Optimiser** — Phases 42-46 (shipped 2026-05-01)
-- 🔄 **v1.7 Decision Assistant** — Phases 47-51 (in progress)
+- ✅ **v1.7 Decision Assistant** — Phases 47-51 (shipped 2026-05-02)
 
 ## Phases
 
@@ -96,17 +96,21 @@ See `.planning/milestones/v1.5-ROADMAP.md` for full phase details.
 </details>
 
 <details>
-<summary>🔄 v1.7 Decision Assistant (Phases 47-51) — IN PROGRESS</summary>
+<summary>✅ v1.7 Decision Assistant (Phases 47-51) — SHIPPED 2026-05-02</summary>
 
-- [x] **Phase 47: Fixture Swing Detector & Clean Sheet Probability** — foundation signal engines that unblock phases 48, 49, and 51
-- [x] **Phase 48: Explainable xPts Breakdown** — per-component xPts breakdown card using CS-01 data
-- [x] **Phase 49: Player Lifecycle Labels** — granular timing labels beyond Buy/Hold/Sell, using fixture swing context
-- [x] **Phase 50: Transfer Opportunity Cost Simulator** — Roll/1-FT/2-FT/Hit comparison table across 1/3/5 GW horizons
-- [x] **Phase 51: Weekly Decision Summary** — one-screen decision view composing all preceding v1.7 engines
+See `.planning/milestones/v1.7-ROADMAP.md` for full phase details.
+
+- [x] Phase 47: Fixture Swing Detector & CS Probability — swing signals, cs_prob_1gw, FixtureSwingDetector panel
+- [x] Phase 48: Explainable xPts Breakdown — appearance_pts component, CSS-only hover card on XPtsCell
+- [x] Phase 49: Player Lifecycle Labels — 7-label taxonomy, priority cascade, LifecycleLabelBadge
+- [x] Phase 50: Transfer Opportunity Cost Simulator — Roll/1-FT/2-FT/Hit table, break-even weeks, derivedFtCount
+- [x] Phase 51: Weekly Decision Summary — 4-card Decision tab (default Squad landing), computeDecisionSeverity
 
 </details>
 
 ## Phase Details
+
+_v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
 
 ### Phase 47: Fixture Swing Detector & Clean Sheet Probability
 **Goal**: Users can see which teams have materially improving or worsening fixtures and accurate CS% for every upcoming fixture — giving proactive buy/sell signals and grounding defensive picks in data
