@@ -257,6 +257,20 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
   4. BPS-CS double-counting mitigated (bonus_ev residualised against cs_prob or split by action type)
   5. Model gated behind `bonus_predictor_enabled` flag; accuracy backtest must show non-regression before flag flips ON
 
+
+**Plans**: 3 plans (2 waves)
+  **Wave 1**
+  - [ ] 053-01-PLAN.md — TDD: pipeline/bonus.py (compute_bonus_predictions, shrinkage estimator, BPS-CS residualisation for GK/DEF) + test_bonus.py
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 053-02-PLAN.md — TDD: extend merge.py (_compute_xpts_fixture/_xpts_ngw/_compute_xpts_sigma/merge_players with bonus_predictor_enabled + bonus_ev kwargs); wire run.py compute call + flag read; test_merge_bonus.py + parametrise test_merge_xpts_components.py
+  - [ ] 053-03-PLAN.md — accuracy.py _read_existing_bonus_predictor_flag helper + summary key in compute_accuracy_backtest/_empty_backtest; 3 new tests in test_accuracy.py
+  **Cross-cutting constraints:**
+  - Plan 01 must ship `pipeline/bonus.py` with `compute_bonus_predictions(bootstrap, summaries, finished_gws)` before Plan 02 can import it in run.py
+  - Plans 02 and 03 are parallel-safe (Plan 02 = merge.py + run.py, Plan 03 = accuracy.py + test_accuracy.py — no file overlap)
+  - BONUS_RATE constant at merge.py line 22 must remain unchanged (Pitfall C1: documented fallback for insufficient-sample players)
+  - bonus_predictor_enabled defaults OFF; manual flip after 5-GW shadow run shows non-regression (Phase 52 D-02 mirror)
+**Phase notes**: BPS-CS double-counting mitigated for GK/DEF only via residualisation `max(0, bonus_ev_raw - 0.5 * cs_rate)` using historical clean_sheets from element-summary history rows; MID/FWD use plain shrinkage. Position priors `{1:0.30, 2:0.40, 3:0.60, 4:0.70}` match merge.BONUS_RATE exactly. Recent window = last 10 starts, MIN_STARTS_GATE = 4, SHRINKAGE_K = 12. No new HTTP calls — reuses the shared `summaries` cache fetched in run.py. Sum-integrity tolerance relaxes to ±0.02 when both `xmins_v2_enabled` AND `bonus_predictor_enabled` are ON (Pitfall 3).
+
 ### Phase 54: Price Change Predictor
 **Goal**: Surface daily rise/fall predictions for FPL player prices — with confidence tiers and a progress indicator — so managers can act on team-value gains and avoid holding falling assets
 **Depends on**: Phase 51 (independent of Phases 52-53; no merge.py dependency)
@@ -296,6 +310,6 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
 | 50 | v1.7 | 2/2 | Complete | 2026-05-02 |
 | 51 | v1.7 | 2/2 | Complete | 2026-05-02 |
 | 52 | v1.8 | 0/4 | Planned | — |
-| 53 | v1.8 | — | Not started | — |
+| 53 | v1.8 | 0/3 | Planned | — |
 | 54 | v1.8 | — | Not started | — |
 | 55 | v1.8 | — | Not started | — |
