@@ -10,6 +10,7 @@
 - ✅ **v1.5 UX & Polish** — Phases 36-41 (shipped 2026-04-30)
 - ✅ **v1.6 Squad Optimiser** — Phases 42-46 (shipped 2026-05-01)
 - ✅ **v1.7 Decision Assistant** — Phases 47-51 (shipped 2026-05-02)
+- 🚧 **v1.8 Predictive Intelligence** — Phases 52-55 (in progress)
 
 ## Phases
 
@@ -221,6 +222,49 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
 **Phase notes**: The `resolveDecisionSummary()` priority hierarchy for conflicting engine outputs (e.g., Transfer engine recommends Sell while Verdict engine recommends Hold for the same player) must be fully specced — including the complete conflict matrix — before implementation begins. Hard limit of 4 visible outputs; no inline expansion. Track oldest source timestamp across all composed hooks; surface a "Refresh All" trigger. Decision Summary pinned to 1 GW horizon explicitly labelled, or horizon lifted to shared state — spec must choose before UI design.
 **UI hint**: yes
 
+### Phase 52: xMins Confidence Engine
+**Goal**: Replace the four-bucket rotation label with calibrated per-player probability distributions — `start_prob`, `mins_60_prob`, and a refined `sub_risk_label` — so xPts computes appearance and CS components from real probabilities instead of heuristic buckets
+**Depends on**: Phase 51 (v1.7 complete)
+**Requirements**: MIN-01
+**Success Criteria** (what must be TRUE):
+  1. Every player in `merged_players.json` carries `start_prob` (sharpened, regularised), `mins_60_prob` (Bernoulli P(≥60 min)), and `sub_risk_label` (5-value enum) written by an extended `pipeline/xmins.py`
+  2. `_compute_xpts_fixture` in `merge.py` consumes `mins_60_prob` for CS and appearance scaling, replacing the `min(1.0, xmins/60.0)` approximation
+  3. Backward-compatibility preserved: existing `mins_risk` enum remains on `MergedPlayer`; `sub_risk_label` is an additive field
+  4. Changes to xPts numerics are gated behind `xmins_v2_enabled` flag in `accuracy_backtest.json`, defaulting OFF until a 5-GW shadow-run shows non-regression
+
+### Phase 53: Bonus Point Predictor
+**Goal**: Replace the flat per-position bonus rate constant with a per-player learned bonus EV derived from BPS history, so xPts captures individual bonus-scoring tendencies (top-3 BPS frequency) instead of a position average
+**Depends on**: Phase 52 (sharper mins_60_prob feeds CS/appearance; same merge.py edit window)
+**Requirements**: BPS-01
+**Success Criteria** (what must be TRUE):
+  1. `pipeline/bonus.py` exports `compute_bonus_predictions()` returning per-player `bonus_ev` using a shrinkage estimator (empirical mean blended with position prior, gated at ≥4 starts)
+  2. `merge.py` replaces `BONUS_RATE[element_type]` lookup with per-player EV; flat rate remains as fallback for insufficient-sample players
+  3. `xPts_components_1gw.bonus_pts` sum-integrity preserved: `appearance + goal + assist + cs + bonus == total` within ±0.01
+  4. BPS-CS double-counting mitigated (bonus_ev residualised against cs_prob or split by action type)
+  5. Model gated behind `bonus_predictor_enabled` flag; accuracy backtest must show non-regression before flag flips ON
+
+### Phase 54: Price Change Predictor
+**Goal**: Surface daily rise/fall predictions for FPL player prices — with confidence tiers and a progress indicator — so managers can act on team-value gains and avoid holding falling assets
+**Depends on**: Phase 51 (independent of Phases 52-53; no merge.py dependency)
+**Requirements**: PRC-01
+**Success Criteria** (what must be TRUE):
+  1. `pipeline/price_changes.py` computes per-player `direction` (rise/fall/stable), `confidence_pct`, and `eta_days` from cumulative net-transfer snapshots; `price_changes_snapshot.json` persists daily state
+  2. `/api/price-changes` route (USE_BLOB toggle, 30-min cache) serves `price_changes.json`; `usePriceChanges` hook (30-min staleTime) exposes the data
+  3. `PriceChangePanel` displays predictions grouped by HIGH/MEDIUM/LOW confidence; surfaced under the Analyse section
+  4. Panel shows "early data" flag until ≥14 days of snapshots are available; badges suppressed below 70% precision threshold
+  5. Cold-start handled: `price_changes.json` seeded to `{ predictions: [] }` so the route never 500s on fresh checkout
+
+### Phase 55: Bench Order Optimiser
+**Goal**: Suggest an autosub-optimal bench ordering (positions 1–3 outfield + GK slot) weighted by start_prob × xPts EV and respecting FPL formation-legality constraints — so the manager's bench actually maximises expected points captured via autosubs
+**Depends on**: Phase 52 (consumes sharpened `start_prob` from MIN-01)
+**Requirements**: BENCH-01
+**Success Criteria** (what must be TRUE):
+  1. `benchOrder()` exported from `optimise-lineup.ts` ranks outfield bench slots by `start_prob × xPts_{horizon}` EV, with GK fixed at bench[0]
+  2. Formation-legality validator reused from `optimiseLineup` — never suggests an order where the top autosub candidate would be skipped due to formation rules
+  3. BGW bench players (no fixture this GW) sorted to slot 3 regardless of xPts; DGW bench players correctly double-weighted
+  4. BB chip mode detected: panel shows "Bench order doesn't affect score with Bench Boost active"
+  5. `optimise-lineup.test.ts` covers: formation-locked slot-1 selection, BGW-to-slot-3 rule, DGW double-weight, BB bypass
+
 ## Progress
 
 | Phase | Milestone | Plans | Status | Completed |
@@ -237,3 +281,7 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
 | 49 | v1.7 | 2/2 | Complete | 2026-05-02 |
 | 50 | v1.7 | 2/2 | Complete | 2026-05-02 |
 | 51 | v1.7 | 2/2 | Complete | 2026-05-02 |
+| 52 | v1.8 | — | Not started | — |
+| 53 | v1.8 | — | Not started | — |
+| 54 | v1.8 | — | Not started | — |
+| 55 | v1.8 | — | Not started | — |
