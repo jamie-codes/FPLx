@@ -488,6 +488,28 @@ export interface SetPieceChanges {
   teams: SetPieceTeam[]
 }
 
+// Price change predictions (Phase 54 PRC-01 — pipeline/cache/price_changes.json)
+export type PriceDirection = 'rise' | 'fall' | 'stable'
+
+export interface PriceChangePrediction {
+  player_id: number
+  name: string             // web_name from bootstrap
+  team: string             // team_short_name (e.g. "ARS")
+  now_cost: number         // tenths of £1m (e.g. 91 = £9.1m)
+  direction: PriceDirection
+  confidence_pct: number   // 0–100; clamp(cumulative_net / threshold, 0, 1) × 100
+  eta_days: number         // 0 = "Tonight"; max(0, threshold - net) / avg_velocity
+  cumulative_net: number   // raw cumulative net transfers since last price change
+  selected_by_percent: string  // FPL string e.g. "12.5"
+}
+
+export interface PriceChanges {
+  generated_at: string     // ISO 8601 timestamp
+  current_gw: number       // bootstrap['events']['current']['id'] or 0
+  snapshot_days: number    // count of distinct ISO dates; < 14 = "early data" (D-06)
+  predictions: PriceChangePrediction[]  // empty array on cold start (D-05)
+}
+
 // Captain picks data (Phase 31 CAP-03/CAP-04 — pipeline writes pipeline/cache/captain_picks.json)
 export interface CaptainPick {
   id: number
