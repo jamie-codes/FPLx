@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, Component } from 'react'
+import type { ReactNode, ErrorInfo } from 'react'
 import { GemTable } from '@/components/gem-table/GemTable'
 import type { ViewPreset } from '@/components/gem-table/GwToggle'
 import type { ScoredPlayer } from '@/lib/types'
@@ -21,6 +22,26 @@ import { InsightsTab } from '@/components/insights/InsightsTab'
 import { AccuracyTab } from '@/components/accuracy/AccuracyTab'
 import { OptimiserPanel } from '@/components/optimiser/OptimiserPanel'
 import { DecisionSummaryTab } from '@/components/squad/DecisionSummaryTab'
+
+class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { error: null }
+  }
+  static getDerivedStateFromError(error: Error) { return { error } }
+  componentDidCatch(error: Error, info: ErrorInfo) { console.error('[DecisionSummaryTab crash]', error, info) }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="rounded border border-red-300 bg-red-50 dark:bg-red-950 p-4 m-4 text-sm text-red-700 dark:text-red-300 space-y-1">
+          <p className="font-semibold">Decision tab error — please report this message:</p>
+          <pre className="whitespace-pre-wrap break-all text-xs">{this.state.error.message}</pre>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 export type Section = 'analyse' | 'plan' | 'squad'
 export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'club-form' | 'value-gems' | 'accuracy' | 'decision' | 'transfers' | 'optimiser'
@@ -150,12 +171,14 @@ export default function Home() {
 
         {/* Tab content — squad guards on section + sub-tab; others guard on sub-tab AND non-squad section */}
         {activeSection === 'squad' && activeSubTab === 'decision' && (
-          <DecisionSummaryTab
-            teamId={teamId}
-            onTeamIdChange={setTeamId}
-            submittedId={submittedId}
-            onSubmit={handleTeamIdSubmit}
-          />
+          <DecisionErrorBoundary>
+            <DecisionSummaryTab
+              teamId={teamId}
+              onTeamIdChange={setTeamId}
+              submittedId={submittedId}
+              onSubmit={handleTeamIdSubmit}
+            />
+          </DecisionErrorBoundary>
         )}
         {activeSection === 'squad' && activeSubTab === 'transfers' && (
           <TransferPanel
