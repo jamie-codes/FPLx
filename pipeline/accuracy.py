@@ -19,6 +19,8 @@ functions, private helpers prefixed with _. No HTTP calls, no file I/O — pure
 transform over the inputs handed in by run.py.
 """
 
+import json
+import os
 from collections import defaultdict
 from datetime import datetime, timezone
 
@@ -34,6 +36,22 @@ FORM_WINDOW_GWS = 5          # Phase 42 ACC-01: same window as merge._compute_fo
 FORM_MIN_MINUTES = 270       # Phase 42 ACC-01: same minutes floor as merge._compute_form_signal default
 
 
+def _read_existing_xmins_v2_flag(cache_dir: str) -> bool:
+    """Phase 52 D-02: preserve xmins_v2_enabled across backtest runs.
+
+    Until accuracy.py runs a parallel shadow path (deferred), the gate value is set
+    once (manually flipped to True after a successful 5-GW shadow run) and preserved
+    on subsequent backtests. Default False on cold start (file missing/malformed).
+    """
+    try:
+        path = os.path.join(cache_dir, 'accuracy_backtest.json')
+        with open(path, 'r', encoding='utf-8') as f:
+            prev = json.load(f)
+        return bool(prev.get('summary', {}).get('xmins_v2_enabled', False))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return False
+
+
 # ============================================================================
 # Public API
 # ============================================================================
@@ -43,6 +61,7 @@ def compute_accuracy_backtest(
     finished_gws: int,
     bootstrap: dict,
     fixtures: list,
+    cache_dir: str = '',
 ) -> dict:
     """Compute pre-aggregated accuracy backtest for the last 5 finished GWs.
 
@@ -263,6 +282,12 @@ def compute_accuracy_backtest(
     # Phase 42 ACC-03: gate flag — blended must beat baseline by STRICTLY MORE THAN GATE_MARGIN_PP (2pp). Strict `>` per PATTERNS.md and RESEARCH.md Pitfall 3 (anti-flap).
     form_signal_enabled = (overall_xpts_blended_hit - overall_xpts_hit) > GATE_MARGIN_PP
 
+    # Phase 52 D-02: xmins_v2_enabled gate — flip condition is non-regression on xPts hit-rate.
+    # Until a parallel shadow-run path is added to accuracy.py (deferred), preserve the existing
+    # flag value if present (so a manually-flipped True survives subsequent backtests). Default False.
+    # This matches the bootstrap/cold-start behavior of form_signal_enabled.
+    xmins_v2_enabled = _read_existing_xmins_v2_flag(cache_dir)
+
     return {
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'gws_covered': target_gws_desc,
@@ -270,6 +295,7 @@ def compute_accuracy_backtest(
             'xpts_hit_rate': round(overall_xpts_hit, 4),
             'xpts_blended_hit_rate': round(overall_xpts_blended_hit, 4),         # Phase 42 ACC-02
             'form_signal_enabled': form_signal_enabled,                          # Phase 42 ACC-03
+            'xmins_v2_enabled': xmins_v2_enabled,                               # Phase 52 D-02: gate for _cs_prob mins_60_prob swap; preserved across runs once flipped
             'blend_alpha_used': BLEND_ALPHA,                                     # Phase 42 ACC-03
             'mid_tier_hit_rate': round(overall_mid_tier_hit, 4),                 # Phase 42 ACC-04
             'mid_tier_blended_hit_rate': round(overall_mid_tier_blended_hit, 4), # Phase 42 ACC-04
@@ -316,6 +342,7 @@ def _empty_backtest() -> dict:
             'xpts_hit_rate': 0.0,
             'xpts_blended_hit_rate': 0.0,             # Phase 42
             'form_signal_enabled': False,             # Phase 42
+            'xmins_v2_enabled': False,                # Phase 52
             'blend_alpha_used': BLEND_ALPHA,          # Phase 42
             'mid_tier_hit_rate': 0.0,                 # Phase 42
             'mid_tier_blended_hit_rate': 0.0,         # Phase 42

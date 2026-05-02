@@ -229,7 +229,7 @@ def run(dry_run: bool = False):
 
         # Phase 40 / ACC-01: Accuracy backtest + predictions snapshot
         print("Computing accuracy backtest...")
-        backtest_data = compute_accuracy_backtest(summaries, finished_gws, bootstrap, fixtures)
+        backtest_data = compute_accuracy_backtest(summaries, finished_gws, bootstrap, fixtures, cache_dir=cache_dir)
         save('accuracy_backtest.json', backtest_data)
         print(f"Accuracy backtest: {len(backtest_data.get('gws_covered', []))} GWs covered, "
               f"{len(backtest_data.get('haulters', []))} haulter entries")
