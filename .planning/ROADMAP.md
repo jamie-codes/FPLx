@@ -101,7 +101,7 @@ See `.planning/milestones/v1.5-ROADMAP.md` for full phase details.
 - [x] **Phase 47: Fixture Swing Detector & Clean Sheet Probability** — foundation signal engines that unblock phases 48, 49, and 51
 - [x] **Phase 48: Explainable xPts Breakdown** — per-component xPts breakdown card using CS-01 data
 - [x] **Phase 49: Player Lifecycle Labels** — granular timing labels beyond Buy/Hold/Sell, using fixture swing context
-- [ ] **Phase 50: Transfer Opportunity Cost Simulator** — Roll/1-FT/2-FT/Hit comparison table across 1/3/5 GW horizons
+- [x] **Phase 50: Transfer Opportunity Cost Simulator** — Roll/1-FT/2-FT/Hit comparison table across 1/3/5 GW horizons
 - [ ] **Phase 51: Weekly Decision Summary** — one-screen decision view composing all preceding v1.7 engines
 
 </details>
@@ -185,9 +185,9 @@ See `.planning/milestones/v1.5-ROADMAP.md` for full phase details.
   5. Hit options are clearly labelled with the 4pt cost deducted, and the current free transfer count (1 or 2 FTs) is reflected — options requiring a hit are flagged as such
 **Plans**: 2 plans (2 waves)
   **Wave 1**
-  - [ ] 050-01-PLAN.md — TDD: src/lib/opportunity-cost.ts + opportunity-cost.test.ts (computeOpportunityCostRows pure mapper, OCSRowKind/OCSRow/MARGINAL_THRESHOLD exports, 16 test cases for OCS-01/02/04/05)
+  - [x] 050-01-PLAN.md — TDD: src/lib/opportunity-cost.ts + opportunity-cost.test.ts (computeOpportunityCostRows pure mapper, OCSRowKind/OCSRow/MARGINAL_THRESHOLD exports, 16 test cases for OCS-01/02/04/05)
   **Wave 2** *(blocked on Wave 1 completion)*
-  - [ ] 050-02-PLAN.md — OpportunityCostTable component + TransferPanel wiring (ocsHorizon/ocsFtCount state, derivedFtCount from event_transfers + active_chip, suggestTransfers call, FtToggle + GwToggle in section header) + human-verify checkpoint
+  - [x] 050-02-PLAN.md — OpportunityCostTable component + TransferPanel wiring (ocsHorizon/ocsFtCount state, derivedFtCount from event_transfers + active_chip, suggestTransfers call, FtToggle + GwToggle in section header) + human-verify checkpoint
   **Cross-cutting constraints:**
   - `computeOpportunityCostRows`, `OCSRow`, `OCSRowKind`, `MARGINAL_THRESHOLD` must exist (Plan 01) before OpportunityCostTable can render and TransferPanel can compose (Plan 02)
   - Existing `computeTransferSuggestions()` "Suggested Transfers" block in TransferPanel is preserved unchanged — OCS is additive (RESEARCH.md §UI Placement Decision)
