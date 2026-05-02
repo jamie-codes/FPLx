@@ -119,7 +119,7 @@ def _compute_difficulty_scores(bootstrap: dict, fixtures: list) -> dict[int, flo
 
 
 
-def _cs_prob(defensive_difficulty: float, xmins: float) -> float:
+def _cs_prob(defensive_difficulty: float, xmins: float, mins_60_prob: float | None = None) -> float:
     """Compute effective CS probability for a fixture (Phase 28 CR-01, WR-01).
 
     defensive_difficulty — opponent's attacking threat (0.0=weak attacker, 1.0=strong).
@@ -132,9 +132,17 @@ def _cs_prob(defensive_difficulty: float, xmins: float) -> float:
       dd=1.0 → cs_prob_raw = 0.10 (poor CS chance)
 
     xmins scales down when expected minutes < 60 (FPL awards CS pts at 60+ min only).
+
+    Phase 52 D-01: when mins_60_prob is provided, it replaces min(1.0, xmins/60.0) as the
+    mins_factor (semantically correct — mins_60_prob IS P(player earns CS pts)). When None
+    or omitted, the existing xmins-based formula is used unchanged (backward compatible).
+    The decision to pass mins_60_prob lives at the call site (Plan 03).
     """
     cs_prob_raw = max(0.10, min(0.65, 0.40 - defensive_difficulty * 0.30))
-    mins_factor = min(1.0, xmins / 60.0)
+    if mins_60_prob is not None:
+        mins_factor = mins_60_prob
+    else:
+        mins_factor = min(1.0, xmins / 60.0)
     return cs_prob_raw * mins_factor
 
 
@@ -426,6 +434,12 @@ def _compute_regression_signal(
     if not history:
         return None, None
 
+    # Qualification check: total season minutes across full history (not just the window).
+    # 900-min threshold requires ~10 starts — ensures meaningful xG/xA sample.
+    season_mins = sum(h.get('minutes', 0) for h in history)
+    if season_mins < min_minutes:
+        return None, None
+
     history_sorted = sorted(history, key=lambda h: h['round'])
 
     unique_rounds = sorted({h['round'] for h in history_sorted})
@@ -433,10 +447,6 @@ def _compute_regression_signal(
 
     window = [h for h in history_sorted if h['round'] in last_rounds]
     played = [h for h in window if h.get('minutes', 0) > 0]
-
-    total_mins = sum(h['minutes'] for h in played)
-    if total_mins < min_minutes:
-        return None, None
 
     n = len(played)
     if n == 0:
