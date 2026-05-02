@@ -14,6 +14,18 @@ v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scor
 
 Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
 
+## Current Milestone: v1.8 Predictive Intelligence
+
+**Goal:** Make every recommendation smarter by replacing flat-rate assumptions with per-player probability models — richer xMins, learned bonus EV, price velocity signals, and autosub-aware bench ordering.
+
+**Target features:**
+- MIN-01: xMins Confidence Engine — start_prob + mins_60_prob + sub-risk detection; extends existing xmins.py pipeline module
+- BPS-01: Bonus Point Predictor — per-player bonus EV from BPS data; replaces flat BONUS_RATE; adds bonus_pts to xPts_components_1gw
+- PRC-01: Price Change Predictor — net transfer velocity tracker; rise/fall prediction with confidence and timing; new pipeline/price_changes.py
+- BENCH-01: Bench Order Optimiser — autosub-legal bench ordering with start probability weighting; pure TS extension of optimise-lineup.ts
+
+---
+
 ## Previous State (v1.7 Decision Assistant — SHIPPED 2026-05-02)
 
 v1.7 complete — 5 phases (47-51), 14 plans. Full weekly decision engine shipped. All six target features delivered: Fixture Swing Detector with 1/3/5 GW toggle and owned-player highlighting; CS% per fixture (rolling xGA, DGW combined formula); Explainable xPts Breakdown (CSS-only hover card, 5 components + Total); Player Lifecycle Labels (7-label taxonomy with priority cascade); Transfer Opportunity Cost Simulator (Roll/1-FT/2-FT/Hit table, break-even weeks, named player pairs, auto-FT detection); Weekly Decision Summary composing all engines into 4 severity-badged cards, default Squad landing. See `.planning/milestones/v1.7-ROADMAP.md`.
@@ -187,7 +199,7 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 
 ### Active (v1.8)
 
-*(requirements to be defined — run /gsd-new-milestone to scope v1.8)*
+*(requirements being defined — see REQUIREMENTS.md)*
 
 ### Out of Scope
 
