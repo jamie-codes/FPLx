@@ -34,12 +34,12 @@ const BADGE_MAP: Record<Exclude<MinsRisk, 'injured'>, Config> = {
   },
 }
 
-export function getMinsRiskConfig(minsRisk: MinsRisk): Config | null {
+export function getMinsRiskConfig(minsRisk: MinsRisk | undefined): Config | null {
   if (!minsRisk || minsRisk === 'injured') return null
   return BADGE_MAP[minsRisk] ?? null
 }
 
-export function MinsRiskBadge({ minsRisk }: { minsRisk: MinsRisk }) {
+export function MinsRiskBadge({ minsRisk }: { minsRisk: MinsRisk | undefined }) {
   const config = getMinsRiskConfig(minsRisk)
   if (!config) return null
   return (
