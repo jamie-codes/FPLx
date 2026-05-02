@@ -22,7 +22,7 @@ describe('PriceChangePanel', () => {
   it('renders the loading state when isLoading=true', () => {
     setHook({ data: undefined, isLoading: true, error: undefined })
     render(<PriceChangePanel />)
-    expect(screen.getByText(/Loading price change predictions/i)).toBeInTheDocument()
+    expect(screen.getByText(/Loading price change predictions/i)).toBeTruthy()
   })
 
   it('renders empty state when predictions list is empty', () => {
@@ -32,7 +32,7 @@ describe('PriceChangePanel', () => {
       error: undefined,
     })
     render(<PriceChangePanel />)
-    expect(screen.getByText(/No price change data yet/i)).toBeInTheDocument()
+    expect(screen.getByText(/No price change data yet/i)).toBeTruthy()
   })
 
   it('renders rise section before fall section', () => {
