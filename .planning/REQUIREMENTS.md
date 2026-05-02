@@ -44,8 +44,8 @@
 
 ### Weekly Decision Summary
 
-- [ ] **WDS-01**: User sees captain recommendation, transfer recommendation, bench order, chip timing flag, and risk flags on a single screen — no tab-hopping required
-- [ ] **WDS-02**: Recommendations are presented in priority order: captain → transfer → bench → chip timing → risks
+- [ ] **WDS-01**: User sees captain recommendation, transfer recommendation, chip timing flag, and risk flags on a single screen — no tab-hopping required
+- [ ] **WDS-02**: Recommendations are presented in priority order: captain → transfer → chip timing → risks
 - [ ] **WDS-03**: Each recommendation carries a severity signal (High / Medium / Low) so the manager knows what to act on urgently
 - [ ] **WDS-04**: Screen degrades gracefully when no squad is loaded — shows captain picks and chip timing cards; hides transfer and bench recommendations
 - [ ] **WDS-05**: DGW or BGW context flag is shown when the upcoming gameweek is a double or blank, affecting the relevance of chip recommendations

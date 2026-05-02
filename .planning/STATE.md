@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: milestone
-status: Phase 50 complete — Phase 51 (Weekly Decision Summary) next
-stopped_at: Completed 050-02-PLAN.md
-last_updated: "2026-05-02T01:30:00.000Z"
+status: v1.7 Decision Assistant milestone complete — all 5 phases shipped
+stopped_at: Phase 51 complete (2026-05-02)
+last_updated: "2026-05-02T00:00:00.000Z"
 progress:
   total_phases: 5
-  completed_phases: 4
-  total_plans: 12
-  completed_plans: 12
+  completed_phases: 5
+  total_plans: 14
+  completed_plans: 14
   percent: 100
 ---
 
@@ -30,7 +30,7 @@ Previous milestone: v1.6 Squad Optimiser (Phases 42-46, shipped 2026-05-01)
 
 Progress: [████░░░░░░] 80% (4/5 phases)
 
-Next action: `/gsd-execute-phase 51` — execute Phase 51 (Weekly Decision Summary)
+Next action: `/gsd-execute-phase 51` — execute Phase 51 (Weekly Decision Summary) — 2 plans ready
 
 ## Performance Metrics
 
@@ -48,7 +48,7 @@ Next action: `/gsd-execute-phase 51` — execute Phase 51 (Weekly Decision Summa
 | 48 | Explainable xPts Breakdown | 3 | Complete | 2026-05-01 |
 | 49 | Player Lifecycle Labels | 2 | Complete | 2026-05-02 |
 | 50 | Transfer Opportunity Cost Simulator | 2 | Complete | 2026-05-02 |
-| 51 | Weekly Decision Summary | TBD | Not started | - |
+| 51 | Weekly Decision Summary | 2 | Planned | - |
 
 *Updated after each plan completion*
 

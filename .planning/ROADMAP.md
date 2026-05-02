@@ -102,7 +102,7 @@ See `.planning/milestones/v1.5-ROADMAP.md` for full phase details.
 - [x] **Phase 48: Explainable xPts Breakdown** — per-component xPts breakdown card using CS-01 data
 - [x] **Phase 49: Player Lifecycle Labels** — granular timing labels beyond Buy/Hold/Sell, using fixture swing context
 - [x] **Phase 50: Transfer Opportunity Cost Simulator** — Roll/1-FT/2-FT/Hit comparison table across 1/3/5 GW horizons
-- [ ] **Phase 51: Weekly Decision Summary** — one-screen decision view composing all preceding v1.7 engines
+- [x] **Phase 51: Weekly Decision Summary** — one-screen decision view composing all preceding v1.7 engines
 
 </details>
 
@@ -196,16 +196,24 @@ See `.planning/milestones/v1.5-ROADMAP.md` for full phase details.
 **UI hint**: yes
 
 ### Phase 51: Weekly Decision Summary
-**Goal**: Users see captain recommendation, transfer recommendation, bench order, chip timing flag, and risk flags on a single screen — no tab-hopping required — with a clear priority order and severity signals
+**Goal**: Users see captain recommendation, transfer recommendation, chip timing flag, and risk flags on a single screen — no tab-hopping required — with a clear priority order and severity signals
 **Depends on**: Phases 47, 48, 49, 50 (composites all preceding v1.7 engines)
 **Requirements**: WDS-01, WDS-02, WDS-03, WDS-04, WDS-05
 **Success Criteria** (what must be TRUE):
-  1. A user with a squad loaded can view all five weekly decision types (captain, transfer, bench order, chip timing, risk flags) on a single screen without navigating to any other tab
-  2. Recommendations appear in priority order: captain first, then transfer, then bench, then chip timing, then risks — so the most time-sensitive action is always at the top
+  1. A user with a squad loaded can view all four weekly decision types (captain, transfer, chip timing, risk flags) on a single screen without navigating to any other tab
+  2. Recommendations appear in priority order: captain first, then transfer, then chip timing, then risks — so the most time-sensitive action is always at the top
   3. Each recommendation card carries a severity badge (High / Medium / Low) indicating urgency
   4. When no squad is loaded, the screen degrades gracefully — captain picks and chip timing cards remain visible; transfer and bench cards are hidden with an explanatory prompt
   5. When the upcoming gameweek is a DGW or BGW, a context flag is shown on the chip timing card affecting the recommendation framing
-**Plans**: TBD
+**Plans**: 2 plans (2 waves)
+  **Wave 1**
+  - [x] 051-01-PLAN.md — TDD: src/lib/decision-severity.ts + decision-severity.test.ts (computeDecisionSeverity pure function for WDS-03/WDS-05; SeverityLevel/DecisionSeverity/ComputeDecisionSeverityArgs exports; 21 test cases covering captain >= 2x boundary, transfer/risk shared rule, chip DGW/BGW HIGH gate)
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [x] 051-02-PLAN.md — DecisionSummaryTab component composing v1.7 engines (4 cards: Captain/Transfer/Chip/Risk) + page.tsx wiring (Decision sub-tab as default Squad landing — D-10) + human-verify checkpoint
+  **Cross-cutting constraints:**
+  - `computeDecisionSeverity`, `SeverityLevel`, `DecisionSeverity` must exist (Plan 01) before DecisionSummaryTab can import the rule classifier and drive its four severity badges (Plan 02)
+  - DecisionSummaryTab MUST receive identical props to TransferPanel (Phase 43 D-11): `{ teamId, onTeamIdChange, submittedId, onSubmit }`
+  - The OCS table inside the Transfer card is mounted with `horizon={1}` and `derivedFtCount` — no FtToggle/GwToggle in this card (CONTEXT.md D-05/D-06/D-09)
 **Phase notes**: The `resolveDecisionSummary()` priority hierarchy for conflicting engine outputs (e.g., Transfer engine recommends Sell while Verdict engine recommends Hold for the same player) must be fully specced — including the complete conflict matrix — before implementation begins. Hard limit of 4 visible outputs; no inline expansion. Track oldest source timestamp across all composed hooks; surface a "Refresh All" trigger. Decision Summary pinned to 1 GW horizon explicitly labelled, or horizon lifted to shared state — spec must choose before UI design.
 **UI hint**: yes
 
@@ -223,5 +231,5 @@ See `.planning/milestones/v1.5-ROADMAP.md` for full phase details.
 | 47 | v1.7 | 5/5 | Complete | 2026-05-01 |
 | 48 | v1.7 | 3/3 | Complete | 2026-05-01 |
 | 49 | v1.7 | 2/2 | Complete | 2026-05-02 |
-| 50 | v1.7 | 0/2 | Planned | - |
-| 51 | v1.7 | 0/TBD | Not started | - |
+| 50 | v1.7 | 2/2 | Complete | 2026-05-02 |
+| 51 | v1.7 | 2/2 | Complete | 2026-05-02 |
