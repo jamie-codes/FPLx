@@ -94,7 +94,7 @@ def compute_accuracy_backtest(
     """
     # D-01: identify last 5 finished GWs
     if finished_gws < 1:
-        return _empty_backtest()
+        return _empty_backtest(cache_dir)
     target_gws = list(range(max(1, finished_gws - BACKTEST_GWS + 1), finished_gws + 1))
     target_gws_desc = sorted(target_gws, reverse=True)
 
@@ -352,20 +352,24 @@ def build_predictions_snapshot(merged: list, current_gw: int) -> dict:
 # Private helpers
 # ============================================================================
 
-def _empty_backtest() -> dict:
-    """Return an empty but well-shaped backtest (used when no GWs are finished)."""
+def _empty_backtest(cache_dir: str = '') -> dict:
+    """Return an empty but well-shaped backtest (used when no GWs are finished).
+
+    Reads existing flag values from cache_dir so manually-flipped True values
+    are not silently overwritten when finished_gws < 1 (CR-01 fix).
+    """
     return {
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'gws_covered': [],
         'summary': {
             'xpts_hit_rate': 0.0,
-            'xpts_blended_hit_rate': 0.0,             # Phase 42
-            'form_signal_enabled': False,             # Phase 42
-            'xmins_v2_enabled': False,                # Phase 52
-            'bonus_predictor_enabled': False,         # Phase 53
-            'blend_alpha_used': BLEND_ALPHA,          # Phase 42
-            'mid_tier_hit_rate': 0.0,                 # Phase 42
-            'mid_tier_blended_hit_rate': 0.0,         # Phase 42
+            'xpts_blended_hit_rate': 0.0,                                       # Phase 42
+            'form_signal_enabled': False,                                        # Phase 42
+            'xmins_v2_enabled': _read_existing_xmins_v2_flag(cache_dir),        # Phase 52
+            'bonus_predictor_enabled': _read_existing_bonus_predictor_flag(cache_dir),  # Phase 53
+            'blend_alpha_used': BLEND_ALPHA,                                     # Phase 42
+            'mid_tier_hit_rate': 0.0,                                            # Phase 42
+            'mid_tier_blended_hit_rate': 0.0,                                    # Phase 42
             'gws': [],
         },
         'haulters': [],
