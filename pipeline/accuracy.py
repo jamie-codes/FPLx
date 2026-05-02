@@ -52,6 +52,23 @@ def _read_existing_xmins_v2_flag(cache_dir: str) -> bool:
         return False
 
 
+def _read_existing_bonus_predictor_flag(cache_dir: str) -> bool:
+    """Phase 53 BPS-01: preserve bonus_predictor_enabled across backtest runs.
+
+    Until accuracy.py runs a parallel shadow path for the bonus model (deferred),
+    the gate value is set once (manually flipped to True after a successful 5-GW
+    shadow run) and preserved on subsequent backtests. Default False on cold start
+    (file missing/malformed).
+    """
+    try:
+        path = os.path.join(cache_dir, 'accuracy_backtest.json')
+        with open(path, 'r', encoding='utf-8') as f:
+            prev = json.load(f)
+        return bool(prev.get('summary', {}).get('bonus_predictor_enabled', False))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return False
+
+
 # ============================================================================
 # Public API
 # ============================================================================
@@ -287,6 +304,7 @@ def compute_accuracy_backtest(
     # flag value if present (so a manually-flipped True survives subsequent backtests). Default False.
     # This matches the bootstrap/cold-start behavior of form_signal_enabled.
     xmins_v2_enabled = _read_existing_xmins_v2_flag(cache_dir)
+    bonus_predictor_enabled = _read_existing_bonus_predictor_flag(cache_dir)  # Phase 53 BPS-01
 
     return {
         'generated_at': datetime.now(timezone.utc).isoformat(),
@@ -296,6 +314,7 @@ def compute_accuracy_backtest(
             'xpts_blended_hit_rate': round(overall_xpts_blended_hit, 4),         # Phase 42 ACC-02
             'form_signal_enabled': form_signal_enabled,                          # Phase 42 ACC-03
             'xmins_v2_enabled': xmins_v2_enabled,                               # Phase 52 D-02: gate for _cs_prob mins_60_prob swap; preserved across runs once flipped
+            'bonus_predictor_enabled': bonus_predictor_enabled,                  # Phase 53 BPS-01: gate for per-player bonus EV; preserved across runs once flipped
             'blend_alpha_used': BLEND_ALPHA,                                     # Phase 42 ACC-03
             'mid_tier_hit_rate': round(overall_mid_tier_hit, 4),                 # Phase 42 ACC-04
             'mid_tier_blended_hit_rate': round(overall_mid_tier_blended_hit, 4), # Phase 42 ACC-04
@@ -343,6 +362,7 @@ def _empty_backtest() -> dict:
             'xpts_blended_hit_rate': 0.0,             # Phase 42
             'form_signal_enabled': False,             # Phase 42
             'xmins_v2_enabled': False,                # Phase 52
+            'bonus_predictor_enabled': False,         # Phase 53
             'blend_alpha_used': BLEND_ALPHA,          # Phase 42
             'mid_tier_hit_rate': 0.0,                 # Phase 42
             'mid_tier_blended_hit_rate': 0.0,         # Phase 42
