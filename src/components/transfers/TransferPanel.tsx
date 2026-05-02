@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useSquad } from '@/lib/hooks/useSquad'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
@@ -16,6 +16,13 @@ import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
 import { CaptaincyPanel } from '@/components/captaincy/CaptaincyPanel'
 import { AuthModal } from '@/components/transfers/AuthModal'
 import { computeAuthExpiryState } from '@/lib/auth-expiry'
+import { suggestTransfers } from '@/lib/suggest-transfers'
+import { computeOpportunityCostRows } from '@/lib/opportunity-cost'
+import type { OCSRow } from '@/lib/opportunity-cost'
+import type { OptimiserHorizon, TransferSuggestion } from '@/lib/types'
+import { FtToggle } from '@/components/optimiser/FtToggle'
+import { GwToggle } from '@/components/gem-table/GwToggle'
+import { OpportunityCostTable } from '@/components/transfers/OpportunityCostTable'
 
 // Phase 43 D-11: teamId / submittedId / onSubmit lifted to page.tsx so OptimiserPanel
 // can receive teamId via props and share the useSquad cache. freeTransfers + isModalOpen
@@ -30,6 +37,8 @@ interface TransferPanelProps {
 export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }: TransferPanelProps) {
   const [freeTransfers, setFreeTransfers] = useState<number>(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [ocsHorizon, setOcsHorizon] = useState<OptimiserHorizon>(1)
+  const [ocsFtCount, setOcsFtCount] = useState<1 | 2>(1)
 
   const { data: squadData, isLoading: squadLoading, error: squadError } = useSquad(submittedId)
   const { data: playersData, isLoading: playersLoading } = usePlayers()
@@ -74,6 +83,34 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
     if (!myTeamData) return new Map<number, number>()
     return new Map(myTeamData.picks.map(p => [p.element, p.selling_price]))
   }, [myTeamData])
+
+  const derivedFtCount: 1 | 2 = useMemo(() => {
+    if (!isAuthenticated || !myTeamData) return 1
+    const chip = squadData?.active_chip
+    if (chip === 'wildcard' || chip === 'freehit') return 1
+    return myTeamData.entry_history.event_transfers === 0 ? 2 : 1
+  }, [isAuthenticated, myTeamData, squadData])
+
+  useEffect(() => {
+    setOcsFtCount(derivedFtCount)
+  }, [derivedFtCount])
+
+  const ocsSuggestions: TransferSuggestion[] = useMemo(() => {
+    if (!squadData || scoredPlayers.length === 0) return []
+    return suggestTransfers({
+      currentPicks: squadData.picks,
+      players: scoredPlayers,
+      horizon: ocsHorizon,
+      ftCount: ocsFtCount,
+      bank: squadData.entry_history.bank,
+      sellPrices: exactSellPrices,
+    })
+  }, [squadData, scoredPlayers, ocsHorizon, ocsFtCount, exactSellPrices])
+
+  const ocsRows: OCSRow[] = useMemo(
+    () => computeOpportunityCostRows(ocsSuggestions, ocsFtCount),
+    [ocsSuggestions, ocsFtCount],
+  )
 
   const effectiveEntryHistory = (isAuthenticated && myTeamData)
     ? myTeamData.entry_history
@@ -258,6 +295,25 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
               week.
             </div>
           )}
+
+          {/* OCS section */}
+          <div className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                Transfer Opportunity Cost
+              </h2>
+              <div className="flex flex-wrap items-center gap-3">
+                <FtToggle value={ocsFtCount} onChange={setOcsFtCount} />
+                <GwToggle value={ocsHorizon} onChange={setOcsHorizon} />
+              </div>
+            </div>
+            {isAuthenticated && myTeamData && (
+              <p className="text-xs text-zinc-400 dark:text-zinc-500 italic">
+                Detected from your FPL team — override if needed.
+              </p>
+            )}
+            <OpportunityCostTable rows={ocsRows} horizon={ocsHorizon} />
+          </div>
 
           {/* Transfer suggestions */}
           {transferResult?.type === 'SUGGESTIONS' && transferResult.suggestions && (
