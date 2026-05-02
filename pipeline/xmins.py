@@ -2,6 +2,9 @@
 
 import statistics
 
+# Phase 52 D-06: position-prior fallback for new signings / post-injury return
+POSITION_PRIOR = {1: 0.90, 2: 0.75, 3: 0.65, 4: 0.60}
+
 
 def compute_xmins_stats(bootstrap: dict, summaries: dict, finished_gws: int) -> dict:
     """
@@ -35,22 +38,42 @@ def _compute_player_xmins(element: dict, summary: dict | None, finished_gws: int
 
     # Per-match data from element-summary (preferred when available)
     if summary and starts > 0:
-        history = [m for m in summary.get('history', []) if m.get('minutes', 0) > 0]
-        recent = history[-10:]  # last 10 appearances with minutes
-        # Use 'starts' field if available, fall back to minutes > 60 threshold
-        starts_in_recent = [m for m in recent if m.get('starts', 0) == 1 or (m.get('starts') is None and m.get('minutes', 0) > 60)]
+        history = summary.get('history', [])
+        recent = history[-10:]  # last 10 GW entries
+        starts_in_recent = [m for m in recent if m.get('starts') == 1]
+
+        # D-05.1: < 3 starts in recent window -> position-prior fallback (D-06)
+        element_type = element.get('element_type', 3)
+        # avg_mins_started must be computed independently (Pitfall 2 — needed for xmins and sub_risk_label cameo)
         if starts_in_recent:
             avg_mins_started = statistics.mean(m['minutes'] for m in starts_in_recent)
-            recent_start_rate = len(starts_in_recent) / max(len(recent), 1)
         else:
             avg_mins_started = 0.0
-            recent_start_rate = 0.0
-    else:
-        # Bootstrap-only fallback (no element-summary or 0 starts)
-        avg_mins_started = minutes / starts if starts > 0 else 0.0
-        recent_start_rate = starts / finished_gws if finished_gws > 0 else 0.0
 
-    start_prob = round(recent_start_rate * availability, 4)
+        if len(starts_in_recent) < 3:
+            start_prob = round(POSITION_PRIOR.get(element_type, 0.65) * availability, 4)
+        else:
+            recent_start_rate = len(starts_in_recent) / max(len(recent), 1)
+            start_prob = round(recent_start_rate * availability, 4)
+
+        # D-05.4 + D-03: mins_60_prob on same recent[-10:] window, conditioned on starts
+        if starts_in_recent:
+            mins_60_count = sum(1 for m in starts_in_recent if m.get('minutes', 0) >= 60)
+            mins_60_prob = round(mins_60_count / len(starts_in_recent), 4)
+        else:
+            mins_60_prob = 0.0
+    else:
+        # Bootstrap-only fallback: no element-summary history available
+        element_type = element.get('element_type', 3)
+        avg_mins_started = minutes / starts if starts > 0 else 0.0
+        # D-05.1 applies in bootstrap too: zero or sub-3 starts -> position prior
+        if starts < 3:
+            start_prob = round(POSITION_PRIOR.get(element_type, 0.65) * availability, 4)
+        else:
+            recent_start_rate = starts / finished_gws if finished_gws > 0 else 0.0
+            start_prob = round(recent_start_rate * availability, 4)
+        mins_60_prob = 0.0  # no per-match data to compute from
+
     xmins = round(avg_mins_started * start_prob, 1)
 
     # mins_risk classification (locked decision: status='a' + blank news gates rotation classification)
@@ -62,9 +85,27 @@ def _compute_player_xmins(element: dict, summary: dict | None, finished_gws: int
         mins_risk = 'nailed'
     elif start_prob >= 0.65:
         mins_risk = 'likely_start'
-    elif avg_mins_started < 30 or recent_start_rate < 0.25:
+    elif avg_mins_started < 30 or start_prob < 0.25:
         mins_risk = 'cameo'
     else:
         mins_risk = 'rotation_risk'
 
-    return {'xmins': xmins, 'start_prob': start_prob, 'mins_risk': mins_risk}
+    # D-08: sub_risk_label — probability-derived, additive (mins_risk preserved unchanged)
+    if status != 'a' or news:
+        sub_risk_label = 'injured'
+    elif start_prob >= 0.90 and mins_60_prob >= 0.80:
+        sub_risk_label = 'nailed'
+    elif start_prob >= 0.65:
+        sub_risk_label = 'sub_risk'
+    elif avg_mins_started < 40 or start_prob < 0.25:
+        sub_risk_label = 'cameo'
+    else:
+        sub_risk_label = 'rotation_risk'
+
+    return {
+        'xmins': xmins,
+        'start_prob': start_prob,
+        'mins_risk': mins_risk,
+        'mins_60_prob': mins_60_prob,
+        'sub_risk_label': sub_risk_label,
+    }

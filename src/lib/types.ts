@@ -85,6 +85,8 @@ export interface FixtureEntry {
 
 // Minutes risk classification (Phase 7 — MINS-01)
 export type MinsRisk = 'nailed' | 'likely_start' | 'rotation_risk' | 'cameo' | 'injured'
+// Phase 52 MIN-01 — probability-derived label (additive; mins_risk preserved unchanged)
+export type SubRiskLabel = 'nailed' | 'sub_risk' | 'rotation_risk' | 'cameo' | 'injured'
 
 // Merged player from pipeline (D-06): FPL fields + Understat + form + fixtures
 export interface MergedPlayer {
@@ -138,6 +140,8 @@ export interface MergedPlayer {
   xmins: number               // expected minutes per GW (0-90)
   start_prob: number          // probability of starting next match (0.0-1.0)
   mins_risk: MinsRisk         // rotation risk classification
+  mins_60_prob?: number          // Phase 52 MIN-01 — Bernoulli P(>=60 min | starts); optional during pipeline rollout
+  sub_risk_label?: SubRiskLabel  // Phase 52 MIN-01 — probability-derived; additive; mins_risk preserved
   // xPts engine (Phase 28 DATA-02, XPTS-01, XPTS-02 — D-01..D-09).
   // Optional during pipeline rollout — same convention as Phase 27 attacking_difficulty.
   xPts_1gw?: number           // expected pts next 1 GW (Poisson goals/assists, Bernoulli CS, flat bonus)
