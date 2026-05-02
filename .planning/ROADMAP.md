@@ -281,6 +281,19 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
   3. `PriceChangePanel` displays predictions grouped by HIGH/MEDIUM/LOW confidence; surfaced under the Analyse section
   4. Panel shows "early data" flag until ≥14 days of snapshots are available; badges suppressed below 70% precision threshold
   5. Cold-start handled: `price_changes.json` seeded to `{ predictions: [] }` so the route never 500s on fresh checkout
+**Plans**: 3 plans (3 waves)
+  **Wave 1**
+  - [ ] 054-01-PLAN.md — pipeline/price_changes.py (compute_price_change_predictions + 7 pytest cases) + cold-start seed files (git add -f) + run.py integration block after set-piece block
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 054-02-PLAN.md — src/lib/types.ts PriceDirection/PriceChangePrediction/PriceChanges; /api/price-changes route (USE_BLOB, s-maxage=1800); usePriceChanges hook (30-min staleTime)
+  **Wave 3** *(blocked on Wave 2 completion)*
+  - [ ] 054-03-PLAN.md — PriceChangePanel.tsx (rise/fall sections, inline-style progress bar, tier badges suppressed when snapshot_days < 14, early-data banner) + 4 Vitest cases + page.tsx wiring (SubTab union + SECTIONS entry + render conditional + import) + human-verify checkpoint
+  **Cross-cutting constraints:**
+  - Plan 01 must ship pipeline/cache/price_changes.json seed file before Plan 02 route can serve cold-start (SC-5)
+  - Plan 02 PriceChanges type must exist before Plan 03 PriceChangePanel can compile
+  - pipeline/cache/ is gitignored at .gitignore line 43-44; both seed files require git add -f (Pitfall 1 / PATTERNS Critical Note 1)
+  - Progress bar MUST use inline style {{ width: `${confidence_pct}%` }} — Tailwind JIT does not generate dynamic classes (Pitfall 4)
+**Phase notes**: Confidence tier badges (HIGH=red, MEDIUM=amber, LOW=zinc per Phase 51 D-13 severity convention) suppressed below 14 days of snapshot history (D-06). `eta_days === 0` renders "Tonight". Stable predictions filtered out (D-04). GW reset boundary: cumulative_net resets to 0 only when cost_change_event != 0 in new bootstrap reading. Phase 54 is read-only public data — no ASVS controls required (RESEARCH.md §Security Domain).
 
 ### Phase 55: Bench Order Optimiser
 **Goal**: Suggest an autosub-optimal bench ordering (positions 1–3 outfield + GK slot) weighted by start_prob × xPts EV and respecting FPL formation-legality constraints — so the manager's bench actually maximises expected points captured via autosubs
@@ -311,5 +324,5 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
 | 51 | v1.7 | 2/2 | Complete | 2026-05-02 |
 | 52 | v1.8 | 4/4 | Complete | 2026-05-02 |
 | 53 | v1.8 | 3/3 | Complete | 2026-05-02 |
-| 54 | v1.8 | — | Not started | — |
+| 54 | v1.8 | 0/3 | Planned | — |
 | 55 | v1.8 | — | Not started | — |
