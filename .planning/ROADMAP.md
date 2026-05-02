@@ -309,7 +309,7 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
 | 49 | v1.7 | 2/2 | Complete | 2026-05-02 |
 | 50 | v1.7 | 2/2 | Complete | 2026-05-02 |
 | 51 | v1.7 | 2/2 | Complete | 2026-05-02 |
-| 52 | v1.8 | 0/4 | Planned | — |
-| 53 | v1.8 | 0/3 | Planned | — |
+| 52 | v1.8 | 4/4 | Complete | 2026-05-02 |
+| 53 | v1.8 | 3/3 | Complete | 2026-05-02 |
 | 54 | v1.8 | — | Not started | — |
 | 55 | v1.8 | — | Not started | — |
