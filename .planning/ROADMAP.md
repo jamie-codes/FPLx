@@ -87,8 +87,6 @@ See `.planning/milestones/v1.5-ROADMAP.md` for full phase details.
 <details>
 <summary>✅ v1.6 Squad Optimiser (Phases 42-46) — SHIPPED 2026-05-01</summary>
 
-See `.planning/milestones/v1.6-ROADMAP.md` for full phase details.
-
 - [x] Phase 42: xPts Accuracy Improvements — form signal (BLEND_ALPHA=0.4), accuracy gate
 - [x] Phase 43: Lineup Engine & Navigator — `optimiseLineup()`, pitch UI, Squad sub-tabs
 - [x] Phase 44: Comparison Output — ComparisonTable, HeadlineRow, Promoted/Dropped badges
@@ -185,8 +183,16 @@ See `.planning/milestones/v1.6-ROADMAP.md` for full phase details.
   3. 1-FT and 2-FT rows each show the specific player-in and player-out names, grounding the comparison in real squad members
   4. The table is toggleable across 1/3/5 GW horizons and updates all values accordingly
   5. Hit options are clearly labelled with the 4pt cost deducted, and the current free transfer count (1 or 2 FTs) is reflected — options requiring a hit are flagged as such
-**Plans**: TBD
-**Phase notes**: When authenticated, derive `ftCount` from `free_transfers` in the `my-team` API field (already available in `squad-adapter.ts`). When unauthenticated, show a prominent FT selector so Roll is not misleadingly attractive for users at the 2-FT cap. 2-FT additive approximation combos within 1.0 xPts of break-even should be labelled "marginal — verify".
+**Plans**: 2 plans (2 waves)
+  **Wave 1**
+  - [ ] 050-01-PLAN.md — TDD: src/lib/opportunity-cost.ts + opportunity-cost.test.ts (computeOpportunityCostRows pure mapper, OCSRowKind/OCSRow/MARGINAL_THRESHOLD exports, 16 test cases for OCS-01/02/04/05)
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 050-02-PLAN.md — OpportunityCostTable component + TransferPanel wiring (ocsHorizon/ocsFtCount state, derivedFtCount from event_transfers + active_chip, suggestTransfers call, FtToggle + GwToggle in section header) + human-verify checkpoint
+  **Cross-cutting constraints:**
+  - `computeOpportunityCostRows`, `OCSRow`, `OCSRowKind`, `MARGINAL_THRESHOLD` must exist (Plan 01) before OpportunityCostTable can render and TransferPanel can compose (Plan 02)
+  - Existing `computeTransferSuggestions()` "Suggested Transfers" block in TransferPanel is preserved unchanged — OCS is additive (RESEARCH.md §UI Placement Decision)
+  - `free_transfers` is NOT a direct FPL API field — derived from `myTeamData.entry_history.event_transfers` + `squadData.active_chip` heuristic (RESEARCH.md §FT Count Sourcing); ROADMAP phase note below is corrected by RESEARCH.md
+**Phase notes**: When authenticated, `ocsFtCount` is derived from `entry_history.event_transfers` + `active_chip` (the "free_transfers" field referenced in earlier notes does NOT exist on the FPL my-team API — see 050-RESEARCH.md §Pitfall 1). When unauthenticated, the FT pill toggle defaults to 1 FT and remains the user's manual selector. 2-FT additive approximation combos with `xPtsGain < MARGINAL_THRESHOLD` (1.0) are labelled "Marginal — verify".
 **UI hint**: yes
 
 ### Phase 51: Weekly Decision Summary
@@ -216,6 +222,6 @@ See `.planning/milestones/v1.6-ROADMAP.md` for full phase details.
 | 42-46 | v1.6 | 12 | Complete | 2026-05-01 |
 | 47 | v1.7 | 5/5 | Complete | 2026-05-01 |
 | 48 | v1.7 | 3/3 | Complete | 2026-05-01 |
-| 49 | v1.7 | 0/2 | Planned | - |
-| 50 | v1.7 | 0/TBD | Not started | - |
+| 49 | v1.7 | 2/2 | Complete | 2026-05-02 |
+| 50 | v1.7 | 0/2 | Planned | - |
 | 51 | v1.7 | 0/TBD | Not started | - |
