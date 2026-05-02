@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: Predictive Intelligence
 status: executing
-stopped_at: Completed 052-01-PLAN.md
-last_updated: "2026-05-02T11:00:00Z"
-last_activity: "2026-05-02 — Phase 52 Plan 01 executed: _compute_player_xmins + MergedPlayer extended"
+stopped_at: Completed 052-03-PLAN.md
+last_updated: "2026-05-02T12:00:00Z"
+last_activity: "2026-05-02 — Phase 52 Plan 03 executed: xmins_v2_enabled flag threaded end-to-end"
 progress:
   total_phases: 9
   completed_phases: 5
   total_plans: 22
-  completed_plans: 17
-  percent: 77
+  completed_plans: 18
+  percent: 82
 ---
 
 # Project State
@@ -26,15 +26,16 @@ See: .planning/PROJECT.md (updated 2026-05-02 — v1.8 started)
 ## Current Position
 
 Phase: 52 — xMins Confidence Engine
-Plan: 1 of 4 complete
+Plan: 3 of 4 complete
 Status: Executing
-Last activity: 2026-05-02 — Plan 052-01 complete: POSITION_PRIOR, mins_60_prob, sub_risk_label added
+Last activity: 2026-05-02 — Plan 052-03 complete: xmins_v2_enabled flag threaded through merge.py, run.py, accuracy.py
 
 ## Performance Metrics
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 052 | 01 | 5 min | 3 | 3 |
+| 052 | 03 | 12 min | 3 | 4 |
 
 **Previous milestone (v1.7) velocity:**
 
@@ -48,6 +49,9 @@ Last activity: 2026-05-02 — Plan 052-01 complete: POSITION_PRIOR, mins_60_prob
 
 - [052-01] Used `starts==1` exclusively for start counting; removed `minutes>0` history filter to allow 0-minute non-start entries to contribute to `start_prob` denominators
 - [052-01] Changed `recent_start_rate < 0.25` to `start_prob < 0.25` in `mins_risk` cameo check to avoid NameError when position-prior branch fires
+- [052-03] Extended `_xpts_ngw` intermediary with `xmins_v2_enabled`/`mins_60_prob` kwargs to thread flag to `_compute_xpts_fixture` without bypassing abstraction layer
+- [052-03] Added `cache_dir: str = ''` parameter to `compute_accuracy_backtest` so `accuracy.py` can read existing flag from disk (backward compatible)
+- [052-03] Added `json`/`os` imports to `accuracy.py` (required by `_read_existing_xmins_v2_flag` helper)
 
 ### Pending Todos
 
@@ -62,6 +66,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-02T11:00:00Z
-Stopped at: Completed 052-01-PLAN.md
+Last session: 2026-05-02T12:00:00Z
+Stopped at: Completed 052-03-PLAN.md
 Resume file: None
