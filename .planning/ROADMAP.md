@@ -283,7 +283,7 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
   5. Cold-start handled: `price_changes.json` seeded to `{ predictions: [] }` so the route never 500s on fresh checkout
 **Plans**: 3 plans (3 waves)
   **Wave 1**
-  - [ ] 054-01-PLAN.md — pipeline/price_changes.py (compute_price_change_predictions + 7 pytest cases) + cold-start seed files (git add -f) + run.py integration block after set-piece block
+  - [x] 054-01-PLAN.md — pipeline/price_changes.py (compute_price_change_predictions + 7 pytest cases) + cold-start seed files (git add -f) + run.py integration block after set-piece block
   **Wave 2** *(blocked on Wave 1 completion)*
   - [ ] 054-02-PLAN.md — src/lib/types.ts PriceDirection/PriceChangePrediction/PriceChanges; /api/price-changes route (USE_BLOB, s-maxage=1800); usePriceChanges hook (30-min staleTime)
   **Wave 3** *(blocked on Wave 2 completion)*
