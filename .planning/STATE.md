@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: milestone
-status: Phase 49 complete — 3/5 phases done; Phase 50 next
+status: Phase 50 planned — 2 plans ready to execute
 stopped_at: ""
-last_updated: "2026-05-02T00:00:00.000Z"
+last_updated: "2026-05-02T01:00:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 12
+  total_plans: 14
   completed_plans: 10
   percent: 60
 ---
@@ -30,7 +30,7 @@ Previous milestone: v1.6 Squad Optimiser (Phases 42-46, shipped 2026-05-01)
 
 Progress: [███░░░░░░░] 60% (3/5 phases)
 
-Next action: `/gsd-discuss-phase 50` — discuss Phase 50 (Transfer Opportunity Cost Simulator) before planning
+Next action: `/gsd-execute-phase 50` — execute Phase 50 (Transfer Opportunity Cost Simulator), 2 plans ready
 
 ## Performance Metrics
 
@@ -47,7 +47,7 @@ Next action: `/gsd-discuss-phase 50` — discuss Phase 50 (Transfer Opportunity 
 | 47 | Fixture Swing Detector & CS Probability | 5 | Complete | 2026-05-01 |
 | 48 | Explainable xPts Breakdown | 3 | Complete | 2026-05-01 |
 | 49 | Player Lifecycle Labels | 2 | Complete | 2026-05-02 |
-| 50 | Transfer Opportunity Cost Simulator | TBD | Not started | - |
+| 50 | Transfer Opportunity Cost Simulator | 2 | Planned | - |
 | 51 | Weekly Decision Summary | TBD | Not started | - |
 
 *Updated after each plan completion*
