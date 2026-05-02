@@ -1,0 +1,190 @@
+"""Pytest unit tests for _compute_player_xmins (Phase 52 MIN-01)."""
+
+from xmins import _compute_player_xmins
+
+
+def _element(element_type=3, starts=10, minutes=900, status='a', news='', chance=None):
+    return {
+        'id': 1,
+        'element_type': element_type,
+        'starts': starts,
+        'minutes': minutes,
+        'status': status,
+        'news': news,
+        'chance_of_playing_next_round': chance,
+    }
+
+
+def _hist(minutes, starts_field):
+    return {'minutes': minutes, 'starts': starts_field}
+
+
+def _summary(entries):
+    return {'history': entries}
+
+
+def test_returns_mins_60_prob_and_sub_risk_label():
+    """Return dict has keys {'xmins','start_prob','mins_risk','mins_60_prob','sub_risk_label'}."""
+    history = [_hist(90, 1)] * 10
+    result = _compute_player_xmins(_element(), _summary(history), 10)
+    assert set(result.keys()) == {'xmins', 'start_prob', 'mins_risk', 'mins_60_prob', 'sub_risk_label'}
+
+
+def test_new_signing_fallback_uses_position_prior():
+    """With only 2 starts in recent 10, start_prob == POSITION_PRIOR[element_type] * availability."""
+    # Build summary: 2 entries with starts=1, 8 with starts=0
+    history = [_hist(90, 1)] * 2 + [_hist(0, 0)] * 8
+
+    # GK (element_type=1) -> prior 0.90, no chance flag -> availability=1.0
+    result = _compute_player_xmins(_element(element_type=1, starts=2, minutes=180), _summary(history), 10)
+    assert result['start_prob'] == round(0.90 * 1.0, 4), f"GK: expected 0.9, got {result['start_prob']}"
+
+    # DEF (element_type=2) -> prior 0.75
+    result = _compute_player_xmins(_element(element_type=2, starts=2, minutes=180), _summary(history), 10)
+    assert result['start_prob'] == round(0.75 * 1.0, 4), f"DEF: expected 0.75, got {result['start_prob']}"
+
+    # MID (element_type=3) -> prior 0.65
+    result = _compute_player_xmins(_element(element_type=3, starts=2, minutes=180), _summary(history), 10)
+    assert result['start_prob'] == round(0.65 * 1.0, 4), f"MID: expected 0.65, got {result['start_prob']}"
+
+    # FWD (element_type=4) -> prior 0.60
+    result = _compute_player_xmins(_element(element_type=4, starts=2, minutes=180), _summary(history), 10)
+    assert result['start_prob'] == round(0.60 * 1.0, 4), f"FWD: expected 0.60, got {result['start_prob']}"
+
+
+def test_starts_field_used_exclusively():
+    """History entries with starts=0 and minutes=70 do NOT count as starts (D-05.3 proxy removed)."""
+    # 2 entries with starts=1, 8 with starts=0 but minutes=70 (would have counted with old proxy)
+    history = [_hist(90, 1)] * 2 + [_hist(70, 0)] * 8
+    # Only 2 starts qualify -> falls into position-prior branch (< 3 starts)
+    result = _compute_player_xmins(_element(element_type=3, starts=2, minutes=250), _summary(history), 10)
+    # Should use POSITION_PRIOR[3]=0.65, not starts_in_recent/recent ratio
+    assert result['start_prob'] == round(0.65 * 1.0, 4), (
+        f"Expected position-prior 0.65 but got {result['start_prob']} — minutes>60 proxy still active?"
+    )
+
+
+def test_window_alignment_10_games():
+    """15 history entries — start_prob and mins_60_prob computed on recent[-10:] only."""
+    # First 5: starts=1, minutes=90 (outside recent[-10:] window)
+    # Last 10: starts=1, minutes=30 (within recent[-10:] window)
+    history = [_hist(90, 1)] * 5 + [_hist(30, 1)] * 10
+    result = _compute_player_xmins(_element(starts=15, minutes=1200), _summary(history), 15)
+    # recent[-10:] = 10 entries all with starts=1, minutes=30
+    assert result['start_prob'] == round(10 / 10 * 1.0, 4), f"Expected start_prob=1.0, got {result['start_prob']}"
+    assert result['mins_60_prob'] == round(0 / 10, 4), f"Expected mins_60_prob=0.0, got {result['mins_60_prob']}"
+
+
+def test_mins_60_prob_denominator_conditioned_on_starts():
+    """mins_60_prob denominator is count(starts==1), not total entries."""
+    # 5 starts: 4 with minutes=70 (>=60), 1 with minutes=30 (<60)
+    # 5 non-starts: minutes=10
+    history = [_hist(70, 1)] * 4 + [_hist(30, 1)] * 1 + [_hist(10, 0)] * 5
+    result = _compute_player_xmins(_element(starts=5, minutes=430), _summary(history), 10)
+    # mins_60_prob = 4/5 = 0.8 (conditioned on starts, not total 10 entries)
+    assert result['mins_60_prob'] == round(4 / 5, 4), f"Expected 0.8, got {result['mins_60_prob']}"
+    # start_prob = 5/10 = 0.5
+    assert result['start_prob'] == round(5 / 10, 4), f"Expected 0.5, got {result['start_prob']}"
+
+
+def test_mins_60_prob_zero_when_no_starts():
+    """No starts in recent -> mins_60_prob == 0.0."""
+    history = [_hist(70, 0)] * 10
+    result = _compute_player_xmins(_element(starts=0, minutes=0), _summary(history), 10)
+    assert result['mins_60_prob'] == 0.0, f"Expected 0.0, got {result['mins_60_prob']}"
+
+
+def test_sub_risk_label_nailed():
+    """start_prob>=0.90 AND mins_60_prob>=0.80 -> sub_risk_label='nailed'."""
+    history = [_hist(90, 1)] * 10  # 10 starts, all >=80 min
+    result = _compute_player_xmins(_element(starts=10, minutes=900), _summary(history), 10)
+    assert result['start_prob'] == 1.0, f"Expected start_prob=1.0, got {result['start_prob']}"
+    assert result['mins_60_prob'] == 1.0, f"Expected mins_60_prob=1.0, got {result['mins_60_prob']}"
+    assert result['sub_risk_label'] == 'nailed', f"Expected 'nailed', got {result['sub_risk_label']}"
+
+
+def test_sub_risk_label_sub_risk():
+    """start_prob>=0.65 (but not nailed because mins_60_prob<0.80) -> sub_risk_label='sub_risk'."""
+    # 7 starts all minutes=50 (below 60 -> mins_60_prob=0), 3 non-starts
+    history = [_hist(50, 1)] * 7 + [_hist(0, 0)] * 3
+    result = _compute_player_xmins(_element(starts=7, minutes=350), _summary(history), 10)
+    assert result['start_prob'] == round(7 / 10, 4), f"Expected 0.7, got {result['start_prob']}"
+    assert result['mins_60_prob'] == 0.0, f"Expected 0.0, got {result['mins_60_prob']}"
+    assert result['sub_risk_label'] == 'sub_risk', f"Expected 'sub_risk', got {result['sub_risk_label']}"
+    # mins_risk uses the different 0.65 threshold -> 'likely_start' (not 'sub_risk')
+    assert result['mins_risk'] == 'likely_start', (
+        f"mins_risk should be 'likely_start' (0.65 threshold), got {result['mins_risk']}"
+    )
+
+
+def test_sub_risk_label_cameo_low_avg_mins():
+    """avg_mins_started<40 with start_prob in [0.25, 0.65) -> sub_risk_label='cameo'."""
+    # 5 starts with minutes=35, 5 non-starts
+    history = [_hist(35, 1)] * 5 + [_hist(0, 0)] * 5
+    result = _compute_player_xmins(_element(starts=5, minutes=175), _summary(history), 10)
+    assert result['start_prob'] == 0.5, f"Expected 0.5, got {result['start_prob']}"
+    assert result['sub_risk_label'] == 'cameo', f"Expected 'cameo', got {result['sub_risk_label']}"
+
+
+def test_sub_risk_label_cameo_low_start_prob():
+    """start_prob<0.25 -> sub_risk_label='cameo' (even if avg_mins_started is reasonable)."""
+    # 2 starts (triggers position-prior fallback), element_type=4 (FWD prior=0.60)
+    # chance=20 -> availability=0.20 -> start_prob = 0.60 * 0.20 = 0.12
+    history = [_hist(80, 1)] * 2 + [_hist(0, 0)] * 8
+    result = _compute_player_xmins(
+        _element(element_type=4, starts=2, minutes=160, chance=20),
+        _summary(history),
+        10,
+    )
+    assert result['start_prob'] == round(0.60 * 0.20, 4), f"Expected 0.12, got {result['start_prob']}"
+    assert result['sub_risk_label'] == 'cameo', f"Expected 'cameo', got {result['sub_risk_label']}"
+
+
+def test_sub_risk_label_injured_status():
+    """status='i' -> sub_risk_label='injured' regardless of probabilities."""
+    history = [_hist(90, 1)] * 10
+    result = _compute_player_xmins(
+        _element(status='i', starts=10, minutes=900),
+        _summary(history),
+        10,
+    )
+    assert result['sub_risk_label'] == 'injured', f"Expected 'injured', got {result['sub_risk_label']}"
+
+
+def test_sub_risk_label_injured_news():
+    """status='a' but news present -> sub_risk_label='injured'."""
+    history = [_hist(90, 1)] * 10
+    result = _compute_player_xmins(
+        _element(status='a', news='Knock - 75% chance', starts=10, minutes=900),
+        _summary(history),
+        10,
+    )
+    assert result['sub_risk_label'] == 'injured', f"Expected 'injured', got {result['sub_risk_label']}"
+
+
+def test_sub_risk_label_rotation_risk():
+    """start_prob in [0.25, 0.65) and avg_mins_started>=40 -> sub_risk_label='rotation_risk'."""
+    # 4 starts in 10 games, all minutes=80 (so mins_60_prob=1.0, avg=80)
+    # start_prob = 4/10 = 0.4 (in [0.25, 0.65) range)
+    history = [_hist(80, 1)] * 4 + [_hist(0, 0)] * 6
+    result = _compute_player_xmins(_element(starts=4, minutes=320), _summary(history), 10)
+    assert result['start_prob'] == round(4 / 10, 4), f"Expected 0.4, got {result['start_prob']}"
+    assert result['mins_60_prob'] == 1.0, f"Expected 1.0, got {result['mins_60_prob']}"
+    assert result['sub_risk_label'] == 'rotation_risk', f"Expected 'rotation_risk', got {result['sub_risk_label']}"
+
+
+def test_mins_risk_unchanged():
+    """Verify mins_risk thresholds are preserved; both fields co-exist with distinct values."""
+    # 8 starts with minutes=50 (mins_60_prob=0), 2 non-starts
+    # start_prob = 8/10 = 0.8 -> mins_risk='likely_start' (0.65 threshold, below 0.85 nailed)
+    history = [_hist(50, 1)] * 8 + [_hist(0, 0)] * 2
+    result = _compute_player_xmins(_element(starts=8, minutes=400), _summary(history), 10)
+    assert result['start_prob'] == round(8 / 10, 4), f"Expected 0.8, got {result['start_prob']}"
+    # mins_risk uses the existing 0.65 threshold
+    assert result['mins_risk'] == 'likely_start', (
+        f"mins_risk should be 'likely_start' (existing threshold), got {result['mins_risk']}"
+    )
+    # sub_risk_label is different — start_prob=0.8 >= 0.65 but mins_60_prob=0.0 < 0.80 -> 'sub_risk'
+    assert result['sub_risk_label'] == 'sub_risk', (
+        f"sub_risk_label should be 'sub_risk', got {result['sub_risk_label']}"
+    )
