@@ -22,8 +22,8 @@ function getConfidenceTier(pct: number): Tier {
 }
 
 function formatEta(eta: number): string {
-  if (eta <= 0) return 'Tonight'
   const days = Math.round(eta)
+  if (days <= 0) return 'Tonight'
   return `${days} day${days === 1 ? '' : 's'}`
 }
 
@@ -46,7 +46,7 @@ export function PriceChangePanel() {
     )
   }
 
-  if (!data || data.predictions.length === 0) {
+  if (!data || !data.predictions || data.predictions.length === 0) {
     return (
       <section className="mt-6 space-y-2" aria-label="Price change predictions not available">
         <h2 className="text-lg font-semibold">No price change data yet</h2>

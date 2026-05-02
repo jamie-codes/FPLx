@@ -6,9 +6,10 @@ from price_changes import compute_price_change_predictions
 
 
 def _bootstrap(elements=None, current_gw_id=1, teams=None):
+    events = [{'id': current_gw_id, 'is_current': True}] if current_gw_id else []
     return {
         'elements': elements or [],
-        'events': {'current': {'id': current_gw_id}} if current_gw_id else {'current': None},
+        'events': events,
         'teams': teams or [{'id': 1, 'short_name': 'ARS'}],
     }
 
@@ -60,7 +61,7 @@ def test_fall_prediction():
 
 def test_empty_bootstrap():
     """Empty bootstrap elements list returns cold-start payload with empty predictions."""
-    bs = {'elements': [], 'events': {'current': None}, 'teams': []}
+    bs = {'elements': [], 'events': [], 'teams': []}
     payload, current_snapshot = compute_price_change_predictions(bs, {})
     assert isinstance(payload['generated_at'], str)
     assert 'T' in payload['generated_at']

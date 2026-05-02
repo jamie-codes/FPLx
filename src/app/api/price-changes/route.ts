@@ -14,6 +14,9 @@ export async function GET() {
         return Response.json({ error: 'Price change data not available' }, { status: 404 })
       }
       const res = await fetch(blobs[0].url)
+      if (!res.ok) {
+        return Response.json({ error: 'Price change data not available' }, { status: 502 })
+      }
       data = await res.text()
     } else {
       const cachePath = join(process.cwd(), 'pipeline', 'cache', 'price_changes.json')

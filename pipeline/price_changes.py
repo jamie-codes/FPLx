@@ -60,13 +60,11 @@ def compute_price_change_predictions(
     today_iso = datetime.now(timezone.utc).date().isoformat()
     team_lookup = {t['id']: t.get('short_name', '') for t in bootstrap.get('teams', [])}
 
-    # current_gw: handle None safely
-    events = (bootstrap.get('events', {}) or {})
-    current_event = events.get('current', {})
-    if current_event is None:
-        current_gw = 0
-    else:
-        current_gw = current_event.get('id', 0) or 0
+    # current_gw: FPL API returns events as a list; find the is_current entry
+    current_event = next(
+        (e for e in bootstrap.get('events', []) if e.get('is_current')), None
+    )
+    current_gw = current_event['id'] if current_event else 0
 
     predictions = []
     current_snapshot = {}
