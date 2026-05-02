@@ -39,13 +39,25 @@ export function getMinsRiskConfig(minsRisk: MinsRisk | undefined): Config | null
   return BADGE_MAP[minsRisk] ?? null
 }
 
-export function MinsRiskBadge({ minsRisk }: { minsRisk: MinsRisk | undefined }) {
+export function MinsRiskBadge({
+  minsRisk,
+  mins60Prob,
+}: {
+  minsRisk: MinsRisk | undefined
+  mins60Prob?: number
+}) {
   const config = getMinsRiskConfig(minsRisk)
   if (!config) return null
+  // Phase 52 D-09: tooltip shows label + 60-min probability when prop provided.
+  // Format per UI-SPEC.md: "<Label> — <X>% chance 60+ min" (em-dash with surrounding spaces, integer percentage).
+  const titleText =
+    mins60Prob !== undefined
+      ? `${config.label} — ${Math.round(mins60Prob * 100)}% chance 60+ min`
+      : config.title
   return (
     <span
       className={`inline-block text-xs font-normal ${config.text} ${config.bg} rounded px-2 py-1`}
-      title={config.title}
+      title={titleText}
     >
       {config.label}
     </span>
