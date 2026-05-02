@@ -192,6 +192,8 @@ def _compute_xpts_fixture(
     defensive_difficulty: float,
     xmins_v2_enabled: bool = False,
     mins_60_prob: float | None = None,
+    bonus_predictor_enabled: bool = False,
+    bonus_ev: float | None = None,
 ) -> dict:
     """Compute expected FPL points for a single fixture (Phase 28 DATA-02).
 
@@ -236,7 +238,13 @@ def _compute_xpts_fixture(
     # Bonus: flat position-average rate, scaled by expected minutes only.
     # xmins already encodes start_prob (unconditional semantics) — do NOT
     # re-apply start_prob here (CR-02 fix: removes double-scaling).
-    bonus_pts = BONUS_RATE[element_type] * (xmins / 90.0)
+    # Phase 53 BPS-01: per-player bonus EV when gate is ON and a sample-sufficient
+    # bonus_ev was supplied; otherwise the flat per-position fallback (Pitfall C1).
+    if bonus_predictor_enabled and bonus_ev is not None:
+        rate = bonus_ev
+    else:
+        rate = BONUS_RATE[element_type]
+    bonus_pts = rate * (xmins / 90.0)
 
     # Appearance: FPL awards 2pts for starting; D-01 Phase 48. NOT scaled by xmins/90 —
     # appearance points are per game started, not per minute.
@@ -263,6 +271,8 @@ def _xpts_ngw(
     n_gws: int,
     xmins_v2_enabled: bool = False,
     mins_60_prob: float | None = None,
+    bonus_predictor_enabled: bool = False,
+    bonus_ev: float | None = None,
 ) -> tuple:
     """Project xPts across N upcoming GWs, DGW-aware (Phase 28 DATA-02 D-04, D-06).
 
@@ -297,6 +307,8 @@ def _xpts_ngw(
                 fix.get('defensive_difficulty', 0.5),
                 xmins_v2_enabled=xmins_v2_enabled,
                 mins_60_prob=mins_60_prob,
+                bonus_predictor_enabled=bonus_predictor_enabled,
+                bonus_ev=bonus_ev,
             )
             total += result['total']
             if gw_idx == 0 and n_gws == 1:
@@ -320,6 +332,8 @@ def _compute_xpts_sigma(
     n_gws: int,
     xmins_v2_enabled: bool = False,
     mins_60_prob: float | None = None,
+    bonus_predictor_enabled: bool = False,
+    bonus_ev: float | None = None,
 ) -> float:
     """Analytical sigma for xPts across an N-GW window (Phase 28 XPTS-02 D-09).
 
@@ -595,6 +609,8 @@ def merge_players(
     form_signal_enabled: bool = False,
     blend_alpha: float = BLEND_ALPHA,
     xmins_v2_enabled: bool = False,
+    bonus_stats: dict | None = None,
+    bonus_predictor_enabled: bool = False,
 ) -> tuple[list, dict]:
     """Merge FPL bootstrap + Understat xG/xA into a unified player list.
 
@@ -619,6 +635,15 @@ def merge_players(
                              BLEND_ALPHA=0.4. run.py overrides this with the
                              value persisted by accuracy.compute_accuracy_backtest
                              (which is whatever Plan 02 ships — currently a fixed 0.4).
+        bonus_stats:         Phase 53 BPS-01. Optional dict from bonus.py mapping
+                             player_id (int) -> {bonus_ev, n_starts, source}. Per-player
+                             learned EV used in place of BONUS_RATE[element_type] when
+                             bonus_predictor_enabled is True. Default None preserves baseline.
+        bonus_predictor_enabled: Phase 53 BPS-01 gate. When True AND a sample-sufficient
+                             bonus_ev is available, the per-player rate replaces the flat
+                             BONUS_RATE in _compute_xpts_fixture. Default False preserves
+                             baseline behaviour. Manually flipped after non-regression
+                             shadow run (Phase 52 D-02 mirror).
 
     Returns:
         List of merged player dicts with all D-01 through D-06 fields plus
@@ -933,6 +958,18 @@ def merge_players(
             player['sub_risk_label'] = 'injured'
         player_mins_60_prob = player['mins_60_prob']
 
+        # Phase 53 BPS-01: per-player bonus EV unpacking. Falls back to None when
+        # bonus_stats is absent OR the player is missing OR the bonus.py guard returned
+        # source='flat_default' for low-sample players (handled at _compute_xpts_fixture
+        # via Pitfall C1 fallback).
+        if bonus_stats and fpl_id in bonus_stats:
+            player_bonus_ev = bonus_stats[fpl_id].get('bonus_ev')
+            # When bonus.py marked source='flat_default', the flat rate is identical to
+            # POSITION_PRIOR — so passing the prior through is harmless. We still pass it
+            # so the gate uses the documented per-player path consistently.
+        else:
+            player_bonus_ev = None
+
         # ---- Form signal (Phase 42 ACC-01) ----
         # Recency-weighted xG+xA per-90 over last 3-5 GWs from element-summary history.
         # Always write the field (None + 0 when insufficient) so MergedPlayer is shape-consistent
@@ -972,16 +1009,19 @@ def merge_players(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 1,
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
+            bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
         )
         xpts_3gw, _ = _xpts_ngw(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 3,
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
+            bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
         )
         xpts_5gw, _ = _xpts_ngw(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 5,
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
+            bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
         )
         player['xPts_1gw'] = xpts_1gw
         player['xPts_3gw'] = xpts_3gw
@@ -1013,16 +1053,19 @@ def merge_players(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 1,
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
+            bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
         )
         player['_sigma_3gw'] = _compute_xpts_sigma(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 3,
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
+            bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
         )
         player['_sigma_5gw'] = _compute_xpts_sigma(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 5,
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
+            bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
         )
 
         result.append(player)

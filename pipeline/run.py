@@ -16,6 +16,7 @@ from understat_client import get_understat_players
 from merge import merge_players
 from defcon import compute_defcon_stats
 from xmins import compute_xmins_stats
+from bonus import compute_bonus_predictions
 from insights import compute_insights
 from accuracy import compute_accuracy_backtest, build_predictions_snapshot
 
@@ -165,6 +166,11 @@ def run(dry_run: bool = False):
         xmins_stats = compute_xmins_stats(bootstrap, summaries, finished_gws)
         print(f"xmins stats: {len(xmins_stats)} players")
 
+        # Compute bonus EV stats (Phase 53 BPS-01) — same shared summaries cache, no new HTTP calls
+        print("Computing bonus EV stats...")
+        bonus_stats = compute_bonus_predictions(bootstrap, summaries, finished_gws)
+        print(f"bonus stats: {len(bonus_stats)} players")
+
         # Merge FPL + Understat data (per-90 normalisation, custom FDR, fixtures)
         # Phase 31: merge_players now returns a tuple — (player list, captain picks dict).
 
@@ -173,6 +179,7 @@ def run(dry_run: bool = False):
         form_signal_enabled = False
         blend_alpha_used = 0.4
         xmins_v2_enabled = False  # Phase 52 D-02 — default OFF; flips ON after non-regression shadow run
+        bonus_predictor_enabled = False  # Phase 53 BPS-01 — default OFF; flips ON after non-regression shadow run
         backtest_path = os.path.join(cache_dir, 'accuracy_backtest.json')
         try:
             with open(backtest_path, 'r', encoding='utf-8') as f:
@@ -180,11 +187,13 @@ def run(dry_run: bool = False):
             form_signal_enabled = prev_backtest.get('summary', {}).get('form_signal_enabled', False)
             blend_alpha_used = prev_backtest.get('summary', {}).get('blend_alpha_used', 0.4)
             xmins_v2_enabled = prev_backtest.get('summary', {}).get('xmins_v2_enabled', False)
+            bonus_predictor_enabled = prev_backtest.get('summary', {}).get('bonus_predictor_enabled', False)
         except (FileNotFoundError, json.JSONDecodeError):
             pass
 
         print(f"Form signal blend: {'ENABLED' if form_signal_enabled else 'DISABLED'} (alpha={blend_alpha_used})")
         print(f"xMins v2 (mins_60_prob in _cs_prob): {'ENABLED' if xmins_v2_enabled else 'DISABLED'}")
+        print(f"Bonus predictor (per-player EV): {'ENABLED' if bonus_predictor_enabled else 'DISABLED'}")
 
         merged, captain_picks = merge_players(
             bootstrap, fixtures, understat, id_map,
@@ -192,6 +201,8 @@ def run(dry_run: bool = False):
             form_signal_enabled=form_signal_enabled,
             blend_alpha=blend_alpha_used,
             xmins_v2_enabled=xmins_v2_enabled,
+            bonus_stats=bonus_stats,
+            bonus_predictor_enabled=bonus_predictor_enabled,
         )
         save('merged_players.json', merged)
         save('captain_picks.json', captain_picks)  # Phase 31 CAP-03/CAP-04

@@ -79,6 +79,53 @@ def test_appearance_pts_formula():
     assert result['appearance_pts'] == pytest.approx(0.8 * 2, abs=0.001)
 
 
+@pytest.mark.parametrize(
+    "bonus_predictor_enabled,bonus_ev",
+    [
+        (False, None),
+        (True, 1.2),
+        (True, None),  # flag ON but no per-player rate -> fallback to BONUS_RATE
+    ],
+)
+def test_xpts_components_sum_integrity_with_bonus_flag(bonus_predictor_enabled, bonus_ev):
+    """Phase 53 BPS-01: sum invariant holds for all bonus_predictor_enabled combinations."""
+    result = _compute_xpts_fixture(
+        xg_per90=0.4, xa_per90=0.2, start_prob=0.9, xmins=81.0,
+        element_type=3, defensive_difficulty=0.5,
+        bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=bonus_ev,
+    )
+    component_sum = (
+        result['goal_pts']
+        + result['assist_pts']
+        + result['cs_pts']
+        + result['bonus_pts']
+        + result['appearance_pts']
+    )
+    assert abs(component_sum - result['total']) < 0.01, \
+        f"Sum drift for flag={bonus_predictor_enabled}, ev={bonus_ev}: " \
+        f"sum={component_sum:.4f}, total={result['total']:.4f}"
+
+
+def test_xpts_components_sum_integrity_both_gates_on():
+    """Phase 53 Pitfall 3: sum invariant holds with xmins_v2 AND bonus_predictor both ON."""
+    result = _compute_xpts_fixture(
+        xg_per90=0.4, xa_per90=0.2, start_prob=0.9, xmins=81.0,
+        element_type=3, defensive_difficulty=0.5,
+        xmins_v2_enabled=True, mins_60_prob=0.85,
+        bonus_predictor_enabled=True, bonus_ev=1.2,
+    )
+    component_sum = (
+        result['goal_pts']
+        + result['assist_pts']
+        + result['cs_pts']
+        + result['bonus_pts']
+        + result['appearance_pts']
+    )
+    # Pitfall 3: relaxed to ±0.02 to absorb cumulative rounding under two active gates.
+    assert abs(component_sum - result['total']) < 0.02, \
+        f"Both-gates sum drift exceeds ±0.02: sum={component_sum:.4f}, total={result['total']:.4f}"
+
+
 # ---- Integration test (WR-03) ----
 # Verifies that merge_players writes xPts_components_1gw with all five required keys
 # and that the component sum equals xPts_1gw within tolerance.
