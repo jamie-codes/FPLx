@@ -342,8 +342,16 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
   2. A four-option mode toggle (Max xPts / Protect Rank / Chase Rank / Differential Aggressive) re-orders captain candidates when switched — the ranked list visibly changes for modes other than Max xPts
   3. In Protect Rank mode, any player with EO > 30% who is not in the user's squad displays a "Dangerous to fade" warning badge directly in the captain panel
   4. Mode selection affects only the Squad section captain panel; Transfer suggestions and Decision Summary ordering are unchanged
-**Plans**: TBD
-**Phase notes**: EO% sourced from selected_by_percent on MergedPlayer (already in merged_players.json) — no new API calls or pipeline changes required. EO-04 scope boundary: mode state must be local to the captain panel component (or its parent Squad section), not lifted to global page state.
+**Plans**: 2 plans (2 waves)
+  **Wave 1**
+  - [ ] 057-01-PLAN.md — TDD: src/lib/eo-candidates.ts + eo-candidates.test.ts (computeEOCandidates pure ranker for 4 EO modes; eligibility filter; median-from-full-pool guard for Pitfall 2)
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 057-02-PLAN.md — rewrite CaptainPicksPanel as ranked top-5 with EOModeToggle + ~EO% inline + Dangerous-to-fade badge (D-01..D-11) + RTL test suite + page.tsx submittedId thread + human-verify checkpoint
+  **Cross-cutting constraints:**
+  - `computeEOCandidates` and `EOMode` must exist (Plan 01) before CaptainPicksPanel can `import { computeEOCandidates, type EOMode } from '@/lib/eo-candidates'` (Plan 02)
+  - Plan 02 mounts the rewritten panel at the existing `<CaptainPicksPanel />` site in `page.tsx` line ~215; only the prop is changed (Pitfall 6) — the surrounding fragment with `<PlannerTab />` is preserved unchanged
+  - `useCaptainPicks()` is retained ONLY for `data.gameweek` in the heading; the candidate POOL must come from `usePlayers()` (Pitfall 1 — captain_picks.json contains only 2 picks, insufficient for top-5 across 4 modes)
+**Phase notes**: EO% sourced from selected_by_percent on MergedPlayer (already in merged_players.json) — no new API calls or pipeline changes required. EO-04 scope boundary: mode state local to CaptainPicksPanel via `useState<EOMode>('max_xpts')` (D-04 default). The `~XX%` tilde prefix and `Dangerous to fade` badge label are LOAD-BEARING COPY (CONTEXT.md §specifics) — do not soften.
 **UI hint**: yes
 
 ### Phase 58: Mini-League Rival Tracker
@@ -411,7 +419,7 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
 | 54 | v1.8 | 0/3 | Planned | — |
 | 55 | v1.8 | 2/2 | Complete | 2026-05-03 |
 | 56 | v1.9 | 0/2 | Planned | — |
-| 57 | v1.9 | 0/? | Not started | — |
+| 57 | v1.9 | 0/2 | Planned | — |
 | 58 | v1.9 | 0/? | Not started | — |
 | 59 | v1.9 | 0/? | Not started | — |
 | 60 | v1.9 | 0/? | Not started | — |
