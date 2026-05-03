@@ -90,6 +90,10 @@ export function PlannerTab() {
     const playerMap = new Map(scoredPlayers.map(p => [p.id, p]))
 
     const step = planResult.steps[stepIndex]
+
+    // Guard: can only manually edit a step that has exactly one transfer
+    if (step.transfersIn.length === 0 || step.transfersOut.length === 0) return
+
     const origBuyId = step.transfersIn[0]
     const oldSellId = step.transfersOut[0]
 
