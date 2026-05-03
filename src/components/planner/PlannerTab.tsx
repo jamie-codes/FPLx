@@ -163,6 +163,8 @@ export function PlannerTab() {
     if (!planResult) return
     const originalBuyId = planResult.originalSteps[stepIndex]?.transfersIn[0]
     if (originalBuyId === undefined) return
+    const currentStep = planResult.steps[stepIndex]
+    if (currentStep.transfersOut.length === 0) return  // no sell to restore against
     handleManualEdit(stepIndex, originalBuyId)
   }
 
