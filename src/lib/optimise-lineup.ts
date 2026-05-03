@@ -188,7 +188,7 @@ export function benchOrder(
 
   // EV score for the active (non-BGW) ranking. fixtures.length is the multiplier.
   const evScore = (p: MergedPlayer): number =>
-    p.start_prob * ((p[field] as number | undefined) ?? 0) * p.fixtures.length
+    (p.start_prob ?? 0) * ((p[field] as number | undefined) ?? 0) * p.fixtures.length
 
   // Formation-flex check: would adding this candidate's position push starters above ceilings?
   // Returns true when the addition is formation-valid (does not exceed DEF=5 / MID=5 / FWD=3).
