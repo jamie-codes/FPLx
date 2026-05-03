@@ -5,11 +5,11 @@ milestone_name: Competitive Intelligence
 status: planning
 stopped_at: ""
 last_updated: "2026-05-03T00:00:00.000Z"
-last_activity: 2026-05-03 — Milestone v1.9 started
+last_activity: 2026-05-03 — Phase 56 planned (2 plans, 1 wave)
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
-  total_plans: 0
+  total_plans: 2
   completed_plans: 0
   percent: 0
 ---
@@ -21,14 +21,34 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-03 — v1.9 started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.9 Competitive Intelligence — defining requirements
+**Current focus:** v1.9 Competitive Intelligence — Phase 56 planned, ready to execute
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-05-03 — Milestone v1.9 started
+Phase: 56 (FT Engine Fix) — Ready to execute
+Plan: 2 plans (1 wave)
+Status: Planned
+Last activity: 2026-05-03 — Phase 56 planned (2 plans, 1 wave)
+
+Progress: 0/5 phases complete [----------] 0%
+
+### v1.9 Phase Summary
+
+| Phase | Name | Requirements | Status |
+|-------|------|--------------|--------|
+| 56 | FT Engine Fix | FTX-01, FTX-02 | Not started |
+| 57 | Effective Ownership Mode | EO-01–EO-04 | Not started |
+| 58 | Mini-League Rival Tracker | ML-01–ML-08 | Not started |
+| 59 | Manual Transfer Planner | MTP-01–MTP-08 | Not started |
+| 60 | Transfer Route Tree | TRT-01–TRT-07 | Not started |
+
+### Dependency Order
+
+- Phase 56 (FTX) — standalone pre-condition; no upstream v1.9 deps
+- Phase 57 (EO) — independent of 56; can start immediately
+- Phase 58 (ML) — independent of 56 and 57; parallel-safe with Phase 57
+- Phase 59 (MTP) — requires Phase 56 (FT engine)
+- Phase 60 (TRT) — requires Phase 59 (MTP-01 bridge)
 
 ## Performance Metrics
 
@@ -52,6 +72,10 @@ Last activity: 2026-05-03 — Milestone v1.9 started
 - [052-03] Extended `_xpts_ngw` intermediary with `xmins_v2_enabled`/`mins_60_prob` kwargs to thread flag to `_compute_xpts_fixture` without bypassing abstraction layer
 - [052-03] Added `cache_dir: str = ''` parameter to `compute_accuracy_backtest` so `accuracy.py` can read existing flag from disk (backward compatible)
 - [052-03] Added `json`/`os` imports to `accuracy.py` (required by `_read_existing_xmins_v2_flag` helper)
+- [v1.9-roadmap] TRT-01 is PURE TYPESCRIPT — no LLM; top-3 sell roots + greedy continuation per branch
+- [v1.9-roadmap] ML-08 requires `p-limit` ^6.1.0 npm install for 3-concurrent-request batching
+- [v1.9-roadmap] Phases 57 (EO) and 58 (ML) are parallel-safe — zero shared files; can be executed concurrently
+- [v1.9-roadmap] MTP-07 sell price caveat shown only when unauthenticated; exact selling_price used when authenticated
 
 ### Pending Todos
 
@@ -67,5 +91,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-05-03T12:19:02.829Z
-Stopped at: context exhaustion at 80% (2026-05-03)
+Stopped at: v1.9 roadmap created
 Resume file: None

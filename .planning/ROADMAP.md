@@ -10,7 +10,8 @@
 - ✅ **v1.5 UX & Polish** — Phases 36-41 (shipped 2026-04-30)
 - ✅ **v1.6 Squad Optimiser** — Phases 42-46 (shipped 2026-05-01)
 - ✅ **v1.7 Decision Assistant** — Phases 47-51 (shipped 2026-05-02)
-- 🚧 **v1.8 Predictive Intelligence** — Phases 52-55 (in progress)
+- ✅ **v1.8 Predictive Intelligence** — Phases 52-55 (shipped 2026-05-03)
+- 🚧 **v1.9 Competitive Intelligence** — Phases 56-60 (in progress)
 
 ## Phases
 
@@ -314,6 +315,81 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
   - benchOrder() (Plan 01) is a pure function with no chip-mode awareness (D-10); BB note (Plan 02) is purely informational — no behavioural coupling between the plans
 **Phase notes**: EV formula `start_prob × (player[HORIZON_FIELD[horizon]] ?? 0) × player.fixtures.length` (D-03) auto-handles DGW (×2) and BGW (×0); BGW also forced to bench[3] by explicit partition (D-05/D-06). Formation-flex check is a tie-breaker rank, not exclusion (D-09) — invalid candidates still appear in returned array. No new types, no new files beyond extensions to existing ones.
 
+---
+
+### Phase 56: FT Engine Fix
+**Goal**: The free-transfer engine correctly banks FTs up to a cap of 4 and preserves the banked FT count across Wildcard and Free Hit activations — establishing the accurate FT state that Manual Planner and Transfer Route Tree depend on
+**Depends on**: Phase 55 (v1.8 complete)
+**Requirements**: FTX-01, FTX-02
+**Success Criteria** (what must be TRUE):
+  1. A manager who takes no transfers for two consecutive GWs has 2 available FTs (not 3) — the bank cap of 4 total available is respected
+  2. A manager who activates Wildcard or Free Hit retains their previously banked FT count after chip play, rather than seeing it reset to 1
+  3. Existing v1.3 planner transfer sequences that relied on the old FT engine are regression-tested to confirm they still produce correct FT counts across multi-GW plans
+**Plans**: 2 plans (1 wave)
+  **Wave 1** *(parallel — disjoint files)*
+  - [ ] 056-01-PLAN.md — TDD: fix Wildcard branch in computeNextFTState (FTX-02), update existing wildcard tests + add D-08 regression block, add D-07 explanatory comment to planning-engine.ts
+  - [ ] 056-02-PLAN.md — convert PlannerTab.initialFTState const to useMemo deriving from authenticated event_transfers (FTX-01) + human-verify checkpoint
+  **Cross-cutting constraints:**
+  - Plans 01 and 02 touch DISJOINT files (Plan 01 = src/lib/free-transfer-engine.ts, tests/lib/free-transfer-engine.test.ts, src/lib/planning-engine.ts; Plan 02 = src/components/planner/PlannerTab.tsx) — fully parallel-safe
+  - Plan 01 fixes the engine; Plan 02 fixes the consumer that seeds the engine. Both must ship for FTX-01 to be fully delivered (Plan 01 covers FTX-02 in full; FTX-01 cap correctness needs both halves)
+
+### Phase 57: Effective Ownership Mode
+**Goal**: The captain panel surfaces EO% per candidate and a four-mode toggle — Max xPts, Protect Rank, Chase Rank, Differential Aggressive — so managers can align captaincy decisions to their current rank position and risk appetite
+**Depends on**: Phase 55 (v1.8 complete; independent of Phase 56)
+**Requirements**: EO-01, EO-02, EO-03, EO-04
+**Success Criteria** (what must be TRUE):
+  1. Each captain candidate in the panel shows an "~EO" percentage figure derived from selected_by_percent, with a tooltip explaining the approximation
+  2. A four-option mode toggle (Max xPts / Protect Rank / Chase Rank / Differential Aggressive) re-orders captain candidates when switched — the ranked list visibly changes for modes other than Max xPts
+  3. In Protect Rank mode, any player with EO > 30% who is not in the user's squad displays a "Dangerous to fade" warning badge directly in the captain panel
+  4. Mode selection affects only the Squad section captain panel; Transfer suggestions and Decision Summary ordering are unchanged
+**Plans**: TBD
+**Phase notes**: EO% sourced from selected_by_percent on MergedPlayer (already in merged_players.json) — no new API calls or pipeline changes required. EO-04 scope boundary: mode state must be local to the captain panel component (or its parent Squad section), not lifted to global page state.
+**UI hint**: yes
+
+### Phase 58: Mini-League Rival Tracker
+**Goal**: Managers can load their mini-league rivals, see a ranked summary table with captain picks and chip status, and get differential intelligence — which players give an advantage, which rival players are threats, and which transfers block rivals simultaneously
+**Depends on**: Phase 55 (v1.8 complete; independent of Phases 56 and 57 — can be executed in parallel with Phase 57)
+**Requirements**: ML-01, ML-02, ML-03, ML-04, ML-05, ML-06, ML-07, ML-08
+**Success Criteria** (what must be TRUE):
+  1. User can enter a mini-league ID and see a rival summary table with rank, rank gap to the user's rank, captain pick (post-deadline), and chips remaining per rival
+  2. For any selected rival, the system shows which players the user and rival share, which players the user owns that the rival does not (user differential), and which high-xPts players the rival owns that the user does not (rival threats)
+  3. The system flags transfer targets that would simultaneously give a differential advantage over rivals (blocking move indicator)
+  4. A rank impact estimate for the captain differential is shown — expected rank swing if the user's captain outscores the rival's captain based on xPts_90th_1gw gap
+  5. Leagues with more than 20 rivals show a note; rivals are fetched in batches of 3 concurrent requests, never unbounded parallel calls
+**Plans**: TBD
+**Phase notes**: Requires `p-limit` ^6.1.0 npm install for the 3-concurrent-request batching in ML-08. All FPL API calls go through the existing `/api/fpl/[...proxy]` route handler — no direct browser-to-FPL calls. Captain pick is only available post-deadline (FPL API does not expose picks pre-deadline). ML-09 pagination for leagues > 20 deferred to v1.10.
+**UI hint**: yes
+
+### Phase 59: Manual Transfer Planner
+**Goal**: Managers can design their own GW-by-GW transfer sequences in a dedicated Manual Plan sub-tab — with live bank balance, FT tracking, hit counting, break-even weeks per hit, and a full squad snapshot per GW
+**Depends on**: Phase 56 (FT engine fix required for accurate FT bank simulation per MTP-04)
+**Requirements**: MTP-01, MTP-02, MTP-03, MTP-04, MTP-05, MTP-06, MTP-07, MTP-08
+**Success Criteria** (what must be TRUE):
+  1. User can open a "Manual Plan" sub-tab in the Planner section that is separate from the existing AI planner tab and does not replace or hide it
+  2. User can add, remove, or swap any transfer for any GW step using a position-filtered, budget-aware player picker
+  3. Each GW step shows the running bank balance (starting bank + cumulative sell prices − buy prices) and FT status (Free or Hit −4pts) based on the corrected FT engine
+  4. The plan summary shows total hits, total hit cost in points, and break-even weeks per hit transfer (formula: 4 ÷ xPts delta)
+  5. Each GW step expands to show the full 15-player squad snapshot reflecting all transfers applied up to that point
+  6. When unauthenticated, a caveat is shown that sell prices are approximate (using now_cost, not the exact selling_price from the FPL my-team API)
+  7. The plan state survives page navigation within the session (localStorage persistence)
+**Plans**: TBD
+**Phase notes**: MTP-07 sell price approximation caveat is shown only when unauthenticated (squadData from my-team API is unavailable). When authenticated, exact selling_price values from the my-team API must be used. Plan state persistence (MTP-08) uses localStorage with a stable key; plan is restored on mount.
+**UI hint**: yes
+
+### Phase 60: Transfer Route Tree
+**Goal**: The system generates 2–3 branching transfer paths in pure TypeScript and presents them in a side-by-side summary table — with a "Load into Manual Planner" bridge so the manager can refine any path manually
+**Depends on**: Phase 59 (MTP-01 Manual Plan sub-tab must exist for TRT-05 "Load into Manual Planner" bridge)
+**Requirements**: TRT-01, TRT-02, TRT-03, TRT-04, TRT-05, TRT-06, TRT-07
+**Success Criteria** (what must be TRUE):
+  1. System generates 2–3 distinct transfer paths, each starting from a different sell-player root, with a greedy continuation per branch — with no LLM involvement
+  2. A side-by-side summary table shows all paths with total hits, total hit cost in points, net projected xPts, and chips preserved vs consumed; the highest net-xPts path is visually highlighted as recommended
+  3. Each path is expandable to a GW-by-GW breakdown showing: transfer out / in, FT bank at that GW, projected xPts contribution
+  4. A "Load into Manual Planner" button on any path pre-populates the Phase 59 Manual Plan with that path's transfers, ready for manual refinement
+  5. Tree generation respects the active chip mode (Wildcard / Free Hit / Bench Boost) and recalculates when the GW horizon toggle changes
+**Plans**: TBD
+**Phase notes**: TRT-01 is PURE TYPESCRIPT — top-3 distinct sell roots with greedy continuation per branch. Explicitly NO LLM. LLM-generated branching is deferred to v1.12 (NLP-01). TRT-05 bridge requires Phase 59 MTP-01 to be complete before this phase begins. Tree builds on Phase 56 (corrected FT engine) for accurate FT bank state at each branch node.
+**UI hint**: yes
+
 ## Progress
 
 | Phase | Milestone | Plans | Status | Completed |
@@ -334,3 +410,8 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
 | 53 | v1.8 | 3/3 | Complete | 2026-05-02 |
 | 54 | v1.8 | 0/3 | Planned | — |
 | 55 | v1.8 | 2/2 | Complete | 2026-05-03 |
+| 56 | v1.9 | 0/2 | Planned | — |
+| 57 | v1.9 | 0/? | Not started | — |
+| 58 | v1.9 | 0/? | Not started | — |
+| 59 | v1.9 | 0/? | Not started | — |
+| 60 | v1.9 | 0/? | Not started | — |
