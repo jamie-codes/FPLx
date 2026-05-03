@@ -80,12 +80,13 @@ function CandidateRow({
   isAuthenticated: boolean
   myTeamPickIds: Set<number>
 }) {
-  const eoPercent = Math.round(parseFloat(candidate.selected_by_percent))
+  const rawEo = parseFloat(candidate.selected_by_percent)
+  const eoPercent = Number.isFinite(rawEo) ? Math.round(rawEo) : 0
   const showDangerBadge =
     mode === 'protect_rank' &&
     isAuthenticated &&
     myTeamPickIds.size > 0 &&
-    parseFloat(candidate.selected_by_percent) > 30 &&
+    (Number.isFinite(rawEo) ? rawEo : 0) > 30 &&
     !myTeamPickIds.has(candidate.id)
 
   const nextGwFixtures = (() => {
