@@ -52,7 +52,6 @@ function makePlayer(overrides: PlayerOverrides): MergedPlayer {
     xPts_3gw: 14.0,
     xPts_5gw: 22.0,
     xPts_90th_1gw: 7.0,
-    element_type: 3,
     ...overrides,
   } as MergedPlayer
 }
