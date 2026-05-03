@@ -333,7 +333,7 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
   - Plans 01 and 02 touch DISJOINT files (Plan 01 = src/lib/free-transfer-engine.ts, tests/lib/free-transfer-engine.test.ts, src/lib/planning-engine.ts; Plan 02 = src/components/planner/PlannerTab.tsx) — fully parallel-safe
   - Plan 01 fixes the engine; Plan 02 fixes the consumer that seeds the engine. Both must ship for FTX-01 to be fully delivered (Plan 01 covers FTX-02 in full; FTX-01 cap correctness needs both halves)
 
-### Phase 57: Effective Ownership Mode
+### ✅ Phase 57: Effective Ownership Mode (completed 2026-05-03)
 **Goal**: The captain panel surfaces EO% per candidate and a four-mode toggle — Max xPts, Protect Rank, Chase Rank, Differential Aggressive — so managers can align captaincy decisions to their current rank position and risk appetite
 **Depends on**: Phase 55 (v1.8 complete; independent of Phase 56)
 **Requirements**: EO-01, EO-02, EO-03, EO-04
@@ -346,7 +346,7 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
   **Wave 1**
   - [x] 057-01-PLAN.md — TDD: src/lib/eo-candidates.ts + eo-candidates.test.ts (computeEOCandidates pure ranker for 4 EO modes; eligibility filter; median-from-full-pool guard for Pitfall 2) *(complete 2026-05-03)*
   **Wave 2** *(blocked on Wave 1 completion)*
-  - [ ] 057-02-PLAN.md — rewrite CaptainPicksPanel as ranked top-5 with EOModeToggle + ~EO% inline + Dangerous-to-fade badge (D-01..D-11) + RTL test suite + page.tsx submittedId thread + human-verify checkpoint
+  - [x] 057-02-PLAN.md — rewrite CaptainPicksPanel as ranked top-5 with EOModeToggle + ~EO% inline + Dangerous-to-fade badge (D-01..D-11) + RTL test suite + page.tsx submittedId thread + human-verify checkpoint *(complete 2026-05-03)*
   **Cross-cutting constraints:**
   - `computeEOCandidates` and `EOMode` must exist (Plan 01) before CaptainPicksPanel can `import { computeEOCandidates, type EOMode } from '@/lib/eo-candidates'` (Plan 02)
   - Plan 02 mounts the rewritten panel at the existing `<CaptainPicksPanel />` site in `page.tsx` line ~215; only the prop is changed (Pitfall 6) — the surrounding fragment with `<PlannerTab />` is preserved unchanged

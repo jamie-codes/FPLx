@@ -3,7 +3,7 @@ phase: 57
 plan: 02
 subsystem: captaincy-ui
 tags: [eo, captaincy, component, rtl, ui, tdd]
-status: checkpoint — awaiting human verification
+status: complete — human verification approved 2026-05-03
 dependency_graph:
   requires: [057-01]
   provides: [CaptainPicksPanel-v2, EOModeToggle, DangerousToFadeBadge, CandidateRow]
