@@ -99,6 +99,10 @@ export function generatePlan(
     }
 
     // Score all (sell, buy) pairs
+    // This engine takes at most 1 transfer per GW — compute hit cost once per step
+    // (same value for every candidate in this GW, avoids recomputing inside the loop).
+    const transferNumber = 1  // greedy engine: exactly 1 transfer per GW
+    const stepCandidateHitCost = computeHitCost(currentFT.available, transferNumber, null)
     const allScoredTransfers: ScoredTransfer[] = []
 
     for (const sellPlayer of startingXIPlayers) {
@@ -126,7 +130,7 @@ export function generatePlan(
         }
 
         const totalScore = gwScore + lookAheadScore
-        const hitCost = computeHitCost(currentFT.available, 1, null)
+        const hitCost = stepCandidateHitCost
         const netGain = totalScore + hitCost
 
         allScoredTransfers.push({
