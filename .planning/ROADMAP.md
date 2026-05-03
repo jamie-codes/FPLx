@@ -344,7 +344,7 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
   4. Mode selection affects only the Squad section captain panel; Transfer suggestions and Decision Summary ordering are unchanged
 **Plans**: 2 plans (2 waves)
   **Wave 1**
-  - [ ] 057-01-PLAN.md — TDD: src/lib/eo-candidates.ts + eo-candidates.test.ts (computeEOCandidates pure ranker for 4 EO modes; eligibility filter; median-from-full-pool guard for Pitfall 2)
+  - [x] 057-01-PLAN.md — TDD: src/lib/eo-candidates.ts + eo-candidates.test.ts (computeEOCandidates pure ranker for 4 EO modes; eligibility filter; median-from-full-pool guard for Pitfall 2) *(complete 2026-05-03)*
   **Wave 2** *(blocked on Wave 1 completion)*
   - [ ] 057-02-PLAN.md — rewrite CaptainPicksPanel as ranked top-5 with EOModeToggle + ~EO% inline + Dangerous-to-fade badge (D-01..D-11) + RTL test suite + page.tsx submittedId thread + human-verify checkpoint
   **Cross-cutting constraints:**
