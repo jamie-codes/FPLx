@@ -4,7 +4,9 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
-v1.7 (current) completed the Decision Assistant: the manager sees a single-screen Decision Summary composing captain picks, transfer opportunity cost, chip timing, and risk flags — all with High/Medium/Low severity signals. New engines: Fixture Swing Detector (buy/sell signals from ease delta), CS% per fixture (rolling xGA), explainable xPts breakdown (component hover card), player lifecycle labels (7-label taxonomy beyond Buy/Hold/Sell), and the Transfer Opportunity Cost Simulator (Roll/1-FT/2-FT/Hit comparison with break-even weeks). The Decision tab is now the default Squad landing page.
+v1.8 completed Predictive Intelligence: calibrated per-player xMins probability distributions (start_prob, mins_60_prob), learned bonus EV replacing flat BONUS_RATE, price change predictor with rise/fall confidence tiers, and autosub-legal bench ordering via benchOrder().
+
+v1.7 completed the Decision Assistant: single-screen Decision Summary composing captain picks, transfer opportunity cost, chip timing, and risk flags with High/Medium/Low severity signals. New engines: Fixture Swing Detector, CS% per fixture, explainable xPts breakdown, player lifecycle labels, and Transfer Opportunity Cost Simulator.
 
 v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto formation, configurable 1/3/5 GW horizon, transfer-aware mode, and chip modes (Wildcard, Free Hit, Bench Boost).
 
@@ -14,15 +16,23 @@ v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scor
 
 Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
 
-## Current Milestone: v1.8 Predictive Intelligence
+## Current Milestone: v1.9 Competitive Intelligence
 
-**Goal:** Make every recommendation smarter by replacing flat-rate assumptions with per-player probability models — richer xMins, learned bonus EV, price velocity signals, and autosub-aware bench ordering.
+**Goal:** Give the manager squad-aware strategic context — rival intelligence, ownership-adjusted decisions, and full manual transfer planning with financial simulation.
 
 **Target features:**
-- MIN-01: xMins Confidence Engine — start_prob + mins_60_prob + sub-risk detection; extends existing xmins.py pipeline module
-- BPS-01: Bonus Point Predictor — per-player bonus EV from BPS data; replaces flat BONUS_RATE; adds bonus_pts to xPts_components_1gw
-- PRC-01: Price Change Predictor — net transfer velocity tracker; rise/fall prediction with confidence and timing; new pipeline/price_changes.py
-- BENCH-01: Bench Order Optimiser — autosub-legal bench ordering with start probability weighting; pure TS extension of optimise-lineup.ts
+- MTP-01: Manual Transfer Planner — separate Planner tab; user-designed GW-by-GW transfer sequences with sell price + bank tracking, FT bank simulation, hit counting, and break-even weeks per hit
+- ML-01: Mini-League Rival Tracker — rival squads, captain, chip status, rank gap; differential intelligence (upside/threat players); blocking vs attacking move flags; rank gap projection
+- EO-01: Effective Ownership & Rank Protection — EO% per player; EO-adjusted captain EV; mode toggle (Max xPts / Protect Rank / Chase Rank / Differential Aggressive)
+- TREE-01: Transfer Route Tree — AI-generated 2–3 branching multi-week sequences; GW-by-GW FT bank, hit cost, xPts per path; chip interaction analysis
+
+---
+
+---
+
+## Previous State (v1.8 Predictive Intelligence — SHIPPED 2026-05-03)
+
+v1.8 complete — 4 phases (52-55), 12 plans. All four predictive intelligence features delivered: xMins Confidence Engine (start_prob, mins_60_prob, sub_risk_label, position-prior fallback, xmins_v2_enabled gate); Bonus Point Predictor (shrinkage estimator, BPS-CS residualisation for GK/DEF, bonus_predictor_enabled gate); Price Change Predictor (cumulative net-transfer snapshots, PriceChangePanel with HIGH/MEDIUM/LOW confidence tiers, 14-day early-data guard); Bench Order Optimiser (benchOrder() EV formula, formation-legality validator, BGW/DGW partition, BB bypass note). See `.planning/milestones/v1.8-ROADMAP.md`.
 
 ---
 
@@ -197,7 +207,14 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 - ✓ OCS-01/02/03/04/05: Transfer Opportunity Cost Simulator — Roll/1-FT/2-FT/Hit table, break-even weeks, named pairs, FT count auto-detection — v1.7
 - ✓ WDS-01/02/03/04/05: Weekly Decision Summary — 4-card single screen, priority order, severity badges, no-squad degradation, DGW/BGW context flags — v1.7
 
-### Active (v1.8)
+### Validated (v1.8)
+
+- ✓ MIN-01: xMins Confidence Engine — start_prob, mins_60_prob, sub_risk_label, xmins_v2_enabled gate — v1.8
+- ✓ BPS-01: Bonus Point Predictor — shrinkage estimator, BPS-CS residualisation, bonus_predictor_enabled gate — v1.8
+- ✓ PRC-01: Price Change Predictor — net transfer velocity, PriceChangePanel, HIGH/MEDIUM/LOW tiers — v1.8
+- ✓ BENCH-01: Bench Order Optimiser — benchOrder() EV, formation-legality, BGW/DGW rules, BB bypass — v1.8
+
+### Active (v1.9)
 
 *(requirements being defined — see REQUIREMENTS.md)*
 

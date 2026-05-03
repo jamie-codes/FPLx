@@ -1,390 +1,431 @@
-# Domain Pitfalls: Decision Assistant (v1.7)
+# Domain Pitfalls — v1.9 Competitive Intelligence
 
-**Domain:** Adding decision-assistant features to an existing FPL analytics system
-**Researched:** 2026-05-01
-**Project context:** Next.js 16 + React 19 + TypeScript + Python pipeline, existing xPts engine (Poisson/Bernoulli), `suggestTransfers()`, `optimiseLineup()`, `computeClubForm()`, `computeVerdicts()`, `computeExplanations()`, Vercel Blob storage
+**Domain:** FPL Analyst — adding MTP-01 (Manual Transfer Planner), ML-01 (Mini-League Rival Tracker), EO-01 (Effective Ownership), and TREE-01 (Transfer Route Tree) to an existing FPL analytics app.
+**Researched:** 2026-05-03
+**Source confidence:** HIGH on FPL sell price rules (premierleague.com official + community sources agree); HIGH on FT banking rule changes (official PL announcement for 2024/25); HIGH on integration pitfalls (verified against `src/lib/free-transfer-engine.ts`, `src/lib/planning-engine.ts`, `src/lib/types.ts`); MEDIUM on FPL API undocumented behaviours (community research, unconfirmed by official docs); MEDIUM on EO approximation limits (community reverse-engineering).
+
+This document catalogues mistakes that will cause v1.9 features to ship broken or to silently corrupt downstream consumers. Pitfalls are scoped to features being **added to this existing system** — generic software engineering advice is not the focus.
 
 ---
 
-## Section 1 — Transfer Opportunity Cost Simulator
+## Critical Pitfalls
 
-### Pitfall 1: Not anchoring to actual FT state at decision time
+These cause silent financial simulation errors, misleading UI, or broken integration with existing engines. Address in the corresponding phase or they will leak into shipped code.
 
-**What goes wrong:** The simulator asks the user "how many FTs do you have?" but does not cross-reference the FPL API's actual `entry-history` or `my-team` data. If the user forgets they rolled a transfer last week, the simulator will show "Roll saves a FT" on a squad already at the 2-FT cap — which is impossible. Worse, when auth is absent, the system silently uses `ftCount=1` as the default, making "Roll" always look attractive.
+### Pitfall C1: free-transfer-engine.ts implements the pre-2024/25 FT banking rules
 
-**Why it happens:** `suggestTransfers()` already takes `ftCount: 1 | 2` as a parameter. The UI is responsible for providing the correct value. It is tempting to default to 1 rather than fetch from `my-team`.
+**Phase:** MTP-01, TREE-01
 
-**Consequences:** The "Roll" column shows a phantom benefit. The manager takes no action believing they will gain a free transfer they already have.
+**What goes wrong:** The 2024/25 FPL season introduced two breaking rule changes ([official PL announcement](https://www.premierleague.com/en/news/4058895)):
+
+1. **FT bank cap raised from 1 to 4** — managers can now accumulate up to 5 free transfers (1 weekly + 4 banked), not the old cap of 2. Yet `computeNextFTState` in `src/lib/free-transfer-engine.ts` has `Math.min(1, unused)` on line 20 (normal GW path) and `Math.min(1, currentAvailable - 1)` on line 14 (Free Hit path), both capping bank at 1. Any MTP-01 simulation starting from a state where the user has 3+ FTs will immediately be wrong.
+
+2. **Wildcard and Free Hit no longer reset banked transfers** — under the old rule, using WC/FH forfeited all banked FTs. Since 2024/25, banked FTs are preserved through chip plays. Yet the wildcard path in `computeNextFTState` (line 10) unconditionally returns `{ available: 1, banked: 0 }`, discarding all banked transfers. A TREE-01 path that includes a wildcard step will silently undercount FTs for every subsequent step.
+
+**Why it happens:** The FT engine was written during v1.3 (2026-04-29), before the 2024/25 rule change was identified as a gap. The v1.7/v1.8 work reused this engine without re-auditing the rules.
+
+**Consequences:**
+- MTP-01 financial simulation shows fewer FTs than the user actually has — suggests unnecessary hits.
+- TREE-01 paths through wildcard nodes underestimate FTs in all downstream steps, making hit-heavy paths look worse than they are.
+- PlannerTab (v1.3) has the same bug but it only affects users with >1 banked FT; it was never caught because the UI defaults `initialFTState = { available: 1, banked: 0 }` (line 55 of PlannerTab.tsx), masking the engine bug with a conservative input.
 
 **Prevention:**
-- When the user is authenticated (`useMyTeam` enabled), derive `ftCount` from the FPL `my-team` API field `free_transfers` (already available on the `MyTeamPick` response in `squad-adapter.ts`). Do not let the UI override it.
-- When unauthenticated, show a FT selector (1 or 2) that is visually prominent and clearly labelled "Set your free transfers."
-- Add a note: "FPL caps banked transfers at 2. Rolling when you already have 2 FTs gains nothing."
+- Fix `computeNextFTState` before writing any MTP-01 code:
+  - Normal GW: `const banked = Math.min(4, unused)` (cap at 4 banked, max 5 available)
+  - Wildcard: preserve banked transfers — `return { available: 1 + Math.min(4, currentAvailable - 1), banked: Math.min(4, currentAvailable - 1) }`
+  - Free Hit: same as wildcard (banked transfers preserved through chip play)
+- Update `FTState.banked` JSDoc in `types.ts` to state the range is now 0–4.
+- Write regression tests: start with 4 banked, use wildcard, assert 5 available next GW.
+- Fix the PlannerTab `initialFTState` default — it should read from `entry_history.event_transfers` and `entry_history.bank` to derive actual FT state, not assume 1.
 
-**Detection:** Integration test: authenticated squad with 2 FTs — assert "Roll" column shows `+0 FTs` or is suppressed entirely.
+**Detection:** Unit test `computeNextFTState({ available: 5, banked: 4 }, 0, null)` — should return `{ available: 5, banked: 4 }`. Currently returns `{ available: 2, banked: 1 }`.
 
 ---
 
-### Pitfall 2: Free transfer banking produces infinite deferral loop
+### Pitfall C2: Sell price ≠ buy price — asymmetric profit formula
 
-**What goes wrong:** The simulator compares Roll / 1-FT / 2-FT / Hit on a 1/3/5 GW horizon. On a 1 GW horizon, rolling always appears attractive when xPtsGain is below threshold — the next GW's numbers are not shown. The manager perpetually rolls, never transfers, and the simulator never surfaces the compounding opportunity cost of inaction.
+**Phase:** MTP-01
 
-**Why it happens:** The opportunity cost of banking is not modelled as a future expected loss. The simulator shows "gain from rolling = +1 FT in bank" but does not show "expected points loss from deferring the best available transfer for N GWs."
+**What goes wrong:** FPL sell price is calculated as:
 
-**Consequences:** The simulation systematically favours deferral, under-indexing on immediate upgrades that would pay off within the scoring horizon.
+```
+sell_price = buy_price + floor((current_price - buy_price) / 2 × 10) / 10
+```
+
+Key consequences:
+- A player bought at £6.0m now worth £6.3m sells for **£6.1m** (not £6.3m — you only get half the rise, rounded down).
+- A player bought at £6.0m now worth £5.9m sells for **£5.9m** (full loss — falls are not halved).
+- A player bought at £6.0m still worth £6.0m sells for **£6.0m** (no change — correct).
+- A player bought at £6.0m now worth £6.1m sells for **£6.0m** (£0.1m rise gives zero profit — the halving rounds down to zero).
+
+The existing `generatePlan()` and `generateChipStep()` already have a `sellPrices` parameter and use `MyTeamPick.selling_price` from the authenticated endpoint — this is correct. **The trap is in MTP-01's manual entry mode**, where the user inputs players without auth. If MTP-01 defaults to `now_cost` as the sell price (like the unauthenticated path in `planning-engine.ts` line 105), the budget simulation will overestimate sell proceeds for players who rose and underestimate for players who fell.
+
+**Why it happens:** `selling_price` is only available from `/api/my-team/` (requires auth cookie). The unauthenticated public endpoint (`entry/{id}/event/{gw}/picks/`) does not include sell prices — the Zod schema (`SquadPicksResponseSchema` vs `MyTeamResponseSchema`) explicitly separates these two shapes. MTP-01's manual mode has no authenticated source to pull from.
+
+**Consequences:** User inputs a manual plan, sees a budget of £2.5m, believes they can afford a player at £8.2m, but actual sell proceeds are £8.0m (the player rose) and they'd actually be £0.2m short. The MTP-01 UI would not flag this.
 
 **Prevention:**
-- On the 1 GW horizon view, show the top-1 transfer suggestion's `xPtsGain` explicitly as the "cost of rolling." The UI framing should be: "Rolling costs you ~X xPts if this transfer is available next week."
-- Extend the 3 GW and 5 GW horizon calculations to include the projected gain from making the transfer now vs deferring. Use the existing `suggestTransfers()` output: `xPtsGain` on the 3/5 GW field is already the forward-looking gain.
-- Never show "Roll" as the dominant recommendation without quantifying the deferral cost.
+- In MTP-01 manual mode, show a sell price input field per player (pre-populated from `selling_price` if auth available, otherwise defaulting to `now_cost` with a visible warning: "Using current price as sell price — log in for exact sell prices").
+- Use a helper function `computeSellPrice(buyPrice, currentPrice): number` that implements the floor formula — do not inline this arithmetic.
+- Display sell price vs buy price as distinct columns in MTP-01's player table. The difference is the "locked profit/loss" that affects budget.
+- Never use `now_cost` silently as sell price in a budget simulation. Either use authenticated `selling_price` or show the caveat prominently.
 
-**Detection:** Scenario test: squad with one clear upgrade (xPtsGain > 4 over 3 GW) — assert the simulator flags rolling as a net-negative on the 3 GW view.
+**Detection:** Test `computeSellPrice(60, 63) === 61` (not 63). Test `computeSellPrice(60, 59) === 59` (full loss). Test `computeSellPrice(60, 61) === 60` (zero gain despite £0.1m rise).
 
 ---
 
-### Pitfall 3: Hit break-even inconsistency across horizons
+### Pitfall C3: FPL `entry/{id}/event/{gw}/picks/` returns the previous GW's squad before a manager confirms this week's picks
 
-**What goes wrong:** The simulator displays `breakEvenGws` using the formula `ceil(4 / xPtsGainPerGw)`. But `xPtsGainPerGw = xPtsGain / horizon`. When the user toggles from 1 GW to 3 GW horizon, `breakEvenGws` changes — not because the player's underlying quality changed, but because the denominator changed. This confuses users and gives the impression the hit becomes "more worthwhile" on a longer horizon, even if the player's per-GW rate is identical.
+**Phase:** ML-01
 
-**Why it happens:** The existing `suggestTransfers()` engine correctly implements this formula per `45-UI-SPEC.md §9`. The pitfall is in how the Opportunity Cost Simulator presents three separate outputs (1/3/5 GW) without explaining that break-even figures are horizon-relative.
+**What goes wrong:** The FPL picks endpoint is keyed by `event_id` (gameweek number). For a rival who has **not yet confirmed their squad** for the current GW (i.e. before the deadline), querying `entry/{id}/event/{current_gw}/picks/` will return a 404 or the last confirmed squad (the previous GW). The API has no field that tells you whether the picks you received are from this GW or the previous one.
 
-**Consequences:** The manager makes a hit based on "break-even in 2 GWs" shown on the 3 GW view, not realising the 1 GW view would have shown "break-even in 4 GWs" for the exact same transfer pair.
+This is distinct from the "stale rival squad" issue — it's a structural limitation: the API only surfaces confirmed squads. A rival's pre-deadline pending transfers are invisible.
+
+**Consequences:**
+- ML-01 shows a rival as owning players they've already transferred out.
+- Differential intelligence (players the user owns that rivals don't) is wrong.
+- "Blocking vs attacking move" flags are wrong — you think a rival owns your target when they've already sold them.
 
 **Prevention:**
-- Add a single shared `breakEvenGws` displayed prominently, computed from the 1 GW `xPtsGainPerGw` only. Label it: "Break-even using 1 GW gain rate."
-- The horizon toggle on the simulator controls which population of players is shown (broader 5 GW fixture view = different ranking), not the break-even arithmetic.
-- Write a unit test asserting that changing `horizon` alone does not change the displayed break-even for the same (sell, buy) pair where the player's 1 GW xPts are held constant.
+- Always query picks for `current_gw - 1` (the last **finished** GW) rather than the current live GW — this is deterministic and confirmed.
+- If you want this-GW data, display a banner: "Rival squads as of GW{n} deadline — picks made after that deadline are not visible."
+- Cross-reference the `entry_history.event` field in the response to detect if the returned data is from the expected GW. If `response.entry_history.event !== target_gw`, show a "squad not yet confirmed" indicator for that rival.
+- Use the `is_current` and `finished` flags from the bootstrap `events` array to determine the last confirmed GW correctly.
+
+**Detection:** Integration test with a known team ID: query picks for an upcoming GW before the deadline and verify the `entry_history.event` field in the response matches the target GW.
 
 ---
 
-### Pitfall 4: Additive 2-transfer approximation inflates combo gains
+### Pitfall C4: Parallel fetching of N rival picks triggers rate-limiting on the FPL API
 
-**What goes wrong:** `suggestTransfers()` uses an additive approximation for 2-FT combos: `xPtsGain = gain1 + gain2`. This is documented in `45-RESEARCH.md §Risk 7` as intentional. However, the Opportunity Cost Simulator presents the combo gain as if it were independently verified. When the two transfers interact (e.g., both bring in a player from the same team, reducing squad flexibility), the additive gain is optimistic.
+**Phase:** ML-01
 
-**Why it happens:** Full re-running of `optimiseLineup()` per combo is the accurate approach but was ruled out for performance (per `CLAUDE.md` Key Decisions). The approximation is fine for the existing Transfer Suggestions UI, but the Opportunity Cost Simulator frames the output as a precise decision tool.
+**What goes wrong:** ML-01 needs to fetch:
+1. `leagues-classic/{league_id}/standings/` — paginated, 50 results per page, multiple pages for 100+ rival leagues.
+2. `entry/{id}/event/{gw}/picks/` — one request per rival.
 
-**Consequences:** The simulator recommends a 2-FT hit that appears to gain 4.2 xPts, but the actual gain post-bench-order-update is 3.4 xPts — insufficient to cover the -4pt hit cost.
+A league with 20 rivals requires 20 parallel picks requests. A league with 100 requires 100. The FPL API has no documented rate limit, but community experience is that firing 20+ parallel requests from a single IP causes transient 429s or connection resets — especially from a Vercel serverless function where the outbound IP may be shared across deployments.
+
+The current proxy `[...proxy]/route.ts` fires single requests (`next: { revalidate: 0 }`) with no concurrency throttle. Routing 50 picks requests through it simultaneously will likely result in some returning 502 errors (the proxy already catches these — line 36).
+
+**Consequences:** ML-01 shows an incomplete rival list. Some rivals have squads, others show "squad unavailable" errors. The errors are non-deterministic (varies by load), making the feature feel unreliable rather than surfacing a clear message.
 
 **Prevention:**
-- In the Opportunity Cost Simulator UI, label 2-FT combo gains with a caveat: "Estimated — individual gains summed."
-- When the combo gain is within 1.0 xPts of the hit cost break-even (i.e., breakEvenGws = 1), suppress the suggestion or flag it as "marginal — verify."
-- Do not promise precision that the approximation cannot deliver.
+- **Client-side sequential or batched fetching:** use a `pLimit(3)` or similar concurrency limiter (available via `p-limit` — already may be in the dependency tree) to fetch rival picks in batches of 3 at a time.
+- **Cap total rivals at 20:** for a personal tool, cap ML-01 to the top 20 rivals by league position. This keeps total requests to 20 and eliminates the scaling problem.
+- **Server-side aggregation route:** create a single `/api/rival-squads?league={id}&gw={n}` route that fetches all picks server-side, handles retries internally, and returns a single JSON payload. The UI makes one request. The route uses sequential fetches with a 100ms delay between requests to avoid burst.
+- **Exponential backoff on 429:** the proxy route should detect 429 responses and include a `Retry-After` header passthrough rather than immediately returning 502.
+- **Cache the league standings for the session:** once fetched, standings don't change mid-session. Use TanStack Query with a 30-minute `staleTime` for standings data to avoid refetching on every tab switch.
+
+**Detection:** Test with a 50-member league. Measure how many requests succeed vs fail. Assert >95% success rate with concurrency limited to 3.
 
 ---
 
-## Section 2 — Weekly Decision Summary
+### Pitfall C5: `selected_by_percent` is overall ownership, not top-10k ownership — EO% will be systematically wrong for any differential player
 
-### Pitfall 5: Conflicting recommendations from different engines
+**Phase:** EO-01
 
-**What goes wrong:** The Decision Summary aggregates outputs from four existing engines: `computeVerdicts()` (BUY/HOLD/SELL from gem_score), `suggestTransfers()` (specific sell+buy pair), `CaptainPicksPanel` (ceiling + EO-adjusted captain), and `chip-strategy-engine.ts` (BB/TC/FH timing). These engines are not coordinated. It is entirely possible for the Decision Summary to show:
+**What goes wrong:** `selected_by_percent` on the FPL bootstrap element is the ownership percentage across **all 10+ million FPL managers**. Top-10k ownership is consistently different:
+- High-ownership template players (Salah, Haaland) have similar ownership at all levels.
+- Differentials owned by 3% overall may be owned by 8–12% in the top 10k (smart money moves earlier).
+- Popular cheap enablers may be at 40% overall but only 15% top-10k (mass market picks avoided by serious managers).
 
-- Verdict: HOLD for Player X
-- Transfer suggestion: SELL Player X
-- Captain suggestion: Captain Player X
+EO-01's spec says "EO% per player (estimated ownership among top 10k, not overall ownership)" but the only available data field is `selected_by_percent`. The approximation is non-trivial and skewed in the direction that matters most — differential players are the ones where EO matters for rank protection, and they're exactly the ones where the approximation is worst.
 
-**Why it happens:** Each engine uses a different signal source and threshold. `computeVerdicts()` uses `gem_score` (composite). `suggestTransfers()` uses `xPts_NgW` delta. `CaptainPicksPanel` uses `xPts_90th_1gw`. They are genuinely optimising different things — this is by design in the existing tab-by-tab architecture.
+**Why it happens:** Top-10k ownership data requires either scraping the top-10k league standings (ML-01 infrastructure), or using community tools (LiveFPL, FPLAnalytics) that aggregate this. The FPL API has no first-class endpoint for it.
 
-**Consequences:** The Decision Summary surface presents three contradictory signals about the same player. The user loses trust in the system's authority.
+**Consequences:**
+- EO-adjusted captain recommendations show the wrong captain as "rank protecting."
+- "Dangerous to fade" labels fire on players who 3% own but top-10k barely own — giving false urgency.
+- A player labelled "high upside differential" may actually be widely held by top-10k managers, making it a rank-neutral pick rather than rank-chasing.
 
 **Prevention:**
-- Establish a strict priority hierarchy for the Decision Summary: Transfer engine overrides Verdict engine when they conflict on the same player. Captain engine is an independent signal (not a conflict).
-- If `suggestTransfers()` says SELL Player X and `computeVerdicts()` says HOLD, the Decision Summary should say "Transfer out recommended" and suppress the HOLD verdict for that player in this view.
-- Do not surface all four engine outputs simultaneously on the same player without reconciliation. Use the summary to pick one authoritative recommendation per dimension (captain, transfer, chip, bench).
-- Add a reconciliation layer: `resolveDecisionSummary(captainPicks, transferSuggestions, verdicts, chipScores) → DecisionSummary` that implements the priority hierarchy.
+- Be explicit about what EO-01 is computing: label the field `overall_ownership_pct` in the data, not `eo_pct`. The UI can display "~EO (approx.)" with a tooltip explaining the approximation.
+- If ML-01 is built in the same milestone, use it: compute **actual top-N rival ownership** from the fetched rival squads. This is true EO for the user's mini-league context, which is actually more useful than population-level EO. Label it "Your league EO%."
+- If using `selected_by_percent` as a proxy, apply a documented skew correction: high-ownership players (>20%) are close to accurate; mid-ownership (5–20%) skew toward being higher in top-10k; low-ownership (<5%) are often 2× higher in top-10k. Frame this as an approximation with uncertainty, not a precise figure.
+- Never present overall ownership as "top-10k EO" without a caveat. This would be actively misleading for the differential player decisions where EO matters most.
 
-**Phase to address:** Decision Summary phase, from the initial spec. This is the highest-risk pitfall for user trust in this milestone.
+**Detection:** Compare `selected_by_percent` against the LiveFPL top-10k ownership table for 5 test players. Document the mean absolute error for the approximation.
 
 ---
 
-### Pitfall 6: Information overload on a single screen
+### Pitfall C6: TREE-01 combinatorial explosion with FT bank accumulation creates exponential path counts
 
-**What goes wrong:** The Decision Summary tries to show everything at once: captain recommendation, bench order, 2 transfer suggestions, chip timing, risks, and opportunities. The FPL deadline is Friday 11:30am. The user has 3 minutes. They cannot process 8 panels.
+**Phase:** TREE-01
 
-**Why it happens:** The design impulse is to surface all available intelligence. The app already has 12+ tabs of analysis. Assembling them on one screen creates a decision dashboard that demands more attention than the deadline allows.
+**What goes wrong:** TREE-01 generates branching multi-week transfer paths. The naive branching factor is:
+- GW1: transfer (0, 1, 2 transfers, or chip) × top-N candidates = many paths.
+- GW2: for each GW1 outcome, repeat.
+- GW3: for each GW2 outcome, repeat.
 
-**Consequences:** The manager reads the first panel, ignores the rest, and the Decision Summary delivers no value beyond the existing individual tabs.
+With the fixed-2-FT old rule, the branching was bounded: max 2 transfers per GW from a small pool. With the corrected 5-FT bank rule (Pitfall C1 fix), a manager with 5 banked FTs in GW1 could make 5 transfers — from 15 sell candidates × top-20 buys per position = hundreds of combinations **per transfer**, with 5 transfers that's intractable.
+
+Even without the 5-FT edge case: if TREE-01 considers {0, 1, 2} transfers each GW with the top-5 candidates for each transfer count, that's roughly 11 paths per GW × 11 × 11 = 1,331 leaf nodes for a 3-GW tree. The existing `generatePlan` already does greedy selection (max 1 transfer per step), not a full tree search.
+
+**Consequences:** TREE-01 either:
+- (a) Tries to enumerate all paths → freezes the browser tab on any realistic input.
+- (b) Uses the same greedy algorithm as `generatePlan` → only generates 1 path, not a branching tree, making TREE-01 misleading in name.
 
 **Prevention:**
-- Limit the Decision Summary to exactly 4 outputs: (1) Captain rec, (2) Transfer rec, (3) Bench order, (4) Chip rec (if applicable) or a "No chip" confirmation.
-- Every recommendation should have a single-sentence rationale and a confidence indicator. No tables, no breakdowns.
-- Deep-dive links ("See full transfer analysis →") should open the relevant existing tab, not expand inline.
-- Apply a "newspaper front page" mental model: one headline per dimension, nothing below the fold on first render.
+- Define TREE-01's scope explicitly: "show the top 3–5 distinct paths" not "show all paths." Use a beam search: at each GW step, keep only the top K paths by cumulative xPts, prune the rest.
+- Bound the branching factor: for each path-step, consider at most `{roll, 1-FT best, 2-FT best, chip}` — that's 4 branches per step, not N×M combinations. The "best 1-FT" is already computed by `generatePlan`. TREE-01 adds the branching **between these top-level choices**, not within them.
+- Hard cap on chip branching: if a wildcard is played in step 1, the squad is restructured — TREE-01 should show this as a distinct sub-tree with a "WC applied" badge and re-run `generateChipStep` to populate it, not branch further within the WC sub-tree.
+- Compute paths lazily: only generate GW2 branches for the top-3 GW1 paths, only generate GW3 branches for the top-3 GW2 paths per GW1 parent.
+
+**Detection:** Time the tree generation on a real squad with `console.time`. Assert it completes in <500ms. If it takes >2s, the branching factor is too high.
 
 ---
 
-### Pitfall 7: Stale data across aggregated sources in the Decision Summary
+## Moderate Pitfalls
 
-**What goes wrong:** The Decision Summary pulls from multiple queries: `usePlayers()` (6h stale), `useCaptainPicks()` (6h stale), `useClubForm()` (6h stale), `useInsights()` (6h stale), `useSquad()` (5 min stale). These queries can have different cache ages. If `usePlayers` was last fetched 5h ago and `useSquad` was fetched 30s ago, the Decision Summary is simultaneously showing a squad from one moment and player data from another.
+### Pitfall M1: xPts projection accuracy degrades rapidly beyond 2 GWs — TREE-01 paths scored at 3-GW horizon will rank incorrectly
 
-**Why it happens:** TanStack Query caches each key independently. The existing app shows freshness at the tab level, not the summary level. When aggregating, freshness is the minimum of all contributing queries.
+**Phase:** TREE-01
 
-**Consequences:** A transfer suggestion derived from 5h-old player xPts against a squad fetched 30s ago is technically a cross-time-point comparison. If a player's `status` changed between the two fetches, the recommendation is invalid.
+**What goes wrong:** The existing `xPts_1gw` values are computed from fixture difficulty × goal/assist/CS Poisson models. These already have noise: the Phase 40/41 accuracy pipeline shows 16.7% hit rate for haulters (5-GW backtest). Over 3 GWs, errors compound and fixture schedules have higher uncertainty (player injuries, rotation changes, team form shifts). A path that looks £4 better over 3 GWs than an alternative may actually be within the noise band of the model.
+
+**Consequences:** TREE-01 presents a false precision: "Path A scores 42.3 xPts, Path B scores 41.1 xPts — choose Path A." The 1.2 xPts difference at 3 GWs is well within model error. The user may make suboptimal decisions based on spurious precision.
 
 **Prevention:**
-- Track the `last_updated` timestamp from each data source. The Decision Summary should display: "Decision based on data from [oldest timestamp]."
-- Flag the entire summary as stale if any contributing source is more than 8h old (the pipeline runs daily — 8h is a reasonable staleness cutoff post-pipeline).
-- Add an explicit "Refresh all data" button that invalidates all TanStack Query cache keys simultaneously before the user acts on the summary.
+- Display xPts per path as ranges, not point estimates. Use existing `xPts_90th_1gw` per player to compute a path ceiling alongside the path mean.
+- Add a caveat label: "GW3 projections have high uncertainty — consider the 1-GW view for near-term decisions."
+- Weight the path score with a discount factor for future GWs (matching the existing `LOOK_AHEAD_DISCOUNT = 0.8` in `planning-engine.ts`).
+- Do not rank paths where the delta is less than 2 xPts over the 3-GW horizon — call them "roughly equivalent."
+
+**Detection:** Compare two paths that both keep the same squad for GW1 but differ in GW3. If TREE-01 ranks one above the other solely on GW3 xPts, the discount factor is too low.
 
 ---
 
-## Section 3 — Fixture Swing Detector
+### Pitfall M2: Mode toggle state for EO-01 leaking across sections
 
-### Pitfall 8: Defining "swing" too loosely — noise vs signal
+**Phase:** EO-01
 
-**What goes wrong:** A "fixture swing" is defined as a team whose next-N-GW difficulty changes materially. But `attacking_difficulty` from `club-form.ts` is derived from FPL's official integer ratings (1-5), normalised to 0-1. An integer-rating change of 1 step (e.g., from 3→2 out of 5, i.e., 0.5→0.25 normalised) triggers a "swing" alert for every team every gameweek as fixtures rotate — producing alert fatigue.
+**What goes wrong:** EO-01 introduces a strategy mode toggle (Max xPts / Protect Rank / Chase Rank / Differential Aggressive). This toggle needs to affect captain recommendations, transfer suggestions, and potentially the bench order. If this state is lifted to the wrong level (too high = global, too low = component-local), it either:
+- (a) Resets whenever the user navigates away (if stored in a tab-local component state).
+- (b) Unexpectedly changes behaviour in unrelated sections (if stored at page level without clear ownership).
 
-**Why it happens:** The `attacking_ease` aggregates in `ClubForm` summarise across 1/3/5 GW windows. Any team gaining or losing a relatively easy game will show a changed aggregate. Without a meaningful delta threshold, every fixture change is a "swing."
+The existing `gemPreset` state in `page.tsx` (the view preset for GemTable) is a prior example of state that needed lifting — it was originally component-local and had to be moved to persist across sub-tab navigation (v1.5 GEM-04).
 
-**Consequences:** The Fixture Swing Detector fires on 12 of 20 teams every week. The user learns to ignore it.
+**Consequences:** User sets "Protect Rank" mode, navigates to Club Form tab, returns to Squad tab — mode is reset to default. Or worse, the mode state persists in a way that silently changes the captain recommendation card in the Decision Summary section.
 
 **Prevention:**
-- Define "swing" as a change in the GW-window aggregate ease score exceeding a minimum threshold. Based on the normalisation formula (FPL 1-5 ratings → 0-1 scale), a meaningful swing is a delta of ≥ 0.20 in the 3 GW window mean ease score.
-- Only compare week-on-week deltas: `ease_3gw(this_pipeline_run) - ease_3gw(last_pipeline_run)`. This requires storing the previous pipeline run's club form data.
-- As an alternative for the first implementation (without historical pipeline state): compare each team's next-3-GW ease against their season average ease. Only teams more than 1 standard deviation above or below their season average qualify as swings.
-- Set a hard cap: surface at most 4 improving teams and 4 worsening teams per GW.
+- Use localStorage persistence for the EO mode toggle (same pattern as `gemPreset` and `fpl_team_id`).
+- Scope the mode effect explicitly: document which UI surfaces respond to the mode toggle and which do not. The EO mode should affect: captain EV display, transfer suggestion framing, ownership impact labels. It should **not** affect: xPts values (these are mode-independent), GemTable sorting, historical data displays.
+- Give the mode a clear default ("Max xPts") that matches current pre-EO-01 behaviour — so the feature adds on top without changing the default experience.
+- If the mode affects the Decision Summary, add a visible badge to the Decision Summary header: "Mode: Protect Rank" — so the user always knows what mode is active.
 
-**Detection:** Backtested scenario: GW with no material schedule changes — detector must fire on zero teams (not 5 due to noise threshold).
+**Detection:** Navigate away and back. Assert mode persists. Assert that xPts column values do not change between modes (mode affects display framing, not model outputs).
 
 ---
 
-### Pitfall 9: BGW and DGW distort fixture swing scores
+### Pitfall M3: Captain EV adjustment for EO-01 creating confusing signal when combined with existing xPts display
 
-**What goes wrong:** A team with a BGW has `attacking_ease_3gw = null` in the current `ClubForm` type. A team with a DGW has a 3 GW window that contains two fixtures from one gameweek. The ease aggregate treats both fixtures as separate GWs — meaning a DGW team may appear to have "two easy weeks in a row" when in reality it is one gameweek counted twice.
+**Phase:** EO-01
 
-**Why it happens:** `meanEase()` in `club-form.ts` slices `upcoming_fixtures` by count (not by `event_id`). If a team has a DGW with 2 fixtures, they appear at `slice(0, 3)` as GW_n, GW_n, GW_n+1 — three entries covering two gameweeks. The 3 GW ease score is then biased by the DGW doubling.
+**What goes wrong:** The existing `CaptainPicksPanel` (Phase 31) shows `xPts_1gw` and `xPts_90th_1gw` per captain candidate, sorted by raw expected points. EO-01 wants to add an "EO-adjusted captain EV" — which is not a different xPts value but a **rank movement expectation** (e.g., "captaining player X when 55% of managers captain him gives you +0 expected rank movement; captaining Y at 3% EO gives you +12k expected rank positions if he hauls").
 
-**Consequences:** A team with a DGW in GW+1 followed by one medium game in GW+2 will appear as "strong fixture run" on the 3 GW view when the reality is one favorable double gameweek and then medium.
+These are fundamentally different numbers: one is expected fantasy points, the other is expected rank movement. Displaying them in the same component or the same column risks the user confusing "EO-adjusted xPts" (which doesn't exist) with rank-movement score.
+
+**Consequences:** User believes the EO-adjusted number is a modified xPts value and uses it to evaluate the player's raw scoring potential. Or user ignores it because they don't understand what the column represents. Either outcome dilutes the feature value.
 
 **Prevention:**
-- Aggregate `ease` per `event_id`, not per fixture entry. Mean ease for GW+1 with two fixtures should average the two fixture difficulties, not count them twice.
-- For BGW (`ease = null`): exclude blank gameweeks from the swing denominator. A team's fixture run should be assessed on their non-blank gameweeks.
-- Add a `hasDGW: boolean` and `hasBGW: boolean` flag to the swing output so the UI can annotate: "Improving run includes a Double GW" or "Worsening run — team has a Blank GW."
+- Use distinct labels and units: "xPts" for expected points, "Rank EV" or "Rank delta" for EO-adjusted captain score. Never put both in a column called "xPts (EO-adjusted)."
+- The EO-adjusted captain card should be a separate section from the existing CaptainPicksPanel, not an extension of it. Model it after the existing 2-card layout (ceiling / EO-adjusted) — but make the EO card clearly labelled "Rank protection" or "Differential pick."
+- Add a tooltip on the EO-adjusted captain score explaining the calculation: "Expected rank movement vs field based on ownership% and captain xPts."
 
-**Detection:** Unit test with a team having a DGW fixture list — assert the 3 GW ease is averaged per event_id, not per fixture entry.
+**Detection:** User test (informal): can you explain what the number means? If not, the label is wrong.
 
 ---
 
-## Section 4 — Player Lifecycle Labels
+### Pitfall M4: MTP-01 hit cost display getting out of sync with FT bank state during multi-step simulation
 
-### Pitfall 10: Label instability — flipping every GW
+**Phase:** MTP-01
 
-**What goes wrong:** Player lifecycle labels (e.g., "Buy next week", "Hold one more", "Sell soon", "Minutes trap", "Fixture trap") are computed from continuous signals: `gem_score`, `xPts_1gw`, fixture difficulty, `mins_risk`, `regression_signal`. These signals all change weekly as new FPL data arrives. A player may be labelled "Buy next week" after GW30, then "Hold one more" after GW31, then "Buy next week" again after GW32 — with no real change in their underlying situation.
+**What goes wrong:** In MTP-01, the user manually sequences GW-by-GW transfers. The hit cost display for each GW step depends on the FT state at that step, which is the cumulative result of all prior steps. If the user edits an earlier step (e.g., adds a transfer to GW1), all subsequent hit costs must recompute. This is the same problem `ftStateAfterStepIndex()` solves in `planning-engine.ts` for the automated planner.
 
-**Why it happens:** Threshold-based classification on continuous signals is inherently brittle near boundaries. `computeVerdicts()` already has this problem with BUY/SELL/HOLD — players near the `positionAvg` boundary flip weekly. Lifecycle labels are a strictly harder problem because they involve more signals and more categories.
+If MTP-01 implements hit cost display without replaying the full FT state from step 0 on every edit, it will show stale hit costs. A user who rolls GW1, rolls GW2, then makes 3 transfers in GW3 would see GW3 cost as "one hit (-4 pts)" but actually have 3 banked FTs and pay 0 pts.
 
-**Consequences:** The manager receives contradictory advice from week to week. They lose confidence in the labels and stop reading them.
+**Consequences:** User plans a sequence that shows 3 hits at -12pts, but the actual hit count is 0. Or vice versa. The financial simulation is the core value of MTP-01 — if it's wrong, the feature is actively harmful.
 
 **Prevention:**
-- Implement hysteresis: once a label is assigned, require the signal to cross a wider band before a different label is applied. Example: to move from "Hold" to "Sell soon", require gem_score to fall below 85% of position average (not just 90%).
-- Define label persistence rules: a label can only change if: (a) the underlying signal has changed by more than X% or (b) a different categorical signal (e.g., `mins_risk`) has changed.
-- Log the primary reason for each label as a structured field. The UI shows the reason alongside the label, so the manager can evaluate whether the label change is meaningful.
-- Accept that lifecycle labels are inherently less stable than point-in-time analytics. Surface them as "context" rather than "commands." Framing matters: "Fixture trap concern" vs "SELL."
+- Reuse `ftStateAfterStepIndex()` directly from `planning-engine.ts` — do not reimplement FT state replay in MTP-01.
+- The MTP-01 state model should be: `{ steps: ManualStep[] }` where each step is rendered by replaying the full FT chain from `initialFTState`, not by storing a per-step FT snapshot that can drift.
+- Use Immer for the steps array (same `useImmer` pattern as PlannerTab) — mutations are safe, but always recompute derived values (hit cost, bank balance) from the full chain on any edit.
+- Derive bank balance after each step as `bankBalance - sum(buyCosts) + sum(sellPrices)` replayed from step 0, not as an incrementally updated value that can accumulate drift.
 
-**Phase to address:** Player Lifecycle Labels phase — define the hysteresis thresholds in the spec, not during implementation.
+**Detection:** Test: set up a 3-GW sequence where GW1 and GW2 roll (0 transfers), and GW3 uses 3 transfers. Verify FT bank at GW3 is 5 available (1 weekly + 2 banked from GW1 + 2 banked from GW2, capped at 5), hit cost is 0, not -8 pts.
 
 ---
 
-### Pitfall 11: Overlapping with existing BUY/SELL/DIFF/TRAP signals
+### Pitfall M5: Wildcard chip in TREE-01 making branching meaningless for that sub-tree
 
-**What goes wrong:** The app already has four signals per player: `regression_signal` (buy/sell from xG delta), `differential_flag` (diff/trap from ownership + xPts), `computeVerdicts()` (BUY/HOLD/SELL from gem_score), and `recommend.ts` buy/hold/sell for squad players. Lifecycle labels are a fifth signal. The UI ends up showing five different indicators on the same player row, some of which may conflict.
+**Phase:** TREE-01
 
-**Why it happens:** Each signal was added independently to address a different research question (regression: over/underperformance; differential: ownership-relative value; verdict: squad management). Lifecycle labels are meant to synthesise these into a single forward-looking label. But if the synthesis is not explicit, they become additive noise.
+**What goes wrong:** When a wildcard is included in a TREE-01 path, the "squad after wildcard" is a near-optimal restructure of 15 players. This means:
+- The post-WC squad has no meaningful relationship to the pre-WC squad.
+- The "transfer savings" framing ("you'll need fewer hits in GW3 if you WC now") is replaced by a completely different squad structure.
+- GW2 and GW3 branches off a WC step in GW1 are based on a different starting squad than all non-WC paths — they cannot be compared on a xPts-delta basis.
 
-**Consequences:** The GemTable row for a player shows: BUY (verdict), SELL (regression), DIFF (differential), "Sell soon" (lifecycle), "Fixture trap" (lifecycle). Five contradictory or overlapping badges. The user gives up.
+Additionally, if TREE-01 generates WC sub-paths by branching further (considering 15 possible transfer combinations from the new WC squad), it creates a combinatorial explosion (Pitfall C6 interaction).
+
+**Consequences:** TREE-01's comparison table shows paths that are incommensurable: one is "roll, roll, hit" from current squad, another is "WC now, roll, roll" from a completely different squad. The user sees different xPts totals but doesn't understand they're looking at entirely different future squads. Decision quality suffers.
 
 **Prevention:**
-- Position lifecycle labels as a replacement for (not addition to) the existing individual signals in the Decision Summary view. In the GemTable, keep only the existing signals. The lifecycle label appears only in the Decision Summary and the squad transfer context.
-- Define lifecycle labels as a synthesis function: `computeLifecycleLabel(verdicts, regressionSignal, differentialFlag, minsRisk, fixtures) → LifecycleLabel`. The function must be deterministic and replace, not supplement, the individual inputs in the output.
-- Document which existing signal wins when signals conflict (e.g., `regression_signal = 'sell'` overrides `differential_flag = 'diff'`).
+- Treat WC (and FH) as a **separate top-level path**, not as a branch within the main tree. Present it as: "Option A: Normal transfer path (no chip)" and "Option B: Wildcard now." These are displayed side-by-side, not as branches of a shared tree.
+- For the WC option, show the projected new squad (from `generateChipStep`) and its xPts, but clearly label it "Squad after WC" and do not branch further.
+- FH is a one-GW special case — show projected FH xPts for GW1 only, then the reverted squad for GW2+.
+- BB and TC do not change the squad, so they fit naturally into branch paths and don't need special handling.
 
-**Phase to address:** Player Lifecycle Labels phase — explicitly map from existing signals to the new label taxonomy before any code is written.
+**Detection:** Verify that a TREE-01 result containing a WC path shows the post-WC squad explicitly and does not have sub-branches from the WC node.
 
 ---
 
-### Pitfall 12: "Minutes trap" label misfires on rotation-risk players who start regularly
+### Pitfall M6: ML-01 rival squad data not respecting GW boundary — fetching picks for a live GW during live scoring
 
-**What goes wrong:** `mins_risk = 'rotation_risk'` is assigned when `start_prob < 0.65`. But a player with `start_prob = 0.60` may start 3 out of 5 GWs — perfectly acceptable for a budget player. The "Minutes trap" lifecycle label fires on any `rotation_risk` player, even those who are solid value at their price point.
+**Phase:** ML-01
 
-**Why it happens:** `mins_risk` was calibrated for the Transfer Suggestions engine, which de-prioritises rotation-risk buy candidates. It is a population-relative signal, not an absolute one. Applied to a lifecycle label, it implies the player is a liability even when they are a good budget option.
+**What goes wrong:** During a live GW (after the deadline but before all matches complete), the `entry/{id}/event/{gw}/picks/` endpoint returns the confirmed squad but `active_chip` may change (chip played post-deadline is visible in the live scoring API), and `entry_history` values (event_total, points, rank) are provisional. More critically, the live-points endpoint (`event/{gw}/live/`) data drives actual scoring, but the picks endpoint only shows the static squad — autosubs applied during the GW are only visible in a different endpoint.
+
+ML-01 shows rival captain and chip status. If queried mid-GW: the captain is the pre-deadline captain, not the effective captain after autosubs.
+
+**Consequences:** "Rival captain is Player X" is wrong if Player X got injured in the first match and the autosub VC is now the effective captain. This makes differential analysis ("I'm differentiating against rivals by captaining Y") incorrect mid-GW.
 
 **Prevention:**
-- Add a price-adjusted filter: "Minutes trap" should fire only when `start_prob < 0.65 AND now_cost > 70` (tenths, i.e., £7.0m+). Budget rotation-risk players (e.g., £4.5m) are expected to rotate — this is priced in.
-- Cross-reference with `xPts_1gw / now_cost` ratio: if xPts per £m is above position average despite rotation risk, the player is still value — suppress "Minutes trap."
-- Consider renaming to "Rotation concern" for players above £7.0m, where the premium price implies reliable minutes.
+- ML-01 is framed as a **pre-deadline planning tool** — it should only be used before the GW deadline, not mid-GW.
+- Add a UI guard: if `events.find(e => e.is_current && !e.finished)` is true (live GW in progress), show a banner: "Live GW in progress — rival data reflects pre-deadline picks and may not account for autosubs."
+- Use the last **finished** GW for rival squad analysis as the reliable data source for squad structure, captain history, and chip usage.
+
+**Detection:** Mock the bootstrap event object with `is_current: true, finished: false`. Assert the live-GW warning banner renders.
 
 ---
 
-## Section 5 — Explainable xPts Breakdown
+## Minor Pitfalls
 
-### Pitfall 13: Components do not sum to the displayed total
+### Pitfall m1: MTP-01 break-even week calculation needs to account for FT bank value
 
-**What goes wrong:** `xPts_components_1gw` stores `{goal_pts, assist_pts, cs_pts, bonus_pts}` rounded to 3 decimal places. `xPts_1gw` is the `round(total, 2)` of the same computation. With rounding at different steps, `goal_pts + assist_pts + cs_pts + bonus_pts` (each rounded to 3dp) may not equal `xPts_1gw` (rounded to 2dp) when displayed.
+**Phase:** MTP-01
 
-**Why it happens:** `_compute_xpts_fixture()` in `merge.py` returns each component rounded to `round(v, 3)`. The total is rounded to `round(total, 3)`, then `_xpts_ngw()` rounds the accumulated total to `round(total, 2)`. Multi-fixture aggregation (DGW) sums component-level 3dp values and can accumulate small floating-point error.
+**What goes wrong:** The existing `TransferSuggestion` type and `suggestTransfers()` compute `breakEvenGws = ceil(4 / xPtsGainPerGw)` for hit transfers. MTP-01 should also display break-even for hits, but the calculation ignores the opportunity cost of spending a banked FT. A hit taken when you have 2 FTs available is different from a hit taken when you have 1 FT — the banked FT has option value (you could have rolled it to give yourself 2 FTs next GW instead).
 
-**Concrete example:** `goal_pts=1.111 + assist_pts=0.333 + cs_pts=0.612 + bonus_pts=0.267 = 2.323` but `xPts_1gw = 2.32`. The displayed breakdown shows 2.323 summing to 2.32 — a 0.003 discrepancy visible in the UI.
+**Prevention:** For now, keep the same `ceil(hitCost / xPtsGainPerGw)` formula. Add a note to MTP-01 plan: break-even ignores FT option value. Revisit in SENS-01 (sensitivity analysis feature from backlog).
 
-**Consequences:** The user sees the breakdown components sum to a number different from the headline. They lose trust in the model's arithmetic.
+---
+
+### Pitfall m2: React state mutation when editing MTP-01 steps out-of-order (non-sequential edits)
+
+**Phase:** MTP-01
+
+**What goes wrong:** If the user edits GW3 before GW2, the financial state at GW3 depends on GW2 which hasn't been set yet. If the state management naively applies edits in isolation without a full re-derive, GW3 sees a stale bank balance.
+
+**Prevention:** Use the same replay pattern from `ftStateAfterStepIndex()` — always derive all step states from scratch from `initialFTState` and `initialBank`. Never store derived financial state; only store user intent (which transfers to make each GW).
+
+---
+
+### Pitfall m3: EO-01 mode toggle not being visible enough — user unaware their view is filtered
+
+**Phase:** EO-01
+
+**What goes wrong:** If the EO mode is set to "Protect Rank" and the user returns to the squad view days later, the captain recommendation will show a different player than expected. They won't remember they set the mode and will be confused why the recommendation changed.
+
+**Prevention:** Persistent mode state (localStorage) must come with persistent mode **display**. Show the active mode in the section header at all times (not just in the toggle controls). Use a coloured badge: blue="Max xPts" (default), green="Protect Rank", amber="Chase Rank", red="Differential Aggressive."
+
+---
+
+### Pitfall m4: TREE-01 using `xPts_1gw` (single GW) as the scoring signal for all GW steps
+
+**Phase:** TREE-01
+
+**What goes wrong:** `planning-engine.ts` already uses `xPts_1gw` for all steps, even in a 5-GW horizon. This means the plan doesn't adapt to known fixture changes beyond GW1 — a player with a difficult fixture in GW1 but an easy GW2 double is always scored by their GW1 xPts. `xPts_3gw` and `xPts_5gw` aggregate over the horizon but can't be used per-step without prorating (which the current engine doesn't do).
+
+TREE-01 may want to use per-GW xPts (i.e., `xPts_1gw * fixtureCountForGw(player, targetGw)`) which the existing `fixtureCountForGw()` already enables. This is what `planning-engine.ts` does on line 116. This is correct for known upcoming fixtures. The problem is that `xPts_1gw` is calibrated to a "typical" fixture — the fixture difficulty is already baked in via the pipeline. Using `xPts_1gw * fixtureCount` double-counts fixture difficulty.
+
+**Prevention:** Review the pipeline to confirm whether `xPts_1gw` already reflects the specific upcoming fixture difficulty or whether it's a per-90 baseline. If it's fixture-adjusted, the `* fixtureCountForGw()` multiplication is correct for DGW only. Document this clearly in TREE-01 plan before writing code.
+
+---
+
+### Pitfall m5: ML-01 league standings pagination not handled — only first 50 rivals shown
+
+**Phase:** ML-01
+
+**What goes wrong:** The `leagues-classic/{id}/standings/` endpoint returns a paginated response with a `has_next` boolean and `results` array per page (approximately 50 results per page). If ML-01 only fetches page 1, leagues with 51+ members silently truncate at 50. For a personal tool capped at top-20 rivals, this is fine — but the implementation must explicitly select the page containing the user's own position and nearby rivals, not blindly take page 1.
 
 **Prevention:**
-- In the UI breakdown display, derive the sum from the stored components (not from `xPts_1gw`) and display that sum as the total. Never display both `sum(components)` and `xPts_1gw` simultaneously — pick one as the canonical value.
-- If the deviation between `sum(components)` and `xPts_1gw` exceeds 0.05 for any player, log it as a pipeline quality warning.
-- For DGW players with `xPts_components_1gw = null` (multi-GW components are not stored per `types.ts`), show "Detailed breakdown unavailable for DGW" rather than a partial breakdown.
-
-**Detection:** Unit test: for every player in a mock pipeline run, assert `abs(sum(components.values()) - xPts_1gw) < 0.05`.
+- Fetch only enough pages to get the user's position ± the desired rival count (e.g. 10 above and 10 below).
+- Use the `entry` field in standings to find the user's own position (compare to team ID from localStorage).
+- Hard cap at 20 rivals regardless of league size — this is a personal planning tool, not a full league dashboard.
 
 ---
 
-### Pitfall 14: Appearance points are not included in the breakdown
+## Phase-Specific Warning Matrix
 
-**What goes wrong:** The existing `xPts_components_1gw` breaks down `goal_pts`, `assist_pts`, `cs_pts`, `bonus_pts`. The FPL scoring system also awards 2 pts for playing 1-60 minutes and 3 pts for playing 60+ minutes. These appearance points are not modelled in `_compute_xpts_fixture()` — the engine relies on `xmins` scaling all components, but does not add the explicit appearance point contribution.
-
-**Why it happens:** The original xPts engine design (Phase 28 `28-RESEARCH.md`) treated appearance points as implicit in the `xmins` scaling of all other components. This is a reasonable modelling simplification. But the breakdown UI claims to show "all the components of a player's xPts" — which it does not.
-
-**Consequences:** The Explainable xPts Breakdown shows a player with `goal_pts=0, assist_pts=0, cs_pts=0, bonus_pts=0.3` implying their expected score is 0.3 pts. The user knows they will get at least 2 pts for playing. The model appears badly wrong.
-
-**Prevention:**
-- Add `appearance_pts: number` to `xPts_components_1gw`. Compute it as `2 * start_prob * xmins/90 + 1 * start_prob * (1 - xmins/60)` (approximate — 3pts for 60+ min, 2pts for 1-60 min, probability-weighted).
-- Alternatively, acknowledge in the UI that "Appearance points are included in the per-minute scaling of all components and are not separately shown." Either approach is acceptable; silence is not.
-
-**Phase to address:** Explainable xPts Breakdown phase — resolve the missing appearance component in the spec before the UI design is finalised.
+| Phase | Feature | Likely Pitfall(s) | Mitigation | Surface in Plan |
+|-------|---------|-------------------|------------|-----------------|
+| MTP-01 | Manual Transfer Planner | C1 (FT engine wrong), C2 (sell price formula), M4 (hit cost drift), m1 (break-even) | Fix free-transfer-engine.ts first; use `computeSellPrice()` helper; replay FT state from step 0 | "Fix FT engine before writing any MTP-01 code" in plan |
+| ML-01 | Mini-League Tracker | C3 (stale picks), C4 (rate limits), M6 (live GW boundary), m5 (pagination) | Use last finished GW; batch requests to 3 concurrent; cap at 20 rivals | "Rate limit strategy required" section in plan |
+| EO-01 | Effective Ownership | C5 (selected_by_percent wrong proxy), M2 (mode state leak), M3 (EV confusion), m3 (invisible mode) | Label as approximation; use ML-01 rival data for mini-league EO; scope mode effects explicitly | "EO approximation caveats" + "Mode persistence" sections in plan |
+| TREE-01 | Transfer Route Tree | C6 (combinatorial explosion), C1 (FT engine), M1 (xPts degradation), M5 (WC meaningless branching), m4 (xPts fixture double-count) | Beam search with K=4 branches; treat WC as separate option; discount future GW scores | "Branching factor bound" + "WC as separate path" in plan |
+| All | — | C1 (FT engine bug affects all financial simulation) | Fix `computeNextFTState` in a standalone phase or as the first task in MTP-01 | Pre-condition in every v1.9 plan |
 
 ---
 
-### Pitfall 15: Overwhelming detail in the breakdown UI
+## Technical Debt Integration Patterns
 
-**What goes wrong:** The breakdown shows 4-5 numeric components per player. For a GK (likely to have `goal_pts=0, assist_pts=0, cs_pts=3.2, bonus_pts=0.3`), the detail is useful. For a MID/FWD, the useful components are goal and assist, while cs_pts is near-zero noise. Showing all 4 components for every player in a dense table creates cognitive load without proportional value.
+### FT engine fix is a pre-condition, not a feature task
 
-**Prevention:**
-- For GK/DEF: emphasise `cs_pts` and `bonus_pts`. Suppress `goal_pts` and `assist_pts` if both are < 0.10.
-- For MID/FWD: emphasise `goal_pts` and `assist_pts`. Suppress `cs_pts` if it is < 0.10.
-- Use a visual bar (proportional to component magnitude) rather than raw numbers. The bar communicates relative composition immediately; the number is a hover tooltip.
-- This reuses the `XPtsCell` tooltip pattern already in the codebase — extend it rather than creating a new component.
+The `computeNextFTState` bug (Pitfall C1) affects MTP-01, TREE-01, and the existing PlannerTab. It should be fixed in a dedicated pre-work commit before any v1.9 feature code is written. Tests for the corrected behaviour should be added to `src/lib/free-transfer-engine.test.ts` (create if it doesn't exist).
 
----
+The fix requires updating `FTState.banked` semantics throughout: the type allows any `number` but existing code assumes `banked` is 0 or 1. After the fix, `banked` can be 0–4. Audit for any code that uses `banked` directly as a boolean.
 
-## Section 6 — Clean Sheet Probability
+### sell price in existing planning engine
 
-### Pitfall 16: Conflating team-level CS% with individual player CS probability
+`generatePlan()` and `generateChipStep()` already handle `sellPrices` correctly — they use `selling_price` from auth if available, otherwise fall back to `now_cost`. MTP-01 must follow the same pattern and must not introduce a separate sell price calculation path.
 
-**What goes wrong:** The pipeline computes `_cs_prob(defensive_difficulty, xmins)` at the player level, but the underlying model is effectively a team-level CS probability modified by xmins. A GK and a DEF on the same team with identical `xmins` receive identical `cs_prob`. This is correct mathematically, but the displayed "Clean Sheet Probability" will show the same value for all players on a team — which makes it appear like a team stat, not a player stat.
+### MTP-01 state model must be derived, not stored
 
-**Why it happens:** CS in FPL is awarded per team result. CS probability fundamentally is a team-level event. The player-level adjustment is only `xmins` (did they play the full game?). The existing `_cs_prob()` formula correctly models this.
+The existing `PlannerTab` uses `useImmer` to store `PlanResult` as a mutable tree. MTP-01 should use the same pattern but with a derived-state discipline: the per-step FT state and bank balance are always computed from first principles (replay from `initialFTState`), never stored as independent state.
 
-**Consequences:** The CS Probability feature appears to add no per-player intelligence. The GK at 30% CS probability and the first-choice CB at 30% CS probability are identical, even though the CB may be more likely to play the full 90.
+### ML-01 TanStack Query staleTime
 
-**Prevention:**
-- Present CS probability as a team-level stat, grouped by team, with per-player modification for `start_prob` and `xmins`.
-- The displayed figure for a player should be: `cs_prob_team * (xmins / 90)` — explicitly showing the minute-scaling adjustment.
-- Add a footnote: "CS probability is team-level. Individual probability adjusts for expected minutes played."
-- Do not imply that a GK and a CB on the same team have different inherent CS probabilities — they do not in this model.
+The existing proxy at `[...proxy]/route.ts` has `next: { revalidate: 0 }` (no server-side cache). TanStack Query hooks use 6h staleTime for player data. For ML-01 rival data, use 30min staleTime — frequent enough to catch late pre-deadline changes, infrequent enough to avoid hammering the FPL API on every tab switch.
+
+### EO-01 mode toggle: localStorage key must be namespaced
+
+The app already uses `fpl_team_id` as a localStorage key. EO-01 must use a namespaced key like `fpl_eo_mode` to avoid collision. Document all localStorage keys in a constants file.
 
 ---
 
-### Pitfall 17: Small sample size in the defensive_difficulty rolling average
+## Integration-Specific Failure Modes
 
-**What goes wrong:** `_compute_offensive_difficulty_score()` in `merge.py` uses a 3-game rolling window for goals-scored. At the start of the season (GW1-GW3), this window contains 1-3 data points. A team that conceded a fluke 4-0 in their first game has a `defensive_difficulty = 1.0` (hardest) and every DEF/GK on that team receives a near-zero `cs_pts` for the next 3 GWs. By GW4, the anomaly is diluted.
+### Financial simulation correctness chain
 
-**Why it happens:** A 3-game window is a deliberate design choice for responsiveness (see `merge.py` comment: "Phase 27 DATA-01 D-02"). Responsiveness trades off against stability.
+MTP-01's core value is: "if I make these transfers in these GWs, what will my bank and FT state be?" The correctness of this depends on three inputs all being correct simultaneously:
+1. `selling_price` values (Pitfall C2) — wrong if not authenticated.
+2. `computeNextFTState` (Pitfall C1) — wrong with old engine.
+3. Hit cost replay from step 0 (Pitfall M4) — wrong if derived incrementally.
 
-**Consequences:** Early-season CS probability figures are unreliable. A player newly flagged as "great CS prospect" may have a `defensive_difficulty` biased by one anomalous result.
+All three must be fixed before MTP-01 ships. Any one failing silently means the feature gives wrong financial advice.
 
-**Prevention:**
-- Add a `sample_size: number` field to the CS probability output when surfaced in the UI. For teams with fewer than 5 games played, show a warning: "Limited data — CS probability estimate may be unreliable."
-- Consider extending the rolling window to 5 for CS probability specifically (separate from the existing 3-game `defensive_difficulty` used in xPts). This gives more stable CS% for the dedicated CS feature without disrupting the xPts calibration.
-- At season start (GW1-GW5), fall back to the FPL official defensive difficulty rating as a prior for the rolling window initialisation.
+### TREE-01 depends on a correct FT engine
 
----
+TREE-01's path scoring includes projected hit costs over multiple GWs. These are only correct if the FT engine correctly models the new 5-FT bank and chip-preserving rules (Pitfall C1). TREE-01 cannot be accurately tested until the FT engine is fixed.
 
-### Pitfall 18: BGW distortion of CS probability display
+### EO-01 + ML-01 synergy
 
-**What goes wrong:** A team with a BGW has no fixture in the target GW. Their `cs_prob` for that GW is effectively 0 (no game = no CS). But the CS Probability panel may display their season-average or rolling CS% without flagging the blank. The manager reads "40% CS chance" and starts their GK without checking the fixture list.
-
-**Why it happens:** The `xPts_components_1gw` is `null` for BGW players (per the existing BGW exclusion in `optimiseLineup()`), but a standalone CS Probability panel may compute independently from the `defensive_difficulty` rolling average without BGW awareness.
-
-**Prevention:**
-- Before computing or displaying any CS probability for a player, check `fixtures.filter(f => f.event_id === targetGw).length > 0`. If zero, display `—` (no fixture) rather than a percentage.
-- Add a BGW badge to any team/player in the CS panel who has no fixture in the target GW.
-- The CS panel must read from the same `fixtures` array used by the xPts engine — do not compute CS% from rolling averages alone.
-
----
-
-### Pitfall 19: CS probability contradicting the existing `cs_pts` in xPts breakdown
-
-**What goes wrong:** The Explainable xPts Breakdown shows `cs_pts = 1.8` for a DEF (30% team CS × 6 pts). The dedicated Clean Sheet Probability panel for the same player shows "30% CS chance." These numbers are mathematically consistent but the user sees "1.8 pts" and "30%" and is unsure if they are measuring the same thing.
-
-**Why it happens:** The user's mental model of CS probability is "will they keep a clean sheet?" (yes/no percentage). The xPts `cs_pts` component is "expected points from CS" (probability × FPL points). They are the same model rendered in different units.
-
-**Prevention:**
-- In both the xPts breakdown and the CS probability panel, show the intermediate computation: "30% CS chance → 1.8 expected pts (6pts × 30%)." Make the formula explicit.
-- Use consistent terminology: "CS probability" always means the percentage; "CS contribution" always means the expected points. Never use the same label for both.
-
----
-
-## Section 7 — Integration Pitfalls (Cross-Feature)
-
-### Pitfall 20: Decision Summary horizon mismatch with Squad Optimiser horizon
-
-**What goes wrong:** The Squad Optimiser (v1.6) has a configurable 1/3/5 GW horizon for `optimiseLineup()`. The Decision Summary uses a fixed horizon to produce its captain, transfer, and bench recommendations. If the Decision Summary defaults to 1 GW but the user has the Optimiser set to 5 GW, the two panels recommend different players for the same positions.
-
-**Prevention:**
-- Lift the active horizon into shared state (e.g., via a context provider or a URL query param) so that all decision features use the same horizon simultaneously.
-- Alternatively, make the Decision Summary horizon-independent by showing the recommendation for the 1 GW horizon only (next-GW decisions) and labelling it explicitly. The user adjusts the Optimiser horizon separately for multi-GW planning.
-
----
-
-### Pitfall 21: Player Lifecycle Labels redundant with existing Planner output
-
-**What goes wrong:** The Gameweek Planner (v1.3) already produces a 1-5 GW transfer sequence with BUY/SELL recommendations per GW. Lifecycle labels like "Buy next week" or "Sell soon" duplicate the Planner's output for the common case (1-2 GW horizon). The user sees the same recommendation in two places, expressed differently.
-
-**Prevention:**
-- Scope lifecycle labels to players outside the Planner's active transfer window — they are best used for players the Planner is not already recommending. If the Planner has "Sell [Player X] in GW+1", the lifecycle label for Player X should say "Sell soon" but link to the Planner output rather than presenting an independent recommendation.
-- Do not build lifecycle labels as a standalone engine if the Planner already covers the same ground. Instead, derive the label from `planResult.steps` when a plan is active: the Planner's output is more sophisticated (multi-step, FT-aware) than a lifecycle heuristic.
-
----
-
-### Pitfall 22: Pipeline output schema changes breaking downstream Decision features
-
-**What goes wrong:** Each v1.7 feature requires new fields in `merged_players.json` or new JSON outputs from the pipeline. The existing `MergedPlayer` TypeScript interface in `types.ts` already has 40+ fields. Adding CS probability, lifecycle label inputs, and fixture swing data as new fields — without a versioning strategy — risks breaking the Zod schema validation in `fpl-adapter.ts` and causing stale-cache fallback on first pipeline run.
-
-**Why it happens:** This project's pattern (from Key Decisions in `PROJECT.md`) is to add optional fields (`?:`) to `MergedPlayer` during pipeline rollout. This is the correct pattern. The risk is forgetting the optional guard or the Zod schema update.
-
-**Prevention:**
-- All new fields added to `merged_players.json` must be declared as optional (`?`) in both the `MergedPlayer` TypeScript interface and the Zod schema simultaneously.
-- New JSON outputs (e.g., `fixture_swings.json`, `lifecycle_labels.json`) must have a seeded empty version committed to `pipeline/cache/` before the pipeline writes to it. This prevents 500 errors on the first pipeline run (per the pattern established in Phase 33 for `insights.json`).
-- After each pipeline change, verify: `cat pipeline/cache/[new-file].json | python -m json.tool` produces valid JSON (empty `{}` or `[]`, not absent).
-
----
-
-## Phase-Specific Warnings
-
-| Phase topic | Likely pitfall | Mitigation |
-|-------------|----------------|------------|
-| Transfer Opportunity Cost Simulator | FT count sourced from UI default instead of `my-team` | Read `ftCount` from authenticated `my-team` API; UI selector only for unauthenticated state |
-| Transfer Opportunity Cost Simulator | Rolling shows as universally beneficial | Show deferral cost explicitly: "Rolling costs ~X xPts if this transfer is still available next week" |
-| Transfer Opportunity Cost Simulator | Break-even inconsistent across horizon toggle | Compute `breakEvenGws` from 1 GW rate only; label horizon-relative caveat |
-| Transfer Opportunity Cost Simulator | 2-FT additive combo over-promise | Flag combo gains within 1.0 xPts of hit break-even as "marginal — verify" |
-| Weekly Decision Summary | Engine conflicts (SELL vs HOLD for same player) | Implement priority hierarchy: Transfer engine overrides Verdict engine for the same player in the summary |
-| Weekly Decision Summary | Information overload | Hard limit: 4 outputs (captain, transfer, bench, chip). No inline expansion. |
-| Weekly Decision Summary | Cross-query staleness | Track oldest source timestamp; "Refresh all" button invalidates all query caches |
-| Fixture Swing Detector | Alert fires on 12+ teams from noise | Delta threshold ≥ 0.20 on 3 GW ease; max 4 improving + 4 worsening surfaces |
-| Fixture Swing Detector | DGW double-counting in ease aggregate | Group fixtures by `event_id`; average per GW, not per fixture entry |
-| Player Lifecycle Labels | Weekly label instability / flipping | Hysteresis bands; require signal to cross wider threshold before label changes |
-| Player Lifecycle Labels | Overlap with existing 4 signal systems | Labels replace (not add to) existing signals in Decision Summary; synthesis function with explicit priority map |
-| Player Lifecycle Labels | "Minutes trap" misfires on cheap rotators | Price-gate: fire only above £7.0m; cross-reference xPts-per-£m ratio |
-| Explainable xPts Breakdown | Components don't sum to displayed total | Display sum-of-components as the total; never show both sum(components) and xPts_1gw simultaneously |
-| Explainable xPts Breakdown | Appearance points missing from breakdown | Add `appearance_pts` component or document its absence explicitly in the UI |
-| Explainable xPts Breakdown | DGW players show null components | "Detailed breakdown unavailable for DGW" — do not show partial breakdown |
-| Clean Sheet Probability | Team-level stat appears per-player | Group by team; individual modification for xmins; add explicit formula annotation |
-| Clean Sheet Probability | Early-season small sample bias | Show `sample_size` warning for teams with < 5 games; consider 5-game window for CS vs 3-game for xPts |
-| Clean Sheet Probability | BGW team shown with non-zero CS% | Check `fixtures.filter(f => f.event_id === targetGw).length > 0` before displaying any CS% |
-| All pipeline changes | New fields break Zod schema | All new fields optional in both TS interface and Zod schema; seed empty cache files before pipeline runs |
-| Decision Summary + Optimiser | Horizon mismatch between panels | Lift active horizon to shared state; or pin Decision Summary to 1 GW with explicit labelling |
+If ML-01 ships before EO-01, EO-01 can use the fetched rival squads to compute accurate mini-league EO% rather than relying on the `selected_by_percent` approximation (Pitfall C5). Recommend shipping ML-01 first, then EO-01 consumes ML-01 data.
 
 ---
 
 ## Sources
 
-- Codebase inspection: `src/lib/suggest-transfers.ts`, `src/lib/optimise-lineup.ts`, `src/lib/recommend.ts`, `src/lib/explain.ts`, `src/lib/chip-strategy-engine.ts`, `src/lib/club-form.ts`, `src/lib/free-transfer-engine.ts`, `src/lib/types.ts`, `pipeline/merge.py`
-- Project context: `.planning/PROJECT.md` — existing engine invariants and Key Decisions table
-- Prior art pitfall: v1.6 PITFALLS.md pitfalls on BGW exclusion, sell-price haircut, stale xPts, FT bank modelling — all integration risks that carry forward to v1.7 decision features
+- [Premier League — FPL Big Changes Announced 2024/25](https://www.premierleague.com/en/news/4058895) — official rule change: 5-FT bank, chips preserve bank (HIGH confidence)
+- [Fantasy Football Scout — Do I keep my free transfers when I use an FPL Wildcard?](https://www.fantasyfootballscout.co.uk/2024/10/03/do-i-keep-my-free-transfers-when-i-use-an-fpl-wildcard) — corroborates wildcard preserves banked FTs (HIGH)
+- [Fantasy Football Scout — Do I keep my saved transfers when using the Free Hit chip?](https://www.fantasyfootballscout.co.uk/2025/03/13/do-i-keep-my-saved-transfers-when-using-the-free-hit-chip) — Free Hit also preserves banked FTs (HIGH)
+- [Premier League — How price changes work](https://www.premierleague.com/en/news/2858775) — official sell price formula (HIGH)
+- [FPL Focus — How FPL Price Changes Work](https://fpl.page/article/how-fpl-price-changes-work-tool-predictor) — sell price = buy + floor(rise/2), full fall on drops (HIGH — matches official)
+- [Fantasy Football Hub — FPL Price Changes](https://www.fantasyfootballhub.co.uk/fpl-price-changes) — price change mechanics (MEDIUM)
+- [Fantasy Football Pundit — FPL Effective Ownership](https://www.fantasyfootballpundit.com/fpl-effective-ownership/) — EO definition and top-10k vs overall divergence (MEDIUM)
+- [LiveFPL — Top 10k Ownership](https://plan.livefpl.net/top10k) — live top-10k ownership data; demonstrates divergence from overall selected_by_percent (MEDIUM)
+- [Premier League — FPL API entry picks endpoint](https://medium.com/@frenzelts/fantasy-premier-league-api-endpoints-a-detailed-guide-acbd5598eb19) — endpoint structure; stale picks behaviour inferred from "picks keyed by event_id" + community behaviour reports (MEDIUM — undocumented FPL API edge cases)
+- [FPL API Cheatsheet — Cheatography](https://cheatography.com/sertalpbilal/cheat-sheets/fpl-api-endpoints/history/279325) — endpoint inventory including leagues-classic pagination (MEDIUM)
+- Local code verified: `src/lib/free-transfer-engine.ts`, `src/lib/planning-engine.ts`, `src/lib/types.ts`, `src/lib/squad-adapter.ts`, `src/components/planner/PlannerTab.tsx` (HIGH — read directly)

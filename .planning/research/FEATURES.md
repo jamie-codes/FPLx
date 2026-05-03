@@ -1,554 +1,450 @@
-# Feature Landscape: FPLx v1.7 Decision Assistant
+# Feature Landscape — v1.9 Competitive Intelligence
 
-**Domain:** FPL decision assistance — transfers, captaincy, chips, bench, timing advice
-**Researched:** 2026-05-01
-**Downstream consumer:** Roadmap / requirements author (REQ-IDs, user-facing behaviour, complexity, dependencies)
-**Replaces:** v1.6 FEATURES.md (different milestone scope)
+**Domain:** FPL Analytics (post-v1.8, competitive strategy layer)
+**Researched:** 2026-05-03
+**Scope:** Four target features — MTP-01 (Manual Transfer Planner), ML-01 (Mini-League Rival Tracker), EO-01 (Effective Ownership & Rank Protection), TREE-01 (Transfer Route Tree)
+**Replaces:** v1.8 FEATURES.md (different milestone scope)
 
----
-
-## Scope Boundary
-
-v1.7 adds six features on top of the completed v1.6 Squad Optimiser. The optimiser
-itself (`optimiseLineup`, `suggestTransfers`, `buildOptimalSquad`), xPts pipeline, and
-all existing UI are assumed shipped. This document covers only the new features.
+This file is intentionally feature-shaped. Each feature gets: domain definition, FPL-specific rules, table-stakes vs differentiator vs anti-feature breakdown, complexity, and "what good looks like." Downstream: REQUIREMENTS.md writer.
 
 ---
 
-## FPL Tool Ecosystem Reference
+## Feature 1 — MTP-01: Manual Transfer Planner
 
-Research surveyed: FPLReview, FPL Copilot, FPL.team, Fantasy Football Fix, FPL Form,
-FPL Stats Lab, Fantasy Football Scout, Fantasy Football Hub, AllAboutFPL, fplstrat.app,
-FPLRotationPlanner.
+### What it is
 
-Key finding: **no single free tool aggregates all six features on one screen for a
-user's actual squad.** Most provide component tools (a fixture ticker here, a transfer
-planner there). That gap is the core differentiating opportunity for v1.7.
+A separate Planner sub-tab where the user manually designs a GW-by-GW transfer sequence. Unlike the existing AI GW Planner (`generatePlan()` which auto-suggests), MTP-01 is fully user-driven: they pick who goes in and out each gameweek and the system tracks all financial consequences and FT state across the sequence.
 
----
+Core outputs per GW step:
+- **Sell price** for each outgoing player (asymmetric profit rule: floor((cost - purchase_price) / 2))
+- **Bank balance** after each transaction
+- **Squad value** = sum of sell prices of all 15 players
+- **FT bank** = remaining free transfers at that GW (accumulates to max 5 per FPL rules)
+- **Hit count** = total deducted transfer penalty across the sequence
+- **Break-even weeks per hit** = (4 pts cost) ÷ (projected xPts gain from the transfer)
 
-## Feature 1: Transfer Opportunity Cost Simulator
+### How FPL financial simulation actually works
 
-### What the ecosystem does
+| Rule | Detail |
+|------|--------|
+| **Sell price = asymmetric profit** | If a player's price rose since purchase: sell price = purchase_price + floor((current_price - purchase_price) / 2). If price fell: sell price = current_price. The "bank" takes half of any price rise profit. |
+| **FT accumulation** | Each GW gives 1 FT. If unused, it rolls over up to a maximum of 5. Wildcard clears the FT bank to 1 the following GW. |
+| **Hit cost** | Each transfer beyond the available FT bank costs −4 pts. These are deducted from the GW score where the hit is taken, not amortised. |
+| **Squad value floor** | Budget = bank + sum of sell prices. Cannot spend more than this on incoming players. Position lock (GK/DEF/MID/FWD constraints) must be maintained at every GW step. |
+| **Wildcard interaction** | Wildcard allows unlimited transfers in one GW at no hit cost. After wildcard, FT bank resets to 1 and all sell prices are locked in at the wildcard activation point. |
+| **Free Hit interaction** | Free Hit allows temporary unlimited transfers for a single GW — squad reverts to pre-FH state afterwards. Bank and FT are unchanged. FH does NOT affect squad value. |
 
-Every serious FPL tool (FPLReview, FPL Copilot, FPL.team Planner) computes cumulative
-xPts across a multi-GW horizon to answer "is this transfer worth making?" The standard
-framework is:
+### FPL-specific edge cases
 
-- Roll = bank the FT; squad unchanged; net gain = 0 vs baseline
-- 1-FT = best single swap; net xPts gain over horizon; no hit cost
-- 2-FT = two position-matched swaps; hit cost subtracted if only 1 FT available
-- Hit (-4pts) = additional transfers beyond free count; break-even analysis
+| Edge case | Handling |
+|-----------|----------|
+| **Sell price vs current price** | The app already has sell prices from v1.1 AUTH-01 (session-cookie auth with exact sell prices). Without auth, sell price approximation must use purchase_price from user input or FPL API field `purchase_price` in `picks` endpoint. |
+| **Price changes during sequence** | The planner is a forward-looking simulation. Prices during the sequence are assumed static unless the user manually overrides. Do NOT auto-update prices mid-sequence — creates confusing state. |
+| **Same-GW price rise** | If a player's price rises after the user's transfer-in was locked, the new sell price should update. In practice, the simulator can't know future prices — state this explicitly. |
+| **Player unavailability** | If a player in the plan becomes injured or sold, the plan step shows a flag but does not auto-correct the sequence. |
+| **DGW / BGW GWs** | Break-even weeks per hit should be computed on the GW-specific projected xPts (not flat average), so a DGW target clears the bar faster. |
+| **Max 3 players per club** | Club cap violation must be flagged if the user builds a sequence that breaches the 3-from-1-club rule at any step. |
 
-The canonical formula is: `net_gain = xPts_gain_across_horizon - (hit_count * 4)`.
-Break-even is `ceil(4 / xPts_gain_per_gw)` gameweeks.
+### Categorisation
 
-FPLReview uses a "Free Transfer Value" parameter (default: 2 pts) — a saved FT is
-worth ~2 pts of flexibility. This quantifies Roll vs Act.
+| Category | Item |
+|----------|------|
+| **Table stakes** | Per-GW transfer row: player out, player in, cost (free / −4 hit). |
+| **Table stakes** | Running bank balance shown at each GW step — not just the end state. |
+| **Table stakes** | FT bank tracker: how many free transfers available entering each GW, how many are used, how many roll over. |
+| **Table stakes** | Running hit total across the sequence (e.g., "3 hits = −12 pts so far"). |
+| **Table stakes** | Break-even weeks per hit displayed per hit-transfer (not just a footer total). |
+| **Table stakes** | Squad value displayed at each GW checkpoint (sell prices sum). |
+| **Table stakes** | Save / load the plan session-locally — users spend time building multi-GW sequences and need persistence across page refreshes. |
+| **Table stakes** | Chip designation per GW: user can mark "Wildcard GW X", "Free Hit GW Y" and the planner adjusts hit costs and FT reset accordingly. |
+| **Differentiator** | Sell price vs current price vs purchase price columns — shows exactly how much value the user realises vs what the player is worth on the market. |
+| **Differentiator** | Total team value trajectory chart (sparkline or simple number) showing whether the sequence builds or erodes squad value. |
+| **Differentiator** | "Hit is worth it" signal: auto-calculate whether the projected xPts gain of each hit transfer exceeds 4pts in the planned horizon. Green = justified, amber = marginal, red = not worth it. |
+| **Differentiator** | Comparison to the AI-generated plan from `generatePlan()` — "Your plan: +14.2 xPts vs AI plan: +18.3 xPts." Motivates users to iterate. |
+| **Anti-feature** | Automatically applying price change predictions to future sell prices — this creates speculative simulation users treat as fact. Show static prices with an optional override. |
+| **Anti-feature** | Per-player xPts recalculation as the user edits each GW step — this makes plan editing feel laggy and complex. Pre-compute xPts at session load and treat it as fixed during manual editing. |
+| **Anti-feature** | Animated pitch view showing squad per GW — this is a v1.3 GW Planner pattern that already exists; do not duplicate it in MTP. The MTP differentiator is the financial simulation, not the visual pitch. |
+| **Anti-feature** | Suggesting which player to buy — MTP is the "manual" planner. Suggestions come from the existing AI planner or from the user's own research. MTP's job is to simulate and track, not suggest. |
 
-Community consensus from Fantasy Football Scout elite manager interviews: rolling is
-undervalued by most managers; a saved FT enabling two swaps next week is commonly
-worth more than a marginal single swap now.
+### Complexity
 
-### Table stakes
+**Medium.** Pure TypeScript state machine over the existing `PlanStep` shape from `planning-engine.ts`. The core is:
 
-| Behaviour | Why Expected |
-|-----------|--------------|
-| Compare Roll / 1-FT / 2-FT / Hit on the same screen | Every planner tool does this; missing = incomplete |
-| Show xPts gain net of hit cost per option | Raw gain without hit cost is misleading |
-| Show per-GW break-even for any hit | Community standard ("take the hit if you break even in X GWs") |
-| Operate on user's actual squad (not generic) | Generic advice is table stakes for blog posts; squad-specific is product value |
-| Respect current FT count (1 or 2) | Different FT counts change which options incur hits |
-| Budget-feasibility check | Any option that requires more than available funds must be excluded |
+1. **Immutable per-GW state** — each step is `{gw, transfersIn[], transfersOut[], ftBank, bankBalance, squadValue, hitCount}`. Immer is already used in `PlannerTab` for state mutation — reuse the pattern.
+2. **Sell price computation** — already partially in place for AUTH-01/02 authenticated sessions; needs to generalise to unauthenticated flow using FPL `picks` endpoint `purchase_price` field.
+3. **FT bank simulation** — simple counter with Wildcard reset and 5-cap.
+4. **Break-even** — existing `suggestTransfers()` already computes hit break-even; reuse `breakEvenWeeks` from OCS-01.
+5. **Persistence** — `localStorage` serialisation of the plan steps array.
 
-### Differentiators (not expected, but valued)
+Hard part: maintaining correct sell prices across a sequence when the user reorders steps (changing step 2 should recompute all downstream bank balances). Requires a pure recomputation function over the step array, not mutable references.
 
-| Behaviour | Value | Complexity |
-|-----------|-------|------------|
-| 1 / 3 / 5 GW horizon toggle (not just 1 GW) | Shows whether to act now vs wait; long-horizon Roll often wins | Low — xPts_Ngw already exists |
-| Show "Roll" as an explicit row with 0 gain | Makes the opportunity cost of inaction visible | Low — UI only |
-| Flag when 2-FT hit EV is negative | Prevents managers from rationalising bad hits | Low — arithmetic |
-| Show specific player-pair for best 1-FT and 2-FT | Grounds the abstract comparison in real names | Medium — calls existing suggestTransfers() |
-| Confidence band: "2-FT gain assumes no injuries" | Honest about approximation (additive not re-solved) | Low — copy only |
+### What good looks like
 
-### Anti-features
-
-| Anti-Feature | Why Not |
-|--------------|---------|
-| Simulate all possible n-hit combos (3, 4 transfers) | Exponential search space; personal tool, not a season-long solver |
-| Probability-weighted break-even with injury risk | Requires injury probability model not in scope |
-| Transfer sequence planning (multi-week sequences) | Already covered by existing GW Planner (v1.3) |
-
-### Complexity: Medium
-
-Core logic reuses `suggestTransfers()` (already built). New work: a comparison UI
-layer that places Roll / 1-FT / 2-FT / Hit in a single structured view. Pipeline
-changes: none.
-
-### Dependencies on existing system
-
-| Dependency | Status |
-|------------|--------|
-| `suggestTransfers(currentPicks, players, horizon, ftCount, bank)` | Built (v1.6) |
-| xPts_1gw / xPts_3gw / xPts_5gw per player | Built (v1.4) |
-| FT count input (1 or 2) | Built in TransferPanel |
-| Bank balance from useMyTeam / useSquad | Built (v1.1 auth layer) |
-| Sell prices from useMyTeam | Built (v1.1 auth layer) |
+- User adds "Sell Saka (£8.6m, bought at £8.2m, sell price £8.4m), Buy Mbeumo (£8.1m)" in GW36 and the bank updates immediately: +£0.3m (£8.4m sell minus £8.1m buy).
+- FT bank shows: "GW35: 2 FT → GW36: used 1 FT, bank = 1 FT → GW37: bank = 2 FT."
+- A hit in GW37 shows break-even badge: "Break even in 1 GW" (green) if xPts gain > 4, "Break even in 3 GW" (amber) if gain is 1.5–4, red otherwise.
+- Exiting the page and returning restores the full sequence from localStorage.
+- Chip designation "WC on GW36" removes hit costs for that GW and resets FT bank to 1 for GW37.
 
 ---
 
-## Feature 2: Weekly Decision Summary
+## Feature 2 — ML-01: Mini-League Rival Tracker
 
-### What the ecosystem does
+### What it is
 
-No major free tool offers a true one-screen weekly summary for a user's squad. The
-closest: FPL.team's AI chat ("ask your team anything"), Fantasy Football Fix's "best
-transfer" recommendation, FPL Copilot's solver output. All of these either require
-interaction (chat), are single-topic (transfers only), or are paid.
+A panel (new sub-tab within Plan or Squad section) that fetches all rival team squads in a user's mini-league via the FPL API, then surfaces:
 
-The gap: a structured, data-driven, scan-in-10-seconds summary aggregating captain,
-transfers, bench, chip timing, and risk flags on a single screen — personalised to the
-manager's actual squad.
+- Per-rival: squad composition, captain pick, chip status, rank gap to user, shared players vs differentials
+- Cross-league: which players the user should acquire to block/attack rivals
+- Rank projection: how the gap changes based on template captain and fixture outcomes
 
-Expert FPL community pattern (Fantasy Football Scout, Fantasy Football Hub GW articles):
-managers want to answer five questions before each deadline:
-1. Who do I captain?
-2. Do I make a transfer or roll?
-3. How do I order my bench?
-4. Should I play a chip?
-5. What risks am I taking this week?
+### FPL API data available
 
-### Table stakes
+| Endpoint | Data |
+|----------|------|
+| `leagues-classic/{id}/standings/` | All team entries in the league, with `entry` IDs, manager names, total points, current GW rank, overall rank |
+| `entry/{id}/` | Team name, manager, overall rank, chips used (wildcard1/2, free_hit, bench_boost, triple_captain), bank, team_value |
+| `entry/{id}/event/{gw}/picks/` | Full 15-player squad for that GW, with `is_captain`, `is_vice_captain`, `multiplier` (1/2/3 for TC), `element` (player ID) |
+| `entry/{id}/transfers/` | All transfers ever made — can infer chip usage timing and current squad without paying for GW `picks` call |
 
-| Behaviour | Why Expected |
-|-----------|--------------|
-| Captain recommendation with xPts and confidence | Every FPL tool surfaces a top captain pick |
-| Transfer recommendation (make / roll / hit) | The primary weekly decision; every tool covers it |
-| Bench order recommendation | Basic squad management; missing = incomplete product |
-| Chip timing flag (if a chip is relevant) | Not every GW, but must surface when applicable |
-| Injury / availability risk flags for starters | Essential for deadline decisions |
+All endpoints are already proxied via the app's `/api/fpl/[...proxy]` pattern (v1.0). No new infrastructure required.
 
-### Differentiators
+### FPL-specific rules / nuances
 
-| Behaviour | Value | Complexity |
-|-----------|-------|------------|
-| All five answers on one screen (no tab-hopping) | No competitor does this for a specific squad | Medium — new aggregator component |
-| Priority ordering of recommendations | "Do captain first, then transfer" guidance reduces cognitive load | Low — ordering logic |
-| Risk severity signal (High / Medium / Low) per item | Managers want to know what to worry about | Low — derive from existing signals |
-| DGW / BGW callout when applicable | Context-sensitive flag; critical for chip decisions | Low — fixture data already present |
-| "Autopilot" path: accept all recommendations | Shows manager what happens if they accept all | Low — UI affordance |
+| Rule | Detail |
+|------|--------|
+| **Chip status derivation** | Chips used are in `entry/{id}/chips` array (name, time, event). Compute chips *remaining* by differencing from the allowed set: {wildcard (×2 — one each half), free_hit, bench_boost, triple_captain}. |
+| **Captain pick timing** | GW picks (captaincy) are only available post-deadline from `entry/{id}/event/{gw}/picks/`. Pre-deadline: captain pick is not public — do not attempt to infer it from transfer news. |
+| **Shared vs differential player** | A player the user owns that rivals don't = **upside differential** (user profits if they score). A player rivals own that the user doesn't = **threat differential** (rivals profit if they score). |
+| **Blocking move** | A transfer that acquires a player many rivals are targeting — reduces differential upside for those rivals. Meaningful only if there's signal (via price change data or community board) that rivals are chasing the same player. |
+| **Rank gap vs points gap** | The `standings` endpoint exposes total points, not GW-specific rank gaps. GW rank gap = "how far ahead/behind will the user be after this GW if both pick the same captain?" Requires simulating both squads against a fixture. |
+| **League size limits** | FPL classic leagues can have hundreds of members. The tracker should be usable with up to 20–30 rivals maximum (the relevant competitive set). For large leagues, surface only the top N rivals by closeness to user's rank. |
+| **Privacy** | All data is public within the league (same scope as FPL's own league table). No auth beyond the FPL public API is needed for public leagues; private leagues need the user's `_ga_*` session cookie (already handled by AUTH-01/02). |
 
-### Anti-features
+### Categorisation
 
-| Anti-Feature | Why Not |
-|--------------|---------|
-| Natural-language prose generation (AI/LLM) | Adds dependency; brittle; hallucination risk; not in scope |
-| Mini-league rank projection | Explicitly out of scope (PROJECT.md constraint) |
-| Push notifications / reminders | Web-only personal tool; no notification infrastructure |
+| Category | Item |
+|----------|------|
+| **Table stakes** | League ID input → fetch all rival entries and display a table: Rival name | Total Pts | GW Pts | Overall Rank | Gap to User. |
+| **Table stakes** | Per-rival chip status: which chips remain (WC, FH, BB, TC shown as pill per chip: green=available, grey=used). |
+| **Table stakes** | Per-rival captain pick for the last completed GW (not pre-deadline — post-deadline public data only). |
+| **Table stakes** | Shared players list: players both the user and a specific rival own (click to expand rival squad or view overlap). |
+| **Table stakes** | Differential list: players the user owns that the rival doesn't (upside differentials) and vice versa (threat differentials). |
+| **Table stakes** | Rank gap displayed as both points difference and overall rank difference. |
+| **Differentiator** | Captain differential signal: if the user's captain pick has low EO among rivals (they are not captaining it), surface "Captain upside vs rivals" badge. |
+| **Differentiator** | Chip threat signal: if a rival has a BB or TC unused and good DGW fixtures, flag "Rival may play BB this GW — beware". |
+| **Differentiator** | Blocking move flag: if a player is owned by 0 of N rivals and the user is planning to bring them in, label it "Blocking move" (no rival benefits). |
+| **Differentiator** | Attacking move flag: if a player is owned by many rivals but the user doesn't own them, label the potential transfer "Attacking move" (capturing shared upside). |
+| **Differentiator** | Rank protection filter: surface which players the user must captain to not lose rank vs the modal rival captain pick. |
+| **Anti-feature** | Pre-deadline captain prediction based on transfer news. Post-deadline public picks only — pre-deadline captain inference is speculation. |
+| **Anti-feature** | Automated rival transfer scraping (monitoring changes in picks mid-GW). The pipeline is daily; live rival tracking requires polling infrastructure that isn't in scope. |
+| **Anti-feature** | Head-to-head win probability modelling across a season. This is sophisticated enough to be a separate feature (v1.10+). The tracker surfaces context, not predictions. |
+| **Anti-feature** | Sorting/ranking rival squads by their projected GW points against the user's projected GW points. EO-01 already handles the rank-impact angle; ML-01 is the data surface, not the rank simulator. |
+| **Anti-feature** | Fetching all 100+ members of a large league by default. This triggers many sequential FPL API calls — rate-limit by fetching only the top 20 rivals by rank proximity to the user. |
 
-### Complexity: Medium
+### Complexity
 
-This is primarily a new composition component (DecisionSummaryPanel or similar) that
-reads from existing hooks (useCaptainPicks, useSuggestTransfers, useOptimiseLineup,
-useChipStrategy) and presents the outputs in a structured, prioritised format. The
-data already exists; the challenge is aggregation logic (what to surface, in what
-order, with what severity).
+**High.** Not algorithmically complex but operationally expensive:
 
-### Dependencies on existing system
+1. **Fan-out API calls** — fetching picks for N rivals across a GW requires N sequential calls to `entry/{id}/event/{gw}/picks/`. TanStack Query with individual query keys per rival entry and parallel fetching with rate-limit delay (~200ms between calls) is the right pattern.
+2. **State management** — rival data is per-league, per-GW, and relatively large. A dedicated `useRivals(leagueId, gw)` hook with 6h stale time mirrors the existing data layer pattern.
+3. **Player ID resolution** — rival picks return `element` IDs; player names come from the existing `usePlayers()` data. Join on `element` = player.id.
+4. **New UI surface** — the rival tracker needs a dedicated sub-panel with its own navigation state. Likely a new sub-tab under Plan section ("Rivals" alongside existing planner content).
 
-| Dependency | Status |
-|------------|--------|
-| `useCaptainPicks` hook + CaptainPicksPanel logic | Built (v1.4) |
-| `suggestTransfers()` + TransferPanel | Built (v1.6) |
-| `optimiseLineup()` bench order output | Built (v1.6) |
-| Chip strategy engine (`computeBBScore`, etc.) | Built (v1.4) |
-| Player injury status / news field | Built (MergedPlayer.news, MergedPlayer.status) |
-| Fixture data per player | Built (FixtureEntry[]) |
+The chip-availability derivation is non-trivial: must correctly handle that each manager gets Wildcard twice (once before and once after GW20) — need to check event number of each used Wildcard to determine if the second is still available.
 
----
+### What good looks like
 
-## Feature 3: Fixture Swing Detector
-
-### What the ecosystem does
-
-Fixture swing analysis is one of the most-discussed FPL strategy concepts. It is done
-manually by virtually every FPL blogger (AllAboutFPL, Fantasy Football Hub, Fantasy
-Football Fix) but is almost never algorithmic in free tools. The FPLRotationPlanner
-claims a "Fixture Swing Tool" but it 403s on fetch. Fantasy Football Hub's fixture
-ticker is the closest: a colour-coded grid where managers visually scan for green runs.
-
-The community definition of a fixture swing: a team whose upcoming N-GW difficulty
-changes materially versus their previous N-GW difficulty. "3+ green fixtures in a row"
-is the informal buy signal; "4+ red fixtures" is the sell signal.
-
-Current state in this app: `attacking_difficulty` and `defensive_difficulty` per
-fixture are already computed (pipeline/merge.py, Phase 27). Club form ease aggregates
-(attacking_ease_1gw, attacking_ease_3gw, attacking_ease_5gw) are also present.
-
-What does NOT exist: a delta computation comparing upcoming ease vs past ease for each
-team, and a UI that surfaces teams with the largest positive / negative swing.
-
-### Table stakes
-
-| Behaviour | Why Expected |
-|-----------|--------------|
-| Surface teams with best upcoming fixture runs | Most fixture tools do this |
-| Surface teams with worst upcoming runs (sell signals) | Buy-side only is one-dimensional |
-| Some notion of "swing" not just current difficulty | Static rankings exist everywhere; delta is the differentiator |
-
-### Differentiators
-
-| Behaviour | Value | Complexity |
-|-----------|-------|------------|
-| Quantified swing: upcoming_ease - past_ease (e.g., next 3GW vs prev 3GW) | Most tools show absolute difficulty, not change; delta = actionable timing signal | Low-Medium — arithmetic on existing data |
-| Translated to player names from user's squad | Connecting fixture swing to "you own X from this team" is high-value personalisation | Medium — join squad players to swing teams |
-| Buy/sell signal classification with threshold | "material swing" defined as delta > 0.2 on 0-1 scale (or similar) | Low — threshold logic |
-| 1 / 3 / 5 GW window toggle | Matches existing horizon preference | Low |
-| "Buy window" and "Sell window" framing | Buy signal = team's upcoming ease > past ease by threshold; Sell = inverse | Low |
-
-### Anti-features
-
-| Anti-Feature | Why Not |
-|--------------|---------|
-| European fixture congestion modelling | Rotation prediction requires separate data source; adds scope |
-| Price rise / price fall prediction based on fixture swings | Price changes are driven by transfers, not just fixtures; out of scope |
-| Fixture swing alerts / notifications | No notification infrastructure |
-
-### Complexity: Low-Medium
-
-Pipeline: add a `fixture_swing` metric per team in `pipeline/merge.py` or a new
-`pipeline/fixture_swing.py`. Formula: `upcoming_N_ease - past_N_ease` where ease
-is the mean of `1 - attacking_difficulty` over the window. Write to a new
-`fixture_swings.json` cache file or embed in `merged_players.json` team-level data.
-
-UI: a new panel (FixtureSwingPanel or extension of FixtureEaseRankingPanel) showing
-top N improving and top N worsening teams, with their key players highlighted.
-
-### Dependencies on existing system
-
-| Dependency | Status |
-|------------|--------|
-| `attacking_difficulty` per fixture per player | Built (Phase 27) |
-| `computeClubForm()` with ease aggregates | Built (Phase 27) |
-| FixtureEaseRankingPanel (can extend or parallel) | Built (Phase 27) |
-| xGI% and top-player table per team (TargetListPanel) | Built (Phase 32) |
-| Squad player list for personalisation | Built (useSquad) |
+- User enters league ID "12345", sees a table of 8 rivals with their rank, gap, and chip status instantly.
+- Clicking a rival row expands to show their squad, captain, and a diff panel: "Shared: Salah, Haaland, Saka | You have: Mbeumo (they don't) | They have: Palmer (you don't)."
+- Mbeumo (owned by user, 0 rivals) is labelled "Captain upside differential."
+- Palmer (owned by 6/8 rivals, not owned by user) shows "High rival threat — consider blocking move."
+- Rival with BB still available and a DGW in 2 weeks shows "BB threat: GW36 DGW."
 
 ---
 
-## Feature 4: Player Lifecycle Labels
+## Feature 3 — EO-01: Effective Ownership & Rank Protection Mode
 
-### What the ecosystem does
+### What it is
 
-The FPL community uses "Buy / Hold / Sell" universally. This app already has that
-(`recommend.ts`, `Verdict` type). The v1.7 extension is granular timing advice within
-each category — the difference between "Hold because data supports holding" and "Hold
-one more week then reassess because fixture run worsens from GW36."
+Two linked capabilities:
 
-Community usage confirms the following timing label concepts are well-understood:
-- "Buy next week" (fixture currently hard, upcoming run improves)
-- "Hold one more" (owns fixtures going soft next 1-2 GWs; sell window is GW+2)
-- "Sell soon" (form declining, fixtures turning hard, but price still defensible)
-- "Minutes trap" (solid stats but rotation risk means expected minutes are low)
-- "Fixture trap" (popular player, high ownership, but facing hard fixtures)
+1. **EO% surface** — display estimated Effective Ownership percentage per player, specifically approximating the **top-10k EO** (the relevant competitive benchmark) rather than raw `selected_by_percent`.
+2. **Mode toggle** — adjust all captain and transfer recommendations based on which strategic posture the user is in: Max xPts / Protect Rank / Chase Rank / Differential Aggressive.
 
-These concepts are discussed weekly in expert analysis but are not implemented as
-algorithmic labels by any tool found in research. They represent genuine product
-differentiation.
+### EO formula and mechanics
 
-### Table stakes
-
-| Behaviour | Why Expected |
-|-----------|--------------|
-| Existing Buy / Hold / Sell verdict retained | Already built; regression = breaking change |
-| Label applies to squad players | Context of "my squad" makes labels actionable |
-| Label updates as data changes (pipeline-driven) | Static labels from training data are useless |
-
-### Differentiators (the new labels)
-
-| Label | Definition | Signals Used | Complexity |
-|-------|-----------|--------------|------------|
-| Buy Next Week | BUY verdict but current GW fixture is hard (≥0.7 difficulty); upcoming 1 GW improves materially | regression_signal='buy' + current fixture hard + next fixture easy | Low — combine existing fields |
-| Hold One More | HOLD verdict; upcoming 1 GW easy but GW+2 onward hard; sell window is next week | xPts_1gw high, xPts_3gw low relative to xPts_1gw | Low — xPts field comparison |
-| Sell Soon | SELL verdict but price still defensible (not yet falling); grace period before forced sell | regression_signal='sell' + cost_change_event = 0 (no fall yet) | Low |
-| Minutes Trap | HOLD or BUY by gem score / xPts, but mins_risk is rotation_risk or cameo | mins_risk in ['rotation_risk', 'cameo'] + good xPts (per 90, not absolute) | Low — existing MinsRisk field |
-| Fixture Trap | High ownership (>15%) + worsening fixtures (attacking difficulty > 0.6 next 3GW) + HOLD/BUY verdict | selected_by_percent > 15 + attacking_ease_3gw < 0.4 + verdict not SELL | Low — existing fields |
-
-### Anti-features
-
-| Anti-Feature | Why Not |
-|--------------|---------|
-| Price prediction label ("price rise incoming") | Requires transfer volume prediction; out of scope |
-| Captaincy timing label ("Captain this week") | Captaincy is already covered by CaptainPicksPanel |
-| Labels for all 600+ players (not just squad) | Useful in GemTable context but increases scope significantly; consider deferred |
-
-### Complexity: Low
-
-Labels are deterministic functions of existing MergedPlayer fields. No new pipeline
-data required. New logic: a `computeLifecycleLabel()` pure function in
-`src/lib/recommend.ts` (or a new `src/lib/lifecycle.ts`) that returns a structured
-label alongside the existing `Verdict`.
-
-Most complex part: defining and testing the fixture swing component of "Buy Next Week"
-and "Hold One More," which requires comparing current-GW fixture difficulty vs next
-1-2 GW fixture difficulty from the `fixtures[]` array already on MergedPlayer.
-
-### Dependencies on existing system
-
-| Dependency | Status |
-|------------|--------|
-| `Verdict` from `recommend.ts` (Buy/Hold/Sell) | Built (v1.1) |
-| `regression_signal` ('buy'/'sell') | Built (v1.4) |
-| `mins_risk` (MinsRisk enum) | Built (v1.1) |
-| `fixtures[]` with `attacking_difficulty` per fixture | Built (Phase 27) |
-| `selected_by_percent` | Built (v1.0) |
-| `cost_change_event` | Built (v1.0) |
-| `differential_flag` ('diff'/'trap') | Built (v1.4) |
-
----
-
-## Feature 5: Explainable xPts Breakdown
-
-### What the ecosystem does
-
-FPL Copilot's xPts model description ("50+ data points, including xG, xA, CS
-probability, projected minutes, bonus patterns, fixture adjustment") is the most
-detailed public description found. The actual per-component breakdown is typically
-behind a paid tier or not exposed.
-
-Standard community expectation: managers want to see why a player is projected at
-5.2 xPts, not just the number. The components are:
-1. Appearance / minutes probability (playing time expected)
-2. Goal contribution (xG-derived, position-adjusted)
-3. Assist contribution (xA-derived)
-4. Clean sheet probability (per-fixture, position-scaled: GK/DEF=4pts, MID=1pt, FWD=0pt)
-5. Bonus points (historical bonus rate as flat adder)
-6. DefCon contribution (2025/26 specific; DEF/GK defensive contribution threshold)
-7. Minutes risk modifier (discount when start_prob < 0.65)
-
-This app's pipeline already computes Poisson goal xPts, Bernoulli CS xPts, and
-flat bonus — and stores them in `xPts_components_1gw` on MergedPlayer. The existing
-`XPtsCell` tooltip already shows these components for 1GW. What's missing:
-- Appearance points component (2 pts for 60+ min, 1 pt for 1-59 min — expected value)
-- Minutes risk component (the probability-weighted discount)
-- A dedicated UI surface (not just a hover tooltip)
-
-### Table stakes
-
-| Behaviour | Why Expected |
-|-----------|--------------|
-| Show the xPts number with a breakdown path | Once xPts is central to the app, "why?" is the obvious next question |
-| Components must sum to the displayed total (±rounding) | Inconsistency destroys trust |
-| Show for both 1GW and multi-GW horizons | Managers check both |
-| Position-appropriate components | GK/DEF show CS; FWD shows goal pts prominently |
-
-### Differentiators
-
-| Behaviour | Value | Complexity |
-|-----------|-------|------------|
-| Dedicated expandable breakdown row or panel | Tooltip-only is dismissable; persistent view enables comparison | Low-Medium — new display component |
-| Visual proportion bars (not just numbers) | Scan-able format; shows which component dominates | Low — CSS width from proportion |
-| Minutes risk as explicit multiplier ("30% chance of starting = x0.30 discount") | Honest model transparency | Low — start_prob already exists |
-| Fixture-adjusted CS% shown explicitly | Managers should see the team-vs-opponent clean sheet probability | Medium — requires per-fixture CS% (Feature 6 dependency) |
-| Comparison: "This GW vs average" | Shows whether this week is a particularly good or bad projection | Low — compare xPts_1gw to xPts_3gw/3 |
-
-### Anti-features
-
-| Anti-Feature | Why Not |
-|--------------|---------|
-| Monte Carlo simulation breakdown | Analytical model is sufficient; simulation adds latency, not meaningful accuracy |
-| Per-match-event probability trees | Overcomplicates; not actionable |
-| Historical accuracy shown per component | Interesting but adds scope; not actionable for this-week decisions |
-
-### Complexity: Low-Medium
-
-Pipeline: the core components (goal_pts, assist_pts, cs_pts, bonus_pts) are already
-computed and stored in `xPts_components_1gw`. Two additions needed:
-1. `appearance_pts` component: `E[appearance] = start_prob * 2 + (1 - start_prob) * 0.5` (simplified)
-2. `minutes_discount`: already implicit in the xPts calculation via `xmins`; make it explicit
-
-UI: existing `XPtsCell` tooltip can be extended, or a new `XPtsBreakdownPanel`
-component created for use in the Decision Summary and player detail views.
-
-### Dependencies on existing system
-
-| Dependency | Status |
-|------------|--------|
-| `xPts_components_1gw` (goal_pts, assist_pts, cs_pts, bonus_pts) | Built (Phase 28) |
-| `xPts_1gw / xPts_3gw / xPts_5gw` | Built (Phase 28) |
-| `start_prob`, `xmins`, `mins_risk` | Built (Phase 7) |
-| `XPtsCell` component with existing tooltip | Built (Phase 28) |
-| Per-fixture CS% | NOT built — dependency on Feature 6 |
-
----
-
-## Feature 6: Clean Sheet Probability
-
-### What the ecosystem does
-
-This is a well-established analytical primitive in FPL tools. Multiple tools provide
-CS% per team per fixture:
-
-- AllFantasyTips: "CS odds shown as a decimal (e.g., 0.35 = 35% probability)"
-- Fantasy Football Pundit: CS odds updated every GW for all teams
-- Never Manage Alone: per-GW CS odds table
-
-The standard methodology (MEDIUM-HIGH confidence from multiple sources):
-- Model expected goals against (xGA) for the fixture
-- Apply Poisson distribution: `P(goals = 0) = e^(-lambda)` where lambda = opponent xGA
-- Adjust for home/away (home teams concede ~15% fewer goals on average)
-- Scale by recent form (rolling window xGA, not season total)
-
-This app already uses Poisson distribution for goal scoring xPts (Phase 28 pipeline).
-The CS probability computation is an extension of the same model:
-- `lambda_concede = opponent_attacking_difficulty * position_scale_factor`
-  (where `attacking_difficulty` already encodes the rolling xGA of the attacking team)
-- `cs_prob = exp(-lambda_concede)`
-- `cs_pts = cs_prob * position_cs_points` (GK/DEF: 4, MID: 1, FWD: 0)
-
-This cs_pts component is already embedded in `xPts_components_1gw.cs_pts`. What
-does NOT exist: the raw `cs_prob` as a displayed percentage, per team per fixture,
-accessible for the defensive picks view.
-
-### Table stakes
-
-| Behaviour | Why Expected |
-|-----------|--------------|
-| CS% per team per upcoming fixture | AllFantasyTips, Fantasy Football Pundit, Never Manage Alone all provide this |
-| CS% consistent with xPts model (same inputs) | Inconsistency between CS% display and xPts model destroys credibility |
-| GK and DEF picks ordered by CS% contribution | The primary use case for CS% data |
-
-### Differentiators
-
-| Behaviour | Value | Complexity |
-|-----------|-------|------------|
-| CS% derived from the same xGA rolling window already in the pipeline | Model consistency (not bolted-on external data) | Low — reuse attacking_difficulty |
-| CS% displayed per fixture (not just per team season average) | Fixture-specific is more actionable | Low — per fixture data exists |
-| Combined CS% for DGW (probability of at least one CS across two fixtures) | DGW doubles opportunity; combined CS% = 1 - (1-p1)*(1-p2) | Low — arithmetic |
-| CS% surfaced in GK/DEF player card | Reduces need to cross-reference the Club Form tab | Medium — new display location |
-| CS% fed into Feature 5 (xPts breakdown) | Powers the "fixture-adjusted CS%" display in explainability | Low — dependency resolved |
-
-### Anti-features
-
-| Anti-Feature | Why Not |
-|--------------|---------|
-| Betting odds integration (bookmaker CS prices) | Data sourcing dependency; not authoritative within the xPts model |
-| Live CS% updates during match | Daily refresh is sufficient; in-match is out of scope |
-| Season-long CS% prediction model | Adds ML scope; weekly fixture-level CS% is sufficient |
-
-### Complexity: Low-Medium
-
-Pipeline: `cs_prob` per fixture can be derived from `attacking_difficulty` directly.
-Formula: `cs_prob = exp(-attacking_difficulty * GOAL_RATE_SCALAR)` where
-`GOAL_RATE_SCALAR` is a tuning constant (approx. 1.2-1.5 based on Premier League avg
-goals per game of ~2.7). This requires a calibration step: verify that the implied
-mean CS rate (~30%) matches observed PL data.
-
-Alternatively, the existing `cs_pts` component in `xPts_components_1gw` can be
-reverse-engineered: `cs_prob = cs_pts / position_cs_point_value` (e.g., DEF: cs_pts/4).
-
-Write `cs_prob` per fixture to `merged_players.json`. No new pipeline dependency.
-
-UI: a new `CleanSheetOddsPanel` (or extension of `FixtureEaseRankingPanel`) showing
-CS% per team per next 3-5 fixtures, sortable by GK/DEF value.
-
-### Dependencies on existing system
-
-| Dependency | Status |
-|------------|--------|
-| `attacking_difficulty` per fixture (rolling xGA, normalised) | Built (Phase 27) |
-| `xPts_components_1gw.cs_pts` (already computed) | Built (Phase 28) |
-| `start_prob`, `element_type` for per-position CS points | Built (v1.1, v1.0) |
-| Pipeline/merge.py for adding cs_prob field | Existing file; extend |
-
----
-
-## Feature Dependencies (v1.7)
+**Official formula (confirmed, HIGH confidence):**
 
 ```
-existing: attacking_difficulty, xPts_components_1gw, start_prob, regression_signal,
-          mins_risk, fixtures[], Verdict, suggestTransfers(), optimiseLineup()
-          |
-          ├──> Feature 6: Clean Sheet Probability
-          │       cs_prob per fixture, cs_prob per team view
-          │       |
-          │       └──> Feature 5: Explainable xPts Breakdown (consumes cs_prob)
-          │
-          ├──> Feature 3: Fixture Swing Detector
-          │       fixture_swing delta per team
-          │       |
-          │       └──> Feature 4: Lifecycle Labels (consumes fixture swing)
-          │
-          ├──> Feature 1: Transfer Opportunity Cost Simulator
-          │       (wraps suggestTransfers(), adds Roll row, horizon comparison)
-          │
-          └──> Feature 2: Weekly Decision Summary
-                  (aggregates Features 1, 3, 4, 5; captain from existing panel;
-                   chip timing from existing chip-strategy-engine)
+EO = (% who started the player) + (% who captained them) + (% who triple-captained them)
 ```
 
-**Build order implication:** Feature 6 before Feature 5; Feature 3 before Feature 4;
-Features 1 and 6 can be built in parallel. Feature 2 (Decision Summary) should be
-last — it composes the others.
+This is why EO can exceed 100%: if 80% own a player and 50% of all managers captain them, EO = 80 + 50 = 130%.
+
+Practical interpretation: a player with 130% EO means 1.30 pts is added to the average score for every point they score. If you don't own and captain them, you lose 1.30 pts of rank ground per point they score.
+
+**Top-10k EO vs overall EO:**
+
+Top-10k managers concentrate ownership and captaincy much more tightly around a smaller set of players. The standard FPL `selected_by_percent` is overall ownership. Top-10k EO is not available directly from the FPL API — it must be approximated or sourced from the community (LiveFPL provides it post-deadline).
+
+**Data source for this app:** The FPL bootstrap provides `selected_by_percent` (overall ownership) and `transfers_in_event` / `transfers_out_event` per player. Neither is top-10k EO. The most accurate approximation available without external scraping is:
+
+- Use `selected_by_percent` as the ownership component
+- Weight by a heuristic for "captain probability among owners" — high-xPts players attract disproportionate captaincy from top managers
+- Apply a scaling factor: top-10k ownership for template players is empirically ~1.4–1.8× overall ownership; for differentials it's ~0.5× (elite managers under-own popular low-ceiling picks, over-own differentials)
+
+This is acknowledged as an approximation. Surface confidence band accordingly.
+
+### Strategic modes
+
+| Mode | Behaviour |
+|------|-----------|
+| **Max xPts** (default) | Existing captain ranking by raw xPts. No EO adjustment. |
+| **Protect Rank** | Penalise low-EO captain picks (differential picks are risky when guarding a lead). EO-adjusted captain EV = `(player xPts × 2) − (EO × rank_risk_multiplier)`. Surface "dangerous to fade" label on high-EO players the user doesn't own/captain. |
+| **Chase Rank** | Reward low-EO captain picks. EO-adjusted captain EV = `(player xPts × 2) + (1 − EO/100) × differential_bonus`. Differential player badge becomes more prominent. |
+| **Differential Aggressive** | Maximise differential upside: only surface captain candidates with EO < 20%, ignoring EV floor. Explicitly high-risk mode with visible disclaimer. |
+
+### FPL-specific rules / edge cases
+
+| Rule | Detail |
+|------|--------|
+| **EO post-deadline only** | Top-10k EO data from LiveFPL/FotPrem is only available post-deadline (squads locked). Pre-deadline, EO is the previous GW's figure — useful as a prior but not real-time. Flag this clearly in the UI. |
+| **EO and vice-captain** | VC contributes a fractional EO (if captain blanks and VC scores, the VC's 2× applies). Strictly: EO_vc = (% vice-captaining × 2) × P(captain blank). For simplicity, model VC separately as a lower-weight signal. |
+| **Fading a dangerous player** | If a player has EO > 80% (even unowned by the user), the user is "fading" them and will lose rank whenever they score. Surface a "You're fading X (EO 92%)" warning in the captain panel. |
+| **EO normalisation** | EO across all players in a GW does not sum to a fixed value. Total EO can well exceed N players × 100% because captaincy concentrations compound. No normalisation is needed — show raw EO% per player. |
+| **Captain EV rank impact formula** | Rank impact = `(player_pts_this_gw − template_captain_pts) × (1 − EO/100)`. Positive = rank gain vs the crowd. |
+
+### Categorisation
+
+| Category | Item |
+|----------|------|
+| **Table stakes** | EO% column added to the captain panel (existing `CaptainPicksPanel`). Show EO alongside xPts for each candidate. |
+| **Table stakes** | "Dangerous to fade" label on high-EO players not currently owned/captained by the user (EO > 80% threshold). |
+| **Table stakes** | Mode toggle with 4 options: Max xPts / Protect Rank / Chase Rank / Differential Aggressive. Toggle stored in local state (not persisted — users switch modes frequently). |
+| **Table stakes** | Captain ranking reorders when mode changes — the visible rank order shifts without page reload. |
+| **Table stakes** | EO source label: "EO approximated from overall ownership — top-10k EO available post-deadline only." Honesty is required here. |
+| **Differentiator** | Per-mode rank impact estimate: "Captaining X in Protect Rank mode: expected rank change ±N places." Rough estimate based on EO and opponent count. |
+| **Differentiator** | "Ownership impact" label per player: Dangerous to fade / High upside differential / Moderate shield / Template pick — based on EO bands with context-aware thresholds. |
+| **Differentiator** | Mini-league integration (ML-01): when ML-01 data is loaded, the EO calculation can be scoped to the user's mini-league rivals rather than the full player pool. "Local EO" = % of your mini-league who own/captain this player. |
+| **Differentiator** | Rank simulation sketch: "If template captain scores 12 and you captain X instead who scores 8, you drop approximately 3 places in a 1000-person league." Rough calculation — show confidence band. |
+| **Anti-feature** | Attempting to scrape real-time top-10k EO from LiveFPL or FotPrem (third-party scraping). These sites do not offer APIs; scraping their pages violates their terms of service and is brittle. Approximate from FPL bootstrap data only. |
+| **Anti-feature** | EO-adjusted xPts becoming the *default* captain metric. EO is contextual — Max xPts should remain the default with EO as an opt-in lens. Users who just want best xPts shouldn't see EO noise. |
+| **Anti-feature** | A fifth "Auto" mode that tries to guess the user's context (rank, GW in season, etc.) and auto-selects the right mode. This is paternalistic and often wrong. Let the user choose. |
+| **Anti-feature** | VC EO modelling in full detail. VC EO is a second-order effect (P(captain blank) × VC scoring × EO of VC) — too noisy to surface reliably. Flag VC only as "also widely captained" if its EO exceeds 60%. |
+
+### Complexity
+
+**Medium.** Most of the complexity is in the data approximation and the mode-switching behaviour, not the algorithm:
+
+1. **EO approximation** — `selected_by_percent` from the bootstrap is already in the pipeline. Augment with a captaincy weight: players who are top-5 in captain panel ranking get `captaincy_pct ≈ selected_by_percent × captain_concentration_factor` (0.4–0.7 depending on xPts lead). This is a heuristic, not a precise model — document accordingly.
+2. **Mode toggle state** — React state; four modes; four different sort/display functions over the same captain data. Clean separation.
+3. **Captain panel extension** — `CaptainPicksPanel` already has a two-card layout (v1.6 CAP-03/04). Adding EO column and mode toggle is a layout extension, not a rewrite.
+4. **ML-01 integration** — if the user has loaded rival data, expose a local-EO mode as a fifth option. This is additive, not blocking.
+
+### What good looks like
+
+- Captain panel shows: Haaland | xPts 9.2 | EO 184% | Mode: Protect Rank → rank #1 in panel. Differential Aggressive mode → Haaland drops to bottom, a 5% EO player with xPts 6.1 rises to top.
+- "Dangerous to fade: Salah (EO 127%) — you don't captain him. Expected rank loss: −0.8 pts per point he scores." surfaced as an amber warning card.
+- User toggles to Chase Rank → captain panel reorders, differential badge appears on low-EO high-upside candidates.
+- Mode toggle persists within the session but resets on next visit (user's strategic context changes weekly).
 
 ---
 
-## Complexity Summary
+## Feature 4 — TREE-01: Transfer Route Tree
 
-| Feature | Pipeline Work | UI Work | Total Complexity |
-|---------|---------------|---------|-----------------|
-| 1. Transfer Opportunity Cost Simulator | None (reuses suggestTransfers) | Medium — new comparison view | Medium |
-| 2. Weekly Decision Summary | None (aggregates existing) | Medium — new aggregator panel | Medium |
-| 3. Fixture Swing Detector | Low — delta computation in merge.py or new file | Low — extend FixtureEaseRankingPanel | Low-Medium |
-| 4. Player Lifecycle Labels | None — pure TS function over existing fields | Low — new badge variants | Low |
-| 5. Explainable xPts Breakdown | Low — add appearance_pts component | Low-Medium — new breakdown display | Low-Medium |
-| 6. Clean Sheet Probability | Low — add cs_prob field per fixture | Low-Medium — new CS% panel | Low-Medium |
+### What it is
+
+An AI-generated comparison of 2–3 distinct multi-week transfer sequences, shown side-by-side or in a tabular comparison. Each "path" is a coherent multi-GW plan with its own:
+
+- Player-level transfer steps per GW
+- FT bank state per GW
+- Hit costs per GW
+- Projected xPts per GW and cumulative
+- Chip interaction notes (which chips are preserved, consumed, or optimal for that path)
+
+The key differentiator vs the existing GW Planner (`generatePlan()`): the Planner returns one best path. TREE-01 returns **N alternative paths** with explicit tradeoffs, letting the user compare and choose.
+
+### How existing tools implement this
+
+FPL Review's Transfer Solver is the closest reference: it uses a chess-engine-style heuristic search ("beams") and surfaces multiple "root moves" — the top-N first transfers, each of which spawns a separate continuation plan. Users pick their preferred root move and the solver continues from that path. This is effectively what TREE-01 wants to implement at a simpler scale.
+
+The branching model for TREE-01:
+
+```
+Current squad
+   ├── Path A: Transfer X→Y in GW36, Z→W in GW37 (no hit)
+   │           Projected: +18.4 xPts over 3 GWs, WC preserved
+   │
+   ├── Path B: Transfer X→Y in GW36 + Z→W in GW36 (1 hit)
+   │           Projected: +21.2 xPts over 3 GWs, 1 hit cost = −4
+   │           Net: +17.2 xPts, WC preserved
+   │
+   └── Path C: Wildcard GW36 (reset squad)
+               Projected: +24.8 xPts, WC consumed
+```
+
+Each path is scored: `path_score = cumulative_xPts − (hits × 4)`.
+
+### How branching works in practice
+
+The existing `generatePlan()` is a greedy + 1-level look-ahead engine. TREE-01 extends this by:
+
+1. Generating `N` distinct top-level transfer choices (different player-in/player-out combos for GW0 of the sequence)
+2. For each top-level choice, running `generatePlan()` to compute the continuation
+3. Returning the top 3 paths ranked by net score
+
+This is NOT a full beam search across the exponential space — it's "top-3 root moves, each with their greedy continuation." That's sufficient for a personal-use tool and avoids compute overload.
+
+### FPL-specific rules / edge cases
+
+| Rule | Detail |
+|------|--------|
+| **FT bank branching** | Paths that roll FT in GW0 have 2 FT in GW1; paths that spend FT in GW0 have 1 FT in GW1. These diverge significantly over 5 GWs — the FT bank difference is itself a meaningful path differentiator. |
+| **Hit path vs roll path** | A −4 hit path is only better if cumulative xPts gain exceeds 4 within the horizon. Many users systematically underestimate hit break-even — the tree makes this explicit by showing both paths. |
+| **Chip path: Wildcard** | One path can designate a Wildcard in GW0 (or any step). When WC is active: unlimited transfers, no hits, FT resets to 1 afterwards. `buildOptimalSquad()` (WC mode, already in v1.6) generates the WC path's player set. |
+| **Chip path: Free Hit** | FH is a single-GW temporary squad. Show as a path option when FH is available; squad reverts after. FH path score = current_gw_xPts_with_optimal_FH_squad. |
+| **Chip path: Bench Boost** | BB is a chip applied on top of existing squad. It's not a transfer path — more of a "when to play BB" decision. Surface BB as a note on the path that happens to have best bench xPts, not as a branching dimension. |
+| **Path ordering** | Default sort: net xPts (cumulative xPts minus hit costs). User can also sort by: minimum hits, maximum ceiling, chip preservation. |
+| **Horizon mismatch** | Paths must be compared over the same GW horizon. If Path A has a hit in GW1 and Path B doesn't, compare both over a 3-GW horizon minimum to allow the hit to break even. |
+
+### Categorisation
+
+| Category | Item |
+|----------|------|
+| **Table stakes** | Exactly 2–3 distinct paths shown (not 1, not 10). Cognitive load above 3 paths is too high for a weekly decision. |
+| **Table stakes** | Per-path summary row: path label, transfers in GW0, total hits across horizon, net xPts (after hit deduction), chip used (if any). |
+| **Table stakes** | Per-path GW-by-GW breakdown: which transfer(s) made each GW, FT bank, hit cost, projected xPts. |
+| **Table stakes** | Net score formula visible: "Cumulative xPts − (hits × 4) = net score." Users must be able to audit the ranking. |
+| **Table stakes** | Chip interaction per path: "Path A: WC available", "Path B: WC consumed GW36", "Path C: no chip interaction." |
+| **Differentiator** | FT bank difference highlighted explicitly: "Path A rolls FT → 2 FT in GW37. Path B spends FT → 1 FT in GW37." Helps users value flexibility. |
+| **Differentiator** | Confidence band on net xPts: show variance band (e.g., ±3.2 xPts) based on fixture uncertainty, so the user sees whether Path A's lead is robust or fragile. |
+| **Differentiator** | Path naming: auto-label paths as "No hit (conservative)", "1-hit (moderate)", "2-hit (aggressive)" or "Wildcard reset" based on characteristics. Human-readable labels > algorithmic IDs. |
+| **Differentiator** | Comparison to MTP-01 user-defined plan: if the user has a manual plan saved, add it as a 4th "Your plan" path for direct comparison. |
+| **Anti-feature** | Exhaustive path enumeration (all possible N-GW transfer combinations). The search space is enormous (700 × 700 × N GWs). Top-3-root-moves with greedy continuation is the appropriate scope. |
+| **Anti-feature** | Interactive branching tree visualisation (collapsible tree diagram). This is a complex D3/Recharts component that adds build time without adding decision value. A compact table comparison is sufficient. |
+| **Anti-feature** | Paths that differ only by player ordering (same players, different GW of transfer). The user cannot distinguish these cognitively — deduplicate paths by the set of player changes, not the order. |
+| **Anti-feature** | Running the solver on every xPts update. The tree is generated on-demand (button press), not auto-refreshed. Tree generation should be a deliberate action, not a live-recomputing background process. |
+| **Anti-feature** | Showing more than 3 paths by default. 3 is the cognitive maximum for side-by-side comparison in a weekly decision. A "show more" option for power users is acceptable but should not be default. |
+
+### Complexity
+
+**High.** The algorithmic work is manageable but the integration complexity is significant:
+
+1. **Branching logic** — extending `generatePlan()` to produce multiple root moves (not just the top-1 greedy choice). This requires refactoring the planner to return `PlanResult[]` not `PlanResult`. The greedy continuation from each root move can reuse `generatePlanFrom()` (already in v1.3 for manual edit mode).
+2. **Wildcard path** — calling `buildOptimalSquad(chipMode='wildcard')` (already in v1.6) to generate the WC branch is available; the integration is wiring the result into `PlanResult` format.
+3. **Free Hit path** — requires computing a temporary optimal squad for the FH GW only. `buildOptimalSquad(chipMode='freehit')` exists (v1.6) — same wiring job.
+4. **Comparison table UI** — a side-by-side or stacked table of 2–3 paths is a new component. Design challenge: paths have variable length (different hit counts lead to different GW counts in the breakdown). Needs a unified grid layout.
+5. **Dependency on planning engine state** — TREE-01 reads from the same squad + FT state as the existing planner. No new data dependencies, but must not mutate the existing plan state.
+
+### What good looks like
+
+- User clicks "Generate Transfer Tree" and sees three paths in <2 seconds.
+- Path A: "No hit — Roll FT" | GW36: sell Rashford, buy Mbeumo (free) | Net: +16.2 xPts | WC available.
+- Path B: "1 hit — Early move" | GW36: sell Rashford, buy Mbeumo + sell Jones, buy Saliba (1 hit −4) | Net: +18.8 xPts | WC available.
+- Path C: "Wildcard — Full reset" | GW36: WC squad | Net: +24.1 xPts | WC consumed.
+- Each path shows a compact GW-by-GW table with xPts, hit cost, FT bank.
+- Best path highlighted with a green "Recommended" badge (highest net xPts).
+- User can click "Use this plan" on any path to load it into the MTP-01 manual planner for further editing.
 
 ---
 
-## Table Stakes vs Differentiators Summary
+## Cross-feature dependency map
 
-### True Table Stakes (missing = product feels broken)
+```
+Existing v1.8 engines (start_prob, xPts pipeline, benchOrder)
+   └── All four v1.9 features consume xPts projections (no new pipeline dep)
 
-- Transfer comparison shows Roll / 1-FT / 2-FT options (Feature 1)
-- Captain and transfer rec on the same screen as user's squad (Feature 2)
-- Any fixture difficulty display for defensive/GK picks (Feature 6, basic)
-- Buy/Hold/Sell at minimum for squad players (existing, retained)
+MTP-01 (Manual Transfer Planner)
+   ├── Consumes: existing PlanStep/generatePlanFrom() shape from v1.3
+   ├── Consumes: sell price data from AUTH-01/02 (v1.1) or FPL picks endpoint
+   └── Produces: saved plan state consumed by TREE-01 path comparison
 
-### Differentiators (valued but not universally expected in free tools)
+ML-01 (Mini-League Rival Tracker)
+   ├── Consumes: FPL /api/fpl/[...proxy] for league + entry APIs (v1.0)
+   ├── Consumes: usePlayers() for player ID→name resolution (v1.0)
+   └── Produces: local EO data optionally consumed by EO-01 (mini-league scoping)
 
-- 1/3/5 GW horizon on the transfer comparison (Feature 1)
-- Quantified fixture swing delta (not just absolute difficulty) (Feature 3)
-- Granular timing labels beyond Buy/Hold/Sell (Feature 4) — **no competitor does this algorithmically**
-- Per-component xPts breakdown with visual proportion (Feature 5)
-- CS% from the same xGA model as xPts (consistency differentiator) (Feature 6)
-- All five weekly decisions on one screen personalised to actual squad (Feature 2) — **no free tool does this**
+EO-01 (Effective Ownership)
+   ├── Consumes: selected_by_percent from bootstrap (v1.0)
+   ├── Consumes: CaptainPicksPanel (v1.6 CAP-03/04) — extends existing component
+   └── Optionally consumes: ML-01 rival squad data for local-EO mode
 
-### Anti-Features (explicitly exclude from v1.7)
+TREE-01 (Transfer Route Tree)
+   ├── Consumes: generatePlan() / generatePlanFrom() from v1.3 planning engine
+   ├── Consumes: buildOptimalSquad() WC/FH modes from v1.6
+   └── Produces: paths loadable into MTP-01 (link between features)
+```
 
-| Anti-Feature | Reason |
-|--------------|--------|
-| AI / LLM-generated prose summaries | Adds external dependency, hallucination risk, not in scope |
-| Multi-week transfer sequence optimiser | Already exists in GW Planner (v1.3); don't duplicate |
-| Automated chip activation | Dangerous irreversible action; recommendation only |
-| Mini-league / head-to-head analysis | Out of scope per PROJECT.md |
-| In-match live CS% updates | Daily refresh sufficient; in-match is out of scope |
-| Injury probability model | Data not available; out of scope |
-| Betting odds data feeds | External data source dependency; model inconsistency risk |
-| Price rise prediction labels | Requires transfer volume modelling; out of scope |
+**Implied phase ordering:**
+- MTP-01 first — foundational financial simulation needed before route tree can reference manual plans
+- EO-01 second — independent of MTP/TREE; extends the captain panel which is already stable
+- ML-01 third — high fan-out API calls, needs careful async handling; doesn't block EO or MTP
+- TREE-01 last — depends on MTP-01 for the "load into manual planner" integration; depends on v1.6 chip engines for WC/FH paths
+
+EO-01 and ML-01 can be parallelised. TREE-01 should follow MTP-01.
+
+---
+
+## Table Stakes summary
+
+| Feature | Table Stakes (minimum viable) |
+|---------|-------------------------------|
+| MTP-01 | GW-by-GW transfer row, bank balance per step, FT bank tracker, hit counter, break-even per hit, chip designation |
+| ML-01 | Rival table (rank/gap/chips), captain per rival (post-deadline), shared vs differential player list |
+| EO-01 | EO% column in captain panel, mode toggle (4 modes), "dangerous to fade" warning |
+| TREE-01 | 2–3 paths with per-path summary (hits, net xPts, chip status), GW-by-GW breakdown per path |
+
+---
+
+## Differentiators summary
+
+| Feature | Key Differentiator |
+|---------|--------------------|
+| MTP-01 | Hit-justified signal (green/amber/red), MTP vs AI-plan comparison, squad value trajectory |
+| ML-01 | Blocking/attacking move flags, chip threat alert, captain differential badge |
+| EO-01 | Mode-adjusted captain ranking, local-EO from ML-01 data, rank simulation sketch |
+| TREE-01 | FT bank comparison per path, confidence band on net xPts, "load into MTP" bridge |
+
+---
+
+## Anti-features summary
+
+| Feature | Key Anti-Features |
+|---------|-------------------|
+| MTP-01 | Auto-applying price change predictions to future sells; animated pitch view duplication; suggesting players (AI planner does this) |
+| ML-01 | Pre-deadline captain inference; live rival transfer polling; fetching all 100+ members by default |
+| EO-01 | Scraping third-party top-10k EO; EO as default captain metric; auto-mode guessing user's strategic context |
+| TREE-01 | Exhaustive path enumeration; D3 tree visualisation; auto-refresh on xPts update; >3 paths by default |
+
+---
+
+## Prioritisation matrix
+
+| Feature | Strategic Value | User Demand | Build Complexity | Phase Priority |
+|---------|----------------|-------------|------------------|----------------|
+| MTP-01 | HIGH — fills the manual planning gap; AI planner already exists | HIGH — asked for in backlog | Medium | 1st |
+| EO-01 | HIGH — fundamental to top-manager decision-making | HIGH — core competitive concept | Medium | 2nd (parallel with ML-01) |
+| ML-01 | HIGH — transforms the app from solo to competitive | HIGH — top-3 backlog item | High | 2nd (parallel with EO-01) |
+| TREE-01 | MEDIUM-HIGH — powerful but most complex build | MEDIUM — power user feature | High | Last |
+
+If only two features ship: **MTP-01 + EO-01.** These are independent and highest decision-value per build-week. ML-01 and TREE-01 need more infrastructure and async API work.
+
+If only three ship: add **ML-01** — it provides the context that makes EO-01's local-EO mode significantly more useful, and the rival data surface is uniquely unavailable elsewhere in the app.
 
 ---
 
 ## Sources
 
-- [FPLReview Solver Settings](https://docs.fplreview.com/the-model/solvers/settings/) — transfer horizon framework, FT value parameter
-- [FPL Copilot — Transfer Planning Guide](https://fplcopilot.com/blog/transfer-planning-guide) — Roll vs 1-FT vs hit framework, 5-GW horizon
-- [FPL Copilot — xPts Explained](https://fplcopilot.com/blog/expected-points-explained) — xPts component breakdown reference
-- [Fantasy Football Scout — When to Take Hits (elite manager interviews)](https://www.fantasyfootballscout.co.uk/2021/08/06/when-to-take-hits-and-the-importance-of-rolling-transfers-in-fpl/) — Roll value, hit economics
-- [AllAboutFPL — Fixture Swing Analysis](https://allaboutfpl.com/2025/09/fpl-fixture-swing-analysis-best-fixture-runs-to-target/) — swing analysis methodology
-- [Fantasy Football Fix — Fixture Swings & Wildcard Strategy](https://www.fantasyfootballfix.com/blog-index/fpl-fixture-swings-wildcard-strategy/) — buy/sell signal framing from swings
-- [AllFantasyTips — Clean Sheet Odds](https://allfantasytips.com/premier-league-clean-sheet-odds/) — CS% as decimal, community expectation
-- [Fantasy Football Pundit — CS Odds](https://www.fantasyfootballpundit.com/premier-league-clean-sheet-odds/) — CS% updated every GW standard
-- [Marcus Leadboot — Modelling xPts in FPL (Medium)](https://medium.com/@marcusleadboot/modelling-xpts-in-fpl-gameweek-1-01fd2179eac6) — component model reference
-- [Fantasy Football Hub — Buy Hold Sell GW35](https://www.fantasyfootballhub.co.uk/buy-hold-sell-fpl-blank-gameweek-35) — community timing label vocabulary
-- [FPL Rotation Planner](https://www.fplrotationplanner.com/) — fixture swing tool claim (403 on fetch; feature list only)
+- [FPL Transfer Rules (Premier League official)](https://www.premierleague.com/en/news/2174907) — HIGH confidence
+- [What is Effective Ownership in FPL (FF Scout, 2021)](https://www.fantasyfootballscout.co.uk/2021/03/24/what-is-effective-ownership-and-why-is-it-so-widely-talked-about-in-fpl/) — HIGH confidence
+- [How to use EO for differential decisions (FF Scout)](https://www.fantasyfootballscout.co.uk/2021/03/07/how-to-use-effective-ownership-to-make-differential-fpl-decisions) — HIGH confidence
+- [FPL Effective Ownership formula (AllAboutFPL)](https://allaboutfpl.com/2021/07/what-is-effective-ownership-in-fpl-fpl-guide/) — HIGH confidence
+- [FotPrem Top-10k EO table](https://fotprem.com/fpl-effective-ownership) — MEDIUM confidence (live data tool, methodology inferred)
+- [FPL Gameweek EO explained](https://www.fplgameweek.com/articles/fpl-effective-ownership/) — MEDIUM confidence
+- [FPL Transfer Planner UX (FPL.team)](https://fpl.team/plan/) — MEDIUM confidence (UI inspection)
+- [FPL Mini-League features (LiveFPL)](https://plan.livefpl.net/leagues/113224) — MEDIUM confidence (UI inspection)
+- [FPL Copilot mini-league tracker](https://fplcopilot.com/minileagues) — MEDIUM confidence
+- [FPL Review solver comparison (Transfer Solver vs Linear Optimiser)](https://docs.fplreview.com/the-model/solvers/solver-comparison/) — HIGH confidence (official docs)
+- [FPL Copilot transfer planning guide](https://fplcopilot.com/blog/transfer-planning-guide) — MEDIUM confidence
+- [FPL sell price mechanics (Premier League official)](https://www.premierleague.com/en/news/2174907) — HIGH confidence

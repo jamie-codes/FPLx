@@ -1,475 +1,609 @@
-# Architecture Patterns — v1.7 Decision Assistant Integration
+# Architecture Patterns — v1.9 Competitive Intelligence Integration
 
-**Domain:** FPL analytics decision engine — adding on top of existing Next.js 16 / Python pipeline app
-**Researched:** 2026-05-01
-**Confidence:** HIGH (based on direct codebase reading, no guesswork)
-
----
-
-## Existing Architecture — Ground Truth
-
-### Data Flow (established, immutable)
-
-```
-GitHub Actions cron (daily)
-  → pipeline/run.py
-    → FPL bootstrap + fixtures + element-summaries
-    → Understat xG/xA
-    → merge_players() → merged_players.json
-    → captain_picks.json
-    → insights.json
-    → accuracy_backtest.json
-    → set_piece_changes.json
-  → save() → Vercel Blob (prod) or pipeline/cache/ (dev)
-
-Browser request
-  → /api/players → Blob read → Response.json(enriched)   ← only API with join logic
-  → /api/captain-picks → Blob read → Response.json()
-  → /api/insights → Blob read → Response.json()
-  → (pattern: thin Blob reader, no computation)
-
-Client component (page.tsx)
-  → usePlayers() → ['players'] query key → 6h staleTime
-  → useSquad(teamId) → squad picks from FPL API
-  → useMyTeam() → exact sell prices (auth only)
-  → pure-TS engines (optimiseLineup, suggestTransfers, computeClubForm, etc.)
-  → renders into section/sub-tab structure
-```
-
-### Nav Hierarchy (established)
-
-```
-Section: Analyse  → Gem Ratings | Insights | DefCon | Set Pieces | Accuracy
-Section: Plan     → Planner | Club Form | Value Gems
-Section: Squad    → Transfers | Optimiser
-```
-
-v1.7 adds a new sub-tab "Decision" inside Plan, and augments existing views. It does **not** restructure sections.
-
-### Key Architectural Invariants to Preserve
-
-- `/api/*` routes are **stateless thin readers** — no computation, no state
-- All decision logic lives in **pure-TS engine functions** in `src/lib/`
-- `usePlayers()` with `['players']` query key is the **single source of truth** for player data — all features must reuse this cache
-- `useSquad(teamId)` is already lifted to `page.tsx` and shared between Transfers and Optimiser via TanStack Query cache
-- Pipeline writes JSON files; UI reads them — **no pipeline-to-UI WebSocket or polling**
-- `MergedPlayer` in `src/lib/types.ts` is the **schema contract** — all new pipeline fields must be added here
+**Domain:** FPL Analyst — incremental milestone integration (subsequent milestone, not greenfield)
+**Researched:** 2026-05-03
+**Overall confidence:** HIGH (existing codebase patterns directly observed)
 
 ---
 
-## Feature-by-Feature Integration Analysis
+## Existing Architecture (Verified Baseline — v1.8)
 
-### 1. Transfer Opportunity Cost Simulator
+```
+                +------------------------+
+                |  GitHub Actions cron   |
+                +-----------+------------+
+                            |
+                            v
++-----------------------------------------------------+
+| pipeline/run.py  (Python orchestrator)              |
+|  xmins.py, bonus.py, price_changes.py, merge.py    |
+|  insights.py, accuracy.py, defcon.py               |
+|  writes JSON to pipeline/cache/ + Vercel Blob       |
++----------------------+------------------------------+
+                       |
+                       |  writes JSON artifacts
+                       v
+        +--------------+----------------+
+        | pipeline/cache/ + Vercel Blob |
+        |  merged_players.json          |
+        |  captain_picks.json           |
+        |  insights.json                |
+        |  accuracy_backtest.json       |
+        |  set_piece_changes.json       |
+        |  defcon_stats.json            |
+        |  price_changes.json           |
+        |  last_updated.json            |
+        +--------------+----------------+
+                       |
+                       v
+   +------------------------------------------------+
+   | Next.js Route Handlers  /api/*                 |
+   | (USE_BLOB toggle: blob.list() vs fs.readFile)  |
+   | /api/fpl/[...proxy]  <- pass-through to FPL    |
+   +-----------------------+------------------------+
+                           |
+                           v
+   +------------------------------------------------+
+   | TanStack Query hooks (src/lib/hooks/use*.ts)   |
+   |  usePlayers (6h staleTime)                     |
+   |  useSquad / useMyTeam / useClubForm            |
+   |  useSetPieces / useCaptainPicks / useInsights  |
+   |  usePriceChanges (30 min staleTime)            |
+   +-----------------------+------------------------+
+                           |
+                           v
+   +------------------------------------------------+
+   | Pure-TS engines  (src/lib/*.ts, no React)      |
+   |  optimise-lineup.ts, planning-engine.ts        |
+   |  suggest-transfers.ts, chip-strategy-engine.ts |
+   |  captaincy-engine.ts, opportunity-cost.ts      |
+   |  lifecycle-label.ts, decision-severity.ts      |
+   +-----------------------+------------------------+
+                           |
+                           v
+   +------------------------------------------------+
+   | UI components (src/components/**/*.tsx)        |
+   | page.tsx manages Section/SubTab state          |
+   | Sections: analyse / plan / squad               |
+   | squad: Decision | Transfers | Optimiser        |
+   | plan:  Planner  | Club Form  | Value Gems      |
+   | analyse: Gems | Insights | DefCon | … (6 tabs) |
+   +------------------------------------------------+
+```
 
-**What it does:** Compare Roll / 1-FT / 2-FT / Hit across 1/3/5 GW horizons for the user's actual squad.
+### Established Conventions for v1.9
 
-**Existing entry points:**
-- `suggestTransfers()` in `src/lib/suggest-transfers.ts` already handles 1-FT (cost=0 or cost=4) and 2-FT (cost=0 when ftCount=2) variants
-- `SuggestTransfersParams` accepts `ftCount: 1 | 2` and `bank`
-- Results are `TransferSuggestion[]` with `xPtsGain`, `xPtsGainPerGw`, `breakEvenGws`, `cost`
+| Convention | Source | Implication |
+|---|---|---|
+| `merged_players.json` is the single source of truth for per-player state | `pipeline/merge.py` -> `MergedPlayer` in `types.ts` | EO-01 needs no new field — `selected_by_percent` already present |
+| New `MergedPlayer` fields use `?:` during pipeline rollout, consumers use `??` fallback | All four v1.8 features | No v1.9 feature needs new `MergedPlayer` fields |
+| Pure-TS engines: no React, no `'use client'`, no side effects (importable in `@vitest-environment node`) | `src/lib/optimise-lineup.ts`, `chip-strategy-engine.ts` | EO-01 engine function follows this shape exactly |
+| Public FPL API data fetched via `/api/fpl/[...proxy]` pass-through | `src/app/api/fpl/[...proxy]/route.ts` | ML-01 uses this proxy for league standings + rival picks; no new API route needed |
+| Authenticated data via `useMyTeam` / `useSquad` — teamId shared from page.tsx | `PlannerTab.tsx`, `DecisionSummaryTab.tsx` | MTP-01 and TREE-01 share the same auth + teamId pattern |
+| TanStack Query hooks use a string or array query key; `enabled:` guards null/empty IDs | `useSquad`, `useMyTeam`, `useChipHistory` | `useLeagueRivals` follows the same shape with `leagueId` enabling guard |
+| Section/SubTab union types and `SECTIONS` constant in `page.tsx`; MobileNav derives from same constant | `page.tsx` lines 47-84 | Adding sub-tabs requires one addition to `SubTab` union and one entry in `SECTIONS` |
+| `useImmer` for complex nested state that requires safe mutation recipes | `PlannerTab.tsx` (planResult, chip toggles) | MTP-01 multi-step plan state uses the same pattern |
 
-**What is missing:**
-- "Roll" scenario: the engine doesn't model "do nothing and bank the FT" — this is just `xPtsGain = 0` for this GW, plus a future-value heuristic (having 2 FTs next week is worth ~half a transfer's optionality)
-- Cross-horizon comparison: `suggestTransfers()` is called with a single `horizon` — simulator needs to call it at 1, 3, and 5 to build a matrix
-- Scenario aggregation: the 4 scenarios (Roll / 1-FT / 2-FT / Hit) need to be synthesised into a single table showing the best transfer for each scenario at each horizon
+---
 
-**Integration pattern:**
+## Per-Feature Integration Plan
 
-The simulator is a **pure-TS computation layer** that wraps `suggestTransfers()`:
+### MTP-01 — Manual Transfer Planner
 
+**Type:** New UI sub-tab in Plan section. New component. Uses existing hooks and engines; minor extension to `free-transfer-engine.ts`.
+
+**Classification:** Auth-gated (exact sell prices + bank require authenticated `useMyTeam`); degrades gracefully to approximate prices from `useSquad` when unauthenticated — identical to `PlannerTab.tsx` degradation pattern.
+
+**Files NEW:**
+- `src/components/planner/ManualPlannerTab.tsx` — new sub-tab component. Manages its own `useImmer<ManualPlanStep[]>` state for the multi-step plan array. Renders per-GW step rows where the user picks Out and In player via `PlayerPickerModal` (already exists). Computes hit cost and bank balance imperatively as the user edits steps, using `computeHitCost` and `computeNextFTState` from `free-transfer-engine.ts`. Displays: GW column, player out, player in, FTs used, hit cost (–4n pts), running bank balance, break-even GWs for any hit.
+
+**New type additions to `src/lib/types.ts`:**
 ```typescript
-// src/lib/opportunity-cost-engine.ts  (NEW)
-export interface ScenarioResult {
-  scenario: 'roll' | '1ft' | '2ft' | 'hit'
-  horizon: OptimiserHorizon
-  bestGain: number
-  bestTransfer: TransferSuggestion | null
-  rollValue: number | null  // estimated FT option value for Roll scenario
+// MTP-01: one user-authored step in the manual plan
+export interface ManualPlanStep {
+  gw: number
+  transfersOut: number[]    // up to 2 player IDs (multi-transfer support)
+  transfersIn: number[]     // same length as transfersOut
+  chip: PlannerChip
+  // Derived on render, not stored — recomputed from prior steps:
+  // freeTransfersAvailable, hitCost, bankBalance, breakEvenGws
+}
+```
+
+**Files MODIFIED:**
+- `src/app/page.tsx`:
+  - Add `'manual-planner'` to `SubTab` union type (line 48)
+  - Add `{ id: 'manual-planner', label: 'Manual Planner', mobileLabel: 'Manual' }` inside the `plan` section's `subTabs` array (after `'planner'`)
+  - Add render block: `{activeSection !== 'squad' && activeSubTab === 'manual-planner' && <ManualPlannerTab ... />}`
+  - Pass `teamId`, `submittedId`, `onTeamIdSubmit` props (same as PlannerTab pattern — MTP-01 needs squad and sell prices)
+- `src/components/nav/MobileNav.tsx` — no structural change; picks up the new sub-tab automatically from `SECTIONS` once page.tsx is updated (MobileNav already derives from SECTIONS)
+
+**Reused without modification:**
+- `useSquad(teamId)` — starting squad picks + bank
+- `useMyTeam(isAuthenticated)` — exact sell prices; falls back to `now_cost` when unauthenticated
+- `usePlayers()` → `computeAllGemScores()` → player picker pool
+- `PlayerPickerModal` — already exists for per-step player swap
+- `computeHitCost(available, transfersUsed, chip)` — already exported from `free-transfer-engine.ts`
+- `computeNextFTState(available, transfersUsed, chip)` — already exported from `free-transfer-engine.ts`
+
+**Break-even computation (pure, no new function needed):**
+```typescript
+// inline in ManualPlannerTab render/memo
+const breakEvenGws = hitCost < 0 && xPtsDelta > 0
+  ? Math.ceil(Math.abs(hitCost) / xPtsDelta)
+  : null
+```
+xPtsDelta = `(player_in.xPts_1gw ?? 0) - (player_out.xPts_1gw ?? 0)` for the active horizon. This is identical to the break-even logic in `suggest-transfers.ts` and the Opportunity Cost table — no new engine needed.
+
+**State shape:** `ManualPlanStep[]` managed by `useImmer`. Each step is independently editable. Financial simulation replays from step 0 each render (O(horizon) = trivial). No `originalSteps` frozen copy needed (user controls all edits; there is no AI-generated baseline to restore).
+
+**Auth gate distinction:**
+- `selling_price` from `MyTeamPick` → exact sell price (authenticated path)
+- `now_cost` from `MergedPlayer` → approximate sell price (unauthenticated fallback)
+- The component UI shows a note when unauthenticated: "Sell prices are approximate (login for exact)"
+
+---
+
+### ML-01 — Mini-League Rival Tracker
+
+**Type:** New Analyse sub-tab. New hook. New component. All data from public FPL API via existing proxy. No pipeline module needed.
+
+**Classification:** Public data — no auth required. League ID is user-provided input (not derived from auth). Rival squad picks are public (`/api/fpl/entry/{id}/event/{gw}/picks`).
+
+**Files NEW:**
+- `src/lib/hooks/useLeagueRivals.ts` — TanStack Query hook. Accepts `leagueId: string | null` and `currentGw: number | null`. `enabled` guard: `!!leagueId && !!currentGw`. Query key: `['league-rivals', leagueId, currentGw]`. Fetches:
+  1. League standings: `GET /api/fpl/leagues-classic/${leagueId}/standings/`
+  2. For each rival entry in standings (top N, e.g. 20): `GET /api/fpl/entry/${entryId}/event/${currentGw}/picks/`
+  All via the existing `/api/fpl/[...proxy]` pass-through. Returns a typed `LeagueRivalsData` shape.
+  `staleTime: 5 * 60 * 1000` (5 minutes — rival squads change during GW deadline; more volatile than pipeline data).
+
+- `src/components/rivals/RivalTrackerTab.tsx` — new Analyse sub-tab. Contains:
+  - League ID text input with submit button (local `useState<string>` for the typed value; lifted `leagueId` state to `page.tsx` so it persists on section change, same pattern as `teamId`)
+  - Standings table: rank, manager name, team name, GW pts, total pts, rank gap vs user's team
+  - Rival picks panel: for each rival shows captain choice, active chip, differential players (in rival squad but not in user's squad), threat players (high-ownership players rival has that you don't)
+  - Loading/error/empty states following the `InsightsTab` pattern
+
+**New type additions to `src/lib/types.ts`:**
+```typescript
+export interface RivalPick {
+  element: number        // player ID
+  is_captain: boolean
+  is_vice_captain: boolean
+  multiplier: number
+}
+export interface RivalEntry {
+  entry_id: number
+  manager_name: string
+  team_name: string
+  rank: number
+  total_points: number
+  event_total: number    // current GW points
+  active_chip: string | null
+  picks: RivalPick[]     // populated after second fetch
+}
+export interface LeagueRivalsData {
+  league_name: string
+  entries: RivalEntry[]
+  current_gw: number
+}
+```
+
+**Files MODIFIED:**
+- `src/app/page.tsx`:
+  - Add `'rivals'` to `SubTab` union type
+  - Add `{ id: 'rivals', label: 'Rivals', mobileLabel: 'Rivals' }` to `analyse` section's `subTabs`
+  - Add `leagueId` + `setLeagueId` state (lifted here so it persists across section switches; same rationale as `teamId`)
+  - Add render block: `{activeSection !== 'squad' && activeSubTab === 'rivals' && <RivalTrackerTab leagueId={leagueId} onLeagueIdChange={setLeagueId} ... />}`
+
+**Data flow:**
+```
+user inputs leagueId
+    |
+    v
+useLeagueRivals(leagueId, currentGw)
+    |  step 1: GET /api/fpl/leagues-classic/{id}/standings/
+    |  step 2: GET /api/fpl/entry/{rival_id}/event/{gw}/picks/  (per rival)
+    |  (both via /api/fpl/[...proxy] — no new server route)
+    v
+RivalTrackerTab renders standings + rival squad panels
+    |
+    | cross-reference with usePlayers() data
+    | to resolve player names + xPts for differential analysis
+    v
+Differential intelligence: players in rival squad but not user's (upside)
+Threat intelligence: high-xPts players rival has that user doesn't
+```
+
+**N+1 fetch concern:** Fetching picks for 20 rivals = 21 round trips (1 standings + 20 picks). All via the proxy which has no caching. Mitigation: cap rival count at 10 for performance; use TanStack Query's `useQueries` (parallel fan-out) rather than sequential. This is a known pattern in FPL community tooling.
+
+**leagueId input sequencing:** The league ID input must be committed before rival data can load. The `enabled` guard on `useLeagueRivals` enforces this naturally. The UX flow is: type league ID → click "Load" → `setLeagueId(value)` → hook fires. This mirrors the teamId flow in `TransferPanel`.
+
+**Auth-gated vs public distinction:** ALL data for ML-01 is from the public FPL API. No session cookie needed. The rival picks endpoint `/entry/{id}/event/{gw}/picks` is public for all managers. User's own squad (for differential comparison) comes from `useSquad(teamId)` which is also public. If the user is authenticated, `useMyTeam` provides richer own-squad data, but ML-01 does not require it.
+
+---
+
+### EO-01 — Effective Ownership
+
+**Type:** Engine function addition + mode toggle state + UI modifications to existing components. No new API route. No new hook. No pipeline change.
+
+**Classification:** Fully client-side. `selected_by_percent` is already on every `MergedPlayer` (and hence `ScoredPlayer`). No new data required.
+
+**Files NEW:**
+- `src/lib/eo-engine.ts` — pure TS engine. Exports:
+  ```typescript
+  export type EOMode = 'max-xpts' | 'protect-rank' | 'chase-rank' | 'differential'
+
+  /**
+   * Effective Ownership = selected_by_percent * captaincy_rate
+   * captaincy_rate ≈ captain_selection_among_owners (approximated as xPts_1gw share)
+   * EO-adjusted captain EV = xPts_1gw * 2 * eo_pct + xPts_1gw * (1 - eo_pct) * eo_multiplier
+   *
+   * eo_pct: fraction of all managers who have this player AND captain them
+   * eo_multiplier: in protect-rank mode, penalise captaining non-popular picks
+   */
+  export function computeEOAdjustedCaptainEV(
+    player: ScoredPlayer,
+    allPlayers: ScoredPlayer[],
+    mode: EOMode,
+  ): number
+
+  /**
+   * Rank the squad's outfield players by EO-adjusted captain EV for the given mode.
+   */
+  export function rankCaptainsByEO(
+    squadPicks: SquadPick[],
+    allPlayers: ScoredPlayer[],
+    mode: EOMode,
+  ): Array<{ player: ScoredPlayer; eoAdjustedEV: number; eoPct: number }>
+  ```
+  Pure function, no React, node-importable. Follows `captaincy-engine.ts` shape.
+
+**Files MODIFIED:**
+- `src/app/page.tsx`:
+  - Add `eoMode` state: `const [eoMode, setEOMode] = useState<EOMode>('max-xpts')`
+  - Lift `eoMode` at Squad section level: passed as prop to `DecisionSummaryTab` and `TransferPanel` (both live under `activeSection === 'squad'`). This is the right level — EO mode is a squad-section concern, not a global app concern.
+
+- `src/components/squad/DecisionSummaryTab.tsx`:
+  - Accept `eoMode: EOMode` and `onEOModeChange: (m: EOMode) => void` props
+  - Add a 4-button segmented toggle above the captain card: "Max xPts | Protect Rank | Chase Rank | Differential"
+  - In the captain card, replace `computeCaptaincyCandidates()` ranking with `rankCaptainsByEO()` when mode !== `'max-xpts'`, or pass mode through to a unified function
+  - Display EO% next to each captain candidate (formatted as "EO 14.2%")
+  - Transfer recommendation card: when mode is `'protect-rank'`, weight `suggestTransfers()` output by de-emphasising differential picks (low-owned buys); when `'chase-rank'`, prefer high-ceiling picks. The transfer engine itself doesn't need to change — a post-sort filter/re-rank in the component is sufficient for v1.9.
+
+- `src/components/transfers/TransferPanel.tsx`:
+  - Accept `eoMode: EOMode` prop
+  - Surface EO% on transfer candidates in the buy column
+  - No engine change needed — `suggestTransfers()` output is re-sorted or annotated based on mode
+
+**State ownership decision:**
+`eoMode` lives in `page.tsx` at the Squad section level (not inside `DecisionSummaryTab` or `TransferPanel`). This preserves the mode when switching between Decision and Transfers sub-tabs within the Squad section, matching the `sectionMemory` pattern for sub-tab state.
+
+**No pipeline involvement:** `selected_by_percent` (string "12.5") is already on every `MergedPlayer`. The EO engine does a `parseFloat(player.selected_by_percent)` internally. No new artifact, no new endpoint, no new hook.
+
+---
+
+### TREE-01 — Transfer Route Tree
+
+**Type:** New Plan sub-tab. Extension to `planning-engine.ts` (new exported function). New component. No pipeline change. No new API route.
+
+**Classification:** Auth-gated for best results (sell prices, bank balance); degrades gracefully without auth — same pattern as MTP-01 and PlannerTab.
+
+**Files NEW:**
+- `src/components/planner/TransferRouteTreeTab.tsx` — new sub-tab component. Calls `generateTransferTree()` engine function. Renders 2–3 branch cards side-by-side (or stacked on mobile), each showing: path label (A/B/C), GW-by-GW transfer sequence (player out → player in), cumulative xPts gain, hit cost total, bank balance trajectory. Highlights the recommended branch (highest net cumulative xPts after hit costs).
+
+**Extension to `src/lib/planning-engine.ts`** (NEW exported function, no modification to existing functions):
+```typescript
+/**
+ * Generate 2-3 branching transfer paths from the current squad.
+ *
+ * Each path is an independent PlanResult (or lighter TreePath shape).
+ * Branching strategy: for the first GW, take the top-3 scoring single transfers
+ * as branch roots, then run generatePlanFrom() independently for each.
+ *
+ * Pure function — no hooks, no side effects.
+ */
+export interface TreePath {
+  label: 'A' | 'B' | 'C'
+  steps: PlanStep[]
+  cumulativeXPtsGain: number    // sum of netGain across all steps (after hit costs)
+  totalHitCost: number          // sum of hitCost across all steps
+  rootTransfer: { sellId: number; buyId: number }  // the GW-1 branch decision
 }
 
-export function computeOpportunityCost(
+export function generateTransferTree(
   picks: SquadPick[],
-  players: MergedPlayer[],
-  ftCount: 1 | 2,
-  bank: number,
-  sellPrices?: Map<number, number>
-): ScenarioResult[]
+  allPlayers: ScoredPlayer[],
+  horizon: PlannerHorizon,
+  startingGw: number,
+  ftState: FTState,
+  bankBalance: number,
+  sellPrices?: Record<number, number>,
+  numBranches?: 2 | 3,
+): TreePath[]
 ```
 
-This function calls `suggestTransfers()` three times (once per horizon) and synthesises results. Total computation: <5ms (same engine, three passes).
+**Algorithm sketch:**
+1. Run `generatePlan()` once to collect the full scored transfer list for GW 1.
+2. Take the top-3 unique `sellId` alternatives (or top-3 `buyId` alternatives when the same sell player appears multiple times) as branch roots.
+3. For each branch root, apply that root transfer to the squad state, then call `generatePlanFrom()` for GW 2..horizon.
+4. Compute `cumulativeXPtsGain` and `totalHitCost` as sums.
+5. Return sorted by `cumulativeXPtsGain` descending; label as A/B/C.
 
-**UI placement:** New sub-tab "Simulator" under Plan section, or embedded panel inside existing Transfers sub-tab. The table is self-contained. Given it requires squad data (teamId), placing it as a panel inside the **Squad → Optimiser** sub-tab (below the existing comparison table) avoids duplicating the team ID entry flow. Alternatively, a dedicated Squad sub-tab "Simulator" is clean.
+This avoids deep recursion (no exponential branching). Complexity: O(3 × horizon × N) where N = candidate pool size. Same order as the existing `generatePlan`. Pure function; mirrors `generatePlanFrom` pattern.
 
-**Data flow:** No new API routes. No pipeline changes. Pure client-side.
+**Files MODIFIED:**
+- `src/app/page.tsx`:
+  - Add `'transfer-tree'` to `SubTab` union type
+  - Add `{ id: 'transfer-tree', label: 'Route Tree', mobileLabel: 'Tree' }` to `plan` section's `subTabs` (after `'manual-planner'`)
+  - Add render block: `{activeSection !== 'squad' && activeSubTab === 'transfer-tree' && <TransferRouteTreeTab teamId={teamId} submittedId={submittedId} onSubmit={handleTeamIdSubmit} onTeamIdChange={setTeamId} />}`
+- `src/lib/planning-engine.ts` — add `generateTransferTree()` export alongside existing functions. No modification to existing functions.
 
-**New files:**
-- `src/lib/opportunity-cost-engine.ts` (pure TS, no React)
-- `src/components/optimiser/SimulatorTable.tsx` (display only)
-
-**Modified files:**
-- `src/lib/types.ts` — add `ScenarioResult` type
-- `page.tsx` — add sub-tab entry if creating new Squad sub-tab
+**Reused without modification:**
+- `generatePlanFrom()` — called per branch after applying root transfer
+- `computeNextFTState()`, `computeHitCost()` — used inside the tree generator
+- `useSquad()`, `useMyTeam()`, `usePlayers()` — same hooks as `PlannerTab`
+- `PlayerPickerModal` — not used in tree view (read-only output)
+- `HorizonSelector` — reuse for the tree's horizon input
 
 ---
 
-### 2. Weekly Decision Summary
+## New vs Modified Files Summary
 
-**What it does:** One-screen aggregation of captain rec, transfer rec, bench order, chip timing, risks, and opportunities.
+### Files NEW
 
-**Existing engines to aggregate:**
-- Captain: `useCaptainPicks()` → `captain_picks.json` (pipeline-computed, `CaptainPicks` type)
-- Transfer: `suggestTransfers()` → top-1 single suggestion from current squad
-- Bench order: `optimiseLineup()` → `bench: number[]` (already computed in OptimiserPanel)
-- Chip timing: `computeBBScore()`, `computeTCScore()`, `computeFHResult()` from `chip-strategy-engine.ts`
-- Lifecycle labels (v1.7 feature): `computeVerdicts()` extended (see Feature 4)
+| File | Feature | Purpose |
+|---|---|---|
+| `src/components/planner/ManualPlannerTab.tsx` | MTP-01 | Manual GW-by-GW planner UI |
+| `src/components/rivals/RivalTrackerTab.tsx` | ML-01 | Mini-league rivals UI |
+| `src/lib/hooks/useLeagueRivals.ts` | ML-01 | TanStack hook, fans out FPL proxy calls |
+| `src/lib/eo-engine.ts` | EO-01 | Pure TS EO-adjusted captain EV engine |
+| `src/components/planner/TransferRouteTreeTab.tsx` | TREE-01 | Branch path comparison UI |
 
-**Integration challenge:** All these data sources use different hooks. The Decision Summary needs them all simultaneously. This is a data aggregation problem, not a computation problem.
+### Files MODIFIED
 
-**Pattern:** Create a `useDecisionSummary()` hook that composes the relevant hooks:
+| File | Feature | What Changes |
+|---|---|---|
+| `src/app/page.tsx` | MTP-01, ML-01, EO-01, TREE-01 | SubTab union +4 entries; SECTIONS +4 sub-tabs; eoMode state; leagueId state; 4 new render blocks |
+| `src/lib/types.ts` | MTP-01, ML-01 | `ManualPlanStep`, `RivalPick`, `RivalEntry`, `LeagueRivalsData` type additions; `EOMode` (in eo-engine.ts, not types.ts — no MergedPlayer changes) |
+| `src/components/squad/DecisionSummaryTab.tsx` | EO-01 | eoMode prop; captain card re-ranks via eo-engine; EO% badges; mode toggle UI |
+| `src/components/transfers/TransferPanel.tsx` | EO-01 | eoMode prop; EO% on buy candidates |
+| `src/lib/planning-engine.ts` | TREE-01 | `generateTransferTree()` and `TreePath` type appended; no existing function modified |
 
+### Files NOT Changed
+
+- `pipeline/run.py`, `pipeline/merge.py`, `pipeline/xmins.py`, `pipeline/bonus.py`, `pipeline/price_changes.py` — all four v1.9 features are fully client-side or use existing pipeline data
+- All existing `/api/*` routes — no new server routes needed
+- `src/lib/optimise-lineup.ts`, `src/lib/suggest-transfers.ts`, `src/lib/captaincy-engine.ts` — untouched
+- `MergedPlayer` type in `types.ts` — no new fields; `selected_by_percent` already present for EO-01
+
+---
+
+## Data Flow Diagrams
+
+### MTP-01 Data Flow
+
+```
+useSquad(teamId) ──────────┐
+useMyTeam(isAuthenticated) ─┤──> ManualPlannerTab
+usePlayers() ──────────────┘      |
+                                  | user selects out/in per GW step
+                                  | computeHitCost() from free-transfer-engine
+                                  | computeNextFTState() from free-transfer-engine
+                                  | bank simulation: bank += sellPrice - buyCost
+                                  | breakEvenGws: ceil(4 / xPtsDelta)
+                                  v
+                            per-step table:
+                            GW | Out | In | FTs | Hit | Bank | Break-even
+```
+
+### ML-01 Data Flow
+
+```
+user input: leagueId
+    |
+    v
+useLeagueRivals(leagueId, currentGw)
+    |  /api/fpl/leagues-classic/{id}/standings/   (proxy, public)
+    |  /api/fpl/entry/{id}/event/{gw}/picks/      (proxy, public, ×N rivals)
+    v
+RivalTrackerTab
+    |  cross-reference: usePlayers() for xPts, names
+    |  cross-reference: useSquad(teamId) for user's own picks
+    v
+standings table + differential/threat player lists
+```
+
+### EO-01 Data Flow
+
+```
+usePlayers() → selected_by_percent on every MergedPlayer (already present)
+useSquad(teamId) / useMyTeam() → user's squad picks
+    |
+    v
+eo-engine.ts: computeEOAdjustedCaptainEV(player, allPlayers, eoMode)
+    |
+    v
+DecisionSummaryTab (captain card with EO% badges, mode toggle)
+TransferPanel (EO% on buy candidates)
+    |
+    | eoMode state lives in page.tsx, passed as prop to both
+```
+
+### TREE-01 Data Flow
+
+```
+useSquad(teamId) ──────────┐
+useMyTeam(isAuthenticated) ─┤──> TransferRouteTreeTab
+usePlayers() ──────────────┘      |
+                                  | generateTransferTree(picks, allPlayers, horizon, ...)
+                                  |   -> takes top-3 GW-1 transfers as branch roots
+                                  |   -> generatePlanFrom() per branch
+                                  |   -> compute cumulative xPts + hit cost per path
+                                  v
+                            3 branch cards (A/B/C):
+                            - GW-by-GW transfer sequence
+                            - Cumulative xPts gain
+                            - Total hit cost
+                            - Bank trajectory
+                            Recommended path highlighted (highest net cumulative xPts)
+```
+
+---
+
+## Navigation Changes to page.tsx
+
+Current `plan` subTabs (2 entries → 4 entries after v1.9):
 ```typescript
-// src/lib/hooks/useDecisionSummary.ts  (NEW)
-export function useDecisionSummary(teamId: string) {
-  const { data: players } = usePlayers()           // ['players'] — already cached
-  const { data: captainPicks } = useCaptainPicks() // ['captain-picks'] — already cached
-  const { data: clubForm } = useClubForm()         // ['club-form'] — already cached
-  const { data: squad } = useSquad(teamId)         // ['squad', teamId] — shared cache
-  // ... memoised aggregation into DecisionSummary shape
-}
+// BEFORE
+{ id: 'planner',    label: 'Planner',    mobileLabel: 'Planner' },
+{ id: 'club-form',  label: 'Club Form',  mobileLabel: 'Form'    },
+{ id: 'value-gems', label: 'Value Gems', mobileLabel: 'Values'  },
+
+// AFTER (MTP-01 + TREE-01 add 2 sub-tabs to Plan)
+{ id: 'planner',        label: 'AI Planner',    mobileLabel: 'AI Plan' },
+{ id: 'manual-planner', label: 'Manual',         mobileLabel: 'Manual'  },
+{ id: 'transfer-tree',  label: 'Route Tree',     mobileLabel: 'Tree'    },
+{ id: 'club-form',      label: 'Club Form',      mobileLabel: 'Form'    },
+{ id: 'value-gems',     label: 'Value Gems',     mobileLabel: 'Values'  },
 ```
 
-This is the same composing pattern already used in `TransferPanel.tsx`. Each sub-hook is individually cached by TanStack Query; the aggregation is a `useMemo()` derived value.
-
-**UI placement:** New sub-tab under the Plan section: Plan → "Decision" (landing between Planner and Club Form). This is the appropriate home — it's a planning output, not a squad-edit workflow.
-
-**New files:**
-- `src/lib/hooks/useDecisionSummary.ts`
-- `src/components/decision/DecisionSummaryPanel.tsx`
-- `src/components/decision/CaptainCard.tsx`
-- `src/components/decision/TransferCard.tsx`
-- `src/components/decision/ChipCard.tsx`
-- `src/components/decision/RiskCard.tsx`
-
-**Modified files:**
-- `page.tsx` — add `'decision'` to SubTab union, add to Plan section's subTabs array
-- `src/components/nav/MobileNav.tsx` — add Decision to mobile nav
-
----
-
-### 3. Fixture Swing Detector
-
-**What it does:** Identify teams with materially improving or worsening upcoming fixtures (delta from current GW to future GWs).
-
-**Existing data:**
-- `ClubForm` in `src/lib/types.ts` has `attacking_ease_1gw`, `attacking_ease_3gw`, `attacking_ease_5gw` and defensive equivalents
-- `useClubForm()` hook already fetches this data, cached at `['club-form']`
-- `FixtureEntry` per player has `attacking_difficulty` and `defensive_difficulty` per GW
-
-**What is missing:**
-- A "swing" computation: `delta = ease_3gw - ease_1gw` (or similar). Teams where the 3GW ease is significantly better than 1GW ease = "improving". Inverse = "worsening".
-- No pipeline change needed — all data is already in `ClubForm`
-
-**Integration pattern:**
-
+Current `analyse` subTabs (6 entries → 7 entries after v1.9):
 ```typescript
-// src/lib/fixture-swing-engine.ts  (NEW)
-export interface FixtureSwing {
-  team_id: number
-  team_short_name: string
-  att_swing: number          // attacking_ease_3gw - attacking_ease_1gw (positive = improving)
-  def_swing: number          // defensive_ease_3gw - defensive_ease_1gw
-  direction: 'improving' | 'worsening' | 'neutral'
-  magnitude: 'large' | 'moderate' | 'small'
-}
-
-export function computeFixtureSwings(clubForm: ClubForm[]): FixtureSwing[]
+// AFTER (ML-01 adds 1 sub-tab to Analyse)
+{ id: 'gems',         label: 'Gem Ratings',     mobileLabel: 'Gems'     },
+{ id: 'insights',     label: 'Insights',         mobileLabel: 'Insights' },
+{ id: 'rivals',       label: 'Rivals',           mobileLabel: 'Rivals'   },  // NEW
+{ id: 'defcon',       label: 'DefCon Analysis',  mobileLabel: 'DefCon'   },
+{ id: 'set-pieces',   label: 'Set Pieces',       mobileLabel: 'SP'       },
+{ id: 'accuracy',     label: 'Accuracy',         mobileLabel: 'Acc'      },
+{ id: 'price-changes',label: 'Price Changes',    mobileLabel: 'Prices'   },
 ```
 
-Threshold for "large": delta > 0.3 (raw ease units 0-1). Threshold for "moderate": delta > 0.15. These are tunable constants.
+`squad` subTabs: unchanged (Decision | Transfers | Optimiser). EO-01 is a mode toggle within existing sub-tabs, not a new sub-tab.
 
-**UI placement:** New panel inside the Plan → Club Form sub-tab, rendered above the existing `FixtureEaseRankingPanel`. It's contextually appropriate — users already go to Club Form to assess fixture difficulty.
-
-**New files:**
-- `src/lib/fixture-swing-engine.ts` (pure TS)
-- `src/components/club-form/FixtureSwingPanel.tsx`
-
-**Modified files:**
-- `page.tsx` — add `<FixtureSwingPanel />` above `<FixtureEaseRankingPanel />` inside the club-form branch
-
-**No pipeline changes. No new API routes.**
+**MobileNav note:** MobileNav already derives its structure from the `SECTIONS` constant exported from `page.tsx`. No direct MobileNav.tsx changes are required; it picks up new sub-tabs automatically.
 
 ---
 
-### 4. Player Lifecycle Labels
+## Recommended Build Order
 
-**What it does:** Extend Buy/Hold/Sell with granular timing labels: "Buy next week", "Hold one more GW", "Sell soon", "Minutes trap", "Fixture trap", etc.
-
-**Existing entry point:**
-- `computeVerdicts()` in `src/lib/recommend.ts` returns `Map<playerId, Verdict>` where `Verdict = 'buy' | 'hold' | 'sell'`
-- It uses `gem_score` vs position average as the sole discriminator
-- `MergedPlayer` already has: `mins_risk`, `fixtures` (next 5), `regression_signal`, `differential_flag`, `xPts_1gw`, `xPts_3gw`, `xPts_5gw`
-
-**What is missing:**
-- Sub-labels derived from existing fields:
-  - "Minutes trap": verdict='buy' but `mins_risk === 'rotation_risk'` or `mins_risk === 'cameo'`
-  - "Fixture trap": verdict='buy' but `attacking_ease_1gw` < 0.3 (hard upcoming fixture)
-  - "Sell soon": verdict='sell' AND `regression_signal === 'sell'` (price likely to fall)
-  - "Buy next week": verdict='buy' but current fixture is hard (`attacking_ease_1gw` < 0.3), next 3GW is easy
-  - "Hold one more GW": verdict='hold' AND fixture improvement incoming
-
-**Decision: client-side, not pipeline.** All input data is already in `MergedPlayer`. Adding this to the pipeline would create a dependency on `ClubForm` data during merge (currently separate). Client-side keeps it testable and instantly reactive to horizon changes.
-
-**Integration pattern:**
-
-```typescript
-// src/lib/lifecycle-labels.ts  (NEW)
-export type LifecycleLabel =
-  | 'buy'
-  | 'buy-next-week'
-  | 'minutes-trap'
-  | 'fixture-trap'
-  | 'hold'
-  | 'hold-one-more'
-  | 'sell-soon'
-  | 'sell'
-
-export function computeLifecycleLabel(
-  player: ScoredPlayer,
-  verdict: Verdict,
-  clubFormMap: Map<number, ClubFormFixture[]>  // from buildClubFormMap()
-): LifecycleLabel
+```
+Phase 1: EO-01 (smallest blast radius, no new files except eo-engine.ts)
+    |
+    |  Rationale:
+    |  - Zero pipeline dependency
+    |  - One new pure-TS engine file + two component prop additions
+    |  - Verifies the mode-toggle + eoMode state-lift pattern before more complex features
+    |
+    v
+Phase 2: ML-01 (new sub-tab, new hook, public data only)
+    |
+    |  Rationale:
+    |  - leagueId state lift to page.tsx is independent of eoMode state lift
+    |  - useLeagueRivals has no dependency on EO-01 or MTP-01
+    |  - Can be developed in parallel with EO-01 if two contributors available
+    |  - Validates the N+1 rival picks fetch pattern before complex planner work
+    |
+    v
+Phase 3: MTP-01 (new Plan sub-tab, depends on squad/auth pattern being understood)
+    |
+    |  Rationale:
+    |  - Builds on PlannerTab.tsx auth pattern (already proven)
+    |  - ManualPlannerTab is self-contained; no engine changes needed
+    |  - Ships value independently of TREE-01
+    |
+    v
+Phase 4: TREE-01 (extends planning-engine.ts; benefits from MTP-01 UX patterns)
+    |
+    |  Rationale:
+    |  - generateTransferTree() is a pure extension to planning-engine.ts
+    |  - After MTP-01 lands, the team understands the GW-step financial simulation model deeply
+    |  - TransferRouteTreeTab reuses HorizonSelector and the same auth/squad hooks as MTP-01
+    |  - No risk of breaking generatePlan() or generatePlanFrom() — appended, not modified
 ```
 
-The function accepts a pre-computed `Verdict` (from `computeVerdicts`) and enriches it with fixture and minutes context.
-
-**UI placement:** `LifecycleLabel` replaces or augments `VerdictBadge` in `SquadView` and `TransferPanel`. The label appears on each squad player row, replacing the current 3-way Buy/Hold/Sell badge.
-
-**New files:**
-- `src/lib/lifecycle-labels.ts` (pure TS)
-- `src/components/shared/LifecycleBadge.tsx` (replaces/wraps `VerdictBadge`)
-- `src/lib/lifecycle-labels.test.ts`
-
-**Modified files:**
-- `src/components/squad/SquadView.tsx` — use `LifecycleBadge` where `VerdictBadge` is rendered
-- `src/components/transfers/TransferPanel.tsx` — pass `clubForm` data for label computation
-
-**No pipeline changes. No new API routes.** One new hook dependency: `useClubForm()` needs to be called in `TransferPanel` (currently it is not — `TransferPanel` does not use club form data). Since `useClubForm()` is already globally cached via TanStack Query, adding this call does not trigger a new network request if Club Form tab has already been visited.
+**Parallelism option:** EO-01 and ML-01 have zero shared files and can be developed simultaneously without conflict.
 
 ---
 
-### 5. Explainable xPts Breakdown
+## Integration Point Matrix
 
-**What it does:** Expand the existing XPtsCell tooltip into a richer breakdown including appearance probability, minutes factor, goal prob, assist prob, CS prob, and bonus prob.
-
-**Existing entry point:**
-- `XPtsCell` in `src/components/gem-table/columns.tsx` already renders a tooltip for the 1GW window using `xPts_components_1gw`
-- `xPts_components_1gw` in `MergedPlayer` has `{ goal_pts, assist_pts, cs_pts, bonus_pts }` — four fields
-- The pipeline `_compute_xpts_fixture()` computes these values and stores them in `merged_players.json`
-
-**What is missing:**
-- `appearance_prob` and `min_factor` are computed inside `_compute_xpts_fixture()` but not stored in the output:
-  - `start_prob` is already in `MergedPlayer` as a top-level field
-  - `xmins` is already in `MergedPlayer`
-  - `min_factor = min(1.0, xmins / 60.0)` is derivable client-side
-- A richer "breakdown modal" or expanded tooltip that shows the probability chain
-
-**Decision: mostly client-side.** The missing values (`appearance_prob` = `start_prob`, `min_factor` derivable from `xmins`) are already present in `MergedPlayer`. No pipeline change required for the core breakdown.
-
-The one genuine gap: `goal_prob` and `assist_prob` as probabilities (not as expected points). These are `lam_g = xg_per90 * (xmins/90)` and `lam_a = xa_per90 * (xmins/90)`, derivable client-side from existing `xg_per90`, `xa_per90`, and `xmins` fields.
-
-**Integration pattern:**
-
-```typescript
-// src/lib/xpts-breakdown.ts  (NEW)
-export interface XPtsBreakdown {
-  appearance_prob: number    // start_prob from MergedPlayer
-  min_factor: number         // min(1, xmins/60) for CS; xmins/90 for goals
-  goal_prob: number          // lam_g = xg_per90 * (xmins/90)
-  assist_prob: number        // lam_a = xa_per90 * (xmins/90)
-  cs_prob: number            // _cs_prob formula: 0.40 - dd*0.30 * min_factor
-  goal_pts: number           // from xPts_components_1gw
-  assist_pts: number         // from xPts_components_1gw
-  cs_pts: number             // from xPts_components_1gw
-  bonus_pts: number          // from xPts_components_1gw
-  total: number              // xPts_1gw
-}
-
-export function computeXPtsBreakdown(player: MergedPlayer): XPtsBreakdown | null
-```
-
-**UI:** Replace the existing `title=` tooltip in `XPtsCell` with a hover card (Tailwind popover pattern — no new library). Or, integrate the breakdown into `PlayerComparisonModal` which already has a dedicated xPts section.
-
-**New files:**
-- `src/lib/xpts-breakdown.ts` (pure TS)
-- Possibly `src/components/gem-table/XPtsBreakdownCard.tsx` (hover card)
-
-**Modified files:**
-- `src/components/gem-table/columns.tsx` — `XPtsCell` uses new breakdown card instead of `title=` tooltip
-
-**No pipeline changes.** The `cs_prob` formula needs to be mirrored from Python (`_cs_prob()` in `merge.py`) into TypeScript — this is a documented formula, easy to replicate.
+| Layer | MTP-01 | ML-01 | EO-01 | TREE-01 |
+|---|---|---|---|---|
+| Pipeline module | none | none | none | none |
+| `pipeline/run.py` | none | none | none | none |
+| Cache artifact | none | none | none | none |
+| API route | none | none (uses existing /api/fpl proxy) | none | none |
+| TanStack hook | none new (reuses useSquad/useMyTeam/usePlayers) | NEW `useLeagueRivals` | none | none (reuses same 3 hooks) |
+| `MergedPlayer` type | none | none | none — uses `selected_by_percent` already present | none |
+| New types | `ManualPlanStep` | `RivalPick`, `RivalEntry`, `LeagueRivalsData` | `EOMode` (in eo-engine.ts) | `TreePath` (in planning-engine.ts) |
+| Pure TS engine | none | none | NEW `eo-engine.ts` | `generateTransferTree()` added to planning-engine.ts |
+| `page.tsx` state | leagueId lifted here | leagueId lifted here | eoMode lifted here | none (reuses teamId) |
+| UI component | NEW `ManualPlannerTab` | NEW `RivalTrackerTab` | MODIFY `DecisionSummaryTab` + `TransferPanel` | NEW `TransferRouteTreeTab` |
+| Sub-tab added | plan: Manual Planner | analyse: Rivals | none (mode toggle, not sub-tab) | plan: Route Tree |
+| Auth required | degrades gracefully | no — public FPL data | no | degrades gracefully |
+| Test surface | unit tests for hit/bank simulation | hook tests (mock proxy responses) | unit tests for eo-engine.ts | unit tests for generateTransferTree |
 
 ---
 
-### 6. Clean Sheet Probability
+## Risks Specific to v1.9 Integration
 
-**What it does:** Per-fixture CS% for all teams computed from rolling xGA, displayed as a new column or panel to improve GK/DEF picks.
+### R1 — ML-01 N+1 FPL API calls
+**What goes wrong:** Fetching 10–20 rival picks in parallel may hit FPL's unofficial rate limit (~5 req/s). FPL has no documented rate limit but community experience shows 429s at ~10 concurrent requests.
+**Mitigation:** Cap `useLeagueRivals` at 10 rivals by default. Use `useQueries` from TanStack Query (parallel fan-out with concurrency) rather than `Promise.all`. Cache the results aggressively (5 min staleTime). Display partial results if some picks fail (fail gracefully per rival, not whole request).
 
-**Existing data:**
-- `defensive_difficulty` per fixture in `FixtureEntry` represents opponent's attacking threat (0.0 = weak attacker, 1.0 = strong)
-- `_cs_prob()` in `merge.py` already computes `cs_prob_raw = max(0.10, min(0.65, 0.40 - defensive_difficulty * 0.30))`
-- This formula is already being applied per player, per fixture, inside `_compute_xpts_fixture()` — but the per-team, per-GW CS probability is not currently surfaced as a standalone field
+### R2 — page.tsx state accumulation
+**What goes wrong:** page.tsx already manages `teamId`, `submittedId`, `gemPreset`, `comparePlayer`, `compareOpen`, `sectionMemory`. Adding `leagueId` + `eoMode` makes it 7+ state values. This is manageable but approaching the limit of "grab-bag component" before extraction becomes necessary.
+**Mitigation:** All additions are small `useState` primitives. `leagueId` could live in `RivalTrackerTab` if cross-section persistence is not required (it probably isn't for v1.9). Recommend keeping `eoMode` in page.tsx (cross-sub-tab within Squad) but scoping `leagueId` to `RivalTrackerTab` local state unless the spec requires it to persist.
 
-**Decision: pipeline adds per-team CS% data; client-side display only.**
+### R3 — TREE-01 branch root diversity
+**What goes wrong:** The top-3 transfers from `generatePlan()` may all involve the same sell player (e.g. sell Salah → buy Mbeumo, sell Salah → buy Haaland, sell Salah → buy Palmer). The three branches then look identical in structure.
+**Mitigation:** Select branch roots by unique `buyId` OR require distinct `sellId` across branches. In `generateTransferTree()`, after collecting the sorted transfer list, skip candidates until 3 branches with distinct sell players are found.
 
-Two options:
-- **Option A (pipeline):** Add `cs_prob_1gw`, `cs_prob_3gw` per player to `merged_players.json`. Computed in `merge.py` by aggregating `_cs_prob()` across upcoming fixtures. Minimal pipeline change — the formula already runs per fixture.
-- **Option B (client-side):** Derive CS prob client-side using `defensive_difficulty` from `player.fixtures` and `player.xmins`. No pipeline change.
+### R4 — EO-01 mode toggle affecting transfer recommendations
+**What goes wrong:** The `suggestTransfers()` function is pure and takes no mode parameter. Changing behaviour based on mode requires either: (a) passing mode into `suggestTransfers()` which would break its existing tests, or (b) post-filtering the results in the component.
+**Mitigation:** Use post-filtering in the component for v1.9 (option b). Add a `// TODO v1.9: EO mode filtering` comment in `TransferPanel.tsx`. If the post-filter logic becomes complex (>20 lines), extract `applyEOModeFilter(suggestions, mode, allPlayers)` as a separate pure function in `eo-engine.ts`.
 
-**Recommendation: Option B (client-side).** All required data is already in `MergedPlayer`:
-- `player.fixtures[0].defensive_difficulty` — first-GW defensive difficulty
-- `player.xmins` — minutes factor
-- CS prob formula is simple enough to mirror from Python: `max(0.10, min(0.65, 0.40 - dd * 0.30)) * min(1.0, xmins / 60.0)`
-
-This avoids a pipeline schema change and keeps all probability math client-side (consistent with xPts breakdown approach above).
-
-**Integration pattern:**
-
-```typescript
-// src/lib/cs-probability.ts  (NEW)
-export interface CSProbability {
-  team_id: number
-  team_short_name: string
-  cs_prob_1gw: number    // for GK/DEF: always computed; for others: 0
-  cs_prob_3gw: number    // mean across next 3 fixtures
-  fixture_opponent: string
-  is_home: boolean
-}
-
-export function computeCSProbability(player: MergedPlayer): CSProbability | null
-```
-
-**UI placement:** Two integration points:
-1. New column in GemTable (`CS%`) — visible in Analysis preset, hidden in Default and Compact presets. This is the primary discovery surface.
-2. Panel inside OptimiserPanel showing GK and DEF CS probabilities for the user's current starters.
-
-**New files:**
-- `src/lib/cs-probability.ts` (pure TS)
-- `src/components/gem-table/CSProbCell.tsx` (column renderer)
-
-**Modified files:**
-- `src/components/gem-table/columns.tsx` — add CS% column
-- `src/components/gem-table/GwToggle.tsx` — add `cs_prob` to `PRESET_COLUMN_VISIBILITY` (hidden in default/compact, visible in analysis)
-- `src/lib/types.ts` — if any new optional fields are needed (likely none for Option B)
-
-**No new API routes. No pipeline changes (Option B).**
-
----
-
-## Component Boundaries Summary
-
-| Component | Location | Type | Communicates With |
-|-----------|----------|------|-------------------|
-| `opportunity-cost-engine.ts` | `src/lib/` | Pure TS | Wraps `suggestTransfers()` |
-| `SimulatorTable.tsx` | `src/components/optimiser/` | React client | Receives `ScenarioResult[]` via props |
-| `useDecisionSummary.ts` | `src/lib/hooks/` | TanStack Query composite | `usePlayers`, `useCaptainPicks`, `useClubForm`, `useSquad` |
-| `DecisionSummaryPanel.tsx` | `src/components/decision/` | React client | `useDecisionSummary()` |
-| `fixture-swing-engine.ts` | `src/lib/` | Pure TS | Reads `ClubForm[]` |
-| `FixtureSwingPanel.tsx` | `src/components/club-form/` | React client | `useClubForm()` |
-| `lifecycle-labels.ts` | `src/lib/` | Pure TS | Wraps `computeVerdicts()` result + `ClubForm` |
-| `LifecycleBadge.tsx` | `src/components/shared/` | React client | Replaces `VerdictBadge` |
-| `xpts-breakdown.ts` | `src/lib/` | Pure TS | Reads `MergedPlayer` fields |
-| `XPtsBreakdownCard.tsx` | `src/components/gem-table/` | React client | Replaces `title=` tooltip in `XPtsCell` |
-| `cs-probability.ts` | `src/lib/` | Pure TS | Reads `player.fixtures` + `player.xmins` |
-| `CSProbCell.tsx` | `src/components/gem-table/` | React client | New GemTable column |
-
----
-
-## Data Flow Changes
-
-### Fields Already Present in `MergedPlayer` (no pipeline change needed)
-- `start_prob` — appearance probability for xPts breakdown
-- `xmins` — minutes factor for CS prob and xPts breakdown
-- `xg_per90`, `xa_per90` — for goal/assist probability computation
-- `fixtures[].defensive_difficulty` — for CS probability
-- `fixtures[].attacking_difficulty` — for fixture swing
-- `xPts_components_1gw` — four components already stored
-
-### Fields in `ClubForm` (already served by `/api/club-form`)
-- `attacking_ease_1gw`, `attacking_ease_3gw`, `attacking_ease_5gw` — for fixture swing
-- `defensive_ease_1gw`, `defensive_ease_3gw`, `defensive_ease_5gw` — for fixture swing and lifecycle labels
-
-### New Pipeline Fields Required
-None for the recommended integration approach. All six features can be implemented using existing pipeline output.
-
-### New API Routes Required
-None. All existing `/api/*` routes are sufficient.
-
----
-
-## Suggested Build Order
-
-Dependencies drive this order: each phase uses only data and engines that exist at the start of that phase.
-
-### Phase 1: Fixture Swing Detector + CS Probability
-**Why first:** Pure client-side, no deps on other v1.7 features. Uses only `ClubForm` and `MergedPlayer` — both stable. These are new pure-TS engines (`fixture-swing-engine.ts`, `cs-probability.ts`) that later features can optionally consume. Building these first gives lifecycle labels a fixture context to draw from.
-- New: `fixture-swing-engine.ts`, `FixtureSwingPanel.tsx`, `cs-probability.ts`, `CSProbCell.tsx`
-- Modified: `columns.tsx` (CS% column), `GwToggle.tsx` (preset visibility), page club-form branch
-
-### Phase 2: Explainable xPts Breakdown
-**Why second:** Self-contained. Depends only on existing `MergedPlayer` fields and `xPts_components_1gw`. No deps on other v1.7 features. Unblocks `DecisionSummaryPanel` which will want to show xPts components.
-- New: `xpts-breakdown.ts`, `XPtsBreakdownCard.tsx`
-- Modified: `XPtsCell` in `columns.tsx`
-
-### Phase 3: Player Lifecycle Labels
-**Why third:** Depends on `computeVerdicts()` (existing) and `ClubForm` fixture context (Phase 1 engine). `LifecycleBadge` replaces `VerdictBadge` in SquadView and TransferPanel.
-- New: `lifecycle-labels.ts`, `LifecycleBadge.tsx`, `lifecycle-labels.test.ts`
-- Modified: `SquadView.tsx`, `TransferPanel.tsx`
-
-### Phase 4: Transfer Opportunity Cost Simulator
-**Why fourth:** Depends on `suggestTransfers()` (existing, stable) and squad data hooks. No deps on v1.7 features. Can be built independently but benefits from lifecycle labels being available for contextual display.
-- New: `opportunity-cost-engine.ts`, `SimulatorTable.tsx`
-- Modified: `page.tsx` (new Squad sub-tab or embedded panel), `src/lib/types.ts`
-
-### Phase 5: Weekly Decision Summary
-**Why last:** Aggregates outputs from all other features (captain picks, transfer engine, chip strategy, lifecycle labels, fixture swings). Must be built last because it depends on Phases 1, 3, and 4.
-- New: `useDecisionSummary.ts`, `DecisionSummaryPanel.tsx`, sub-components (CaptainCard, TransferCard, ChipCard, RiskCard)
-- Modified: `page.tsx` (new Plan → Decision sub-tab), `MobileNav.tsx`
+### R5 — MobileNav sub-tab count
+**What goes wrong:** Adding 3 new sub-tabs (Manual Planner, Route Tree, Rivals) pushes the Plan section to 5 sub-tabs and Analyse to 7. Mobile pill row for Plan will need horizontal scroll on small screens.
+**Mitigation:** Use short mobile labels (`'Manual'`, `'Tree'`, `'Rivals'`). The mobile pill row already scrolls horizontally (CSS `overflow-x-auto` pattern from Phase 36). Verify on 375px viewport. If Plan section with 5 sub-tabs overflows badly, consider grouping Manual Planner + Route Tree under a single "Planning" expand, but this is a UX call not an architecture one.
 
 ---
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: New Pipeline Schema for Client-Derivable Values
-**What:** Adding `cs_prob_1gw`, `goal_prob_1gw`, etc. to `merged_players.json` when the values can be computed client-side from existing fields.
-**Why bad:** Schema migrations require pipeline re-run + cache invalidation + TypeScript type updates + API route changes. Client-side derivation is faster to ship and easier to change.
-**Instead:** Mirror the Python formula in TypeScript. The `_cs_prob()` formula is 2 lines of math.
+### AP1: New pipeline artifact for EO-01
+**Don't:** Create a `eo_stats.json` pipeline artifact to pre-compute EO data.
+**Do:** `selected_by_percent` is already on every `MergedPlayer`. The EO engine is a pure TS function that runs in-browser in <1ms. No pipeline involvement.
 
-### Anti-Pattern 2: New API Routes for v1.7 Features
-**What:** Creating `/api/decision-summary`, `/api/fixture-swings`, `/api/lifecycle-labels`.
-**Why bad:** All v1.7 features compose existing data. A new route adds a Blob read, a TanStack Query key, cache invalidation complexity, and a new file to maintain — for no data that isn't already available.
-**Instead:** Compose from `usePlayers()`, `useClubForm()`, `useCaptainPicks()`, `useSquad()` — all already cached.
+### AP2: New API route for ML-01
+**Don't:** Create a `/api/league-rivals` server route that proxies the FPL calls and joins the standings + picks data.
+**Do:** Use the existing `/api/fpl/[...proxy]` pass-through. The joining and enrichment logic belongs in `useLeagueRivals` (TanStack hook) and `RivalTrackerTab`. No new server route is justified — the proxy already handles CORS for all FPL API paths.
 
-### Anti-Pattern 3: Putting Decision Logic in `page.tsx`
-**What:** Moving `computeLifecycleLabel()` or `computeOpportunityCost()` calls into the page component.
-**Why bad:** `page.tsx` is already 200 lines managing nav state. Decision logic belongs in pure-TS engines (testable via Vitest) or hooks. `page.tsx` should only handle section/sub-tab state.
-**Instead:** Pure-TS engine in `src/lib/`, called from the relevant panel component or hook.
+### AP3: Putting eoMode inside DecisionSummaryTab local state
+**Don't:** `const [eoMode, setEOMode] = useState<EOMode>('max-xpts')` inside `DecisionSummaryTab`.
+**Do:** Lift `eoMode` to `page.tsx` and pass as prop to both `DecisionSummaryTab` and `TransferPanel`. This preserves the selected mode when switching between Decision and Transfers sub-tabs.
 
-### Anti-Pattern 4: Duplicating Squad Fetch
-**What:** Calling `useSquad(teamId)` independently inside new components like `SimulatorTable` or `DecisionSummaryPanel`.
-**Why bad:** If `teamId` differs (e.g., prop drilling missed), TanStack Query creates a second cache entry. The pattern established in v1.6 (teamId lifted to `page.tsx`, shared via props) must be preserved.
-**Instead:** Pass `teamId` or pre-fetched `squadData` as props from the parent that already has it.
+### AP4: Modifying generatePlan() for TREE-01
+**Don't:** Add a `branches` parameter to `generatePlan()` or fork it.
+**Do:** Add `generateTransferTree()` as a new top-level export that internally calls `generatePlan()` once and `generatePlanFrom()` once per branch. Existing function signatures stay stable.
+
+### AP5: Fetching rival picks inside the component render
+**Don't:** Call `fetch('/api/fpl/entry/{id}/event/{gw}/picks')` inside `useEffect` in `RivalTrackerTab`.
+**Do:** Encapsulate all fetching in `useLeagueRivals` hook (TanStack Query). Components are presentation only.
 
 ---
 
 ## Sources
 
-- Direct codebase reading: `src/lib/suggest-transfers.ts`, `src/lib/optimise-lineup.ts`, `src/lib/recommend.ts`, `src/lib/club-form.ts`, `src/lib/chip-strategy-engine.ts`
-- `src/lib/types.ts` — full MergedPlayer schema with all optional fields
-- `src/app/page.tsx` — nav hierarchy, sub-tab structure, state model
-- `src/components/optimiser/OptimiserPanel.tsx` — existing squad + transfer engine wiring
-- `src/components/transfers/TransferPanel.tsx` — multi-hook composition pattern
-- `src/components/gem-table/columns.tsx` — XPtsCell and existing tooltip pattern
-- `pipeline/merge.py` — `_cs_prob()`, `_compute_xpts_fixture()`, xPts component computation
-- `pipeline/run.py` — pipeline output files and save() pattern
-- `src/app/api/players/route.ts` — thin Blob reader pattern with backtest join
-- `.planning/PROJECT.md` — v1.6 decisions log, established invariants
+- `src/app/page.tsx` (SubTab union, SECTIONS constant, state management pattern) — HIGH confidence, directly observed
+- `src/lib/planning-engine.ts` (generatePlan, generatePlanFrom, generateChipStep) — HIGH confidence, directly observed
+- `src/lib/types.ts` (MergedPlayer, PlanStep, FTState, PlannerChip, SquadPick) — HIGH confidence, directly observed
+- `src/components/planner/PlannerTab.tsx` (auth pattern, sell prices, bank balance, useImmer plan state) — HIGH confidence, directly observed
+- `src/lib/free-transfer-engine.ts` (computeHitCost, computeNextFTState) — HIGH confidence, directly observed
+- `src/lib/squad-adapter.ts` (MyTeamPick.selling_price, bank fields) — HIGH confidence, directly observed
+- `src/app/api/fpl/[...proxy]/route.ts` (pass-through proxy for all FPL paths) — HIGH confidence, directly observed
+- `src/lib/hooks/useSquad.ts` (TanStack hook template with enabled guard) — HIGH confidence, directly observed
+- `src/lib/captaincy-engine.ts` (pure TS engine shape for EO-01 to mirror) — HIGH confidence, directly observed
+- `src/components/squad/DecisionSummaryTab.tsx` (component structure, prop pattern) — HIGH confidence, directly observed
+- `.planning/PROJECT.md` (v1.9 feature specs, established decisions, tech stack) — HIGH confidence, directly observed

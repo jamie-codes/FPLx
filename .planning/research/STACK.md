@@ -1,288 +1,254 @@
-# Technology Stack — v1.7 Decision Assistant
+# Technology Stack — v1.9 Competitive Intelligence
 
-**Project:** FPL Analyst
-**Researched:** 2026-05-01
-**Confidence:** HIGH
-**Scope:** NEW additions for v1.7 Decision Assistant ONLY.
-
-Existing validated stack (do not re-add): `next@16.2.1`, `react@19.2.4`, `@tanstack/react-query@^5.95.2`, `@tanstack/react-table@^8.21.3`, `@vercel/blob@^2.3.1`, `zod@^4.3.6`, `immer@^11.1.4`, `use-immer@^0.11.0`, `tailwindcss@^4`, `vitest@^4.1.2`; Python: `requests>=2.32.0`, `pandas>=2.2.0`, `numpy>=2.2.0`, `scipy>=1.14.0`, `vercel-blob>=0.4.0`, `python-dotenv>=1.0.0`, `soccerdata==1.8.8`
+**Project:** FPL Analyst — v1.9 milestone (subsequent milestone, additive only)
+**Researched:** 2026-05-03
+**Overall confidence:** HIGH
 
 ---
 
-## Executive Finding: Zero New Dependencies
+## Headline Recommendation
 
-**No new npm packages. No new Python packages.**
+**Three targeted additions to the existing stack:**
 
-Every v1.7 feature is implementable using the existing stack. The evidence is in the codebase:
+1. **`p-limit` ^6.x** — concurrency throttle for the parallel rival-squad fetches in ML-01 (prevents hammering the FPL API with N simultaneous requests)
+2. **`ai` + `@ai-sdk/anthropic`** — Vercel AI SDK v6 for TREE-01's structured multi-branch transfer-route generation (server-side only, zero client bundle impact)
+3. **Zero additional UI libraries** — the Transfer Route Tree (TREE-01) renders as a collapsible card tree in plain Tailwind/React, not a D3 chart
 
-| v1.7 Feature | Existing foundation that covers it |
-|---|---|
-| Transfer Opportunity Cost Simulator | `suggestTransfers()` already enumerates Roll/1-FT/2-FT. Multi-horizon comparison is a new calling convention over existing data. |
-| Weekly Decision Summary | Aggregation of existing TanStack Query hooks. Pure layout work. |
-| Fixture Swing Detector | `attacking_difficulty` / `defensive_difficulty` already in every `FixtureEntry`. Need a new sort/delta function over existing data. |
-| Player Lifecycle Labels | `regression_signal`, `differential_flag`, `mins_risk`, `xPts_components_1gw` all already on `MergedPlayer`. Need a new classification function. |
-| Explainable xPts Breakdown | `xPts_components_1gw: {goal_pts, assist_pts, cs_pts, bonus_pts}` already computed by pipeline and typed in `MergedPlayer`. Need a panel component. |
-| Clean Sheet Probability | `_cs_prob()` already runs per-fixture in pipeline. Need to surface `cs_prob` into JSON; existing `FixtureEntry` or new per-team JSON artifact. |
+MTP-01 and EO-01 need **no new packages** — they are pure TypeScript over existing `MergedPlayer`, `FTState`, and `PlanStep` shapes with the existing FPL proxy.
 
 ---
 
-## Feature-by-Feature Stack Analysis
+## Recommended Stack — Per Feature
 
-### 1. Transfer Opportunity Cost Simulator
+### MTP-01: Manual Transfer Planner
 
-**What:** Compare Roll / 1-FT / 2-FT / Hit across 1 / 3 / 5 GW horizons side-by-side for the manager's current squad.
+**New packages:** None.
 
-**Existing:** `suggestTransfers()` in `src/lib/suggest-transfers.ts` already enumerates all (sell, buy) pairs per position, applies budget filter, computes `xPtsGain`, `cost`, and `breakEvenGws`. It handles `ftCount: 1 | 2` and returns sorted results.
+**Approach:** A new `manual-transfer-engine.ts` alongside `planning-engine.ts`. The existing engine already carries all the primitives needed:
 
-**What is new:** A simulator that calls `suggestTransfers()` three times (horizons 1, 3, 5) and computes the Roll scenario (do nothing, carry forward FTs). The Roll value is `0` additional xPts gain. The comparison table is plain TypeScript + JSX.
+| Existing primitive | What MTP-01 reuses it for |
+|-------------------|---------------------------|
+| `FTState` / `computeNextFTState()` in `free-transfer-engine.ts` | FT bank simulation per GW step |
+| `computeHitCost()` in `free-transfer-engine.ts` | -4pt per hit, hit counting |
+| `bankBalance` + `sellPrices` already on `generatePlan()` | Starting bank, sell-price-aware budget |
+| `PlanStep.hitCost` + `GWStep.chip` in `types.ts` | Per-step financial state shape already exists |
+| `MyTeamPick.selling_price` from `squad-adapter.ts` | Exact sell price for financial simulation |
+| `useImmer` (already installed) | Nested mutable state for user-edited steps |
 
-**Approach:** New pure-TS function `computeOpportunityCost(params)` that wraps `suggestTransfers()` for each horizon and returns a structured comparison object. No new library.
+The new engine differs from `generatePlan()` in one way: **the user provides the transfer pair(s) per GW instead of the engine choosing them**. The engine then simulates bank/FT state forward from those choices. Break-even weeks formula is `ceil(4 / xPtsGainPerGw)` — identical to `TransferSuggestion.breakEvenGws` logic already in `suggest-transfers.ts`.
 
-**Pattern to follow:** Mirrors the existing `HORIZON_FIELD` map pattern and the `suggestTransfers()` calling convention already in use by `OptimiserPanel`.
-
----
-
-### 2. Weekly Decision Summary
-
-**What:** One-screen aggregated view: captain rec, transfer rec, bench order, chip timing, risks, opportunities.
-
-**Existing:** All underlying data already flows through existing hooks (`useCaptainPicks`, `useMyTeam`, `usePlayers`, `useInsights`, the chip-strategy engine). This is a composition/layout feature.
-
-**Approach:** New `DecisionSummaryPanel` component that imports existing hooks and renders their outputs in a unified card layout. No new data fetching, no new computation engine, no new library.
-
-**Note:** `useImmer` is available for any complex local state (existing dep). No additional state library needed.
+**Why not reuse `generatePlan()` directly:** `generatePlan()` is greedy-auto (it picks transfers). MTP-01 is user-designed — the engine should only simulate the user's choices, not override them. Separate function, shared primitives.
 
 ---
 
-### 3. Fixture Swing Detector
+### ML-01: Mini-League Rival Tracker
 
-**What:** Surface teams with materially improving or worsening upcoming fixture sequences as proactive buy/sell signals.
+**New package: `p-limit` ^6.x (server-side only)**
 
-**Existing:** Every `FixtureEntry` already carries `attacking_difficulty` (float, 0=easy, 1=hard) and `defensive_difficulty`. `ClubForm` aggregates `attacking_ease_1gw`, `attacking_ease_3gw`, `attacking_ease_5gw` per team in `computeClubForm()`. This is the raw material.
+The core pattern for rival squad fetching is already proven: `src/app/api/squad/[teamId]/route.ts` calls `entry/{id}/event/{gw}/picks/` through the server-side proxy. ML-01 extends this to N rivals in parallel.
 
-**What is new:** A function `computeFixtureSwing(teams: ClubForm[])` that compares short-horizon ease vs long-horizon ease for each team and flags directional movement: `improving` when `attacking_ease_1gw` significantly above `attacking_ease_5gw`, `worsening` when below. Threshold is a constant (e.g. `SWING_THRESHOLD = 0.15` on the 0–1 scale).
+**Why p-limit is needed:** A mini-league can have 10–50 entries. `Promise.all(rivals.map(fetchPicks))` fires all requests simultaneously. FPL's API has no published rate limits but community experience shows aggressive concurrent hitting causes 429s and temporary bans. Throttling to 3 concurrent requests (configurable) eliminates this risk.
 
-**Approach:** Pure-TS function in `src/lib/fixture-swing.ts`, unit-tested with Vitest. Consumes `ClubForm[]` already available via `useClubForm()`. No pipeline changes needed; all input data already published to `merged_players.json` / `club_form`.
+| Property | Detail |
+|----------|--------|
+| Package | `p-limit` |
+| Version | ^6.1.0 (current: 6.x; v7.x requires Node 20, which is fine for Vercel but not worth the major jump yet — confirm project's Node version) |
+| Runtime | Server-side Next.js Route Handler only |
+| Bundle impact | Zero — never imported by client components |
 
-**Why no pipeline change:** `attacking_ease_Xgw` values are already emitted. The swing detection is a client-side derived computation, like `computeClubForm()` itself.
+**Note on p-limit version:** v7.x requires Node.js 20+. v6.x requires Node.js 16+. Both are ESM-only. Verify with `node -v` in the project. If Node 20+ is confirmed (likely on Vercel), v7.x is fine. The recommendation is ^6.1.0 as the safe floor; upgrade to ^7.x if Node version permits.
 
----
+**FPL API endpoints needed (all public, no auth required for rival data):**
 
-### 4. Player Lifecycle Labels
+| Endpoint | Purpose | Auth |
+|----------|---------|------|
+| `leagues-classic/{leagueId}/standings/` | Fetch rival entry IDs, names, ranks, event totals | Public |
+| `entry/{entryId}/event/{gw}/picks/` | Per-rival squad picks (element[], multiplier for captain=2) | Public |
+| `entry/{entryId}/history/` | Chips used this season (chips[].chip_name, chips[].event) | Public |
 
-**What:** Richer timing advice labels per player — Buy next week, Hold one more, Sell soon, Minutes trap, Fixture trap, etc.
+**Key API fields verified:**
+- `standings.results[].entry` — the rival's team ID
+- `standings.results[].rank`, `last_rank`, `total`, `event_total` — rank gap computation
+- `picks[].element`, `picks[].multiplier` (1=playing, 0=bench, 2=captain, 3=TC), `picks[].position`
+- `active_chip` — chip played this GW (null if none; "bboost", "freehit", "wildcard", "3xc")
+- `history.chips[].chip_name`, `.event` — which chips remain available
 
-**Existing:** `regression_signal` ('buy'|'sell'), `differential_flag` ('diff'|'trap'), `mins_risk` ('nailed'|'likely_start'|'rotation_risk'|'cameo'|'injured'), and fixture difficulty are all already on `MergedPlayer`. `xPts_components_1gw` provides CS component for fixture quality.
+**New Route Handler:** `src/app/api/mini-league/[leagueId]/route.ts` — fetches standings then fans out to per-rival picks with p-limit concurrency control. Returns a shaped `RivalIntel[]` array. The existing `/api/fpl/[...proxy]` route could technically proxy these calls, but a dedicated route is cleaner: it orchestrates multi-step fetching, applies Zod validation, and shapes the response into the `RivalIntel` type rather than raw FPL JSON.
 
-**What is new:** A `classifyPlayerLifecycle(player: MergedPlayer, fixtures: FixtureEntry[])` pure function that combines these signals into a single `LifecycleLabel` type. The label set needs definition; the signal inputs already exist.
-
-**Approach:** Pure-TS function in `src/lib/lifecycle.ts`. Returns a discriminated union or string literal union. Unit-tested with Vitest. No new data, no new pipeline artifact, no library.
-
-**Minutes trap and Fixture trap** use existing `mins_risk` and per-fixture `attacking_difficulty` respectively — no new data fields needed.
-
----
-
-### 5. Explainable xPts Breakdown
-
-**What:** Component breakdown panel/tooltip showing appearance + goals + assists + CS + bonus + minutes risk contribution to any player's projected score.
-
-**Existing:**
-- `xPts_components_1gw?: {goal_pts, assist_pts, cs_pts, bonus_pts}` already on `MergedPlayer`
-- `XPtsCell` in `src/components/gem-table/columns.tsx` already renders a native `title` tooltip showing these components for the 1 GW window
-- The tooltip format is already established: "Goals: X.XX\nAssists: X.XX\nClean sheet: X.XX\nBonus: X.XX"
-
-**What is new:** A richer panel (not just a native title tooltip) that can show all three horizon windows (1/3/5 GW), include a `minutes_risk` row, and present the data in a readable card layout. The 3GW/5GW horizons currently do NOT have component breakdown in the pipeline — `_xpts_ngw()` only returns components for the first GW.
-
-**Pipeline change needed:** Extend `_xpts_ngw()` or add a separate `_compute_xpts_components_ngw()` that sums per-component across all fixtures in the N-GW window and emits `xPts_components_3gw` and `xPts_components_5gw` alongside the existing `xPts_components_1gw`. This is pure arithmetic — no new Python dependency.
-
-**UI approach:** New `XPtsBreakdownPanel` component. Uses the existing native `title` pattern for simple cells (no Radix, no Floating UI, no Popper — the project explicitly avoids tooltip libraries). For the richer panel presentation, use a CSS `:hover` / `focus-within` expand pattern or a `<details>/<summary>` element — both are zero-dependency.
-
-**Why no tooltip library:**
-- The existing codebase comment in `VarianceBadge.tsx` states: "Native `title` tooltip is the project pattern (no Radix / no custom Tooltip primitive)."
-- For a richer panel, `<details>`/`<summary>` or a `group-hover:` Tailwind pattern avoids adding a library for a single use case.
-- Accessibility: native `title` is sufficient for a personal tool; not a public product.
+**EO% calculation for ML-01 differential logic:**
+- Global ownership: `selected_by_percent` field already on `MergedPlayer` (string, parse to float)
+- Mini-league EO: computed client-side from rival squad arrays — `(ownCount + captainCount + tcCount) / leagueSize` per player
+- No new library — pure arithmetic over the fetched picks arrays
 
 ---
 
-### 6. Clean Sheet Probability
+### EO-01: Effective Ownership & Rank Protection
 
-**What:** Per-fixture CS% for all teams, computed from xGA, improving defensive/GK picks.
+**New packages:** None.
 
-**Existing:** `_cs_prob(defensive_difficulty, xmins)` in `pipeline/merge.py` already computes per-fixture CS probability using the formula `0.40 - defensive_difficulty * 0.30`, clamped to [0.10, 0.65], then scaled by minutes factor. This is invoked inside `_compute_xpts_fixture()` but its output is not separately surfaced to JSON.
+**Approach:** Pure TypeScript engine `src/lib/eo-engine.ts`. All inputs are already present:
 
-**What is new:** Surface `cs_prob` per fixture per player into the merged player data, and/or emit a separate per-team CS probability summary (next 1/3/5 GW average) as a new JSON artifact.
+| Input | Source |
+|-------|--------|
+| `selected_by_percent` per player | `MergedPlayer` (existing field) |
+| `xPts_1gw` per player | `MergedPlayer` (existing field) |
+| Captain multiplier | User's own picks via `useMyTeam` (existing hook) |
+| Mode toggle state | New UI state only — no data requirement |
 
-**Two options:**
+**EO-adjusted captain EV formula** (standard FPL community formula, MEDIUM confidence):
+```
+eo_adjusted_ev = xPts_1gw * (1 + eo_pct/100)
+```
+Where `eo_pct` is effective ownership % = `owns% + captain%` (captain gets double points, so captaining someone you own by 50% of rivals means you gain vs the field when they score).
 
-Option A — Add `cs_prob_1gw` / `cs_prob_3gw` / `cs_prob_5gw` floats directly to each `MergedPlayer` in the pipeline. Enables per-player CS% sorting in GemTable. Zero cost: the `_cs_prob` function already runs for every player/fixture pair during xPts computation — it's a single additional dict key assignment.
-
-Option B — Emit a per-team `team_cs_probs.json` artifact (20 teams × next 5 fixtures) as a separate endpoint. Cleaner separation of concerns for a Fixture Swing / CS panel that shows per-team rather than per-player data.
-
-**Recommendation: Option A first, Option B if a dedicated CS panel is added.** Option A requires zero pipeline refactoring — just capture the output already computed and assign it to the player dict. Option B is a separate pipeline module.
-
-**Python change:** One or two additional `player['cs_prob_1gw'] = ...` assignments inside the existing `merge_players()` loop, using the same `_cs_prob()` call that already runs. No new Python package.
-
----
-
-## New npm Dependencies
-
-**None.**
-
-| Considered | Verdict | Reason |
-|---|---|---|
-| `@radix-ui/react-tooltip` | Rejected | Project pattern is native `title`. Single personal tool. Adds ~8KB gzip for no UX gain over `<details>` expand. |
-| `recharts` / `victory` / `nivo` | Rejected | No charting requirement in v1.7 features. Horizon comparison is a table, not a chart. |
-| `@floating-ui/react` | Rejected | Same as Radix tooltip — overkill for this use case. |
-| `date-fns` / `dayjs` | Rejected | Relative time formatting already done by `formatRelativeTime.ts`. No new date math needed. |
-| `clsx` / `classnames` | Rejected | Tailwind v4 with template literals already handles conditional classes across the codebase. |
+**Mode toggle (`Max xPts / Protect Rank / Chase Rank / Differential Aggressive`):** A pure enum state in the new `EOTab` component. Each mode reorders/filters the existing `suggestTransfers()` output by a different objective function. No new data sources — different weights on existing `xPtsGain`, `differential_flag`, and EO% fields.
 
 ---
 
-## New Python Dependencies
+### TREE-01: Transfer Route Tree
 
-**None.**
+**New packages: `ai` ^6.x + `@ai-sdk/anthropic` (server-side only)**
 
-| Considered | Verdict | Reason |
-|---|---|---|
-| `statsmodels` | Rejected | All statistical modelling (Poisson xPts, Bernoulli CS) already done with `numpy`/`scipy` in `merge.py`. No regression model needed for v1.7. |
-| `scikit-learn` | Rejected | No ML model needed. Lifecycle labels and swing detection are rule-based. |
+The branching tree structure (2–3 paths × 2–3 GWs) is a constrained generation problem: given the user's squad, budget, FT state, and player pool with xPts values, generate N distinct transfer sequences. Each branch needs a specific shape (players in/out per GW, cumulative FT state, hit cost, xPts per path).
 
----
+**Why an LLM rather than pure TypeScript enumeration:**
+- `generatePlan()` is a greedy single-path engine. Generating 2–3 *distinct* paths requires either (a) a search tree with pruning or (b) prompting an LLM with structured output to produce branching alternatives.
+- A search tree for 3 paths × 3 GWs × 2 transfers per GW = 27,000 candidate evaluations — feasible but complex to implement with good diversity (greedy enumeration tends to produce near-identical paths).
+- The LLM approach with `generateObject` + Zod schema produces human-readable branch rationale ("Route A: Double up on Man City assets for DGW33") alongside the structured xPts data, which is the "AI-generated" requirement in TREE-01.
+- The LLM does not *score* xPts — it selects players and structures branches. xPts values are passed in as context and the LLM's output is validated/re-scored server-side with the existing `xPts_1gw` fields from `MergedPlayer`.
 
-## Pipeline Changes (Python, no new packages)
+**Vercel AI SDK v6 — verified current (Dec 2025 release):**
 
-| Change | File | Cost | Purpose |
-|---|---|---|---|
-| Surface `cs_prob_1gw`, `cs_prob_3gw`, `cs_prob_5gw` per player | `pipeline/merge.py` | ~5 lines in existing merge loop | Clean Sheet Probability feature |
-| Emit per-component breakdown for 3GW and 5GW windows | `pipeline/merge.py` | ~20 lines extending `_xpts_ngw()` | Explainable xPts Breakdown (3/5 GW panels) |
-| (Optional) `team_cs_probs.json` artifact | New `pipeline/cs_probs.py` | ~60 lines, new module | Per-team CS% panel if built separately |
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `ai` | ^6.x (current: 6.0.173) | Core `generateObject` / `generateText` with structured output |
+| `@ai-sdk/anthropic` | ^1.x (latest) | Anthropic Claude provider for the AI SDK |
 
-All changes use existing `_cs_prob()` and `_compute_xpts_fixture()` functions — no new algorithm, no new dependency.
+**Server-side only:** The LLM call lives in a new Route Handler `src/app/api/transfer-tree/route.ts`. The client fires one `fetch()` and receives the scored tree JSON. Zero LLM code in the client bundle.
 
----
+**Output schema (Zod):** The server validates the LLM output against a `TransferTreeSchema` before returning it to the client. This means the UI always receives correctly-shaped data, and the LLM has a hard contract to conform to.
 
-## New TypeScript Source Files (no new packages)
+**Model recommendation:** `claude-sonnet-4-5` — sufficient for structured JSON generation, fast, cost-effective for a personal tool. Claude Opus is unnecessary for this scope (the task is constrained generation, not reasoning).
 
-| File | Purpose |
-|---|---|
-| `src/lib/opportunity-cost.ts` | `computeOpportunityCost()` — wraps `suggestTransfers()` across all horizons for simulator |
-| `src/lib/fixture-swing.ts` | `computeFixtureSwing()` — swing direction from existing `ClubForm` ease fields |
-| `src/lib/lifecycle.ts` | `classifyPlayerLifecycle()` — combines existing signals into a label union |
-| `src/components/optimiser/XPtsBreakdownPanel.tsx` | Rich xPts component panel (replaces inline `title` tooltip for detail view) |
-| `src/components/squad/DecisionSummaryPanel.tsx` | Aggregated weekly decision view |
-| `src/components/fixtures/FixtureSwingPanel.tsx` | Improving/worsening fixture trend display |
+**Environment variable needed:** `ANTHROPIC_API_KEY` in `.env.local` and Vercel project settings.
 
-Each file follows the existing pattern: pure functions in `src/lib/`, React components in `src/components/`, corresponding `.test.ts` / `.test.tsx` in place.
+**Chip interaction:** The TREE-01 prompt includes current chip availability (from `entry/{id}/history/` — already fetched by the existing `useChipHistory` hook) as context. The LLM can then annotate branches with chip usage notes. Chip legality is validated server-side, not trusted from LLM output.
 
 ---
 
-## New TanStack Query Hooks
+## Core Technologies — No Changes
 
-All hooks follow the existing pattern in `src/lib/hooks/` (6h staleTime, typed return, no manual caching):
-
-| Hook | Data Source | New endpoint needed? |
-|---|---|---|
-| `useDecisionSummary()` | Composes `usePlayers` + `useCaptainPicks` + `useMyTeam` — no new fetch | No |
-| `useClubCsProbs()` | `team_cs_probs.json` via `/api/cs-probs` | Yes, if Option B chosen |
-
-If CS% data is added directly to `MergedPlayer` (Option A), `usePlayers()` already covers it — no new hook.
+| Technology | Version | Status | v1.9 use |
+|------------|---------|--------|----------|
+| Next.js | 16.2.1 | Unchanged | New Route Handlers for mini-league and transfer-tree |
+| React | 19.2.4 | Unchanged | New components: MTPTab, MLTab, EOTab, TransferTreePanel |
+| TypeScript | ^5 | Unchanged | New engine files |
+| TanStack Query | ^5.95.2 | Unchanged | New hooks: `useMiniLeague`, `useTransferTree` |
+| TanStack Table | ^8.21.3 | Unchanged | Rival squad table in ML-01 |
+| Tailwind CSS | ^4 | Unchanged | Tree node cards, mode toggle pills |
+| Vitest | ^4.1.2 | Unchanged | TDD for new engines |
+| immer / use-immer | ^11.1.4 / ^0.11.0 | Unchanged | MTP-01 step mutation |
+| Zod | ^4.3.6 | Unchanged | Rival picks schema, TransferTreeSchema for AI output |
+| Vercel Blob | ^2.3.1 | Unchanged | No new blobs needed for v1.9 |
+| Python pipeline | requests + pandas + stdlib | Unchanged | No pipeline changes for v1.9 |
 
 ---
 
-## Type Extensions (src/lib/types.ts)
+## New Supporting Libraries
 
-New fields to add to existing interfaces — no new types file:
+| Library | Version | Purpose | Scope | Install |
+|---------|---------|---------|-------|---------|
+| `p-limit` | ^6.1.0 | Concurrency throttle for N rival-squad fetches | Server-side only | `npm install p-limit` |
+| `ai` | ^6.x | Vercel AI SDK — `generateObject` for TREE-01 structured output | Server-side only | `npm install ai` |
+| `@ai-sdk/anthropic` | ^1.x | Anthropic Claude provider for the AI SDK | Server-side only | `npm install @ai-sdk/anthropic` |
 
-```typescript
-// On MergedPlayer — Clean Sheet Probability (Option A)
-cs_prob_1gw?: number        // per-fixture average CS probability, 1 GW window
-cs_prob_3gw?: number        // 3 GW window average
-cs_prob_5gw?: number        // 5 GW window average
-
-// On MergedPlayer — Extended xPts breakdown
-xPts_components_3gw?: { goal_pts: number; assist_pts: number; cs_pts: number; bonus_pts: number } | null
-xPts_components_5gw?: { goal_pts: number; assist_pts: number; cs_pts: number; bonus_pts: number } | null
-
-// New standalone types
-export type LifecycleLabel =
-  | 'buy-now'
-  | 'buy-next-week'
-  | 'hold'
-  | 'sell-soon'
-  | 'minutes-trap'
-  | 'fixture-trap'
-  | 'differential'
-  | 'transfer-target'
-
-export type SwingDirection = 'improving' | 'worsening' | 'stable'
-export interface FixtureSwing {
-  team_id: number
-  team_short_name: string
-  direction: SwingDirection
-  attacking_ease_delta: number   // ease_1gw - ease_5gw; positive = improving short-term
-  defensive_ease_delta: number
-}
+**Install command:**
+```bash
+npm install p-limit ai @ai-sdk/anthropic
 ```
 
-All `?` (optional) fields follow the existing `xPts_components_1gw?` convention — absent before pipeline runs, no breakage to existing consumers.
+**Bundle impact:** All three packages are used only in Next.js Route Handlers (`src/app/api/*/route.ts`). They are never imported by client components and do not affect the client JavaScript bundle. Next.js tree-shakes server-only imports automatically in the App Router.
+
+---
+
+## Alternatives Considered
+
+| Capability | Recommended | Alternative | Why Not |
+|------------|-------------|-------------|---------|
+| Rival fetch throttling | `p-limit` ^6 | `p-queue` | `p-queue` is heavier (135 code snippets vs 3) and queue management is not needed — we just need a concurrency cap, which is exactly `p-limit`'s purpose |
+| Rival fetch throttling | `p-limit` ^6 | Manual `Promise.all` batching | Requires manual chunking logic; `p-limit` is 3 lines and purpose-built |
+| TREE-01 branching | Vercel AI SDK (`generateObject`) | Pure TS search tree | A search tree is feasible but produces low-diversity branches (greedy paths converge); LLM produces human-readable branch rationale that satisfies the "AI-generated" spec requirement |
+| TREE-01 branching | Vercel AI SDK (`generateObject`) | Direct `@anthropic-ai/sdk` | Vercel AI SDK provides unified structured-output interface with Zod schema validation; raw Anthropic SDK requires manual JSON parsing and retry logic |
+| TREE-01 branching | Vercel AI SDK (`generateObject`) | OpenAI | Claude is already familiar from project context; Anthropic SDK is well-maintained; no reason to add a second AI provider |
+| Transfer tree visualization | Plain Tailwind collapsible cards | `react-d3-tree` (88KB) | TREE-01 has at most 3 branches × 3 GWs = 9 nodes. A full D3 tree library for 9 nodes is extreme overkill. CSS flexbox cards with a branch-line divider is 20 lines of Tailwind. |
+| Transfer tree visualization | Plain Tailwind collapsible cards | `d3-hierarchy` | Same reason — 9 nodes does not justify importing D3 |
+| EO calculation | Pure TypeScript | Python pipeline field | EO% changes every time the user switches rivals or their own squad. It must be client-side reactive, not a pipeline output. |
+| FPL API call pattern (ML-01) | Dedicated `/api/mini-league/` route | Extend `/api/fpl/[...proxy]` | The proxy is a dumb passthrough. ML-01 needs orchestration: fetch standings, fan out to N picks calls with throttling, validate each, compute differential flags, and return a shaped `RivalIntel[]`. That logic belongs in a dedicated route, not in the generic proxy. |
 
 ---
 
 ## What NOT to Add
 
-| Item | Reason |
-|---|---|
-| Any tooltip/popover library (Radix, Floating UI, Headless UI) | Project explicitly uses native `title` attribute. A `<details>` expand covers the richer panel case. Single personal tool — accessibility cost of `title` is acceptable. |
-| Any charting library (recharts, victory, nivo, chart.js) | Horizon comparison is a comparison table. CS% is displayed as a numeric column. No chart needed. |
-| `react-hot-toast` or notification library | No new async operations that need toast feedback. |
-| Server-side computation for simulator | Transfer opportunity cost is fast client-side (<5ms for all horizon combinations using existing engine). No API route needed. |
-| Separate `/api/opportunity-cost` route | Simulator inputs are per-manager (squad, bank, FTs) — they must be computed client-side from data already fetched by `usePlayers` and `useMyTeam`. |
-| `lodash` or `ramda` | All array manipulation uses native TypeScript. No functional utility library needed. |
-| `zod` schema changes | New pipeline fields are optional additions; existing Zod schemas use `safeParse` with stale-cache fallback — new optional fields pass through without schema changes. |
+- **No D3 or charting library** — the transfer tree is a small card list, not a network graph. Adding `react-d3-tree` (88KB) or `recharts` for 9 nodes is indefensible.
+- **No database or caching layer** — rival squad data is fetched fresh per session (like the existing squad view). Vercel Blob is not used for rival data because it changes each GW and is user-specific.
+- **No `@ai-sdk/react` package** — the AI SDK's React hooks (`useChat`, `useObject`) are for streaming UI patterns. TREE-01 is a one-shot `generateObject` call from a server route handler. The client uses a plain TanStack Query `useQuery` hook over the `/api/transfer-tree` route.
+- **No scikit-learn or ML libraries** — EO% is arithmetic, not machine learning.
+- **No additional Python pipeline modules** — all four v1.9 features are either client-side engines or server-route-handler orchestrations. The pipeline does not need to change.
+- **No WebSocket / real-time layer** — out of scope per PROJECT.md constraint ("Once-daily sufficient; no real-time requirements").
+- **No auth changes** — ML-01 rival picks use the public `entry/{id}/event/{gw}/picks/` endpoint (no session cookie needed). The user's own team ID is already stored in client state.
 
 ---
 
-## Integration Summary
+## New Environment Variables
 
-```
-pipeline/merge.py (modified — no new imports)
-├── _cs_prob() already runs per player/fixture — add cs_prob_1gw output
-├── _xpts_ngw() extended — emit xPts_components_3gw / xPts_components_5gw
-└── upload.py — no changes (existing merged_players.json covers all new fields)
+| Variable | Purpose | Where |
+|----------|---------|-------|
+| `ANTHROPIC_API_KEY` | Authenticates the AI SDK Anthropic provider for TREE-01 | `.env.local` + Vercel project settings |
 
-src/lib/ (new pure-TS files, no new npm packages)
-├── opportunity-cost.ts   — calls suggestTransfers() × 3 horizons
-├── fixture-swing.ts      — derives swing direction from ClubForm data
-└── lifecycle.ts          — classifies player lifecycle from existing MergedPlayer fields
-
-src/components/ (new React components, no new npm packages)
-├── DecisionSummaryPanel  — composes existing hook outputs
-├── XPtsBreakdownPanel    — renders xPts_components_{1,3,5}gw
-├── FixtureSwingPanel     — renders fixture swing signals
-└── [inline CS% in existing FixtureBadges or GemTable column]
-
-src/lib/types.ts
-└── New optional fields on MergedPlayer + new LifecycleLabel / SwingDirection types
-```
+No other environment variables are needed. `BLOB_READ_WRITE_TOKEN` already exists for Vercel Blob.
 
 ---
 
-## Confirmed Package Versions (no changes from v1.6)
+## New Files (orientating the roadmap)
 
-All versions are inherited from the validated v1.6 stack. No version upgrades required for v1.7.
-
-| Package | Current version | v1.7 needs upgrade? |
-|---|---|---|
-| next | 16.2.1 | No |
-| react | 19.2.4 | No |
-| @tanstack/react-query | ^5.95.2 | No |
-| @tanstack/react-table | ^8.21.3 | No |
-| immer / use-immer | ^11.1.4 / ^0.11.0 | No |
-| tailwindcss | ^4 | No |
-| vitest | ^4.1.2 | No |
-| scipy (Python) | >=1.14.0 | No |
+| File | Feature | Type |
+|------|---------|------|
+| `src/lib/manual-transfer-engine.ts` | MTP-01 | New pure TS engine |
+| `src/lib/eo-engine.ts` | EO-01 | New pure TS engine |
+| `src/lib/hooks/useMiniLeague.ts` | ML-01 | New TanStack Query hook |
+| `src/lib/hooks/useTransferTree.ts` | TREE-01 | New TanStack Query hook |
+| `src/app/api/mini-league/[leagueId]/route.ts` | ML-01 | New Route Handler (uses p-limit) |
+| `src/app/api/transfer-tree/route.ts` | TREE-01 | New Route Handler (uses ai + @ai-sdk/anthropic) |
 
 ---
 
-*Stack research for: FPL Analyst v1.7 Decision Assistant*
-*Researched: 2026-05-01*
+## Verification Status
+
+| Claim | Source | Confidence |
+|-------|--------|------------|
+| `leagues-classic/{id}/standings/` returns `entry`, `rank`, `last_rank`, `total`, `event_total` per rival | FPL API live fetch via WebFetch + multiple API docs | HIGH |
+| `entry/{id}/event/{gw}/picks/` returns `picks[].multiplier` (2=captain, 3=TC), `active_chip` | Medium article + FPL API cheat sheet + community docs | HIGH |
+| `entry/{id}/history/` returns `chips[].chip_name`, `.event` | Oliver Looney FPL API guide + community sources | MEDIUM — field name unverified against live 2025/26 API; validate in Phase research |
+| `p-limit` v6.x is ESM-only, Node 16+ | GitHub releases page (verified 2025-02-03 latest v7.3.0; v6.x is the stable prior major) | HIGH |
+| `p-limit` v7.x requires Node 20+ | GitHub releases page | HIGH |
+| Vercel AI SDK v6.0.173 is current; `generateObject` uses Zod schema to produce typed structured output | ai-sdk.dev docs + Vercel blog (Dec 2025) | HIGH |
+| AI SDK + Next.js App Router server route handler pattern is supported | ai-sdk.dev/docs/getting-started/nextjs-app-router | HIGH |
+| `react-d3-tree` v3.6.6 bundle is ~89KB; unsuitable for a 9-node tree | bundlephobia + github.com/bkrem/react-d3-tree | HIGH |
+| EO formula: `(own% + captain%)` producing effective ownership | allaboutfpl.com + fantasyfootballscout.co.uk + fplhints.com | MEDIUM — formula is community-standard but FPL does not publish it officially |
+
+---
+
+## Sources
+
+- [FPL APIs Explained — Oliver Looney](https://www.oliverlooney.com/blogs/FPL-APIs-Explained)
+- [Fantasy Premier League API Endpoints: A Detailed Guide — Frenzel Timothy, Medium](https://medium.com/@frenzelts/fantasy-premier-league-api-endpoints-a-detailed-guide-acbd5598eb19)
+- [FPL API Endpoints Cheat Sheet — Cheatography](https://cheatography.com/sertalpbilal/cheat-sheets/fpl-api-endpoints/history/279325)
+- [What is Effective Ownership in FPL? — FPL Hints](https://www.fplhints.com/post/what-is-effective-ownership-in-fpl)
+- [How to use effective ownership to make differential FPL decisions — Fantasy Football Scout](https://www.fantasyfootballscout.co.uk/2021/03/07/how-to-use-effective-ownership-to-make-differential-fpl-decisions)
+- [AI SDK Introduction — ai-sdk.dev](https://ai-sdk.dev/docs/introduction)
+- [AI SDK Getting Started: Next.js App Router — ai-sdk.dev](https://ai-sdk.dev/docs/getting-started/nextjs-app-router)
+- [AI SDK Generating Structured Data — ai-sdk.dev](https://ai-sdk.dev/docs/ai-sdk-core/generating-structured-data)
+- [AI SDK 6 release — Vercel blog](https://vercel.com/blog/ai-sdk-6)
+- [p-limit releases — GitHub](https://github.com/sindresorhus/p-limit/releases)
+- [react-d3-tree — GitHub](https://github.com/bkrem/react-d3-tree)
+- [Fetch Concurrency Control with p-limit — DEV Community](https://dev.to/recca0120/fetch-concurrency-control-limit-simultaneous-requests-with-p-limit-2p5h)
