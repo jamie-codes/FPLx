@@ -2,7 +2,7 @@
 // Mirrors src/lib/chip-strategy-engine.test.ts pattern.
 // @vitest-environment node
 import { describe, it, expect } from 'vitest'
-import { optimiseLineup } from './optimise-lineup'
+import { optimiseLineup, benchOrder } from './optimise-lineup'
 import type { MergedPlayer } from './types'
 import type { SquadPick } from './squad-adapter'
 
@@ -230,6 +230,92 @@ describe('Phase 43: optimise-lineup', () => {
       const { picks, players } = makeSquad(overrides)
       const result = optimiseLineup(picks, players, 1)
       expect(result).toBeNull()
+    })
+  })
+
+  describe('BENCH-01 benchOrder()', () => {
+    // Helper: build a single FixtureEntry mock (matches FixtureEntry shape from types.ts).
+    const fx = (event_id: number) => ({
+      opponent_team: 'TST',
+      is_home: true,
+      event_id,
+      difficulty_score: 0.5,
+      difficulty_tier: 'medium' as const,
+    })
+
+    it('ranks by start_prob × xPts × fixtures.length (D-03 EV formula)', () => {
+      // Two MID candidates, identical xPts_1gw, identical fixtures count, different start_prob.
+      // EV(A) = 0.9 × 5.0 × 1 = 4.5; EV(B) = 0.3 × 5.0 × 1 = 1.5 → A first.
+      const A = makePlayer({ id: 101, element_type: 3, start_prob: 0.9, xPts_1gw: 5.0, fixtures: [fx(10)] })
+      const B = makePlayer({ id: 102, element_type: 3, start_prob: 0.3, xPts_1gw: 5.0, fixtures: [fx(10)] })
+      // Starters: a formation-valid 4-4-2 baseline so neither A nor B is formation-constrained.
+      const starters: MergedPlayer[] = [
+        makePlayer({ id: 1, element_type: 1 }),
+        makePlayer({ id: 2, element_type: 2 }), makePlayer({ id: 3, element_type: 2 }),
+        makePlayer({ id: 4, element_type: 2 }), makePlayer({ id: 5, element_type: 2 }),
+        makePlayer({ id: 6, element_type: 3 }), makePlayer({ id: 7, element_type: 3 }),
+        makePlayer({ id: 8, element_type: 3 }), makePlayer({ id: 9, element_type: 3 }),
+        makePlayer({ id: 10, element_type: 4 }), makePlayer({ id: 11, element_type: 4 }),
+      ]
+      const result = benchOrder([B, A], starters, 1)
+      expect(result.map(p => p.id)).toEqual([101, 102])
+    })
+
+    it('places BGW players (fixtures.length === 0) at slot 3 regardless of EV (D-05/D-06)', () => {
+      // BGW candidate has overwhelmingly high xPts but empty fixtures → must end up last.
+      const bgw = makePlayer({ id: 201, element_type: 3, start_prob: 0.99, xPts_1gw: 99, fixtures: [] })
+      const single1 = makePlayer({ id: 202, element_type: 3, start_prob: 0.5, xPts_1gw: 4.0, fixtures: [fx(10)] })
+      const single2 = makePlayer({ id: 203, element_type: 3, start_prob: 0.4, xPts_1gw: 3.0, fixtures: [fx(10)] })
+      // Formation-valid 4-4-2 starters.
+      const starters: MergedPlayer[] = [
+        makePlayer({ id: 1, element_type: 1 }),
+        makePlayer({ id: 2, element_type: 2 }), makePlayer({ id: 3, element_type: 2 }),
+        makePlayer({ id: 4, element_type: 2 }), makePlayer({ id: 5, element_type: 2 }),
+        makePlayer({ id: 6, element_type: 3 }), makePlayer({ id: 7, element_type: 3 }),
+        makePlayer({ id: 8, element_type: 3 }), makePlayer({ id: 9, element_type: 3 }),
+        makePlayer({ id: 10, element_type: 4 }), makePlayer({ id: 11, element_type: 4 }),
+      ]
+      const result = benchOrder([bgw, single1, single2], starters, 1)
+      // Last element (slot 3 outfield = bench[3]) MUST be the BGW player.
+      expect(result[result.length - 1].id).toBe(201)
+      // BGW must NOT be at slot 1 (index 0) regardless of its EV.
+      expect(result[0].id).not.toBe(201)
+    })
+
+    it('DGW player (fixtures.length === 2) ranks higher than identical single-fixture player (D-07)', () => {
+      // Identical start_prob & xPts; DGW has fixtures.length=2 → EV doubled by formula.
+      const dgw = makePlayer({ id: 301, element_type: 3, start_prob: 0.7, xPts_1gw: 5.0, fixtures: [fx(10), fx(10)] })
+      const single = makePlayer({ id: 302, element_type: 3, start_prob: 0.7, xPts_1gw: 5.0, fixtures: [fx(10)] })
+      const starters: MergedPlayer[] = [
+        makePlayer({ id: 1, element_type: 1 }),
+        makePlayer({ id: 2, element_type: 2 }), makePlayer({ id: 3, element_type: 2 }),
+        makePlayer({ id: 4, element_type: 2 }), makePlayer({ id: 5, element_type: 2 }),
+        makePlayer({ id: 6, element_type: 3 }), makePlayer({ id: 7, element_type: 3 }),
+        makePlayer({ id: 8, element_type: 3 }), makePlayer({ id: 9, element_type: 3 }),
+        makePlayer({ id: 10, element_type: 4 }), makePlayer({ id: 11, element_type: 4 }),
+      ]
+      const result = benchOrder([single, dgw], starters, 1)
+      expect(result.map(p => p.id)).toEqual([301, 302])
+    })
+
+    it('demotes formation-invalid candidate (would exceed DEF ceiling of 5) below formation-valid (D-08/D-09)', () => {
+      // Starters: formation 5-3-2 → DEF count is at ceiling (5). Adding another DEF candidate would push DEF to 6.
+      // Candidate D = DEF (formation-invalid), Candidate M = MID (formation-valid). D has higher EV but should be demoted.
+      const D = makePlayer({ id: 401, element_type: 2, start_prob: 0.9, xPts_1gw: 8.0, fixtures: [fx(10)] })
+      const M = makePlayer({ id: 402, element_type: 3, start_prob: 0.5, xPts_1gw: 3.0, fixtures: [fx(10)] })
+      // 5-3-2 starters: 1 GK + 5 DEF + 3 MID + 2 FWD = 11.
+      const starters: MergedPlayer[] = [
+        makePlayer({ id: 1, element_type: 1 }),
+        makePlayer({ id: 2, element_type: 2 }), makePlayer({ id: 3, element_type: 2 }),
+        makePlayer({ id: 4, element_type: 2 }), makePlayer({ id: 5, element_type: 2 }), makePlayer({ id: 6, element_type: 2 }),
+        makePlayer({ id: 7, element_type: 3 }), makePlayer({ id: 8, element_type: 3 }), makePlayer({ id: 9, element_type: 3 }),
+        makePlayer({ id: 10, element_type: 4 }), makePlayer({ id: 11, element_type: 4 }),
+      ]
+      const result = benchOrder([D, M], starters, 1)
+      // M (formation-valid) ranks first; D (formation-invalid) is demoted below.
+      expect(result.map(p => p.id)).toEqual([402, 401])
+      // Demotion is NOT exclusion — D must still appear in the returned array.
+      expect(result).toHaveLength(2)
     })
   })
 })
