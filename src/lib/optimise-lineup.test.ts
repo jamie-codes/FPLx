@@ -184,16 +184,23 @@ describe('Phase 43: optimise-lineup', () => {
     })
 
     it('bench[1..3] are outfield players ordered by horizon xPts descending', () => {
+      // Give each player a single fixture so benchOrder() uses the active (EV) path,
+      // not the BGW fallback. All have identical start_prob so EV rank == xPts rank.
       const { picks, players } = makeSquad()
-      const result = optimiseLineup(picks, players, 1)
+      const playersWithFixtures = players.map(p => ({
+        ...p,
+        fixtures: [{ opponent_team: 'TST', is_home: true, event_id: 30,
+                     difficulty_score: 0.5, difficulty_tier: 'medium' as const }],
+      }))
+      const result = optimiseLineup(picks, playersWithFixtures, 1)
       expect(result).not.toBeNull()
-      const playerMap = new Map(players.map(p => [p.id, p]))
+      const playerMap = new Map(playersWithFixtures.map(p => [p.id, p]))
       const outfieldBench = result!.bench.slice(1)
       // None of bench[1..3] are GK
       for (const id of outfieldBench) {
         expect(playerMap.get(id)!.element_type).not.toBe(1)
       }
-      // xPts descending
+      // xPts descending — with uniform start_prob, EV rank equals xPts rank
       const scores = outfieldBench.map(id => playerMap.get(id)!.xPts_1gw ?? 0)
       for (let i = 1; i < scores.length; i++) {
         expect(scores[i - 1]).toBeGreaterThanOrEqual(scores[i])
