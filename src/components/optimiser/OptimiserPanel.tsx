@@ -414,6 +414,11 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
     removedStarters.reduce((s, id) => s + ((playerMap.get(id)?.[horizonField] as number | undefined) ?? 0), 0)
   )
 
+  // WR-02: compute once so BB headline uses the same value for both Bench xPts and Total displays.
+  const bbBenchXPts = chipMode === 'bench-boost'
+    ? computeBenchBoostXPts(lineup.bench, playersData, horizon)
+    : 0
+
   return (
     <section className="mt-6 space-y-3" data-testid="optimiser-panel">
       <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Optimised Lineup</h2>
@@ -464,7 +469,7 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
               <span className="text-zinc-400">│</span>
               <span>
                 <span className="font-semibold">Bench xPts:</span>{' '}
-                {computeBenchBoostXPts(lineup.bench, playersData, horizon).toFixed(1)}
+                {bbBenchXPts.toFixed(1)}
               </span>
               <span className="text-zinc-400">│</span>
               <span>
@@ -474,7 +479,7 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
               <span className="text-zinc-400">│</span>
               <span className="font-semibold text-green-600 dark:text-green-400">
                 Total: {(
-                  computeBenchBoostXPts(lineup.bench, playersData, horizon) +
+                  bbBenchXPts +
                   lineup.starters.reduce((s, id) => s + ((playerMap.get(id)?.[horizonField] as number | undefined) ?? 0), 0)
                 ).toFixed(1)}
               </span>
