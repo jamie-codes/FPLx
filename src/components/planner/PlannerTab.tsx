@@ -12,7 +12,7 @@ import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
 import { useClubForm } from '@/lib/hooks/useClubForm'
 import { computeAllGemScores } from '@/lib/gem-score'
 import { generatePlan, generatePlanFrom, generateChipStep, ftStateAfterStepIndex, squadPicksFromStep, fixtureCountForGw } from '@/lib/planning-engine'
-import { computeNextFTState } from '@/lib/free-transfer-engine'
+import { computeNextFTState, computeHitCost } from '@/lib/free-transfer-engine'
 import type { PlanResult, FTState, PlannerHorizon, PlannerChip } from '@/lib/types'
 import type { SquadPick } from '@/lib/squad-adapter'
 
@@ -146,6 +146,7 @@ export function PlannerTab() {
       if (!draft) return
       const draftStep = draft.steps[stepIndex]
       draftStep.transfersIn = [newBuyId]
+      draftStep.hitCost = computeHitCost(draftStep.freeTransfersAvailable, 1, null)  // re-derive
       draftStep.squadAfter = newSquadAfter
       draftStep.positionsAfter = newPositionsAfter
       draft.steps.splice(stepIndex + 1, draft.steps.length - stepIndex - 1, ...newStepsFromXPlus1)
