@@ -36,14 +36,19 @@ describe('computeNextFTState', () => {
   })
 
   describe('wildcard chip', () => {
-    it('resets FT bank to 1 next GW regardless of transfers used', () => {
+    it('preserves bank when entering with 2 available (banked 1) → next GW also 2', () => {
       const result = computeNextFTState(2, 5, 'wildcard')
+      expect(result).toEqual({ available: 2, banked: 1 })
+    })
+
+    it('preserves bank when entering with 1 available (banked 0) → next GW stays 1', () => {
+      const result = computeNextFTState(1, 5, 'wildcard')
       expect(result).toEqual({ available: 1, banked: 0 })
     })
 
-    it('resets FT bank even with 0 transfers used', () => {
+    it('preserves bank with 0 transfers used and 2 available', () => {
       const result = computeNextFTState(2, 0, 'wildcard')
-      expect(result).toEqual({ available: 1, banked: 0 })
+      expect(result).toEqual({ available: 2, banked: 1 })
     })
   })
 
@@ -72,6 +77,39 @@ describe('computeNextFTState', () => {
     it('does not affect FTs — same as normal GW', () => {
       const result = computeNextFTState(1, 0, '3xc')
       expect(result).toEqual({ available: 2, banked: 1 })
+    })
+  })
+
+  describe('D-08 regression: multi-GW FT banking sequences', () => {
+    it('rolling 1 FT → 2 available next GW', () => {
+      const next = computeNextFTState(1, 0, null)
+      expect(next).toEqual({ available: 2, banked: 1 })
+    })
+
+    it('rolling 2 GWs → still 2 (cap respected)', () => {
+      const after1 = computeNextFTState(1, 0, null)   // { available: 2, banked: 1 }
+      const after2 = computeNextFTState(after1.available, 0, null)
+      expect(after2).toEqual({ available: 2, banked: 1 })
+    })
+
+    it('Wildcard mid-plan preserves bank when entering with 2 available', () => {
+      const afterWC = computeNextFTState(2, 11, 'wildcard')
+      expect(afterWC).toEqual({ available: 2, banked: 1 })
+    })
+
+    it('Wildcard mid-plan preserves bank when entering with 1 available', () => {
+      const afterWC = computeNextFTState(1, 11, 'wildcard')
+      expect(afterWC).toEqual({ available: 1, banked: 0 })
+    })
+
+    it('FH mid-plan preserves bank when entering with 2 available', () => {
+      const afterFH = computeNextFTState(2, 11, 'freehit')
+      expect(afterFH).toEqual({ available: 2, banked: 1 })
+    })
+
+    it('FH mid-plan preserves bank when entering with 1 available', () => {
+      const afterFH = computeNextFTState(1, 11, 'freehit')
+      expect(afterFH).toEqual({ available: 1, banked: 0 })
     })
   })
 })
