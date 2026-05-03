@@ -725,6 +725,20 @@ describe('Phase 46: Chip Modes (CHIP-01, CHIP-02, CHIP-03)', () => {
     expect(getByTestId('bb-notice').textContent).toContain('All 15 players score points')
   })
 
+  it('activating Bench Boost shows bench-order-irrelevant note (BENCH-01 / D-11)', () => {
+    setupValidLineup()
+    computeBenchBoostXPtsMock.mockReturnValue(6.0)
+    const { getByTestId, queryByTestId } = render(<OptimiserPanel teamId="123" />)
+    // Before BB activation: the bench-order note must be absent.
+    expect(queryByTestId('bb-bench-order-note')).toBeNull()
+    // Activate Bench Boost.
+    fireEvent.click(getByTestId('chip-toggle-benchboost-mock'))
+    // After activation: the note is rendered with the exact D-11 copy.
+    const note = getByTestId('bb-bench-order-note')
+    expect(note).toBeTruthy()
+    expect(note.textContent).toContain("Bench order doesn't affect score with Bench Boost active")
+  })
+
   it('activating Bench Boost keeps FT toggle visible (D-02)', () => {
     setupValidLineup()
     computeBenchBoostXPtsMock.mockReturnValue(5.0)
