@@ -51,8 +51,18 @@ export function PlannerTab() {
     ? Object.fromEntries(myTeamData.picks.map(p => [p.element, p.selling_price]))
     : undefined
 
-  // Conservative default FT state when exact count is unknown
-  const initialFTState: FTState = { available: 1, banked: 0 }
+  // Initial FT state — mirrors TransferPanel.derivedFtCount pattern (CONTEXT D-06).
+  // Authenticated path: derive from event_transfers (0 → rolled FT → available: 2, banked: 1).
+  // Active WC/FH chip GW: planner displays as if 1 FT for the current GW.
+  // Unauthenticated or pre-load: safe default { available: 1, banked: 0 }.
+  const initialFTState: FTState = useMemo(() => {
+    if (!isAuthenticated || !myTeamData) return { available: 1, banked: 0 }
+    const chip = squadData?.active_chip
+    if (chip === 'wildcard' || chip === 'freehit') return { available: 1, banked: 0 }
+    const available: 1 | 2 = myTeamData.entry_history.event_transfers === 0 ? 2 : 1
+    const banked: 0 | 1 = available === 2 ? 1 : 0
+    return { available, banked }
+  }, [isAuthenticated, myTeamData, squadData])
 
   // Button enabled when squad picks and player scores are both loaded
   const canGenerate =
