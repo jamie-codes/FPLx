@@ -7,13 +7,13 @@ export function computeNextFTState(
 ): FTState {
   // Wildcard: bank preserved (same rule as Free Hit — chip does not reset FTs) — FTX-02
   if (chip === 'wildcard') {
-    const banked = Math.min(1, currentAvailable - 1)
+    const banked = Math.min(1, Math.max(0, currentAvailable - 1))
     const nextAvailable = 1 + banked
     return { available: nextAvailable, banked }
   }
   // Free Hit: bank passes through unchanged (as if GW didn't happen for FT purposes)
   if (chip === 'freehit') {
-    const banked = Math.min(1, currentAvailable - 1)
+    const banked = Math.min(1, Math.max(0, currentAvailable - 1))
     const nextAvailable = 1 + banked
     return { available: nextAvailable, banked }
   }
