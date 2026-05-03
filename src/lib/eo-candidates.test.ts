@@ -169,7 +169,7 @@ describe('Phase 57: computeEOCandidates', () => {
       expect(result.map(p => p.id)).toEqual([7, 8, 9, 10, 11])
     })
 
-    it('returns empty array when no players pass median filter', () => {
+    it('returns single candidate when xPts_1gw equals median (boundary inclusivity)', () => {
       // Single eligible player with xPts_1gw=5; median=5; filter >=5 admits it; length 1
       const players = [
         makePlayer({ id: 1, element_type: 3, xPts_1gw: 5 }),

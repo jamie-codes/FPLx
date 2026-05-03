@@ -40,6 +40,7 @@ export function computeEOCandidates(
 
   if (mode === 'chase_rank') {
     return eligible
+      .filter(p => p.xPts_90th_1gw != null)
       .slice()
       .sort((a, b) => (b.xPts_90th_1gw ?? 0) - (a.xPts_90th_1gw ?? 0))
       .slice(0, topN)

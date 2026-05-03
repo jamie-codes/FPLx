@@ -80,12 +80,13 @@ function CandidateRow({
   isAuthenticated: boolean
   myTeamPickIds: Set<number>
 }) {
-  const eoPercent = Math.round(parseFloat(candidate.selected_by_percent))
+  const rawEo = parseFloat(candidate.selected_by_percent)
+  const eoPercent = Number.isFinite(rawEo) ? Math.round(rawEo) : 0
   const showDangerBadge =
     mode === 'protect_rank' &&
     isAuthenticated &&
     myTeamPickIds.size > 0 &&
-    parseFloat(candidate.selected_by_percent) > 30 &&
+    (Number.isFinite(rawEo) ? rawEo : 0) > 30 &&
     !myTeamPickIds.has(candidate.id)
 
   const nextGwFixtures = (() => {
@@ -174,7 +175,7 @@ export function CaptainPicksPanel({ submittedId }: CaptainPicksPanelProps = {}) 
       <div className="space-y-1">
         <h2 className="text-lg font-semibold">Captain Picks — GW {gameweek ?? '—'}</h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Re-rank candidates by mode. Differential filters to above-median xPts only.
+          Re-rank candidates by mode. Differential filters to at or above median xPts only.
         </p>
       </div>
       <EOModeToggle value={mode} onChange={setMode} />
