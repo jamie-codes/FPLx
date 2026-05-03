@@ -131,9 +131,10 @@ export function optimiseLineup(
 
   // bench[0] = non-starting GK. There must be exactly 1 (FPL squads have exactly 2 GKs).
   const benchGk = benchPicks.find(p => p.element_type === GK)
-  const benchOutfield = benchPicks
-    .filter(p => p.element_type !== GK)
-    .sort((a, b) => horizonScore(b) - horizonScore(a))
+  // Phase 55 BENCH-01: delegate outfield bench ordering to benchOrder() — EV/BGW/formation-aware.
+  const starterPlayers = bestStarterIds.map(id => playerMap.get(id)!)
+  const benchOutfieldRaw = benchPicks.filter(p => p.element_type !== GK)
+  const benchOutfield = benchOrder(benchOutfieldRaw, starterPlayers, horizon)
 
   // Defensive: if for any reason there is no bench GK (e.g. both GKs in starters — invalid in FPL),
   // we can't satisfy OPT-04. Return null.
@@ -151,4 +152,77 @@ export function optimiseLineup(
     vcId,
     formation,
   }
+}
+
+/**
+ * benchOrder (Phase 55 BENCH-01): rank outfield bench players for autosub priority.
+ *
+ * EV formula (D-03): score = start_prob × ((player[HORIZON_FIELD[horizon]] as number | undefined) ?? 0) × fixtures.length
+ *   - DGW (fixtures.length === 2) → EV doubled automatically (D-07).
+ *   - BGW (fixtures.length === 0) → EV is 0 from formula AND player is forced to slot 3 (D-05/D-06).
+ *
+ * Formation-flex heuristic (D-08/D-09): a candidate whose position would push starters'
+ * counts above ceilings (DEF > 5, MID > 5, FWD > 3) is demoted below formation-valid candidates.
+ * Demotion is a tie-breaker rank, NOT a hard exclusion — the candidate still appears in the
+ * returned array. Within each group (valid / invalid), order is by EV desc.
+ *
+ * Returns: a new array (input is not mutated), same length as benchOutfield.
+ * Caller (optimiseLineup) prepends the bench GK at index 0.
+ *
+ * Pure function: no React, no side effects (mirrors file-level convention).
+ */
+export function benchOrder(
+  benchOutfield: MergedPlayer[],
+  starters: MergedPlayer[],
+  horizon: OptimiserHorizon,
+): MergedPlayer[] {
+  const field = HORIZON_FIELD[horizon]
+
+  // Compute starter outfield counts (ignore GK — bench candidates are non-GK by caller contract).
+  let starterDef = 0, starterMid = 0, starterFwd = 0
+  for (const p of starters) {
+    if (p.element_type === DEF) starterDef++
+    else if (p.element_type === MID) starterMid++
+    else if (p.element_type === FWD) starterFwd++
+  }
+
+  // EV score for the active (non-BGW) ranking. fixtures.length is the multiplier.
+  const evScore = (p: MergedPlayer): number =>
+    p.start_prob * ((p[field] as number | undefined) ?? 0) * p.fixtures.length
+
+  // Formation-flex check: would adding this candidate's position push starters above ceilings?
+  // Returns true when the addition is formation-valid (does not exceed DEF=5 / MID=5 / FWD=3).
+  const isFormationValid = (p: MergedPlayer): boolean => {
+    if (p.element_type === DEF) return starterDef + 1 <= 5
+    if (p.element_type === MID) return starterMid + 1 <= 5
+    if (p.element_type === FWD) return starterFwd + 1 <= 3
+    // Defensive: a GK among bench outfield is unexpected; treat as invalid so it sinks.
+    return false
+  }
+
+  // Partition: BGW (fixtures.length === 0) vs active.
+  const bgw: MergedPlayer[] = []
+  const active: MergedPlayer[] = []
+  for (const p of benchOutfield) {
+    if (p.fixtures.length === 0) bgw.push(p)
+    else active.push(p)
+  }
+
+  // Sort active: formation-valid first, then formation-invalid; within each group, EV desc.
+  const activeSorted = [...active].sort((a, b) => {
+    const aValid = isFormationValid(a)
+    const bValid = isFormationValid(b)
+    if (aValid !== bValid) return aValid ? -1 : 1
+    return evScore(b) - evScore(a)
+  })
+
+  // Sort BGW among themselves by horizon xPts desc (EV is 0 for all — use xPts as tie-breaker
+  // so multi-BGW ordering is deterministic). They will all trail the active players.
+  const bgwSorted = [...bgw].sort((a, b) => {
+    const aPts = (a[field] as number | undefined) ?? 0
+    const bPts = (b[field] as number | undefined) ?? 0
+    return bPts - aPts
+  })
+
+  return [...activeSorted, ...bgwSorted]
 }
