@@ -200,6 +200,8 @@ export function generatePlan(
     steps.push(step)
 
     // Advance FT state for the next step
+    // D-07: AI-generated plans never auto-select chips — chip handling flows only through
+    // PlannerTab.handleChipToggle. Passing `null` here is intentional and correct.
     currentFT = computeNextFTState(currentFT.available, transfersUsed, null)
   }
 
