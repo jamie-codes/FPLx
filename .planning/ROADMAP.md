@@ -307,8 +307,8 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
   5. `optimise-lineup.test.ts` covers: formation-locked slot-1 selection, BGW-to-slot-3 rule, DGW double-weight, BB bypass
 **Plans**: 2 plans (1 wave)
   **Wave 1** *(parallel — disjoint files)*
-  - [ ] 055-01-PLAN.md — TDD: benchOrder() in src/lib/optimise-lineup.ts (EV/BGW/DGW/formation logic) + 4 BENCH-01 tests in optimise-lineup.test.ts + integration replacing line-136 sort
-  - [ ] 055-02-PLAN.md — BB inline note in OptimiserPanel.tsx (bb-bench-order-note guarded by chipMode === 'bench-boost') + 1 RTL test in OptimiserPanel.test.tsx
+  - [x] 055-01-PLAN.md — TDD: benchOrder() in src/lib/optimise-lineup.ts (EV/BGW/DGW/formation logic) + 4 BENCH-01 tests in optimise-lineup.test.ts + integration replacing line-136 sort
+  - [x] 055-02-PLAN.md — BB inline note in OptimiserPanel.tsx (bb-bench-order-note guarded by chipMode === 'bench-boost') + 1 RTL test in OptimiserPanel.test.tsx
   **Cross-cutting constraints:**
   - Plans 01 and 02 touch DISJOINT files (Plan 01 = src/lib/optimise-lineup.{ts,test.ts}; Plan 02 = src/components/optimiser/OptimiserPanel.{tsx,test.tsx}) — fully parallel-safe
   - benchOrder() (Plan 01) is a pure function with no chip-mode awareness (D-10); BB note (Plan 02) is purely informational — no behavioural coupling between the plans
@@ -333,4 +333,4 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
 | 52 | v1.8 | 4/4 | Complete | 2026-05-02 |
 | 53 | v1.8 | 3/3 | Complete | 2026-05-02 |
 | 54 | v1.8 | 0/3 | Planned | — |
-| 55 | v1.8 | 0/2 | Planned | — |
+| 55 | v1.8 | 2/2 | Complete | 2026-05-03 |
