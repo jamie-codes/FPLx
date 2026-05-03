@@ -5,9 +5,11 @@ export function computeNextFTState(
   transfersUsed: number,
   chip: PlannerChip,
 ): FTState {
-  // Wildcard: resets bank to 1 next GW
+  // Wildcard: bank preserved (same rule as Free Hit — chip does not reset FTs) — FTX-02
   if (chip === 'wildcard') {
-    return { available: 1, banked: 0 }
+    const banked = Math.min(1, currentAvailable - 1)
+    const nextAvailable = 1 + banked
+    return { available: nextAvailable, banked }
   }
   // Free Hit: bank passes through unchanged (as if GW didn't happen for FT purposes)
   if (chip === 'freehit') {
