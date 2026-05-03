@@ -40,8 +40,13 @@ export function PlannerTab() {
     [playersData]
   )
 
-  // Derive starting GW from the first upcoming fixture across scored players
-  const startingGw = scoredPlayers[0]?.fixtures[0]?.event_id ?? null
+  // Derive starting GW from the minimum fixture event_id across all scored players.
+  // Using [0].fixtures[0] is wrong for BGW — that player may have no fixture this GW,
+  // making startingGw point to the wrong week (or null, blocking plan generation entirely).
+  const startingGw = (() => {
+    const ids = scoredPlayers.flatMap(p => p.fixtures.map(f => f.event_id))
+    return ids.length > 0 ? Math.min(...ids) : null
+  })()
 
   // Hybrid squad data (per D-04): prefer authenticated my-team, fall back to public squad
   const picks = myTeamData?.picks ?? squadData?.picks ?? null
