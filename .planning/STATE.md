@@ -5,13 +5,13 @@ milestone_name: Competitive Intelligence
 status: planning
 stopped_at: ""
 last_updated: "2026-05-03T00:00:00.000Z"
-last_activity: 2026-05-03 — Phase 56 planned (2 plans, 1 wave)
+last_activity: 2026-05-03 — Phase 56 complete (FTX-01 + FTX-02 delivered)
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 0
-  percent: 0
+  completed_plans: 2
+  percent: 20
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-03 — v1.9 started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.9 Competitive Intelligence — Phase 56 planned, ready to execute
+**Current focus:** v1.9 Competitive Intelligence — Phase 56 complete; Phase 57 (EO Mode) next
 
 ## Current Position
 
-Phase: 56 (FT Engine Fix) — Ready to execute
-Plan: 2 plans (1 wave)
-Status: Planned
-Last activity: 2026-05-03 — Phase 56 planned (2 plans, 1 wave)
+Phase: 57 (Effective Ownership Mode) — Ready to plan
+Plan: TBD
+Status: Planning
+Last activity: 2026-05-03 — Phase 56 complete; FTX-01 and FTX-02 delivered
 
 Progress: 0/5 phases complete [----------] 0%
 
@@ -36,7 +36,7 @@ Progress: 0/5 phases complete [----------] 0%
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| 56 | FT Engine Fix | FTX-01, FTX-02 | Not started |
+| 56 | FT Engine Fix | FTX-01, FTX-02 | ✅ Complete (2026-05-03) |
 | 57 | Effective Ownership Mode | EO-01–EO-04 | Not started |
 | 58 | Mini-League Rival Tracker | ML-01–ML-08 | Not started |
 | 59 | Manual Transfer Planner | MTP-01–MTP-08 | Not started |

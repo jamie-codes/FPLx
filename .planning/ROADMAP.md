@@ -317,7 +317,7 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
 
 ---
 
-### Phase 56: FT Engine Fix
+### ✅ Phase 56: FT Engine Fix (completed 2026-05-03)
 **Goal**: The free-transfer engine correctly banks FTs up to a cap of 4 and preserves the banked FT count across Wildcard and Free Hit activations — establishing the accurate FT state that Manual Planner and Transfer Route Tree depend on
 **Depends on**: Phase 55 (v1.8 complete)
 **Requirements**: FTX-01, FTX-02
@@ -327,8 +327,8 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
   3. Existing v1.3 planner transfer sequences that relied on the old FT engine are regression-tested to confirm they still produce correct FT counts across multi-GW plans
 **Plans**: 2 plans (1 wave)
   **Wave 1** *(parallel — disjoint files)*
-  - [ ] 056-01-PLAN.md — TDD: fix Wildcard branch in computeNextFTState (FTX-02), update existing wildcard tests + add D-08 regression block, add D-07 explanatory comment to planning-engine.ts
-  - [ ] 056-02-PLAN.md — convert PlannerTab.initialFTState const to useMemo deriving from authenticated event_transfers (FTX-01) + human-verify checkpoint
+  - [x] 056-01-PLAN.md — TDD: fix Wildcard branch in computeNextFTState (FTX-02), update existing wildcard tests + add D-08 regression block, add D-07 explanatory comment to planning-engine.ts
+  - [x] 056-02-PLAN.md — convert PlannerTab.initialFTState const to useMemo deriving from authenticated event_transfers (FTX-01) + human-verify checkpoint
   **Cross-cutting constraints:**
   - Plans 01 and 02 touch DISJOINT files (Plan 01 = src/lib/free-transfer-engine.ts, tests/lib/free-transfer-engine.test.ts, src/lib/planning-engine.ts; Plan 02 = src/components/planner/PlannerTab.tsx) — fully parallel-safe
   - Plan 01 fixes the engine; Plan 02 fixes the consumer that seeds the engine. Both must ship for FTX-01 to be fully delivered (Plan 01 covers FTX-02 in full; FTX-01 cap correctness needs both halves)
