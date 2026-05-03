@@ -212,7 +212,7 @@ export default function Home() {
         {activeSection !== 'squad' && activeSubTab === 'planner' && (
           <>
             <PlannerTab />
-            <CaptainPicksPanel />
+            <CaptainPicksPanel submittedId={submittedId} />
           </>
         )}
       </main>
