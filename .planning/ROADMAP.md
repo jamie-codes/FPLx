@@ -295,7 +295,7 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
   - Progress bar MUST use inline style {{ width: `${confidence_pct}%` }} — Tailwind JIT does not generate dynamic classes (Pitfall 4)
 **Phase notes**: Confidence tier badges (HIGH=red, MEDIUM=amber, LOW=zinc per Phase 51 D-13 severity convention) suppressed below 14 days of snapshot history (D-06). `eta_days === 0` renders "Tonight". Stable predictions filtered out (D-04). GW reset boundary: cumulative_net resets to 0 only when cost_change_event != 0 in new bootstrap reading. Phase 54 is read-only public data — no ASVS controls required (RESEARCH.md §Security Domain).
 
-### Phase 55: Bench Order Optimiser
+### ✅ Phase 55: Bench Order Optimiser (completed 2026-05-03)
 **Goal**: Suggest an autosub-optimal bench ordering (positions 1–3 outfield + GK slot) weighted by start_prob × xPts EV and respecting FPL formation-legality constraints — so the manager's bench actually maximises expected points captured via autosubs
 **Depends on**: Phase 52 (consumes sharpened `start_prob` from MIN-01)
 **Requirements**: BENCH-01
