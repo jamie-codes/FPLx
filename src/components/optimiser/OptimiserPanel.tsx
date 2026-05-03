@@ -493,6 +493,16 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
             </p>
           )}
 
+          {/* BENCH-01 / D-11 (Phase 55): bench order is decorative under Bench Boost — inform the user. */}
+          {chipMode === 'bench-boost' && (
+            <p
+              className="text-xs text-zinc-500 dark:text-zinc-400 italic"
+              data-testid="bb-bench-order-note"
+            >
+              Bench order doesn&apos;t affect score with Bench Boost active
+            </p>
+          )}
+
           {/* Desktop comparison table — pass isBenchBoost for bench opacity (D-14, Pitfall 6) */}
           <div className="hidden sm:block">
             <ComparisonTable
