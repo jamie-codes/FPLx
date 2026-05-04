@@ -354,7 +354,7 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
 **Phase notes**: EO% sourced from selected_by_percent on MergedPlayer (already in merged_players.json) — no new API calls or pipeline changes required. EO-04 scope boundary: mode state local to CaptainPicksPanel via `useState<EOMode>('max_xpts')` (D-04 default). The `~XX%` tilde prefix and `Dangerous to fade` badge label are LOAD-BEARING COPY (CONTEXT.md §specifics) — do not soften.
 **UI hint**: yes
 
-### Phase 58: Mini-League Rival Tracker
+### Phase 58: Mini-League Rival Tracker ✅ Complete (2026-05-04)
 **Goal**: Managers can load their mini-league rivals, see a ranked summary table with captain picks and chip status, and get differential intelligence — which players give an advantage, which rival players are threats, and which transfers block rivals simultaneously
 **Depends on**: Phase 55 (v1.8 complete; independent of Phases 56 and 57 — can be executed in parallel with Phase 57)
 **Requirements**: ML-01, ML-02, ML-03, ML-04, ML-05, ML-06, ML-07, ML-08
@@ -365,10 +365,10 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
   4. A rank impact estimate for the captain differential is shown — expected rank swing if the user's captain outscores the rival's captain based on xPts_90th_1gw gap
   5. Leagues with more than 20 rivals show a note; rivals are fetched in batches of 3 concurrent requests, never unbounded parallel calls
 **Plans**: 4 plans
-- [ ] 058-01-PLAN.md — Foundation: install p-limit ^6.1.0, add RivalEntry/RivalPick/RivalLeagueResult types, extend FPLEventSchema with deadline_time, implement useRivals hook with p-limit(3) batching + 20-rival cap + deadline gate (ML-01, ML-02, ML-08)
-- [ ] 058-02-PLAN.md — Pure differential engine: rival-intel.ts (computeShared/computeUserAdvantage/computePositionMedians/computeRivalThreats/computeBlockingMoves/computeCaptainEdge) + 12+ unit tests (ML-03..ML-07)
-- [ ] 058-03-PLAN.md — UI components: RivalsTab/RivalSummaryTable/RivalDetailPanel + component tests (ML-01..ML-08)
-- [ ] 058-04-PLAN.md — Wire RivalsTab into page.tsx Plan section + page.test.tsx mock + full suite green (ML-01)
+- [x] 058-01-PLAN.md — Foundation: install p-limit ^6.1.0, add RivalEntry/RivalPick/RivalLeagueResult types, extend FPLEventSchema with deadline_time, implement useRivals hook with p-limit(3) batching + 20-rival cap + deadline gate (ML-01, ML-02, ML-08) ✅ 2026-05-04
+- [x] 058-02-PLAN.md — Pure differential engine: rival-intel.ts (computeShared/computeUserAdvantage/computePositionMedians/computeRivalThreats/computeBlockingMoves/computeCaptainEdge) + 12+ unit tests (ML-03..ML-07) ✅ 2026-05-04
+- [x] 058-03-PLAN.md — UI components: RivalsTab/RivalSummaryTable/RivalDetailPanel + component tests (ML-01..ML-08) ✅ 2026-05-04
+- [x] 058-04-PLAN.md — Wire RivalsTab into page.tsx Plan section + page.test.tsx mock + full suite green (ML-01) ✅ 2026-05-04
 **Phase notes**: Requires `p-limit` ^6.1.0 npm install for the 3-concurrent-request batching in ML-08. All FPL API calls go through the existing `/api/fpl/[...proxy]` route handler — no direct browser-to-FPL calls. Captain pick is only available post-deadline (FPL API does not expose picks pre-deadline). ML-09 pagination for leagues > 20 deferred to v1.10.
 **UI hint**: yes
 
@@ -384,7 +384,19 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
   5. Each GW step expands to show the full 15-player squad snapshot reflecting all transfers applied up to that point
   6. When unauthenticated, a caveat is shown that sell prices are approximate (using now_cost, not the exact selling_price from the FPL my-team API)
   7. The plan state survives page navigation within the session (localStorage persistence)
-**Plans**: TBD
+**Plans**: 3 plans (3 waves)
+  **Wave 1**
+  - [ ] 059-01-PLAN.md — TDD: src/lib/manual-plan.ts engine (types, deriveStepStates reusing Phase 56 FT engine, computeManualPlanSummary, localStorage persist/load) + 17-case test suite (MTP-03..MTP-06, MTP-08)
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 059-02-PLAN.md — src/components/planner/ManualPlanTab.tsx + ManualPlanTab.test.tsx (no-squad branch, caveat banner, summary header, GwStepCard, two-stage PlayerPickerModal flow, accordion + SquadSnapshotRow, Reset Plan, persistence wiring) — 20+ RTL tests (MTP-01, MTP-02, MTP-03..MTP-08)
+  **Wave 3** *(blocked on Wave 2 completion)*
+  - [ ] 059-03-PLAN.md — src/app/page.tsx wiring (SubTab union + SECTIONS Plan subTabs + render guard) + page.test.tsx mock + 2 navigation tests + human-verify checkpoint covering MTP-01..MTP-08 (MTP-01)
+  **Cross-cutting constraints:**
+  - Plan 01 must export `freshPlan`, `truncateOrExtendSteps`, `deriveStepStates`, `computeManualPlanSummary`, `loadManualPlan`, `persistManualPlan`, `clearManualPlan`, and `MANUAL_PLAN_KEY` before Plan 02 can compile (single import barrel)
+  - Plan 02 must mount the `ManualPlanTab` component with `submittedId: string | null` prop before Plan 03 can wire the render guard
+  - Plan 02 reuses `HorizonSelector`, `ChipToggle`, `PlayerPickerModal`, `SquadSnapshotRow` AS-IS — no edits to those four files
+  - Plan 01 reuses `computeNextFTState`, `computeHitCost`, `snapshotSquad` from `src/lib/free-transfer-engine.ts` (Phase 56) verbatim — DO NOT reimplement FT bank rules
+  - PlayerPickerModal cannot be used for the SELL stage (filters by element_type + excludes squadIds); a custom inline list is required for sell selection (see Plan 02 Task 2 action)
 **Phase notes**: MTP-07 sell price approximation caveat is shown only when unauthenticated (squadData from my-team API is unavailable). When authenticated, exact selling_price values from the my-team API must be used. Plan state persistence (MTP-08) uses localStorage with a stable key; plan is restored on mount.
 **UI hint**: yes
 
@@ -425,5 +437,5 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
 | 56 | v1.9 | 0/2 | Planned | — |
 | 57 | v1.9 | 0/2 | Planned | — |
 | 58 | v1.9 | 0/? | Not started | — |
-| 59 | v1.9 | 0/? | Not started | — |
+| 59 | v1.9 | 0/3 | Planned | — |
 | 60 | v1.9 | 0/? | Not started | — |
