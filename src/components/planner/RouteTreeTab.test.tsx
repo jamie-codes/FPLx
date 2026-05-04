@@ -207,7 +207,7 @@ describe('caveat banner (MTP-07 mirror)', () => {
       },
       isLoading: false,
       error: null,
-    } as ReturnType<typeof useMyTeam>)
+    } as unknown as ReturnType<typeof useMyTeam>)
     render(<RouteTreeTab submittedId="123" onSwitchSubTab={onSwitchSubTab} />)
     expect(screen.queryByText('Sell prices are approximate — log in to FPL for exact selling prices.')).toBeNull()
   })
