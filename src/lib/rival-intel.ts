@@ -70,7 +70,7 @@ export function computeRivalThreats(
     const p = playerById.get(id)
     if (!p) continue
     const x = p.xPts_1gw
-    if (x === undefined) continue
+    if (x === undefined || x <= 0) continue   // CR-02: exclude BGW players (mirrors computePositionMedians)
     const median = posMedians.get(p.element_type) ?? 0
     if (x > median) out.push(p)
   }
@@ -94,7 +94,7 @@ export function computeBlockingMoves(
   const qualifies = (buy: MergedPlayer): boolean => {
     if (rivalIds.has(buy.id)) return false
     const x = buy.xPts_1gw
-    if (x === undefined) return false
+    if (x === undefined || x <= 0) return false  // CR-02: exclude BGW players (mirrors computePositionMedians)
     const median = posMedians.get(buy.element_type) ?? 0
     return x > median
   }
