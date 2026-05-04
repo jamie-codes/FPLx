@@ -39,6 +39,9 @@ vi.mock('@/components/accuracy/AccuracyTab', () => ({
 vi.mock('@/components/price-changes/PriceChangePanel', () => ({
   PriceChangePanel: () => <div data-testid="price-change-panel" />,
 }))
+vi.mock('@/components/planner/ManualPlanTab', () => ({
+  ManualPlanTab: (_props: { submittedId: string | null }) => <div data-testid="manual-plan-tab" />,
+}))
 
 import Home from '@/app/page'
 
@@ -120,6 +123,9 @@ describe('Phase 36: page.tsx state', () => {
     expect(nav?.textContent).not.toContain('Gems')
     expect(nav?.textContent).toContain('Form')
     expect(nav?.textContent).not.toContain('Club Form')
+    // 'Manual Plan' uses the 'Manual' mobile abbreviation per D-01
+    expect(nav?.textContent).toContain('Manual')
+    expect(nav?.textContent).not.toContain('Manual Plan')
     expect(nav?.textContent).toContain('Values')
     expect(nav?.textContent).not.toContain('Value Gems')
     expect(nav?.textContent).toContain('Planner')
@@ -150,6 +156,32 @@ describe('Phase 36: page.tsx state', () => {
     fireEvent.click(optimiserBtn!)
     expect(container.querySelector('[data-testid="optimiser-panel"]')).not.toBeNull()
     expect(container.querySelector('[data-testid="transfer-panel"]')).toBeNull()
+  })
+
+  it('Plan section sub-tab nav contains "Manual Plan" after "Planner" (D-01, MTP-01)', () => {
+    const { container } = render(<Home />)
+    const planBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Plan')
+    fireEvent.click(planBtn!)
+    const planSubTabs = container.querySelector('nav[aria-label="Plan sub-tabs"]')
+    expect(planSubTabs).not.toBeNull()
+    const subTabBtns = Array.from(planSubTabs!.querySelectorAll('button')).map(b => b.textContent)
+    // Order locked by D-01: Manual Plan immediately after Planner
+    expect(subTabBtns).toEqual(['Planner', 'Manual Plan', 'Club Form', 'Value Gems', 'Rivals'])
+  })
+
+  it('clicking "Manual Plan" sub-tab mounts ManualPlanTab and hides PlannerTab (MTP-01, D-02)', () => {
+    const { container } = render(<Home />)
+    const planBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Plan')
+    fireEvent.click(planBtn!)
+    // Default Plan landing is Planner — confirm PlannerTab visible, ManualPlanTab hidden
+    expect(container.querySelector('[data-testid="planner"]')).not.toBeNull()
+    expect(container.querySelector('[data-testid="manual-plan-tab"]')).toBeNull()
+    // Click Manual Plan
+    const manualBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Manual Plan')
+    fireEvent.click(manualBtn!)
+    // Manual Plan visible, Planner hidden
+    expect(container.querySelector('[data-testid="manual-plan-tab"]')).not.toBeNull()
+    expect(container.querySelector('[data-testid="planner"]')).toBeNull()
   })
 })
 

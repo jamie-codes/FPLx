@@ -16,6 +16,7 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { ValueGemsTable } from '@/components/value-gems/ValueGemsTable'
 import { MobileNav } from '@/components/nav/MobileNav'
 import { PlannerTab } from '@/components/planner/PlannerTab'
+import { ManualPlanTab } from '@/components/planner/ManualPlanTab'
 import { SetPieceTakerPanel } from '@/components/set-pieces/SetPieceTakerPanel'
 import { CaptainPicksPanel } from '@/components/captaincy/CaptainPicksPanel'
 import { InsightsTab } from '@/components/insights/InsightsTab'
@@ -46,7 +47,7 @@ class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: 
 }
 
 export type Section = 'analyse' | 'plan' | 'squad'
-export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'club-form' | 'value-gems' | 'accuracy' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals'
+export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'club-form' | 'value-gems' | 'accuracy' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals'
 
 export const SECTIONS = [
   {
@@ -66,8 +67,9 @@ export const SECTIONS = [
     id: 'plan' as Section,
     label: 'Plan',
     subTabs: [
-      { id: 'planner' as SubTab,    label: 'Planner',    mobileLabel: 'Planner' },
-      { id: 'club-form' as SubTab,  label: 'Club Form',  mobileLabel: 'Form'    },
+      { id: 'planner' as SubTab,     label: 'Planner',     mobileLabel: 'Planner' },
+      { id: 'manual-plan' as SubTab, label: 'Manual Plan', mobileLabel: 'Manual'  },
+      { id: 'club-form' as SubTab,   label: 'Club Form',   mobileLabel: 'Form'    },
       { id: 'value-gems' as SubTab, label: 'Value Gems', mobileLabel: 'Values'  },
       { id: 'rivals' as SubTab,     label: 'Rivals',     mobileLabel: 'Rivals'  },
     ],
@@ -213,6 +215,9 @@ export default function Home() {
         {activeSection !== 'squad' && activeSubTab === 'value-gems' && <ValueGemsTable />}
         {activeSection !== 'squad' && activeSubTab === 'rivals' && (
           <RivalsTab submittedId={submittedId} />
+        )}
+        {activeSection === 'plan' && activeSubTab === 'manual-plan' && (
+          <ManualPlanTab submittedId={submittedId} />
         )}
         {activeSection !== 'squad' && activeSubTab === 'planner' && (
           <>
