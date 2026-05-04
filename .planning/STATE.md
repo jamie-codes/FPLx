@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Competitive Intelligence
-status: Phase 59 (Manual Transfer Planner) planned — ready to execute
+status: Phase 59 (Manual Transfer Planner) complete — Phase 60 (Transfer Route Tree) next
 stopped_at: ""
-last_updated: "2026-05-04T00:00:00.000Z"
-last_activity: 2026-05-04 — Phase 59 planned; 3 plans created
+last_updated: "2026-05-04T09:11:28Z"
+last_activity: 2026-05-04 — Phase 59 complete; all 3 plans executed; MTP-01..MTP-08 verified
 progress:
   total_phases: 11
   completed_phases: 9
   total_plans: 31
-  completed_plans: 28
-  percent: 90
+  completed_plans: 31
+  percent: 100
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-03 — v1.9 started)
 
 ## Current Position
 
-Phase: 59 (Manual Transfer Planner) — Planned ✓ 2026-05-04
-Plan: 3 plans ready (Wave 1: engine TDD, Wave 2: ManualPlanTab, Wave 3: navigation wiring)
-Status: Ready to execute
-Last activity: 2026-05-04 — Phase 59 planned; 3 plans created (verified, 0 blockers)
+Phase: 60 (Transfer Route Tree) — Not started
+Plan: 0 plans created; planning required
+Status: Ready to plan
+Last activity: 2026-05-04 — Phase 59 complete; all 3 plans executed; MTP-01..MTP-08 human-verified
 
-Progress: 1/5 phases complete [##--------] 20%
+Progress: 4/5 phases complete [########--] 80%
 
 ### v1.9 Phase Summary
 
@@ -39,7 +39,7 @@ Progress: 1/5 phases complete [##--------] 20%
 | 56 | FT Engine Fix | FTX-01, FTX-02 | ✅ Complete (2026-05-03) |
 | 57 | Effective Ownership Mode | EO-01–EO-04 | ✅ Complete (2026-05-03) |
 | 58 | Mini-League Rival Tracker | ML-01–ML-08 | ✅ Complete (2026-05-04) |
-| 59 | Manual Transfer Planner | MTP-01–MTP-08 | Planned ✓ (3 plans) |
+| 59 | Manual Transfer Planner | MTP-01–MTP-08 | ✅ Complete (2026-05-04) |
 | 60 | Transfer Route Tree | TRT-01–TRT-07 | Not started |
 
 ### Dependency Order
@@ -76,6 +76,8 @@ Progress: 1/5 phases complete [##--------] 20%
 - [v1.9-roadmap] ML-08 requires `p-limit` ^6.1.0 npm install for 3-concurrent-request batching
 - [v1.9-roadmap] Phases 57 (EO) and 58 (ML) are parallel-safe — zero shared files; can be executed concurrently
 - [v1.9-roadmap] MTP-07 sell price caveat shown only when unauthenticated; exact selling_price used when authenticated
+- [059-03] D-02 positive render guard used for manual-plan: `activeSection === 'plan'` not `activeSection !== 'squad'` — locks tab strictly to Plan section
+- [059-03] window.location.reload() hack from Plan 02 no-squad submit remains in effect; submittedId prop pre-populates Team ID input only
 
 ### Pending Todos
 
@@ -90,6 +92,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-04T07:54:06.575Z
-Stopped at: context exhaustion at 79% (2026-05-04)
+Last session: 2026-05-04T09:11:28Z
+Stopped at: Phase 59 complete — Phase 60 (Transfer Route Tree) next
 Resume file: None

@@ -386,11 +386,11 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
   7. The plan state survives page navigation within the session (localStorage persistence)
 **Plans**: 3 plans (3 waves)
   **Wave 1**
-  - [ ] 059-01-PLAN.md — TDD: src/lib/manual-plan.ts engine (types, deriveStepStates reusing Phase 56 FT engine, computeManualPlanSummary, localStorage persist/load) + 17-case test suite (MTP-03..MTP-06, MTP-08)
+  - [x] 059-01-PLAN.md — TDD: src/lib/manual-plan.ts engine (types, deriveStepStates reusing Phase 56 FT engine, computeManualPlanSummary, localStorage persist/load) + 17-case test suite (MTP-03..MTP-06, MTP-08)
   **Wave 2** *(blocked on Wave 1 completion)*
-  - [ ] 059-02-PLAN.md — src/components/planner/ManualPlanTab.tsx + ManualPlanTab.test.tsx (no-squad branch, caveat banner, summary header, GwStepCard, two-stage PlayerPickerModal flow, accordion + SquadSnapshotRow, Reset Plan, persistence wiring) — 20+ RTL tests (MTP-01, MTP-02, MTP-03..MTP-08)
+  - [x] 059-02-PLAN.md — src/components/planner/ManualPlanTab.tsx + ManualPlanTab.test.tsx (no-squad branch, caveat banner, summary header, GwStepCard, two-stage PlayerPickerModal flow, accordion + SquadSnapshotRow, Reset Plan, persistence wiring) — 20+ RTL tests (MTP-01, MTP-02, MTP-03..MTP-08)
   **Wave 3** *(blocked on Wave 2 completion)*
-  - [ ] 059-03-PLAN.md — src/app/page.tsx wiring (SubTab union + SECTIONS Plan subTabs + render guard) + page.test.tsx mock + 2 navigation tests + human-verify checkpoint covering MTP-01..MTP-08 (MTP-01)
+  - [x] 059-03-PLAN.md — src/app/page.tsx wiring (SubTab union + SECTIONS Plan subTabs + render guard) + page.test.tsx mock + 2 navigation tests + human-verify checkpoint covering MTP-01..MTP-08 (MTP-01)
   **Cross-cutting constraints:**
   - Plan 01 must export `freshPlan`, `truncateOrExtendSteps`, `deriveStepStates`, `computeManualPlanSummary`, `loadManualPlan`, `persistManualPlan`, `clearManualPlan`, and `MANUAL_PLAN_KEY` before Plan 02 can compile (single import barrel)
   - Plan 02 must mount the `ManualPlanTab` component with `submittedId: string | null` prop before Plan 03 can wire the render guard
@@ -437,5 +437,5 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
 | 56 | v1.9 | 0/2 | Planned | — |
 | 57 | v1.9 | 0/2 | Planned | — |
 | 58 | v1.9 | 0/? | Not started | — |
-| 59 | v1.9 | 0/3 | Planned | — |
+| 59 | v1.9 | 3/3 | Complete | 2026-05-04 |
 | 60 | v1.9 | 0/? | Not started | — |
