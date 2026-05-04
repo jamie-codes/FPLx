@@ -30,6 +30,9 @@ vi.mock('@/components/gem-table/PlayerComparisonModal', () => ({
   PlayerComparisonModal: ({ open, playerA }: { open: boolean; playerA?: { web_name?: string } }) =>
     open ? <div data-testid="comparison-modal">{playerA?.web_name}</div> : null,
 }))
+vi.mock('@/components/rivals/RivalsTab', () => ({
+  RivalsTab: (_props: { submittedId: string | null }) => <div data-testid="rivals-tab" />,
+}))
 
 import Home from '@/app/page'
 
