@@ -46,7 +46,9 @@ export function useRivals(
   return useQuery<RivalLeagueResult>({
     queryKey: ['rivals', leagueId, userTeamId],
     queryFn: async () => {
-      if (!leagueId) throw new Error('leagueId required')
+      // WR-03: defence-in-depth numeric guard — mirrors the enabled condition.
+      // Protects against programmatic refetch() calls that bypass the enabled gate.
+      if (!leagueId || !/^\d+$/.test(leagueId)) throw new Error('leagueId must be numeric')
 
       // Step 1: bootstrap — for current event + deadline_time (D-05).
       // CLIENT-SIDE deadline gate per <deviation_rationale> in this plan.
