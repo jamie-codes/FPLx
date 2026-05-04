@@ -12,7 +12,8 @@
 - ✅ **v1.7 Decision Assistant** — Phases 47-51 (shipped 2026-05-02)
 - ✅ **v1.8 Predictive Intelligence** — Phases 52-55 (shipped 2026-05-03)
 - ✅ **v1.9 Competitive Intelligence** — Phases 56-60 (shipped 2026-05-04)
-- **v1.10 Modelling & Trust** — Phases 61-65 (in progress)
+- **v1.10 Modelling & Trust** — Phases 61-65 (planned, deprioritised mid-season)
+- **v1.11 Insights & Infrastructure** — Phases 66-71 (in progress)
 
 ## Phases
 
@@ -143,6 +144,15 @@ See `.planning/milestones/v1.9-ROADMAP.md` for full phase details.
 - [ ] **Phase 63: Model Versioning & Calibration Charts** — version tags in pipeline, multi-version comparison, calibration reliability diagrams in AccuracyTab
 - [ ] **Phase 64: Sensitivity Analysis** — fragility engine over transfer candidates + captain picks, amber indicators
 - [ ] **Phase 65: Rejection Explainer** — "why not?" natural-language engine across GemTable, TransferPanel, SquadView
+
+### v1.11 Insights & Infrastructure (Phases 66-71)
+
+- [ ] **Phase 66: Fixture Heat Map** — 20 teams × 8 GWs colour-coded grid, DGW highlighted, BGW blank
+- [ ] **Phase 67: LLM Prose Summaries** — Claude API weekly prose summary grounded in structured model output, manual refresh button
+- [ ] **Phase 68: In-App Alert System** — price/injury/set-piece change banners, deadline countdown, dismissible with localStorage persistence
+- [ ] **Phase 69: Event-Based Pipeline Refresh** — GitHub Actions deadline-aware triggers (6h/2h/30min/post), stale-data warning UX
+- [ ] **Phase 70: Post-GW Review** — auto-generated GW review (bench pts, captain delta, vs top-10k), Vercel Blob + `/api/gw-review`
+- [ ] **Phase 71: Decision History & Regret Backtester** — decision logging per team ID, cumulative ROI dashboard, 2×2 process×outcome matrix
 
 ## Phase Details
 
@@ -420,6 +430,88 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 **Plans**: TBD
 **UI hint**: yes
 
+---
+
+## v1.11 Insights & Infrastructure (Phases 66-71)
+
+### Phase 66: Fixture Heat Map
+**Goal**: Users can see at a glance which teams have favourable upcoming runs across the next 8 GWs — a single colour-coded grid replaces tab-by-tab fixture inspection and makes long-horizon transfer planning trivially scannable
+**Depends on**: Phase 60 (v1.9 complete); reuses existing `attacking_difficulty` per-fixture values from `pipeline/merge.py`
+**Requirements**: HEAT-01, HEAT-02, HEAT-03
+**Success Criteria** (what must be TRUE):
+  1. User can open a fixture heat map showing all 20 PL teams as rows × the next 8 GWs as columns, with each cell colour-coded green (easy) / amber (medium) / red (hard) using existing `attacking_difficulty` thresholds
+  2. DGW cells are visually distinguished (split cell or DGW badge) so the manager immediately recognises a double-fixture opportunity; BGW teams display a blank/empty cell for that GW with no colour coding
+  3. The full 20×8 grid fits a single desktop screen with no horizontal scrolling — all teams and all 8 GWs visible at one glance
+  4. Hovering a cell reveals the opponent club name, home/away indicator, and the underlying difficulty value — so the colour can be cross-checked against the data
+  5. Heat map is reachable from the Analyse section navigation as a dedicated tab
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 67: LLM Prose Summaries
+**Goal**: Users can read a plain-English weekly summary of the model's top recommendations — a Claude-generated paragraph grounded in structured pipeline output (no hallucinated player data) — turning numeric rankings into a digestible narrative
+**Depends on**: Phase 51 (Decision Summary supplies the structured input — captain pick, transfer recommendation, chip flag, risk flags)
+**Requirements**: NLP-01, NLP-02
+**Success Criteria** (what must be TRUE):
+  1. User can read a weekly prose summary on the Decision Summary screen — Claude-generated paragraph derived from the same structured engine outputs that drive the four Decision cards, with player names and numeric values quoted verbatim from the structured input (no invented player data)
+  2. User can press a "Refresh summary" button to regenerate the prose mid-week (e.g., after price changes, injury news) without waiting for the next pipeline run
+  3. Summary regenerates automatically each pipeline run, persisted alongside other pipeline output (Vercel Blob), and served via a typed API route consumed by a TanStack Query hook
+  4. When the LLM call fails or quota is exceeded, the screen degrades gracefully — falls back to the existing structured Decision cards without blocking the rest of the UI
+  5. Generated prose names only players present in the structured model input — a guardrail check rejects responses referencing players not in the input set
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 68: In-App Alert System
+**Goal**: Users see proactive in-app alerts when actionable changes occur since their last visit — price moves, injury status flips, set-piece taker changes, and imminent deadlines — so they never miss a window to act
+**Depends on**: Phase 54 (price change snapshots), Phase 26 (set-piece change detection); both already in production
+**Requirements**: ALERT-01, ALERT-02, ALERT-03
+**Success Criteria** (what must be TRUE):
+  1. User sees an in-app alert banner or notification badge when any of the following have changed since their last visit: a player price rose or fell, a player's injury/availability status changed, or a set-piece taker assignment changed
+  2. When a GW deadline is within 24 hours, a live deadline countdown is shown in the alert banner area, updating in real time as the deadline approaches
+  3. User can dismiss individual alerts (close button per alert); dismissed alerts do not return on subsequent visits — dismissed-state is persisted via localStorage keyed by alert ID
+  4. Alerts are computed client-side from existing pipeline outputs (price_changes.json, bootstrap status field, set_piece_changes.json) — no new pipeline cron, no server-side state required
+  5. Alert area is accessible on every section (top of page, above the section nav) — managers see alerts regardless of which tab they land on
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 69: Event-Based Pipeline Refresh
+**Goal**: Pipeline data is fresh near gameweek deadlines and post-deadline — additional GitHub Actions triggers run the pipeline at 6h/2h/30min before each deadline and immediately after, so managers always see current data when it matters most; stale data is surfaced rather than served silently
+**Depends on**: Phase 60 (v1.9 complete); extends existing GitHub Actions daily cron in `.github/workflows/pipeline.yml`
+**Requirements**: REFRESH-01, REFRESH-02, REFRESH-03
+**Success Criteria** (what must be TRUE):
+  1. Pipeline runs successfully on additional scheduled GitHub Actions triggers at 6 hours, 2 hours, and 30 minutes before each GW deadline — verified by the `last_updated` timestamp in `/api/last-updated` advancing within those windows
+  2. Pipeline runs automatically within 1 hour after each GW deadline passes — post-deadline transfer activity (auto-substitutes, captain confirmations) is reflected in the merged dataset
+  3. When the pipeline has not refreshed within the expected window for the upcoming deadline, the app shows a visible warning ("Last successful run: X ago — data may be stale") on every section, replacing the silent stale-serve behaviour
+  4. GitHub Actions workflow uses the FPL `events` API to compute deadline-relative trigger times rather than hard-coded cron schedules — so a deadline change does not require a workflow file edit
+  5. Pipeline failures (any step exits non-zero) leave the previous successful `last_updated` timestamp untouched — the staleness warning fires cleanly instead of overwriting good data with broken data
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 70: Post-GW Review
+**Goal**: After each gameweek settles, users can read an auto-generated GW review — bench points left, captain delta vs optimal, top scorer, score vs top-10k template — turning each completed GW into a learning moment rather than a number on a leaderboard
+**Depends on**: Phase 55 (`benchOrder()` and `optimiseLineup()` supply the optimal-captain comparison), Phase 69 (post-deadline pipeline refresh ensures actual scores are available)
+**Requirements**: PGW-01, PGW-02
+**Success Criteria** (what must be TRUE):
+  1. After each GW settles, user can view a Post-GW Review card showing: total bench points left, their captain pick vs the optimal captain (player name and points delta), their top scorer (player name and points), and their GW score vs the top-10k average
+  2. Review data is written by the pipeline to Vercel Blob after each GW settles (post-deadline + after final scores fix) and served via a new `/api/gw-review` route, consumed by a typed TanStack Query hook
+  3. Review surfaces in the Squad section as a new "Review" sub-tab (or analogous placement) — historic GW reviews are listed by GW number for retrospective browsing
+  4. When the pipeline cannot compute a review (GW not yet settled, missing data), the screen degrades gracefully with a clear "GW review will appear once scores finalise" prompt rather than an empty card or error
+  5. Review is keyed by team ID — a manager loading a different team ID sees the corresponding manager's GW review, not stale state from a previous team
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 71: Decision History & Regret Backtester
+**Goal**: Users can log their actual decisions each GW and see a cumulative report — captain hit rate, transfer ROI, hit break-even rate — plus a per-transfer regret backtester with a 2×2 process×outcome matrix, so they learn whether their process is sound regardless of luck
+**Depends on**: Phase 70 (post-GW actuals are needed to score logged decisions retrospectively)
+**Requirements**: HIST-01, HIST-02, BACK-01, BACK-02
+**Success Criteria** (what must be TRUE):
+  1. User can log each GW's decisions (captain pick, transfers in/out, chip used if any) via a Decision Log form on the Squad section; logged entries are persisted to Vercel Blob keyed by team ID + GW number
+  2. User can view a cumulative Decision Report showing: captain hit rate (% of GWs where captain outscored vice), transfer ROI (xPts gained on bought minus scored by sold at decision time), and hit break-even success rate
+  3. For each logged transfer, user can see a retrospective verdict: actual GW outcome (points scored by player bought vs player sold that GW) plus a process grade (Good process = model ranked the buy above the sell at decision time, irrespective of actual outcome)
+  4. Regret dashboard displays a 2×2 outcome matrix — Good process / Bad outcome, Good process / Good outcome, Bad process / Good outcome, Bad process / Bad outcome — with the count of transfers and example player pairs in each quadrant
+  5. When no decisions have been logged yet, the Decision Report and Regret matrix degrade gracefully with an explanatory prompt and a one-click jump to the Decision Log form
+**Plans**: TBD
+**UI hint**: yes
+
 ## Progress
 
 | Phase | Milestone | Plans | Status | Completed |
@@ -450,3 +542,9 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 | 63 | v1.10 | 0 | Not started | - |
 | 64 | v1.10 | 0 | Not started | - |
 | 65 | v1.10 | 0 | Not started | - |
+| 66 | v1.11 | 0 | Not started | - |
+| 67 | v1.11 | 0 | Not started | - |
+| 68 | v1.11 | 0 | Not started | - |
+| 69 | v1.11 | 0 | Not started | - |
+| 70 | v1.11 | 0 | Not started | - |
+| 71 | v1.11 | 0 | Not started | - |

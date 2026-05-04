@@ -71,20 +71,20 @@
 
 | REQ-ID | Phase | Plan | Status |
 |--------|-------|------|--------|
-| NLP-01 | — | — | pending |
-| NLP-02 | — | — | pending |
-| HEAT-01 | — | — | pending |
-| HEAT-02 | — | — | pending |
-| HEAT-03 | — | — | pending |
-| ALERT-01 | — | — | pending |
-| ALERT-02 | — | — | pending |
-| ALERT-03 | — | — | pending |
-| REFRESH-01 | — | — | pending |
-| REFRESH-02 | — | — | pending |
-| REFRESH-03 | — | — | pending |
-| PGW-01 | — | — | pending |
-| PGW-02 | — | — | pending |
-| HIST-01 | — | — | pending |
-| HIST-02 | — | — | pending |
-| BACK-01 | — | — | pending |
-| BACK-02 | — | — | pending |
+| HEAT-01 | Phase 66 | — | pending |
+| HEAT-02 | Phase 66 | — | pending |
+| HEAT-03 | Phase 66 | — | pending |
+| NLP-01 | Phase 67 | — | pending |
+| NLP-02 | Phase 67 | — | pending |
+| ALERT-01 | Phase 68 | — | pending |
+| ALERT-02 | Phase 68 | — | pending |
+| ALERT-03 | Phase 68 | — | pending |
+| REFRESH-01 | Phase 69 | — | pending |
+| REFRESH-02 | Phase 69 | — | pending |
+| REFRESH-03 | Phase 69 | — | pending |
+| PGW-01 | Phase 70 | — | pending |
+| PGW-02 | Phase 70 | — | pending |
+| HIST-01 | Phase 71 | — | pending |
+| HIST-02 | Phase 71 | — | pending |
+| BACK-01 | Phase 71 | — | pending |
+| BACK-02 | Phase 71 | — | pending |

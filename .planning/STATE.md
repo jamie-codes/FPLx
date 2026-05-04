@@ -7,7 +7,7 @@ stopped_at: ~
 last_updated: "2026-05-04T00:00:00.000Z"
 last_activity: 2026-05-04 — Milestone v1.11 started; v1.10 Modelling & Trust deprioritised mid-season
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -30,7 +30,7 @@ Plan: —
 Status: Defining requirements
 Last activity: 2026-05-04 — Milestone v1.11 started
 
-Progress: 0/? phases complete [] 0%
+Progress: 0/6 phases complete [] 0%
 
 ## Performance Metrics
 
