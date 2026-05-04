@@ -39,6 +39,9 @@ vi.mock('@/components/accuracy/AccuracyTab', () => ({
 vi.mock('@/components/price-changes/PriceChangePanel', () => ({
   PriceChangePanel: () => <div data-testid="price-change-panel" />,
 }))
+vi.mock('@/components/club-form/FixtureHeatMap', () => ({
+  FixtureHeatMap: () => <div data-testid="fixture-heat-map" />,
+}))
 vi.mock('@/components/planner/ManualPlanTab', () => ({
   ManualPlanTab: (props: { submittedId: string | null; horizon: number }) => <div data-testid="manual-plan-tab" data-horizon={props.horizon} />,
 }))
@@ -203,6 +206,36 @@ describe('Phase 36: page.tsx state', () => {
     // Manual Plan visible, Planner hidden
     expect(container.querySelector('[data-testid="manual-plan-tab"]')).not.toBeNull()
     expect(container.querySelector('[data-testid="planner"]')).toBeNull()
+  })
+
+  it('Phase 66: clicking "Heat Map" sub-tab mounts FixtureHeatMap and shows aria-current="page" (HEAT-01, D-06, D-07)', () => {
+    const { container } = render(<Home />)
+    // Default landing is Analyse / Gems — confirm Heat Map sub-tab exists in the Analyse nav
+    const analyseSubTabs = container.querySelector('nav[aria-label="Analyse sub-tabs"]')
+    expect(analyseSubTabs).not.toBeNull()
+    const subTabBtns = Array.from(analyseSubTabs!.querySelectorAll('button')).map(b => b.textContent)
+    // Locked order per D-06: Gem Ratings | Insights | DefCon Analysis | Set Pieces | Accuracy | Price Changes | Heat Map
+    expect(subTabBtns).toEqual([
+      'Gem Ratings',
+      'Insights',
+      'DefCon Analysis',
+      'Set Pieces',
+      'Accuracy',
+      'Price Changes',
+      'Heat Map',
+    ])
+    // Click Heat Map
+    const heatMapBtn = Array.from(analyseSubTabs!.querySelectorAll('button')).find(b => b.textContent === 'Heat Map')
+    expect(heatMapBtn).toBeDefined()
+    fireEvent.click(heatMapBtn!)
+    // FixtureHeatMap mounted; PriceChangePanel and Gems hidden
+    expect(container.querySelector('[data-testid="fixture-heat-map"]')).not.toBeNull()
+    expect(container.querySelector('[data-testid="price-change-panel"]')).toBeNull()
+    expect(container.querySelector('[data-testid="gem-table"]')).toBeNull()
+    // aria-current is now Heat Map
+    expect(
+      container.querySelector('nav[aria-label="Analyse sub-tabs"] button[aria-current="page"]')?.textContent
+    ).toBe('Heat Map')
   })
 
   it('D-07: section-level HorizonSelector shares horizon across all Plan sub-tabs', () => {

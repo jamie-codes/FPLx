@@ -26,6 +26,7 @@ import { CaptainPicksPanel } from '@/components/captaincy/CaptainPicksPanel'
 import { InsightsTab } from '@/components/insights/InsightsTab'
 import { AccuracyTab } from '@/components/accuracy/AccuracyTab'
 import { PriceChangePanel } from '@/components/price-changes/PriceChangePanel'
+import { FixtureHeatMap } from '@/components/club-form/FixtureHeatMap'
 import { RivalsTab } from '@/components/rivals/RivalsTab'
 import { OptimiserPanel } from '@/components/optimiser/OptimiserPanel'
 import { DecisionSummaryTab } from '@/components/squad/DecisionSummaryTab'
@@ -51,7 +52,7 @@ class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: 
 }
 
 export type Section = 'analyse' | 'plan' | 'squad'
-export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals'
+export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals' | 'fixture-heat-map'
 
 export const SECTIONS = [
   {
@@ -64,6 +65,7 @@ export const SECTIONS = [
       { id: 'set-pieces' as SubTab, label: 'Set Pieces',      mobileLabel: 'SP'       },
       { id: 'accuracy' as SubTab,      label: 'Accuracy',        mobileLabel: 'Acc'      },
       { id: 'price-changes' as SubTab, label: 'Price Changes',   mobileLabel: 'Prices'   },
+      { id: 'fixture-heat-map' as SubTab, label: 'Heat Map',     mobileLabel: 'Heat Map' },
     ],
     defaultSubTab: 'gems' as SubTab,
   },
@@ -243,6 +245,7 @@ export default function Home() {
         {activeSection !== 'squad' && activeSubTab === 'insights' && <InsightsTab />}
         {activeSection !== 'squad' && activeSubTab === 'accuracy' && <AccuracyTab />}
         {activeSection !== 'squad' && activeSubTab === 'price-changes' && <PriceChangePanel />}
+        {activeSection !== 'squad' && activeSubTab === 'fixture-heat-map' && <FixtureHeatMap />}
         {activeSection !== 'squad' && activeSubTab === 'value-gems' && <ValueGemsTable />}
         {activeSection === 'plan' && activeSubTab === 'rivals' && (
           <RivalsTab submittedId={submittedId} />
