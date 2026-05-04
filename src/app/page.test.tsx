@@ -33,6 +33,12 @@ vi.mock('@/components/gem-table/PlayerComparisonModal', () => ({
 vi.mock('@/components/rivals/RivalsTab', () => ({
   RivalsTab: (_props: { submittedId: string | null }) => <div data-testid="rivals-tab" />,
 }))
+vi.mock('@/components/accuracy/AccuracyTab', () => ({
+  AccuracyTab: () => <div data-testid="accuracy-tab" />,
+}))
+vi.mock('@/components/price-changes/PriceChangePanel', () => ({
+  PriceChangePanel: () => <div data-testid="price-change-panel" />,
+}))
 
 import Home from '@/app/page'
 
