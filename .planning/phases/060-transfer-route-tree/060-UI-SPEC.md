@@ -96,7 +96,7 @@ Specific role mapping for this phase:
 Accent reserved for (explicit list):
 
 1. **Recommended-path ring** — the highest net-xPts row gets `ring-2 ring-offset-1 ring-green-700 dark:ring-green-300` applied to the row's outer container. This pattern is **already established** in the codebase: `ChipStrategyPanel.tsx` line 56 (`isBest` cell) and `DecisionSummaryTab.tsx` line 108 (recommended chip). Reusing it preserves visual continuity. The ring is applied via the row-level wrapper because `<tr>` ring offsets don't render reliably across browsers — the engine renders each path as a `<div>` "row" inside an outer card OR uses `ring-inset` on `<tr>`. (Implementation detail: see Component Inventory §Layout choice.)
-2. **Recommended-path badge** ("Recommended"): `bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-xs font-semibold rounded px-2 py-0.5`. Sits inline next to the path label in the recommended row.
+2. **Recommended-path badge** ("Recommended"): `bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-xs font-semibold rounded px-2 py-1`. Sits inline next to the path label in the recommended row.
 3. **"Load into Manual Planner" button** (per-row, default state): `bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold rounded min-h-[44px] px-3 py-2 text-sm hover:bg-zinc-800 dark:hover:bg-zinc-200 cursor-pointer`. Same zinc-inverse pattern as the Phase 59 "Load Squad" button and Phase 58 "Load Rivals" button.
 4. **Active state of `HorizonSelector` segments** (1 / 3 / 5 GW) — inherited from reused component at the Plan section header level (D-07). Route Tree does NOT render its own HorizonSelector.
 
@@ -107,7 +107,7 @@ Semantic badge / status colors (status indicators, NOT accent — carried forwar
 - **Recommended badge:** `bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300` (see above).
 - **Hit cost negative value** (when `totalHitCost > 0`): `text-red-700 dark:text-red-300 font-semibold`. When `totalHitCost === 0`, render plain `text-zinc-900 dark:text-zinc-100` with the literal `0 pts`.
 - **Chips preserved indicator** (when path consumes 0 chips): `text-zinc-500 dark:text-zinc-400` plain text reading `All preserved`.
-- **Chips consumed indicator** (when path uses a chip): inline pill `bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 text-xs font-semibold rounded px-2 py-0.5` with the chip code (`WC`, `FH`, `BB`, `TC`).
+- **Chips consumed indicator** (when path uses a chip): inline pill `bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 text-xs font-semibold rounded px-2 py-1` with the chip code (`WC`, `FH`, `BB`, `TC`).
 - **No-fixture / hold step** in GW-by-GW breakdown: `text-zinc-500 dark:text-zinc-400` em-dash for sell/buy cells; FT bank shows the banked count.
 
 Borders: `border-zinc-200 dark:border-zinc-700` (table outer wrapper, summary card); `border-zinc-100 dark:border-zinc-700` (inner row dividers, expanded breakdown top border).
