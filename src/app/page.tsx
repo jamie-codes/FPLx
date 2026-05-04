@@ -21,6 +21,7 @@ import { CaptainPicksPanel } from '@/components/captaincy/CaptainPicksPanel'
 import { InsightsTab } from '@/components/insights/InsightsTab'
 import { AccuracyTab } from '@/components/accuracy/AccuracyTab'
 import { PriceChangePanel } from '@/components/price-changes/PriceChangePanel'
+import { RivalsTab } from '@/components/rivals/RivalsTab'
 import { OptimiserPanel } from '@/components/optimiser/OptimiserPanel'
 import { DecisionSummaryTab } from '@/components/squad/DecisionSummaryTab'
 
@@ -45,7 +46,7 @@ class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: 
 }
 
 export type Section = 'analyse' | 'plan' | 'squad'
-export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'club-form' | 'value-gems' | 'accuracy' | 'decision' | 'transfers' | 'optimiser' | 'price-changes'
+export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'club-form' | 'value-gems' | 'accuracy' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals'
 
 export const SECTIONS = [
   {
@@ -68,6 +69,7 @@ export const SECTIONS = [
       { id: 'planner' as SubTab,    label: 'Planner',    mobileLabel: 'Planner' },
       { id: 'club-form' as SubTab,  label: 'Club Form',  mobileLabel: 'Form'    },
       { id: 'value-gems' as SubTab, label: 'Value Gems', mobileLabel: 'Values'  },
+      { id: 'rivals' as SubTab,     label: 'Rivals',     mobileLabel: 'Rivals'  },
     ],
     defaultSubTab: 'planner' as SubTab,
   },
@@ -209,6 +211,9 @@ export default function Home() {
         {activeSection !== 'squad' && activeSubTab === 'accuracy' && <AccuracyTab />}
         {activeSection !== 'squad' && activeSubTab === 'price-changes' && <PriceChangePanel />}
         {activeSection !== 'squad' && activeSubTab === 'value-gems' && <ValueGemsTable />}
+        {activeSection !== 'squad' && activeSubTab === 'rivals' && (
+          <RivalsTab submittedId={submittedId} />
+        )}
         {activeSection !== 'squad' && activeSubTab === 'planner' && (
           <>
             <PlannerTab />
