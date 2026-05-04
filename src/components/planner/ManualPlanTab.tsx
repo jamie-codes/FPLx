@@ -399,7 +399,7 @@ export function ManualPlanTab({ submittedId }: ManualPlanTabProps) {
             aria-label="Select player to sell"
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
           >
-            <div className="rounded-lg bg-white dark:bg-zinc-900 p-4 max-w-sm w-full max-h-[70vh] flex flex-col border border-zinc-200 dark:border-zinc-700 shadow-lg">
+            <div data-testid="sell-stage-picker" className="rounded-lg bg-white dark:bg-zinc-900 p-4 max-w-sm w-full max-h-[70vh] flex flex-col border border-zinc-200 dark:border-zinc-700 shadow-lg">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
                   Select player to sell
