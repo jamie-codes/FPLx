@@ -4,10 +4,10 @@ milestone: v1.10
 milestone_name: Modelling & Trust
 status: planning
 stopped_at: ~
-last_updated: "2026-05-04T15:00:00.000Z"
-last_activity: 2026-05-04 — v1.10 Modelling & Trust milestone started; defining requirements
+last_updated: "2026-05-04T15:30:00.000Z"
+last_activity: 2026-05-04 — v1.10 roadmap created; 5 phases (61-65) defined, 13/13 requirements mapped
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-04 — v1.10 started)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Not started (roadmap defined, awaiting first plan)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-04 — Milestone v1.10 started
+Status: Ready to plan Phase 61
+Last activity: 2026-05-04 — Roadmap created; phases 61-65 defined
 
-Progress: 0/0 phases complete [] 0%
+Progress: 0/5 phases complete [] 0%
 
 ## Performance Metrics
 
@@ -54,6 +54,11 @@ Progress: 0/0 phases complete [] 0%
 - [059-03] window.location.reload() hack from Plan 02 no-squad submit remains in effect; submittedId prop pre-populates Team ID input only
 - [052-01] Used `starts==1` exclusively for start counting; removed `minutes>0` history filter to allow 0-minute non-start entries to contribute to `start_prob` denominators
 - [052-03] Extended `_xpts_ngw` intermediary with `xmins_v2_enabled`/`mins_60_prob` kwargs to thread flag to `_compute_xpts_fixture` without bypassing abstraction layer
+- [v1.10-roadmap] Phase 61 simulate.py reuses `_compute_xpts_fixture` Poisson/Bernoulli parameters — no new HTTP calls; sim writes 4 fields per player to merged_players.json
+- [v1.10-roadmap] Phase 62 rank simulator is client-side UI only — 5-GW trajectory computed over existing MC fields from Phase 61; no additional pipeline work
+- [v1.10-roadmap] Phase 63 groups VER-01/VER-02/CAL-01/CAL-02 — all are accuracy.py + AccuracyTab extensions with no new pipeline data source
+- [v1.10-roadmap] Phase 64 fragility engine is pure TypeScript over MergedPlayer — checks start_prob threshold (0.70), fixture difficulty tier, and hit cost; no pipeline dependency
+- [v1.10-roadmap] Phase 65 rejection explainer is pure TypeScript over MergedPlayer + existing recommendation engine outputs; WHY-02 >20% ownership callout reuses selected_by_percent field
 
 ### Pending Todos
 
@@ -82,6 +87,6 @@ Items carried from v1.9:
 
 ## Session Continuity
 
-Last session: 2026-05-04T15:00:00.000Z
-Stopped at: v1.10 milestone started — defining requirements
+Last session: 2026-05-04T15:30:00.000Z
+Stopped at: v1.10 roadmap created — ready to plan Phase 61
 Resume file: None

@@ -12,6 +12,7 @@
 - ✅ **v1.7 Decision Assistant** — Phases 47-51 (shipped 2026-05-02)
 - ✅ **v1.8 Predictive Intelligence** — Phases 52-55 (shipped 2026-05-03)
 - ✅ **v1.9 Competitive Intelligence** — Phases 56-60 (shipped 2026-05-04)
+- **v1.10 Modelling & Trust** — Phases 61-65 (in progress)
 
 ## Phases
 
@@ -102,7 +103,7 @@ See `.planning/milestones/v1.5-ROADMAP.md` for full phase details.
 
 See `.planning/milestones/v1.7-ROADMAP.md` for full phase details.
 
-- [x] Phase 47: Fixture Swing Detector & CS Probability — swing signals, cs_prob_1gw, FixtureSwingDetector panel
+- [x] Phase 47: Fixture Swing Detector & Clean Sheet Probability — swing signals, cs_prob_1gw, FixtureSwingDetector panel
 - [x] Phase 48: Explainable xPts Breakdown — appearance_pts component, CSS-only hover card on XPtsCell
 - [x] Phase 49: Player Lifecycle Labels — 7-label taxonomy, priority cascade, LifecycleLabelBadge
 - [x] Phase 50: Transfer Opportunity Cost Simulator — Roll/1-FT/2-FT/Hit table, break-even weeks, derivedFtCount
@@ -134,6 +135,14 @@ See `.planning/milestones/v1.9-ROADMAP.md` for full phase details.
 - [x] Phase 60: Transfer Route Tree — buildTransferRouteTree, RouteTreeTab, Manual Planner bridge
 
 </details>
+
+### v1.10 Modelling & Trust (Phases 61-65)
+
+- [ ] **Phase 61: MC Simulation Core** — 10k sim engine in pipeline, blank%/haul%/floor/ceiling per player per GW
+- [ ] **Phase 62: MC Rank Simulator & Captain Integration** — 5-GW rank trajectory UI, captain picker MC augmentation
+- [ ] **Phase 63: Model Versioning & Calibration Charts** — version tags in pipeline, multi-version comparison, calibration reliability diagrams in AccuracyTab
+- [ ] **Phase 64: Sensitivity Analysis** — fragility engine over transfer candidates + captain picks, amber indicators
+- [ ] **Phase 65: Rejection Explainer** — "why not?" natural-language engine across GemTable, TransferPanel, SquadView
 
 ## Phase Details
 
@@ -344,6 +353,73 @@ _All milestone phase details archived to `.planning/milestones/`. See the releva
 
 _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 
+---
+
+### Phase 61: MC Simulation Core
+**Goal**: Users can see simulation-derived blank probability, haul probability, floor (10th percentile), and ceiling (90th percentile) for any player for the upcoming GW — making the uncertainty of xPts predictions explicit
+**Depends on**: Phase 60 (v1.9 complete); reuses `_compute_xpts_fixture` Poisson/Bernoulli parameters from `pipeline/merge.py`
+**Requirements**: MC-01, MC-02
+**Success Criteria** (what must be TRUE):
+  1. `pipeline/simulate.py` runs 10,000 Monte Carlo simulations per player per GW using Poisson goal/assist distributions and Bernoulli CS distributions drawn from the existing xPts pipeline parameters, and writes `blank_prob`, `haul_prob`, `p10_pts`, `p90_pts` to each player in `merged_players.json`
+  2. User can see blank% and haul% for any player in GemTable row expand — "X% chance of blank (≤2 pts) | Y% chance of haul (≥10 pts)"
+  3. User can see floor (10th percentile) and ceiling (90th percentile) outcomes for any player, shown alongside the existing xPts headline figure
+  4. BGW players show blank% = 100% and haul% = 0% (no fixture = guaranteed blank); DGW players correctly simulate both fixtures and combine
+  5. Simulation results are written once per pipeline run and consumed as static JSON — no client-side simulation, no added latency on page load
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 62: MC Rank Simulator & Captain Integration
+**Goal**: Users can simulate where their rank will be after 5 GWs under their current XI vs an alternative XI, and captain recommendations are augmented with MC-derived labels (highest ceiling, lowest floor, best P(haul))
+**Depends on**: Phase 61 (requires `blank_prob`, `haul_prob`, `p10_pts`, `p90_pts` per player from MC-01/MC-02)
+**Requirements**: MC-03, MC-04
+**Success Criteria** (what must be TRUE):
+  1. User can open a 5-GW rank trajectory simulator that shows P(top-10k), P(rank gain), and P(rank drop) for their current XI lineup
+  2. User can define an alternative XI (by swapping players) and see the rank trajectory comparison side-by-side with the current XI
+  3. Each captain candidate in `CaptainPicksPanel` shows one augmented MC label — "Highest ceiling", "Lowest floor", or "Best P(haul)" — with the corresponding simulated value displayed
+  4. TC (Triple Captain) decision engine surfaces the player with the highest P(haul) as the TC recommendation, annotated with the simulated probability
+  5. Rank simulator degrades gracefully when squad is not loaded — shows an explanatory prompt rather than an empty chart
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 63: Model Versioning & Calibration Charts
+**Goal**: The accuracy pipeline tracks model version history, and AccuracyTab users can compare accuracy across multiple model versions and inspect calibration reliability diagrams broken out by position
+**Depends on**: Phase 60 (v1.9 complete); extends existing `pipeline/accuracy.py` and `AccuracyTab.tsx`
+**Requirements**: VER-01, VER-02, CAL-01, CAL-02
+**Success Criteria** (what must be TRUE):
+  1. Every pipeline run writes a version record to `accuracy_backtest.json` containing: formula version string, data timestamp, and all active gate flag states (xmins_v2_enabled, bonus_predictor_enabled, form_signal_enabled)
+  2. AccuracyTab shows a version comparison table with hit rate per version and a delta indicator — user can see at a glance whether a model change improved or degraded accuracy
+  3. AccuracyTab shows a calibration reliability diagram: for players predicted at each haul% bracket (e.g., 30-40%), the diagram shows the actual observed haul rate — a well-calibrated model produces a near-diagonal line
+  4. Calibration diagram is broken out by position (GK / DEF / MID / FWD) so position-specific over- or under-confidence is immediately visible
+  5. Both version comparison and calibration diagram are populated from static `accuracy_backtest.json` — no additional API route or pipeline changes to data flow required beyond `accuracy.py` extensions
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 64: Sensitivity Analysis
+**Goal**: Transfer candidates and captain recommendations carry a fragility flag when the recommendation would reverse under plausible adverse conditions — making it clear which picks are robust and which are conditional
+**Depends on**: Phase 60 (v1.9 complete); operates over existing `MergedPlayer` data in client-side TypeScript
+**Requirements**: SENS-01, SENS-02
+**Success Criteria** (what must be TRUE):
+  1. Every transfer candidate row and every captain recommendation row carries a computed fragility flag — "fragile" when the recommendation reverses if start_prob drops below 70%, fixture difficulty worsens by 1 tier, or the action requires a 4pt hit
+  2. Fragile recommendations display an amber indicator that is visually distinct from the existing severity badge system — not easily confused with High/Medium/Low severity
+  3. Each fragile recommendation shows a one-line explanation: "no longer recommended if: [specific condition]" — naming the exact condition that would reverse the call
+  4. Non-fragile recommendations show no fragility indicator — the UI is not cluttered for robust picks
+  5. Fragility computation is pure TypeScript over existing `MergedPlayer` fields — no new API call, no pipeline change required
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 65: Rejection Explainer
+**Goal**: Users can understand why any player they are curious about did not surface as a transfer target or captain recommendation — turning opaque ranking into an auditable, trust-building explanation
+**Depends on**: Phase 64 (sensitivity flags inform rejection reasons); operates over existing `MergedPlayer` and recommendation engine outputs
+**Requirements**: WHY-01, WHY-02, WHY-03
+**Success Criteria** (what must be TRUE):
+  1. User can expand any GemTable row and read a natural-language "why not?" explanation for why that player falls below the transfer or captain recommendation threshold — covering at least: ownership%, xPts ranking, start probability, fixture difficulty, and any active fragility flag
+  2. TransferPanel shows a dedicated callout for any player with >20% ownership who is absent from the transfer candidate list — the callout names the player and gives a one-sentence reason ("Salah: already ranked #1 in your squad by xPts — no upgrade available at position")
+  3. Squad view row expand for an owned player explains why they are not recommended to hold or captain — distinguishing between "below xPts threshold", "rotation risk", "difficult fixture", and "fragile recommendation"
+  4. All three explainer surfaces (GemTable, TransferPanel callout, SquadView) are computed client-side over existing data — loading a page or squad triggers computation with no additional network request
+  5. Explanations use plain English with specific values — not generic phrases like "not recommended" — so the user can act on the reasoning
+**Plans**: TBD
+**UI hint**: yes
+
 ## Progress
 
 | Phase | Milestone | Plans | Status | Completed |
@@ -369,3 +445,8 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 | 58 | v1.9 | 4/4 | Complete | 2026-05-04 |
 | 59 | v1.9 | 3/3 | Complete | 2026-05-04 |
 | 60 | v1.9 | 2/2 | Complete | 2026-05-04 |
+| 61 | v1.10 | 0 | Not started | - |
+| 62 | v1.10 | 0 | Not started | - |
+| 63 | v1.10 | 0 | Not started | - |
+| 64 | v1.10 | 0 | Not started | - |
+| 65 | v1.10 | 0 | Not started | - |

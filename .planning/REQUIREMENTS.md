@@ -2,7 +2,7 @@
 
 **Milestone:** v1.10 Modelling & Trust
 **Started:** 2026-05-04
-**Status:** Defining
+**Status:** Planned
 
 ---
 
@@ -60,16 +60,16 @@
 
 | REQ-ID | Phase | Plan | Status |
 |--------|-------|------|--------|
-| MC-01 | — | — | pending |
-| MC-02 | — | — | pending |
-| MC-03 | — | — | pending |
-| MC-04 | — | — | pending |
-| VER-01 | — | — | pending |
-| VER-02 | — | — | pending |
-| CAL-01 | — | — | pending |
-| CAL-02 | — | — | pending |
-| SENS-01 | — | — | pending |
-| SENS-02 | — | — | pending |
-| WHY-01 | — | — | pending |
-| WHY-02 | — | — | pending |
-| WHY-03 | — | — | pending |
+| MC-01 | Phase 61 | — | pending |
+| MC-02 | Phase 61 | — | pending |
+| MC-03 | Phase 62 | — | pending |
+| MC-04 | Phase 62 | — | pending |
+| VER-01 | Phase 63 | — | pending |
+| VER-02 | Phase 63 | — | pending |
+| CAL-01 | Phase 63 | — | pending |
+| CAL-02 | Phase 63 | — | pending |
+| SENS-01 | Phase 64 | — | pending |
+| SENS-02 | Phase 64 | — | pending |
+| WHY-01 | Phase 65 | — | pending |
+| WHY-02 | Phase 65 | — | pending |
+| WHY-03 | Phase 65 | — | pending |
