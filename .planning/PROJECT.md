@@ -4,6 +4,8 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
+v1.10 started (2026-05-04) — Modelling & Trust milestone: Monte Carlo simulator, calibration charts, model versioning, sensitivity analysis, rejection explainer.
+
 v1.9 complete (shipped 2026-05-04) — Competitive Intelligence milestone finished with Phase 60 (Transfer Route Tree). The pure-TypeScript greedy multi-branch engine (`buildTransferRouteTree`) generates 2–3 distinct transfer paths from a squad, presents them in a side-by-side summary table with a "Load into Manual Planner" bridge, and shares a section-level planning horizon across all Plan sub-tabs (D-07 lift: `planHorizon` state in `page.tsx`, `<HorizonSelector>` above Plan nav, horizon prop threaded to PlannerTab + ManualPlanTab + RouteTreeTab). Phase 59 shipped the Manual Transfer Planner: GW-by-GW sequences with live bank balance, FT tracking, hit cost, break-even weeks, squad snapshots, and localStorage persistence. See previous milestone summary below.
 
 v1.8 completed Predictive Intelligence: calibrated per-player xMins probability distributions (start_prob, mins_60_prob), learned bonus EV replacing flat BONUS_RATE, price change predictor with rise/fall confidence tiers, and autosub-legal bench ordering via benchOrder().
@@ -13,6 +15,17 @@ v1.7 completed the Decision Assistant: single-screen Decision Summary composing 
 v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto formation, configurable 1/3/5 GW horizon, transfer-aware mode, and chip modes (Wildcard, Free Hit, Bench Boost).
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
+
+## Current Milestone: v1.10 Modelling & Trust
+
+**Goal:** Add statistical rigour to recommendations — show users how confident the model really is, and why it ranked players the way it did.
+
+**Target features:**
+- MC-01: Monte Carlo Simulator — 10k sims per player per GW (Poisson goals, Bernoulli CS), blank%/haul%/10th/90th percentile, plus 5-GW rank trajectory simulator
+- CAL-01: Calibration Charts — reliability diagram in AccuracyTab (predicted haul% bucket vs actual rate, per position)
+- VER-01: Model Versioning — version tags + cross-version accuracy comparison in accuracy_backtest.json
+- SENS-01: Sensitivity Analysis — per-recommendation fragility flag ("still good if start prob drops to 70%? If fixture worsens?")
+- WHY-01: Rejection Explainer — natural-language "why not?" explanation in GemTable row expand, transfer suggestions, and squad view
 
 ## Core Value
 
@@ -306,4 +319,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-04 — Phase 60 complete; v1.9 milestone shipped. Transfer Route Tree: pure-TS greedy multi-branch engine, RouteTreeTab, D-07 section-level horizon lift (planHorizon → page.tsx, HorizonSelector shared across all Plan sub-tabs). 14/14 UAT tests passed. All TRT-01..TRT-07 requirements validated.*
+*Last updated: 2026-05-04 — v1.10 Modelling & Trust milestone started. Features: MC-01 Monte Carlo Simulator, CAL-01 Calibration Charts, VER-01 Model Versioning, SENS-01 Sensitivity Analysis, WHY-01 Rejection Explainer.*

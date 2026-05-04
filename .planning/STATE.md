@@ -1,83 +1,59 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.9
-milestone_name: Competitive Intelligence
-status: archived
-stopped_at: milestone archived (2026-05-04)
-last_updated: "2026-05-04T14:30:00.000Z"
-last_activity: 2026-05-04 — v1.9 milestone archived; ROADMAP/MILESTONES/RETROSPECTIVE/PROJECT updated; v1.9 git tag created
+milestone: v1.10
+milestone_name: Modelling & Trust
+status: planning
+stopped_at: ~
+last_updated: "2026-05-04T15:00:00.000Z"
+last_activity: 2026-05-04 — v1.10 Modelling & Trust milestone started; defining requirements
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 13
-  completed_plans: 13
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-03 — v1.9 started)
+See: .planning/PROJECT.md (updated 2026-05-04 — v1.10 started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.9 Competitive Intelligence — ARCHIVED 2026-05-04; ready for v1.10 milestone planning
+**Current focus:** v1.10 Modelling & Trust — Monte Carlo simulator, calibration charts, model versioning, sensitivity analysis, rejection explainer
 
 ## Current Position
 
-Phase: 60 (Transfer Route Tree) — Complete
-Plan: 2/2 plans complete
-Status: v1.9 milestone complete — ready for `/gsd-complete-milestone v1.9`
-Last activity: 2026-05-04 — Phase 60 complete; TRT-01..TRT-07 + D-07 horizon lift human-verified; 14/14 UAT passed
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-04 — Milestone v1.10 started
 
-Progress: 5/5 phases complete [##########] 100%
-
-### v1.9 Phase Summary
-
-| Phase | Name | Requirements | Status |
-|-------|------|--------------|--------|
-| 56 | FT Engine Fix | FTX-01, FTX-02 | ✅ Complete (2026-05-03) |
-| 57 | Effective Ownership Mode | EO-01–EO-04 | ✅ Complete (2026-05-03) |
-| 58 | Mini-League Rival Tracker | ML-01–ML-08 | ✅ Complete (2026-05-04) |
-| 59 | Manual Transfer Planner | MTP-01–MTP-08 | ✅ Complete (2026-05-04) |
-| 60 | Transfer Route Tree | TRT-01–TRT-07 | ✅ Complete (2026-05-04) |
-
-### Dependency Order
-
-- Phase 56 (FTX) — standalone pre-condition; no upstream v1.9 deps
-- Phase 57 (EO) — independent of 56; can start immediately
-- Phase 58 (ML) — independent of 56 and 57; parallel-safe with Phase 57
-- Phase 59 (MTP) — requires Phase 56 (FT engine)
-- Phase 60 (TRT) — requires Phase 59 (MTP-01 bridge)
+Progress: 0/0 phases complete [] 0%
 
 ## Performance Metrics
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
-| 052 | 01 | 5 min | 3 | 3 |
-| 052 | 03 | 12 min | 3 | 4 |
 
-**Previous milestone (v1.7) velocity:**
+**Previous milestone (v1.9) velocity:**
 
-- 5 phases, 14 plans
-- 2 days (2026-05-01 → 2026-05-02)
-- 88 commits, 323 files changed
+- 5 phases, 13 plans
+- 2 days (2026-05-03 → 2026-05-04)
+- 121 files changed, +27,865 / −1,388 lines
 
 ## Accumulated Context
 
 ### Decisions
 
-- [052-01] Used `starts==1` exclusively for start counting; removed `minutes>0` history filter to allow 0-minute non-start entries to contribute to `start_prob` denominators
-- [052-01] Changed `recent_start_rate < 0.25` to `start_prob < 0.25` in `mins_risk` cameo check to avoid NameError when position-prior branch fires
-- [052-03] Extended `_xpts_ngw` intermediary with `xmins_v2_enabled`/`mins_60_prob` kwargs to thread flag to `_compute_xpts_fixture` without bypassing abstraction layer
-- [052-03] Added `cache_dir: str = ''` parameter to `compute_accuracy_backtest` so `accuracy.py` can read existing flag from disk (backward compatible)
-- [052-03] Added `json`/`os` imports to `accuracy.py` (required by `_read_existing_xmins_v2_flag` helper)
 - [v1.9-roadmap] TRT-01 is PURE TYPESCRIPT — no LLM; top-3 sell roots + greedy continuation per branch
 - [v1.9-roadmap] ML-08 requires `p-limit` ^6.1.0 npm install for 3-concurrent-request batching
-- [v1.9-roadmap] Phases 57 (EO) and 58 (ML) are parallel-safe — zero shared files; can be executed concurrently
 - [v1.9-roadmap] MTP-07 sell price caveat shown only when unauthenticated; exact selling_price used when authenticated
 - [059-03] D-02 positive render guard used for manual-plan: `activeSection === 'plan'` not `activeSection !== 'squad'` — locks tab strictly to Plan section
 - [059-03] window.location.reload() hack from Plan 02 no-squad submit remains in effect; submittedId prop pre-populates Team ID input only
+- [052-01] Used `starts==1` exclusively for start counting; removed `minutes>0` history filter to allow 0-minute non-start entries to contribute to `start_prob` denominators
+- [052-03] Extended `_xpts_ngw` intermediary with `xmins_v2_enabled`/`mins_60_prob` kwargs to thread flag to `_compute_xpts_fixture` without bypassing abstraction layer
 
 ### Pending Todos
 
@@ -92,7 +68,7 @@ None.
 
 ## Deferred Items
 
-Items acknowledged at v1.9 milestone close — carried to backlog:
+Items carried from v1.9:
 
 | ID | Description | Phase | Target |
 |----|-------------|-------|--------|
@@ -106,6 +82,6 @@ Items acknowledged at v1.9 milestone close — carried to backlog:
 
 ## Session Continuity
 
-Last session: 2026-05-04T13:40:00.000Z
-Stopped at: milestone complete — v1.9 shipped
+Last session: 2026-05-04T15:00:00.000Z
+Stopped at: v1.10 milestone started — defining requirements
 Resume file: None
