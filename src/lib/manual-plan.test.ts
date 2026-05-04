@@ -130,11 +130,11 @@ describe('manual-plan', () => {
     const picks = makeInitialPicks()
     // Replace player at position 1 (id=1) with id=10 (£8.0m) so we can sell id=10
     picks[0] = makePick(10, 1)
+    // Put filler first, then specific entries last so they override any filler conflicts
     const playerMap = new Map<number, ScoredPlayer>([
-      [10, makeScored(10, { now_cost: 80 })],  // sell £8.0m
-      [99, makeScored(99, { now_cost: 75 })],  // buy £7.5m
-      // fill the rest
       ...Array.from({ length: 14 }, (_, i) => [i + 2, makeScored(i + 2)] as [number, ScoredPlayer]),
+      [10, makeScored(10, { now_cost: 80 })],  // sell £8.0m — overrides filler for id=10
+      [99, makeScored(99, { now_cost: 75 })],  // buy £7.5m
     ])
     const derived = deriveStepStates({
       initialPicks: picks,
@@ -157,9 +157,9 @@ describe('manual-plan', () => {
     const picks = makeInitialPicks()
     picks[0] = makePick(10, 1)
     const playerMap = new Map<number, ScoredPlayer>([
-      [10, makeScored(10, { now_cost: 80 })],
-      [99, makeScored(99, { now_cost: 75 })],
       ...Array.from({ length: 14 }, (_, i) => [i + 2, makeScored(i + 2)] as [number, ScoredPlayer]),
+      [10, makeScored(10, { now_cost: 80 })],  // specific entry overrides filler
+      [99, makeScored(99, { now_cost: 75 })],
     ])
     const sellPrices = new Map<number, number>([[10, 75]])  // exact selling price £7.5m
     const derived = deriveStepStates({
@@ -182,9 +182,9 @@ describe('manual-plan', () => {
     const picks = makeInitialPicks()
     picks[0] = makePick(10, 1)
     const playerMap = new Map<number, ScoredPlayer>([
-      [10, makeScored(10, { now_cost: 80 })],
-      [99, makeScored(99, { now_cost: 75 })],
       ...Array.from({ length: 14 }, (_, i) => [i + 2, makeScored(i + 2)] as [number, ScoredPlayer]),
+      [10, makeScored(10, { now_cost: 80 })],  // specific entry overrides filler
+      [99, makeScored(99, { now_cost: 75 })],
     ])
     const derived = deriveStepStates({
       initialPicks: picks,
@@ -211,10 +211,10 @@ describe('manual-plan', () => {
     const picks = makeInitialPicks()
     picks[0] = makePick(10, 1)
     const playerMap = new Map<number, ScoredPlayer>([
-      [10, makeScored(10, { now_cost: 60 })],
+      ...Array.from({ length: 13 }, (_, i) => [i + 2, makeScored(i + 2)] as [number, ScoredPlayer]),
+      [10, makeScored(10, { now_cost: 60 })],  // specific entry overrides filler
       [99, makeScored(99, { now_cost: 60 })],
       [100, makeScored(100, { now_cost: 60 })],
-      ...Array.from({ length: 13 }, (_, i) => [i + 2, makeScored(i + 2)] as [number, ScoredPlayer]),
     ])
     const derived = deriveStepStates({
       initialPicks: picks,
@@ -243,11 +243,11 @@ describe('manual-plan', () => {
     picks[0] = makePick(10, 1)
     picks[1] = makePick(11, 2)
     const playerMap = new Map<number, ScoredPlayer>([
-      [10, makeScored(10, { now_cost: 60 })],
+      ...Array.from({ length: 11 }, (_, i) => [i + 3, makeScored(i + 3)] as [number, ScoredPlayer]),
+      [10, makeScored(10, { now_cost: 60 })],  // specific entries override filler
       [11, makeScored(11, { now_cost: 60 })],
       [99, makeScored(99, { now_cost: 60 })],
       [100, makeScored(100, { now_cost: 60 })],
-      ...Array.from({ length: 11 }, (_, i) => [i + 3, makeScored(i + 3)] as [number, ScoredPlayer]),
     ])
     const derived = deriveStepStates({
       initialPicks: picks,
@@ -302,9 +302,9 @@ describe('manual-plan', () => {
     const picks = makeInitialPicks()
     picks[0] = makePick(10, 1)
     const playerMap = new Map<number, ScoredPlayer>([
-      [10, makeScored(10, { now_cost: 60 })],
-      [99, makeScored(99, { now_cost: 60 })],
       ...Array.from({ length: 14 }, (_, i) => [i + 2, makeScored(i + 2)] as [number, ScoredPlayer]),
+      [10, makeScored(10, { now_cost: 60 })],  // specific entries override filler
+      [99, makeScored(99, { now_cost: 60 })],
     ])
     // Start with 2 FTs banked
     const derived = deriveStepStates({
@@ -389,14 +389,16 @@ describe('manual-plan', () => {
     picks[0] = makePick(10, 1)
     picks[1] = makePick(11, 2)
     picks[2] = makePick(12, 3)
+    // Filler first, specific entries last so they override any conflicts
+    const fillerIds = [4, 5, 6, 7, 8, 9, 13, 14, 15, 16, 17, 18]
     const playerMap = new Map<number, ScoredPlayer>([
+      ...fillerIds.map(id => [id, makeScored(id)] as [number, ScoredPlayer]),
       [10, makeScored(10, { now_cost: 60, xPts_1gw: 5 })],
       [11, makeScored(11, { now_cost: 60, xPts_1gw: 5 })],
       [12, makeScored(12, { now_cost: 60, xPts_1gw: 5 })],
       [99, makeScored(99, { now_cost: 60, xPts_1gw: 7 })],
       [100, makeScored(100, { now_cost: 60, xPts_1gw: 7 })],
       [101, makeScored(101, { now_cost: 60, xPts_1gw: 7 })],
-      ...Array.from({ length: 12 }, (_, i) => [i + 3, makeScored(i + 3)] as [number, ScoredPlayer]),
     ])
     // Step with 1 FT available, 3 transfers → 1 free, 2 hits → hitCost = -8
     const derived = deriveStepStates({
@@ -428,12 +430,14 @@ describe('manual-plan', () => {
     const picks = makeInitialPicks()
     picks[0] = makePick(10, 1)
     picks[1] = makePick(11, 2)
+    // Filler first, specific entries last so they override any conflicts
+    const fillerIds = [2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16]
     const playerMap = new Map<number, ScoredPlayer>([
+      ...fillerIds.map(id => [id, makeScored(id)] as [number, ScoredPlayer]),
       [10, makeScored(10, { now_cost: 60, xPts_1gw: 4 })],
       [11, makeScored(11, { now_cost: 60, xPts_1gw: 4 })],
       [99, makeScored(99, { now_cost: 60, xPts_1gw: 4 })],  // free transfer (same xPts)
       [100, makeScored(100, { now_cost: 60, xPts_1gw: 8 })], // hit transfer, delta = 8-4 = 4
-      ...Array.from({ length: 13 }, (_, i) => [i + 2, makeScored(i + 2)] as [number, ScoredPlayer]),
     ])
     // 2 transfers, 1 FT available → first free, second is a hit
     const derived = deriveStepStates({
@@ -463,12 +467,14 @@ describe('manual-plan', () => {
     const picks = makeInitialPicks()
     picks[0] = makePick(10, 1)
     picks[1] = makePick(11, 2)
+    // Filler first, specific entries last so they override any conflicts
+    const fillerIds = [2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16]
     const playerMap = new Map<number, ScoredPlayer>([
+      ...fillerIds.map(id => [id, makeScored(id)] as [number, ScoredPlayer]),
       [10, makeScored(10, { now_cost: 60, xPts_1gw: 4 })],
       [11, makeScored(11, { now_cost: 60, xPts_1gw: 8 })],
       [99, makeScored(99, { now_cost: 60, xPts_1gw: 4 })],
       [100, makeScored(100, { now_cost: 60, xPts_1gw: 2 })],  // hit; delta = 2-8 = -6 (neg)
-      ...Array.from({ length: 13 }, (_, i) => [i + 2, makeScored(i + 2)] as [number, ScoredPlayer]),
     ])
     const derived = deriveStepStates({
       initialPicks: picks,
@@ -498,14 +504,16 @@ describe('manual-plan', () => {
     picks[0] = makePick(10, 1)
     picks[1] = makePick(11, 2)
     picks[2] = makePick(12, 3)
+    // Filler first, specific entries last so they override any conflicts
+    const fillerIds = [4, 5, 6, 7, 8, 9, 13, 14, 15, 16, 17, 18]
     const playerMap = new Map<number, ScoredPlayer>([
+      ...fillerIds.map(id => [id, makeScored(id)] as [number, ScoredPlayer]),
       [10, makeScored(10, { now_cost: 60, xPts_1gw: 8 })],
       [11, makeScored(11, { now_cost: 60, xPts_1gw: 8 })],
       [12, makeScored(12, { now_cost: 60, xPts_1gw: 8 })],
       [99, makeScored(99, { now_cost: 60, xPts_1gw: 6 })],
       [100, makeScored(100, { now_cost: 60, xPts_1gw: 3 })],
       [101, makeScored(101, { now_cost: 60, xPts_1gw: 1 })],
-      ...Array.from({ length: 12 }, (_, i) => [i + 3, makeScored(i + 3)] as [number, ScoredPlayer]),
     ])
     // 3 transfers, 1 FT → 1 free + 2 hits, all hits have negative delta
     const derived = deriveStepStates({
