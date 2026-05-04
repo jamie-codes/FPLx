@@ -42,8 +42,8 @@ Declared values (multiples of 4):
 | 3xl | 64px | Page-level spacing |
 
 Exceptions:
-- Touch targets: minimum `min-h-[44px]` on all interactive buttons (toggle buttons, row click targets). Source: CaptainPicksPanel.tsx `min-h-[44px]` pattern.
-- Input fields: `px-3 py-1.5` (12px/6px) — matches TransferPanel text input pattern.
+- Touch targets: minimum `min-h-[48px]` (`min-h-12`) on all interactive buttons (toggle buttons, row click targets). 48px = 12 × 4; satisfies WCAG 2.5.5 (≥44px). Source: CaptainPicksPanel.tsx touch target pattern; fixed from 44px (non-multiple-of-4) per checker revision.
+- Input fields: `px-3 py-2` (12px/8px) — matches compact text input pattern. Fixed from `py-1.5` (6px, non-multiple-of-4) per checker revision.
 - Table cells: `py-1` tight row padding, `pb-1` header bottom padding. Source: AccuracyTab `TD_CLS`.
 
 ---
@@ -95,6 +95,11 @@ Dark-mode surface pattern (project standard from CONTEXT.md §Established Patter
 
 ## Component Inventory
 
+### Visual Hierarchy (Focal Point)
+
+- **Initial state (no rivals loaded):** The "Load Rivals" button is the primary visual anchor. The page is intentionally sparse — form + empty state copy — directing the eye to the single CTA.
+- **Loaded state (rivals fetched):** `RivalSummaryTable` becomes the primary visual anchor. The selected-row highlight (`bg-zinc-100 dark:bg-zinc-800`) draws the eye to the active rival; `RivalDetailPanel` below is the secondary anchor once a row is selected.
+
 ### New Components (src/components/rivals/)
 
 | Component | Description |
@@ -124,8 +129,8 @@ Mirrors the Team ID input in TransferPanel (RESEARCH.md Pattern 4):
 
 ```
 <label> Mini-League ID
-<input> border border-zinc-300 dark:border-zinc-600 rounded px-3 py-1.5 text-base sm:text-sm ...
-<button> "Load Rivals" — bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium rounded
+<input> border border-zinc-300 dark:border-zinc-600 rounded px-3 py-2 text-base sm:text-sm ...
+<button> "Load Rivals" — bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium rounded min-h-[48px]
 ```
 
 Input width: `w-full sm:w-40`. Submit button: full-width on mobile, auto-width on desktop.

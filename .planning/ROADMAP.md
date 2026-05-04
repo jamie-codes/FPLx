@@ -364,7 +364,11 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
   3. The system flags transfer targets that would simultaneously give a differential advantage over rivals (blocking move indicator)
   4. A rank impact estimate for the captain differential is shown — expected rank swing if the user's captain outscores the rival's captain based on xPts_90th_1gw gap
   5. Leagues with more than 20 rivals show a note; rivals are fetched in batches of 3 concurrent requests, never unbounded parallel calls
-**Plans**: TBD
+**Plans**: 4 plans
+- [ ] 058-01-PLAN.md — Foundation: install p-limit ^6.1.0, add RivalEntry/RivalPick/RivalLeagueResult types, extend FPLEventSchema with deadline_time, implement useRivals hook with p-limit(3) batching + 20-rival cap + deadline gate (ML-01, ML-02, ML-08)
+- [ ] 058-02-PLAN.md — Pure differential engine: rival-intel.ts (computeShared/computeUserAdvantage/computePositionMedians/computeRivalThreats/computeBlockingMoves/computeCaptainEdge) + 12+ unit tests (ML-03..ML-07)
+- [ ] 058-03-PLAN.md — UI components: RivalsTab/RivalSummaryTable/RivalDetailPanel + component tests (ML-01..ML-08)
+- [ ] 058-04-PLAN.md — Wire RivalsTab into page.tsx Plan section + page.test.tsx mock + full suite green (ML-01)
 **Phase notes**: Requires `p-limit` ^6.1.0 npm install for the 3-concurrent-request batching in ML-08. All FPL API calls go through the existing `/api/fpl/[...proxy]` route handler — no direct browser-to-FPL calls. Captain pick is only available post-deadline (FPL API does not expose picks pre-deadline). ML-09 pagination for leagues > 20 deferred to v1.10.
 **UI hint**: yes
 
