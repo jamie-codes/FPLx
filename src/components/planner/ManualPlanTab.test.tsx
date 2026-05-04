@@ -1,7 +1,7 @@
 // Phase 59 Plan 02: ManualPlanTab component tests
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, fireEvent, screen, within, act } from '@testing-library/react'
+import { render, fireEvent, screen, within } from '@testing-library/react'
 import type { MergedPlayer, ScoredPlayer } from '@/lib/types'
 import type { SquadPick } from '@/lib/squad-adapter'
 
@@ -9,6 +9,18 @@ vi.mock('@/lib/hooks/usePlayers', () => ({ usePlayers: vi.fn() }))
 vi.mock('@/lib/hooks/useSquad', () => ({ useSquad: vi.fn() }))
 vi.mock('@/lib/hooks/useMyTeam', () => ({ useMyTeam: vi.fn() }))
 vi.mock('@/lib/hooks/useAuthStatus', () => ({ useAuthStatus: vi.fn() }))
+
+// Mock manual-plan persistence functions so localStorage is not needed in tests
+vi.mock('@/lib/manual-plan', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/manual-plan')>()
+  return {
+    ...actual,
+    loadManualPlan: vi.fn(() => null),
+    persistManualPlan: vi.fn(),
+    clearManualPlan: vi.fn(),
+  }
+})
+
 vi.mock('./ChipToggle', () => ({
   ChipToggle: ({ activeChip, onToggle }: { activeChip: string | null; onToggle: (c: string) => void }) => (
     <div data-testid="chip-toggle" data-active={activeChip ?? 'none'}>
@@ -54,6 +66,8 @@ import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useSquad } from '@/lib/hooks/useSquad'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
 import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
+import { loadManualPlan, clearManualPlan } from '@/lib/manual-plan'
+import type { ManualPlan } from '@/lib/manual-plan'
 
 const mU = vi.mocked
 
@@ -67,6 +81,7 @@ function makePlayer(id: number, opts: Partial<ScoredPlayer> = {}): ScoredPlayer 
     web_name: `Player${id}`,
     element_type: opts.element_type ?? 3, // MID by default
     team: 1,
+    team_short_name: `T${id}`,
     now_cost: opts.now_cost ?? 60,
     status: 'a',
     xPts_1gw: opts.xPts_1gw ?? 5.0,
@@ -84,10 +99,10 @@ function makePick(element: number, position: number): SquadPick {
 
 // 15 default picks
 const DEFAULT_PICKS: SquadPick[] = [
-  makePick(1, 1),  // GK starter
-  makePick(2, 12), // GK bench
-  makePick(3, 2),  makePick(4, 3),  makePick(5, 4),  makePick(6, 5), // DEF
-  makePick(7, 6),  makePick(8, 7),  makePick(9, 8),  makePick(10, 9), // MID
+  makePick(1, 1),   // GK starter
+  makePick(2, 12),  // GK bench
+  makePick(3, 2), makePick(4, 3), makePick(5, 4), makePick(6, 5), // DEF
+  makePick(7, 6), makePick(8, 7), makePick(9, 8), makePick(10, 9), // MID
   makePick(11, 10), makePick(12, 11), // FWD
   makePick(13, 13), makePick(14, 14), makePick(15, 15), // bench
 ]
@@ -109,10 +124,12 @@ function setupDefaultMocks(overrides: {
   isAuthenticated?: boolean
   picks?: SquadPick[] | null
   scoredPlayers?: ScoredPlayer[]
+  bank?: number
 } = {}) {
   const isAuthenticated = overrides.isAuthenticated ?? false
   const picks = overrides.picks !== undefined ? overrides.picks : DEFAULT_PICKS
   const scoredPlayers = overrides.scoredPlayers ?? DEFAULT_SCORED
+  const bank = overrides.bank ?? 10
 
   mU(useAuthStatus).mockReturnValue({
     isAuthenticated,
@@ -133,11 +150,24 @@ function setupDefaultMocks(overrides: {
     mU(useMyTeam).mockReturnValue({ data: undefined, isLoading: false, error: null } as ReturnType<typeof useMyTeam>)
   } else {
     mU(useSquad).mockReturnValue({
-      data: { ...DEFAULT_SQUAD_DATA, picks },
+      data: { ...DEFAULT_SQUAD_DATA, picks, entry_history: { ...DEFAULT_SQUAD_DATA.entry_history, bank } },
       isLoading: false,
       error: null,
     } as ReturnType<typeof useSquad>)
     mU(useMyTeam).mockReturnValue({ data: undefined, isLoading: false, error: null } as ReturnType<typeof useMyTeam>)
+  }
+}
+
+function makePlan(overrides: Partial<ManualPlan> = {}): ManualPlan {
+  return {
+    version: 1,
+    horizon: 3,
+    steps: [
+      { gw: 33, chip: null, transfers: [] },
+      { gw: 34, chip: null, transfers: [] },
+      { gw: 35, chip: null, transfers: [] },
+    ],
+    ...overrides,
   }
 }
 
@@ -148,9 +178,8 @@ function setupDefaultMocks(overrides: {
 describe('ManualPlanTab', () => {
   beforeEach(() => {
     vi.resetAllMocks()
-    window.localStorage.clear()
-    // Provide a fpl_team_id so hooks fire
-    window.localStorage.setItem('fpl_team_id', '123456')
+    // Reset loadManualPlan to return null by default
+    mU(loadManualPlan).mockReturnValue(null)
   })
 
   // ---- Shell tests (S1–S9) ----
@@ -169,6 +198,7 @@ describe('ManualPlanTab', () => {
     setupDefaultMocks({ picks: null, scoredPlayers: DEFAULT_SCORED })
     render(<ManualPlanTab submittedId={null} />)
     expect(screen.getByText('Load your squad first')).toBeDefined()
+    // Check via aria label
     expect(screen.getByLabelText('FPL Team ID')).toBeDefined()
     expect(screen.getByText('Load Squad')).toBeDefined()
   })
@@ -185,9 +215,7 @@ describe('ManualPlanTab', () => {
     setupDefaultMocks()
     const { container } = render(<ManualPlanTab submittedId="123456" />)
 
-    // Find summary values (text-base font-semibold spans)
     const allText = container.textContent ?? ''
-    expect(allText).toContain('0')
     expect(allText).toContain('0 pts')
     // em-dash for no-hits avg break-even
     expect(allText).toContain('—')
@@ -206,70 +234,59 @@ describe('ManualPlanTab', () => {
     expect(banner).toBeNull()
   })
 
-  it('S7: HorizonSelector present; clicking 1 GW button changes plan horizon', () => {
+  it('S7: HorizonSelector present; clicking 1 GW button updates plan horizon', () => {
     setupDefaultMocks()
     render(<ManualPlanTab submittedId="123456" />)
-    // HorizonSelector renders buttons like "1 GW"
+    // HorizonSelector renders buttons with text "1 GW"
     const btn1Gw = screen.getByRole('button', { name: '1 GW' })
     expect(btn1Gw).toBeDefined()
     fireEvent.click(btn1Gw)
-    // After clicking 1 GW, 1 step card should remain (GW step list reduced)
-    // Verified indirectly via rendered content not throwing
+    // After clicking 1 GW, horizon changes — only 1 step card should show (GW 33)
+    // Verify that GW 33 still exists (not destroyed)
+    expect(screen.getByText('GW 33')).toBeDefined()
+    // GW 34 and 35 should be gone after truncation to 1 GW
+    expect(screen.queryByText('GW 34')).toBeNull()
   })
 
-  it('S8: Reset Plan link triggers confirm; on cancel no clear; on accept clears localStorage', () => {
+  it('S8: Reset Plan link triggers confirm; on cancel no clear; on accept calls clearManualPlan', () => {
     setupDefaultMocks()
-    // Seed existing plan
-    window.localStorage.setItem('fplx_manual_plan', JSON.stringify({
-      version: 1, horizon: 3,
-      steps: [
-        { gw: 33, chip: null, transfers: [{ sellId: 3, buyId: 20 }] },
-        { gw: 34, chip: null, transfers: [] },
-        { gw: 35, chip: null, transfers: [] },
-      ],
-    }))
 
     // Mock confirm to return false first
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
     render(<ManualPlanTab submittedId="123456" />)
     fireEvent.click(screen.getByText('Reset Plan'))
     expect(confirmSpy).toHaveBeenCalledWith('Clear all transfers from your manual plan?')
-    // plan key not cleared on cancel
-    expect(window.localStorage.getItem('fplx_manual_plan')).not.toBeNull()
+    // clearManualPlan not called on cancel
+    expect(mU(clearManualPlan)).not.toHaveBeenCalled()
 
     // Now return true
     confirmSpy.mockReturnValue(true)
     fireEvent.click(screen.getByText('Reset Plan'))
-    // After confirm=true, clearManualPlan removes the key
-    expect(window.localStorage.getItem('fplx_manual_plan')).toBeNull()
+    // clearManualPlan called on accept
+    expect(mU(clearManualPlan)).toHaveBeenCalled()
 
     confirmSpy.mockRestore()
   })
 
-  it('S9: plan state restored from localStorage on mount', () => {
-    const savedPlan = {
+  it('S9: plan state restored from localStorage on mount (via loadManualPlan)', () => {
+    const savedPlan: ManualPlan = {
       version: 1, horizon: 1,
       steps: [{ gw: 33, chip: null, transfers: [] }],
     }
-    window.localStorage.setItem('fplx_manual_plan', JSON.stringify(savedPlan))
+    mU(loadManualPlan).mockReturnValue(savedPlan)
     setupDefaultMocks()
     render(<ManualPlanTab submittedId="123456" />)
     // HorizonSelector should show "1 GW" as pressed (restored horizon=1)
     const btn1 = screen.getByRole('button', { name: '1 GW' })
     expect(btn1.getAttribute('aria-pressed')).toBe('true')
+    // No GW 34 or 35 (only 1-step plan)
+    expect(screen.queryByText('GW 34')).toBeNull()
   })
 
   // ---- GwStepCard tests (S10–S21) ----
 
   it('S10: squad-loaded with 3-step plan renders 3 GwStepCards each with header GW {N}', () => {
-    window.localStorage.setItem('fplx_manual_plan', JSON.stringify({
-      version: 1, horizon: 3,
-      steps: [
-        { gw: 33, chip: null, transfers: [] },
-        { gw: 34, chip: null, transfers: [] },
-        { gw: 35, chip: null, transfers: [] },
-      ],
-    }))
+    mU(loadManualPlan).mockReturnValue(makePlan())
     setupDefaultMocks()
     render(<ManualPlanTab submittedId="123456" />)
     expect(screen.getByText('GW 33')).toBeDefined()
@@ -278,14 +295,7 @@ describe('ManualPlanTab', () => {
   })
 
   it('S11: each GwStepCard shows a + Add Transfer button', () => {
-    window.localStorage.setItem('fplx_manual_plan', JSON.stringify({
-      version: 1, horizon: 3,
-      steps: [
-        { gw: 33, chip: null, transfers: [] },
-        { gw: 34, chip: null, transfers: [] },
-        { gw: 35, chip: null, transfers: [] },
-      ],
-    }))
+    mU(loadManualPlan).mockReturnValue(makePlan())
     setupDefaultMocks()
     render(<ManualPlanTab submittedId="123456" />)
     const addButtons = screen.getAllByText('+ Add Transfer')
@@ -293,42 +303,25 @@ describe('ManualPlanTab', () => {
   })
 
   it('S12: clicking + Add Transfer enters sell stage; sell-stage list contains squad player names', () => {
-    window.localStorage.setItem('fplx_manual_plan', JSON.stringify({
-      version: 1, horizon: 3,
-      steps: [
-        { gw: 33, chip: null, transfers: [] },
-        { gw: 34, chip: null, transfers: [] },
-        { gw: 35, chip: null, transfers: [] },
-      ],
-    }))
+    mU(loadManualPlan).mockReturnValue(makePlan())
     setupDefaultMocks()
     render(<ManualPlanTab submittedId="123456" />)
     const addButtons = screen.getAllByText('+ Add Transfer')
     fireEvent.click(addButtons[0])
     // Sell stage: squad player names should appear in a sell list
-    // Player1..Player15 (our DEFAULT_PICKS)
     expect(screen.getByText('Player1')).toBeDefined()
     expect(screen.getByText('Player3')).toBeDefined()
   })
 
   it('S13: after picking a sell, buy stage opens with PlayerPickerModal at sell element_type', () => {
     // Player3 is element_type=2 (DEF) in our setup
-    const scored = DEFAULT_SCORED.map((p) => ({ ...p }))
-    window.localStorage.setItem('fplx_manual_plan', JSON.stringify({
-      version: 1, horizon: 3,
-      steps: [
-        { gw: 33, chip: null, transfers: [] },
-        { gw: 34, chip: null, transfers: [] },
-        { gw: 35, chip: null, transfers: [] },
-      ],
-    }))
-    setupDefaultMocks({ scoredPlayers: scored })
+    mU(loadManualPlan).mockReturnValue(makePlan())
+    setupDefaultMocks()
     render(<ManualPlanTab submittedId="123456" />)
     const addButtons = screen.getAllByText('+ Add Transfer')
     fireEvent.click(addButtons[0])
     // Click player3 in sell list (element_type=2 DEF)
-    const sellBtn = screen.getByText('Player3')
-    fireEvent.click(sellBtn)
+    fireEvent.click(screen.getByText('Player3'))
     // Buy stage: PlayerPickerModal should appear with position=2 (DEF)
     const modal = screen.getByTestId('picker-modal')
     expect(modal).toBeDefined()
@@ -336,16 +329,14 @@ describe('ManualPlanTab', () => {
   })
 
   it('S14: after picking buy, transfer row appears with sell/buy names and Free badge', () => {
-    // Use 1 step plan; player3 is el_type=2 (DEF)
-    window.localStorage.setItem('fplx_manual_plan', JSON.stringify({
+    mU(loadManualPlan).mockReturnValue({
       version: 1, horizon: 1,
       steps: [{ gw: 33, chip: null, transfers: [] }],
-    }))
-
+    })
     // Add player id=99 to scoredPlayers so its name shows
     const scored = [
       ...DEFAULT_SCORED,
-      makePlayer(99, { element_type: 2, web_name: 'NewPlayer' } as Partial<ScoredPlayer>),
+      makePlayer(99, { element_type: 2 } as Partial<ScoredPlayer>),
     ]
     setupDefaultMocks({ scoredPlayers: scored })
     render(<ManualPlanTab submittedId="123456" />)
@@ -354,21 +345,21 @@ describe('ManualPlanTab', () => {
     fireEvent.click(screen.getByText('+ Add Transfer'))
     // Pick sell: Player3 (DEF)
     fireEvent.click(screen.getByText('Player3'))
-    // Pick buy via mocked modal
+    // Pick buy via mocked modal (picks id=99)
     fireEvent.click(screen.getByTestId('pick-buy'))
 
     // Transfer row should appear
     expect(screen.getByText('Player3')).toBeDefined()
     expect(screen.getByText('Player99')).toBeDefined()
-    // "Free" badge since 1 FT available (default)
+    // "Free" badge since 1 FT available (default event_transfers=1 → available=1)
     expect(screen.getByText('Free')).toBeDefined()
   })
 
   it('S15: clicking X removes transfer from plan steps', () => {
-    window.localStorage.setItem('fplx_manual_plan', JSON.stringify({
+    mU(loadManualPlan).mockReturnValue({
       version: 1, horizon: 1,
       steps: [{ gw: 33, chip: null, transfers: [] }],
-    }))
+    })
     const scored = [
       ...DEFAULT_SCORED,
       makePlayer(99, { element_type: 2 } as Partial<ScoredPlayer>),
@@ -376,7 +367,7 @@ describe('ManualPlanTab', () => {
     setupDefaultMocks({ scoredPlayers: scored })
     render(<ManualPlanTab submittedId="123456" />)
 
-    // Add a transfer
+    // Add a transfer (sell Player3, buy id=99)
     fireEvent.click(screen.getByText('+ Add Transfer'))
     fireEvent.click(screen.getByText('Player3'))
     fireEvent.click(screen.getByTestId('pick-buy'))
@@ -384,15 +375,15 @@ describe('ManualPlanTab', () => {
     // ✕ button
     const removeBtn = screen.getByRole('button', { name: 'Remove transfer' })
     fireEvent.click(removeBtn)
-    // Transfer row gone
+    // Transfer row gone (Player99 no longer in DOM as a transfer row)
     expect(screen.queryByText('Player99')).toBeNull()
   })
 
   it('S16: toggling a chip via ChipToggle sets it; toggling same chip again sets it to null', () => {
-    window.localStorage.setItem('fplx_manual_plan', JSON.stringify({
+    mU(loadManualPlan).mockReturnValue({
       version: 1, horizon: 1,
       steps: [{ gw: 33, chip: null, transfers: [] }],
-    }))
+    })
     setupDefaultMocks()
     render(<ManualPlanTab submittedId="123456" />)
 
@@ -409,10 +400,10 @@ describe('ManualPlanTab', () => {
   })
 
   it('S17: accordion toggle mounts SquadSnapshotRow when open', () => {
-    window.localStorage.setItem('fplx_manual_plan', JSON.stringify({
+    mU(loadManualPlan).mockReturnValue({
       version: 1, horizon: 1,
       steps: [{ gw: 33, chip: null, transfers: [] }],
-    }))
+    })
     setupDefaultMocks()
     render(<ManualPlanTab submittedId="123456" />)
 
@@ -426,23 +417,21 @@ describe('ManualPlanTab', () => {
 
   it('S18: hit transfer with positive xPts delta shows break-even in GWs', () => {
     // 2 transfers: first is free (1 FT), second is a hit
-    // xPts_buy - xPts_sell = 4.0 → 4/4 = 1.0 GW
+    // Player3 xPts=5.0, Player99 xPts=9.0: delta=4.0 → 4/4 = 1.0 GW
     const scored = [
       ...DEFAULT_SCORED,
-      makePlayer(99, { element_type: 2, xPts_1gw: 9.0 } as Partial<ScoredPlayer>), // buy
-      makePlayer(98, { element_type: 2, xPts_1gw: 9.0 } as Partial<ScoredPlayer>), // buy2
+      makePlayer(99, { element_type: 2, xPts_1gw: 9.0 } as Partial<ScoredPlayer>),
+      makePlayer(98, { element_type: 2, xPts_1gw: 9.0 } as Partial<ScoredPlayer>),
     ]
-    // Player3 is sell (xPts=5.0 default), Player99 buy (xPts=9.0): delta=4.0 → BE=1.0 GW
-    window.localStorage.setItem('fplx_manual_plan', JSON.stringify({
+    mU(loadManualPlan).mockReturnValue({
       version: 1, horizon: 1,
       steps: [{ gw: 33, chip: null, transfers: [
-        { sellId: 3, buyId: 99 },  // free
-        { sellId: 4, buyId: 98 },  // hit (delta=4.0)
+        { sellId: 3, buyId: 99 },  // free (1st transfer uses 1 FT)
+        { sellId: 4, buyId: 98 },  // hit (2nd transfer; delta = 9-5=4 → BE=1.0 GW)
       ] }],
-    }))
+    })
     setupDefaultMocks({ scoredPlayers: scored })
     render(<ManualPlanTab submittedId="123456" />)
-    // Second transfer is hit: delta = 9.0 - 5.0 = 4.0 → 4/4.0 = 1.0 GW
     expect(screen.getByText('Break-even: 1.0 GWs')).toBeDefined()
   })
 
@@ -453,13 +442,13 @@ describe('ManualPlanTab', () => {
       makePlayer(100, { element_type: 2, xPts_1gw: 3.0 } as Partial<ScoredPlayer>),
       makePlayer(101, { element_type: 2, xPts_1gw: 3.0 } as Partial<ScoredPlayer>),
     ]
-    window.localStorage.setItem('fplx_manual_plan', JSON.stringify({
+    mU(loadManualPlan).mockReturnValue({
       version: 1, horizon: 1,
       steps: [{ gw: 33, chip: null, transfers: [
         { sellId: 3, buyId: 100 }, // free
         { sellId: 4, buyId: 101 }, // hit — delta negative
       ] }],
-    }))
+    })
     setupDefaultMocks({ scoredPlayers: scored })
     render(<ManualPlanTab submittedId="123456" />)
     // Should show ∞ glyph (U+221E)
@@ -473,10 +462,10 @@ describe('ManualPlanTab', () => {
       ...DEFAULT_SCORED,
       makePlayer(99, { element_type: 2, now_cost: 100 } as Partial<ScoredPlayer>),
     ]
-    window.localStorage.setItem('fplx_manual_plan', JSON.stringify({
+    mU(loadManualPlan).mockReturnValue({
       version: 1, horizon: 1,
       steps: [{ gw: 33, chip: null, transfers: [{ sellId: 3, buyId: 99 }] }],
-    }))
+    })
     setupDefaultMocks({ scoredPlayers: scored })
     const { container } = render(<ManualPlanTab submittedId="123456" />)
     // The bank span should have red class
@@ -487,8 +476,8 @@ describe('ManualPlanTab', () => {
   it('S21: D-06 MTP-02 budget-aware filter — only affordable players passed to picker', () => {
     // bank=5 (£0.5m), sell player id=3 now_cost=50 (£5.0m), bankAfterSell=55 (£5.5m)
     // Pool: id=100 now_cost=40 (affordable), id=101 now_cost=55 (affordable), id=102 now_cost=60 (over budget)
-    // Also a different element_type player (el=1) id=103 now_cost=30 (affordable but wrong position for modal)
-    const scored = DEFAULT_SCORED.map((p) => p.element === 3 ? { ...p, now_cost: 50 } : p)
+    // Also id=103 el_type=1 now_cost=30 (affordable, different element_type)
+    const scored = DEFAULT_SCORED.map((p) => p.id === 3 ? { ...p, now_cost: 50 } : p)
       .concat([
         makePlayer(100, { element_type: 2, now_cost: 40 } as Partial<ScoredPlayer>),
         makePlayer(101, { element_type: 2, now_cost: 55 } as Partial<ScoredPlayer>),
@@ -496,10 +485,10 @@ describe('ManualPlanTab', () => {
         makePlayer(103, { element_type: 1, now_cost: 30 } as Partial<ScoredPlayer>),
       ])
 
-    window.localStorage.setItem('fplx_manual_plan', JSON.stringify({
+    mU(loadManualPlan).mockReturnValue({
       version: 1, horizon: 1,
       steps: [{ gw: 33, chip: null, transfers: [] }],
-    }))
+    })
 
     // bank = 5, unauthenticated → no sellPriceMap → uses now_cost for sellPrice
     mU(useAuthStatus).mockReturnValue({ isAuthenticated: false, expiresAt: undefined, isLoading: false, setAuthenticated: vi.fn(), clearAuthenticated: vi.fn() })
@@ -527,12 +516,11 @@ describe('ManualPlanTab', () => {
     expect(modal).toBeDefined()
 
     // Budget-aware filter: bankAfterSell = 5 + 50 = 55
-    // affordablePlayers: id=100 (40), id=101 (55) — id=102 (60) excluded
+    // affordablePlayers: id=100 (40≤55), id=101 (55≤55) — id=102 (60>55) excluded
     const poolIds = modal.getAttribute('data-pool-ids')!.split(',').map(Number)
     expect(poolIds).toEqual(expect.arrayContaining([100, 101]))
     expect(poolIds).not.toContain(102)
-    // id=103 is affordable (30 ≤ 55) but the modal handles position filtering
-    // The caller's affordability filter keeps it in the pool — confirmed included
+    // id=103 is affordable (30 ≤ 55) — the caller's affordability filter keeps it; modal handles position
     expect(poolIds).toContain(103)
   })
 })
