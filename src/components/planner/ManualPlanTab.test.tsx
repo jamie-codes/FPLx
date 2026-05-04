@@ -62,6 +62,7 @@ vi.mock('./PlayerPickerModal', () => ({
 }))
 
 import { ManualPlanTab } from './ManualPlanTab'
+import type { PlannerHorizon } from '@/lib/types'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useSquad } from '@/lib/hooks/useSquad'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
@@ -175,6 +176,10 @@ function makePlan(overrides: Partial<ManualPlan> = {}): ManualPlan {
 // Test suite
 // ---------------------------------------------------------------------------
 
+function renderManualPlan(props: Partial<{ submittedId: string | null; horizon: PlannerHorizon }> = {}) {
+  return render(<ManualPlanTab submittedId={props.submittedId ?? '123456'} horizon={props.horizon ?? 3} />)
+}
+
 describe('ManualPlanTab', () => {
   beforeEach(() => {
     vi.resetAllMocks()
@@ -190,13 +195,13 @@ describe('ManualPlanTab', () => {
     mU(useSquad).mockReturnValue({ data: undefined, isLoading: true, error: null } as ReturnType<typeof useSquad>)
     mU(useMyTeam).mockReturnValue({ data: undefined, isLoading: true, error: null } as ReturnType<typeof useMyTeam>)
 
-    render(<ManualPlanTab submittedId="123456" />)
+    renderManualPlan()
     expect(screen.getByText('Loading…')).toBeDefined()
   })
 
   it('S2: renders no-squad branch when picks are null but players loaded', () => {
     setupDefaultMocks({ picks: null, scoredPlayers: DEFAULT_SCORED })
-    render(<ManualPlanTab submittedId={null} />)
+    renderManualPlan({ submittedId: null })
     expect(screen.getByText('Load your squad first')).toBeDefined()
     // Check via aria label
     expect(screen.getByLabelText('FPL Team ID')).toBeDefined()
@@ -205,7 +210,7 @@ describe('ManualPlanTab', () => {
 
   it('S3: renders summary header with three metric labels when picks loaded', () => {
     setupDefaultMocks()
-    render(<ManualPlanTab submittedId="123456" />)
+    renderManualPlan()
     expect(screen.getByText('Hits')).toBeDefined()
     expect(screen.getByText('Hit cost')).toBeDefined()
     expect(screen.getByText('Avg break-even')).toBeDefined()
@@ -213,7 +218,7 @@ describe('ManualPlanTab', () => {
 
   it('S4: empty plan shows Hits 0, Hit cost 0 pts, Avg break-even em-dash', () => {
     setupDefaultMocks()
-    const { container } = render(<ManualPlanTab submittedId="123456" />)
+    const { container } = renderManualPlan()
 
     const allText = container.textContent ?? ''
     expect(allText).toContain('0 pts')
@@ -223,28 +228,24 @@ describe('ManualPlanTab', () => {
 
   it('S5: caveat banner present when unauthenticated and picks not null', () => {
     setupDefaultMocks({ isAuthenticated: false })
-    render(<ManualPlanTab submittedId="123456" />)
+    renderManualPlan()
     expect(screen.getByText('Sell prices are approximate — log in to FPL for exact selling prices.')).toBeDefined()
   })
 
   it('S6: caveat banner absent when authenticated', () => {
     setupDefaultMocks({ isAuthenticated: true })
-    render(<ManualPlanTab submittedId="123456" />)
+    renderManualPlan()
     const banner = screen.queryByText('Sell prices are approximate — log in to FPL for exact selling prices.')
     expect(banner).toBeNull()
   })
 
-  it('S7: HorizonSelector present; clicking 1 GW button updates plan horizon', () => {
+  it('S7: prop horizon change truncates plan to N steps (D-07 sync effect)', () => {
     setupDefaultMocks()
-    render(<ManualPlanTab submittedId="123456" />)
-    // HorizonSelector renders buttons with text "1 GW"
-    const btn1Gw = screen.getByRole('button', { name: '1 GW' })
-    expect(btn1Gw).toBeDefined()
-    fireEvent.click(btn1Gw)
-    // After clicking 1 GW, horizon changes — only 1 step card should show (GW 33)
-    // Verify that GW 33 still exists (not destroyed)
+    const { rerender } = renderManualPlan({ horizon: 3 })
     expect(screen.getByText('GW 33')).toBeDefined()
-    // GW 34 and 35 should be gone after truncation to 1 GW
+    expect(screen.getByText('GW 34')).toBeDefined()
+    rerender(<ManualPlanTab submittedId="123456" horizon={1} />)
+    expect(screen.getByText('GW 33')).toBeDefined()
     expect(screen.queryByText('GW 34')).toBeNull()
   })
 
@@ -253,7 +254,7 @@ describe('ManualPlanTab', () => {
 
     // Mock confirm to return false first
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
-    render(<ManualPlanTab submittedId="123456" />)
+    renderManualPlan()
     const callsBefore = mU(persistManualPlan).mock.calls.length
     fireEvent.click(screen.getByText('Reset Plan'))
     expect(confirmSpy).toHaveBeenCalledWith('Clear all transfers from your manual plan?')
@@ -269,17 +270,16 @@ describe('ManualPlanTab', () => {
     confirmSpy.mockRestore()
   })
 
-  it('S9: plan state restored from localStorage on mount (via loadManualPlan)', () => {
+  it('S9: persisted plan steps load via loadManualPlan and reflect persisted horizon', () => {
     const savedPlan: ManualPlan = {
       version: 1, horizon: 1,
       steps: [{ gw: 33, chip: null, transfers: [] }],
     }
     mU(loadManualPlan).mockReturnValue(savedPlan)
     setupDefaultMocks()
-    render(<ManualPlanTab submittedId="123456" />)
-    // HorizonSelector should show "1 GW" as pressed (restored horizon=1)
-    const btn1 = screen.getByRole('button', { name: '1 GW' })
-    expect(btn1.getAttribute('aria-pressed')).toBe('true')
+    // Pass horizon=1 to match the persisted plan (page.tsx initialises from loadManualPlan)
+    renderManualPlan({ horizon: 1 })
+    expect(screen.getByText('GW 33')).toBeDefined()
     // No GW 34 or 35 (only 1-step plan)
     expect(screen.queryByText('GW 34')).toBeNull()
   })
@@ -289,7 +289,7 @@ describe('ManualPlanTab', () => {
   it('S10: squad-loaded with 3-step plan renders 3 GwStepCards each with header GW {N}', () => {
     mU(loadManualPlan).mockReturnValue(makePlan())
     setupDefaultMocks()
-    render(<ManualPlanTab submittedId="123456" />)
+    renderManualPlan()
     expect(screen.getByText('GW 33')).toBeDefined()
     expect(screen.getByText('GW 34')).toBeDefined()
     expect(screen.getByText('GW 35')).toBeDefined()
@@ -298,7 +298,7 @@ describe('ManualPlanTab', () => {
   it('S11: each GwStepCard shows a + Add Transfer button', () => {
     mU(loadManualPlan).mockReturnValue(makePlan())
     setupDefaultMocks()
-    render(<ManualPlanTab submittedId="123456" />)
+    renderManualPlan()
     const addButtons = screen.getAllByText('+ Add Transfer')
     expect(addButtons.length).toBe(3)
   })
@@ -306,7 +306,7 @@ describe('ManualPlanTab', () => {
   it('S12: clicking + Add Transfer enters sell stage; sell-stage list contains squad player names', () => {
     mU(loadManualPlan).mockReturnValue(makePlan())
     setupDefaultMocks()
-    render(<ManualPlanTab submittedId="123456" />)
+    renderManualPlan()
     const addButtons = screen.getAllByText('+ Add Transfer')
     fireEvent.click(addButtons[0])
     // Sell stage: squad player names should appear in a sell list
@@ -318,7 +318,7 @@ describe('ManualPlanTab', () => {
     // Player3 is element_type=2 (DEF) in our setup
     mU(loadManualPlan).mockReturnValue(makePlan())
     setupDefaultMocks()
-    render(<ManualPlanTab submittedId="123456" />)
+    renderManualPlan()
     const addButtons = screen.getAllByText('+ Add Transfer')
     fireEvent.click(addButtons[0])
     // Click player3 in sell list (element_type=2 DEF)
@@ -340,7 +340,7 @@ describe('ManualPlanTab', () => {
       makePlayer(99, { element_type: 2 } as Partial<ScoredPlayer>),
     ]
     setupDefaultMocks({ scoredPlayers: scored })
-    render(<ManualPlanTab submittedId="123456" />)
+    renderManualPlan({ horizon: 1 })
 
     // Add transfer
     fireEvent.click(screen.getByText('+ Add Transfer'))
@@ -366,7 +366,7 @@ describe('ManualPlanTab', () => {
       makePlayer(99, { element_type: 2 } as Partial<ScoredPlayer>),
     ]
     setupDefaultMocks({ scoredPlayers: scored })
-    render(<ManualPlanTab submittedId="123456" />)
+    renderManualPlan({ horizon: 1 })
 
     // Add a transfer (sell Player3, buy id=99)
     fireEvent.click(screen.getByText('+ Add Transfer'))
@@ -386,7 +386,7 @@ describe('ManualPlanTab', () => {
       steps: [{ gw: 33, chip: null, transfers: [] }],
     })
     setupDefaultMocks()
-    render(<ManualPlanTab submittedId="123456" />)
+    renderManualPlan({ horizon: 1 })
 
     const chipToggle = screen.getByTestId('chip-toggle')
     expect(chipToggle.getAttribute('data-active')).toBe('none')
@@ -406,7 +406,7 @@ describe('ManualPlanTab', () => {
       steps: [{ gw: 33, chip: null, transfers: [] }],
     })
     setupDefaultMocks()
-    render(<ManualPlanTab submittedId="123456" />)
+    renderManualPlan({ horizon: 1 })
 
     // Accordion default: closed
     expect(screen.queryByTestId('squad-snapshot')).toBeNull()
@@ -432,7 +432,7 @@ describe('ManualPlanTab', () => {
       ] }],
     })
     setupDefaultMocks({ scoredPlayers: scored })
-    render(<ManualPlanTab submittedId="123456" />)
+    renderManualPlan()
     expect(screen.getByText('Break-even: 1.0 GWs')).toBeDefined()
   })
 
@@ -451,7 +451,7 @@ describe('ManualPlanTab', () => {
       ] }],
     })
     setupDefaultMocks({ scoredPlayers: scored })
-    render(<ManualPlanTab submittedId="123456" />)
+    renderManualPlan()
     // Should show ∞ glyph (U+221E)
     expect(screen.getByText('Break-even: ∞')).toBeDefined()
   })
@@ -468,7 +468,7 @@ describe('ManualPlanTab', () => {
       steps: [{ gw: 33, chip: null, transfers: [{ sellId: 3, buyId: 99 }] }],
     })
     setupDefaultMocks({ scoredPlayers: scored })
-    const { container } = render(<ManualPlanTab submittedId="123456" />)
+    const { container } = renderManualPlan()
     // The bank span should have red class
     const redSpan = container.querySelector('.text-red-700')
     expect(redSpan).not.toBeNull()
@@ -505,7 +505,7 @@ describe('ManualPlanTab', () => {
     } as ReturnType<typeof useSquad>)
     mU(useMyTeam).mockReturnValue({ data: undefined, isLoading: false, error: null } as ReturnType<typeof useMyTeam>)
 
-    render(<ManualPlanTab submittedId="123456" />)
+    renderManualPlan({ horizon: 1 })
 
     // Open picker for step 0
     fireEvent.click(screen.getByText('+ Add Transfer'))

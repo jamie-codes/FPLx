@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react'
 import { useImmer } from 'use-immer'
-import { HorizonSelector } from './HorizonSelector'
 import { TransferPlanTable } from './TransferPlanTable'
 import { ChipStrategyPanel } from './ChipStrategyPanel'
 import { usePlayers } from '@/lib/hooks/usePlayers'
@@ -16,8 +15,11 @@ import { computeNextFTState, computeHitCost } from '@/lib/free-transfer-engine'
 import type { PlanResult, FTState, PlannerHorizon, PlannerChip } from '@/lib/types'
 import type { SquadPick } from '@/lib/squad-adapter'
 
-export function PlannerTab() {
-  const [horizon, setHorizon] = useState<PlannerHorizon>(3)
+interface PlannerTabProps {
+  horizon: PlannerHorizon
+}
+
+export function PlannerTab({ horizon }: PlannerTabProps) {
   const [planResult, updatePlanResult] = useImmer<PlanResult | null>(null)
 
   // Team ID from localStorage (Team-ID-only mode — no auth required)
@@ -334,12 +336,6 @@ export function PlannerTab() {
         sellPrices={sellPrices}
         startingGw={startingGw}
       />
-      <div>
-        <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
-          Planning Horizon
-        </h2>
-        <HorizonSelector value={horizon} onChange={setHorizon} />
-      </div>
       <button
         disabled={!canGenerate}
         onClick={handleGeneratePlan}

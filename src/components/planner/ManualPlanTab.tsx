@@ -7,7 +7,6 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useImmer } from 'use-immer'
-import { HorizonSelector } from './HorizonSelector'
 import { ChipToggle } from './ChipToggle'
 import { PlayerPickerModal } from './PlayerPickerModal'
 import { SquadSnapshotRow } from './SquadSnapshotRow'
@@ -33,9 +32,10 @@ import type { PlannerHorizon, PlannerChip, ScoredPlayer } from '@/lib/types'
 
 interface ManualPlanTabProps {
   submittedId: string | null
+  horizon: PlannerHorizon
 }
 
-export function ManualPlanTab({ submittedId }: ManualPlanTabProps) {
+export function ManualPlanTab({ submittedId, horizon }: ManualPlanTabProps) {
   // Team ID local input state for no-squad branch
   const [teamIdInput, setTeamIdInput] = useState<string>(() => submittedId ?? '')
 
@@ -97,7 +97,7 @@ export function ManualPlanTab({ submittedId }: ManualPlanTabProps) {
   const [plan, updatePlan] = useImmer<ManualPlan>(() => {
     const restored = loadManualPlan()
     if (restored) return restored
-    return freshPlan(3, 0)
+    return freshPlan(horizon, 0)
   })
 
   // When startingGw resolves, rewrite placeholder gw=0 step numbers
@@ -111,6 +111,16 @@ export function ManualPlanTab({ submittedId }: ManualPlanTabProps) {
       }
     })
   }, [startingGw, updatePlan])
+
+  // D-07: sync persisted plan horizon to the section-level prop. page.tsx owns the
+  // active horizon; plan.horizon is a downstream mirror so reloads preserve it.
+  useEffect(() => {
+    if (plan.horizon === horizon) return
+    updatePlan((draft) => {
+      draft.horizon = horizon
+      draft.steps = truncateOrExtendSteps(draft.steps, horizon, startingGw ?? draft.steps[0]?.gw ?? 0)
+    })
+  }, [horizon, startingGw, plan.horizon, updatePlan])
 
   // Persistence effect (D-05, MTP-08) — fires on every plan mutation
   useEffect(() => {
@@ -322,9 +332,8 @@ export function ManualPlanTab({ submittedId }: ManualPlanTabProps) {
         </div>
       )}
 
-      {/* Top controls row */}
-      <div className="flex items-center justify-between gap-4 mb-4">
-        <HorizonSelector value={plan.horizon} onChange={handleHorizonChange} />
+      {/* Top controls row — horizon now lives in page.tsx (D-07); only Reset Plan stays here */}
+      <div className="flex items-center justify-end gap-4 mb-4">
         <button
           onClick={handleReset}
           className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 underline-offset-2 hover:underline cursor-pointer"

@@ -22,7 +22,7 @@ vi.mock('@/components/club-form/FixtureSwingDetector', () => ({ FixtureSwingDete
 vi.mock('@/components/LastUpdated', () => ({ LastUpdated: () => <div data-testid="last-updated" /> }))
 vi.mock('@/components/theme/ThemeToggle', () => ({ ThemeToggle: () => <div data-testid="theme-toggle" /> }))
 vi.mock('@/components/value-gems/ValueGemsTable', () => ({ ValueGemsTable: () => <div data-testid="value-gems" /> }))
-vi.mock('@/components/planner/PlannerTab', () => ({ PlannerTab: () => <div data-testid="planner" /> }))
+vi.mock('@/components/planner/PlannerTab', () => ({ PlannerTab: (props: { horizon: number }) => <div data-testid="planner" data-horizon={props.horizon} /> }))
 vi.mock('@/components/set-pieces/SetPieceTakerPanel', () => ({ SetPieceTakerPanel: () => <div data-testid="set-piece-taker" /> }))
 vi.mock('@/components/captaincy/CaptainPicksPanel', () => ({ CaptainPicksPanel: () => <div data-testid="captain-picks" /> }))
 vi.mock('@/components/insights/InsightsTab', () => ({ InsightsTab: () => <div data-testid="insights" /> }))
@@ -40,10 +40,10 @@ vi.mock('@/components/price-changes/PriceChangePanel', () => ({
   PriceChangePanel: () => <div data-testid="price-change-panel" />,
 }))
 vi.mock('@/components/planner/ManualPlanTab', () => ({
-  ManualPlanTab: (_props: { submittedId: string | null }) => <div data-testid="manual-plan-tab" />,
+  ManualPlanTab: (props: { submittedId: string | null; horizon: number }) => <div data-testid="manual-plan-tab" data-horizon={props.horizon} />,
 }))
 vi.mock('@/components/planner/RouteTreeTab', () => ({
-  RouteTreeTab: (_props: { submittedId: string | null; onSwitchSubTab: (tab: 'manual-plan') => void }) => <div data-testid="route-tree-tab" />,
+  RouteTreeTab: (props: { submittedId: string | null; onSwitchSubTab: (tab: string) => void; horizon: number }) => <div data-testid="route-tree-tab" data-horizon={props.horizon} />,
 }))
 
 import Home from '@/app/page'
@@ -203,6 +203,37 @@ describe('Phase 36: page.tsx state', () => {
     // Manual Plan visible, Planner hidden
     expect(container.querySelector('[data-testid="manual-plan-tab"]')).not.toBeNull()
     expect(container.querySelector('[data-testid="planner"]')).toBeNull()
+  })
+
+  it('D-07: section-level HorizonSelector shares horizon across all Plan sub-tabs', () => {
+    const { container } = render(<Home />)
+    const planBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Plan')
+    fireEvent.click(planBtn!)
+
+    // Section-level HorizonSelector present (desktop + mobile each get data-testid)
+    const horizonSelectors = container.querySelectorAll('[data-testid="plan-section-horizon"]')
+    expect(horizonSelectors.length).toBeGreaterThanOrEqual(1)
+
+    // Default horizon=3 reaches Planner tab
+    expect(container.querySelector('[data-testid="planner"]')?.getAttribute('data-horizon')).toBe('3')
+
+    // Click 1 GW in the first horizon group
+    const horizonGroup = container.querySelector('[aria-label="Planning horizon"]')!
+    const oneGwBtn = Array.from(horizonGroup.querySelectorAll('button')).find(b => b.textContent === '1 GW')!
+    fireEvent.click(oneGwBtn)
+
+    // Planner tab now receives horizon=1
+    expect(container.querySelector('[data-testid="planner"]')?.getAttribute('data-horizon')).toBe('1')
+
+    // Switch to Manual Plan — same horizon shared
+    const manualBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Manual Plan')
+    fireEvent.click(manualBtn!)
+    expect(container.querySelector('[data-testid="manual-plan-tab"]')?.getAttribute('data-horizon')).toBe('1')
+
+    // Switch to Route Tree — same horizon shared
+    const routeTreeBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Route Tree')
+    fireEvent.click(routeTreeBtn!)
+    expect(container.querySelector('[data-testid="route-tree-tab"]')?.getAttribute('data-horizon')).toBe('1')
   })
 })
 

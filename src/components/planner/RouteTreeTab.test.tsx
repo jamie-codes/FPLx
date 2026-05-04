@@ -2,7 +2,7 @@
 // Phase 60 Plan 02: RouteTreeTab component tests (TRT-04, TRT-05, TRT-07)
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, fireEvent, screen } from '@testing-library/react'
-import type { ScoredPlayer, MergedPlayer } from '@/lib/types'
+import type { ScoredPlayer, MergedPlayer, PlannerHorizon } from '@/lib/types'
 import type { SquadPick } from '@/lib/squad-adapter'
 
 vi.mock('@/lib/hooks/usePlayers', () => ({ usePlayers: vi.fn() }))
@@ -149,9 +149,9 @@ beforeEach(() => {
   mU(loadManualPlan).mockReturnValue(null)
 })
 
-function renderRouteTree(overrides: Parameters<typeof setupDefaultMocks>[0] = {}) {
+function renderRouteTree(overrides: Parameters<typeof setupDefaultMocks>[0] = {}, horizon: PlannerHorizon = 3) {
   setupDefaultMocks(overrides)
-  return render(<RouteTreeTab submittedId="123" onSwitchSubTab={onSwitchSubTab} />)
+  return render(<RouteTreeTab submittedId="123" horizon={horizon} onSwitchSubTab={onSwitchSubTab} />)
 }
 
 // ---------------------------------------------------------------------------
@@ -161,7 +161,7 @@ function renderRouteTree(overrides: Parameters<typeof setupDefaultMocks>[0] = {}
 describe('no-squad branch', () => {
   it('when picks === null, renders empty-state heading, Team ID input, Load Squad button; no table', () => {
     setupDefaultMocks({ picks: null })
-    render(<RouteTreeTab submittedId={null} onSwitchSubTab={onSwitchSubTab} />)
+    render(<RouteTreeTab submittedId={null} horizon={3} onSwitchSubTab={onSwitchSubTab} />)
     expect(screen.getByText('Load your squad first')).toBeDefined()
     expect(screen.getByLabelText('FPL Team ID')).toBeDefined()
     const loadBtn = screen.getAllByRole('button').find(b => b.textContent === 'Load Squad')
@@ -178,7 +178,7 @@ describe('no-squad branch', () => {
       configurable: true,
       value: { ...window.location, reload: reloadSpy },
     })
-    const { container } = render(<RouteTreeTab submittedId={null} onSwitchSubTab={onSwitchSubTab} />)
+    const { container } = render(<RouteTreeTab submittedId={null} horizon={3} onSwitchSubTab={onSwitchSubTab} />)
     const input = screen.getByLabelText('FPL Team ID') as HTMLInputElement
     fireEvent.change(input, { target: { value: '9999999' } })
     // Submit the form directly
@@ -208,7 +208,7 @@ describe('caveat banner (MTP-07 mirror)', () => {
       isLoading: false,
       error: null,
     } as unknown as ReturnType<typeof useMyTeam>)
-    render(<RouteTreeTab submittedId="123" onSwitchSubTab={onSwitchSubTab} />)
+    render(<RouteTreeTab submittedId="123" horizon={3} onSwitchSubTab={onSwitchSubTab} />)
     expect(screen.queryByText('Sell prices are approximate — log in to FPL for exact selling prices.')).toBeNull()
   })
 })
@@ -328,37 +328,27 @@ describe('expand breakdown — TRT-03', () => {
 })
 
 describe('horizon recompute — TRT-07', () => {
-  it('changing horizon to 5 GW re-renders with different path data', () => {
-    const { container } = renderRouteTree()
-    // Get initial path count
+  it('changing horizon prop re-renders with valid path data', () => {
+    setupDefaultMocks()
+    const { container, rerender } = render(<RouteTreeTab submittedId="123" horizon={3} onSwitchSubTab={onSwitchSubTab} />)
     const initialRows = container.querySelectorAll('[data-testid^="path-row-"]')
-    const initialCount = initialRows.length
-    expect(initialCount).toBeGreaterThanOrEqual(1)
+    expect(initialRows.length).toBeGreaterThanOrEqual(1)
 
-    // Find the 5 GW button in HorizonSelector
-    const allButtons = Array.from(container.querySelectorAll('button'))
-    const fiveGwBtn = allButtons.find(b => b.textContent === '5 GW')
-    expect(fiveGwBtn).toBeDefined()
-    fireEvent.click(fiveGwBtn!)
+    rerender(<RouteTreeTab submittedId="123" horizon={5} onSwitchSubTab={onSwitchSubTab} />)
 
-    // After horizon change, table should still render (same or different path count)
     const afterRows = container.querySelectorAll('[data-testid^="path-row-"]')
     expect(afterRows.length).toBeGreaterThanOrEqual(1)
   })
 
-  it('changing horizon resets expandedPaths (previously expanded path collapses)', () => {
-    const { container } = renderRouteTree()
-    // Expand path 0
+  it('changing horizon prop resets expandedPaths (previously expanded path collapses)', () => {
+    setupDefaultMocks()
+    const { container, rerender } = render(<RouteTreeTab submittedId="123" horizon={3} onSwitchSubTab={onSwitchSubTab} />)
     const expandBtn = container.querySelector('[data-testid="path-expand-0"]') as HTMLButtonElement
     fireEvent.click(expandBtn)
     expect(container.querySelector('[data-testid="path-breakdown-0"]')).not.toBeNull()
 
-    // Change horizon to 5 GW
-    const allButtons = Array.from(container.querySelectorAll('button'))
-    const fiveGwBtn = allButtons.find(b => b.textContent === '5 GW')!
-    fireEvent.click(fiveGwBtn)
+    rerender(<RouteTreeTab submittedId="123" horizon={5} onSwitchSubTab={onSwitchSubTab} />)
 
-    // Path 0 should be collapsed again
     expect(container.querySelector('[data-testid="path-breakdown-0"]')).toBeNull()
   })
 })
@@ -502,7 +492,7 @@ describe('empty tree fallback', () => {
     // With only 15 squad members in the scored pool, ownedIds covers all of them
     // so buildCandidatePool returns [] → forceRootReplacement returns null → all branches dropped
 
-    const { container } = render(<RouteTreeTab submittedId="123" onSwitchSubTab={onSwitchSubTab} />)
+    const { container } = render(<RouteTreeTab submittedId="123" horizon={3} onSwitchSubTab={onSwitchSubTab} />)
     expect(container.querySelector('[data-testid="route-tree-empty"]')).not.toBeNull()
     expect(container.querySelectorAll('[data-testid^="path-row-"]').length).toBe(0)
   })

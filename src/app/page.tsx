@@ -2,6 +2,9 @@
 
 import { useState, useCallback, Component } from 'react'
 import type { ReactNode, ErrorInfo } from 'react'
+import { HorizonSelector } from '@/components/planner/HorizonSelector'
+import { loadManualPlan } from '@/lib/manual-plan'
+import type { PlannerHorizon } from '@/lib/types'
 import { GemTable } from '@/components/gem-table/GemTable'
 import type { ViewPreset } from '@/components/gem-table/GwToggle'
 import type { ScoredPlayer } from '@/lib/types'
@@ -115,6 +118,18 @@ export default function Home() {
     }
   }, [teamId])
 
+  // D-07: Plan-section horizon shared across PlannerTab, ManualPlanTab, and RouteTreeTab.
+  // Initialised from localStorage via loadManualPlan so the persisted plan's horizon is the
+  // source of truth on page reload. Default 3 when no plan is stored.
+  const [planHorizon, setPlanHorizon] = useState<PlannerHorizon>(() => {
+    try {
+      const persisted = loadManualPlan()
+      return persisted?.horizon ?? 3
+    } catch {
+      return 3
+    }
+  })
+
   const handleCompare = useCallback((player: ScoredPlayer) => {
     setComparePlayer(player)
     setCompareOpen(true)
@@ -177,6 +192,20 @@ export default function Home() {
           )
         })()}
 
+        {/* D-07: Section-level HorizonSelector — only when Plan section is active */}
+        {activeSection === 'plan' && (
+          <>
+            <div className="hidden sm:flex items-center gap-3 mb-6" data-testid="plan-section-horizon">
+              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Planning Horizon</span>
+              <HorizonSelector value={planHorizon} onChange={setPlanHorizon} />
+            </div>
+            <div className="sm:hidden flex items-center gap-3 mb-4 overflow-x-auto" data-testid="plan-section-horizon-mobile">
+              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Horizon</span>
+              <HorizonSelector value={planHorizon} onChange={setPlanHorizon} />
+            </div>
+          </>
+        )}
+
         {/* Tab content — squad guards on section + sub-tab; others guard on sub-tab AND non-squad section */}
         {activeSection === 'squad' && activeSubTab === 'decision' && (
           <DecisionErrorBoundary>
@@ -219,14 +248,14 @@ export default function Home() {
           <RivalsTab submittedId={submittedId} />
         )}
         {activeSection === 'plan' && activeSubTab === 'manual-plan' && (
-          <ManualPlanTab submittedId={submittedId} />
+          <ManualPlanTab submittedId={submittedId} horizon={planHorizon} />
         )}
         {activeSection === 'plan' && activeSubTab === 'route-tree' && (
-          <RouteTreeTab submittedId={submittedId} onSwitchSubTab={handleSubTabChange} />
+          <RouteTreeTab submittedId={submittedId} horizon={planHorizon} onSwitchSubTab={handleSubTabChange} />
         )}
         {activeSection === 'plan' && activeSubTab === 'planner' && (
           <>
-            <PlannerTab />
+            <PlannerTab horizon={planHorizon} />
             <CaptainPicksPanel submittedId={submittedId} />
           </>
         )}

@@ -4,8 +4,7 @@
 // Composes the Plan 01 pure engine + reused Phase 59 patterns (ManualPlanTab analog).
 // Bridge to Manual Plan via persistManualPlan (D-08, D-09).
 
-import { useState, useMemo, useCallback, Fragment } from 'react'
-import { HorizonSelector } from './HorizonSelector'
+import { useState, useMemo, useCallback, useEffect, Fragment } from 'react'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useSquad } from '@/lib/hooks/useSquad'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
@@ -22,16 +21,15 @@ import type { PlannerHorizon, PlannerChip } from '@/lib/types'
 
 interface RouteTreeTabProps {
   submittedId: string | null
+  horizon: PlannerHorizon
   onSwitchSubTab: (tab: 'manual-plan') => void
 }
 
-export function RouteTreeTab({ submittedId, onSwitchSubTab }: RouteTreeTabProps) {
+export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTreeTabProps) {
   // Team ID local input state for no-squad branch
   const [teamIdInput, setTeamIdInput] = useState<string>(() => submittedId ?? '')
 
-  // Local horizon state — see architecture decision: RouteTreeTab renders its own HorizonSelector
-  // matching the PlannerTab/ManualPlanTab pattern. TRT-07 recomputation via useMemo dependency.
-  const [horizon, setHorizon] = useState<PlannerHorizon>(3)
+  // D-07: horizon is a prop from page.tsx — no local state. TRT-07 recomputation via useMemo dependency.
 
   // Expand/confirm state
   const [expandedPaths, setExpandedPaths] = useState<Set<number>>(() => new Set())
@@ -114,12 +112,11 @@ export function RouteTreeTab({ submittedId, onSwitchSubTab }: RouteTreeTabProps)
   // Handlers
   // ---------------------------------------------------------------------------
 
-  // Horizon change handler — clears expanded paths (UI-SPEC.md §Interaction Contracts)
-  const handleHorizonChange = useCallback((h: PlannerHorizon) => {
-    setHorizon(h)
+  // D-07: reset expanded state when the section-level horizon prop changes
+  useEffect(() => {
     setExpandedPaths(new Set())
     setConfirmingLoadIndex(null)
-  }, [])
+  }, [horizon])
 
   const toggleExpand = useCallback((i: number) => {
     setExpandedPaths(prev => {
@@ -242,11 +239,6 @@ export function RouteTreeTab({ submittedId, onSwitchSubTab }: RouteTreeTabProps)
           </p>
         </div>
       )}
-
-      {/* HorizonSelector row — local state per architecture decision (D-07 deviation) */}
-      <div className="flex items-center gap-3 mb-4">
-        <HorizonSelector value={horizon} onChange={handleHorizonChange} />
-      </div>
 
       {/* Empty-tree fallback */}
       {tree && tree.paths.length === 0 && (
