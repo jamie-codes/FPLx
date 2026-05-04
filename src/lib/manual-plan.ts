@@ -12,6 +12,8 @@ export interface ManualTransfer {
 export interface ManualStep {
   gw: number
   chip: PlannerChip
+  // INVARIANT: transfers are ordered free-first — the first freeTransfersAvailable
+  // entries are free; any beyond that incur a -4pt hit.
   transfers: ManualTransfer[]  // unlimited per D-07
 }
 
@@ -239,9 +241,11 @@ export function loadManualPlan(): ManualPlan | null {
     if (typeof p.horizon !== 'number' || p.horizon < 1 || p.horizon > 5) return null
     if (!Array.isArray(p.steps) || p.steps.length === 0 || p.steps.length > 5) return null
     // T-59-01: validate each step is shape-compatible
+    const VALID_CHIPS = new Set(['wildcard', 'freehit', 'bboost', '3xc', null])
     for (const s of p.steps) {
       if (typeof s.gw !== 'number') return null
       if (!Array.isArray(s.transfers)) return null
+      if (!VALID_CHIPS.has(s.chip)) return null
     }
     return p as ManualPlan
   } catch {
