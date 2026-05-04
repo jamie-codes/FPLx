@@ -30,10 +30,11 @@ export const FPLTeamSchema = z.object({
 })
 
 export const FPLEventSchema = z.object({
-  id:         z.number().int(),
-  is_current: z.boolean(),
-  is_next:    z.boolean(),
-  finished:   z.boolean(),
+  id:            z.number().int(),
+  is_current:    z.boolean(),
+  is_next:       z.boolean(),
+  finished:      z.boolean(),
+  deadline_time: z.string(),  // ISO 8601 — added Phase 58 D-05 for rival captain deadline gate
 })
 
 export const FPLBootstrapSchema = z.object({

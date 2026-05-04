@@ -42,6 +42,7 @@ export interface FPLEvent {
   is_current: boolean
   is_next: boolean
   finished: boolean
+  deadline_time: string  // ISO 8601 — Phase 58 D-05
 }
 
 // Full bootstrap-static response (validated)
@@ -540,4 +541,61 @@ export interface Insight {
   confidence_pct: number                                  // 0-100 (rounded to 1 d.p. by pipeline)
   sample_n: number                                        // numerator (how many times pattern held true)
   sample_total: number                                    // denominator (>= 10 enforced by pipeline D-03)
+}
+
+// Phase 58 (ML-01..ML-08) — Mini-League Rival Tracker.
+// Source: .planning/phases/058-mini-league-rival-tracker/058-CONTEXT.md §decisions D-03, D-07, D-12
+//         .planning/phases/058-mini-league-rival-tracker/058-RESEARCH.md §Architecture Patterns
+
+/**
+ * One pick from a rival's GW lineup. Mirrors SquadPick but is namespaced for clarity:
+ * the rival picks endpoint returns the same shape as `entry/{id}/event/{gw}/picks/`.
+ * Stored on RivalEntry.picks as the raw pick list (15 entries: 11 starters + 4 bench).
+ */
+export interface RivalPick {
+  element: number          // FPL player ID
+  position: number         // 1..15 (lineup slot)
+  multiplier: number       // 0=bench, 1=starter, 2=captain, 3=triple captain
+  is_captain: boolean
+  is_vice_captain: boolean
+}
+
+/**
+ * One rival manager and their hydrated GW data.
+ *
+ * Fields:
+ * - entryId: FPL `entry` ID (manager's team ID).
+ * - entryName: team name (FPL `entry_name`).
+ * - playerName: real-name (FPL `player_name`).
+ * - rank: rival's rank within the mini-league (1-indexed).
+ * - rankGap: rival.rank - userRank. Negative = user is ranked higher (better);
+ *            positive = user is ranked lower (worse). Mirrors UI-SPEC.md sign convention
+ *            ("+N green = user ahead"); the UI flips sign for display.
+ * - picks: the 15-pick array from the GW picks endpoint (raw shape).
+ * - captainPlayerId: post-deadline only — the FPL element ID of the rival's captain.
+ *                    `null` when current event's deadline_time is in the future
+ *                    (D-05 deadline gate applied inside `useRivals`).
+ * - chipsRemaining: derived from history — array of unplayed chip names from
+ *                    ['bboost','3xc','freehit','wildcard'].
+ */
+export interface RivalEntry {
+  entryId: number
+  entryName: string
+  playerName: string
+  rank: number
+  rankGap: number
+  picks: RivalPick[]
+  captainPlayerId: number | null
+  chipsRemaining: string[]
+}
+
+/**
+ * Result returned by the `useRivals` hook.
+ * - rivals: up to MAX_RIVALS (20) entries, in standings rank order.
+ * - leagueTruncated: true when the league had > 20 entries and we capped (ML-08).
+ *                    Triggers the "Showing first 20 rivals…" note in the UI.
+ */
+export interface RivalLeagueResult {
+  rivals: RivalEntry[]
+  leagueTruncated: boolean
 }
