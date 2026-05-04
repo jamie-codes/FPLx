@@ -23,7 +23,6 @@ import {
   computeManualPlanSummary,
   loadManualPlan,
   persistManualPlan,
-  clearManualPlan,
 } from '@/lib/manual-plan'
 import type { ManualPlan, ManualStep, ManualTransfer, DerivedStep } from '@/lib/manual-plan'
 import type { PlannerHorizon, PlannerChip, ScoredPlayer } from '@/lib/types'
@@ -175,7 +174,8 @@ export function ManualPlanTab({ submittedId }: ManualPlanTabProps) {
     const ok = window.confirm('Clear all transfers from your manual plan?')
     if (!ok) return
     updatePlan(() => freshPlan(plan.horizon, startingGw ?? 0))
-    clearManualPlan()
+    // clearManualPlan() is unnecessary — persistManualPlan effect overwrites storage
+    // on every plan change, including this reset.
   }, [plan.horizon, startingGw, updatePlan])
 
   const handleChipToggle = useCallback(
@@ -416,7 +416,13 @@ export function ManualPlanTab({ submittedId }: ManualPlanTabProps) {
               <div className="overflow-y-auto flex-1 divide-y divide-zinc-100 dark:divide-zinc-800">
                 {squadEntering.map((playerId) => {
                   const player = playerMap.get(playerId)
-                  if (!player) return null
+                  if (!player) {
+                    return (
+                      <div key={playerId} className="w-full px-3 py-2 text-sm text-zinc-400 italic">
+                        Unknown player (ID {playerId})
+                      </div>
+                    )
+                  }
                   return (
                     <button
                       key={playerId}
@@ -513,7 +519,7 @@ function computeFtLabel(step: ManualStep, derivedStep: DerivedStep): string {
   const remaining = derivedStep.freeTransfersAvailable - step.transfers.length
   if (remaining >= 2) return '2 free'
   if (remaining === 1) return '1 free'
-  return 'Used (Hit)'
+  return '0 free'  // all FTs consumed, no hit (transfers.length === freeTransfersAvailable)
 }
 
 function GwStepCard({
