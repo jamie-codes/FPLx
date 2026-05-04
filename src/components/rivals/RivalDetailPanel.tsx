@@ -91,21 +91,18 @@ export function RivalDetailPanel({
   const sharedPlayers = sharedIds.map(id => playerById.get(id)).filter((p): p is MergedPlayer => !!p)
   const advantagePlayers = advantageIds.map(id => playerById.get(id)).filter((p): p is MergedPlayer => !!p)
 
-  // For blocking suggestions, surface the qualifying buy player(s) (singles → 1 chip; combos → 1-2 chips per suggestion).
-  // We dedupe by buy.id across all suggestions so the same player only renders once.
+  // WR-02: derive blockingPlayers from computeBlockingMoves output directly.
+  // Do NOT re-apply the filter conditions here — computeBlockingMoves already enforces them.
+  // Deduplication by buy.id ensures the same player only renders once across suggestions.
   const blockingBuyIds = new Set<number>()
   const blockingPlayers: MergedPlayer[] = []
   for (const s of blocking) {
-    const buys = s.kind === 'single' ? [s.buy] : [s.transfers[0].buy, s.transfers[1].buy]
+    const buys = s.kind === 'single' ? [s.buy] : s.transfers.map(t => t.buy)
     for (const buy of buys) {
-      if (rivalIds.has(buy.id)) continue
-      const x = buy.xPts_1gw
-      if (x === undefined) continue
-      const median = posMedians.get(buy.element_type) ?? 0
-      if (x <= median) continue
-      if (blockingBuyIds.has(buy.id)) continue
-      blockingBuyIds.add(buy.id)
-      blockingPlayers.push(buy)
+      if (!blockingBuyIds.has(buy.id)) {
+        blockingBuyIds.add(buy.id)
+        blockingPlayers.push(buy)
+      }
     }
   }
 
