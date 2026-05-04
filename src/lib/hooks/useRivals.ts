@@ -69,7 +69,7 @@ export function useRivals(
       const stRaw = await stRes.json()
       const stParsed = parseLeagueStandings(stRaw)
       if (!stParsed.success) throw new Error('standings shape invalid')
-      const allEntries = stParsed.data.standings.results
+      const page1 = stParsed.data.standings
 
       // ML-02: extract user's rank from the SAME standings response (no extra fetch).
       // Find the user's entry by matching against userTeamId. Falls back to null when
@@ -77,12 +77,16 @@ export function useRivals(
       let userRank: number | null = null
       if (userTeamId && /^\d+$/.test(userTeamId)) {
         const userEntryNum = Number(userTeamId)
-        const userEntry = allEntries.find(e => e.entry === userEntryNum)
+        const userEntry = page1.results.find(e => e.entry === userEntryNum)
         userRank = userEntry?.rank ?? null
       }
 
-      const leagueTruncated = allEntries.length > MAX_RIVALS
-      const capped = allEntries.slice(0, MAX_RIVALS)
+      // CR-01: use has_next from the API response to correctly detect truncation.
+      // The old allEntries.length > MAX_RIVALS check was wrong — the API always
+      // returns at most MAX_RIVALS (20) results per page, so has_next is the only
+      // reliable signal that more pages exist.
+      const leagueTruncated = page1.has_next === true || page1.results.length > MAX_RIVALS
+      const capped = page1.results.slice(0, MAX_RIVALS)
 
       // Step 3: per-rival picks + history with p-limit(3) concurrency cap.
       const limit = pLimit(CONCURRENCY)
