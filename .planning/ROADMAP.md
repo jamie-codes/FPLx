@@ -410,7 +410,16 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
   3. Each path is expandable to a GW-by-GW breakdown showing: transfer out / in, FT bank at that GW, projected xPts contribution
   4. A "Load into Manual Planner" button on any path pre-populates the Phase 59 Manual Plan with that path's transfers, ready for manual refinement
   5. Tree generation respects the active chip mode (Wildcard / Free Hit / Bench Boost) and recalculates when the GW horizon toggle changes
-**Plans**: TBD
+**Plans**: 2 plans
+  **Wave 1**
+  - [ ] 060-01-PLAN.md — TDD: src/lib/transfer-route-tree.ts + tests/lib/transfer-route-tree.test.ts (pure greedy multi-branch engine; top-3 sell roots, position-matched buys, D-01 no-hits, D-04 per-leg positive, chipMode arg, deterministic tie-break) — TRT-01/02/03/06
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 060-02-PLAN.md — RouteTreeTab.tsx + RouteTreeTab.test.tsx + page.tsx wiring (SubTab union + Plan section subTabs entry + render guard) + page.test.tsx integration test + human-verify checkpoint — TRT-01 (UI mount) / TRT-04 / TRT-05 / TRT-07
+  **Cross-cutting constraints:**
+  - Plan 01 must export buildTransferRouteTree, RouteNode, RoutePath, TransferRouteTree, BuildTransferRouteTreeArgs before Plan 02 can compile
+  - Plan 02 reuses computeNextFTState/computeHitCost/snapshotSquad (Phase 56), persistManualPlan/loadManualPlan/ManualPlan/ManualStep (Phase 59) AS-IS — no edits to those engines
+  - Architecture decision (logged in Plan 02): RouteTreeTab renders its OWN HorizonSelector locally (matches PlannerTab/ManualPlanTab pattern); UI-SPEC.md §Reused Components note about no-own-HorizonSelector is overridden because page.tsx does not yet have a section-level horizon (RESEARCH.md Pitfall 4 / A2)
+  - chipMode passed as null constant in Plan 02 — TRT-06 satisfied at engine level (Plan 01 Tests E1–E4); section-level ChipToggle deferred per RESEARCH.md A3
 **Phase notes**: TRT-01 is PURE TYPESCRIPT — top-3 distinct sell roots with greedy continuation per branch. Explicitly NO LLM. LLM-generated branching is deferred to v1.12 (NLP-01). TRT-05 bridge requires Phase 59 MTP-01 to be complete before this phase begins. Tree builds on Phase 56 (corrected FT engine) for accurate FT bank state at each branch node.
 **UI hint**: yes
 
