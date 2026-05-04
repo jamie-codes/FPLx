@@ -492,17 +492,19 @@ const captainEdge =
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Deadline detection: proxy-side or client-side bootstrap lookup?**
    - What we know: D-05 specifies deadline check "server-side in the route handler". The bare proxy (`/api/fpl/[...proxy]`) does zero interpretation — it just forwards.
    - What's unclear: Should we add a thin dedicated route (`/api/rivals/picks/[entryId]`) that checks deadline and returns `captainPlayerId: null | number`? Or does the `useRivals` hook fetch `bootstrap-static` separately (through the proxy) and apply the deadline gate client-side?
    - Recommendation: Add a thin wrapper route `/api/rivals/picks/[entryId]` that (1) fetches bootstrap to get deadline_time for current event, (2) fetches the rival's picks, and (3) returns `{ captainPlayerId: null | number, picks: SquadPick[] }` — this keeps deadline logic server-side per D-05 without changing the bare proxy. Alternatively, the `useRivals` hook can fetch bootstrap once and check `deadline_time` client-side — simpler but technically violates D-05 wording.
+   - **RESOLVED (2026-05-04):** Implemented client-side in `useRivals` (Plan 01 Task 3) per the bare-proxy approach. The bootstrap fetch + `Date.now() >= Date.parse(deadline_time)` check happens in the queryFn closure. D-05 deviation rationale documented in 058-01-PLAN.md Task 3 `<deviation_rationale>`. Spirit of D-05 (captainPlayerId null pre-deadline) is preserved; FPL API itself returns null picks pre-deadline as a secondary safeguard.
 
 2. **Where does `suggestTransfers()` get called for blocking moves?**
    - What we know: `suggestTransfers()` needs `currentPicks`, `players`, `horizon`, `ftCount`, `bank`. The Rivals tab receives `submittedId` prop (from page.tsx) and can call `useSquad(submittedId)`.
    - What's unclear: Whether the planner should re-invoke `suggestTransfers()` in `RivalsTab` or have page.tsx pass down the already-computed `transferSuggestions` from `TransferPanel`.
    - Recommendation: Re-invoke `suggestTransfers()` in `RivalsTab` with a fixed `horizon=1`, `ftCount=1` (simplest, no auth requirement). The same suggestion data in `TransferPanel` uses user-configured horizon and ftCount — those differ. A fresh call with horizon=1 is the right choice for blocking move intent.
+   - **RESOLVED (2026-05-04):** Re-invoked inside `RivalsTab` (Plan 03 Task 3) with fixed `horizon=1`, `ftCount=1`, empty `sellPrices` map. Computed once via `useMemo` over `(squadData, playersData)`; result passed to `RivalDetailPanel` as a prop so blocking-move computation does not re-call `suggestTransfers` per rival selection.
 
 ---
 
