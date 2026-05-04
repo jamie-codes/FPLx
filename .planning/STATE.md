@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Competitive Intelligence
-status: Phase 59 (Manual Transfer Planner) complete — Phase 60 (Transfer Route Tree) next
-stopped_at: ""
-last_updated: "2026-05-04T09:11:28Z"
-last_activity: 2026-05-04 — Phase 59 complete; all 3 plans executed; MTP-01..MTP-08 verified
+status: archived
+stopped_at: milestone archived (2026-05-04)
+last_updated: "2026-05-04T14:30:00.000Z"
+last_activity: 2026-05-04 — v1.9 milestone archived; ROADMAP/MILESTONES/RETROSPECTIVE/PROJECT updated; v1.9 git tag created
 progress:
-  total_phases: 11
-  completed_phases: 9
-  total_plans: 31
-  completed_plans: 31
+  total_phases: 5
+  completed_phases: 5
+  total_plans: 13
+  completed_plans: 13
   percent: 100
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-03 — v1.9 started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.9 Competitive Intelligence — Phase 57 complete; Phase 58 (Mini-League Rival Tracker) next
+**Current focus:** v1.9 Competitive Intelligence — ARCHIVED 2026-05-04; ready for v1.10 milestone planning
 
 ## Current Position
 
-Phase: 60 (Transfer Route Tree) — Not started
-Plan: 0 plans created; planning required
-Status: Ready to plan
-Last activity: 2026-05-04 — Phase 59 complete; all 3 plans executed; MTP-01..MTP-08 human-verified
+Phase: 60 (Transfer Route Tree) — Complete
+Plan: 2/2 plans complete
+Status: v1.9 milestone complete — ready for `/gsd-complete-milestone v1.9`
+Last activity: 2026-05-04 — Phase 60 complete; TRT-01..TRT-07 + D-07 horizon lift human-verified; 14/14 UAT passed
 
-Progress: 4/5 phases complete [########--] 80%
+Progress: 5/5 phases complete [##########] 100%
 
 ### v1.9 Phase Summary
 
@@ -40,7 +40,7 @@ Progress: 4/5 phases complete [########--] 80%
 | 57 | Effective Ownership Mode | EO-01–EO-04 | ✅ Complete (2026-05-03) |
 | 58 | Mini-League Rival Tracker | ML-01–ML-08 | ✅ Complete (2026-05-04) |
 | 59 | Manual Transfer Planner | MTP-01–MTP-08 | ✅ Complete (2026-05-04) |
-| 60 | Transfer Route Tree | TRT-01–TRT-07 | Not started |
+| 60 | Transfer Route Tree | TRT-01–TRT-07 | ✅ Complete (2026-05-04) |
 
 ### Dependency Order
 
@@ -90,8 +90,22 @@ Progress: 4/5 phases complete [########--] 80%
 
 None.
 
+## Deferred Items
+
+Items acknowledged at v1.9 milestone close — carried to backlog:
+
+| ID | Description | Phase | Target |
+|----|-------------|-------|--------|
+| TRT-06 | ChipToggle UI in RouteTreeTab — chipMode hardcoded null | 60 | v1.12 |
+| TRT-02 | "Hits" column label cosmetic mismatch (shows totalTransfers, not totalHits) | 60 | v1.12 |
+| VERIFY-60 | Phase 60 VERIFICATION.md not created — UAT recorded in STATE.md only | 60 | backlog |
+| WR-02 | decision-severity.ts captain MEDIUM when candidates < 2 (should be LOW) | pre-v1.9 | backlog |
+| WR-01 | DecisionSummaryTab Load Squad button duplicate transition classes | pre-v1.9 | backlog |
+| WR-03/04 | MobileNav.test.tsx 4→5 pills description wrong, Acc pill untested | pre-v1.9 | backlog |
+| TEST-57 | captain-picks.test.ts 5 pre-existing failures from Phase 57 CaptainPicksPanel rewrite | 57 | backlog |
+
 ## Session Continuity
 
-Last session: 2026-05-04T09:11:28Z
-Stopped at: Phase 59 complete — Phase 60 (Transfer Route Tree) next
+Last session: 2026-05-04T13:40:00.000Z
+Stopped at: milestone complete — v1.9 shipped
 Resume file: None

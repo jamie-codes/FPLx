@@ -247,6 +247,55 @@
 
 ---
 
+## Milestone: v1.9 — Competitive Intelligence
+
+**Shipped:** 2026-05-04
+**Phases:** 5 (56-60) | **Plans:** 13 | **Timeline:** 2 days (2026-05-03 → 2026-05-04)
+**Files changed:** 121 files, +27,865 / −1,388 lines
+
+### What Was Built
+
+- FT Engine Fix (Phase 56): Wildcard branch `Math.min(1, currentAvailable - 1)` formula; `initialFTState` useMemo in PlannerTab — corrects FT bank across all planning features downstream
+- Effective Ownership Mode (Phase 57): `computeEOCandidates` (4 modes), `EOModeToggle`, ranked top-5 captain panel with EO%, Dangerous-to-fade badge — complete CaptainPicksPanel rewrite
+- Mini-League Rival Tracker (Phase 58): `useRivals` hook with `p-limit(3)` concurrent batching; `rival-intel.ts` differential engine (shared/advantage/threats/blocking/captain edge); `RivalsTab` with league table + squad cards
+- Manual Transfer Planner (Phase 59): `manual-plan.ts` engine (deriveStepStates, computeManualPlanSummary); `ManualPlanTab` with GW step cards, player picker, localStorage persistence; reused Phase 56 FT engine verbatim
+- Transfer Route Tree (Phase 60): `buildTransferRouteTree` pure-TS greedy multi-branch engine (top-3 sell roots, position-matched continuation); `RouteTreeTab` expandable summary table; "Load into Manual Planner" bridge
+- D-07 Section-Level Horizon Lift: `planHorizon` lifted to `page.tsx`; single `<HorizonSelector>` above Plan nav drives PlannerTab + ManualPlanTab + RouteTreeTab simultaneously
+
+### What Worked
+
+- **Phase 56 reuse chain**: `computeNextFTState` from Phase 56 was imported verbatim into Phase 59 (`manual-plan.ts`) and Phase 60 (`RouteTreeTab` bridge) — zero duplication; fixing the Wildcard bug once fixed it everywhere downstream
+- **Pure engine first pattern**: `buildTransferRouteTree` (31 tests, 430 lines) and `manual-plan.ts` (17 tests) were fully tested before any UI work started — both integration layers were clean first-pass
+- **D-07 horizon lift**: Lifting `planHorizon` to `page.tsx` was the right call even though it required touching 5 files — eliminated all cross-tab horizon drift that would otherwise have recurred as tech debt
+- **TRT-05 bridge design**: Inline confirm only when plan has existing transfers; silent overwrite for empty plans — correct default behaviour from day one
+
+### What Was Inefficient
+
+- **Phase 60 VERIFICATION.md not created**: The verifier step was skipped for Phase 60 — UAT was recorded in STATE.md (14/14) but no VERIFICATION.md was produced. This caused the audit to flag gaps_found even though all requirements were met. The gap was documentation-only but visible at milestone close.
+- **REQUIREMENTS.md checkboxes stale (again)**: This is the 4th+ milestone where most requirements ship with `[ ]` unchecked — only MTP-01..08 were correctly marked. Archive required manual review of all 29 requirements.
+- **captain-picks.test.ts left failing**: Phase 57 rewrote CaptainPicksPanel but the pre-existing captain-picks test suite (5 failures) was not updated — carried forward as known technical debt rather than addressed during execution.
+
+### Patterns Established
+
+- **Section-level state lift for shared controls**: When 3+ sub-tabs need the same control value, lift to the section (page.tsx) owner — not each component. D-07 pattern reusable for future shared Plan controls.
+- **`persistManualPlan` as bridge contract**: Serialising a `ManualPlan` to localStorage and switching sub-tabs is a reusable pattern for any future "load into Manual Planner" integration.
+- **`p-limit` for FPL API batching**: `p-limit(3)` in `useRivals` is the correct pattern for concurrent FPL API requests — prevents 429s; reuse for any future multi-entry fetching.
+
+### Key Lessons
+
+1. **Create VERIFICATION.md during execute-phase, not after**: Phase 60 skipped the verifier step — 14/14 UAT tests passed but the documentation gap caused `gaps_found` at audit. VERIFICATION.md should be a mandatory execute-phase deliverable, not optional.
+2. **REQUIREMENTS.md stale checkbox pattern is structural**: 4+ milestones in a row. The requirement is tracked in SUMMARY.md (via requirements mapping) and verified in VERIFICATION.md — the REQUIREMENTS.md checkbox is a redundant maintenance burden. Consider deprecating it as a live document; archive-only going forward.
+3. **Small pre-existing test failures compound**: The 5 captain-picks failures from Phase 57's CaptainPicksPanel rewrite were accepted as known debt but created noise in every subsequent test run for the rest of the milestone. Fix test regressions in the same phase that causes them.
+4. **D-07 pattern: lift state when ≥2 sub-tabs share it**: The local `useState<PlannerHorizon>` per sub-tab was the original design — it worked until Phase 60 added a third consumer. Lift earlier when ≥2 consumers are known at design time.
+
+### Cost Observations
+
+- Model: Sonnet 4.6 throughout (executor + verifier)
+- Sessions: 2 days, ~6-8 sessions
+- Notable: Phase 58 (4 plans) was the most work-intensive; Phase 60 Plan 02 was the most complex single plan (5 files modified, D-07 lift + 21 new tests)
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -258,6 +307,9 @@
 | v1.2 | ~67 | 6 | CSS-first responsive; TanStack VisibilityState reuse; dark mode without deps |
 | v1.3 | ~55 | 7 | Complex feature architecture (engine → table → snapshot → edit); native dialog pattern; useImmer |
 | v1.6 | 87 | 5 | Wave 0/1/2 TDD structure hardened; `chipMode` param extension over fork; spec errors caught by TDD |
+| v1.7 | 88 | 5 | Compositor milestone — 5 independent engines composed into Decision Summary; all pure-function first |
+| v1.8 | ~60 | 4 | Predictive model upgrades; flag-gated rollout (`xmins_v2_enabled`, `bonus_predictor_enabled`); benchOrder pure-TS |
+| v1.9 | ~75 | 5 | Cross-component state lift (D-07); reuse chain (Phase 56 FT engine → 59 → 60); p-limit API batching |
 
 ### Cumulative Quality
 
@@ -268,15 +320,20 @@
 | v1.2 | 16 | ~7,000 | 0 |
 | v1.3 | ~20 | ~11,300 | 0 |
 | v1.6 | ~30 | ~17,774 | 0 |
+| v1.7 | ~40 | ~19,500 | 0 |
+| v1.8 | ~45 | ~22,000 | 0 |
+| v1.9 | ~55 | ~28,000 | 0 |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. TDD-first for pure functions pays back in cheaper UAT and gap closure — confirmed across v1.0, v1.1, v1.3, v1.6
+1. TDD-first for pure functions pays back in cheaper UAT and gap closure — confirmed across v1.0, v1.1, v1.3, v1.6, v1.7, v1.9
 2. DAT/infra requirements need operational smoke tests, not just scaffolding — multi-milestone deferral is a smell (DAT-01 v1.0→v1.1→v1.2 before resolution)
 3. Established patterns compound across phases — getting Phase 1 of a milestone right (isMobile, zinc dark scale, native dialog, TDD wave structure) pays forward 4+ phases later
 4. CSS-first (no JS for show/hide, no library for dark mode) avoids hydration issues and reduces dependencies
 5. Clean architectural layering pays off in complex features — engine → output → visualization → edit mode with clear interfaces means no rework between phases
 6. Extending a shared function via param (chipMode, blend_alpha) is safer than forking — one test suite, one call site, consistent behaviour
-7. REQUIREMENTS.md maintenance is a recurring gap — auto-checking requirements on SUMMARY commit or treating the archive as canonical would save manual work at milestone close
+7. REQUIREMENTS.md maintenance is a recurring gap — 4+ milestones with stale checkboxes; treat archive as canonical going forward; deprecate REQUIREMENTS.md as a live document
+8. VERIFICATION.md must be created during execute-phase — skipping it (Phase 60) causes gaps_found at audit even when all requirements are met; documentation gaps are not free
+9. Phase engine reuse chains are high-leverage — Phase 56 FT engine fix propagated correctly to Phase 59 and Phase 60 at zero incremental cost; fix once, benefit everywhere downstream
 
 ---

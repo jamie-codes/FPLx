@@ -4,6 +4,8 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
+v1.9 complete (shipped 2026-05-04) — Competitive Intelligence milestone finished with Phase 60 (Transfer Route Tree). The pure-TypeScript greedy multi-branch engine (`buildTransferRouteTree`) generates 2–3 distinct transfer paths from a squad, presents them in a side-by-side summary table with a "Load into Manual Planner" bridge, and shares a section-level planning horizon across all Plan sub-tabs (D-07 lift: `planHorizon` state in `page.tsx`, `<HorizonSelector>` above Plan nav, horizon prop threaded to PlannerTab + ManualPlanTab + RouteTreeTab). Phase 59 shipped the Manual Transfer Planner: GW-by-GW sequences with live bank balance, FT tracking, hit cost, break-even weeks, squad snapshots, and localStorage persistence. See previous milestone summary below.
+
 v1.8 completed Predictive Intelligence: calibrated per-player xMins probability distributions (start_prob, mins_60_prob), learned bonus EV replacing flat BONUS_RATE, price change predictor with rise/fall confidence tiers, and autosub-legal bench ordering via benchOrder().
 
 v1.7 completed the Decision Assistant: single-screen Decision Summary composing captain picks, transfer opportunity cost, chip timing, and risk flags with High/Medium/Low severity signals. New engines: Fixture Swing Detector, CS% per fixture, explainable xPts breakdown, player lifecycle labels, and Transfer Opportunity Cost Simulator.
@@ -16,17 +18,9 @@ v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scor
 
 Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
 
-## Current Milestone: v1.9 Competitive Intelligence
+## Previous State (v1.9 Competitive Intelligence — SHIPPED 2026-05-04)
 
-**Goal:** Give the manager squad-aware strategic context — rival intelligence, ownership-adjusted decisions, and full manual transfer planning with financial simulation.
-
-**Target features:**
-- MTP-01: Manual Transfer Planner — separate Planner tab; user-designed GW-by-GW transfer sequences with sell price + bank tracking, FT bank simulation, hit counting, and break-even weeks per hit
-- ML-01: Mini-League Rival Tracker — rival squads, captain, chip status, rank gap; differential intelligence (upside/threat players); blocking vs attacking move flags; rank gap projection
-- EO-01: Effective Ownership & Rank Protection — EO% per player; EO-adjusted captain EV; mode toggle (Max xPts / Protect Rank / Chase Rank / Differential Aggressive)
-- TREE-01: Transfer Route Tree — AI-generated 2–3 branching multi-week sequences; GW-by-GW FT bank, hit cost, xPts per path; chip interaction analysis
-
----
+v1.9 complete — 5 phases (56-60), 13 plans. All four competitive intelligence features delivered: FT Engine Fix (Wildcard FT preservation, bank cap, FTX-01/FTX-02); Effective Ownership Mode (EO% per candidate, 4-mode toggle, Dangerous-to-fade badge, EO-01..EO-04); Mini-League Rival Tracker (p-limit(3) batching, differential engine, RivalsTab, ML-01..ML-08); Manual Transfer Planner (GW-by-GW sequences, bank simulation, MTP-01..MTP-08); Transfer Route Tree (pure-TS greedy multi-branch engine, RouteTreeTab, D-07 section-level horizon lift, TRT-01..TRT-07). See `.planning/milestones/v1.9-ROADMAP.md` (when created).
 
 ---
 
@@ -214,14 +208,18 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 - ✓ PRC-01: Price Change Predictor — net transfer velocity, PriceChangePanel, HIGH/MEDIUM/LOW tiers — v1.8
 - ✓ BENCH-01: Bench Order Optimiser — benchOrder() EV, formation-legality, BGW/DGW rules, BB bypass — v1.8
 
-### Active (v1.9)
+### Validated (v1.9)
 
-*(requirements being defined — see REQUIREMENTS.md)*
+- ✓ FTX-01/02: FT Engine Fix — Wildcard FT preservation, 4-FT bank cap, authenticated event_transfers seeding — v1.9
+- ✓ EO-01/02/03/04: Effective Ownership Mode — EO% per candidate, 4-mode toggle (Max xPts/Protect Rank/Chase Rank/Differential Aggressive), Dangerous-to-fade badge — v1.9
+- ✓ ML-01/02/03/04/05/06/07/08: Mini-League Rival Tracker — useRivals with p-limit(3), rival-intel.ts differential engine, RivalsTab/RivalSummaryTable/RivalDetailPanel — v1.9
+- ✓ MTP-01/02/03/04/05/06/07/08: Manual Transfer Planner — GW-by-GW sequences, bank simulation, FT tracking, hit cost, squad snapshots, caveat banner, localStorage persistence — v1.9
+- ✓ TRT-01/02/03/04/05/06/07: Transfer Route Tree — pure-TS greedy multi-branch engine, RouteTreeTab summary + expand, recommended highlight, bridge to Manual Plan, horizon recompute — v1.9
+- ✓ D-07: Section-level horizon lift — planHorizon state in page.tsx, shared HorizonSelector above Plan sub-tab nav, horizon prop threaded to PlannerTab + ManualPlanTab + RouteTreeTab — v1.9
 
 ### Out of Scope
 
 - Live in-match updates — data refreshes daily, not during gameweeks
-- Mini-league or head-to-head analysis — squad optimisation focus only
 - Mobile app — web only (responsive web covers the mobile use case)
 - Automated chip timing recommendations — chip visibility in plan is in-scope; chip strategy analysis (finder) is now in v1.4; fully automated auto-timing remains out
 - Offline mode — daily refresh is sufficient
@@ -275,6 +273,8 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 | `changeCount` via set-difference (not pairSection row count) | Avoids overcounting when xPts sort reshuffles pairs within same position | ✓ Good — fixed in execution after spec inconsistency caught |
 | `isPromoted` uses `currentId` (player who moved from bench to XI) | Plan spec had inversion; corrected during execution | ✓ Fixed — caught by TDD test assertions |
 | Test fixtures require valid single-GK formations (4-3-3, 5-3-2) | `optimiseLineup` is deterministic only with valid formations; 2-GK-in-XI fixtures aren't | ✓ Good — prevents flaky test failures |
+| D-07: `planHorizon` lifted to `page.tsx`, single section-level HorizonSelector | Three Plan sub-tabs sharing horizon state via local selectors caused sync bugs; single source of truth eliminates drift | ✓ Good — all sub-tabs (PlannerTab/ManualPlanTab/RouteTreeTab) receive horizon prop; D-07 sync effect in ManualPlanTab mirrors prop → localStorage |
+| TRT bridge chip `null` constant (D-09) | ChipToggle in RouteTreeTab deferred (RESEARCH.md A3); bridge always writes `chip: null` per step | ✓ Good — engine-level TRT-06 satisfied; UI ChipToggle deferred to v1.12 |
 
 ---
 
@@ -282,9 +282,9 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 
 **Tech stack:** Next.js 16, React 19, TypeScript, TanStack Table v8, TanStack Query, Tailwind CSS v4, Vitest, immer/use-immer, Python (requests, pandas, soccerdata), Vercel Blob
 
-**Codebase:** ~21,200 LOC (~17,800 TypeScript + ~3,400 Python), ~320+ files
+**Codebase:** ~28,000 LOC (~23,000 TypeScript + ~5,000 Python), ~440+ files
 
-**What's running (v1.7):**
+**What's running (v1.9):**
 - `/` — Gem Ratings tab (default), DefCon tab, Squad tab (Decision | Transfers | Optimiser sub-tabs, Decision is default), Club Form tab, Value Gems tab, Set Pieces tab, Insights tab, Accuracy tab
 - `/api/players` — merged FPL+Understat dataset from Vercel Blob (includes cs_prob_1gw, xPts_components_1gw with appearance_pts)
 - `/api/accuracy` — accuracy backtest data including form signal gate
@@ -306,4 +306,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-03 — Phase 57 complete (EO-01..EO-04: CaptainPicksPanel rewritten with ranked top-5 list, 4-mode EO toggle, ~EO% inline display, Dangerous to fade badge; computeEOCandidates pure-TS engine with 14 TDD tests)*
+*Last updated: 2026-05-04 — Phase 60 complete; v1.9 milestone shipped. Transfer Route Tree: pure-TS greedy multi-branch engine, RouteTreeTab, D-07 section-level horizon lift (planHorizon → page.tsx, HorizonSelector shared across all Plan sub-tabs). 14/14 UAT tests passed. All TRT-01..TRT-07 requirements validated.*

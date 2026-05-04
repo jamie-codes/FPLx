@@ -11,7 +11,7 @@
 - ✅ **v1.6 Squad Optimiser** — Phases 42-46 (shipped 2026-05-01)
 - ✅ **v1.7 Decision Assistant** — Phases 47-51 (shipped 2026-05-02)
 - ✅ **v1.8 Predictive Intelligence** — Phases 52-55 (shipped 2026-05-03)
-- 🚧 **v1.9 Competitive Intelligence** — Phases 56-60 (in progress)
+- ✅ **v1.9 Competitive Intelligence** — Phases 56-60 (shipped 2026-05-04)
 
 ## Phases
 
@@ -110,9 +110,34 @@ See `.planning/milestones/v1.7-ROADMAP.md` for full phase details.
 
 </details>
 
+<details>
+<summary>✅ v1.8 Predictive Intelligence (Phases 52-55) — SHIPPED 2026-05-03</summary>
+
+See `.planning/milestones/v1.8-ROADMAP.md` for full phase details.
+
+- [x] Phase 52: xMins Confidence Engine — calibrated start_prob, mins_60_prob, sub_risk_label
+- [x] Phase 53: Bonus Point Predictor — per-player bonus_ev shrinkage estimator
+- [x] Phase 54: Price Change Predictor — daily rise/fall predictions with confidence tiers
+- [x] Phase 55: Bench Order Optimiser — benchOrder() EV-ranked autosub-optimal bench
+
+</details>
+
+<details>
+<summary>✅ v1.9 Competitive Intelligence (Phases 56-60) — SHIPPED 2026-05-04</summary>
+
+See `.planning/milestones/v1.9-ROADMAP.md` for full phase details.
+
+- [x] Phase 56: FT Engine Fix — Wildcard bank preservation, initialFTState useMemo
+- [x] Phase 57: Effective Ownership Mode — top-5 EO%, 4-mode toggle, Dangerous-to-fade badge
+- [x] Phase 58: Mini-League Rival Tracker — useRivals p-limit(3), RivalsTab
+- [x] Phase 59: Manual Transfer Planner — GW-by-GW plan, bank/FT simulation, localStorage
+- [x] Phase 60: Transfer Route Tree — buildTransferRouteTree, RouteTreeTab, Manual Planner bridge
+
+</details>
+
 ## Phase Details
 
-_v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
+_All milestone phase details archived to `.planning/milestones/`. See the relevant `v{version}-ROADMAP.md` file for each milestone's full phase specifications._
 
 ### Phase 47: Fixture Swing Detector & Clean Sheet Probability
 **Goal**: Users can see which teams have materially improving or worsening fixtures and accurate CS% for every upcoming fixture — giving proactive buy/sell signals and grounding defensive picks in data
@@ -317,111 +342,7 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
 
 ---
 
-### ✅ Phase 56: FT Engine Fix (completed 2026-05-03)
-**Goal**: The free-transfer engine correctly banks FTs up to a cap of 4 and preserves the banked FT count across Wildcard and Free Hit activations — establishing the accurate FT state that Manual Planner and Transfer Route Tree depend on
-**Depends on**: Phase 55 (v1.8 complete)
-**Requirements**: FTX-01, FTX-02
-**Success Criteria** (what must be TRUE):
-  1. A manager who takes no transfers for two consecutive GWs has 2 available FTs (not 3) — the bank cap of 4 total available is respected
-  2. A manager who activates Wildcard or Free Hit retains their previously banked FT count after chip play, rather than seeing it reset to 1
-  3. Existing v1.3 planner transfer sequences that relied on the old FT engine are regression-tested to confirm they still produce correct FT counts across multi-GW plans
-**Plans**: 2 plans (1 wave)
-  **Wave 1** *(parallel — disjoint files)*
-  - [x] 056-01-PLAN.md — TDD: fix Wildcard branch in computeNextFTState (FTX-02), update existing wildcard tests + add D-08 regression block, add D-07 explanatory comment to planning-engine.ts
-  - [x] 056-02-PLAN.md — convert PlannerTab.initialFTState const to useMemo deriving from authenticated event_transfers (FTX-01) + human-verify checkpoint
-  **Cross-cutting constraints:**
-  - Plans 01 and 02 touch DISJOINT files (Plan 01 = src/lib/free-transfer-engine.ts, tests/lib/free-transfer-engine.test.ts, src/lib/planning-engine.ts; Plan 02 = src/components/planner/PlannerTab.tsx) — fully parallel-safe
-  - Plan 01 fixes the engine; Plan 02 fixes the consumer that seeds the engine. Both must ship for FTX-01 to be fully delivered (Plan 01 covers FTX-02 in full; FTX-01 cap correctness needs both halves)
-
-### ✅ Phase 57: Effective Ownership Mode (completed 2026-05-03)
-**Goal**: The captain panel surfaces EO% per candidate and a four-mode toggle — Max xPts, Protect Rank, Chase Rank, Differential Aggressive — so managers can align captaincy decisions to their current rank position and risk appetite
-**Depends on**: Phase 55 (v1.8 complete; independent of Phase 56)
-**Requirements**: EO-01, EO-02, EO-03, EO-04
-**Success Criteria** (what must be TRUE):
-  1. Each captain candidate in the panel shows an "~EO" percentage figure derived from selected_by_percent, with a tooltip explaining the approximation
-  2. A four-option mode toggle (Max xPts / Protect Rank / Chase Rank / Differential Aggressive) re-orders captain candidates when switched — the ranked list visibly changes for modes other than Max xPts
-  3. In Protect Rank mode, any player with EO > 30% who is not in the user's squad displays a "Dangerous to fade" warning badge directly in the captain panel
-  4. Mode selection affects only the Squad section captain panel; Transfer suggestions and Decision Summary ordering are unchanged
-**Plans**: 2 plans (2 waves)
-  **Wave 1**
-  - [x] 057-01-PLAN.md — TDD: src/lib/eo-candidates.ts + eo-candidates.test.ts (computeEOCandidates pure ranker for 4 EO modes; eligibility filter; median-from-full-pool guard for Pitfall 2) *(complete 2026-05-03)*
-  **Wave 2** *(blocked on Wave 1 completion)*
-  - [x] 057-02-PLAN.md — rewrite CaptainPicksPanel as ranked top-5 with EOModeToggle + ~EO% inline + Dangerous-to-fade badge (D-01..D-11) + RTL test suite + page.tsx submittedId thread + human-verify checkpoint *(complete 2026-05-03)*
-  **Cross-cutting constraints:**
-  - `computeEOCandidates` and `EOMode` must exist (Plan 01) before CaptainPicksPanel can `import { computeEOCandidates, type EOMode } from '@/lib/eo-candidates'` (Plan 02)
-  - Plan 02 mounts the rewritten panel at the existing `<CaptainPicksPanel />` site in `page.tsx` line ~215; only the prop is changed (Pitfall 6) — the surrounding fragment with `<PlannerTab />` is preserved unchanged
-  - `useCaptainPicks()` is retained ONLY for `data.gameweek` in the heading; the candidate POOL must come from `usePlayers()` (Pitfall 1 — captain_picks.json contains only 2 picks, insufficient for top-5 across 4 modes)
-**Phase notes**: EO% sourced from selected_by_percent on MergedPlayer (already in merged_players.json) — no new API calls or pipeline changes required. EO-04 scope boundary: mode state local to CaptainPicksPanel via `useState<EOMode>('max_xpts')` (D-04 default). The `~XX%` tilde prefix and `Dangerous to fade` badge label are LOAD-BEARING COPY (CONTEXT.md §specifics) — do not soften.
-**UI hint**: yes
-
-### Phase 58: Mini-League Rival Tracker ✅ Complete (2026-05-04)
-**Goal**: Managers can load their mini-league rivals, see a ranked summary table with captain picks and chip status, and get differential intelligence — which players give an advantage, which rival players are threats, and which transfers block rivals simultaneously
-**Depends on**: Phase 55 (v1.8 complete; independent of Phases 56 and 57 — can be executed in parallel with Phase 57)
-**Requirements**: ML-01, ML-02, ML-03, ML-04, ML-05, ML-06, ML-07, ML-08
-**Success Criteria** (what must be TRUE):
-  1. User can enter a mini-league ID and see a rival summary table with rank, rank gap to the user's rank, captain pick (post-deadline), and chips remaining per rival
-  2. For any selected rival, the system shows which players the user and rival share, which players the user owns that the rival does not (user differential), and which high-xPts players the rival owns that the user does not (rival threats)
-  3. The system flags transfer targets that would simultaneously give a differential advantage over rivals (blocking move indicator)
-  4. A rank impact estimate for the captain differential is shown — expected rank swing if the user's captain outscores the rival's captain based on xPts_90th_1gw gap
-  5. Leagues with more than 20 rivals show a note; rivals are fetched in batches of 3 concurrent requests, never unbounded parallel calls
-**Plans**: 4 plans
-- [x] 058-01-PLAN.md — Foundation: install p-limit ^6.1.0, add RivalEntry/RivalPick/RivalLeagueResult types, extend FPLEventSchema with deadline_time, implement useRivals hook with p-limit(3) batching + 20-rival cap + deadline gate (ML-01, ML-02, ML-08) ✅ 2026-05-04
-- [x] 058-02-PLAN.md — Pure differential engine: rival-intel.ts (computeShared/computeUserAdvantage/computePositionMedians/computeRivalThreats/computeBlockingMoves/computeCaptainEdge) + 12+ unit tests (ML-03..ML-07) ✅ 2026-05-04
-- [x] 058-03-PLAN.md — UI components: RivalsTab/RivalSummaryTable/RivalDetailPanel + component tests (ML-01..ML-08) ✅ 2026-05-04
-- [x] 058-04-PLAN.md — Wire RivalsTab into page.tsx Plan section + page.test.tsx mock + full suite green (ML-01) ✅ 2026-05-04
-**Phase notes**: Requires `p-limit` ^6.1.0 npm install for the 3-concurrent-request batching in ML-08. All FPL API calls go through the existing `/api/fpl/[...proxy]` route handler — no direct browser-to-FPL calls. Captain pick is only available post-deadline (FPL API does not expose picks pre-deadline). ML-09 pagination for leagues > 20 deferred to v1.10.
-**UI hint**: yes
-
-### Phase 59: Manual Transfer Planner
-**Goal**: Managers can design their own GW-by-GW transfer sequences in a dedicated Manual Plan sub-tab — with live bank balance, FT tracking, hit counting, break-even weeks per hit, and a full squad snapshot per GW
-**Depends on**: Phase 56 (FT engine fix required for accurate FT bank simulation per MTP-04)
-**Requirements**: MTP-01, MTP-02, MTP-03, MTP-04, MTP-05, MTP-06, MTP-07, MTP-08
-**Success Criteria** (what must be TRUE):
-  1. User can open a "Manual Plan" sub-tab in the Planner section that is separate from the existing AI planner tab and does not replace or hide it
-  2. User can add, remove, or swap any transfer for any GW step using a position-filtered, budget-aware player picker
-  3. Each GW step shows the running bank balance (starting bank + cumulative sell prices − buy prices) and FT status (Free or Hit −4pts) based on the corrected FT engine
-  4. The plan summary shows total hits, total hit cost in points, and break-even weeks per hit transfer (formula: 4 ÷ xPts delta)
-  5. Each GW step expands to show the full 15-player squad snapshot reflecting all transfers applied up to that point
-  6. When unauthenticated, a caveat is shown that sell prices are approximate (using now_cost, not the exact selling_price from the FPL my-team API)
-  7. The plan state survives page navigation within the session (localStorage persistence)
-**Plans**: 3 plans (3 waves)
-  **Wave 1**
-  - [x] 059-01-PLAN.md — TDD: src/lib/manual-plan.ts engine (types, deriveStepStates reusing Phase 56 FT engine, computeManualPlanSummary, localStorage persist/load) + 17-case test suite (MTP-03..MTP-06, MTP-08)
-  **Wave 2** *(blocked on Wave 1 completion)*
-  - [x] 059-02-PLAN.md — src/components/planner/ManualPlanTab.tsx + ManualPlanTab.test.tsx (no-squad branch, caveat banner, summary header, GwStepCard, two-stage PlayerPickerModal flow, accordion + SquadSnapshotRow, Reset Plan, persistence wiring) — 20+ RTL tests (MTP-01, MTP-02, MTP-03..MTP-08)
-  **Wave 3** *(blocked on Wave 2 completion)*
-  - [x] 059-03-PLAN.md — src/app/page.tsx wiring (SubTab union + SECTIONS Plan subTabs + render guard) + page.test.tsx mock + 2 navigation tests + human-verify checkpoint covering MTP-01..MTP-08 (MTP-01)
-  **Cross-cutting constraints:**
-  - Plan 01 must export `freshPlan`, `truncateOrExtendSteps`, `deriveStepStates`, `computeManualPlanSummary`, `loadManualPlan`, `persistManualPlan`, `clearManualPlan`, and `MANUAL_PLAN_KEY` before Plan 02 can compile (single import barrel)
-  - Plan 02 must mount the `ManualPlanTab` component with `submittedId: string | null` prop before Plan 03 can wire the render guard
-  - Plan 02 reuses `HorizonSelector`, `ChipToggle`, `PlayerPickerModal`, `SquadSnapshotRow` AS-IS — no edits to those four files
-  - Plan 01 reuses `computeNextFTState`, `computeHitCost`, `snapshotSquad` from `src/lib/free-transfer-engine.ts` (Phase 56) verbatim — DO NOT reimplement FT bank rules
-  - PlayerPickerModal cannot be used for the SELL stage (filters by element_type + excludes squadIds); a custom inline list is required for sell selection (see Plan 02 Task 2 action)
-**Phase notes**: MTP-07 sell price approximation caveat is shown only when unauthenticated (squadData from my-team API is unavailable). When authenticated, exact selling_price values from the my-team API must be used. Plan state persistence (MTP-08) uses localStorage with a stable key; plan is restored on mount.
-**UI hint**: yes
-
-### Phase 60: Transfer Route Tree
-**Goal**: The system generates 2–3 branching transfer paths in pure TypeScript and presents them in a side-by-side summary table — with a "Load into Manual Planner" bridge so the manager can refine any path manually
-**Depends on**: Phase 59 (MTP-01 Manual Plan sub-tab must exist for TRT-05 "Load into Manual Planner" bridge)
-**Requirements**: TRT-01, TRT-02, TRT-03, TRT-04, TRT-05, TRT-06, TRT-07
-**Success Criteria** (what must be TRUE):
-  1. System generates 2–3 distinct transfer paths, each starting from a different sell-player root, with a greedy continuation per branch — with no LLM involvement
-  2. A side-by-side summary table shows all paths with total hits, total hit cost in points, net projected xPts, and chips preserved vs consumed; the highest net-xPts path is visually highlighted as recommended
-  3. Each path is expandable to a GW-by-GW breakdown showing: transfer out / in, FT bank at that GW, projected xPts contribution
-  4. A "Load into Manual Planner" button on any path pre-populates the Phase 59 Manual Plan with that path's transfers, ready for manual refinement
-  5. Tree generation respects the active chip mode (Wildcard / Free Hit / Bench Boost) and recalculates when the GW horizon toggle changes
-**Plans**: 2 plans
-  **Wave 1**
-  - [ ] 060-01-PLAN.md — TDD: src/lib/transfer-route-tree.ts + tests/lib/transfer-route-tree.test.ts (pure greedy multi-branch engine; top-3 sell roots, position-matched buys, D-01 no-hits, D-04 per-leg positive, chipMode arg, deterministic tie-break) — TRT-01/02/03/06
-  **Wave 2** *(blocked on Wave 1 completion)*
-  - [ ] 060-02-PLAN.md — RouteTreeTab.tsx + RouteTreeTab.test.tsx + page.tsx wiring (SubTab union + Plan section subTabs entry + render guard) + page.test.tsx integration test + human-verify checkpoint — TRT-01 (UI mount) / TRT-04 / TRT-05 / TRT-07
-  **Cross-cutting constraints:**
-  - Plan 01 must export buildTransferRouteTree, RouteNode, RoutePath, TransferRouteTree, BuildTransferRouteTreeArgs before Plan 02 can compile
-  - Plan 02 reuses computeNextFTState/computeHitCost/snapshotSquad (Phase 56), persistManualPlan/loadManualPlan/ManualPlan/ManualStep (Phase 59) AS-IS — no edits to those engines
-  - Architecture decision (logged in Plan 02): RouteTreeTab renders its OWN HorizonSelector locally (matches PlannerTab/ManualPlanTab pattern); UI-SPEC.md §Reused Components note about no-own-HorizonSelector is overridden because page.tsx does not yet have a section-level horizon (RESEARCH.md Pitfall 4 / A2)
-  - chipMode passed as null constant in Plan 02 — TRT-06 satisfied at engine level (Plan 01 Tests E1–E4); section-level ChipToggle deferred per RESEARCH.md A3
-**Phase notes**: TRT-01 is PURE TYPESCRIPT — top-3 distinct sell roots with greedy continuation per branch. Explicitly NO LLM. LLM-generated branching is deferred to v1.12 (NLP-01). TRT-05 bridge requires Phase 59 MTP-01 to be complete before this phase begins. Tree builds on Phase 56 (corrected FT engine) for accurate FT bank state at each branch node.
-**UI hint**: yes
+_v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 
 ## Progress
 
@@ -441,10 +362,10 @@ _v1.7 phase details archived to `.planning/milestones/v1.7-ROADMAP.md`_
 | 51 | v1.7 | 2/2 | Complete | 2026-05-02 |
 | 52 | v1.8 | 4/4 | Complete | 2026-05-02 |
 | 53 | v1.8 | 3/3 | Complete | 2026-05-02 |
-| 54 | v1.8 | 0/3 | Planned | — |
+| 54 | v1.8 | 3/3 | Complete | 2026-05-02 |
 | 55 | v1.8 | 2/2 | Complete | 2026-05-03 |
-| 56 | v1.9 | 0/2 | Planned | — |
-| 57 | v1.9 | 0/2 | Planned | — |
-| 58 | v1.9 | 0/? | Not started | — |
+| 56 | v1.9 | 2/2 | Complete | 2026-05-03 |
+| 57 | v1.9 | 2/2 | Complete | 2026-05-03 |
+| 58 | v1.9 | 4/4 | Complete | 2026-05-04 |
 | 59 | v1.9 | 3/3 | Complete | 2026-05-04 |
-| 60 | v1.9 | 0/? | Not started | — |
+| 60 | v1.9 | 2/2 | Complete | 2026-05-04 |

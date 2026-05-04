@@ -1,5 +1,52 @@
 # Milestones
 
+## v1.9 Competitive Intelligence (Shipped: 2026-05-04)
+
+**Phases completed:** 5 phases (56-60), 13 plans
+**Timeline:** 2026-05-03 → 2026-05-04 (2 days)
+**Files changed:** 121 files, +27,865 / −1,388 lines
+
+**Key accomplishments:**
+
+1. FT Engine Fix (Phase 56): `Math.min(1, currentAvailable - 1)` Wildcard bank preservation + `initialFTState` useMemo — FTX-01/FTX-02
+2. Effective Ownership Mode (Phase 57): top-5 EO% ranked captain panel, 4-mode EOModeToggle, Dangerous-to-fade badge — EO-01..EO-04
+3. Mini-League Rival Tracker (Phase 58): `useRivals` with `p-limit(3)` batching, `rival-intel.ts` differential engine, `RivalsTab` — ML-01..ML-08
+4. Manual Transfer Planner (Phase 59): GW-by-GW transfer sequences, bank/FT simulation, localStorage persistence, hit break-even — MTP-01..MTP-08
+5. Transfer Route Tree (Phase 60): `buildTransferRouteTree` pure-TS engine, `RouteTreeTab` expandable tree, "Load into Manual Planner" bridge — TRT-01..TRT-07
+6. D-07 Section-Level Horizon Lift: `planHorizon` lifted to `page.tsx`; single `HorizonSelector` shared across PlannerTab, ManualPlanTab, RouteTreeTab
+
+---
+
+## v1.8 Predictive Intelligence (Shipped: 2026-05-03)
+
+**Phases completed:** 4 phases (52-55), 12 plans
+**Timeline:** 2026-05-02 → 2026-05-03 (2 days)
+
+**Key accomplishments:**
+
+1. xMins Confidence Engine (Phase 52): calibrated `start_prob`, `mins_60_prob`, `sub_risk_label` per player; `xmins_v2_enabled` gate — MIN-01
+2. Bonus Point Predictor (Phase 53): per-player `bonus_ev` shrinkage estimator (empirical mean + position prior, ≥4 starts gate); `bonus_predictor_enabled` flag — BPS-01
+3. Price Change Predictor (Phase 54): daily rise/fall predictions from cumulative net-transfer snapshots; HIGH/MEDIUM/LOW confidence tiers; `PriceChangePanel` — PRC-01
+4. Bench Order Optimiser (Phase 55): `benchOrder()` EV-ranked autosub-optimal bench (start_prob × xPts); BGW/DGW rules; BB bypass note — BENCH-01
+
+---
+
+## v1.7 Decision Assistant (Shipped: 2026-05-02)
+
+**Phases completed:** 5 phases (47-51), 14 plans
+**Timeline:** 2026-05-01 → 2026-05-02 (2 days)
+**Files changed:** 323 files, 88 commits
+
+**Key accomplishments:**
+
+1. Fixture Swing Detector (Phase 47): `swing_*gw` deltas, `cs_prob_1gw` per fixture (DGW formula: `1-(1-p1)*(1-p2)`), `FixtureSwingDetector` panel — CS-01..03, SWG-01..04
+2. Explainable xPts Breakdown (Phase 48): `appearance_pts` component in xPts breakdown; CSS-only hover card on `XPtsCell`; mobile toggle — XPT-01..04
+3. Player Lifecycle Labels (Phase 49): 7-label taxonomy with priority cascade (`computeLifecycleLabel`); `LifecycleLabelBadge` in `TransferPanel` — LCL-01..03
+4. Transfer Opportunity Cost Simulator (Phase 50): Roll/1-FT/2-FT/Hit table; `computeOpportunityCostRows`; break-even weeks; `derivedFtCount` heuristic — OCS-01..05
+5. Weekly Decision Summary (Phase 51): 4-card Decision tab (Captain/Transfer/Chip/Risk); `computeDecisionSeverity`; Decision sub-tab as default Squad landing (D-10) — WDS-01..05
+
+---
+
 ## v1.6 Squad Optimiser (Shipped: 2026-05-01)
 
 **Phases completed:** 5 phases (42-46), 12 plans
