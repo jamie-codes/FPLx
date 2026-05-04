@@ -213,13 +213,13 @@ export default function Home() {
         {activeSection !== 'squad' && activeSubTab === 'accuracy' && <AccuracyTab />}
         {activeSection !== 'squad' && activeSubTab === 'price-changes' && <PriceChangePanel />}
         {activeSection !== 'squad' && activeSubTab === 'value-gems' && <ValueGemsTable />}
-        {activeSection !== 'squad' && activeSubTab === 'rivals' && (
+        {activeSection === 'plan' && activeSubTab === 'rivals' && (
           <RivalsTab submittedId={submittedId} />
         )}
         {activeSection === 'plan' && activeSubTab === 'manual-plan' && (
           <ManualPlanTab submittedId={submittedId} />
         )}
-        {activeSection !== 'squad' && activeSubTab === 'planner' && (
+        {activeSection === 'plan' && activeSubTab === 'planner' && (
           <>
             <PlannerTab />
             <CaptainPicksPanel submittedId={submittedId} />
