@@ -511,7 +511,7 @@ describe('buildTransferRouteTree', () => {
 
     it('D2: BGW (no fixture in target GW) → xPtsContribution for that leg === 0', () => {
       // Player with no fixture in GW33 (BGW) - xPtsContribution should be 0
-      const bgwFixture = [] // no fixtures in GW33
+      const bgwFixture: import('@/lib/types').FixtureEntry[] = [] // no fixtures in GW33
       const squadPlayers: ScoredPlayer[] = [
         makePlayer(1, { element_type: 1, xPts_1gw: 1.0, now_cost: 45, fixtures: bgwFixture }), // GK BGW
         makePlayer(2, { element_type: 1, xPts_1gw: 15.0, now_cost: 45, fixtures: bgwFixture }),
