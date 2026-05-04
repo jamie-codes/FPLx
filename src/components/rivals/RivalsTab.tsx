@@ -91,12 +91,17 @@ export function RivalsTab({ submittedId }: RivalsTabProps) {
     })
   }, [squadData, playersData])
 
-  // User's top captain candidate by max_xpts mode (assumption A2 in RESEARCH.md).
+  // WR-01: prefer the actual captain from the user's squad when available.
+  // Fall back to the global best-xPts candidate (assumption A2) only when squad is unavailable.
   const userCaptainCandidate = useMemo<MergedPlayer | null>(() => {
+    if (squadData && playersData) {
+      const capPick = squadData.picks.find(p => p.multiplier === 2 || p.is_captain)
+      if (capPick) return playerById.get(capPick.element) ?? null
+    }
     if (!playersData) return null
     const top = computeEOCandidates(playersData, 'max_xpts', 1)
     return top[0] ?? null
-  }, [playersData])
+  }, [squadData, playersData, playerById])
 
   const selectedRival = useMemo(() => {
     if (!rivalsData || selectedRivalId === null) return null
