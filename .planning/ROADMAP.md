@@ -444,7 +444,16 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   3. The full 20×8 grid fits a single desktop screen with no horizontal scrolling — all teams and all 8 GWs visible at one glance
   4. Hovering a cell reveals the opponent club name, home/away indicator, and the underlying difficulty value — so the colour can be cross-checked against the data
   5. Heat map is reachable from the Analyse section navigation as a dedicated tab
-**Plans**: TBD
+**Plans**: 3 plans (2 waves)
+  **Wave 1** *(parallel — disjoint files)*
+  - [ ] 066-01-PLAN.md — pipeline/merge.py FIXTURE_LOOKAHEAD 5→16 + src/lib/types.ts upcoming_fixtures comment "next 5"→"next 16"
+  - [ ] 066-02-PLAN.md — TDD: src/components/club-form/FixtureHeatMap.tsx + FixtureHeatMap.test.tsx (12 cases covering HEAT-01/HEAT-02/HEAT-03, groupby event_id, DGW gradient, BGW empty, alphabetical sort, tooltip formats)
+  **Wave 2** *(blocked on Plan 02 completion)*
+  - [ ] 066-03-PLAN.md — src/app/page.tsx wiring (import + SubTab union + SECTIONS Analyse entry + render guard) + src/app/page.test.tsx vi.mock + Phase 66 navigation test
+  **Cross-cutting constraints:**
+  - Plans 01 and 02 touch DISJOINT files (Plan 01 = pipeline/merge.py + src/lib/types.ts; Plan 02 = src/components/club-form/FixtureHeatMap.{tsx,test.tsx}) — fully parallel-safe
+  - Plan 03 imports `FixtureHeatMap` from Plan 02; the page.test.tsx vi.mock MUST land in the SAME plan/commit as the page.tsx import to avoid breaking the existing test suite (Pitfall 3 from RESEARCH.md)
+**Phase notes**: D-01 FIXTURE_LOOKAHEAD=16 (8 GWs × 2 DGW max). D-02 client-side groupby event_id over upcoming_fixtures, first 8 unique event_ids form columns (derived from union across all teams — Pitfall 1). D-03 DGW cells use CSS linear-gradient split-diagonal (inline style; dark-mode hex limitation accepted per Pitfall 2). D-04 DGW tooltip slash-separated; D-08 single-fixture tooltip uses em-dash U+2014. D-05 reuses ClubFormFixture.difficulty_tier directly — no new threshold computation. D-06 sub-tab inserted after `'price-changes'` in Analyse SECTIONS, label `'Heat Map'` (mobile and desktop identical). HEAT-03 desktop no-scroll achieved via `min-w-[640px]` table inside `overflow-x-auto` wrapper (20 rows × 8 × 48px ≈ 448px < 1440px viewport). No new API routes, no new hooks — `useClubForm()` is the data source.
 **UI hint**: yes
 
 ### Phase 67: LLM Prose Summaries
@@ -542,7 +551,7 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 | 63 | v1.10 | 0 | Not started | - |
 | 64 | v1.10 | 0 | Not started | - |
 | 65 | v1.10 | 0 | Not started | - |
-| 66 | v1.11 | 0 | Not started | - |
+| 66 | v1.11 | 0/3 | Not started | - |
 | 67 | v1.11 | 0 | Not started | - |
 | 68 | v1.11 | 0 | Not started | - |
 | 69 | v1.11 | 0 | Not started | - |
