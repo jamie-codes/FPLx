@@ -66,7 +66,7 @@ import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useSquad } from '@/lib/hooks/useSquad'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
 import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
-import { loadManualPlan, clearManualPlan } from '@/lib/manual-plan'
+import { loadManualPlan, persistManualPlan } from '@/lib/manual-plan'
 import type { ManualPlan } from '@/lib/manual-plan'
 
 const mU = vi.mocked
@@ -248,22 +248,23 @@ describe('ManualPlanTab', () => {
     expect(screen.queryByText('GW 34')).toBeNull()
   })
 
-  it('S8: Reset Plan link triggers confirm; on cancel no clear; on accept calls clearManualPlan', () => {
+  it('S8: Reset Plan link triggers confirm; on cancel no reset; on accept persists fresh plan', () => {
     setupDefaultMocks()
 
     // Mock confirm to return false first
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
     render(<ManualPlanTab submittedId="123456" />)
+    const callsBefore = mU(persistManualPlan).mock.calls.length
     fireEvent.click(screen.getByText('Reset Plan'))
     expect(confirmSpy).toHaveBeenCalledWith('Clear all transfers from your manual plan?')
-    // clearManualPlan not called on cancel
-    expect(mU(clearManualPlan)).not.toHaveBeenCalled()
+    // persist not called again on cancel
+    expect(mU(persistManualPlan).mock.calls.length).toBe(callsBefore)
 
     // Now return true
     confirmSpy.mockReturnValue(true)
     fireEvent.click(screen.getByText('Reset Plan'))
-    // clearManualPlan called on accept
-    expect(mU(clearManualPlan)).toHaveBeenCalled()
+    // persist called again with fresh plan on accept
+    expect(mU(persistManualPlan).mock.calls.length).toBeGreaterThan(callsBefore)
 
     confirmSpy.mockRestore()
   })
