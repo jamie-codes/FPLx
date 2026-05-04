@@ -4,7 +4,9 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
-v1.10 started (2026-05-04) — Modelling & Trust milestone: Monte Carlo simulator, calibration charts, model versioning, sensitivity analysis, rejection explainer.
+v1.11 started (2026-05-04) — Insights & Infrastructure milestone: LLM prose summaries, fixture heat map, in-app alerts, event-based pipeline refresh, post-GW review, decision history ROI, transfer regret backtester.
+
+v1.10 planned (2026-05-04) — Modelling & Trust phases 61-65 defined in ROADMAP.md (MC, calibration, versioning, sensitivity, rejection explainer); deprioritised mid-season in favour of v1.11. Work to resume post-season.
 
 v1.9 complete (shipped 2026-05-04) — Competitive Intelligence milestone finished with Phase 60 (Transfer Route Tree). The pure-TypeScript greedy multi-branch engine (`buildTransferRouteTree`) generates 2–3 distinct transfer paths from a squad, presents them in a side-by-side summary table with a "Load into Manual Planner" bridge, and shares a section-level planning horizon across all Plan sub-tabs (D-07 lift: `planHorizon` state in `page.tsx`, `<HorizonSelector>` above Plan nav, horizon prop threaded to PlannerTab + ManualPlanTab + RouteTreeTab). Phase 59 shipped the Manual Transfer Planner: GW-by-GW sequences with live bank balance, FT tracking, hit cost, break-even weeks, squad snapshots, and localStorage persistence. See previous milestone summary below.
 
@@ -16,16 +18,22 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
-## Current Milestone: v1.10 Modelling & Trust
+## Current Milestone: v1.11 Insights & Infrastructure
 
-**Goal:** Add statistical rigour to recommendations — show users how confident the model really is, and why it ranked players the way it did.
+**Goal:** Make the app proactive and reflective — surface plain-English summaries, alert managers to actionable changes, make the pipeline more reliable near deadlines, and give managers a structured way to review and learn from their own decisions.
 
 **Target features:**
-- MC-01: Monte Carlo Simulator — 10k sims per player per GW (Poisson goals, Bernoulli CS), blank%/haul%/10th/90th percentile, plus 5-GW rank trajectory simulator
-- CAL-01: Calibration Charts — reliability diagram in AccuracyTab (predicted haul% bucket vs actual rate, per position)
-- VER-01: Model Versioning — version tags + cross-version accuracy comparison in accuracy_backtest.json
-- SENS-01: Sensitivity Analysis — per-recommendation fragility flag ("still good if start prob drops to 70%? If fixture worsens?")
-- WHY-01: Rejection Explainer — natural-language "why not?" explanation in GemTable row expand, transfer suggestions, and squad view
+- NLP-01: LLM Prose Summaries — weekly plain-English recommendation summary via Claude API, grounded in structured model output
+- HEAT-01: Fixture Heat Map — all 20 teams × next 8 GWs colour-coded grid (green/amber/red), DGW highlighted
+- ALERT-01: In-App Alert System — banner/badge for price changes, injury status changes, set-piece taker changes, deadline countdown
+- REFRESH-01: Event-Based Pipeline Refresh — additional GitHub Actions triggers at 6h/2h/30min before each GW deadline and post-deadline
+- PGW-01: Post-GW Review — auto-generated GW review (bench pts left, captain vs optimal, vs top-10k template)
+- HIST-01: Decision History & ROI — captain hit rate, transfer ROI, hit break-even rate logged to Vercel Blob per team ID
+- BACK-01: Transfer Regret Backtester — per-transfer outcome verdict + 2×2 good/bad process × good/bad outcome dashboard
+
+## Planned (Deprioritised): v1.10 Modelling & Trust
+
+Phases 61-65 fully defined in ROADMAP.md. Deprioritised mid-season (chips used, modelling features better suited to off-season build). Features: MC-01 Monte Carlo Simulator, CAL-01 Calibration Charts, VER-01 Model Versioning, SENS-01 Sensitivity Analysis, WHY-01 Rejection Explainer.
 
 ## Core Value
 
@@ -319,4 +327,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-04 — v1.10 Modelling & Trust milestone started. Features: MC-01 Monte Carlo Simulator, CAL-01 Calibration Charts, VER-01 Model Versioning, SENS-01 Sensitivity Analysis, WHY-01 Rejection Explainer.*
+*Last updated: 2026-05-04 — v1.11 Insights & Infrastructure milestone started. v1.10 Modelling & Trust (phases 61-65) planned but deprioritised mid-season — work to resume post-season.*
