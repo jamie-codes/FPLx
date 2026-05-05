@@ -104,19 +104,19 @@ export function FixtureHeatMap() {
                     )
                   }
                   if (fixtures.length >= 2) {
-                    // DGW (Pitfall 1: detect via group.length, NOT total array length)
-                    const [f1, f2] = fixtures
-                    const c1 = TIER_HEX[f1.difficulty_tier]
-                    const c2 = TIER_HEX[f2.difficulty_tier]
-                    const tooltip =
-                      `${f1.opponent_team} (${f1.is_home ? 'H' : 'A'}) ${f1.attacking_difficulty.toFixed(2)}` +
-                      ` / ` +
-                      `${f2.opponent_team} (${f2.is_home ? 'H' : 'A'}) ${f2.attacking_difficulty.toFixed(2)}`
+                    // DGW/TGW (Pitfall 1: detect via group.length, NOT total array length)
+                    const colours = fixtures.map(f => TIER_HEX[f.difficulty_tier])
+                    const gradient = colours.length === 2
+                      ? `linear-gradient(to bottom right, ${colours[0]} 50%, ${colours[1]} 50%)`
+                      : `linear-gradient(to bottom right, ${colours[0]} 33%, ${colours[1]} 33% 66%, ${colours[2]} 66%)`
+                    const tooltip = fixtures
+                      .map(f => `${f.opponent_team} (${f.is_home ? 'H' : 'A'}) ${(f.attacking_difficulty ?? 0).toFixed(2)}`)
+                      .join(' / ')
                     return (
                       <td
                         key={gw}
                         className="px-2 py-1 text-center min-w-[48px] h-8"
-                        style={{ background: `linear-gradient(to bottom right, ${c1} 50%, ${c2} 50%)` }}
+                        style={{ background: gradient }}
                         title={tooltip}
                       />
                     )
@@ -124,7 +124,7 @@ export function FixtureHeatMap() {
                   // Single fixture
                   const f = fixtures[0]
                   const tooltip =
-                    `${f.opponent_team} (${f.is_home ? 'H' : 'A'}) — ${f.attacking_difficulty.toFixed(2)}`
+                    `${f.opponent_team} (${f.is_home ? 'H' : 'A'}) — ${(f.attacking_difficulty ?? 0).toFixed(2)}`
                   return (
                     <td
                       key={gw}
