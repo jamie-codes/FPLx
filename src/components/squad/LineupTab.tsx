@@ -160,6 +160,7 @@ export function LineupTab({ teamId }: LineupTabProps) {
   const [lineup, setLineup] = useState<OptimisedLineup | null>(initialLineup)
   useEffect(() => {
     setLineup(initialLineup)
+    setPendingStarterId(null)
   }, [initialLineup])
 
   // Swap state machine (RESEARCH.md Pattern 5):

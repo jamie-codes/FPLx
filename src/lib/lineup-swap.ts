@@ -51,6 +51,8 @@ export function applySwap(
   // trigger React re-render; in-place mutation would not flip the reference).
   const newStarters = lineup.starters.map(id => id === starterId ? benchId : id)
   const benchIdx = lineup.bench.indexOf(benchId)
+  // Guard: if benchId is not in bench (stale caller), return unchanged lineup.
+  if (benchIdx === -1) return lineup
   const newBench = lineup.bench.map((id, i) => i === benchIdx ? starterId : id)
 
   // Recompute captain/VC against the NEW starters (Pitfall 2 — captain may have just been benched).
@@ -58,7 +60,11 @@ export function applySwap(
   const captainKey = (p: MergedPlayer): number =>
     p.xPts_90th_1gw ?? p.xPts_1gw ?? 0
   const sorted = [...newStarters].sort(
-    (a, b) => captainKey(playerMap.get(b)!) - captainKey(playerMap.get(a)!),
+    (a, b) => {
+      const pa = playerMap.get(a)
+      const pb = playerMap.get(b)
+      return (pb ? captainKey(pb) : 0) - (pa ? captainKey(pa) : 0)
+    },
   )
 
   // Recompute formation string from NEW starters (Pitfall 3).
