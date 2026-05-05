@@ -29,6 +29,7 @@ import { PriceChangePanel } from '@/components/price-changes/PriceChangePanel'
 import { FixtureHeatMap } from '@/components/club-form/FixtureHeatMap'
 import { RivalsTab } from '@/components/rivals/RivalsTab'
 import { OptimiserPanel } from '@/components/optimiser/OptimiserPanel'
+import { LineupTab } from '@/components/squad/LineupTab'
 import { DecisionSummaryTab } from '@/components/squad/DecisionSummaryTab'
 
 class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -52,7 +53,7 @@ class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: 
 }
 
 export type Section = 'analyse' | 'plan' | 'squad'
-export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals' | 'fixture-heat-map'
+export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals' | 'fixture-heat-map' | 'lineup'
 
 export const SECTIONS = [
   {
@@ -89,6 +90,7 @@ export const SECTIONS = [
       { id: 'decision' as SubTab,  label: 'Decision',  mobileLabel: 'Decision'  },
       { id: 'transfers' as SubTab, label: 'Transfers', mobileLabel: 'Transfers' },
       { id: 'optimiser' as SubTab, label: 'Optimiser', mobileLabel: 'Optimiser' },
+      { id: 'lineup' as SubTab,    label: 'Lineup',    mobileLabel: 'Lineup'    },
     ],
     defaultSubTab: 'decision' as SubTab,
   },
@@ -229,6 +231,9 @@ export default function Home() {
         )}
         {activeSection === 'squad' && activeSubTab === 'optimiser' && (
           <OptimiserPanel teamId={submittedId ?? ''} />
+        )}
+        {activeSection === 'squad' && activeSubTab === 'lineup' && (
+          <LineupTab teamId={submittedId ?? ''} />
         )}
         {activeSection !== 'squad' && activeSubTab === 'gems' && (
           <GemTable preset={gemPreset} onPresetChange={setGemPreset} onCompare={handleCompare} />
