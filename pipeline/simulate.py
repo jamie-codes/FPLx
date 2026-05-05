@@ -70,6 +70,8 @@ def _simulate_player(p: dict, xmins_v2_enabled: bool, rng) -> dict:
     xg = p.get('xg_per90') or 0.0
     xa = p.get('xa_per90') or 0.0
     et = p.get('element_type', 3) or 3
+    if et not in GOAL_PTS:
+        et = 3
     m60 = p.get('mins_60_prob') if xmins_v2_enabled else None
     fixtures = p.get('fixtures', []) or []
 
