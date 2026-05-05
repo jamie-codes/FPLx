@@ -12,8 +12,8 @@
 - ✅ **v1.7 Decision Assistant** — Phases 47-51 (shipped 2026-05-02)
 - ✅ **v1.8 Predictive Intelligence** — Phases 52-55 (shipped 2026-05-03)
 - ✅ **v1.9 Competitive Intelligence** — Phases 56-60 (shipped 2026-05-04)
-- **v1.10 Modelling & Trust** — Phases 61-65 (planned, deprioritised mid-season)
-- **v1.11 Insights & Infrastructure** — Phases 66-71 (in progress)
+- **v1.11 Insights & Infrastructure** — Phases 66-73 (Phases 66-71 planned; 72-73 complete 2026-05-05)
+- **v1.12 Modelling & Refinement** — Phases 61-65 (carry-forward) + 74-77 (in progress)
 
 ## Phases
 
@@ -137,7 +137,7 @@ See `.planning/milestones/v1.9-ROADMAP.md` for full phase details.
 
 </details>
 
-### v1.10 Modelling & Trust (Phases 61-65)
+### v1.12 Modelling & Refinement — Carry-forward (Phases 61-65)
 
 - [ ] **Phase 61: MC Simulation Core** — 10k sim engine in pipeline, blank%/haul%/floor/ceiling per player per GW
 - [ ] **Phase 62: MC Rank Simulator & Captain Integration** — 5-GW rank trajectory UI, captain picker MC augmentation
@@ -155,6 +155,13 @@ See `.planning/milestones/v1.9-ROADMAP.md` for full phase details.
 - [ ] **Phase 71: Decision History & Regret Backtester** — decision logging per team ID, cumulative ROI dashboard, 2×2 process×outcome matrix
 - [x] **Phase 72: Lineup Optimiser** — recommend optimal starting XI + bench order from squad using xPts×start_prob, formation-constraint solver, overridable team sheet UI (LINEUP-01) ✓ 2026-05-05
 - [x] **Phase 73: Post-GW Review** — 5th Squad sub-tab showing last 3 settled GWs: bench pts left, captain delta vs optimal, top scorer, FPL average score; pipeline writes `gw_review_gw{N}.json` to Vercel Blob (PGW-01, PGW-02) ✓ 2026-05-05
+
+### v1.12 Modelling & Refinement — New Phases (74-77)
+
+- [ ] **Phase 74: Transfer Engine Overhaul** — 3-per-team cap enforcement, duplicate transfer bug fix, multi-hit view (1FT/2FT/−4/−8), bank balance auto-pull and feasibility checks
+- [ ] **Phase 75: Fixture Heat Map v2** — opponent labels per cell, owned-team filtering and row highlighting, user-selectable horizon (8/12/16 GWs), ATT/DEF difficulty toggle
+- [ ] **Phase 76: Analytics Enhancements** — routes_to_points pipeline score + GemTable column, Accuracy GW row drill-down, LineupTab manual captain/VC override
+- [ ] **Phase 77: Pitch Visuals & Mobile Polish** — LineupTab kit art with placeholder fallback, Decision tab captain card overflow fix, full mobile layout audit on 390–430px viewport
 
 ## Phase Details
 
@@ -584,6 +591,60 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   - captain_delta MUST use `pick.multiplier` not hardcoded 2 (Pitfall 3 — handles Triple Captain where multiplier=3)
 **UI hint**: yes
 
+---
+
+## v1.12 Modelling & Refinement (Phases 61-65 carry-forward + 74-77 new)
+
+### Phase 74: Transfer Engine Overhaul
+**Goal**: Transfer suggestions correctly enforce the 3-player-per-team cap, never duplicate player moves across multi-transfer plans, and present all four cost scenarios (1FT, 2FT, −4, −8) with live bank balance and clear affordability indicators
+**Depends on**: Phase 73 (v1.11 complete); extends existing `suggestTransfers()` in `src/lib/optimise-lineup.ts` and `TransferPanel`
+**Requirements**: TFX-01, TFX-02, TFX-03, TFX-04, TFX-05
+**Success Criteria** (what must be TRUE):
+  1. Transfer panel never suggests a player from a team where the user already owns 3 players — the 3-per-team cap is silently filtered before any candidate appears
+  2. When the user views a 2FT or hit plan, no player appears as both a sell candidate in one step and a buy candidate in another — each move involves a distinct player pair
+  3. User can view 1FT, 2FT, −4 hit, and −8 hit (two hits) scenarios in a single panel without switching views — all four rows visible simultaneously
+  4. Each scenario row shows the remaining bank balance after the move; unaffordable moves are visually disabled (greyed out or struck through) rather than silently excluded
+  5. When authenticated, bank balance is auto-derived from FPL sell prices; when unauthenticated, user can type their bank balance into a field that immediately updates all affordability checks
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 75: Fixture Heat Map v2
+**Goal**: The fixture heat map gains opponent labels in every cell, owned-team row highlighting, a user-selectable horizon (8/12/16 GWs), and an ATT/DEF difficulty toggle — making it useful for targeted transfer planning rather than just general fixture scanning
+**Depends on**: Phase 66 (Fixture Heat Map Phase 1 — base grid must exist); Phase 66 plans not yet started, so Phase 75 is sequenced after Phase 66 executes
+**Requirements**: HEAT-04, HEAT-05, HEAT-06, HEAT-07, HEAT-08
+**Success Criteria** (what must be TRUE):
+  1. Every fixture cell in the heat map displays the opponent's abbreviated name (e.g. "MCI", "ARS") so the manager can read who each team plays without hovering
+  2. User can press a toggle to show only rows for teams where they own at least one player; full grid is restored when squad is not loaded or toggle is off
+  3. Heat map rows for teams where the user owns players are visually highlighted (distinct background or left border) even when the filter is off, so owned-team fixtures stand out at a glance
+  4. User can select an 8 GW, 12 GW, or 16 GW horizon using a pill selector — the grid expands to the chosen width without layout overflow
+  5. User can toggle between attacking difficulty view and defensive difficulty view via a two-button pill — both datasets already exist in the pipeline per team per fixture
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 76: Analytics Enhancements
+**Goal**: GemTable gains a sortable Routes to Points column from pipeline data; Accuracy tab GW rows become clickable to reveal flagged players and haulers; LineupTab gains a manual captain/VC override interaction
+**Depends on**: Phase 73 (v1.11 complete); Phase 72 (LineupTab exists for OPT-01); extends existing `pipeline/merge.py`, `AccuracyTab.tsx`, and `LineupTab.tsx`
+**Requirements**: RTP-01, RTP-02, ACC2-01, OPT-01
+**Success Criteria** (what must be TRUE):
+  1. Pipeline writes a `routes_to_points` integer (1–5) to every player in `merged_players.json` counting their distinct point-scoring routes (pen taker, FK taker, corner taker, primary xG scorer, primary xA provider)
+  2. GemTable shows a "Routes" column with the `routes_to_points` value, sortable ascending/descending; column is hidden on mobile portrait view
+  3. User can click any GW row in the Accuracy GW Summary table to expand a drill-down panel showing which players were xPts-flagged (predicted haul, actual blank) and which were haulers (substantially outperformed xPts) for that GW, with player names and actual vs predicted points
+  4. User can tap any player on the LineupTab pitch to arm a captain assignment (amber "C" badge reassignment); a distinct secondary interaction (e.g. long-press or dedicated VC button) assigns vice-captain; the override is session-only and a Reset button restores the algorithm's recommendation
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 77: Pitch Visuals & Mobile Polish
+**Goal**: LineupTab renders player kit art alongside names for faster visual scanning; Decision tab captain card no longer overflows its container; all tabs are verified clean on 390–430px viewport with no truncation, overflow, or undersized tap targets
+**Depends on**: Phase 76 (LineupTab captain override must be complete before kit art is layered on top); Phase 74 (transfer panel layout stable before mobile audit)
+**Requirements**: OPT-02, POL-01, POL-02, POL-03
+**Success Criteria** (what must be TRUE):
+  1. Each player card on the LineupTab pitch displays a team kit image (shirt colours) alongside the player's name — a coloured placeholder renders when the image URL is unavailable or fails to load
+  2. CaptainPicksPanel on the Decision tab renders entirely within its card container on desktop — no content clips the card boundary; card expands vertically or uses an internal scroll region as needed
+  3. GemTable and all sub-tables (Accuracy, Rivals, Value Gems, DefCon) render without horizontal overflow on 390–430px viewport widths — xPts columns and sortable columns are fully visible or the table is explicitly scroll-bounded
+  4. Every tab verified individually on a 430px viewport (Galaxy S26+): no truncated text, no misaligned cells, no tap targets below 44px — all violations resolved before the phase is marked complete
+**Plans**: TBD
+**UI hint**: yes
+
 ## Progress
 
 | Phase | Milestone | Plans | Status | Completed |
@@ -609,16 +670,20 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 | 58 | v1.9 | 4/4 | Complete | 2026-05-04 |
 | 59 | v1.9 | 3/3 | Complete | 2026-05-04 |
 | 60 | v1.9 | 2/2 | Complete | 2026-05-04 |
-| 61 | v1.10 | 0 | Not started | - |
-| 62 | v1.10 | 0 | Not started | - |
-| 63 | v1.10 | 0 | Not started | - |
-| 64 | v1.10 | 0 | Not started | - |
-| 65 | v1.10 | 0 | Not started | - |
-| 66 | v1.11 | 0/3 | Not started | - |
-| 67 | v1.11 | 0/3 | Not started | - |
+| 61 | v1.12 | 0 | Not started | - |
+| 62 | v1.12 | 0 | Not started | - |
+| 63 | v1.12 | 0 | Not started | - |
+| 64 | v1.12 | 0 | Not started | - |
+| 65 | v1.12 | 0 | Not started | - |
+| 66 | v1.11 | 3/3 | Complete | 2026-05-05 |
+| 67 | v1.11 | 3/3 | Complete | 2026-05-05 |
 | 68 | v1.11 | 0 | Not started | - |
 | 69 | v1.11 | 0 | Not started | - |
 | 70 | v1.11 | 0 | Not started | - |
 | 71 | v1.11 | 0 | Not started | - |
 | 72 | v1.11 | 2/2 | Complete | 2026-05-05 |
 | 73 | v1.11 | 3/3 | Complete | 2026-05-05 |
+| 74 | v1.12 | 0 | Not started | - |
+| 75 | v1.12 | 0 | Not started | - |
+| 76 | v1.12 | 0 | Not started | - |
+| 77 | v1.12 | 0 | Not started | - |
