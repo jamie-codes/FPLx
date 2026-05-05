@@ -1078,14 +1078,14 @@ def merge_players(
     pos_xpts: dict[int, list[float]] = {1: [], 2: [], 3: [], 4: []}
     for p in result:
         xpts_val = p.get('xPts_1gw')
-        if xpts_val:  # exclude BGW players (xPts_1gw=0 or None — no fixture this week)
+        if xpts_val is not None and xpts_val > 0:  # exclude BGW players (xPts_1gw=None or 0 — no fixture this week)
             pos_xpts[p['element_type']].append(xpts_val)
     pos_median: dict[int, float] = {
         et: median(vals) if vals else 0.0
         for et, vals in pos_xpts.items()
     }
     for p in result:
-        if not p.get('xPts_1gw'):  # BGW player — no fixture; skip differential classification
+        if p.get('xPts_1gw') is None or p.get('xPts_1gw') <= 0:  # BGW player — no fixture; skip differential classification
             continue
         flag = _compute_differential_flag(
             p['xPts_1gw'],
