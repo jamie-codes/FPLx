@@ -1,0 +1,327 @@
+'use client'
+
+import { useState, useMemo, useEffect } from 'react'
+import { useSquad } from '@/lib/hooks/useSquad'
+import { usePlayers } from '@/lib/hooks/usePlayers'
+import { optimiseLineup } from '@/lib/optimise-lineup'
+import { isLegalSwap, applySwap } from '@/lib/lineup-swap'
+import type { OptimisedLineup, MergedPlayer } from '@/lib/types'
+
+// Position codes (mirrors src/lib/optimise-lineup.ts internals)
+const GK = 1
+const DEF = 2
+const MID = 3
+const FWD = 4
+
+interface LineupTabProps {
+  teamId: string   // submitted id from page.tsx; empty string = no submission
+}
+
+// ─── PlayerCard sub-component ───────────────────────────────────────────────
+
+interface PlayerCardProps {
+  id: number
+  player: MergedPlayer
+  isPending: boolean
+  isLegalTarget: boolean
+  isIncompatible: boolean
+  isCaptain: boolean
+  isViceCaptain: boolean
+  onTap: (id: number) => void
+}
+
+function PlayerCard({ id, player, isPending, isLegalTarget, isIncompatible, isCaptain, isViceCaptain, onTap }: PlayerCardProps) {
+  const baseCls = 'relative flex flex-col items-stretch justify-center min-h-[64px] sm:min-h-[72px] w-full max-w-[96px] sm:max-w-[112px] rounded border bg-zinc-50 dark:bg-zinc-800 px-2 py-2 text-left transition-shadow'
+  const stateCls = isPending
+    ? 'border-amber-400 bg-amber-50 dark:bg-amber-950 ring-2 ring-amber-400 ring-offset-1 ring-offset-white dark:ring-offset-zinc-900'
+    : isLegalTarget
+    ? 'border-zinc-200 dark:border-zinc-700 ring-2 ring-green-500 ring-offset-1 ring-offset-white dark:ring-offset-zinc-900 cursor-pointer'
+    : isIncompatible
+    ? 'border-zinc-200 dark:border-zinc-700 opacity-40 cursor-not-allowed'
+    : 'border-zinc-200 dark:border-zinc-700 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700'
+  return (
+    <button
+      type="button"
+      // CRITICAL Pitfall 7: stopPropagation prevents the pitch background's onClick
+      // from firing right after a card click and immediately disarming the pending state.
+      onClick={(e) => { e.stopPropagation(); onTap(id) }}
+      disabled={isIncompatible}
+      data-testid={`pitch-card-${id}`}
+      data-pending={isPending ? 'true' : undefined}
+      data-legal-target={isLegalTarget ? 'true' : undefined}
+      className={`${baseCls} ${stateCls}`}
+    >
+      <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+        {player.web_name}
+      </span>
+      <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+        {(player.xPts_1gw ?? 0).toFixed(1)}
+      </span>
+      <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+        {Math.round((player.start_prob ?? 0) * 100)}%
+      </span>
+      {isCaptain && (
+        <span className="absolute top-1 right-1 text-xs font-semibold text-amber-600 dark:text-amber-400" data-testid="captain-badge">
+          C
+        </span>
+      )}
+      {isViceCaptain && (
+        <span className="absolute top-1 right-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400" data-testid="vc-badge">
+          VC
+        </span>
+      )}
+    </button>
+  )
+}
+
+// ─── PitchRow sub-component ─────────────────────────────────────────────────
+
+interface PitchRowProps {
+  position: 'GK' | 'DEF' | 'MID' | 'FWD' | 'Bench'
+  ids: number[]
+  playerMap: Map<number, MergedPlayer>
+  pendingStarterId: number | null
+  legalBenchIds: Set<number> | null
+  onCardTap: (id: number) => void
+  captainId: number
+  vcId: number
+  isBench?: boolean
+}
+
+function PitchRow({ position, ids, playerMap, pendingStarterId, legalBenchIds, onCardTap, captainId, vcId, isBench = false }: PitchRowProps) {
+  return (
+    <div className="flex items-stretch gap-2 sm:gap-3" data-testid={`pitch-row-${position.toLowerCase()}`}>
+      <div className="text-[10px] font-semibold uppercase text-zinc-500 dark:text-zinc-400 tracking-wide w-10 self-center">
+        {position}
+      </div>
+      <div className="flex-1 flex justify-around gap-2 sm:gap-3">
+        {ids.map(id => {
+          const player = playerMap.get(id)
+          if (!player) return null
+          const isPending = id === pendingStarterId
+          const isLegalTarget = isBench && legalBenchIds?.has(id) === true
+          const isIncompatible = isBench && legalBenchIds !== null && !legalBenchIds.has(id)
+          return (
+            <PlayerCard
+              key={id}
+              id={id}
+              player={player}
+              isPending={isPending}
+              isLegalTarget={isLegalTarget}
+              isIncompatible={isIncompatible}
+              isCaptain={id === captainId}
+              isViceCaptain={id === vcId}
+              onTap={onCardTap}
+            />
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── LineupTab main export ───────────────────────────────────────────────────
+
+export function LineupTab({ teamId }: LineupTabProps) {
+  const submittedId = teamId.trim() === '' ? null : teamId.trim()
+  const { data: squadData, isLoading: squadLoading, error: squadError } = useSquad(submittedId)
+  const { data: playersData, isLoading: playersLoading } = usePlayers()
+  const isLoading = squadLoading || playersLoading
+
+  // Compute initial recommendation (memoised — recomputes only when squad or players data changes)
+  const { initialLineup, playerMap, eligibleCount, totalPlayersInSquad } = useMemo(() => {
+    if (!squadData || !playersData) {
+      return {
+        initialLineup: null,
+        playerMap: new Map<number, MergedPlayer>(),
+        eligibleCount: 0,
+        totalPlayersInSquad: 0,
+      }
+    }
+    const map = new Map<number, MergedPlayer>(playersData.map(p => [p.id, p]))
+    // CRITICAL (Pitfall 1): BGW filter is `xPts_1gw !== 0` (NOT `!== undefined`).
+    // undefined means "no pipeline data"; only exact 0 indicates a confirmed BGW.
+    const eligible = squadData.picks.filter(pick => {
+      const p = map.get(pick.element)
+      if (!p) return false
+      return p.xPts_1gw !== 0
+    }).length
+    const result = optimiseLineup(squadData.picks, playersData, 1)   // horizon=1 per D-02
+    return {
+      initialLineup: result,
+      playerMap: map,
+      eligibleCount: eligible,
+      totalPlayersInSquad: squadData.picks.length,
+    }
+  }, [squadData, playersData])
+
+  // Override state: held lineup; starts as initialLineup, mutated by swaps, restored by Reset.
+  // Pitfall 6: any data refetch resets overrides — accepted as session-only behaviour per D-08.
+  const [lineup, setLineup] = useState<OptimisedLineup | null>(initialLineup)
+  useEffect(() => {
+    setLineup(initialLineup)
+  }, [initialLineup])
+
+  // Swap state machine (RESEARCH.md Pattern 5):
+  const [pendingStarterId, setPendingStarterId] = useState<number | null>(null)
+
+  function handleStarterTap(id: number) {
+    setPendingStarterId(prev => prev === id ? null : id)
+  }
+  function handleBenchTap(benchId: number) {
+    if (pendingStarterId === null || !lineup) return
+    // Defence in depth (Pitfall 4): re-check legality even though incompatible cards are disabled.
+    if (!isLegalSwap(lineup, pendingStarterId, benchId, playerMap)) return
+    setLineup(applySwap(lineup, pendingStarterId, benchId, playerMap))
+    setPendingStarterId(null)
+  }
+  function handleBackgroundTap() {
+    setPendingStarterId(null)
+  }
+  function handleReset() {
+    setPendingStarterId(null)
+    setLineup(initialLineup)
+  }
+
+  // Compute legal bench targets when a starter is armed (memoised on pendingStarterId + lineup).
+  const legalBenchIds = useMemo(() => {
+    if (pendingStarterId === null || !lineup) return null
+    const set = new Set<number>()
+    for (const benchId of lineup.bench) {
+      if (isLegalSwap(lineup, pendingStarterId, benchId, playerMap)) set.add(benchId)
+    }
+    return set
+  }, [pendingStarterId, lineup, playerMap])
+
+  // ───── Render branches ─────
+
+  if (submittedId === null) {
+    return (
+      <section className="mt-6 space-y-3" data-testid="lineup-tab">
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Optimised Lineup</h2>
+        <div className="rounded border border-zinc-200 dark:border-zinc-700 p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+          Enter your FPL Team ID on the Transfers tab to see your optimised lineup.
+        </div>
+      </section>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <section className="mt-6 space-y-3" data-testid="lineup-tab">
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Optimised Lineup</h2>
+        <div className="rounded border border-zinc-200 dark:border-zinc-700 p-4 text-sm text-zinc-500 dark:text-zinc-400">
+          Loading squad...
+        </div>
+      </section>
+    )
+  }
+
+  if (squadError) {
+    const errorMessage = squadError instanceof Error && squadError.message
+      ? squadError.message
+      : 'Unable to load squad data. Please try again.'
+    return (
+      <section className="mt-6 space-y-3" data-testid="lineup-tab">
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Optimised Lineup</h2>
+        <div className="rounded border border-red-300 bg-red-50 dark:bg-red-950 p-4 text-sm text-red-700 dark:text-red-300">
+          {errorMessage}
+        </div>
+      </section>
+    )
+  }
+
+  if (lineup === null) {
+    return (
+      <section className="mt-6 space-y-3" data-testid="lineup-tab">
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Optimised Lineup</h2>
+        {eligibleCount < 11 ? (
+          <div
+            className="rounded border border-amber-400 bg-amber-50 dark:bg-amber-950 px-3 py-2 text-sm text-amber-800 dark:text-amber-200"
+            data-testid="bgw-banner-critical"
+          >
+            <span className="font-semibold">Warning:</span>{' '}
+            fewer than 11 eligible starters — only {eligibleCount} of your {totalPlayersInSquad} players have a fixture this gameweek. Optimised lineup may include bench players.
+          </div>
+        ) : (
+          <div className="rounded border border-red-300 bg-red-50 dark:bg-red-950 p-4 text-sm text-red-700 dark:text-red-300">
+            Unable to optimise lineup. Please try again.
+          </div>
+        )}
+      </section>
+    )
+  }
+
+  // ───── Lineup-rendered branch ─────
+  // Group starters by element_type for the pitch rows.
+  const starterGks  = lineup.starters.filter(id => playerMap.get(id)?.element_type === GK)
+  const starterDefs = lineup.starters.filter(id => playerMap.get(id)?.element_type === DEF)
+  const starterMids = lineup.starters.filter(id => playerMap.get(id)?.element_type === MID)
+  const starterFwds = lineup.starters.filter(id => playerMap.get(id)?.element_type === FWD)
+
+  // Total xPts: sum of starters' xPts_1gw + captain's xPts_1gw (captain doubles per FPL rules).
+  const sumStarterXpts = lineup.starters.reduce((acc, id) => {
+    const p = playerMap.get(id)
+    return acc + ((p?.xPts_1gw ?? 0))
+  }, 0)
+  const captainBonus = playerMap.get(lineup.captainId)?.xPts_1gw ?? 0
+  const totalXPts = sumStarterXpts + captainBonus
+
+  const onCardTap = (id: number) => {
+    if (lineup.starters.includes(id)) handleStarterTap(id)
+    else if (lineup.bench.includes(id)) handleBenchTap(id)
+  }
+
+  return (
+    <section className="mt-6 space-y-3" data-testid="lineup-tab">
+      <header className="flex items-center justify-between">
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Optimised Lineup</h2>
+        <button
+          type="button"
+          onClick={handleReset}
+          data-testid="lineup-reset"
+          aria-label="Reset to recommended lineup"
+          className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold rounded min-h-[44px] px-3 py-2 text-sm hover:bg-zinc-800 dark:hover:bg-zinc-200 cursor-pointer"
+        >
+          Reset
+        </button>
+      </header>
+
+      {eligibleCount < totalPlayersInSquad && eligibleCount >= 11 && (
+        <div
+          className="rounded border border-amber-400 bg-amber-50 dark:bg-amber-950 px-3 py-2 text-sm text-amber-800 dark:text-amber-200"
+          data-testid="bgw-banner-soft"
+        >
+          <span className="font-semibold">Blank gameweek warning:</span>{' '}
+          only {eligibleCount} of your {totalPlayersInSquad} players have a fixture this gameweek.
+        </div>
+      )}
+
+      <div data-testid="lineup-headline-row" className="flex flex-wrap items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 py-2">
+        <span><span className="font-semibold">Formation:</span> {lineup.formation}</span>
+        <span className="text-zinc-400">│</span>
+        <span><span className="font-semibold">Captain:</span> {playerMap.get(lineup.captainId)?.web_name ?? '—'}</span>
+        <span className="text-zinc-400">│</span>
+        <span className="font-semibold text-green-600 dark:text-green-400">Total xPts: {totalXPts.toFixed(1)}</span>
+      </div>
+
+      <div
+        className="bg-zinc-50 dark:bg-zinc-800/40 rounded border border-zinc-200 dark:border-zinc-700 px-2 sm:px-4 py-3 sm:py-4 space-y-2"
+        onClick={handleBackgroundTap}
+        data-testid="pitch"
+      >
+        <PitchRow position="GK"  ids={starterGks}  playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} captainId={lineup.captainId} vcId={lineup.vcId} />
+        <PitchRow position="DEF" ids={starterDefs} playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} captainId={lineup.captainId} vcId={lineup.vcId} />
+        <PitchRow position="MID" ids={starterMids} playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} captainId={lineup.captainId} vcId={lineup.vcId} />
+        <PitchRow position="FWD" ids={starterFwds} playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} captainId={lineup.captainId} vcId={lineup.vcId} />
+        <div className="border-t border-zinc-200 dark:border-zinc-700 mt-4 pt-4">
+          <PitchRow position="Bench" ids={lineup.bench} playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} captainId={lineup.captainId} vcId={lineup.vcId} isBench />
+        </div>
+      </div>
+
+      <p className="text-xs italic text-zinc-500 dark:text-zinc-400">
+        Tap a starter, then tap a bench player to swap. Tap elsewhere to cancel.
+      </p>
+    </section>
+  )
+}
