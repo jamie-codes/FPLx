@@ -466,7 +466,21 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   3. Summary regenerates automatically each pipeline run, persisted alongside other pipeline output (Vercel Blob), and served via a typed API route consumed by a TanStack Query hook
   4. When the LLM call fails or quota is exceeded, the screen degrades gracefully — falls back to the existing structured Decision cards without blocking the rest of the UI
   5. Generated prose names only players present in the structured model input — a guardrail check rejects responses referencing players not in the input set
-**Plans**: TBD
+**Plans**: 3 plans (3 waves)
+  **Wave 1**
+  - [ ] 067-01-PLAN.md — Wave 0 test scaffolds, ProseSummary/ProseRefreshPayload types, shared TS guardrail (prose-guardrail.ts), Anthropic SDK dependencies (Python + npm)
+  **Wave 2** *(blocked on Plan 01 completion)*
+  - [ ] 067-02-PLAN.md — Pipeline path: prose_summary.py + run.py integration + pipeline.yml ANTHROPIC_API_KEY; GET /api/prose-summary route + useProseSummary hook + ProseSummaryBlock mounted in DecisionSummaryTab (payload=null placeholder)
+  **Wave 3** *(blocked on Plan 02 completion)*
+  - [ ] 067-03-PLAN.md — Refresh path: POST /api/prose-summary (zod + maxDuration=30 + Anthropic SDK + retry guardrail), real useProseRefresh mutation, DecisionSummaryTab builds ProseRefreshPayload from existing state + human-verify checkpoint
+  **Cross-cutting constraints:**
+  - `ProseSummary` and `ProseRefreshPayload` types must exist in src/lib/types.ts (Plan 01) before Plans 02+03 can compile
+  - `passesGuardrail` TS module (Plan 01) algorithm MUST be byte-equivalent to `_passes_guardrail` in pipeline/prose_summary.py (Plan 02)
+  - Plan 02 lands a stub `useProseRefresh` (no-op mutation) so ProseSummaryBlock compiles without the POST route; Plan 03 replaces the stub with real `useMutation` — file path stays the same
+  - DecisionSummaryTab passes `payload={null}` in Plan 02 and `payload={proseRefreshPayload}` in Plan 03 — same component prop, evolving caller
+  - `export const maxDuration = 30` is REQUIRED on the POST route (Pitfall 1: Hobby plan default 10s will silently 504)
+  - ANTHROPIC_API_KEY GitHub repo secret + local .env must be configured by user before pipeline merge — D-14 graceful skip handles missing key without crash
+**Phase notes**: D-01 pipeline writes global squad-agnostic prose covering top-3 captains + top-3 differential gems (recomputed in prose_summary.py from merged_players.json — captain_picks.json schema unchanged per Open Question 1 resolution). D-02 prompt input deviates: top-3 captains from merged xPts_1gw, top-3 gems = ownership<15% AND xPts_1gw>0 (Open Question 2 resolution; insights.json contains pattern statements not gems). D-08 model = `claude-haiku-4-5` (alias) for both Python and TS calls. D-12 exact-match guardrail (case-insensitive + whitespace-normalised) implemented twice: src/lib/prose-guardrail.ts + pipeline/prose_summary.py — algorithms must agree. D-13 422 → silent UI hide; D-14 Python guardrail double-fail → no Blob write. Open Question 3: prose is QUALITATIVE (no numeric values; cards above already show exact figures). Open Question 4: POST handler reads merged_players.json server-side via USE_BLOB switch — body does NOT carry corpus.
 **UI hint**: yes
 
 ### Phase 68: In-App Alert System
@@ -552,7 +566,7 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 | 64 | v1.10 | 0 | Not started | - |
 | 65 | v1.10 | 0 | Not started | - |
 | 66 | v1.11 | 0/3 | Not started | - |
-| 67 | v1.11 | 0 | Not started | - |
+| 67 | v1.11 | 0/3 | Not started | - |
 | 68 | v1.11 | 0 | Not started | - |
 | 69 | v1.11 | 0 | Not started | - |
 | 70 | v1.11 | 0 | Not started | - |
