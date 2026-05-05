@@ -614,3 +614,17 @@ export interface ProseRefreshPayload {
   chip: { code: 'bboost' | '3xc' | 'freehit' | 'wildcard' | null; bestGw: number | null }
   risks: ReadonlyArray<{ name: string; label: string }>
 }
+
+// Phase 73 PGW-01 / PGW-02: Post-GW Review (D-05..D-08 in 073-CONTEXT.md)
+// Returned by GET /api/gw-review?teamId=&gw= ; consumed by useGwReview + GwReviewTab.
+export interface GwReview {
+  gw: number                       // Settled gameweek number (matches the ?gw= query param)
+  your_score: number               // entry_history.points - your GW score
+  bench_pts_left: number           // entry_history.points_on_bench - D-05; do NOT recompute from individual picks
+  captain_name: string             // web_name of pick where is_captain === true
+  optimal_captain_name: string     // web_name of pick with highest total_points among starting XI (position <= 11)
+  captain_delta: number            // (optimal_captain_pts * 2) - (your_captain_pts * your_captain_multiplier); clamped >= 0 (D-06)
+  top_scorer_name: string          // web_name of pick with highest total_points among starting XI (position <= 11)
+  top_scorer_pts: number           // that pick's total_points
+  average_score: number            // FPL average - from gw_review_gw{N}.json (D-08); labelled "FPL average", NOT "top-10k"
+}
