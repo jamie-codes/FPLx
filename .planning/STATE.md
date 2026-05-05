@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.11
-milestone_name: Insights & Infrastructure
-status: executing
-stopped_at: Phase 73 complete — human UAT pending
-last_updated: "2026-05-05T18:33:00.000Z"
-last_activity: 2026-05-05 -- Phase 73 execution complete (human UAT pending)
+milestone: v1.12
+milestone_name: Modelling & Refinement
+status: planning
+stopped_at: Defining requirements
+last_updated: "2026-05-05T00:00:00.000Z"
+last_activity: 2026-05-05 -- Milestone v1.12 started
 progress:
-  total_phases: 8
-  completed_phases: 8
-  total_plans: 27
-  completed_plans: 27
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,12 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-04 — v1.10 started)
 
 ## Current Position
 
-Phase: 73 — Post-GW Review
-Plan: all 3 complete
-Status: Human UAT pending (browser smoke + live pipeline run)
-Last activity: 2026-05-05 -- Phase 73 planning complete
-
-Progress: 0/6 phases complete [] 0%
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-05 — Milestone v1.12 started
 
 ## Performance Metrics
 

@@ -18,18 +18,21 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
-## Current Milestone: v1.11 Insights & Infrastructure
+## Current Milestone: v1.12 Modelling & Refinement
 
-**Goal:** Make the app proactive and reflective — surface plain-English summaries, alert managers to actionable changes, make the pipeline more reliable near deadlines, and give managers a structured way to review and learn from their own decisions.
+**Goal:** Resurrect the deprioritised v1.10 modelling depth (Monte Carlo, calibration, versioning, sensitivity, rejection explainer) while fixing known bugs in transfer suggestions and the optimiser, and refining analytics UI across Heat Map, Accuracy Tab, and GemTable.
 
 **Target features:**
-- NLP-01: LLM Prose Summaries — weekly plain-English recommendation summary via Claude API, grounded in structured model output
-- HEAT-01: Fixture Heat Map — all 20 teams × next 8 GWs colour-coded grid (green/amber/red), DGW highlighted
-- ALERT-01: In-App Alert System — banner/badge for price changes, injury status changes, set-piece taker changes, deadline countdown
-- REFRESH-01: Event-Based Pipeline Refresh — additional GitHub Actions triggers at 6h/2h/30min before each GW deadline and post-deadline
-- PGW-01: Post-GW Review — auto-generated GW review (bench pts left, captain vs optimal, vs top-10k template)
-- HIST-01: Decision History & ROI — captain hit rate, transfer ROI, hit break-even rate logged to Vercel Blob per team ID
-- BACK-01: Transfer Regret Backtester — per-transfer outcome verdict + 2×2 good/bad process × good/bad outcome dashboard
+- MC-01/02/03/04: Monte Carlo simulation — blank%, haul%, floor/ceiling per player; 5-GW rank trajectory simulator; captain MC labels
+- VER-01/02 + CAL-01/02: Model version history tracking + calibration reliability diagrams by position
+- SENS-01/02: Sensitivity/fragility flags on transfer candidates and captain picks
+- WHY-01/02/03: "Why not?" rejection explainer (GemTable, TransferPanel callout, Squad view)
+- HEAT2-01..05: Heat Map v2 — opponent labels per cell, team filtering, extended horizon, ATT/DEF split, squad overlay
+- ACC2-01: Accuracy drill-down — click GW row to see flagged players and haulers
+- RTP-01: Routes to Points — numeric score column in GemTable (pen, FK, corners, goals, assists routes)
+- TFR2-01..04: Transfer engine fixes — 3-per-team cap, duplicate transfer bug, multi-hit support (-4/-8), bank balance auto-pull/manual entry
+- OPT2-01/02: Optimiser enhancements — manual captain/VC override, pitch visual with player kit art
+- POL-01..03: Polish — Decision tab captain overflow fix, full mobile layout audit (Galaxy S26+)
 
 ## Planned (Deprioritised): v1.10 Modelling & Trust
 
@@ -327,4 +330,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-04 — v1.11 Insights & Infrastructure milestone started. v1.10 Modelling & Trust (phases 61-65) planned but deprioritised mid-season — work to resume post-season.*
+*Last updated: 2026-05-05 — v1.12 Modelling & Refinement milestone started. Resumes v1.10 Modelling & Trust work (phases 61-65 already phased in ROADMAP.md) and adds Heat Map v2, transfer engine fixes, optimiser enhancements, and mobile/desktop polish.*
