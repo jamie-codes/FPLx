@@ -384,7 +384,18 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   3. User can see floor (10th percentile) and ceiling (90th percentile) outcomes for any player, shown alongside the existing xPts headline figure
   4. BGW players show blank% = 100% and haul% = 0% (no fixture = guaranteed blank); DGW players correctly simulate both fixtures and combine
   5. Simulation results are written once per pipeline run and consumed as static JSON — no client-side simulation, no added latency on page load
-**Plans**: TBD
+**Plans**: 3 plans (2 waves)
+  **Wave 0**
+  - [ ] 061-01-PLAN.md — TDD scaffolding (test_simulate.py 5 RED cases + columns.test.tsx 3 RED MC-row cases + types.ts MergedPlayer 4 optional MC fields)
+  **Wave 1** *(parallel — disjoint files)*
+  - [ ] 061-02-PLAN.md — pipeline/simulate.py (compute_simulations + _simulate_player + _cs_prob_sim, NumPy vectorized) + run.py integration + requirements.txt numpy>=1.26.0
+  - [ ] 061-03-PLAN.md — XPtsCell hover-card extension (4 MC props + showMC guard + Blank%/Haul%/Floor/Ceiling rows + amber haul threshold + xPts_1gw column threading)
+  **Cross-cutting constraints:**
+  - Plan 061-01 is Wave 0 (RED tests + types) — Plans 02 and 03 both depend on it; Plans 02 and 03 are file-disjoint and run in Wave 1 parallel
+  - simulate.py MUST NOT import from merge.py (D-02) — re-implement the 3-line _cs_prob inline as _cs_prob_sim
+  - simulate.py MUST NOT read JSON files (D-03) — xmins_v2_enabled arrives as a parameter from run.py
+  - p90_pts overwrites xPts_90th_1gw in the merged JSON (D-05) — downstream consumers (captain picker Chase Rank, PlayerComparisonModal) gain MC accuracy with no TS change
+  - XPtsCell BGW guard at line 54 and showBreakdown guard at line 60 are NOT modified — MC rows show only when window===1 AND all 4 MC props are defined
 **UI hint**: yes
 
 ### Phase 62: MC Rank Simulator & Captain Integration
@@ -670,7 +681,7 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 | 58 | v1.9 | 4/4 | Complete | 2026-05-04 |
 | 59 | v1.9 | 3/3 | Complete | 2026-05-04 |
 | 60 | v1.9 | 2/2 | Complete | 2026-05-04 |
-| 61 | v1.12 | 0 | Not started | - |
+| 61 | v1.12 | 0/3 | Not started | - |
 | 62 | v1.12 | 0 | Not started | - |
 | 63 | v1.12 | 0 | Not started | - |
 | 64 | v1.12 | 0 | Not started | - |

@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.12
 milestone_name: Modelling & Refinement
 status: planning
-stopped_at: Defining requirements
+stopped_at: Phase 61 planned
 last_updated: "2026-05-05T00:00:00.000Z"
-last_activity: 2026-05-05 -- Milestone v1.12 started
+last_activity: 2026-05-05 -- Phase 61 planned (3 plans, 2 waves — pipeline simulate.py + frontend XPtsCell hover card)
 progress:
   total_phases: 0
   completed_phases: 0
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-04 — v1.10 started)
 
 ## Current Position
 
-Phase: Not started — roadmap approved, ready to execute
-Plan: —
+Phase: 61 — MC Simulation Core (planned, ready to execute)
+Plan: 3 plans (Wave 0: 061-01; Wave 1: 061-02, 061-03 parallel)
 Status: Ready to execute Phase 61
-Last activity: 2026-05-05 — v1.12 roadmap created (9 phases: 61-65 carry-forward + 74-77 new)
+Last activity: 2026-05-05 — Phase 61 planned (simulate.py MC engine + XPtsCell hover card extension)
 
 ## Performance Metrics
 
