@@ -275,6 +275,53 @@ def run(dry_run: bool = False):
             upload_json(f'predictions_snapshot_gw{current_gw}.json', snapshot_data)
             print(f"Predictions snapshot uploaded to Blob: predictions_snapshot_gw{current_gw}.json")
 
+        # Phase 67 NLP-01/NLP-02 — LLM prose summary (Claude call; guardrail-protected).
+        # Pitfall 8: a Claude failure must NOT poison the rest of the pipeline.
+        print("Generating weekly prose summary...")
+        try:
+            from prose_summary import generate_weekly_summary
+            # Top-3 captains: highest xPts_1gw excluding GKs (element_type==1)
+            captains_top3 = sorted(
+                [p for p in merged if (p.get('xPts_1gw') or 0) > 0 and p.get('element_type') != 1],
+                key=lambda p: p.get('xPts_1gw') or 0,
+                reverse=True,
+            )[:3]
+            cap_payload = [
+                {'name': p.get('web_name'), 'team': p.get('team_short_name', ''), 'xPts_1gw': p.get('xPts_1gw')}
+                for p in captains_top3
+            ]
+            cap_ids = {p['id'] for p in captains_top3}
+            # Top-3 differential gems: ownership < 15.0, xPts_1gw > 0, exclude already-picked captains
+            gems_top3 = sorted(
+                [
+                    p for p in merged
+                    if (p.get('xPts_1gw') or 0) > 0
+                    and float(p.get('selected_by_percent') or 0) < 15.0
+                    and p.get('id') not in cap_ids
+                ],
+                key=lambda p: p.get('xPts_1gw') or 0,
+                reverse=True,
+            )[:3]
+            gem_payload = [
+                {'name': p.get('web_name'), 'team': p.get('team_short_name', ''), 'xPts_1gw': p.get('xPts_1gw')}
+                for p in gems_top3
+            ]
+            corpus = [p.get('web_name') for p in merged if p.get('web_name')]
+            summary = generate_weekly_summary(
+                captains=cap_payload,
+                gems=gem_payload,
+                player_corpus=corpus,
+                gameweek=current_gw,
+            )
+            if summary is not None:
+                save('weekly_summary.json', summary)
+                print(f"Weekly summary written: GW {summary.get('gw')}")
+            else:
+                print("Weekly summary skipped (missing key or guardrail rejection)")
+        except Exception as exc:
+            import sys
+            print(f"[prose_summary] non-fatal error: {exc}", file=sys.stderr)
+
         # Write last_updated.json with success metadata
         from datetime import datetime, timezone
         timestamp = datetime.now(timezone.utc).isoformat()

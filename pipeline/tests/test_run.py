@@ -148,3 +148,42 @@ def test_xmins_v2_enabled_run_py_source_check():
         "run.py must pass xmins_v2_enabled to merge_players"
     assert "xMins v2" in src, \
         "run.py must print xMins v2 status"
+
+
+def test_run_invokes_prose():
+    """Phase 67 NLP-02: run.py source calls generate_weekly_summary with the correct pattern.
+
+    This is a source-code contract test (same style as the existing gate-read tests above).
+    It verifies run.py imports and calls generate_weekly_summary with the required kwargs.
+    """
+    run_path = os.path.join(os.path.dirname(__file__), '..', 'run.py')
+    with open(run_path, 'r', encoding='utf-8') as f:
+        src = f.read()
+
+    # Phase 67 NLP-02 must-haves
+    assert 'from prose_summary import generate_weekly_summary' in src, \
+        "run.py must import generate_weekly_summary from prose_summary"
+    assert 'generate_weekly_summary(' in src, \
+        "run.py must call generate_weekly_summary()"
+    assert "captains=cap_payload" in src, \
+        "run.py must pass captains=cap_payload to generate_weekly_summary"
+    assert "gems=gem_payload" in src, \
+        "run.py must pass gems=gem_payload to generate_weekly_summary"
+    assert "player_corpus=corpus" in src, \
+        "run.py must pass player_corpus=corpus to generate_weekly_summary"
+    assert "gameweek=current_gw" in src, \
+        "run.py must pass gameweek=current_gw to generate_weekly_summary"
+    assert "save('weekly_summary.json'" in src, \
+        "run.py must call save('weekly_summary.json', ...) when summary is not None"
+
+    # Pitfall 8: Claude failure must not poison pipeline — ensure the call is guarded
+    assert "[prose_summary] non-fatal error" in src, \
+        "run.py prose block must have a non-fatal error handler (Pitfall 8)"
+
+    # Selection logic: top-3 captains exclude GKs (element_type != 1)
+    assert "element_type') != 1" in src, \
+        "run.py must exclude GKs (element_type != 1) when building captain top-3"
+
+    # Selection logic: gems use ownership < 15.0 threshold
+    assert "< 15.0" in src, \
+        "run.py must filter gems by selected_by_percent < 15.0"
