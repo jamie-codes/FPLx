@@ -139,7 +139,7 @@ See `.planning/milestones/v1.9-ROADMAP.md` for full phase details.
 
 ### v1.12 Modelling & Refinement — Carry-forward (Phases 61-65)
 
-- [ ] **Phase 61: MC Simulation Core** — 10k sim engine in pipeline, blank%/haul%/floor/ceiling per player per GW
+- [x] **Phase 61: MC Simulation Core** — 10k sim engine in pipeline, blank%/haul%/floor/ceiling per player per GW *(complete 2026-05-05)*
 - [ ] **Phase 62: MC Rank Simulator & Captain Integration** — 5-GW rank trajectory UI, captain picker MC augmentation
 - [ ] **Phase 63: Model Versioning & Calibration Charts** — version tags in pipeline, multi-version comparison, calibration reliability diagrams in AccuracyTab
 - [ ] **Phase 64: Sensitivity Analysis** — fragility engine over transfer candidates + captain picks, amber indicators
@@ -386,10 +386,10 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   5. Simulation results are written once per pipeline run and consumed as static JSON — no client-side simulation, no added latency on page load
 **Plans**: 3 plans (2 waves)
   **Wave 0**
-  - [ ] 061-01-PLAN.md — TDD scaffolding (test_simulate.py 5 RED cases + columns.test.tsx 3 RED MC-row cases + types.ts MergedPlayer 4 optional MC fields)
+  - [x] 061-01-PLAN.md — TDD scaffolding (test_simulate.py 5 RED cases + columns.test.tsx 3 RED MC-row cases + types.ts MergedPlayer 4 optional MC fields)
   **Wave 1** *(parallel — disjoint files)*
-  - [ ] 061-02-PLAN.md — pipeline/simulate.py (compute_simulations + _simulate_player + _cs_prob_sim, NumPy vectorized) + run.py integration + requirements.txt numpy>=1.26.0
-  - [ ] 061-03-PLAN.md — XPtsCell hover-card extension (4 MC props + showMC guard + Blank%/Haul%/Floor/Ceiling rows + amber haul threshold + xPts_1gw column threading)
+  - [x] 061-02-PLAN.md — pipeline/simulate.py (compute_simulations + _simulate_player + _cs_prob_sim, NumPy vectorized) + run.py integration + requirements.txt numpy>=1.26.0
+  - [x] 061-03-PLAN.md — XPtsCell hover-card extension (4 MC props + showMC guard + Blank%/Haul%/Floor/Ceiling rows + amber haul threshold + xPts_1gw column threading)
   **Cross-cutting constraints:**
   - Plan 061-01 is Wave 0 (RED tests + types) — Plans 02 and 03 both depend on it; Plans 02 and 03 are file-disjoint and run in Wave 1 parallel
   - simulate.py MUST NOT import from merge.py (D-02) — re-implement the 3-line _cs_prob inline as _cs_prob_sim

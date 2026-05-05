@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.12
 milestone_name: Modelling & Refinement
-status: planning
-stopped_at: Phase 61 planned
-last_updated: "2026-05-05T00:00:00.000Z"
-last_activity: 2026-05-05 -- Phase 61 planned (3 plans, 2 waves — pipeline simulate.py + frontend XPtsCell hover card)
+status: in_progress
+stopped_at: Phase 61 complete
+last_updated: "2026-05-05T22:35:00.000Z"
+last_activity: 2026-05-05 -- Phase 61 complete (3 plans, 2 waves — simulate.py MC engine + XPtsCell hover card; 5 pipeline + 11 Vitest tests all green)
 progress:
-  total_phases: 0
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 9
+  completed_phases: 1
+  total_plans: 3
+  completed_plans: 3
+  percent: 11
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-04 — v1.10 started)
 
 ## Current Position
 
-Phase: 61 — MC Simulation Core (planned, ready to execute)
-Plan: 3 plans (Wave 0: 061-01; Wave 1: 061-02, 061-03 parallel)
-Status: Ready to execute Phase 61
-Last activity: 2026-05-05 — Phase 61 planned (simulate.py MC engine + XPtsCell hover card extension)
+Phase: 62 — MC Rank Simulator & Captain Integration (next)
+Plan: Phase 61 complete (3/3 plans) → Phase 62 pending
+Status: Phase 61 complete; Phase 62 ready to plan
+Last activity: 2026-05-05 — Phase 61 complete (simulate.py 10k-sim MC engine + XPtsCell blank%/haul%/floor/ceiling hover card)
 
 ## Performance Metrics
 
