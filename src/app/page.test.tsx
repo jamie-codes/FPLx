@@ -15,6 +15,7 @@ vi.mock('@/components/gem-table/GemTable', () => ({
 vi.mock('@/components/defcon/DefConTables', () => ({ DefConTables: () => <div data-testid="defcon" /> }))
 vi.mock('@/components/transfers/TransferPanel', () => ({ TransferPanel: (_props: { teamId: string; onTeamIdChange: (id: string) => void; submittedId: string | null; onSubmit: () => void }) => <div data-testid="transfer-panel" /> }))
 vi.mock('@/components/optimiser/OptimiserPanel', () => ({ OptimiserPanel: (_props: { teamId: string }) => <div data-testid="optimiser-panel" /> }))
+vi.mock('@/components/squad/LineupTab', () => ({ LineupTab: (_props: { teamId: string }) => <div data-testid="lineup-tab" /> }))
 vi.mock('@/components/squad/DecisionSummaryTab', () => ({ DecisionSummaryTab: (_props: { teamId: string; onTeamIdChange: (id: string) => void; submittedId: string | null; onSubmit: () => void }) => <div data-testid="decision-summary-tab" /> }))
 vi.mock('@/components/club-form/ClubFormTable', () => ({ ClubFormTable: () => <div data-testid="club-form-table" /> }))
 vi.mock('@/components/club-form/FixtureEaseRankingPanel', () => ({ FixtureEaseRankingPanel: () => <div data-testid="fixture-ease" /> }))
@@ -151,7 +152,7 @@ describe('Phase 36: page.tsx state', () => {
     // Sub-tab nav contains Decision, Transfers, Optimiser buttons in that order
     const subTabs = container.querySelector('nav[aria-label="Squad sub-tabs"]')
     const subTabBtns = Array.from(subTabs!.querySelectorAll('button')).map(b => b.textContent)
-    expect(subTabBtns).toEqual(['Decision', 'Transfers', 'Optimiser'])
+    expect(subTabBtns).toEqual(['Decision', 'Transfers', 'Optimiser', 'Lineup'])
   })
 
   it('Squad Optimiser sub-tab shows OptimiserPanel and hides TransferPanel (NAV-01, D-09)', () => {
@@ -162,6 +163,16 @@ describe('Phase 36: page.tsx state', () => {
     fireEvent.click(optimiserBtn!)
     expect(container.querySelector('[data-testid="optimiser-panel"]')).not.toBeNull()
     expect(container.querySelector('[data-testid="transfer-panel"]')).toBeNull()
+  })
+
+  it('Squad Lineup sub-tab shows LineupTab and hides OptimiserPanel (LINEUP-01, D-09)', () => {
+    const { container } = render(<Home />)
+    const squadBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Squad')
+    fireEvent.click(squadBtn!)
+    const lineupBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Lineup')
+    fireEvent.click(lineupBtn!)
+    expect(container.querySelector('[data-testid="lineup-tab"]')).not.toBeNull()
+    expect(container.querySelector('[data-testid="optimiser-panel"]')).toBeNull()
   })
 
   it('Plan section sub-tab nav contains "Manual Plan" after "Planner" (D-01, MTP-01)', () => {
