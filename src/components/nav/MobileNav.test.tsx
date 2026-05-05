@@ -67,15 +67,15 @@ describe('Phase 36: MobileNav component', () => {
     expect(pillButtons[2].textContent).toBe('Values')
   })
 
-  it('Squad active: pill row shows 3 pills Decision, Transfers and Optimiser; total 6 buttons in DOM (NAV-04 / NAV-01, updated D-10/Phase51)', () => {
+  it('Squad active: pill row shows 4 pills Decision, Transfers, Optimiser, Lineup; total 7 buttons in DOM (NAV-04 / NAV-01, updated Phase72)', () => {
     const { container } = render(
       <MobileNav {...makeProps({ activeSection: 'squad' as Section, activeSubTab: 'transfers' as SubTab })} />
     )
     const allButtons = Array.from(container.querySelectorAll('button'))
-    // 3 section buttons + 3 Squad pills = 6 total
-    expect(allButtons).toHaveLength(6)
-    const pillButtons = allButtons.filter(b => ['Decision', 'Transfers', 'Optimiser'].includes(b.textContent ?? ''))
-    expect(pillButtons).toHaveLength(3)
+    // 3 section buttons + 4 Squad pills (Decision/Transfers/Optimiser/Lineup) = 7 total
+    expect(allButtons).toHaveLength(7)
+    const pillButtons = allButtons.filter(b => ['Decision', 'Transfers', 'Optimiser', 'Lineup'].includes(b.textContent ?? ''))
+    expect(pillButtons).toHaveLength(4)
     expect(pillButtons[0].textContent).toBe('Decision')
     expect(pillButtons[1].textContent).toBe('Transfers')
     expect(pillButtons[2].textContent).toBe('Optimiser')
