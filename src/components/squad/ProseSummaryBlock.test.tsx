@@ -81,14 +81,14 @@ describe('ProseSummaryBlock', () => {
       opts?.onSuccess?.({ prose: 'OVERRIDE', gw: 35, generated_at: '2026-05-05T00:01:00Z' })
     })
     mockRefresh({ mutate })
-    const { getByLabelText, getByText, unmount, rerender } = render(
+    const { getByLabelText, getByText, unmount } = render(
       <ProseSummaryBlock payload={SAMPLE_PAYLOAD} />,
     )
     fireEvent.click(getByLabelText('Refresh AI summary'))
     expect(getByText('OVERRIDE')).toBeTruthy()
     unmount()
-    rerender(<ProseSummaryBlock payload={SAMPLE_PAYLOAD} />)
-    // After remount with override state lost, global prose shows again
-    expect(getByText('GLOBAL')).toBeTruthy()
+    // Remount fresh instance — override state is lost, global prose shows again (D-04)
+    const { getByText: getByText2 } = render(<ProseSummaryBlock payload={SAMPLE_PAYLOAD} />)
+    expect(getByText2('GLOBAL')).toBeTruthy()
   })
 })
