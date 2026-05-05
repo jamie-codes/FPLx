@@ -17,6 +17,7 @@ from merge import merge_players
 from defcon import compute_defcon_stats
 from xmins import compute_xmins_stats
 from bonus import compute_bonus_predictions
+from simulate import compute_simulations
 from price_changes import compute_price_change_predictions
 from insights import compute_insights
 from accuracy import compute_accuracy_backtest, build_predictions_snapshot
@@ -205,6 +206,7 @@ def run(dry_run: bool = False):
             bonus_stats=bonus_stats,
             bonus_predictor_enabled=bonus_predictor_enabled,
         )
+        merged = compute_simulations(merged, xmins_v2_enabled)
         save('merged_players.json', merged)
         save('captain_picks.json', captain_picks)  # Phase 31 CAP-03/CAP-04
 
