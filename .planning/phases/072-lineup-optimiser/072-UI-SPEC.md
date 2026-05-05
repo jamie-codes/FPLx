@@ -61,12 +61,12 @@ Source: 058-UI-SPEC.md spacing scale; 060-UI-SPEC.md spacing scale; ChipSquadVie
 
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
-| Body | 14px (`text-sm`) | 400 (normal) | 1.5 |
-| Label / helper | 12px (`text-xs`) | 400 (normal) | 1.4 |
-| Section heading | 16px (`text-base`) | 600 (semibold) | 1.2 |
-| Page heading | 18px (`text-lg`) | 600 (semibold) | 1.2 |
+| Position label / start_prob % | 10px (`text-[10px]`) | 400 (normal) for start_prob; 600 (semibold) for position labels | 1.4 |
+| Body / labels / xPts / badges | 12px (`text-xs`) | 400 (normal); 600 (semibold) for emphasis | 1.4 |
+| Player name / headline / Reset | 14px (`text-sm`) | 400 (normal); 600 (semibold) for emphasis | 1.5 |
+| Section / page heading | 16px (`text-base`) | 600 (semibold) | 1.2 |
 
-Carried forward from Phases 58/60. Only two weights in use: 400 (normal) and 600 (semibold). No other weights permitted.
+Carried forward from Phases 58/60 with one role-mapping refinement: this phase declares **exactly four font sizes** (`text-[10px]`, `text-xs`, `text-sm`, `text-base`) and **exactly two weights** (400 normal, 600 semibold). No other sizes or weights are permitted in this phase. The `text-lg` (18px) role used elsewhere in the project is intentionally NOT used here — the page heading "Optimised Lineup" uses `text-base font-semibold` to match the existing `OptimiserPanel` heading hierarchy.
 
 Specific role mapping for this phase:
 
@@ -76,7 +76,7 @@ Specific role mapping for this phase:
 - **Pitch card — player name:** `text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate`. `truncate` is required because long player names ("Alexander-Arnold") would otherwise force the card wider than its row allotment.
 - **Pitch card — xPts value:** `text-xs font-semibold text-zinc-700 dark:text-zinc-300`. Two decimals (`xPts.toFixed(1)` → e.g. `7.4`).
 - **Pitch card — start_prob percentage:** `text-[10px] text-zinc-500 dark:text-zinc-400`. Format: `78%` (no decimal). `Math.round(start_prob * 100)`.
-- **Pitch card — captain (C) badge:** `text-xs font-bold text-amber-600 dark:text-amber-400`. Locked from existing `SquadView.tsx:162` precedent — same colour, same weight, same size. Format: `C` (single letter, NOT `(C)` with parens, because the badge is overlaid not inline).
+- **Pitch card — captain (C) badge:** `text-xs font-semibold text-amber-600 dark:text-amber-400`. Weight is 600 (semibold), NOT 700 (bold) — the two-weight contract permits only 400 and 600. The amber colour provides the visual distinction; the semibold weight matches the rest of the card emphasis system. Format: `C` (single letter, NOT `(C)` with parens, because the badge is overlaid not inline).
 - **Pitch card — vice-captain (VC) badge:** `text-xs font-semibold text-zinc-500 dark:text-zinc-400`. Locked from existing `SquadView.tsx:165` precedent. Format: `VC`.
 - **Reset button label:** `text-sm font-semibold` — primary affordance.
 - **Helper text / footnote** ("Tap a starter, then tap a bench player to swap. Reset restores the recommendation."): `text-xs text-zinc-500 dark:text-zinc-400 italic`. Matches the BB notice italic helper pattern (`OptimiserPanel.tsx:494`).
@@ -316,7 +316,7 @@ export function PlayerCard({
 
       {isCaptain && (
         <span
-          className="absolute top-1 right-1 text-xs font-bold text-amber-600 dark:text-amber-400"
+          className="absolute top-1 right-1 text-xs font-semibold text-amber-600 dark:text-amber-400"
           data-testid="captain-badge"
         >
           C
@@ -481,10 +481,10 @@ When TanStack Query refetches `usePlayers()` or `useSquad()` (e.g. after a stale
 Load-bearing copy locked from CONTEXT.md and prior-phase conventions:
 
 - **Em-dash `—`** for null/unavailable data — not used in this phase because every player rendered has both `xPts_1gw` and `start_prob` (BGW-zero players are excluded by the engine).
-- **`C` and `VC` (no parens)** — locked because the badges are positioned absolute over the card, so the parens form `(C)` / `(VC)` used in `SquadView.tsx:162-165` (where the badge is inline with the player name) is replaced with single-letter form here. Colour and weight are locked: amber-600 bold for C, zinc-500 semibold for VC — same as `SquadView.tsx`.
+- **`C` and `VC` (no parens)** — locked because the badges are positioned absolute over the card, so the parens form `(C)` / `(VC)` used in `SquadView.tsx:162-165` (where the badge is inline with the player name) is replaced with single-letter form here. Colour and weight are locked: amber-600 semibold for C, zinc-500 semibold for VC. The amber colour itself provides sufficient visual distinction; the two-weight contract (400/600) does not permit `font-bold` (700).
 - **"Optimised Lineup" (heading)** — verbatim match to `OptimiserPanel.tsx:304`/`316`/`331` so the two Squad sub-tabs that render lineups present a consistent identity. The `<h2>` text is intentionally identical to the Optimiser tab; the difference between tabs is the body content (this tab is a pitch, that tab is a comparison table).
 - **"Tap a starter, then tap a bench player to swap. Tap elsewhere to cancel."** — single-sentence explainer. Locked wording. NOT "drag a player" (interaction is two-tap, not drag). NOT "click" (mobile-first phrasing).
-- **"Reset"** (single word) — short, scan-friendly. NOT "Reset to recommendation" / "Restore optimal" / "Undo all". The accessible label expands to `Reset to recommended lineup` for screen readers via `aria-label`.
+- **"Reset"** (single word) — short, scan-friendly. NOT "Reset to recommendation" / "Restore optimal" / "Undo all". The accessible label expands to `Reset to recommended lineup` for screen readers via `aria-label`. Single-word visual label is acceptable because the `aria-label` covers screen-reader users with full context.
 
 ---
 
@@ -511,7 +511,7 @@ Load-bearing copy locked from CONTEXT.md and prior-phase conventions:
 | Armed (this card is the armed starter) | `id === pendingStarterId` | Amber tint + amber ring + amber border. `cursor-pointer` (re-tap to disarm). |
 | Legal swap target (bench card during pending swap) | `isBench && legalBenchIds?.has(id)` | Standard zinc tint + green ring + green border (border colour change is implicit via `border-zinc-200`/dark variant — the ring is the dominant signal). `cursor-pointer`. |
 | Incompatible (bench card during pending swap) | `isBench && legalBenchIds !== null && !legalBenchIds.has(id)` | `opacity-40 cursor-not-allowed`. Card is `disabled` (no focus, no click). |
-| Captain | `id === captainId` | `C` badge top-right (amber-600 bold). |
+| Captain | `id === captainId` | `C` badge top-right (amber-600 semibold). |
 | Vice-captain | `id === vcId` | `VC` badge top-right (zinc-500 semibold). |
 
 ### Reset button
@@ -562,7 +562,7 @@ No third-party component registry blocks. All UI is bespoke Tailwind + React reu
 | Reset button restores `optimiseLineup` recommendation; session-only | CONTEXT.md D-08 |
 | `xPts_1gw` is the scoring metric (already embeds start_prob — no re-multiplication) | CONTEXT.md D-01 + RESEARCH.md §Scoring Formula |
 | Horizon = 1GW only; no toggle | CONTEXT.md D-02 |
-| Captain badge `text-amber-600 dark:text-amber-400 font-bold` | Existing `SquadView.tsx:162` |
+| Captain badge `text-amber-600 dark:text-amber-400 font-semibold` | Existing `SquadView.tsx:162` (colour) + this phase's two-weight contract (weight reduced from `font-bold` to `font-semibold` to comply with the 400/600-only typography rule) |
 | VC badge `text-zinc-500 dark:text-zinc-400 font-semibold` | Existing `SquadView.tsx:165` |
 | Position-row label `text-[10px] font-semibold uppercase text-zinc-500` | Existing `OptimiserPanel.tsx:188-191` and `ChipSquadView.tsx:68-70` |
 | Empty / loading / error / BGW banner copy + markup | Verbatim mirror of `OptimiserPanel.tsx:301-371` |
