@@ -130,3 +130,70 @@ describe('Phase 41 ACC-05: last_gw_actual_pts column', () => {
     expect(numC.textContent?.trim()).toBe('8')
   })
 })
+
+// Phase 61 MC-02 — XPtsCell hover-card MC row rendering (Blank%, Haul%, Floor, Ceiling)
+// RED until 061-03 extends XPtsCell with blankProb/haulProb/p10Pts/p90Pts props.
+describe('XPtsCell — Phase 61 MC-02 hover card MC rows', () => {
+  it('renders MC rows when blankProb/haulProb/p10Pts/p90Pts present and window===1', () => {
+    render(
+      <XPtsCell
+        value={5.5}
+        ceiling={false}
+        components={FULL_COMPONENTS}
+        window={1}
+        blankProb={0.23}
+        haulProb={0.41}
+        p10Pts={3.2}
+        p90Pts={11.8}
+      />
+    )
+    // Labels (D-12: short labels `Blank%` / `Haul%` / `Floor` / `Ceiling`)
+    expect(screen.getByText('Blank%')).toBeTruthy()
+    expect(screen.getByText('Haul%')).toBeTruthy()
+    expect(screen.getByText('Floor')).toBeTruthy()
+    expect(screen.getByText('Ceiling')).toBeTruthy()
+    // Values (D-14: integer percent for blank/haul; 1 decimal for floor/ceiling)
+    expect(screen.getByText('23%')).toBeTruthy()
+    expect(screen.getByText('41%')).toBeTruthy()
+    expect(screen.getByText('3.2')).toBeTruthy()
+    expect(screen.getByText('11.8')).toBeTruthy()
+  })
+
+  it('omits MC rows when window===3 (multi-GW window suppresses breakdown card entirely)', () => {
+    render(
+      <XPtsCell
+        value={15.0}
+        ceiling={false}
+        components={FULL_COMPONENTS}
+        window={3}
+        blankProb={0.10}
+        haulProb={0.50}
+        p10Pts={5.0}
+        p90Pts={20.0}
+      />
+    )
+    expect(screen.queryByText('Blank%')).toBeNull()
+    expect(screen.queryByText('Haul%')).toBeNull()
+    expect(screen.queryByText('Floor')).toBeNull()
+    expect(screen.queryByText('Ceiling')).toBeNull()
+  })
+
+  it('omits MC rows when window===5', () => {
+    render(
+      <XPtsCell
+        value={25.0}
+        ceiling={false}
+        components={FULL_COMPONENTS}
+        window={5}
+        blankProb={0.10}
+        haulProb={0.50}
+        p10Pts={5.0}
+        p90Pts={30.0}
+      />
+    )
+    expect(screen.queryByText('Blank%')).toBeNull()
+    expect(screen.queryByText('Haul%')).toBeNull()
+    expect(screen.queryByText('Floor')).toBeNull()
+    expect(screen.queryByText('Ceiling')).toBeNull()
+  })
+})
