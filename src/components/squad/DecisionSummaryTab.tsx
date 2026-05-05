@@ -27,6 +27,7 @@ import { OpportunityCostTable } from '@/components/transfers/OpportunityCostTabl
 import { LifecycleLabelBadge } from '@/components/shared/LifecycleLabelBadge'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
 import { CHIP_LABELS } from '@/components/planner/plan-helpers'
+import { ProseSummaryBlock } from './ProseSummaryBlock'
 
 // ---- Private helpers ----
 
@@ -615,6 +616,9 @@ export function DecisionSummaryTab({
           <NoSquadPlaceholder />
         )}
       </div>
+
+      {/* Phase 67 NLP-01 — LLM prose summary; payload null until Plan 03 wires squad-aware refresh */}
+      <ProseSummaryBlock payload={null} />
     </section>
   )
 }

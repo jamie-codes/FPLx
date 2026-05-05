@@ -12,6 +12,7 @@ jobs:
     env:
       USE_BLOB: 'true'
       BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
     steps:
       - name: Checkout repository
@@ -24,7 +25,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests pandas vercel-blob python-dotenv
+          pip install requests pandas vercel-blob python-dotenv anthropic
 
       - name: Run pipeline
         run: python pipeline/run.py

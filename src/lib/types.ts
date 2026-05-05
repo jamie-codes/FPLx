@@ -609,8 +609,8 @@ export interface ProseSummary {
 
 export interface ProseRefreshPayload {
   gw: number
-  captains: Array<{ name: string; team: string; xPts_1gw: number | null }>
+  captains: ReadonlyArray<{ name: string; team: string; xPts_1gw: number | null }>
   transfer: { sell: string; buy: string; delta: number } | null
   chip: { code: 'bboost' | '3xc' | 'freehit' | 'wildcard' | null; bestGw: number | null }
-  risks: Array<{ name: string; label: string }>
+  risks: ReadonlyArray<{ name: string; label: string }>
 }
