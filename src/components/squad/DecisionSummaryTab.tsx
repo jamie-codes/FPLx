@@ -22,7 +22,7 @@ import {
 } from '@/lib/chip-strategy-engine'
 import { fixtureCountForGw } from '@/lib/planning-engine'
 import { computeDecisionSeverity, type SeverityLevel } from '@/lib/decision-severity'
-import type { ClubForm, TransferSuggestion } from '@/lib/types'
+import type { ClubForm, TransferSuggestion, ProseRefreshPayload } from '@/lib/types'
 import { OpportunityCostTable } from '@/components/transfers/OpportunityCostTable'
 import { LifecycleLabelBadge } from '@/components/shared/LifecycleLabelBadge'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
@@ -308,6 +308,62 @@ export function DecisionSummaryTab({
 
   // Severity inputs
   const riskLabelArr = useMemo(() => riskRows.map(r => r.label), [riskRows])
+
+  // Phase 67 NLP-02 — payload for squad-aware Refresh
+  // Built from existing component state — no recomputation per CONTEXT.md D-05
+  const proseRefreshPayload: ProseRefreshPayload | null = useMemo(() => {
+    if (!submittedId) return null
+
+    const captains = captaincyCandidates.slice(0, 3).map(c => ({
+      name: c.player.web_name,
+      team: c.player.team_short_name ?? String(c.player.team),
+      xPts_1gw: c.player.xPts_1gw ?? null,
+    }))
+
+    // Top OCS suggestion row (first row with actual transfer data — row 0 is always Roll)
+    const topRow = ocsRows.find(r => r.transfers && r.transfers.length > 0)
+    const transfer = topRow?.transfers?.[0]
+      ? {
+          sell: topRow.transfers[0].sell.web_name,
+          buy: topRow.transfers[0].buy.web_name,
+          delta: topRow.xPtsGain,
+        }
+      : null
+
+    // Chip: inline derivation (avoids hoisting bestGwForChip out of render body)
+    const CHIP_CODES_LOCAL: Array<'bboost' | '3xc' | 'freehit'> = ['bboost', '3xc', 'freehit']
+    const unusedLocal = CHIP_CODES_LOCAL.filter(code => !usedChips.has(code))
+    let chipCode: 'bboost' | '3xc' | 'freehit' | 'wildcard' | null = null
+    let chipBestGw: number | null = null
+    for (const code of unusedLocal) {
+      let best: number | null = null
+      if (code === 'freehit') {
+        best = fhResult.bestGw > 0 ? fhResult.bestGw : null
+      } else if (code === 'bboost') {
+        best = bbScores.find(s => s.isBest)?.gw ?? null
+      } else if (code === '3xc') {
+        best = tcScores.find(s => s.isBest)?.gw ?? null
+      }
+      if (best === nextGw) {
+        chipCode = code
+        chipBestGw = best
+        break
+      }
+    }
+
+    const risks = riskRows.map(r => ({
+      name: r.player.web_name,
+      label: r.label,
+    }))
+
+    return {
+      gw: nextGw,
+      captains,
+      transfer,
+      chip: { code: chipCode, bestGw: chipBestGw },
+      risks,
+    }
+  }, [submittedId, captaincyCandidates, ocsRows, usedChips, bbScores, tcScores, fhResult, nextGw, riskRows])
 
   // hasAvailableChip: wildcard excluded (timing-driven chips only — see Plan 01 comment)
   const hasAvailableChip =
@@ -617,8 +673,8 @@ export function DecisionSummaryTab({
         )}
       </div>
 
-      {/* Phase 67 NLP-01 — LLM prose summary; payload null until Plan 03 wires squad-aware refresh */}
-      <ProseSummaryBlock payload={null} />
+      {/* Phase 67 NLP-02 — LLM prose summary with squad-aware Refresh (Plan 03) */}
+      <ProseSummaryBlock payload={proseRefreshPayload} />
     </section>
   )
 }

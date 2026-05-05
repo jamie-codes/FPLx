@@ -1,20 +1,26 @@
-// Phase 67 Plan 02 — STUB. Plan 03 replaces with real useMutation calling POST /api/prose-summary.
-// Stub keeps ProseSummaryBlock compiling without the POST route in place.
+'use client'
+
+import { useMutation } from '@tanstack/react-query'
 import type { ProseSummary, ProseRefreshPayload } from '../types'
 
-export interface ProseRefreshHandle {
-  mutate: (
-    payload: ProseRefreshPayload,
-    opts?: { onSuccess?: (data: ProseSummary) => void; onError?: (e: Error) => void },
-  ) => void
-  isPending: boolean
+async function postRefresh(payload: ProseRefreshPayload): Promise<ProseSummary> {
+  const res = await fetch('/api/prose-summary', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (res.status === 422) {
+    // D-13 sentinel: silently hide the prose block
+    throw new Error('GUARDRAIL_FAILED')
+  }
+  if (!res.ok) {
+    throw new Error(`Refresh failed: ${res.status}`)
+  }
+  return res.json()
 }
 
-export function useProseRefresh(): ProseRefreshHandle {
-  return {
-    mutate: () => {
-      // Plan 03 implements POST /api/prose-summary call
-    },
-    isPending: false,
-  }
+export function useProseRefresh() {
+  return useMutation<ProseSummary, Error, ProseRefreshPayload>({
+    mutationFn: postRefresh,
+  })
 }

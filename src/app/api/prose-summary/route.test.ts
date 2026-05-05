@@ -5,9 +5,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 vi.mock('fs/promises', () => ({ readFile: vi.fn() }))
 vi.mock('@vercel/blob', () => ({ list: vi.fn() }))
 vi.mock('@anthropic-ai/sdk', () => ({
-  default: vi.fn().mockImplementation(() => ({
-    messages: { create: vi.fn() },
-  })),
+  // Rule 1 fix: use regular function (not arrow) so vi.fn() can proxy as a constructor
+  default: vi.fn().mockImplementation(function () {
+    return { messages: { create: vi.fn() } }
+  }),
 }))
 
 import { readFile } from 'fs/promises'
@@ -75,13 +76,16 @@ describe('POST /api/prose-summary', () => {
   it('POST 422 when guardrail fails on both attempts', async () => {
     const stub = (Anthropic as unknown as ReturnType<typeof vi.fn>).mock.results
     // Re-mock to inject a failing-guardrail response
-    ;(Anthropic as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-      messages: {
-        create: vi.fn().mockResolvedValue({
-          content: [{ type: 'text', text: 'Palmer is the captain pick.' }],
-        }),
-      },
-    }))
+    // Rule 1 fix: use regular function (not arrow) so vi.fn() can proxy as a constructor
+    ;(Anthropic as unknown as ReturnType<typeof vi.fn>).mockImplementation(function () {
+      return {
+        messages: {
+          create: vi.fn().mockResolvedValue({
+            content: [{ type: 'text', text: 'Palmer is the captain pick.' }],
+          }),
+        },
+      }
+    })
     const { POST } = await import('./route')
     const res = await POST(makeReq({
       gw: 35,
@@ -95,13 +99,16 @@ describe('POST /api/prose-summary', () => {
   })
 
   it('POST 200 when guardrail passes', async () => {
-    ;(Anthropic as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-      messages: {
-        create: vi.fn().mockResolvedValue({
-          content: [{ type: 'text', text: 'Salah leads this week.' }],
-        }),
-      },
-    }))
+    // Rule 1 fix: use regular function (not arrow) so vi.fn() can proxy as a constructor
+    ;(Anthropic as unknown as ReturnType<typeof vi.fn>).mockImplementation(function () {
+      return {
+        messages: {
+          create: vi.fn().mockResolvedValue({
+            content: [{ type: 'text', text: 'Salah leads this week.' }],
+          }),
+        },
+      }
+    })
     const { POST } = await import('./route')
     const res = await POST(makeReq({
       gw: 35,
