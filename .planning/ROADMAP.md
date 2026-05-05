@@ -154,7 +154,7 @@ See `.planning/milestones/v1.9-ROADMAP.md` for full phase details.
 - [ ] **Phase 70: Post-GW Review** — auto-generated GW review (bench pts, captain delta, vs top-10k), Vercel Blob + `/api/gw-review`
 - [ ] **Phase 71: Decision History & Regret Backtester** — decision logging per team ID, cumulative ROI dashboard, 2×2 process×outcome matrix
 - [x] **Phase 72: Lineup Optimiser** — recommend optimal starting XI + bench order from squad using xPts×start_prob, formation-constraint solver, overridable team sheet UI (LINEUP-01) ✓ 2026-05-05
-- [ ] **Phase 73: Post-GW Review** — 5th Squad sub-tab showing last 3 settled GWs: bench pts left, captain delta vs optimal, top scorer, FPL average score; pipeline writes `gw_review_gw{N}.json` to Vercel Blob (PGW-01, PGW-02)
+- [x] **Phase 73: Post-GW Review** — 5th Squad sub-tab showing last 3 settled GWs: bench pts left, captain delta vs optimal, top scorer, FPL average score; pipeline writes `gw_review_gw{N}.json` to Vercel Blob (PGW-01, PGW-02) ✓ 2026-05-05
 
 ## Phase Details
 
@@ -570,11 +570,11 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   5. Review is keyed by team ID — switching team ID loads that team's own GW review data, not stale state from a previous team
 **Plans**: 3 plans (3 waves)
   **Wave 1**
-  - [ ] 073-01-PLAN.md — Pipeline gw_review writer block in run.py + 3 cold-start seed files (gw_review_gw{33,34,35}.json) force-added to git
+  - [x] 073-01-PLAN.md — Pipeline gw_review writer block in run.py + 3 cold-start seed files (gw_review_gw{33,34,35}.json) force-added to git
   **Wave 2** *(blocked on Wave 1 completion)*
-  - [ ] 073-02-PLAN.md — GwReview TypeScript interface + GET /api/gw-review route (USE_BLOB switch, direct FPL upstream fetch, captain_delta with pick.multiplier) + useGwReview TanStack Query hook (30 min staleTime)
+  - [x] 073-02-PLAN.md — GwReview TypeScript interface + GET /api/gw-review route (USE_BLOB switch, direct FPL upstream fetch, captain_delta with pick.multiplier) + useGwReview TanStack Query hook (30 min staleTime)
   **Wave 3** *(blocked on Wave 2 completion)*
-  - [ ] 073-03-PLAN.md — Wave 0 GwReviewTab.test.tsx (4 RTL cases) → GwReviewTab.tsx component (5 state branches, GW pill toggle, UI-SPEC styling) → page.tsx 4 additive edits → MobileNav.test.tsx updated to expect 5 Squad pills
+  - [x] 073-03-PLAN.md — Wave 0 GwReviewTab.test.tsx (4 RTL cases) → GwReviewTab.tsx component (5 state branches, GW pill toggle, UI-SPEC styling) → page.tsx 4 additive edits → MobileNav.test.tsx updated to expect 5 Squad pills
   **Cross-cutting constraints:**
   - Plan 02 imports the GwReview interface created in Plan 02 Task 1; the API route and the hook share that single source of truth in src/lib/types.ts
   - Plan 03 Task 1 (test file) is Wave 0 per VALIDATION.md — written BEFORE the component (RED phase); Task 2 implements component to pass tests (GREEN)
@@ -621,4 +621,4 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 | 70 | v1.11 | 0 | Not started | - |
 | 71 | v1.11 | 0 | Not started | - |
 | 72 | v1.11 | 2/2 | Complete | 2026-05-05 |
-| 73 | v1.11 | 0/3 | Not started | - |
+| 73 | v1.11 | 3/3 | Complete | 2026-05-05 |
