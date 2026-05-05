@@ -67,22 +67,26 @@ describe('Phase 36: MobileNav component', () => {
     expect(pillButtons[2].textContent).toBe('Values')
   })
 
-  it('Squad active: pill row shows 4 pills Decision, Transfers, Optimiser, Lineup; total 7 buttons in DOM (NAV-04 / NAV-01, updated Phase72)', () => {
+  it('Squad active: pill row shows 5 pills Decision, Transfers, Optimiser, Lineup, Review; total 8 buttons in DOM (NAV-04 / NAV-01, updated Phase73)', () => {
     const { container } = render(
       <MobileNav {...makeProps({ activeSection: 'squad' as Section, activeSubTab: 'transfers' as SubTab })} />
     )
     const allButtons = Array.from(container.querySelectorAll('button'))
-    // 3 section buttons + 4 Squad pills (Decision/Transfers/Optimiser/Lineup) = 7 total
-    expect(allButtons).toHaveLength(7)
-    const pillButtons = allButtons.filter(b => ['Decision', 'Transfers', 'Optimiser', 'Lineup'].includes(b.textContent ?? ''))
-    expect(pillButtons).toHaveLength(4)
+    // 3 section buttons + 5 Squad pills (Decision/Transfers/Optimiser/Lineup/Review) = 8 total
+    expect(allButtons).toHaveLength(8)
+    const pillButtons = allButtons.filter(b => ['Decision', 'Transfers', 'Optimiser', 'Lineup', 'Review'].includes(b.textContent ?? ''))
+    expect(pillButtons).toHaveLength(5)
     expect(pillButtons[0].textContent).toBe('Decision')
     expect(pillButtons[1].textContent).toBe('Transfers')
     expect(pillButtons[2].textContent).toBe('Optimiser')
+    expect(pillButtons[3].textContent).toBe('Lineup')
+    expect(pillButtons[4].textContent).toBe('Review')
     // Active sub-tab pill (Transfers) has aria-current; others do not
     expect(pillButtons[0].getAttribute('aria-current')).not.toBe('page')
     expect(pillButtons[1].getAttribute('aria-current')).toBe('page')
     expect(pillButtons[2].getAttribute('aria-current')).not.toBe('page')
+    expect(pillButtons[3].getAttribute('aria-current')).not.toBe('page')
+    expect(pillButtons[4].getAttribute('aria-current')).not.toBe('page')
   })
 
   it('clicking section buttons calls onSectionChange with correct id (NAV-05)', () => {
