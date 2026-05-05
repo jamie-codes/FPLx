@@ -153,6 +153,7 @@ See `.planning/milestones/v1.9-ROADMAP.md` for full phase details.
 - [ ] **Phase 69: Event-Based Pipeline Refresh** — GitHub Actions deadline-aware triggers (6h/2h/30min/post), stale-data warning UX
 - [ ] **Phase 70: Post-GW Review** — auto-generated GW review (bench pts, captain delta, vs top-10k), Vercel Blob + `/api/gw-review`
 - [ ] **Phase 71: Decision History & Regret Backtester** — decision logging per team ID, cumulative ROI dashboard, 2×2 process×outcome matrix
+- [ ] **Phase 72: Lineup Optimiser** — recommend optimal starting XI + bench order from squad using xPts×start_prob, formation-constraint solver, overridable team sheet UI (LINEUP-01)
 
 ## Phase Details
 
@@ -571,3 +572,4 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 | 69 | v1.11 | 0 | Not started | - |
 | 70 | v1.11 | 0 | Not started | - |
 | 71 | v1.11 | 0 | Not started | - |
+| 72 | backlog | 0 | Not started | - |

@@ -58,6 +58,22 @@
 
 ---
 
+## LINEUP-01: Optimal Starting XI Recommendation
+
+**Phase:** 72
+**Priority:** High
+
+Given the user's 15-player squad, recommend the starting XI and bench order that maximises total expected points within FPL formation rules. Show the result as an overridable team sheet.
+
+**Acceptance criteria:**
+- Solver respects FPL constraints: exactly 1 GK, 3–5 DEF, 2–5 MID, 1–3 FWD, total = 11
+- Scores players by `xPts_1gw × start_prob`; selects the legal XI with highest total
+- Bench ordered by same metric descending (best cover first)
+- UI renders a team sheet; user can swap a benched player with a starter (position-compatible only)
+- Requires squad to be loaded (disabled otherwise)
+
+---
+
 ## Out of Scope
 
 - Push notifications or email alerts (in-app only for v1.11)
@@ -88,3 +104,4 @@
 | HIST-02 | Phase 71 | — | pending |
 | BACK-01 | Phase 71 | — | pending |
 | BACK-02 | Phase 71 | — | pending |
+| LINEUP-01 | Phase 72 | — | pending |
