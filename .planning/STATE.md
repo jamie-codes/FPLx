@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.11
 milestone_name: Insights & Infrastructure
-status: Ready to execute
-stopped_at: Phase 72 planned (2 plans)
-last_updated: "2026-05-05T01:00:00.000Z"
-last_activity: 2026-05-05 — Phase 72 Lineup Optimiser planned (2 plans, 2 waves)
+status: executing
+stopped_at: Phase 73 context gathered (2026-05-05)
+last_updated: "2026-05-05T14:30:00.000Z"
+last_activity: 2026-05-05 — Phase 73 context gathered
 progress:
   total_phases: 8
   completed_phases: 8
@@ -87,6 +87,6 @@ Items carried from v1.9:
 
 ## Session Continuity
 
-Last session: 2026-05-05T01:00:00.000Z
-Stopped at: Phase 72 planned — 2 plans (072-01, 072-02), 2 waves
-Resume file: .planning/phases/072-lineup-optimiser/072-01-PLAN.md
+Last session: 2026-05-05T14:09:34.058Z
+Stopped at: context exhaustion at 76% (2026-05-05)
+Resume file: None
