@@ -153,7 +153,7 @@ See `.planning/milestones/v1.9-ROADMAP.md` for full phase details.
 - [ ] **Phase 69: Event-Based Pipeline Refresh** — GitHub Actions deadline-aware triggers (6h/2h/30min/post), stale-data warning UX
 - [ ] **Phase 70: Post-GW Review** — auto-generated GW review (bench pts, captain delta, vs top-10k), Vercel Blob + `/api/gw-review`
 - [ ] **Phase 71: Decision History & Regret Backtester** — decision logging per team ID, cumulative ROI dashboard, 2×2 process×outcome matrix
-- [ ] **Phase 72: Lineup Optimiser** — recommend optimal starting XI + bench order from squad using xPts×start_prob, formation-constraint solver, overridable team sheet UI (LINEUP-01)
+- [x] **Phase 72: Lineup Optimiser** — recommend optimal starting XI + bench order from squad using xPts×start_prob, formation-constraint solver, overridable team sheet UI (LINEUP-01) ✓ 2026-05-05
 
 ## Phase Details
 
@@ -548,9 +548,9 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   5. Reset button restores the algorithm's original recommendation; user-made swaps are session-only (no localStorage persistence per D-08); refetches reset overrides as accepted side effect
 **Plans**: 2 plans (2 waves)
   **Wave 1**
-  - [ ] 072-01-PLAN.md — `src/lib/lineup-swap.ts` + `src/lib/lineup-swap.test.ts` (pure helpers `isLegalSwap` and `applySwap` — GK rule, formation-legality predicate mirroring `optimise-lineup.ts:91-97`, captain/formation recomputation per Pitfalls 2/3)
+  - [x] 072-01-PLAN.md — `src/lib/lineup-swap.ts` + `src/lib/lineup-swap.test.ts` (pure helpers `isLegalSwap` and `applySwap` — GK rule, formation-legality predicate mirroring `optimise-lineup.ts:91-97`, captain/formation recomputation per Pitfalls 2/3)
   **Wave 2** *(blocked on Plan 01)*
-  - [ ] 072-02-PLAN.md — `src/components/squad/LineupTab.tsx` + `LineupTab.test.tsx` (pitch UI, two-tap state machine, override state, Reset) + `src/app/page.tsx` 4-line additive wiring + `page.test.tsx` mock and Lineup sub-tab nav test + manual UAT checkpoint for visual styling / transition feel / mobile viewport
+  - [x] 072-02-PLAN.md — `src/components/squad/LineupTab.tsx` + `LineupTab.test.tsx` (pitch UI, two-tap state machine, override state, Reset) + `src/app/page.tsx` 4-line additive wiring + `page.test.tsx` mock and Lineup sub-tab nav test + manual UAT checkpoint for visual styling / transition feel / mobile viewport
   **Cross-cutting constraints:**
   - Plan 02 imports `isLegalSwap` and `applySwap` from Plan 01 — sequential dependency
   - All 9 CONTEXT.md decisions (D-01..D-09) and all 7 RESEARCH.md pitfalls (Pitfall 1: `xPts_1gw !== 0` BGW filter; 2: captain recompute; 3: formation string update; 4/5: full `isLegalSwap` validator; 6: refetch reset accepted; 7: `e.stopPropagation()` on every card) MUST be encoded — acceptance criteria in each task grep-verify the load-bearing patterns
