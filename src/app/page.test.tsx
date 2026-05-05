@@ -152,7 +152,7 @@ describe('Phase 36: page.tsx state', () => {
     // Sub-tab nav contains Decision, Transfers, Optimiser buttons in that order
     const subTabs = container.querySelector('nav[aria-label="Squad sub-tabs"]')
     const subTabBtns = Array.from(subTabs!.querySelectorAll('button')).map(b => b.textContent)
-    expect(subTabBtns).toEqual(['Decision', 'Transfers', 'Optimiser', 'Lineup'])
+    expect(subTabBtns).toEqual(['Decision', 'Transfers', 'Optimiser', 'Lineup', 'Review'])
   })
 
   it('Squad Optimiser sub-tab shows OptimiserPanel and hides TransferPanel (NAV-01, D-09)', () => {
