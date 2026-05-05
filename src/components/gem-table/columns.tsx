@@ -31,6 +31,10 @@ export function XPtsCell({
   minsRisk,
   mins60Prob,
   window,
+  blankProb,
+  haulProb,
+  p10Pts,
+  p90Pts,
 }: {
   value: number | undefined
   ceiling: boolean | undefined
@@ -44,6 +48,12 @@ export function XPtsCell({
   minsRisk?: MinsRisk
   mins60Prob?: number
   window: 1 | 3 | 5
+  // Phase 61 MC-02 (D-13): MC simulation outputs from pipeline/simulate.py.
+  // Optional — present only on 1GW window after Phase 61 pipeline ships.
+  blankProb?: number
+  haulProb?: number
+  p10Pts?: number
+  p90Pts?: number
 }) {
   const [open, setOpen] = useState(false)
   const display = Number.isFinite(value ?? 0) ? (value ?? 0).toFixed(1) : '0.0'
@@ -73,6 +83,13 @@ export function XPtsCell({
   const cardTotal = (
     c.appearance_pts + c.goal_pts + c.assist_pts + c.cs_pts + c.bonus_pts
   ).toFixed(2)
+
+  // Phase 61 MC-02 (D-13): show MC stats only when window===1 and all 4 MC props defined
+  const showMC = window === 1
+    && blankProb !== undefined
+    && haulProb !== undefined
+    && p10Pts !== undefined
+    && p90Pts !== undefined
 
   const rows: [string, string][] = [
     ['Appearance', c.appearance_pts.toFixed(2)],
@@ -109,6 +126,31 @@ export function XPtsCell({
           </div>
         ))}
         <hr className="my-1 border-zinc-200 dark:border-zinc-600" />
+        {showMC && (
+          <>
+            <div className="flex justify-between">
+              <span className="text-zinc-500 dark:text-zinc-400">Blank%</span>
+              <span className="font-mono">{(blankProb! * 100).toFixed(0)}%</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-500 dark:text-zinc-400">Haul%</span>
+              <span className={
+                haulProb! >= 0.40
+                  ? 'font-mono text-amber-600 dark:text-amber-400'
+                  : 'font-mono'
+              }>{(haulProb! * 100).toFixed(0)}%</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-500 dark:text-zinc-400">Floor</span>
+              <span className="font-mono">{p10Pts!.toFixed(1)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-500 dark:text-zinc-400">Ceiling</span>
+              <span className="font-mono">{p90Pts!.toFixed(1)}</span>
+            </div>
+            <hr className="my-1 border-zinc-200 dark:border-zinc-600" />
+          </>
+        )}
         <div className="flex justify-between font-semibold">
           <span>Total</span>
           <span className="font-mono">{cardTotal}</span>
@@ -227,6 +269,10 @@ export function createColumns(onCompare: (player: ScoredPlayer) => void, gwN: nu
         minsRisk={info.row.original.mins_risk}
         mins60Prob={info.row.original.mins_60_prob}
         window={1}
+        blankProb={info.row.original.blank_prob}
+        haulProb={info.row.original.haul_prob}
+        p10Pts={info.row.original.p10_pts}
+        p90Pts={info.row.original.p90_pts}
       />
     ),
     enableSorting: true,
