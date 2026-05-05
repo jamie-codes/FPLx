@@ -45,7 +45,15 @@ function mockError(status: number, message: string) {
 
 describe('Phase 73: GwReviewTab', () => {
   beforeEach(() => {
-    mockUseGwReview.mockReset()
+    // Reset to a safe default (disabled-query shape) so tests that don't call
+    // mockSuccess/mockError still get a valid destructurable object. The hook
+    // is always called (React rules of hooks), even when teamId is empty.
+    mockUseGwReview.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: false,
+      error: null,
+    })
   })
 
   it('renders 4 stat values + top-scorer + captain rows when data present (PGW-01)', () => {
