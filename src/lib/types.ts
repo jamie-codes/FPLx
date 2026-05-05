@@ -599,3 +599,18 @@ export interface RivalLeagueResult {
   rivals: RivalEntry[]
   leagueTruncated: boolean
 }
+
+// Phase 67 NLP-01/NLP-02 — LLM prose summary types
+export interface ProseSummary {
+  prose: string
+  gw: number
+  generated_at: string  // ISO 8601 UTC
+}
+
+export interface ProseRefreshPayload {
+  gw: number
+  captains: Array<{ name: string; team: string; xPts_1gw: number | null }>
+  transfer: { sell: string; buy: string; delta: number } | null
+  chip: { code: 'bboost' | '3xc' | 'freehit' | 'wildcard' | null; bestGw: number | null }
+  risks: Array<{ name: string; label: string }>
+}
