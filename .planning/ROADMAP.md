@@ -536,6 +536,27 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 **Plans**: TBD
 **UI hint**: yes
 
+### Phase 72: Lineup Optimiser
+**Goal**: Users can see the algorithm's recommended starting XI and bench order on a classic FPL-style pitch layout, and override it via two-tap swap interactions (position-compatibility enforced) — turning the existing C(15,11) optimiser output into an interactive team sheet that the manager can adjust for cases the algorithm cannot know
+**Depends on**: Phase 43 (`optimiseLineup()` and `benchOrder()` already in `src/lib/optimise-lineup.ts`); reuses `useSquad`/`usePlayers` hooks and `OptimiserPanel`'s empty/loading/error/BGW shell pattern unchanged
+**Requirements**: LINEUP-01
+**Success Criteria** (what must be TRUE):
+  1. User can open the Squad section and click a 4th sub-tab ("Lineup", positioned after Optimiser) to see a pitch-layout team sheet rendering `optimiseLineup(picks, players, 1)`'s recommendation with formation rows (GK / DEF / MID / FWD) and a bench row below
+  2. Each player card shows web_name + xPts_1gw (1 decimal) + start_prob percentage (rounded integer); captain card has an amber "C" badge, vice-captain card has a grey "VC" badge
+  3. User can tap a starter to arm a swap (amber ring + amber tint), see compatible bench players highlighted (green ring) and incompatible ones dimmed (40% opacity, disabled), then tap a compatible bench player to execute the swap — captain/VC and formation string update automatically per FPL rules
+  4. Tapping the same armed starter again disarms the swap; tapping the pitch background also clears the armed state; `e.stopPropagation()` on every card prevents accidental disarm via event bubbling
+  5. Reset button restores the algorithm's original recommendation; user-made swaps are session-only (no localStorage persistence per D-08); refetches reset overrides as accepted side effect
+**Plans**: 2 plans (2 waves)
+  **Wave 1**
+  - [ ] 072-01-PLAN.md — `src/lib/lineup-swap.ts` + `src/lib/lineup-swap.test.ts` (pure helpers `isLegalSwap` and `applySwap` — GK rule, formation-legality predicate mirroring `optimise-lineup.ts:91-97`, captain/formation recomputation per Pitfalls 2/3)
+  **Wave 2** *(blocked on Plan 01)*
+  - [ ] 072-02-PLAN.md — `src/components/squad/LineupTab.tsx` + `LineupTab.test.tsx` (pitch UI, two-tap state machine, override state, Reset) + `src/app/page.tsx` 4-line additive wiring + `page.test.tsx` mock and Lineup sub-tab nav test + manual UAT checkpoint for visual styling / transition feel / mobile viewport
+  **Cross-cutting constraints:**
+  - Plan 02 imports `isLegalSwap` and `applySwap` from Plan 01 — sequential dependency
+  - All 9 CONTEXT.md decisions (D-01..D-09) and all 7 RESEARCH.md pitfalls (Pitfall 1: `xPts_1gw !== 0` BGW filter; 2: captain recompute; 3: formation string update; 4/5: full `isLegalSwap` validator; 6: refetch reset accepted; 7: `e.stopPropagation()` on every card) MUST be encoded — acceptance criteria in each task grep-verify the load-bearing patterns
+**Phase notes**: Pure UI phase — no pipeline change, no scoring formula change. D-01 `xPts_1gw` already embeds `start_prob` (no re-multiplication — would double-count per `pipeline/merge.py` CR-02). D-02 horizon=1 only (no toggle). D-04 cards: web_name + xPts.toFixed(1) + Math.round(start_prob × 100) + "%". D-05 captain logic copied verbatim from `optimise-lineup.ts:57-58` (`xPts_90th_1gw ?? xPts_1gw ?? 0`). D-07 GK only swaps with GK; outfield cross-position allowed iff resulting formation in {3-4-3, 3-5-2, 4-3-3, 4-4-2, 4-5-1, 5-3-2, 5-4-1}. D-08 session-only — no localStorage. D-09 4th sub-tab in Squad section after Optimiser. UI-SPEC two-weight typography contract (400/600 only — `font-bold` is forbidden per the captain badge specification reduced from `font-bold` to `font-semibold`).
+**UI hint**: yes
+
 ## Progress
 
 | Phase | Milestone | Plans | Status | Completed |
@@ -572,4 +593,4 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 | 69 | v1.11 | 0 | Not started | - |
 | 70 | v1.11 | 0 | Not started | - |
 | 71 | v1.11 | 0 | Not started | - |
-| 72 | backlog | 0 | Not started | - |
+| 72 | v1.11 | 0/2 | Not started | - |

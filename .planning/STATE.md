@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.11
 milestone_name: Insights & Infrastructure
 status: Ready to execute
-stopped_at: Phase 66 planned (3 plans, 2 waves)
-last_updated: "2026-05-04T21:00:00.000Z"
-last_activity: 2026-05-04 — Milestone v1.11 started
+stopped_at: Phase 72 planned (2 plans)
+last_updated: "2026-05-05T01:00:00.000Z"
+last_activity: 2026-05-05 — Phase 72 Lineup Optimiser planned (2 plans, 2 waves)
 progress:
   total_phases: 8
   completed_phases: 8
@@ -87,6 +87,6 @@ Items carried from v1.9:
 
 ## Session Continuity
 
-Last session: 2026-05-04T21:00:00.000Z
-Stopped at: Phase 66 planned — 3 plans (066-01, 066-02, 066-03), 2 waves
-Resume file: .planning/phases/066-fixture-heat-map/066-01-PLAN.md
+Last session: 2026-05-05T01:00:00.000Z
+Stopped at: Phase 72 planned — 2 plans (072-01, 072-02), 2 waves
+Resume file: .planning/phases/072-lineup-optimiser/072-01-PLAN.md
