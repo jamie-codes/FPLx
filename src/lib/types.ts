@@ -173,6 +173,14 @@ export interface MergedPlayer {
   // Captaincy ceiling (Phase 31 CAP-03 D-11). 90th-percentile xPts (xPts_1gw + 1.28*sigma_1gw)
   // computed in pipeline; persisted per-player to enable future GemTable sort.
   xPts_90th_1gw?: number
+  // Phase 61 MC-01/MC-02: Monte Carlo simulation outputs (10,000 sims per player per GW).
+  // Written by pipeline/simulate.py after merge_players(). Optional — absent on first
+  // pipeline run before simulate.py is deployed. BGW players: blank_prob=1.0, haul_prob=0.0,
+  // p10_pts=0.0, p90_pts=0.0. p90_pts also overwrites xPts_90th_1gw (D-05).
+  blank_prob?: number     // P(total_pts <= 2) across 10k simulations; 1.0 for BGW
+  haul_prob?: number      // P(total_pts >= 10) across 10k simulations; 0.0 for BGW
+  p10_pts?: number        // 10th percentile simulated points (floor); 0.0 for BGW
+  p90_pts?: number        // 90th percentile simulated points (ceiling); overwrites xPts_90th_1gw
   // ACC-05 (Phase 41 D-11): last GW actual points, joined into the player row by /api/players
   // from accuracy_backtest.json. Optional — null when player has no backtest entry; absent
   // before Phase 40 pipeline has run. NOT computed by pipeline/merge.py.
