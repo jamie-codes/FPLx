@@ -35,7 +35,7 @@ interface RawBootstrap {
 
 export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[]): ClubForm[] {
   const WINDOW = 5
-  const LOOKAHEAD = 5
+  const LOOKAHEAD = 16
 
   const teams = new Map(bootstrap.teams.map(t => [t.id, t]))
 
@@ -55,35 +55,11 @@ export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[])
     if (aList) aList.push(fix)
   }
 
-  // 3. Compute difficulty scores using rolling goals-conceded avg per team
-  const ROLLING = 6
-  const teamXga = new Map<number, number>()
-  for (const [tId, fxs] of teamFinished) {
-    const conceded = fxs.map(f =>
-      f.team_h === tId ? (f.team_a_score ?? 0) : (f.team_h_score ?? 0)
-    )
-    const lastN = conceded.slice(-ROLLING)
-    teamXga.set(tId, lastN.length > 0 ? lastN.reduce((a, b) => a + b, 0) / lastN.length : 0)
-  }
-  const xgaValues = [...teamXga.values()].sort((a, b) => a - b)
-  const minXga = xgaValues.length > 0 ? Math.min(...xgaValues) : 0
-  const maxXga = xgaValues.length > 0 ? Math.max(...xgaValues) : 1
-  const diffScore = (tId: number) => {
-    const xga = teamXga.get(tId) ?? 0
-    if (maxXga === minXga) return 0.5
-    return 1 - (xga - minXga) / (maxXga - minXga)
-  }
-  // Tier thresholds: bottom third easy (low xga = high score), top third hard
-  const n = xgaValues.length
-  const easyThreshScore = n >= 3
-    ? 1 - ((xgaValues[Math.floor(n * 2 / 3)] ?? maxXga) - minXga) / (maxXga - minXga === 0 ? 1 : maxXga - minXga)
-    : 0.33
-  const hardThreshScore = n >= 3
-    ? 1 - ((xgaValues[Math.floor(n / 3)] ?? minXga) - minXga) / (maxXga - minXga === 0 ? 1 : maxXga - minXga)
-    : 0.67
-  const tier = (score: number): DifficultyTier => {
-    if (score >= hardThreshScore) return 'hard'
-    if (score <= easyThreshScore) return 'easy'
+  // 3. Tier classification uses FPL-difficulty-scale (fplToAttDiff 0–1).
+  // attDiff <= 0.4 → easy (FPL 1–2), attDiff >= 0.6 → hard (FPL 4–5), else medium.
+  const tier = (attDiff: number): DifficultyTier => {
+    if (attDiff <= 0.4) return 'easy'
+    if (attDiff >= 0.6) return 'hard'
     return 'medium'
   }
 
@@ -100,7 +76,7 @@ export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[])
   const xgsValues = [...teamGoalsScored.values()].sort((a, b) => a - b)
   const minXgs = xgsValues.length > 0 ? Math.min(...xgsValues) : 0
   const maxXgs = xgsValues.length > 0 ? Math.max(...xgsValues) : 1
-  // NOT inverted (unlike diffScore) — high goals scored = HIGH difficulty for opponent's defenders
+  // NOT inverted — high goals scored = HIGH difficulty for opponent's defenders
   const defScore = (tId: number) => {
     const xgs = teamGoalsScored.get(tId) ?? 0
     if (maxXgs === minXgs) return 0.5
