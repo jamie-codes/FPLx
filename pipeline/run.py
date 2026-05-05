@@ -246,6 +246,21 @@ def run(dry_run: bool = False):
         save('price_changes_snapshot.json', curr_pc_snapshot)
         print(f"Price change predictions: {len(pc_predictions.get('predictions', []))} player(s) with direction signal")
 
+        # PGW-02: GW review writer (Phase 73 D-01, D-10)
+        # Sliding window of last 3 finished GWs; overwritten each daily run.
+        # Writes global data only (gw, average_score) — team-specific data is
+        # computed on-demand by /api/gw-review.
+        print("Computing GW review files...")
+        finished_events = [e for e in bootstrap.get('events', []) if e.get('finished')]
+        last_3_gws = sorted(finished_events, key=lambda e: e['id'])[-3:]
+        for event in last_3_gws:
+            gw_data = {
+                'gw': event['id'],
+                'average_score': event.get('average_entry_score') or 0,
+            }
+            save(f'gw_review_gw{event["id"]}.json', gw_data)
+        print(f"GW review files written: {[e['id'] for e in last_3_gws]}")
+
         # Compute DefCon stats from element-summary history (Phase 4)
         print("Computing DefCon stats...")
         from merge import _compute_difficulty_scores
