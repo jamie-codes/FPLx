@@ -30,7 +30,16 @@ import { FixtureHeatMap } from '@/components/club-form/FixtureHeatMap'
 import { RivalsTab } from '@/components/rivals/RivalsTab'
 import { OptimiserPanel } from '@/components/optimiser/OptimiserPanel'
 import { LineupTab } from '@/components/squad/LineupTab'
+import { GwReviewTab } from '@/components/squad/GwReviewTab'
 import { DecisionSummaryTab } from '@/components/squad/DecisionSummaryTab'
+
+// Phase 73 PGW-01: hardcoded last-3 settled GWs. The pipeline writes
+// gw_review_gw{N}.json for the actual last 3 finished GWs (D-10 sliding window).
+// The matching API route returns 404/503 if a requested gw is not present —
+// GwReviewTab handles those states gracefully. A future enhancement may derive
+// this list from a new `useSettledGws` hook reading bootstrap.events; out of
+// scope for Phase 73 (deferred per RESEARCH.md Open Question 2).
+const SETTLED_GWS_PLACEHOLDER: number[] = [33, 34, 35]
 
 class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -53,7 +62,7 @@ class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: 
 }
 
 export type Section = 'analyse' | 'plan' | 'squad'
-export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals' | 'fixture-heat-map' | 'lineup'
+export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals' | 'fixture-heat-map' | 'lineup' | 'review'
 
 export const SECTIONS = [
   {
@@ -91,6 +100,7 @@ export const SECTIONS = [
       { id: 'transfers' as SubTab, label: 'Transfers', mobileLabel: 'Transfers' },
       { id: 'optimiser' as SubTab, label: 'Optimiser', mobileLabel: 'Optimiser' },
       { id: 'lineup' as SubTab,    label: 'Lineup',    mobileLabel: 'Lineup'    },
+      { id: 'review' as SubTab,    label: 'Review',    mobileLabel: 'Review'    },
     ],
     defaultSubTab: 'decision' as SubTab,
   },
@@ -234,6 +244,9 @@ export default function Home() {
         )}
         {activeSection === 'squad' && activeSubTab === 'lineup' && (
           <LineupTab teamId={submittedId ?? ''} />
+        )}
+        {activeSection === 'squad' && activeSubTab === 'review' && (
+          <GwReviewTab teamId={submittedId ?? ''} settledGws={SETTLED_GWS_PLACEHOLDER} />
         )}
         {activeSection !== 'squad' && activeSubTab === 'gems' && (
           <GemTable preset={gemPreset} onPresetChange={setGemPreset} onCompare={handleCompare} />
