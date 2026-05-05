@@ -63,8 +63,8 @@ Notes:
 - Section heading matches `LineupTab.tsx` h2: `text-base font-semibold`
 - Stat numbers (your_score, bench_pts_left, captain_delta, average_score) rendered at text-xl font-semibold to be scannable
 - Stat labels rendered at text-xs text-zinc-500 below each number
-- Player names (top scorer, captain name) rendered at text-sm font-medium
-- GW pill labels: text-xs font-medium — matches RESEARCH.md Pattern 3 code
+- Player names (top scorer, captain name) rendered at text-sm font-semibold
+- GW pill labels: text-xs font-semibold — matches LineupTab player name convention
 
 Source: RESEARCH.md Pattern 3 + codebase patterns from LineupTab and ProseSummaryBlock.
 
@@ -109,7 +109,7 @@ Source: CONTEXT.md specifics + RESEARCH.md Pattern 3 code + LineupTab/GwToggle c
 
   <!-- GW pill toggle -->
   <div role="group" aria-label="Gameweek" flex gap-1>
-    {settledGws.map(gw => <button rounded-full px-3 py-1 text-xs font-medium ...>GW{gw}</button>)}
+    {settledGws.map(gw => <button rounded-full px-3 py-1 text-xs font-semibold ...>GW{gw}</button>)}
   </div>
 
   <!-- Stat grid: 2×2 on mobile, 2×3 or 4-column row on desktop -->
@@ -123,13 +123,13 @@ Source: CONTEXT.md specifics + RESEARCH.md Pattern 3 code + LineupTab/GwToggle c
   <!-- Top scorer detail row -->
   <div rounded border px-3 py-2>
     <span text-xs text-zinc-500>Top scorer</span>
-    <span text-sm font-medium>{top_scorer_name} — {top_scorer_pts}pts</span>
+    <span text-sm font-semibold>{top_scorer_name} — {top_scorer_pts}pts</span>
   </div>
 
   <!-- Captain detail row (when delta > 0) -->
   <div rounded border px-3 py-2>
     <span text-xs text-zinc-500>Captain</span>
-    <span text-sm font-medium>{captain_name}</span>
+    <span text-sm font-semibold>{captain_name}</span>
     <span text-xs text-zinc-500 ml-2>Optimal: {optimal_captain_name}</span>
   </div>
 </section>

@@ -154,6 +154,7 @@ See `.planning/milestones/v1.9-ROADMAP.md` for full phase details.
 - [ ] **Phase 70: Post-GW Review** — auto-generated GW review (bench pts, captain delta, vs top-10k), Vercel Blob + `/api/gw-review`
 - [ ] **Phase 71: Decision History & Regret Backtester** — decision logging per team ID, cumulative ROI dashboard, 2×2 process×outcome matrix
 - [x] **Phase 72: Lineup Optimiser** — recommend optimal starting XI + bench order from squad using xPts×start_prob, formation-constraint solver, overridable team sheet UI (LINEUP-01) ✓ 2026-05-05
+- [ ] **Phase 73: Post-GW Review** — 5th Squad sub-tab showing last 3 settled GWs: bench pts left, captain delta vs optimal, top scorer, FPL average score; pipeline writes `gw_review_gw{N}.json` to Vercel Blob (PGW-01, PGW-02)
 
 ## Phase Details
 
@@ -557,6 +558,32 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 **Phase notes**: Pure UI phase — no pipeline change, no scoring formula change. D-01 `xPts_1gw` already embeds `start_prob` (no re-multiplication — would double-count per `pipeline/merge.py` CR-02). D-02 horizon=1 only (no toggle). D-04 cards: web_name + xPts.toFixed(1) + Math.round(start_prob × 100) + "%". D-05 captain logic copied verbatim from `optimise-lineup.ts:57-58` (`xPts_90th_1gw ?? xPts_1gw ?? 0`). D-07 GK only swaps with GK; outfield cross-position allowed iff resulting formation in {3-4-3, 3-5-2, 4-3-3, 4-4-2, 4-5-1, 5-3-2, 5-4-1}. D-08 session-only — no localStorage. D-09 4th sub-tab in Squad section after Optimiser. UI-SPEC two-weight typography contract (400/600 only — `font-bold` is forbidden per the captain badge specification reduced from `font-bold` to `font-semibold`).
 **UI hint**: yes
 
+### Phase 73: Post-GW Review
+**Goal**: Users can view an auto-generated review for each of the last 3 settled GWs — bench points left, captain delta vs optimal, top scorer, GW score vs FPL average — via a 5th "Review" sub-tab in the Squad section with a GW pill toggle, turning each completed GW into a learning moment
+**Depends on**: Phase 55 (`benchOrder()` and `optimiseLineup()` supply the optimal-captain comparison); Phase 72 (5th sub-tab after Lineup)
+**Requirements**: PGW-01, PGW-02
+**Success Criteria** (what must be TRUE):
+  1. User can open Squad → "Review" sub-tab and see a GW review card for the most recently settled GW showing: bench points left, their captain vs the optimal captain (player names + points delta), their top scorer (player name + points), and their GW score vs FPL average
+  2. Review data is written by the pipeline to Vercel Blob as `gw_review_gw{N}.json` (fields: `gw`, `average_score`) for the last 3 settled GWs; served via `GET /api/gw-review?teamId=&gw=` which merges Blob data with on-demand FPL picks; consumed by `useGwReview` TanStack Query hook
+  3. A GW pill toggle (e.g., "GW33 | GW34 | GW35") lets the user switch between the last 3 settled GWs; defaults to most recent settled GW
+  4. When GW is not yet settled or Blob file is missing, screen shows "GW review will appear once scores finalise" rather than an error; when no team ID is loaded, shows "Load your squad to see GW reviews"
+  5. Review is keyed by team ID — switching team ID loads that team's own GW review data, not stale state from a previous team
+**Plans**: 3 plans (3 waves)
+  **Wave 1**
+  - [ ] 073-01-PLAN.md — Pipeline gw_review writer block in run.py + 3 cold-start seed files (gw_review_gw{33,34,35}.json) force-added to git
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 073-02-PLAN.md — GwReview TypeScript interface + GET /api/gw-review route (USE_BLOB switch, direct FPL upstream fetch, captain_delta with pick.multiplier) + useGwReview TanStack Query hook (30 min staleTime)
+  **Wave 3** *(blocked on Wave 2 completion)*
+  - [ ] 073-03-PLAN.md — Wave 0 GwReviewTab.test.tsx (4 RTL cases) → GwReviewTab.tsx component (5 state branches, GW pill toggle, UI-SPEC styling) → page.tsx 4 additive edits → MobileNav.test.tsx updated to expect 5 Squad pills
+  **Cross-cutting constraints:**
+  - Plan 02 imports the GwReview interface created in Plan 02 Task 1; the API route and the hook share that single source of truth in src/lib/types.ts
+  - Plan 03 Task 1 (test file) is Wave 0 per VALIDATION.md — written BEFORE the component (RED phase); Task 2 implements component to pass tests (GREEN)
+  - SETTLED_GWS_PLACEHOLDER constant in page.tsx is hardcoded [33,34,35] for v1 ship — derives-from-bootstrap is deferred per RESEARCH.md Open Question 2; UI gracefully degrades when a requested gw lacks a Blob file
+  - pipeline/cache/ is gitignored (.gitignore line 44); seed files require `git add -f` (Pitfall 5)
+  - API route MUST call FPL upstream directly (Pitfall 1) — relative-URL self-fetch fails in Vercel serverless deployments
+  - captain_delta MUST use `pick.multiplier` not hardcoded 2 (Pitfall 3 — handles Triple Captain where multiplier=3)
+**UI hint**: yes
+
 ## Progress
 
 | Phase | Milestone | Plans | Status | Completed |
@@ -593,4 +620,5 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 | 69 | v1.11 | 0 | Not started | - |
 | 70 | v1.11 | 0 | Not started | - |
 | 71 | v1.11 | 0 | Not started | - |
-| 72 | v1.11 | 0/2 | Not started | - |
+| 72 | v1.11 | 2/2 | Complete | 2026-05-05 |
+| 73 | v1.11 | 0/3 | Not started | - |
