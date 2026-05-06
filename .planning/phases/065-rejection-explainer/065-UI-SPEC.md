@@ -32,17 +32,22 @@ Source: `src/app/globals.css`, `src/components/shared/FragilityNote.tsx`.
 
 Declared values (multiples of 4):
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| xs | 4px | Icon-to-text gap within inline elements (gap-1) |
-| sm | 8px | List item spacing, inline badge padding (space-y-0.5, px-2 py-1) |
-| md | 16px | Expand-row cell padding (px-3, py-2 — matching ExplainPanel) |
-| lg | 24px | Section gap within expand panels (space-y-2) |
-| xl | 32px | n/a this phase |
-| 2xl | 48px | n/a this phase |
-| 3xl | 64px | n/a this phase |
+| Token | Value | Tailwind Class | Usage |
+|-------|-------|----------------|-------|
+| xs | 4px | `space-y-1`, `gap-1`, `px-1` | Icon-to-text gap within inline elements; shortlist section spacing |
+| sm | 8px | `py-2`, `px-2`, `gap-2` | Vertical cell padding, inline badge padding |
+| md | 16px | `px-4`, `py-4` | Standard card padding (unused by existing panels this phase) |
+| lg | 24px | `space-y-2` (8px gap between sections, not 24px — see note) | Section gap within expand panels |
+| xl | 32px | n/a | n/a this phase |
+| 2xl | 48px | n/a | n/a this phase |
+| 3xl | 64px | n/a | n/a this phase |
 
-Exceptions: none. All existing ExplainPanel and GemTable expand rows use `px-3 py-2` / `px-3 py-3` — Phase 65 matches those values exactly.
+**Explicit exceptions (matching existing component patterns — not introducing new values):**
+
+- `space-y-0.5` (2px) — exception: matches existing `ExplainPanel.tsx` line 14 vertical rhythm for rejection/reason list items (`<ul className="space-y-0.5">`). Phase 65 preserves this value in WHY-01 and WHY-03 rejection line lists to match the surrounding component pattern.
+- `px-3` (12px) — exception: matches existing `ExplainPanel.tsx` container padding (`px-3 py-2`) and `GemTable.tsx` mobile expand row cell padding (`px-3 py-3`). Phase 65 uses `px-3` on the new desktop expand row cell to match the existing mobile expand row exactly.
+
+Note on `space-y-2`: Tailwind `space-y-2` = 8px, not 24px. The lg token (24px) is declared for completeness but `space-y-2` correctly belongs to the sm scale. The table above reflects correct Tailwind-to-pixel mappings.
 
 ---
 
@@ -110,6 +115,8 @@ Source: `GemTable.tsx` line 215 (`bg-blue-50 dark:bg-blue-950`), `ExplainPanel.t
 </div>
 ```
 
+Note: `space-y-0.5` (2px) in the `<ul>` is an explicit exception — matches the existing `ExplainPanel.tsx` line 14 pattern (`<ul className="space-y-0.5">`). `px-3` on the expand row cell is an explicit exception — matches `GemTable.tsx` line 216 mobile expand row cell padding.
+
 For strong players with no rejection signals:
 ```
 <p className="text-xs text-green-700 dark:text-green-400">
@@ -134,6 +141,8 @@ For strong players with no rejection signals:
 </div>
 ```
 
+Note: `p-3` (12px) on the callout container is an explicit exception — matches the existing `ExplainPanel.tsx` container padding pattern (`px-3 py-2`).
+
 **Component name (Claude's discretion):** `HighOwnershipCallout` — concise, describes the trigger condition.
 
 **Capped at 3** by `selected_by_percent` descending (D-13). `parseFloat(player.selected_by_percent)` required (string field).
@@ -149,7 +158,7 @@ For strong players with no rejection signals:
 **Markup:**
 ```
 {rejectionReasons && rejectionReasons.length > 0 && (
-  <div className="space-y-0.5">
+  <div className="space-y-1">
     <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Why not recommended:</p>
     <ul className="space-y-0.5">
       {rejectionReasons.map((reason, i) => (
@@ -159,6 +168,8 @@ For strong players with no rejection signals:
   </div>
 )}
 ```
+
+Note: The wrapping `<div>` uses `space-y-1` (4px) between the header `<p>` and the `<ul>`. The `<ul>` itself uses `space-y-0.5` (2px) between list items — explicit exception matching the existing `ExplainPanel.tsx` line 14 pattern for reason lists.
 
 Fragility lines within `rejectionReasons` that come from `computeFragility()` are plain strings (e.g., "no longer recommended if: start_prob < 70%") — they render as body text, not inside `<FragilityNote>`. The amber-coloured `<FragilityNote>` pattern belongs to TransferPanel and CaptainPicksPanel contexts (Phase 64). In ExplainPanel the same content is presented as a plain text rejection line matching the existing `text-xs text-zinc-600 dark:text-zinc-400` style.
 
