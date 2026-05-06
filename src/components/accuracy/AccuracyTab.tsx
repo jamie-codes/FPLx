@@ -518,7 +518,7 @@ function PlayerDeltaTable({ data }: { data: AccuracyBacktest }) {
         <thead>
           <tr>
             <th scope="col" className={sortableHeaderCls('player_name')} aria-sort={ariaSort('player_name')} onClick={() => handleSort('player_name')}>Player</th>
-            <th scope="col" className={TH_CLS}>Team</th>
+            <th scope="col" className={TH_CLS} aria-sort="none">Team</th>
             <th scope="col" className={sortableHeaderCls('gw')} aria-sort={ariaSort('gw')} onClick={() => handleSort('gw')}>GW</th>
             <th scope="col" className={sortableHeaderCls('actual_pts')} aria-sort={ariaSort('actual_pts')} onClick={() => handleSort('actual_pts')}>Actual Pts</th>
             <th scope="col" className={sortableHeaderCls('xpts_predicted')} aria-sort={ariaSort('xpts_predicted')} onClick={() => handleSort('xpts_predicted')}>xPts Pred</th>
