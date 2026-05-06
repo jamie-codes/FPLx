@@ -129,7 +129,7 @@ export function computeRejection(
   const { reasons: fragilityReasons } = computeFragility(player, false) // Pitfall 4: isTransfer=false
 
   const isStrong =
-    player.gem_score > posAvg &&
+    player.gem_score >= posAvg &&
     fragilityReasons.length === 0 &&
     player.start_prob >= REJECTION_START_PROB_THRESHOLD
 
