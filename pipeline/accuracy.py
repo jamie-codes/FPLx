@@ -87,6 +87,21 @@ def _read_existing_versions(cache_dir: str) -> list:
         return []
 
 
+def _read_existing_cache(cache_dir: str) -> dict:
+    """WR-02: read and parse accuracy_backtest.json exactly once, returning the full dict.
+
+    Callers derive all gate flags and version history from the returned dict to avoid
+    repeated file opens for the same data within one pipeline run.
+    Returns {} on cold start (file missing or malformed).
+    """
+    try:
+        path = os.path.join(cache_dir, 'accuracy_backtest.json')
+        with open(path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return {}
+
+
 # ============================================================================
 # Public API
 # ============================================================================
@@ -324,13 +339,14 @@ def compute_accuracy_backtest(
     # Until a parallel shadow-run path is added to accuracy.py (deferred), preserve the existing
     # flag value if present (so a manually-flipped True survives subsequent backtests). Default False.
     # This matches the bootstrap/cold-start behavior of form_signal_enabled.
-    xmins_v2_enabled = _read_existing_xmins_v2_flag(cache_dir)
-    bonus_predictor_enabled = _read_existing_bonus_predictor_flag(cache_dir)  # Phase 53 BPS-01
+    # WR-02: parse accuracy_backtest.json once and derive all three values from the same dict.
+    prior_cache = _read_existing_cache(cache_dir)
+    xmins_v2_enabled = bool(prior_cache.get('summary', {}).get('xmins_v2_enabled', False))
+    bonus_predictor_enabled = bool(prior_cache.get('summary', {}).get('bonus_predictor_enabled', False))  # Phase 53 BPS-01
 
     # Phase 63 VER-01 / D-02 / D-03 / D-04: read prior versions, dedup-append new record.
-    # Read at the TOP of the function would also work, but reading here keeps it next to the
-    # other gate-flag handling and avoids interleaving with per_gw_rows population.
-    versions = _read_existing_versions(cache_dir)
+    _existing = prior_cache.get('versions', [])
+    versions = _existing if isinstance(_existing, list) else []
     new_version_record = {
         'formula_version': FORMULA_VERSION,
         'recorded_at': datetime.now(timezone.utc).isoformat(),
