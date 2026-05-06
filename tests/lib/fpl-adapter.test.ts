@@ -88,6 +88,7 @@ describe('FPLElement field validation', () => {
     // Build a minimal valid element for each status
     const baseElement = {
       id: 1,
+      code: 12345,
       web_name: 'Test',
       team: 1,
       element_type: 2,

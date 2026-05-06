@@ -884,6 +884,7 @@ def merge_players(
         player = {
             # Core FPL identity
             'id': fpl_id,
+            'code': element.get('code', 0),
             'web_name': element['web_name'],
             'team': team_id,
             'team_short_name': teams[team_id]['short_name'] if team_id in teams else '',

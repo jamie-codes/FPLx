@@ -1,0 +1,43 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-05-06T10:15:00.000Z",
+  "phase": "64",
+  "phase_name": "Sensitivity Analysis",
+  "phase_dir": ".planning/phases/064-sensitivity-analysis",
+  "status": "paused",
+  "stop_reason": "context exhaustion at ~80% during /gsd-plan-phase 64",
+  "resume_command": "/gsd-plan-phase 64 --skip-research",
+  "pre_planning_artifacts": [
+    ".planning/phases/064-sensitivity-analysis/064-CONTEXT.md",
+    ".planning/phases/064-sensitivity-analysis/064-RESEARCH.md",
+    ".planning/phases/064-sensitivity-analysis/064-UI-SPEC.md",
+    ".planning/phases/064-sensitivity-analysis/064-VALIDATION.md",
+    ".planning/phases/064-sensitivity-analysis/064-DISCUSSION-LOG.md"
+  ],
+  "plans_written": 0,
+  "plans_total": 3,
+  "uncommitted_work": [
+    "src/components/shared/TeamBadge.tsx (new)",
+    "src/components/shared/PlayerAvatar.tsx (new)",
+    "src/lib/team-colours.ts (new)",
+    "src/lib/fpl-images.ts (new)",
+    "pipeline/merge.py (code field added)",
+    "src/lib/fpl-adapter.ts (code field in schema)",
+    "src/lib/types.ts (code field in FPLElement + MergedPlayer)",
+    "src/components/gem-table/columns.tsx (TeamBadge in team column)",
+    "src/components/gem-table/PlayerComparisonModal.tsx (PlayerAvatar + TeamBadge)",
+    "src/components/captaincy/CaptaincyPanel.tsx (PlayerAvatar + TeamBadge)",
+    "src/components/squad/SquadView.tsx (PlayerAvatar + TeamBadge)",
+    "tests/fixtures/bootstrap-static-sample.json (code fields added)",
+    "tests/lib/fpl-adapter.test.ts (code in baseElement)"
+  ],
+  "blockers": [],
+  "decisions": [
+    {
+      "decision": "Use optional code?: number on MergedPlayer",
+      "rationale": "15+ test fixtures lack the code field; making it required would break all of them. PlayerAvatar guards !code already.",
+      "phase": "64"
+    }
+  ],
+  "next_action": "Run /gsd-plan-phase 64 --skip-research in a fresh session. All pre-planning artifacts exist. Planner should produce 3 plans: Wave 0 (RED scaffolding), Wave 1 (GREEN implementation), Wave 2 (wire into TransferPanel + CaptainPicksPanel)."
+}

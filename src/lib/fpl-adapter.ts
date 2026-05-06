@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 export const FPLElementSchema = z.object({
   id:                                    z.number().int(),
+  code:                                  z.number().int(),
   web_name:                              z.string(),
   team:                                  z.number().int(),
   element_type:                          z.number().int(),

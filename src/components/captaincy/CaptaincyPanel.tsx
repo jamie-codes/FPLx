@@ -2,6 +2,8 @@
 
 import type { CaptaincyCandidate } from '@/lib/captaincy-engine'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
+import { PlayerAvatar } from '@/components/shared/PlayerAvatar'
+import { TeamBadge } from '@/components/shared/TeamBadge'
 
 interface CaptainTypeBadgeConfig {
   bg: string
@@ -52,14 +54,18 @@ export function CaptaincyPanel({ candidates, nextGw }: CaptaincyPanelProps) {
             key={c.player.id}
             className="rounded border border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3"
           >
-            {/* Rank + player name row */}
-            <div className="flex items-center gap-1.5">
+            {/* Rank + avatar + player name row */}
+            <div className="flex items-center gap-2">
               <span className="text-sm text-zinc-400 w-4 shrink-0">{i + 1}</span>
+              <PlayerAvatar code={c.player.code} webName={c.player.web_name} teamShortName={c.player.team_short_name} width={32} height={40} />
               <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 sm:flex-1">{c.player.web_name}</span>
             </div>
-            {/* Team + fixture row */}
+            {/* Team badge + fixture row */}
             <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-              <span className="text-xs">{c.player.team_short_name}</span>
+              <div className="flex items-center gap-1">
+                <TeamBadge shortName={c.player.team_short_name} size={14} />
+                <span className="text-xs">{c.player.team_short_name}</span>
+              </div>
               {c.player.fixtures.length > 0 && (() => {
                 const nextGwId = c.player.fixtures[0].event_id
                 const nextGwFixtures = c.player.fixtures.filter(f => f.event_id === nextGwId)

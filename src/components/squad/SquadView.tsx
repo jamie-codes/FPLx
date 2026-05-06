@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react'
 import type { ScoredPlayer } from '@/lib/types'
 import type { SquadPick, EntryHistory } from '@/lib/squad-adapter'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
+import { TeamBadge } from '@/components/shared/TeamBadge'
+import { PlayerAvatar } from '@/components/shared/PlayerAvatar'
 import { LifecycleLabelBadge } from '@/components/shared/LifecycleLabelBadge'
 import type { LifecycleLabel } from '@/lib/lifecycle-label'
 import { computeExplanations } from '@/lib/explain'
@@ -148,28 +150,36 @@ export function SquadView({ picks, allPlayers, entryHistory, labels, exactSellPr
                         className={`border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 ${isBench ? 'opacity-50' : ''}`}
                       >
                         <td className="px-3 py-2 whitespace-nowrap font-medium text-zinc-900 dark:text-zinc-100 sticky left-0 z-10 bg-white dark:bg-zinc-900">
-                          {!isBench && (
-                            <button
-                              onClick={() => toggleExpand(pick.element)}
-                              className="inline-flex items-center mr-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
-                              aria-label={expandedIds.has(pick.element) ? 'Collapse details' : 'Expand details'}
-                            >
-                              <span className="text-xs">{expandedIds.has(pick.element) ? '\u25BC' : '\u25B6'}</span>
-                            </button>
-                          )}
-                          {player.web_name}
-                          {pick.is_captain && (
-                            <span className="ml-1 text-xs font-bold text-amber-600 dark:text-amber-400">(C)</span>
-                          )}
-                          {pick.is_vice_captain && (
-                            <span className="ml-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">(VC)</span>
-                          )}
-                          {isBench && (
-                            <span className="ml-1 text-xs text-zinc-400 dark:text-zinc-500">bench</span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <PlayerAvatar code={player.code} webName={player.web_name} teamShortName={player.team_short_name} width={28} height={35} />
+                            <div>
+                              {!isBench && (
+                                <button
+                                  onClick={() => toggleExpand(pick.element)}
+                                  className="inline-flex items-center mr-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                                  aria-label={expandedIds.has(pick.element) ? 'Collapse details' : 'Expand details'}
+                                >
+                                  <span className="text-xs">{expandedIds.has(pick.element) ? '\u25BC' : '\u25B6'}</span>
+                                </button>
+                              )}
+                              <span>{player.web_name}</span>
+                              {pick.is_captain && (
+                                <span className="ml-1 text-xs font-bold text-amber-600 dark:text-amber-400">(C)</span>
+                              )}
+                              {pick.is_vice_captain && (
+                                <span className="ml-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">(VC)</span>
+                              )}
+                              {isBench && (
+                                <span className="ml-1 text-xs text-zinc-400 dark:text-zinc-500">bench</span>
+                              )}
+                            </div>
+                          </div>
                         </td>
                         <td className={`px-3 py-2 whitespace-nowrap text-zinc-600 dark:text-zinc-400 ${hideOnMobile}`}>
-                          {player.team_short_name}
+                          <div className="flex items-center gap-1.5">
+                            <TeamBadge shortName={player.team_short_name} size={16} />
+                            <span>{player.team_short_name}</span>
+                          </div>
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap text-zinc-600 dark:text-zinc-400">
                           {(() => {

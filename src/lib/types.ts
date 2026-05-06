@@ -7,6 +7,7 @@ export type PlayerStatus = 'a' | 'd' | 'i' | 's' | 'u' | 'n'
 // Validated FPL element (after Zod parsing, only consumed fields)
 export interface FPLElement {
   id: number
+  code: number
   web_name: string
   team: number
   element_type: PositionCode
@@ -93,6 +94,7 @@ export type SubRiskLabel = 'nailed' | 'sub_risk' | 'rotation_risk' | 'cameo' | '
 export interface MergedPlayer {
   // FPL core fields (from Phase 1 FPLElement)
   id: number
+  code?: number         // stable player photo code (p{code}.png); absent on pre-pipeline cache
   web_name: string
   team: number
   team_short_name: string

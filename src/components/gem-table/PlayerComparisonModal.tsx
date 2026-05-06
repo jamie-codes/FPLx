@@ -10,6 +10,8 @@ import { VarianceBadge } from '@/components/gem-table/VarianceBadge'
 import { RegressionSignalBadge } from '@/components/gem-table/RegressionSignalBadge'
 import { DifferentialBadge } from '@/components/gem-table/DifferentialBadge'
 import { fmtScore, fmtScoreNull } from '@/components/gem-table/columns'
+import { PlayerAvatar } from '@/components/shared/PlayerAvatar'
+import { TeamBadge } from '@/components/shared/TeamBadge'
 
 interface PlayerComparisonModalProps {
   open: boolean
@@ -83,13 +85,27 @@ export function PlayerComparisonModal({ open, playerA, onClose }: PlayerComparis
       {/* Player name headers */}
       <div className="grid grid-cols-3 gap-2 mb-1">
         <div />
-        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-          {pA.web_name} <span className="text-xs font-normal text-zinc-500 dark:text-zinc-400">{pA.team_short_name}</span>
-        </p>
+        <div className="flex items-center gap-2 min-w-0">
+          <PlayerAvatar code={pA.code} webName={pA.web_name} teamShortName={pA.team_short_name} width={40} height={50} className="rounded" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">{pA.web_name}</p>
+            <div className="flex items-center gap-1 mt-0.5">
+              <TeamBadge shortName={pA.team_short_name} size={13} />
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">{pA.team_short_name}</span>
+            </div>
+          </div>
+        </div>
         {pB ? (
-          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-            {pB.web_name} <span className="text-xs font-normal text-zinc-500 dark:text-zinc-400">{pB.team_short_name}</span>
-          </p>
+          <div className="flex items-center gap-2 min-w-0">
+            <PlayerAvatar code={pB.code} webName={pB.web_name} teamShortName={pB.team_short_name} width={40} height={50} className="rounded" />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">{pB.web_name}</p>
+              <div className="flex items-center gap-1 mt-0.5">
+                <TeamBadge shortName={pB.team_short_name} size={13} />
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">{pB.team_short_name}</span>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="flex items-center justify-center min-h-[20px] text-xs text-zinc-400 dark:text-zinc-500 italic">—</div>
         )}

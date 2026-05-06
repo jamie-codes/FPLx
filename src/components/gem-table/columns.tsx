@@ -8,6 +8,7 @@ import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
 import { VarianceBadge } from '@/components/gem-table/VarianceBadge'
 import { RegressionSignalBadge } from '@/components/gem-table/RegressionSignalBadge'
 import { DifferentialBadge } from '@/components/gem-table/DifferentialBadge'
+import { TeamBadge } from '@/components/shared/TeamBadge'
 
 const col = createColumnHelper<ScoredPlayer>()
 
@@ -182,7 +183,16 @@ export function createColumns(onCompare: (player: ScoredPlayer) => void, gwN: nu
         </div>
       ),
     }),
-  col.accessor('team_short_name', { header: 'Team', enableSorting: false }),
+  col.accessor('team_short_name', {
+    header: 'Team',
+    enableSorting: false,
+    cell: (info) => (
+      <div className="flex items-center gap-1.5">
+        <TeamBadge shortName={info.getValue()} size={16} />
+        <span>{info.getValue()}</span>
+      </div>
+    ),
+  }),
   col.accessor('element_type', {
     header: H('Pos', 'Position: GK / DEF / MID / FWD'),
     filterFn: 'equals',
