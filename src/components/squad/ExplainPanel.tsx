@@ -5,9 +5,10 @@ import type { ShortlistEntry } from '@/lib/replacement-shortlist'
 interface ExplainPanelProps {
   reasons: string[]
   shortlist: ShortlistEntry[] | null
+  rejectionReasons?: string[]   // Phase 65 WHY-03 (D-08)
 }
 
-export function ExplainPanel({ reasons, shortlist }: ExplainPanelProps) {
+export function ExplainPanel({ reasons, shortlist, rejectionReasons }: ExplainPanelProps) {
   return (
     <div className="bg-zinc-50 dark:bg-zinc-800 border-t border-zinc-100 dark:border-zinc-700 px-3 py-2 space-y-2">
       {/* Reasons section */}
@@ -18,6 +19,20 @@ export function ExplainPanel({ reasons, shortlist }: ExplainPanelProps) {
           </li>
         ))}
       </ul>
+
+      {/* Phase 65 WHY-03: rejection reasons section — between positive reasons and shortlist (D-08). */}
+      {rejectionReasons && rejectionReasons.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Why not recommended:</p>
+          <ul className="space-y-0.5">
+            {rejectionReasons.map((reason, i) => (
+              <li key={i} className="text-xs text-zinc-600 dark:text-zinc-400">
+                {reason}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Shortlist section — only for Sell-verdicted players */}
       {shortlist !== null && shortlist.length > 0 && (
