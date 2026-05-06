@@ -83,7 +83,7 @@ def test_guardrail_rejects(with_api_key):
         assert client.messages.create.call_count == 2
 
 
-def test_retry_then_skip(with_api_key):
+def test_retry_then_pass(with_api_key):
     from prose_summary import generate_weekly_summary
     with patch('prose_summary.Anthropic') as MockClient:
         client = MockClient.return_value
