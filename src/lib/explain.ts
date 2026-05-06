@@ -120,7 +120,8 @@ export function computeRejection(
   const samePosition = allPlayers
     .filter(p => p.element_type === player.element_type)
     .sort((a, b) => (b.xPts_1gw ?? 0) - (a.xPts_1gw ?? 0))
-  const xPtsRank = samePosition.findIndex(p => p.id === player.id) + 1
+  const rawIndex = samePosition.findIndex(p => p.id === player.id)
+  const xPtsRank = rawIndex === -1 ? samePosition.length + 1 : rawIndex + 1
 
   // Step 2 (D-04): adaptive framing threshold check.
   const positionAverages = computePositionAverages(allPlayers)
