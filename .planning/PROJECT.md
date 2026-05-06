@@ -330,4 +330,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-05 — v1.12 Modelling & Refinement milestone started. Resumes v1.10 Modelling & Trust work (phases 61-65 already phased in ROADMAP.md) and adds Heat Map v2, transfer engine fixes, optimiser enhancements, and mobile/desktop polish.*
+*Last updated: 2026-05-06 — Phase 74 (Transfer Engine Overhaul) complete. TFX-01–TFX-05 all verified: 3-per-team cap, sell-side dedup, simultaneous 1FT/2FT/−4/−8 view, bank affordability, and unauthenticated freeTransfers wiring. v1.12 milestone (24/24 phases) complete.*
