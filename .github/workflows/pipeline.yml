@@ -25,7 +25,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests pandas vercel-blob python-dotenv anthropic
+          pip install requests==2.32.3 pandas==2.2.3 vercel-blob==0.6.0 python-dotenv==1.0.1 anthropic==0.40.0
 
       - name: Run pipeline
         run: python pipeline/run.py
