@@ -69,13 +69,15 @@ function sellValueFor(
 /**
  * Compute breakEvenGws per the locked formula (45-UI-SPEC.md §9 invariants).
  *   cost === 0  → null
- *   cost > 0 && xPtsGainPerGw > 0  → max(1, ceil(4 / xPtsGainPerGw))
+ *   cost > 0 && xPtsGainPerGw > 0  → max(1, ceil(cost / xPtsGainPerGw))
  *   cost > 0 && xPtsGainPerGw <= 0 → null (defensive — engine filters non-positive elsewhere)
+ *
+ * Widened to accept cost: 0 | 4 | 8 (Phase 74 TFX plan) — formula generalises to cost=8.
  */
-function breakEven(cost: 0 | 4, xPtsGainPerGw: number): number | null {
+function breakEven(cost: 0 | 4 | 8, xPtsGainPerGw: number): number | null {
   if (cost === 0) return null
   if (xPtsGainPerGw <= 0) return null
-  return Math.max(1, Math.ceil(4 / xPtsGainPerGw))
+  return Math.max(1, Math.ceil(cost / xPtsGainPerGw))
 }
 
 export function suggestTransfers(params: SuggestTransfersParams): TransferSuggestion[] {
@@ -87,11 +89,27 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
   const playerById = new Map<number, MergedPlayer>(players.map(p => [p.id, p]))
   const ownedIds = new Set<number>(currentPicks.map(p => p.element))
 
-  // Step 1+2: Build top-30 per position pool, excluding currently-owned players (D-03).
+  // TFX-01: Build capped-teams set — teams where user already owns 3 players.
+  // SquadPick has no .team field (squad-adapter.ts); look up via playerById.
+  const teamCountMap = new Map<number, number>()
+  for (const pick of currentPicks) {
+    const teamId = playerById.get(pick.element)?.team
+    if (teamId !== undefined) {
+      teamCountMap.set(teamId, (teamCountMap.get(teamId) ?? 0) + 1)
+    }
+  }
+  const cappedTeams = new Set<number>(
+    [...teamCountMap.entries()]
+      .filter(([, count]) => count >= 3)
+      .map(([teamId]) => teamId),
+  )
+
+  // Step 1+2: Build top-30 per position pool, excluding currently-owned players (D-03)
+  // and players from capped teams (TFX-01: FPL 3-player-per-team cap).
   const inPoolByPosition = new Map<1 | 2 | 3 | 4, MergedPlayer[]>()
   for (const pos of POSITIONS) {
     const candidates = players
-      .filter(p => p.element_type === pos && !ownedIds.has(p.id))
+      .filter(p => p.element_type === pos && !ownedIds.has(p.id) && !cappedTeams.has(p.team))
       .sort((a, b) => horizonScore(b, field) - horizonScore(a, field))
       .slice(0, TOP_N_PER_POSITION)
     inPoolByPosition.set(pos, candidates)

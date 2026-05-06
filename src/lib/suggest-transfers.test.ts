@@ -60,14 +60,17 @@ function makePlayer(overrides: PlayerOverrides): MergedPlayer {
 
 // Build a 15-player squad: 2 GK, 5 DEF, 5 MID, 3 FWD. ids 1..15. positions 1..15 (1..11 starters,
 // 12..15 bench). All players default to xPts_1gw=5, xPts_3gw=14, xPts_5gw=22, now_cost=50.
+// Teams assigned in rotation 1..8 so no team hits the FPL 3-player-per-team cap (max 2 per team),
+// keeping existing tests compatible with the TFX-01 team cap filter.
 function makeValidSquad(): { picks: SquadPick[]; players: MergedPlayer[] } {
   const elementTypes: (1 | 2 | 3 | 4)[] = [1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4]
   const picks: SquadPick[] = []
   const players: MergedPlayer[] = []
   for (let i = 0; i < 15; i++) {
     const id = i + 1
+    const team = (i % 8) + 1  // teams 1..8, max 2 players per team (< cap of 3)
     picks.push(makePick(id, i + 1))
-    players.push(makePlayer({ id, element_type: elementTypes[i] }))
+    players.push(makePlayer({ id, element_type: elementTypes[i], team }))
   }
   return { picks, players }
 }
