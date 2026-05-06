@@ -299,8 +299,8 @@ def run(dry_run: bool = False):
             from prose_summary import generate_weekly_summary
             # Top-3 captains: highest xPts_1gw excluding GKs (element_type==1)
             captains_top3 = sorted(
-                [p for p in merged if (p.get('xPts_1gw') or 0) > 0 and p.get('element_type') != 1],
-                key=lambda p: p.get('xPts_1gw') or 0,
+                [p for p in merged if p.get('xPts_1gw') is not None and p.get('xPts_1gw') > 0 and p.get('element_type') != 1],
+                key=lambda p: p.get('xPts_1gw') if p.get('xPts_1gw') is not None else 0,
                 reverse=True,
             )[:3]
             cap_payload = [
@@ -312,11 +312,11 @@ def run(dry_run: bool = False):
             gems_top3 = sorted(
                 [
                     p for p in merged
-                    if (p.get('xPts_1gw') or 0) > 0
+                    if p.get('xPts_1gw') is not None and p.get('xPts_1gw') > 0
                     and float(p.get('selected_by_percent') or 0) < 15.0
                     and p.get('id') not in cap_ids
                 ],
-                key=lambda p: p.get('xPts_1gw') or 0,
+                key=lambda p: p.get('xPts_1gw') if p.get('xPts_1gw') is not None else 0,
                 reverse=True,
             )[:3]
             gem_payload = [
