@@ -50,6 +50,45 @@ const fixtureBacktest: AccuracyBacktest = {
   ],
 }
 
+const fixtureWithVersionsAndCalibration: AccuracyBacktest = {
+  ...fixtureBacktest,
+  versions: [
+    {
+      formula_version: 'v1.11-a',
+      recorded_at: '2026-04-15T00:00:00+00:00',
+      hit_rate: 0.380,
+      gate_flags: { form_signal_enabled: false, xmins_v2_enabled: false, bonus_predictor_enabled: false },
+    },
+    {
+      formula_version: 'v1.12-a',
+      recorded_at: '2026-04-30T00:00:00+00:00',
+      hit_rate: 0.420,
+      gate_flags: { form_signal_enabled: true, xmins_v2_enabled: false, bonus_predictor_enabled: false },
+    },
+  ],
+  calibration: {
+    by_position: {
+      all: [
+        { bucket_mid: 0.05, predicted_rate: 0.05, actual_rate: 0.04, sample_n: 25 },
+        { bucket_mid: 0.15, predicted_rate: 0.15, actual_rate: 0.12, sample_n: 25 },
+        { bucket_mid: 0.25, predicted_rate: 0.25, actual_rate: 0.22, sample_n: 25 },
+        { bucket_mid: 0.95, predicted_rate: 0.95, actual_rate: 0.88, sample_n: 25 },
+      ],
+      '1': [],
+      '2': [
+        { bucket_mid: 0.05, predicted_rate: 0.05, actual_rate: 0.06, sample_n: 8 },
+        { bucket_mid: 0.95, predicted_rate: 0.95, actual_rate: 0.90, sample_n: 6 },
+      ],
+      '3': [
+        { bucket_mid: 0.05, predicted_rate: 0.05, actual_rate: 0.04, sample_n: 7 },
+      ],
+      '4': [
+        { bucket_mid: 0.95, predicted_rate: 0.95, actual_rate: 0.85, sample_n: 5 },
+      ],
+    },
+  },
+}
+
 describe('Phase 41: AccuracyTab component', () => {
   beforeEach(() => {
     mockedUseAccuracy.mockReset()
@@ -120,5 +159,88 @@ describe('Phase 41: AccuracyTab component', () => {
     // smallest actual_pts in fixture is Haaland/GW32 (1)
     expect(firstRowAfterActual).toContain('Haaland')
     expect(firstRowAfterActual).toMatch(/\b1\b/)
+  })
+})
+
+describe('Phase 63: VersionHistoryTable + CalibrationSection', () => {
+  beforeEach(() => {
+    mockedUseAccuracy.mockReset()
+  })
+
+  it('VER-02: VersionHistoryTable renders heading and one row per version when data.versions present', () => {
+    mockedUseAccuracy.mockReturnValue({ data: fixtureWithVersionsAndCalibration, isLoading: false, error: null } as never)
+    const { getByText } = render(<AccuracyTab />)
+    const heading = getByText('Model Version History')
+    expect(heading).toBeTruthy()
+    const table = heading.parentElement?.querySelector('table')
+    expect(table).toBeTruthy()
+    // 2 versions in fixture -> 2 body rows
+    const bodyRows = table!.querySelectorAll('tbody tr')
+    expect(bodyRows.length).toBe(2)
+    // Both version strings present
+    expect(getByText('v1.11-a')).toBeTruthy()
+    expect(getByText(/v1\.12-a/)).toBeTruthy()
+  })
+
+  it('VER-02: first version row delta is em-dash; second row delta is +4.0 percentage points', () => {
+    mockedUseAccuracy.mockReturnValue({ data: fixtureWithVersionsAndCalibration, isLoading: false, error: null } as never)
+    const { getByText } = render(<AccuracyTab />)
+    const heading = getByText('Model Version History')
+    const tbody = heading.parentElement?.querySelector('tbody')
+    expect(tbody).toBeTruthy()
+    const rows = tbody!.querySelectorAll('tr')
+    // First row delta cell -> '—'
+    expect(rows[0].textContent).toContain('—')
+    // Second row delta cell -> +4.0 (from 0.380 -> 0.420 = +4.0 pp)
+    expect(rows[1].textContent).toMatch(/\+4\.0/)
+  })
+
+  it('CAL-01: CalibrationSection renders heading, X-axis label, and chart container when data.calibration present', () => {
+    mockedUseAccuracy.mockReturnValue({ data: fixtureWithVersionsAndCalibration, isLoading: false, error: null } as never)
+    const { getByText, container } = render(<AccuracyTab />)
+    expect(getByText('Calibration Reliability')).toBeTruthy()
+    // chart container has data-testid="calibration-chart" or contains the legend label
+    expect(getByText(/Actual haul rate/)).toBeTruthy()
+    expect(getByText(/Perfect calibration/)).toBeTruthy()
+    // recharts ResponsiveContainer renders an SVG (or div wrapper) inside the section
+    expect(container.querySelector('[data-testid="calibration-chart"], .recharts-responsive-container')).toBeTruthy()
+  })
+
+  it('CAL-02: PositionTabSelector renders 5 pills (All/GK/DEF/MID/FWD) with All active by default', () => {
+    mockedUseAccuracy.mockReturnValue({ data: fixtureWithVersionsAndCalibration, isLoading: false, error: null } as never)
+    const { container } = render(<AccuracyTab />)
+    const tablist = container.querySelector('[role="tablist"][aria-label="Calibration position filter"]')
+    expect(tablist).toBeTruthy()
+    const tabs = tablist!.querySelectorAll('[role="tab"]')
+    expect(tabs.length).toBe(5)
+    // First tab is "All", aria-selected="true"
+    expect(tabs[0].getAttribute('aria-selected')).toBe('true')
+    expect(tabs[0].textContent).toBe('All')
+    // Position labels in order
+    const labels = Array.from(tabs).map((t) => t.textContent)
+    expect(labels).toEqual(['All', 'GK', 'DEF', 'MID', 'FWD'])
+    // Click GK pill -> aria-selected swaps
+    fireEvent.click(tabs[1])
+    expect(tabs[1].getAttribute('aria-selected')).toBe('true')
+    expect(tabs[0].getAttribute('aria-selected')).toBe('false')
+  })
+
+  it('CAL-01: Insufficient-sample overlay renders when active position has zero usable buckets', () => {
+    mockedUseAccuracy.mockReturnValue({ data: fixtureWithVersionsAndCalibration, isLoading: false, error: null } as never)
+    const { container, getByText } = render(<AccuracyTab />)
+    // Switch to GK pill — fixture has by_position['1'] === [] (zero buckets)
+    const tablist = container.querySelector('[role="tablist"][aria-label="Calibration position filter"]')
+    const gkTab = tablist!.querySelectorAll('[role="tab"]')[1] as HTMLButtonElement
+    fireEvent.click(gkTab)
+    // Empty-state overlay copy from UI-SPEC Copywriting Contract
+    expect(getByText(/Insufficient sample \(n<5\) for GK this window\./)).toBeTruthy()
+  })
+
+  it('VER-02 / CAL-01: both new sections are SUPPRESSED when fixture lacks versions and calibration (legacy-cache compat)', () => {
+    mockedUseAccuracy.mockReturnValue({ data: fixtureBacktest, isLoading: false, error: null } as never)
+    const { queryByText } = render(<AccuracyTab />)
+    // Legacy-cache fixture has neither field — sections must not render
+    expect(queryByText('Model Version History')).toBeNull()
+    expect(queryByText('Calibration Reliability')).toBeNull()
   })
 })
