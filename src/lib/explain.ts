@@ -1,4 +1,6 @@
 import type { ScoredPlayer } from '@/lib/types'
+import { computeFragility } from '@/lib/sensitivity'
+import { computePositionAverages } from '@/lib/recommend'
 
 // Threshold constants (exported for test visibility, matching recommend.ts pattern)
 export const FORM_POSITIVE_THRESHOLD = 5.0
@@ -70,4 +72,102 @@ export function computeExplanations(player: ScoredPlayer): string[] {
   }
 
   return reasons
+}
+
+// ---------------------------------------------------------------------------
+// Phase 65 (WHY-01): computeRejection — adaptive "why not?" rejection engine.
+//
+// Sources of truth:
+//   - .planning/phases/065-rejection-explainer/065-CONTEXT.md §decisions D-04 .. D-07
+//   - .planning/phases/065-rejection-explainer/065-UI-SPEC.md §Copywriting Contract
+//   - .planning/phases/065-rejection-explainer/065-RESEARCH.md §Pattern 1 + Open Q1 (medium AND hard fixtures count)
+// ---------------------------------------------------------------------------
+
+export const REJECTION_START_PROB_THRESHOLD = 0.70
+export const REJECTION_OWNERSHIP_THRESHOLD = 20.0
+
+const POSITION_CODES: Record<number, string> = {
+  1: 'GK',
+  2: 'DEF',
+  3: 'MID',
+  4: 'FWD',
+}
+
+export interface RejectionResult {
+  /** Empty array => positive framing ("No rejection signals — ranked #X..."). Non-empty => caller renders "Why not recommended:" header + <ul>. */
+  reasons: string[]
+  /** 1-based rank within position by xPts_1gw descending. */
+  xPtsRank: number
+}
+
+/**
+ * Compute the natural-language "why not?" rejection signals for a single player.
+ *
+ * Adaptive framing (D-04):
+ *   - Strong player (gem_score >= positionAverage AND no fragility AND start_prob >= 0.70)
+ *     => returns { reasons: [], xPtsRank } so caller renders "No rejection signals" copy.
+ *   - Otherwise => returns rejection reasons in D-07 order:
+ *     rank, rotation risk, fixture difficulty, fragility (delegated), ownership context.
+ *
+ * @param player     The target ScoredPlayer to explain.
+ * @param allPlayers Full ScoredPlayer population (used for position rank + averages).
+ */
+export function computeRejection(
+  player: ScoredPlayer,
+  allPlayers: ScoredPlayer[],
+): RejectionResult {
+  // Step 1 (D-05): rank within position by xPts_1gw descending.
+  const samePosition = allPlayers
+    .filter(p => p.element_type === player.element_type)
+    .sort((a, b) => (b.xPts_1gw ?? 0) - (a.xPts_1gw ?? 0))
+  const xPtsRank = samePosition.findIndex(p => p.id === player.id) + 1
+
+  // Step 2 (D-04): adaptive framing threshold check.
+  const positionAverages = computePositionAverages(allPlayers)
+  const posAvg = positionAverages.get(player.element_type) ?? 0.5
+  const { reasons: fragilityReasons } = computeFragility(player, false) // Pitfall 4: isTransfer=false
+
+  const isStrong =
+    player.gem_score > posAvg &&
+    fragilityReasons.length === 0 &&
+    player.start_prob >= REJECTION_START_PROB_THRESHOLD
+
+  if (isStrong) {
+    // Positive framing — caller renders "No rejection signals" line using xPtsRank.
+    return { reasons: [], xPtsRank }
+  }
+
+  // Step 3 (D-07): rejection reasons in fixed order: rank, start_prob, fixture, fragility, ownership.
+  const reasons: string[] = []
+  const posCode = POSITION_CODES[player.element_type] ?? '??'
+
+  // 3a. Rank label (always first when not strong).
+  reasons.push(`Ranked #${xPtsRank} at ${posCode} by xPts`)
+
+  // 3b. Rotation risk.
+  if (player.start_prob < REJECTION_START_PROB_THRESHOLD) {
+    const startPct = Math.round(player.start_prob * 100)
+    reasons.push(`Rotation risk — start probability ${startPct}%`)
+  }
+
+  // 3c. Fixture difficulty (RESEARCH Open Q1: medium OR hard, both count for rejection).
+  if (
+    player.fixtures.length > 0 &&
+    (player.fixtures[0].difficulty_tier === 'medium' ||
+      player.fixtures[0].difficulty_tier === 'hard')
+  ) {
+    reasons.push(`Difficult fixture (FDR ${player.fixtures[0].difficulty_tier})`)
+  }
+
+  // 3d. Fragility flags (delegated — Don't Hand-Roll). Each fragility reason becomes
+  //     a "Fragile: no longer recommended if: <reason>" line.
+  for (const r of fragilityReasons) {
+    reasons.push(`Fragile: no longer recommended if: ${r}`)
+  }
+
+  // 3e. Ownership context — ALWAYS last (parseFloat per Pitfall 2).
+  const owned = Math.round(parseFloat(player.selected_by_percent))
+  reasons.push(`Owned by ${owned}% of managers`)
+
+  return { reasons, xPtsRank }
 }
