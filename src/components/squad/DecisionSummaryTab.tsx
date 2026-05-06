@@ -235,8 +235,8 @@ export function DecisionSummaryTab({
   }, [squadData, scoredPlayers, derivedFtCount, exactSellPrices])
 
   const ocsRows: OCSRow[] = useMemo(
-    () => computeOpportunityCostRows(ocsSuggestions, derivedFtCount),
-    [ocsSuggestions, derivedFtCount],
+    () => computeOpportunityCostRows(ocsSuggestions, derivedFtCount, squadData?.entry_history.bank ?? 0),
+    [ocsSuggestions, derivedFtCount, squadData],
   )
 
   // nextGw — squad-aware preferred, pool-aware fallback (PATTERNS.md §nextGw derivation)

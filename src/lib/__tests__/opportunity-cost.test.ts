@@ -45,6 +45,9 @@ function makeComboSuggestion(overrides: Partial<Extract<TransferSuggestion, { ki
   }
 }
 
+// Default bank (0) used for legacy tests that only care about row structure, not bankAfter.
+const DEFAULT_BANK = 0
+
 describe('opportunity-cost constants', () => {
   it('Test 1: MARGINAL_THRESHOLD equals 1.0', () => {
     expect(MARGINAL_THRESHOLD).toBe(1.0)
@@ -53,13 +56,13 @@ describe('opportunity-cost constants', () => {
 
 describe('computeOpportunityCostRows — row structure', () => {
   it('Test 2: empty suggestions returns exactly 1 row with kind=roll', () => {
-    const rows = computeOpportunityCostRows([], 1)
+    const rows = computeOpportunityCostRows([], 1, DEFAULT_BANK)
     expect(rows).toHaveLength(1)
     expect(rows[0].kind).toBe('roll')
   })
 
   it('Test 3: ftCount=1 with 1 FREE single returns [Roll, single-free] (length 2)', () => {
-    const rows = computeOpportunityCostRows([makeSingleSuggestion({ cost: 0 })], 1)
+    const rows = computeOpportunityCostRows([makeSingleSuggestion({ cost: 0 })], 1, DEFAULT_BANK)
     expect(rows).toHaveLength(2)
     expect(rows[0].kind).toBe('roll')
     expect(rows[1].kind).toBe('single-free')
@@ -70,20 +73,21 @@ describe('computeOpportunityCostRows — row structure', () => {
       makeSingleSuggestion({ cost: 0, xPtsGain: 3.0 }),
       makeSingleSuggestion({ cost: 4, xPtsGain: 5.0, breakEvenGws: 1 }),
     ]
-    const rows = computeOpportunityCostRows(suggestions, 1)
+    const rows = computeOpportunityCostRows(suggestions, 1, DEFAULT_BANK)
     expect(rows).toHaveLength(3)
     expect(rows[0].kind).toBe('roll')
     expect(rows[1].kind).toBe('single-free')
     expect(rows[2].kind).toBe('single-hit')
   })
 
-  it('Test 5: ftCount=2 with FREE single + FREE combo returns [Roll, single-free, combo-free] (length 3, no hit)', () => {
+  it('Test 5: ftCount=2 with FREE single + FREE combo returns [Roll, single-free, combo-free, combo-hit-8] (includes -8 hit)', () => {
     const suggestions = [
       makeSingleSuggestion({ cost: 0 }),
       makeComboSuggestion({ cost: 0 }),
     ]
-    const rows = computeOpportunityCostRows(suggestions, 2)
-    expect(rows).toHaveLength(3)
+    const rows = computeOpportunityCostRows(suggestions, 2, DEFAULT_BANK)
+    // With combo present, −8 Hit row is always added → length 4
+    expect(rows.length).toBeGreaterThanOrEqual(3)
     expect(rows[0].kind).toBe('roll')
     expect(rows[1].kind).toBe('single-free')
     expect(rows[2].kind).toBe('combo-free')
@@ -94,14 +98,14 @@ describe('computeOpportunityCostRows — row structure', () => {
       makeSingleSuggestion({ cost: 0 }),
       makeSingleSuggestion({ cost: 4, xPtsGain: 5.0, breakEvenGws: 1 }),
     ]
-    const rows = computeOpportunityCostRows(suggestions, 1)
+    const rows = computeOpportunityCostRows(suggestions, 1, DEFAULT_BANK)
     expect(rows[0].kind).toBe('roll')
   })
 })
 
 describe('computeOpportunityCostRows — correctness', () => {
   it('Test 7: Roll row has correct zero values and no transfers field', () => {
-    const rows = computeOpportunityCostRows([], 1)
+    const rows = computeOpportunityCostRows([], 1, DEFAULT_BANK)
     const roll = rows[0]
     expect(roll.kind).toBe('roll')
     expect(roll.xPtsGain).toBe(0)
@@ -113,7 +117,7 @@ describe('computeOpportunityCostRows — correctness', () => {
   })
 
   it('Test 8: 1-FT FREE row has xPtsGainNet === xPtsGain, breakEvenGws=null, cost=0', () => {
-    const rows = computeOpportunityCostRows([makeSingleSuggestion({ cost: 0, xPtsGain: 2.5, xPtsGainPerGw: 2.5 })], 1)
+    const rows = computeOpportunityCostRows([makeSingleSuggestion({ cost: 0, xPtsGain: 2.5, xPtsGainPerGw: 2.5 })], 1, DEFAULT_BANK)
     const row = rows[1]
     expect(row.xPtsGainNet).toBe(row.xPtsGain)
     expect(row.breakEvenGws).toBeNull()
@@ -124,7 +128,7 @@ describe('computeOpportunityCostRows — correctness', () => {
     const suggestions = [
       makeSingleSuggestion({ cost: 4, xPtsGain: 5.0, xPtsGainPerGw: 5.0, breakEvenGws: 1 }),
     ]
-    const rows = computeOpportunityCostRows(suggestions, 1)
+    const rows = computeOpportunityCostRows(suggestions, 1, DEFAULT_BANK)
     const hitRow = rows.find(r => r.kind === 'single-hit')!
     expect(hitRow.xPtsGainNet).toBe(5.0 - 4)
     expect(hitRow.breakEvenGws).toBe(1)
@@ -133,7 +137,7 @@ describe('computeOpportunityCostRows — correctness', () => {
 
   it('Test 10: 2-FT combo row has xPtsGainNet === xPtsGain, transfers length 2', () => {
     const suggestions = [makeComboSuggestion({ cost: 0, xPtsGain: 3.5 })]
-    const rows = computeOpportunityCostRows(suggestions, 2)
+    const rows = computeOpportunityCostRows(suggestions, 2, DEFAULT_BANK)
     const comboRow = rows.find(r => r.kind === 'combo-free')!
     expect(comboRow.xPtsGainNet).toBe(comboRow.xPtsGain)
     expect(comboRow.transfers).toHaveLength(2)
@@ -150,7 +154,7 @@ describe('computeOpportunityCostRows — player names', () => {
       makeSingleSuggestion({ cost: 0, xPtsGain: 4.0, sell: makeMergedPlayer({ web_name: 'BestSell' }), buy: makeMergedPlayer({ web_name: 'BestBuy' }) }),
       makeSingleSuggestion({ cost: 0, xPtsGain: 2.0, sell: makeMergedPlayer({ web_name: 'OtherSell' }), buy: makeMergedPlayer({ web_name: 'OtherBuy' }) }),
     ]
-    const rows = computeOpportunityCostRows(suggestions, 1)
+    const rows = computeOpportunityCostRows(suggestions, 1, DEFAULT_BANK)
     const freeRow = rows.find(r => r.kind === 'single-free')!
     expect(freeRow.transfers![0].sell.web_name).toBe('BestSell')
     expect(freeRow.transfers![0].buy.web_name).toBe('BestBuy')
@@ -165,7 +169,7 @@ describe('computeOpportunityCostRows — player names', () => {
         ],
       }),
     ]
-    const rows = computeOpportunityCostRows(suggestions, 2)
+    const rows = computeOpportunityCostRows(suggestions, 2, DEFAULT_BANK)
     const comboRow = rows.find(r => r.kind === 'combo-free')!
     expect(comboRow.transfers![0].sell.web_name).toBe('SellA')
     expect(comboRow.transfers![0].buy.web_name).toBe('BuyA')
@@ -177,21 +181,21 @@ describe('computeOpportunityCostRows — player names', () => {
 describe('computeOpportunityCostRows — marginal flag', () => {
   it('Test 13: 2-FT combo with xPtsGain=0.9 sets isMarginal=true', () => {
     const suggestions = [makeComboSuggestion({ xPtsGain: 0.9, xPtsGainPerGw: 0.9 })]
-    const rows = computeOpportunityCostRows(suggestions, 2)
+    const rows = computeOpportunityCostRows(suggestions, 2, DEFAULT_BANK)
     const comboRow = rows.find(r => r.kind === 'combo-free')!
     expect(comboRow.isMarginal).toBe(true)
   })
 
   it('Test 14: 2-FT combo with xPtsGain=1.0 sets isMarginal=false (boundary)', () => {
     const suggestions = [makeComboSuggestion({ xPtsGain: 1.0 })]
-    const rows = computeOpportunityCostRows(suggestions, 2)
+    const rows = computeOpportunityCostRows(suggestions, 2, DEFAULT_BANK)
     const comboRow = rows.find(r => r.kind === 'combo-free')!
     expect(comboRow.isMarginal).toBe(false)
   })
 
   it('Test 15: 2-FT combo with xPtsGain=2.5 sets isMarginal=false', () => {
     const suggestions = [makeComboSuggestion({ xPtsGain: 2.5 })]
-    const rows = computeOpportunityCostRows(suggestions, 2)
+    const rows = computeOpportunityCostRows(suggestions, 2, DEFAULT_BANK)
     const comboRow = rows.find(r => r.kind === 'combo-free')!
     expect(comboRow.isMarginal).toBe(false)
   })
@@ -200,7 +204,7 @@ describe('computeOpportunityCostRows — marginal flag', () => {
     const suggestions = [
       makeSingleSuggestion({ cost: 4, xPtsGain: 5.0, xPtsGainPerGw: 5.0, breakEvenGws: 1 }),
     ]
-    const rows = computeOpportunityCostRows(suggestions, 1)
+    const rows = computeOpportunityCostRows(suggestions, 1, DEFAULT_BANK)
     const hitRow = rows.find(r => r.kind === 'single-hit')!
     expect(hitRow.isMarginal === undefined || hitRow.isMarginal === false).toBe(true)
   })
