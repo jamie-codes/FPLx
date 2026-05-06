@@ -13,6 +13,8 @@ import type { ClubForm } from '@/lib/types'
 import { computeCaptaincyCandidates } from '@/lib/captaincy-engine'
 import { SquadView } from '@/components/squad/SquadView'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
+import { computeFragility } from '@/lib/sensitivity'
+import { FragilityNote } from '@/components/shared/FragilityNote'
 import { CaptaincyPanel } from '@/components/captaincy/CaptaincyPanel'
 import { AuthModal } from '@/components/transfers/AuthModal'
 import { computeAuthExpiryState } from '@/lib/auth-expiry'
@@ -387,6 +389,12 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
                           </span>
                         )}
                       </div>
+                      {/* Row 4: fragility note (Phase 64 SENS-01/02) */}
+                      {(() => {
+                        const xPtsGain = (s.buy.xPts_1gw ?? 0) - (s.sell.xPts_1gw ?? 0)
+                        const { fragile, reasons } = computeFragility(s.buy, true, xPtsGain)
+                        return fragile ? <FragilityNote reasons={reasons} /> : null
+                      })()}
                     </div>
                   ))}
               </div>
@@ -447,6 +455,12 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
                         {' '}&rarr;{' '}
                         <span className="text-zinc-700 dark:text-zinc-300">{(s.buy.xPts_1gw ?? 0).toFixed(1)}</span>
                       </div>
+                      {/* Fragility note (Phase 64 SENS-01/02) — combo cards have no Row 3 budget badge */}
+                      {(() => {
+                        const xPtsGain = (s.buy.xPts_1gw ?? 0) - (s.sell.xPts_1gw ?? 0)
+                        const { fragile, reasons } = computeFragility(s.buy, true, xPtsGain)
+                        return fragile ? <FragilityNote reasons={reasons} /> : null
+                      })()}
                     </div>
                   ))}
                 </div>
