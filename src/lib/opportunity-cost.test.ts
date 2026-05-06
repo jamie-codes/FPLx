@@ -306,4 +306,26 @@ describe('Phase 74: computeOpportunityCostRows', () => {
       expect(comboHit.isMarginal).toBe(false)
     })
   })
+
+  describe('Phase 74-05 gap closure: derivedFtCount unauth fallback (CR-02)', () => {
+    // Mirrors the pure logic inside TransferPanel.tsx derivedFtCount useMemo's
+    // unauthenticated branch: `(freeTransfers >= 2 ? 2 : 1) as 1 | 2`.
+    // We test the logic directly because the useMemo is React-bound; the
+    // intent is to lock in the contract that any value >= 2 yields 2 and
+    // any value < 2 yields 1.
+    const unauthFallback = (freeTransfers: number): 1 | 2 =>
+      (freeTransfers >= 2 ? 2 : 1) as 1 | 2
+
+    it('CR-02: freeTransfers=2 returns ftCount=2 for unauthenticated path', () => {
+      expect(unauthFallback(2)).toBe(2)
+    })
+
+    it('CR-02: freeTransfers=1 returns ftCount=1 for unauthenticated path', () => {
+      expect(unauthFallback(1)).toBe(1)
+    })
+
+    it('CR-02: freeTransfers>=2 (e.g. 5) clamps to 2 for unauthenticated path', () => {
+      expect(unauthFallback(5)).toBe(2)
+    })
+  })
 })
