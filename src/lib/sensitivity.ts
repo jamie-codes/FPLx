@@ -14,10 +14,29 @@ export interface FragilityResult {
 }
 
 export function computeFragility(
-  _player: MergedPlayer,
-  _isTransfer: boolean,
-  _xPtsGain?: number,
+  player: MergedPlayer,
+  isTransfer: boolean,
+  xPtsGain?: number,
 ): FragilityResult {
-  // STUB — implementation comes in Task 2 (GREEN)
-  return { fragile: false, reasons: [] }
+  const reasons: string[] = []
+
+  // D-07: rotation risk — applies to both transfers and captains
+  if (player.start_prob < 0.70) {
+    reasons.push('start_prob < 70%')
+  }
+
+  // D-04, D-05: fixture worsening risk — only fixtures[0] (next GW); BGW guard
+  if (
+    player.fixtures.length > 0 &&
+    player.fixtures[0].difficulty_tier === 'medium'
+  ) {
+    reasons.push('harder fixture')
+  }
+
+  // D-09, D-10: hit cost — transfer candidates only
+  if (isTransfer && xPtsGain !== undefined && xPtsGain < 4.0) {
+    reasons.push('taken as a hit (-4pt)')
+  }
+
+  return { fragile: reasons.length > 0, reasons }
 }
