@@ -667,17 +667,19 @@ Phase 65 performs no authentication, no network requests, no user-supplied input
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **`computeRejection` fixture check — medium only or medium+hard?**
    - What we know: `computeFragility()` only flags `difficulty_tier === 'medium'` (not 'hard') because 'hard' fixtures are already the expected norm for top players and don't represent a reversing condition. The rejection context is different — a hard fixture is also rejection-relevant.
    - What's unclear: Should the fixture rejection reason trigger on 'medium' (matching computeFragility) or on 'medium' OR 'hard'?
    - Recommendation: Match the UI-SPEC copywriting: "Difficult fixture (FDR [tier])" — trigger on BOTH medium and hard for WHY-01/WHY-03. For fragility specifically (delegated to computeFragility), medium-only is correct. Implement the fixture check directly in computeRejection for the broader rejection-reason context rather than purely delegating to computeFragility.
+   - **RESOLVED:** Trigger on BOTH medium and hard for the rejection context. computeFragility delegation covers fragility signals only.
 
 2. **WHY-02 in-squad rank derivation**
    - What we know: The copy template is "Already ranked #X at [POS] in your squad by xPts — no upgrade needed". The rank is within the user's squad at that position, not the global population.
    - What's unclear: Does "rank within your squad" mean rank among all squad players at that position (starters + bench), or starters only?
    - Recommendation: Rank among starting-XI players at that position (position < 12), matching how verdicts work. A bench player with higher xPts would still be displayed but is less relevant.
+   - **RESOLVED:** Rank among starting-XI players only (position < 12).
 
 ---
 

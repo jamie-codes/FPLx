@@ -488,7 +488,25 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   3. Squad view row expand for an owned player explains why they are not recommended to hold or captain — distinguishing between "below xPts threshold", "rotation risk", "difficult fixture", and "fragile recommendation"
   4. All three explainer surfaces (GemTable, TransferPanel callout, SquadView) are computed client-side over existing data — loading a page or squad triggers computation with no additional network request
   5. Explanations use plain English with specific values — not generic phrases like "not recommended" — so the user can act on the reasoning
-**Plans**: TBD
+**Plans**: 5 plans (3 waves)
+  **Wave 0**
+  - [ ] 065-01-PLAN.md — RED test stubs: rejection.test.ts (12 cases) + HighOwnershipCallout.test.tsx (7 cases) + ExplainPanel.test.tsx (7 cases)
+  **Wave 1** *(parallel — disjoint files)*
+  - [ ] 065-02-PLAN.md — TDD: computeRejection() + RejectionResult + thresholds in src/lib/explain.ts (delegates to computeFragility(player, false) and computePositionAverages())
+  - [ ] 065-03-PLAN.md — ExplainPanel rejectionReasons?: string[] prop + new HighOwnershipCallout.tsx component
+  **Wave 2** *(parallel — disjoint files; blocked on Wave 1 completion)*
+  - [ ] 065-04-PLAN.md — GemTable WHY-01 wiring (getRowCanExpand=>true, desktop expand row hidden sm:table-row, mobile rejection panel appended below dl) + manual UAT
+  - [ ] 065-05-PLAN.md — TransferPanel WHY-02 callout (highOwnershipAbsent useMemo cap-3) + verdicts threading + SquadView WHY-03 per-player rejectionReasons (verdict + fragility translation + captain rejection D-09) + manual UAT
+**Cross-cutting constraints:**
+  - Plan 01 (Wave 0) ships RED tests; Plan 02 turns rejection.test.ts GREEN; Plan 03 turns ExplainPanel.test + HighOwnershipCallout.test GREEN — all three contract files exist before implementation begins
+  - Plans 02 and 03 are file-disjoint (explain.ts vs ExplainPanel.tsx + HighOwnershipCallout.tsx) — fully Wave 1 parallel-safe
+  - Plans 04 and 05 are file-disjoint (GemTable.tsx vs TransferPanel.tsx + SquadView.tsx) — fully Wave 2 parallel-safe
+  - computeFragility MUST be called with isTransfer=false in computeRejection AND SquadView per-player rejection (Pitfall 4) — any true triggers spurious hit-cost reasons
+  - parseFloat(player.selected_by_percent) is REQUIRED for ALL ownership comparisons (Pitfall 2) — selected_by_percent is a string field
+  - Desktop expand row uses className="bg-blue-50 dark:bg-blue-950 hidden sm:table-row" — display:block is invalid on <tr> (Pitfall 5)
+  - WHY-02 absence detection narrows on s.kind === 'single' (verified opportunity-cost.ts pattern) — DO NOT use 'buy' in s narrowing (loses combo handling)
+  - SquadView reuses existing POSITION_LABELS const (lines 24-29) — DO NOT redeclare
+**Phase notes**: Pure client-side TypeScript/React phase — no pipeline change, no API change, no new dependencies. computeRejection lives in explain.ts (alongside computeExplanations) per Claude's discretion resolved in UI-SPEC. Adaptive framing threshold: gem_score >= positionAverage AND no fragility AND start_prob >= 0.70 → positive framing; otherwise rejection reasons in fixed D-07 order (rank, rotation, fixture, fragility, ownership). RESEARCH Open Q1 resolution: rejection-context fixture check covers BOTH medium AND hard tiers (broader than fragility's medium-only). RESEARCH Open Q2 resolution: in-squad rank for WHY-02 = starting-XI only (position < 12).
 **UI hint**: yes
 
 ---
@@ -726,7 +744,7 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 | 62 | v1.12 | 0/3 | Not started | - |
 | 63 | v1.12 | 0 | Not started | - |
 | 64 | v1.12 | 0 | Not started | - |
-| 65 | v1.12 | 0 | Not started | - |
+| 65 | v1.12 | 0/5 | Not started | - |
 | 66 | v1.11 | 3/3 | Complete | 2026-05-05 |
 | 67 | v1.11 | 3/3 | Complete | 2026-05-05 |
 | 68 | v1.11 | 0 | Not started | - |
