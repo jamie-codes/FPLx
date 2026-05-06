@@ -2,9 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.12
 milestone_name: Modelling & Refinement — Carry-forward
-status: executing
-last_updated: "2026-05-06T12:20:00.000Z"
-last_activity: 2026-05-06 -- Phase 064 complete
+status: planning
+stopped_at: Phase 65 context gathered (2026-05-06)
+last_updated: "2026-05-06T12:00:00.000Z"
+last_activity: 2026-05-06 -- Phase 065 context captured
 progress:
   total_phases: 22
   completed_phases: 22
@@ -84,6 +85,6 @@ Items carried from v1.9:
 
 ## Session Continuity
 
-Last session: 2026-05-06T10:04:44.353Z
-Stopped at: context exhaustion at 78% (2026-05-06)
+Last session: 2026-05-06T11:21:32.046Z
+Stopped at: context exhaustion at 75% (2026-05-06)
 Resume file: None
