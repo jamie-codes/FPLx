@@ -60,14 +60,17 @@ function makePlayer(overrides: PlayerOverrides): MergedPlayer {
 
 // Build a 15-player squad: 2 GK, 5 DEF, 5 MID, 3 FWD. ids 1..15. positions 1..15 (1..11 starters,
 // 12..15 bench). All players default to xPts_1gw=5, xPts_3gw=14, xPts_5gw=22, now_cost=50.
+// Teams assigned in rotation 1..8 so no team hits the FPL 3-player-per-team cap (max 2 per team),
+// keeping existing tests compatible with the TFX-01 team cap filter.
 function makeValidSquad(): { picks: SquadPick[]; players: MergedPlayer[] } {
   const elementTypes: (1 | 2 | 3 | 4)[] = [1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4]
   const picks: SquadPick[] = []
   const players: MergedPlayer[] = []
   for (let i = 0; i < 15; i++) {
     const id = i + 1
+    const team = (i % 8) + 1  // teams 1..8, max 2 players per team (< cap of 3)
     picks.push(makePick(id, i + 1))
-    players.push(makePlayer({ id, element_type: elementTypes[i] }))
+    players.push(makePlayer({ id, element_type: elementTypes[i], team }))
   }
   return { picks, players }
 }
@@ -333,5 +336,187 @@ describe('Phase 45: suggestTransfers engine', () => {
         expect(combo.breakEvenGws).toBeNull()
       }
     })
+  })
+})
+
+describe('Phase 74: Team cap filter (TFX-01)', () => {
+  it('excludes buy candidates from teams where user owns 3 players', () => {
+    // Arrange: squad with 3 players on team 5, plus one strong buy candidate also on team 5.
+    // Use a small focused squad: 2 GK + 5 DEF + 5 MID + 3 FWD (15 total), 3 on team 5.
+    const { picks, players } = makeValidSquad()
+    // Override first 3 DEF players (ids 3,4,5) to team 5
+    const modifiedPlayers = players.map(p =>
+      [3, 4, 5].includes(p.id) ? { ...p, team: 5 } : p,
+    )
+    // Strong DEF candidate on team 5 — would be #1 pick if not capped
+    const cappedCandidate = makePlayer({ id: 20, element_type: 2, xPts_1gw: 9.0, team: 5 })
+    // Also add a non-capped candidate from a different team so engine can return results
+    const allowedCandidate = makePlayer({ id: 21, element_type: 2, xPts_1gw: 8.0, team: 99 })
+
+    const result = suggestTransfers({
+      currentPicks: picks,
+      players: [...modifiedPlayers, cappedCandidate, allowedCandidate],
+      horizon: 1,
+      ftCount: 1,
+      bank: 1000,
+    })
+
+    // No suggestion should have a buy from team 5
+    for (const sug of result) {
+      if (sug.kind === 'single') {
+        expect(sug.buy.team).not.toBe(5)
+      } else if (sug.kind === 'combo') {
+        for (const t of sug.transfers) {
+          expect(t.buy.team).not.toBe(5)
+        }
+      }
+    }
+    // The allowed candidate (team 99) should appear as a buy
+    const allowedBuy = result.find(s => s.kind === 'single' && s.buy.id === 21)
+    expect(allowedBuy).toBeDefined()
+  })
+
+  it('allows buy candidates when user owns only 2 players from a team', () => {
+    // Arrange: only 2 squad players on team 99 (below the 3-player cap).
+    // Use a distinct team id (99) not in the natural team rotation (1-8) to avoid collisions.
+    const { picks, players } = makeValidSquad()
+    // Override the first GK (id=1) and first DEF (id=3) to team 99.
+    // makeValidSquad uses teams 1-8 in rotation — team 99 is absent by default.
+    const modifiedPlayers = players.map(p =>
+      [1, 3].includes(p.id) ? { ...p, team: 99 } : p,
+    )
+    // Strong DEF candidate on team 99 — should be allowed (cap not reached: only 2 owned)
+    const allowedCandidate = makePlayer({ id: 20, element_type: 2, xPts_1gw: 9.0, team: 99 })
+
+    const result = suggestTransfers({
+      currentPicks: picks,
+      players: [...modifiedPlayers, allowedCandidate],
+      horizon: 1,
+      ftCount: 1,
+      bank: 1000,
+    })
+
+    // Team 99 candidate should appear as a buy option (cap is 3, not 2)
+    const team99Buy = result.find(s => s.kind === 'single' && s.buy.team === 99)
+    expect(team99Buy).toBeDefined()
+  })
+})
+
+describe('Phase 74: Sell-side dedup in 2-FT combos (TFX-02)', () => {
+  it('never produces a 2-FT combo where sell1.id === sell2.id', () => {
+    // The combo loop iterates i < j in currentPlayers so sell1 !== sell2 structurally,
+    // but the sell-side dedup guard is an explicit defence against any future loop refactor.
+    // This test verifies the invariant holds in all returned combos.
+    const { picks, players } = makeValidSquad()
+    const strongGk = makePlayer({ id: 20, element_type: 1, xPts_1gw: 9.0, team: 10 })
+    const strongDef = makePlayer({ id: 21, element_type: 2, xPts_1gw: 8.5, team: 11 })
+    const strongMid = makePlayer({ id: 22, element_type: 3, xPts_1gw: 8.0, team: 12 })
+
+    const result = suggestTransfers({
+      currentPicks: picks,
+      players: [...players, strongGk, strongDef, strongMid],
+      horizon: 1,
+      ftCount: 2,
+      bank: 1000,
+    })
+
+    const combos = result.filter(s => s.kind === 'combo')
+    expect(combos.length).toBeGreaterThan(0)
+    for (const sug of combos) {
+      if (sug.kind === 'combo') {
+        const [t1, t2] = sug.transfers
+        expect(t1.sell.id).not.toBe(t2.sell.id)
+      }
+    }
+  })
+
+  it('never produces a 2-FT combo where buy1.id === buy2.id (regression guard)', () => {
+    // Existing buy-side dedup guard — verify it still holds after combo loop refactor.
+    const { picks, players } = makeValidSquad()
+    const strongGk = makePlayer({ id: 20, element_type: 1, xPts_1gw: 9.0, team: 10 })
+    const strongDef = makePlayer({ id: 21, element_type: 2, xPts_1gw: 8.5, team: 11 })
+
+    const result = suggestTransfers({
+      currentPicks: picks,
+      players: [...players, strongGk, strongDef],
+      horizon: 1,
+      ftCount: 2,
+      bank: 1000,
+    })
+
+    const combos = result.filter(s => s.kind === 'combo')
+    for (const sug of combos) {
+      if (sug.kind === 'combo') {
+        const [t1, t2] = sug.transfers
+        expect(t1.buy.id).not.toBe(t2.buy.id)
+      }
+    }
+  })
+})
+
+describe('Phase 74: Combos always emitted (D-06)', () => {
+  it('emits at least one cost:0 combo when ftCount === 2', () => {
+    const { picks, players } = makeValidSquad()
+    const strongGk = makePlayer({ id: 20, element_type: 1, xPts_1gw: 9.0, team: 10 })
+    const strongDef = makePlayer({ id: 21, element_type: 2, xPts_1gw: 8.5, team: 11 })
+
+    const result = suggestTransfers({
+      currentPicks: picks,
+      players: [...players, strongGk, strongDef],
+      horizon: 1,
+      ftCount: 2,
+      bank: 1000,
+    })
+
+    const freeCombos = result.filter(s => s.kind === 'combo' && s.cost === 0)
+    expect(freeCombos.length).toBeGreaterThan(0)
+  })
+
+  it('emits at least one cost:4 combo when ftCount === 1 (always-emit for -8 hit derivation)', () => {
+    // D-06: combos are always enumerated so computeOpportunityCostRows can derive the -8 Hit row.
+    // When ftCount=1, the second transfer is a hit → combos have cost:4.
+    const { picks, players } = makeValidSquad()
+    const strongGk = makePlayer({ id: 20, element_type: 1, xPts_1gw: 9.0, team: 10 })
+    const strongDef = makePlayer({ id: 21, element_type: 2, xPts_1gw: 8.5, team: 11 })
+
+    const result = suggestTransfers({
+      currentPicks: picks,
+      players: [...players, strongGk, strongDef],
+      horizon: 1,
+      ftCount: 1,
+      bank: 1000,
+    })
+
+    const hitCombos = result.filter(s => s.kind === 'combo' && s.cost === 4)
+    expect(hitCombos.length).toBeGreaterThan(0)
+  })
+})
+
+describe('Phase 74: Bank constraint (TFX-05)', () => {
+  it('respects bank parameter in tenths — over-budget buy not returned as top suggestion', () => {
+    // bank = 0 tenths (£0m). Buy candidate now_cost=60 (£6m). Squad player sell value = now_cost=50.
+    // Net cost = 60 - 50 = 10 tenths (£1m) > bank(0). Should be filtered out.
+    const { picks, players } = makeValidSquad()
+    // Expensive GK candidate — would be best pick if budget allowed
+    const expensiveGk = makePlayer({ id: 20, element_type: 1, xPts_1gw: 9.0, now_cost: 60, team: 10 })
+    // Affordable GK candidate (now_cost same as sell value)
+    const affordableGk = makePlayer({ id: 21, element_type: 1, xPts_1gw: 7.0, now_cost: 50, team: 11 })
+
+    const result = suggestTransfers({
+      currentPicks: picks,
+      players: [...players, expensiveGk, affordableGk],
+      horizon: 1,
+      ftCount: 1,
+      bank: 0,  // tenths: £0m — can only afford equal-cost swaps
+    })
+
+    // Expensive GK (id=20) must not appear — bank insufficient (0 + 50 = 50 < 60)
+    for (const sug of result) {
+      const buyIds = sug.kind === 'single' ? [sug.buy.id] : sug.transfers.map(t => t.buy.id)
+      expect(buyIds).not.toContain(20)
+    }
+    // Affordable GK (id=21) may appear — bank+sellValue=0+50=50 >= 50 ✓
+    const affordableBuy = result.find(s => s.kind === 'single' && s.buy.id === 21)
+    expect(affordableBuy).toBeDefined()
   })
 })
