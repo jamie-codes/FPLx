@@ -18,7 +18,7 @@ import pytest
 
 # This import will FAIL until Plan 02 creates pipeline/accuracy.py.
 # Wave 0 RED: collection error is the explicit failure mode.
-from accuracy import compute_accuracy_backtest, build_predictions_snapshot
+from accuracy import compute_accuracy_backtest, build_predictions_snapshot, FORMULA_VERSION
 
 
 # ------------------------------------------------------------------ helpers
@@ -376,4 +376,177 @@ def test_bonus_predictor_flag_persists_across_runs(tmp_path):
     assert result['summary']['bonus_predictor_enabled'] is True, (
         "When prior accuracy_backtest.json has bonus_predictor_enabled: true, "
         "subsequent backtest must preserve True (Phase 52 D-02 mirror pattern)"
+    )
+
+
+# ============================================================================
+# Phase 63 VER-01 / VER-02 — version record persistence and dedup
+# ============================================================================
+
+def test_version_record_appended(tmp_path):
+    """Phase 63 VER-01: a fresh run appends a version record with the current FORMULA_VERSION
+    containing formula_version (str), recorded_at (ISO str), hit_rate (float), and gate_flags
+    (dict with form_signal_enabled, xmins_v2_enabled, bonus_predictor_enabled)."""
+    history = [_hist(gw, 90, 6, xg=0.4, xa=0.2) for gw in range(1, 33)]
+    summaries, fg, bootstrap, fixtures = _build_minimal_inputs({1: history})
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures, cache_dir=str(tmp_path))
+
+    assert 'versions' in result, "result must contain top-level 'versions' key (D-02)"
+    assert isinstance(result['versions'], list)
+    assert len(result['versions']) >= 1, "fresh run must append at least one version record"
+
+    record = result['versions'][-1]
+    # D-04: required fields
+    assert record['formula_version'] == FORMULA_VERSION
+    assert isinstance(record['recorded_at'], str) and record['recorded_at'].endswith(('Z', '+00:00'))
+    assert isinstance(record['hit_rate'], float)
+    assert 'gate_flags' in record
+    for flag in ('form_signal_enabled', 'xmins_v2_enabled', 'bonus_predictor_enabled'):
+        assert flag in record['gate_flags'], f"gate_flags must include {flag}"
+        assert isinstance(record['gate_flags'][flag], bool)
+
+
+def test_version_dedup(tmp_path):
+    """Phase 63 VER-01 / D-03: a second run with the SAME FORMULA_VERSION must NOT append
+    a duplicate. Final versions list length stays at 1 after two consecutive runs."""
+    import json as _json
+    history = [_hist(gw, 90, 6, xg=0.4, xa=0.2) for gw in range(1, 33)]
+    summaries, fg, bootstrap, fixtures = _build_minimal_inputs({1: history})
+
+    # Seed prior cache with a record matching the current FORMULA_VERSION.
+    prior_path = tmp_path / 'accuracy_backtest.json'
+    prior_path.write_text(_json.dumps({
+        'versions': [{
+            'formula_version': FORMULA_VERSION,
+            'recorded_at': '2026-05-01T00:00:00+00:00',
+            'hit_rate': 0.4000,
+            'gate_flags': {
+                'form_signal_enabled': False,
+                'xmins_v2_enabled': False,
+                'bonus_predictor_enabled': False,
+            },
+        }],
+    }))
+
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures, cache_dir=str(tmp_path))
+
+    assert len(result['versions']) == 1, (
+        "Dedup (D-03): when versions[-1].formula_version == FORMULA_VERSION, "
+        "no new record is appended; length stays at 1"
+    )
+
+
+def test_version_cold_start(tmp_path):
+    """Phase 63 VER-01: cold start (no prior accuracy_backtest.json) returns versions
+    list with exactly the single new record (no IndexError on empty list — Pitfall 7)."""
+    history = [_hist(gw, 90, 6, xg=0.4, xa=0.2) for gw in range(1, 33)]
+    summaries, fg, bootstrap, fixtures = _build_minimal_inputs({1: history})
+    # tmp_path is empty — no prior file
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures, cache_dir=str(tmp_path))
+
+    assert isinstance(result['versions'], list)
+    assert len(result['versions']) == 1
+    assert result['versions'][0]['formula_version'] == FORMULA_VERSION
+
+
+# ============================================================================
+# Phase 63 CAL-01 / CAL-02 — calibration data structure and bucketing
+# ============================================================================
+
+def test_calibration_structure():
+    """Phase 63 CAL-01 / D-06: result includes top-level 'calibration' key with shape
+    { by_position: { all, '1', '2', '3', '4' } }; each bucket contains bucket_mid,
+    predicted_rate, actual_rate, sample_n."""
+    # Build inputs with enough players for non-trivial decile bucketing across 5 GWs.
+    # 50 players × 5 GWs = 250 observations -> 25 per decile in 'all'.
+    player_histories = {}
+    for pid in range(1, 51):
+        player_histories[pid] = [_hist(gw, 90, (pid % 12) + 1, xg=0.3, xa=0.2) for gw in range(1, 33)]
+    summaries, fg, bootstrap, fixtures = _build_minimal_inputs(player_histories)
+
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures)
+
+    assert 'calibration' in result, "result must contain top-level 'calibration' key (D-06)"
+    assert 'by_position' in result['calibration']
+    assert 'all' in result['calibration']['by_position']
+    for pos_key in ('1', '2', '3', '4'):
+        assert pos_key in result['calibration']['by_position'], (
+            f"by_position must include position key '{pos_key}' (D-06)"
+        )
+
+    all_buckets = result['calibration']['by_position']['all']
+    assert isinstance(all_buckets, list)
+    # With 50 players × 5 GWs = 250 observations and 10 deciles = 25 per bucket,
+    # all 10 buckets should clear sample_n >= 5.
+    assert len(all_buckets) == 10, "with 250 obs over 10 deciles, all 10 buckets pass sample_n >= 5"
+    for b in all_buckets:
+        for key in ('bucket_mid', 'predicted_rate', 'actual_rate', 'sample_n'):
+            assert key in b, f"bucket missing required key {key}"
+        assert isinstance(b['bucket_mid'], float)
+        assert 0.0 <= b['bucket_mid'] <= 1.0
+        assert isinstance(b['sample_n'], int)
+        assert b['sample_n'] >= 5
+
+
+def test_calibration_sparse_filter():
+    """Phase 63 CAL-01 / D-07: buckets with sample_n < 5 are excluded from the array,
+    leaving a gap (not a zero entry). With only 1 player there are 5 observations
+    over 5 GWs spread thinly across 10 deciles — most deciles get 0 or 1 sample."""
+    # Single player, 32 GW history -> 5 observations in target_gws -> deciles will be sparse.
+    history = [_hist(gw, 90, 6, xg=0.4, xa=0.2) for gw in range(1, 33)]
+    summaries, fg, bootstrap, fixtures = _build_minimal_inputs({1: history})
+
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures)
+
+    all_buckets = result['calibration']['by_position']['all']
+    # With only 5 total observations spread across 10 deciles, NO bucket should clear
+    # the sample_n >= 5 threshold — array is empty.
+    for b in all_buckets:
+        assert b['sample_n'] >= 5, (
+            "D-07: every returned bucket must have sample_n >= 5; sparse buckets are filtered out"
+        )
+
+
+def test_calibration_by_position():
+    """Phase 63 CAL-02 / D-06: by_position has separate, non-aggregated arrays for
+    each position code; the 'all' aggregate sample sums over per-position arrays
+    are >= the position-specific sums (since 'all' includes all positions)."""
+    # Mix of element_types so each position has populated buckets.
+    player_histories = {}
+    bootstrap_elements = []
+    for pid in range(1, 41):
+        # 10 players per position 1..4
+        et = ((pid - 1) // 10) + 1
+        bootstrap_elements.append({
+            'id': pid, 'web_name': f'P{pid}', 'element_type': et, 'team': 14, 'starts': 10,
+        })
+        player_histories[pid] = [_hist(gw, 90, (pid % 8) + 2, xg=0.3, xa=0.2) for gw in range(1, 33)]
+    summaries, fg, _bootstrap_unused, fixtures = _build_minimal_inputs(player_histories)
+    # Override bootstrap.elements with mixed element_types (the helper hardcodes element_type=3).
+    bootstrap = {
+        'elements': bootstrap_elements,
+        'teams': [{'id': 14, 'short_name': 'LIV'}, {'id': 1, 'short_name': 'ARS'}],
+        'events': [{'id': i, 'finished': True} for i in range(1, fg + 1)],
+    }
+
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures)
+
+    by_pos = result['calibration']['by_position']
+    # Each of '1', '2', '3', '4' must be a list (possibly empty if all sparse).
+    for pos_key in ('1', '2', '3', '4'):
+        assert isinstance(by_pos[pos_key], list)
+
+    # 'all' aggregate must include observations from each position — total sample
+    # in 'all' equals sum across positions.
+    all_total = sum(b['sample_n'] for b in by_pos['all'])
+    pos_total = sum(
+        b['sample_n']
+        for pos_key in ('1', '2', '3', '4')
+        for b in by_pos[pos_key]
+    )
+    # Sparse-filter caveat: 'all' may have buckets that pass while a position
+    # bucket fails the n>=5 gate (so all_total >= pos_total is the safe assertion).
+    assert all_total >= pos_total, (
+        "'all' aggregate must include >= the union of position-specific samples "
+        "(some position buckets may be filtered as sparse while 'all' passes)"
     )
