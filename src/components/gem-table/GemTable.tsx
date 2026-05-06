@@ -22,6 +22,15 @@ import { PositionFilter } from './PositionFilter'
 import { GwToggle, getColumnVisibility, type ViewPreset } from './GwToggle'
 import { PresetToggle } from './PresetToggle'
 import { LandscapeTip } from '@/components/set-pieces/LandscapeTip'
+import { computeRejection } from '@/lib/explain'
+
+// Phase 65 WHY-01: position-code label for adaptive-framing rejection-panel rendering.
+const POSITION_CODES_LABEL: Record<number, string> = {
+  1: 'GK',
+  2: 'DEF',
+  3: 'MID',
+  4: 'FWD',
+}
 
 const HIDDEN_COLUMN_LABELS: Record<string, string> = {
   team_short_name: 'Team',
@@ -41,6 +50,42 @@ const HIDDEN_COLUMN_LABELS: Record<string, string> = {
   fixtures: 'Next 5',
   regression_signal: 'Signal',
   differential_flag: 'Diff',
+}
+
+// Phase 65 WHY-01: rejection panel renderer — adaptive framing (positive vs reasons list).
+// Source: 065-UI-SPEC.md §WHY-01 §Component Specifications §Rejection panel structure.
+function RejectionPanelInline({
+  reasons,
+  xPtsRank,
+  posCodeLabel,
+  xPts1gw,
+}: {
+  reasons: string[]
+  xPtsRank: number
+  posCodeLabel: string
+  xPts1gw: number
+}) {
+  // Adaptive positive framing — reasons.length === 0 means computeRejection deemed the player strong.
+  if (reasons.length === 0) {
+    return (
+      <p className="mt-2 text-xs text-green-700 dark:text-green-400">
+        {`No rejection signals — ranked #${xPtsRank} at ${posCodeLabel} by xPts (${xPts1gw.toFixed(1)} pts projected)`}
+      </p>
+    )
+  }
+  // Rejection reasons list.
+  return (
+    <div className="mt-2 space-y-1">
+      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Why not recommended:</p>
+      <ul className="space-y-0.5">
+        {reasons.map((line, i) => (
+          <li key={i} className="text-xs text-zinc-600 dark:text-zinc-400">
+            {line}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
 }
 
 interface GemTableProps {
@@ -111,7 +156,7 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
-    getRowCanExpand: () => isMobile,
+    getRowCanExpand: () => true,
   })
 
   const handlePositionChange = (code: PositionCode | null) => {
@@ -190,10 +235,10 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
             {table.getRowModel().rows.map((row) => (
               <Fragment key={row.id}>
                 <tr
-                  className={`even:bg-gray-50 dark:even:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-zinc-700 ${isMobile ? 'cursor-pointer active:bg-blue-100' : ''}`}
+                  className={`even:bg-gray-50 dark:even:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-zinc-700 cursor-pointer active:bg-blue-100`}
                   onClick={() => {
+                    row.toggleExpanded()
                     if (isMobile) {
-                      row.toggleExpanded()
                       setActionSheetPlayer(row.original)
                     }
                   }}
@@ -211,53 +256,78 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                     </td>
                   ))}
                 </tr>
-                {row.getIsExpanded() && (
-                  <tr className="bg-blue-50 dark:bg-blue-950 sm:hidden">
-                    <td colSpan={row.getVisibleCells().length} className="px-3 py-3">
-                      {actionSheetPlayer?.id === row.original.id && (
-                        <div className="flex gap-2 mt-1 sm:hidden">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              onCompare?.(row.original)
-                              setActionSheetPlayer(null)
-                            }}
-                            className="text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 rounded px-2 py-1 cursor-pointer"
-                          >
-                            Compare
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setActionSheetPlayer(null)
-                            }}
-                            className="text-xs text-zinc-400 dark:text-zinc-500 cursor-pointer"
-                            aria-label="Dismiss"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      )}
-                      <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                        {row.getAllCells()
-                          .filter(cell => HIDDEN_COLUMN_LABELS[cell.column.id])
-                          .map(cell => (
-                            <div key={cell.column.id} className="flex gap-1">
-                              <dt className="text-gray-500 dark:text-zinc-400 shrink-0">
-                                {HIDDEN_COLUMN_LABELS[cell.column.id]}:
-                              </dt>
-                              <dd className="font-medium truncate">
-                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                              </dd>
+                {row.getIsExpanded() && (() => {
+                  const rejection = computeRejection(row.original, scoredPlayers)
+                  const posCodeLabel = POSITION_CODES_LABEL[row.original.element_type] ?? '??'
+                  return (
+                    <>
+                      {/* Mobile expand row — preserved + rejection panel appended (D-03) */}
+                      <tr className="bg-blue-50 dark:bg-blue-950 sm:hidden">
+                        <td colSpan={row.getVisibleCells().length} className="px-3 py-3">
+                          {actionSheetPlayer?.id === row.original.id && (
+                            <div className="flex gap-2 mt-1 sm:hidden">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onCompare?.(row.original)
+                                  setActionSheetPlayer(null)
+                                }}
+                                className="text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 rounded px-2 py-1 cursor-pointer"
+                              >
+                                Compare
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setActionSheetPlayer(null)
+                                }}
+                                className="text-xs text-zinc-400 dark:text-zinc-500 cursor-pointer"
+                                aria-label="Dismiss"
+                              >
+                                ✕
+                              </button>
                             </div>
-                          ))
-                        }
-                      </dl>
-                    </td>
-                  </tr>
-                )}
+                          )}
+                          <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                            {row.getAllCells()
+                              .filter(cell => HIDDEN_COLUMN_LABELS[cell.column.id])
+                              .map(cell => (
+                                <div key={cell.column.id} className="flex gap-1">
+                                  <dt className="text-gray-500 dark:text-zinc-400 shrink-0">
+                                    {HIDDEN_COLUMN_LABELS[cell.column.id]}:
+                                  </dt>
+                                  <dd className="font-medium truncate">
+                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                  </dd>
+                                </div>
+                              ))
+                            }
+                          </dl>
+                          {/* NEW: rejection panel appended below dl (D-03) */}
+                          <RejectionPanelInline
+                            reasons={rejection.reasons}
+                            xPtsRank={rejection.xPtsRank}
+                            posCodeLabel={posCodeLabel}
+                            xPts1gw={row.original.xPts_1gw ?? 0}
+                          />
+                        </td>
+                      </tr>
+                      {/* NEW desktop expand row — rejection panel ONLY (D-02 + Pitfall 5: hidden sm:table-row) */}
+                      <tr className="bg-blue-50 dark:bg-blue-950 hidden sm:table-row">
+                        <td colSpan={row.getVisibleCells().length} className="px-3 py-3">
+                          <RejectionPanelInline
+                            reasons={rejection.reasons}
+                            xPtsRank={rejection.xPtsRank}
+                            posCodeLabel={posCodeLabel}
+                            xPts1gw={row.original.xPts_1gw ?? 0}
+                          />
+                        </td>
+                      </tr>
+                    </>
+                  )
+                })()}
               </Fragment>
             ))}
           </tbody>
