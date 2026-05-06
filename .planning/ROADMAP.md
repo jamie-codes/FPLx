@@ -14,6 +14,7 @@
 - ✅ **v1.9 Competitive Intelligence** — Phases 56-60 (shipped 2026-05-04)
 - **v1.11 Insights & Infrastructure** — Phases 66-73 (Phases 66-71 planned; 72-73 complete 2026-05-05)
 - **v1.12 Modelling & Refinement** — Phases 61-65 (carry-forward) + 74-77 (in progress)
+- **v1.13 Analytics UX & Intelligence** — Phases 78-81 (planned)
 
 ## Phases
 
@@ -715,6 +716,61 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 **Plans**: TBD
 **UI hint**: yes
 
+## v1.13 Analytics UX & Intelligence (Phases 78-81)
+
+### Phase 78: UI Visual Foundation
+**Goal**: Establish a coherent design system — color tokens, typography, and navigation chrome — that makes the app feel like a polished analytics product rather than a data debug view
+**Depends on**: Phase 77 (v1.12 complete)
+**Requirements**: VIS-01, VIS-02, VIS-03, VIS-04, VIS-05
+**Success Criteria** (what must be TRUE):
+  1. CSS custom properties define a complete light/dark color token set (background, surface, elevated surface, text, muted, border, primary accent, secondary accent, positive/warning/negative) — no hardcoded hex values remain in core layout or card components
+  2. App-wide font is Inter or Geist; all numeric data columns use `font-variant-numeric: tabular-nums` so values align vertically in tables
+  3. Section tabs (Analyse/Plan/Squad) and sub-tabs render as filled pills with a clearly distinguished active state; navigation is sticky on scroll
+  4. A "Last updated X ago" data freshness badge appears in the nav area on every section; badge colour shifts amber when data is >2h stale
+  5. Light mode background is softened to off-white (#F7F8FC range); dark mode card background is deep navy (#111827 range); card borders are visible and distinct from background in both modes
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 79: Insight Card Redesign
+**Goal**: Every insight card communicates what the data means for FPL decisions — title/metric/takeaway/action/confidence layout, meaningful signal badges, mini visualisations — replacing the current flat-sentence format
+**Depends on**: Phase 78 (design tokens foundation)
+**Requirements**: INS-01, INS-02, INS-03, INS-04, INS-05, INS-06
+**Success Criteria** (what must be TRUE):
+  1. Every insight card has five distinct visual zones: category badge, bold card title (15–16px), large headline metric (28–36px tabular), plain-English takeaway sentence, and action hint — the full card structure is scannable in under 3 seconds
+  2. Signal badges use semantic vocabulary — "Weak signal", "Watchlist", "Strong signal", "Trap risk", "Regression risk", "Hidden gem" — replacing LOW/MEDIUM/HIGH; each badge carries an icon prefix (●/▲/⚠/★) so meaning is not colour-only
+  3. Percentage and rate metrics show an inline mini progress bar with a benchmark reference line so the user immediately sees whether the value is high or low relative to expectation
+  4. InsightsTab is divided into labelled sections: Priority Insights (highest-signal), Defensive Patterns, Attacking Patterns, Player-Specific Patterns — each section collapsible, with a count badge on the section header
+  5. A "Decision Summary" sticky panel at the top of InsightsTab lists the top 3 current actionable angles with affected player/team chips so the user's first scroll reveals what to do today
+  6. Each card has a hover/expand area revealing methodology: sample size, GWs covered, confidence rationale — so the user can verify the reasoning without leaving the page
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 80: GW-Specific Intelligence
+**Goal**: Users see forward-looking gameweek context insights — rotation risk from European/cup fixtures, position-level GW opportunity, table-stakes pressure, DGW/BGW team flags, and player 3-GW fixture-run narratives — so every insight is tied to an actionable upcoming window
+**Depends on**: Phase 79 (insight card infrastructure); pipeline rotation-risk data new
+**Requirements**: GWI-01, GWI-02, GWI-03, GWI-04, GWI-05
+**Success Criteria** (what must be TRUE):
+  1. Pipeline detects when a PL club has a European or domestic cup fixture within 3 days of a PL fixture and writes a `rotation_risk: true` flag to that team in merged output; the flag is used by the insight engine and is visible in the Set Piece and TransferPanel views
+  2. InsightsTab shows a dedicated "This Gameweek" section with GW-specific cards: position-level opportunity this GW (e.g. "defenders offer better value this GW given 12 easy home fixtures"), rotation-risk callouts for affected teams, and DGW/BGW team highlights
+  3. Pipeline computes a `table_stakes_label` per team for the final 6 GWs — one of: title battle / European chase / relegation battle / nothing-to-play-for — and exposes it as a context field influencing squad-selection likelihood narrative
+  4. Player fixture-run cards show a 3-GW forward outlook: narrative summary ("Thiago: 3 easy away fixtures — prime hold") plus xPts trajectory bar for the next 3 GWs; surfaced for top differentials and high-ownership players
+  5. All GW-specific cards display the relevant GW range label (e.g. "GW36–38") and degrade to an empty-state placeholder ("GW insights will appear once fixtures are confirmed") rather than error or blank when data is unavailable
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 81: Team Shields & Visual Identity
+**Goal**: Club crests appear as visual anchors throughout the app — Set Piece taker boxes, Fixture Heat Map row headers, and other team-identity surfaces — making the UI feel like a real FPL product and letting users identify teams at a glance without reading abbreviations
+**Depends on**: Phase 78 (design tokens; consistent with brand system)
+**Requirements**: SHD-01, SHD-02, SHD-03
+**Success Criteria** (what must be TRUE):
+  1. Each Set Piece taker box uses the team's crest as a low-opacity background or box header element — the crest is visible behind or above the content without obscuring player names or taker roles
+  2. Fixture Heat Map row headers display the club crest (small, ~24px) alongside the team abbreviation so the team is identifiable without reading the text
+  3. A shared `useTeamBadge(teamCode)` hook or utility resolves the PL badge URL for any team code and is used as the single source of truth for all crest placements across the app; graceful fallback to a coloured initial-letter swatch when the image fails to load
+**Plans**: TBD
+**UI hint**: yes
+
+---
+
 ## Progress
 
 | Phase | Milestone | Plans | Status | Completed |
@@ -757,3 +813,7 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 | 75 | v1.12 | 0 | Not started | - |
 | 76 | v1.12 | 0 | Not started | - |
 | 77 | v1.12 | 0 | Not started | - |
+| 78 | v1.13 | 0 | Not started | - |
+| 79 | v1.13 | 0 | Not started | - |
+| 80 | v1.13 | 0 | Not started | - |
+| 81 | v1.13 | 0 | Not started | - |

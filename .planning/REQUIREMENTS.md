@@ -1,8 +1,8 @@
-# Requirements — FPL Analyst v1.12 Modelling & Refinement
+# Requirements — FPL Analyst v1.12–v1.13
 
-**Milestone:** v1.12 Modelling & Refinement
+**Milestones:** v1.12 Modelling & Refinement · v1.13 Analytics UX & Intelligence
 **Started:** 2026-05-05
-**Status:** Planned
+**Status:** In progress
 
 ---
 
@@ -69,6 +69,37 @@
 - [ ] **POL-02** GemTable and all sub-tables render without edge overflow on 390–430px viewport widths — xPts column and all sortable columns are fully visible without horizontal scroll unless the table is explicitly designed to scroll
 - [ ] **POL-03** Full mobile layout audit across all tabs and sections on Galaxy S26+ (≈430px) — truncated text, misaligned cells, and tap-target violations (<44px) resolved; each tab verified individually
 
+### Visual Design System (VIS)
+
+- [ ] **VIS-01** CSS custom properties define a complete light/dark color token set (background, surface, elevated surface, text, muted, border, primary/secondary accent, positive/warning/negative) referenced by all layout and card components — no hardcoded hex values in core layouts
+- [ ] **VIS-02** App-wide font updated to Inter or Geist; all numeric data columns use `font-variant-numeric: tabular-nums` for vertical alignment
+- [ ] **VIS-03** Section tabs (Analyse/Plan/Squad) and sub-tabs rendered as filled pills with a clearly distinguished active state; navigation is sticky on scroll
+- [ ] **VIS-04** Data freshness badge ("Updated X ago") displayed in the nav area on all sections; badge colour shifts amber when data is >2h stale
+- [ ] **VIS-05** Light mode background softened to off-white (#F7F8FC range); dark mode card background deepened to near-navy (#111827 range); card borders visible and distinct from background in both modes
+
+### Insight Card Redesign (INS)
+
+- [ ] **INS-01** Every insight card has five distinct visual zones: category badge, bold title, large tabular headline metric, plain-English takeaway sentence, and action hint — consistent across all insight card types
+- [ ] **INS-02** Signal badges use semantic vocabulary ("Weak signal", "Watchlist", "Strong signal", "Trap risk", "Regression risk", "Hidden gem") with icon prefix (●/▲/⚠/★); meaning communicated by label text, not colour alone
+- [ ] **INS-03** Percentage and rate metrics show an inline mini progress bar with a benchmark reference line so the user can immediately gauge whether a value is high or low
+- [ ] **INS-04** InsightsTab divided into labelled collapsible sections: Priority Insights, Defensive Patterns, Attacking Patterns, Player-Specific Patterns — each with a count badge
+- [ ] **INS-05** Decision Summary sticky panel at the top of InsightsTab lists the top 3 actionable angles with affected player/team chips
+- [ ] **INS-06** Each insight card has a hover/expand area showing sample size, GW coverage, and confidence rationale
+
+### GW-Specific Intelligence (GWI)
+
+- [ ] **GWI-01** Pipeline writes a `rotation_risk: bool` flag per team when a European or domestic cup fixture falls within 3 days of a PL fixture; flag available to insight engine, Set Piece view, and TransferPanel
+- [ ] **GWI-02** InsightsTab "This Gameweek" section shows a position-level GW opportunity card, rotation-risk team callouts, and DGW/BGW highlights — all labelled with the relevant GW range
+- [ ] **GWI-03** Pipeline computes a `table_stakes_label` per team for the final 6 GWs (title battle / European chase / relegation battle / nothing-to-play-for) as a context field influencing squad-selection likelihood narrative
+- [ ] **GWI-04** Player fixture-run cards show a 3-GW forward outlook: narrative summary and xPts trajectory bar for next 3 GWs; surfaced for top differentials and high-ownership players
+- [ ] **GWI-05** All GW-specific insight cards degrade gracefully to an empty-state placeholder when fixture or GW data is unavailable — no error states or blank sections
+
+### Team Shields & Visual Identity (SHD)
+
+- [ ] **SHD-01** Each Set Piece taker box displays the team crest as a low-opacity background or box header element — team identifiable at a glance without obscuring content
+- [ ] **SHD-02** Fixture Heat Map row headers display the club crest (small, ~24px) alongside the team abbreviation
+- [ ] **SHD-03** A shared `useTeamBadge(teamCode)` hook or utility resolves the PL badge URL for any team code and is the single source of truth for all crest placements; graceful fallback to a coloured initial-letter swatch on load failure
+
 ---
 
 ## Future Requirements (deferred)
@@ -133,3 +164,22 @@
 | POL-01 | Phase 77 | — | pending |
 | POL-02 | Phase 77 | — | pending |
 | POL-03 | Phase 77 | — | pending |
+| VIS-01 | Phase 78 | — | pending |
+| VIS-02 | Phase 78 | — | pending |
+| VIS-03 | Phase 78 | — | pending |
+| VIS-04 | Phase 78 | — | pending |
+| VIS-05 | Phase 78 | — | pending |
+| INS-01 | Phase 79 | — | pending |
+| INS-02 | Phase 79 | — | pending |
+| INS-03 | Phase 79 | — | pending |
+| INS-04 | Phase 79 | — | pending |
+| INS-05 | Phase 79 | — | pending |
+| INS-06 | Phase 79 | — | pending |
+| GWI-01 | Phase 80 | — | pending |
+| GWI-02 | Phase 80 | — | pending |
+| GWI-03 | Phase 80 | — | pending |
+| GWI-04 | Phase 80 | — | pending |
+| GWI-05 | Phase 80 | — | pending |
+| SHD-01 | Phase 81 | — | pending |
+| SHD-02 | Phase 81 | — | pending |
+| SHD-03 | Phase 81 | — | pending |
