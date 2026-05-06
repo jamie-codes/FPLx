@@ -196,13 +196,6 @@ export interface MergedPlayer {
   // DGW players: combined probability `1 - (1-p1)*(1-p2)` aggregated across the GW group.
   // GK (element_type=1) and DEF (element_type=2) consume this field; MID/FWD show em-dash in UI.
   cs_prob_1gw?: number
-  // Phase 61 MC-01 (simulate.py): Monte Carlo simulation fields per player.
-  // Optional — absent before simulate.py is deployed or if pipeline run fails. BGW players:
-  // blank_prob=1.0, haul_prob=0.0, p10_pts=0.0, p90_pts=0.0. p90_pts overwrites xPts_90th_1gw (D-05).
-  blank_prob?: number     // P(total_pts <= 2) across 10k simulations; 1.0 for BGW
-  haul_prob?: number      // P(total_pts >= 10) across 10k simulations; 0.0 for BGW
-  p10_pts?: number        // 10th percentile simulated points (floor); 0.0 for BGW
-  p90_pts?: number        // 90th percentile simulated points (ceiling); overwrites xPts_90th_1gw
 }
 
 // Optimiser horizon (Phase 43 OPT-01..OPT-05) — maps to xPts_1gw / xPts_3gw / xPts_5gw fields

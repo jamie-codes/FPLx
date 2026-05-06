@@ -89,6 +89,15 @@ describe('Phase 36: MobileNav component', () => {
     expect(pillButtons[4].getAttribute('aria-current')).not.toBe('page')
   })
 
+  it('Phase 62: Plan active includes Rank Sim pill (MC-03)', () => {
+    const { container } = render(<MobileNav {...makeProps({ activeSection: 'plan' as Section, activeSubTab: 'planner' as SubTab })} />)
+    const allButtons = Array.from(container.querySelectorAll('button'))
+    // Plan section has 7 sub-tabs: Planner, Manual, Routes, Rank Sim, Form, Values, Rivals
+    const planPills = allButtons.filter(b => ['Planner', 'Manual', 'Routes', 'Rank Sim', 'Form', 'Values', 'Rivals'].includes(b.textContent ?? ''))
+    expect(planPills).toHaveLength(7) // was 6 — Phase 62 added 'Rank Sim'
+    expect(planPills.map(p => p.textContent)).toContain('Rank Sim')
+  })
+
   it('clicking section buttons calls onSectionChange with correct id (NAV-05)', () => {
     const onSectionChange = vi.fn()
     const { container } = render(<MobileNav {...makeProps({ onSectionChange })} />)

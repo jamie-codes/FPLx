@@ -49,6 +49,9 @@ vi.mock('@/components/planner/ManualPlanTab', () => ({
 vi.mock('@/components/planner/RouteTreeTab', () => ({
   RouteTreeTab: (props: { submittedId: string | null; onSwitchSubTab: (tab: string) => void; horizon: number }) => <div data-testid="route-tree-tab" data-horizon={props.horizon} />,
 }))
+vi.mock('@/components/planner/RankSimTab', () => ({
+  RankSimTab: (_props: { submittedId: string | null; horizon: number }) => <div data-testid="rank-sim-tab-mock">RankSimTab</div>,
+}))
 
 import Home from '@/app/page'
 
@@ -182,8 +185,8 @@ describe('Phase 36: page.tsx state', () => {
     const planSubTabs = container.querySelector('nav[aria-label="Plan sub-tabs"]')
     expect(planSubTabs).not.toBeNull()
     const subTabBtns = Array.from(planSubTabs!.querySelectorAll('button')).map(b => b.textContent)
-    // Order locked by D-01 + D-05/D-06: Manual Plan after Planner, Route Tree after Manual Plan
-    expect(subTabBtns).toEqual(['Planner', 'Manual Plan', 'Route Tree', 'Club Form', 'Value Gems', 'Rivals'])
+    // Order locked by D-01 + D-05/D-06: Manual Plan after Planner, Route Tree after Manual Plan, Rank Sim after Route Tree (Phase 62 MC-03)
+    expect(subTabBtns).toEqual(['Planner', 'Manual Plan', 'Route Tree', 'Rank Sim', 'Club Form', 'Value Gems', 'Rivals'])
   })
 
   it('inserts Route Tree sub-tab after Manual Plan in Plan section nav (D-05/D-06)', () => {
@@ -199,9 +202,9 @@ describe('Phase 36: page.tsx state', () => {
     expect(container.querySelector('[data-testid="route-tree-tab"]')).not.toBeNull()
     // aria-current is Route Tree
     expect(container.querySelector('nav[aria-label="Plan sub-tabs"] button[aria-current="page"]')?.textContent).toBe('Route Tree')
-    // Sub-tab order: Planner | Manual Plan | Route Tree | Club Form | Value Gems | Rivals
+    // Sub-tab order: Planner | Manual Plan | Route Tree | Rank Sim | Club Form | Value Gems | Rivals (Phase 62 MC-03)
     const subTabBtns = Array.from(container.querySelectorAll('nav[aria-label="Plan sub-tabs"] button')).map(b => b.textContent)
-    expect(subTabBtns).toEqual(['Planner', 'Manual Plan', 'Route Tree', 'Club Form', 'Value Gems', 'Rivals'])
+    expect(subTabBtns).toEqual(['Planner', 'Manual Plan', 'Route Tree', 'Rank Sim', 'Club Form', 'Value Gems', 'Rivals'])
   })
 
   it('clicking "Manual Plan" sub-tab mounts ManualPlanTab and hides PlannerTab (MTP-01, D-02)', () => {
@@ -278,6 +281,24 @@ describe('Phase 36: page.tsx state', () => {
     const routeTreeBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Route Tree')
     fireEvent.click(routeTreeBtn!)
     expect(container.querySelector('[data-testid="route-tree-tab"]')?.getAttribute('data-horizon')).toBe('1')
+  })
+
+  it('Phase 62: renders RankSimTab when Plan → Rank Sim sub-tab is active (MC-03)', () => {
+    const { container } = render(<Home />)
+    // Navigate to Plan section
+    const planBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Plan')
+    fireEvent.click(planBtn!)
+    // Click the Rank Sim sub-tab
+    const rankSimBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Rank Sim')
+    expect(rankSimBtn).toBeDefined()
+    fireEvent.click(rankSimBtn!)
+    // RankSimTab mock renders
+    expect(container.querySelector('[data-testid="rank-sim-tab-mock"]')).not.toBeNull()
+    // aria-current is Rank Sim
+    expect(container.querySelector('nav[aria-label="Plan sub-tabs"] button[aria-current="page"]')?.textContent).toBe('Rank Sim')
+    // Other Plan tabs are NOT rendered
+    expect(container.querySelector('[data-testid="route-tree-tab"]')).toBeNull()
+    expect(container.querySelector('[data-testid="planner"]')).toBeNull()
   })
 })
 

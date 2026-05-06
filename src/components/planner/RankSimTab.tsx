@@ -15,7 +15,7 @@ import {
   ComposedChart, Area, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import type { TooltipProps } from 'recharts'
+import type { TooltipContentProps } from 'recharts'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useSquad } from '@/lib/hooks/useSquad'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
@@ -43,14 +43,15 @@ interface RankSimTabProps {
 // Custom tooltip (only shows mean / altMean lines — confidence band Areas excluded)
 // ---------------------------------------------------------------------------
 
-function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
+function CustomTooltip(props: TooltipContentProps) {
+  const { active, payload, label } = props
   if (!active || !payload?.length) return null
   return (
     <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs shadow-sm">
-      <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-1">{label}</p>
-      {payload
-        .filter(e => e.dataKey === 'mean' || e.dataKey === 'altMean')
-        .map(entry => (
+      <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-1">{label as string}</p>
+      {(payload as unknown as Array<{ dataKey?: string | number; color?: string; value?: number }>)
+        .filter((e) => e.dataKey === 'mean' || e.dataKey === 'altMean')
+        .map((entry) => (
           <p key={String(entry.dataKey)} style={{ color: entry.color }}>
             {entry.dataKey === 'mean' ? 'Current XI' : 'Alt XI'}: {entry.value?.toFixed(1)} pts
           </p>
@@ -274,7 +275,7 @@ export function RankSimTab({ submittedId }: RankSimTabProps) {
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(161,161,170,0.3)" />
             <XAxis dataKey="gw" tick={{ fontSize: 12, fill: 'currentColor' }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 12, fill: 'currentColor' }} axisLine={false} tickLine={false} width={32} />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={CustomTooltip} />
             {/* Confidence band — current XI only. Pitfall 1: ComposedChart not AreaChart. */}
             {/* Pitfall 6: hide={true} not tooltipType="none" (v2-only prop). */}
             <Area type="monotone" dataKey="p90" stroke="none" fill="rgba(161,161,170,0.25)" fillOpacity={1} legendType="none" activeDot={false} hide isAnimationActive={false} />

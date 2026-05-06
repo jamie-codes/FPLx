@@ -21,6 +21,7 @@ import { MobileNav } from '@/components/nav/MobileNav'
 import { PlannerTab } from '@/components/planner/PlannerTab'
 import { ManualPlanTab } from '@/components/planner/ManualPlanTab'
 import { RouteTreeTab } from '@/components/planner/RouteTreeTab'
+import { RankSimTab } from '@/components/planner/RankSimTab'
 import { SetPieceTakerPanel } from '@/components/set-pieces/SetPieceTakerPanel'
 import { CaptainPicksPanel } from '@/components/captaincy/CaptainPicksPanel'
 import { InsightsTab } from '@/components/insights/InsightsTab'
@@ -62,7 +63,7 @@ class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: 
 }
 
 export type Section = 'analyse' | 'plan' | 'squad'
-export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals' | 'fixture-heat-map' | 'lineup' | 'review'
+export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals' | 'fixture-heat-map' | 'lineup' | 'review' | 'rank-sim'
 
 export const SECTIONS = [
   {
@@ -86,6 +87,7 @@ export const SECTIONS = [
       { id: 'planner' as SubTab,     label: 'Planner',     mobileLabel: 'Planner' },
       { id: 'manual-plan' as SubTab, label: 'Manual Plan', mobileLabel: 'Manual'  },
       { id: 'route-tree' as SubTab,  label: 'Route Tree',  mobileLabel: 'Routes'  },
+      { id: 'rank-sim' as SubTab,    label: 'Rank Sim',    mobileLabel: 'Rank Sim' },  // Phase 62 MC-03
       { id: 'club-form' as SubTab,   label: 'Club Form',   mobileLabel: 'Form'    },
       { id: 'value-gems' as SubTab, label: 'Value Gems', mobileLabel: 'Values'  },
       { id: 'rivals' as SubTab,     label: 'Rivals',     mobileLabel: 'Rivals'  },
@@ -273,6 +275,9 @@ export default function Home() {
         )}
         {activeSection === 'plan' && activeSubTab === 'route-tree' && (
           <RouteTreeTab submittedId={submittedId} horizon={planHorizon} onSwitchSubTab={handleSubTabChange} />
+        )}
+        {activeSection === 'plan' && activeSubTab === 'rank-sim' && (
+          <RankSimTab submittedId={submittedId} horizon={planHorizon} />
         )}
         {activeSection === 'plan' && activeSubTab === 'planner' && (
           <>
