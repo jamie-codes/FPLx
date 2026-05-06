@@ -26,7 +26,7 @@ decisions:
 metrics:
   duration: "~45 min (continuation from prior session)"
   completed_date: "2026-05-06"
-  tasks_completed: 2
+  tasks_completed: 3
   tasks_total: 3
   files_changed: 6
 ---
@@ -35,9 +35,9 @@ metrics:
 
 **One-liner:** Recharts ComposedChart fan chart wired as 4th Plan sub-tab with P(rank) header, sell/buy transfer comparison, captain-sold alt XI label, and full RTL test coverage.
 
-## Status: PAUSED AT CHECKPOINT
+## Status: COMPLETE
 
-Tasks 1 and 2 complete. Task 3 (human UAT) is a `checkpoint:human-verify` — plan paused pending visual verification.
+All 3 tasks complete. Task 3 (human UAT) approved by user — visual verification passed.
 
 ## Tasks Completed
 
@@ -45,17 +45,20 @@ Tasks 1 and 2 complete. Task 3 (human UAT) is a `checkpoint:human-verify` — pl
 |------|-------------|--------|-------|
 | 1 | Build RankSimTab component + RTL tests (TDD RED+GREEN) | 395da55 | RankSimTab.tsx, RankSimTab.test.tsx |
 | 2 | Wire into page.tsx + update page.test.tsx + MobileNav.test.tsx | febe229 | page.tsx, page.test.tsx, MobileNav.test.tsx, RankSimTab.tsx (TS fixes), types.ts |
+| 3 | Human UAT — visual verification of RankSimTab in dev server | — (checkpoint) | Approved by user |
 
-## Task 3 (Pending — Human UAT)
+## Task 3 — Human UAT: APPROVED
 
-Visual verification required:
-- Recharts fan chart renders (confidence band + mean line)
-- Dark-mode erase-fill correct (Pitfall 2 — `fill="var(--background)"`)
-- P(rank gain) / P(rank drop) header block
-- Sell/Buy dropdown UX (Buy disabled until Sell selected)
-- Alt XI dashed amber line + legend updates (including "new captain" case)
-- "Clear comparison" resets both dropdowns
-- Mobile Rank Sim pill visible in Plan section nav
+**Outcome:** User confirmed: approved — all visual checks passed in dev server.
+
+Visual checks completed:
+- Recharts fan chart renders (confidence band + mean line): PASSED
+- Dark-mode erase-fill correct (Pitfall 2 — `fill="var(--background)"`): PASSED
+- P(rank gain) / P(rank drop) header block: PASSED
+- Sell/Buy dropdown UX (Buy disabled until Sell selected): PASSED
+- Alt XI dashed amber line + legend updates (including "new captain" case): PASSED
+- "Clear comparison" resets both dropdowns: PASSED
+- Mobile Rank Sim pill visible in Plan section nav: PASSED
 
 ## Automated Test Results
 
@@ -120,6 +123,13 @@ None — all chart data flows from real hooks (usePlayers, useSquad, useMyTeam, 
 ## Threat Surface Scan
 
 No new network endpoints introduced. `RankSimTab` reuses existing hooks (useSquad, useMyTeam, usePlayers, useEntryRank, useGwAverage) without modification. Sell/Buy IDs flow only into in-memory Map lookups, not URL construction. No new threat surface beyond the register in the plan's `<threat_model>`.
+
+## UAT Outcome
+
+**Status:** APPROVED
+**Date:** 2026-05-06
+**Confirmed by:** User
+**Result:** All visual checks passed in dev server. User typed "approved".
 
 ## Self-Check
 
