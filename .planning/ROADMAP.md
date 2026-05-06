@@ -466,10 +466,10 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   5. Fragility computation is pure TypeScript over existing `MergedPlayer` fields — no new API call, no pipeline change required
 **Plans**: 3 plans (2 waves)
   **Wave 1**
-  - [ ] 064-01-PLAN.md — TDD pure function: `computeFragility(player, isTransfer, xPtsGain?)` in src/lib/sensitivity.ts; 7 vitest unit tests (@vitest-environment node) covering D-04/D-07/D-09/D-10 conditions, BGW guard, multi-condition ordering
-  - [ ] 064-02-PLAN.md — TDD shared component: `FragilityNote` in src/components/shared/FragilityNote.tsx (inline ⚠ + amber text, no filled pill); 4 RTL tests (@vitest-environment jsdom) covering data-testid, aria-hidden, single-prefix multi-reason rendering, visual-distinction guards
+  - [x] 064-01-PLAN.md — TDD pure function: `computeFragility(player, isTransfer, xPtsGain?)` in src/lib/sensitivity.ts; 7 vitest unit tests (@vitest-environment node) covering D-04/D-07/D-09/D-10 conditions, BGW guard, multi-condition ordering
+  - [x] 064-02-PLAN.md — TDD shared component: `FragilityNote` in src/components/shared/FragilityNote.tsx (inline ⚠ + amber text, no filled pill); 4 RTL tests (@vitest-environment jsdom) covering data-testid, aria-hidden, single-prefix multi-reason rendering, visual-distinction guards
   **Wave 2** *(blocked on Plans 01 + 02)*
-  - [ ] 064-03-PLAN.md — Wire-up: TransferPanel.tsx Row 4 injection (single + 2-transfer combo, isTransfer=true with xPtsGain); CaptainPicksPanel.tsx CandidateRow tail injection (isTransfer=false — D-09 captain has no hit cost)
+  - [x] 064-03-PLAN.md — Wire-up: TransferPanel.tsx Row 4 injection (single + 2-transfer combo, isTransfer=true with xPtsGain); CaptainPicksPanel.tsx CandidateRow tail injection (isTransfer=false — D-09 captain has no hit cost)
 **Cross-cutting constraints:**
   - `computeFragility` parameter widened to `MergedPlayer` (not `ScoredPlayer`) so CaptainPicksPanel CandidateRow needs no cast (Pitfall 2)
   - Reasons stored as short fragments ("start_prob < 70%", "harder fixture", "taken as a hit (-4pt)"); FragilityNote prepends "no longer recommended if: " exactly once (Pitfall 4)
