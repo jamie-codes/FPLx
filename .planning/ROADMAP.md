@@ -159,7 +159,7 @@ See `.planning/milestones/v1.9-ROADMAP.md` for full phase details.
 
 ### v1.12 Modelling & Refinement — New Phases (74-77)
 
-- [ ] **Phase 74: Transfer Engine Overhaul** — 3-per-team cap enforcement, duplicate transfer bug fix, multi-hit view (1FT/2FT/−4/−8), bank balance auto-pull and feasibility checks
+- [x] **Phase 74: Transfer Engine Overhaul** — 3-per-team cap enforcement, duplicate transfer bug fix, multi-hit view (1FT/2FT/−4/−8), bank balance auto-pull and feasibility checks (complete 2026-05-06)
 - [ ] **Phase 75: Fixture Heat Map v2** — opponent labels per cell, owned-team filtering and row highlighting, user-selectable horizon (8/12/16 GWs), ATT/DEF difficulty toggle
 - [ ] **Phase 76: Analytics Enhancements** — routes_to_points pipeline score + GemTable column, Accuracy GW row drill-down, LineupTab manual captain/VC override
 - [ ] **Phase 77: Pitch Visuals & Mobile Polish** — LineupTab kit art with placeholder fallback, Decision tab captain card overflow fix, full mobile layout audit on 390–430px viewport
@@ -435,7 +435,7 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   3. AccuracyTab shows a calibration reliability diagram: for players predicted at each haul% bracket (e.g., 30-40%), the diagram shows the actual observed haul rate — a well-calibrated model produces a near-diagonal line
   4. Calibration diagram is broken out by position (GK / DEF / MID / FWD) so position-specific over- or under-confidence is immediately visible
   5. Both version comparison and calibration diagram are populated from static `accuracy_backtest.json` — no additional API route or pipeline changes to data flow required beyond `accuracy.py` extensions
-**Plans**: 4 plans (4 waves)
+**Plans**: 5 plans (5 waves) — plan 05 is gap closure
   **Wave 0**
   - [x] 063-01-PLAN.md — RED test stubs: 6 Python tests in pipeline/tests/test_accuracy.py covering VER-01 (append/dedup/cold-start) + CAL-01/CAL-02 (structure/sparse-filter/by-position); 6 React tests in AccuracyTab.test.tsx with extended fixture covering VersionHistoryTable + CalibrationSection + PositionTabSelector + legacy-cache suppression
   **Wave 1** *(blocked on Plan 01)*
@@ -678,13 +678,15 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   5. When authenticated, bank balance is auto-derived from FPL sell prices; when unauthenticated, user can type their bank balance into a field that immediately updates all affordability checks
 **Plans**: 4 plans (4 waves)
   **Wave 0**
-  - [ ] 074-01-PLAN.md — extend TransferSuggestion combo cost union to 0|4|8; create opportunity-cost.test.ts scaffold
+  - [x] 074-01-PLAN.md — extend TransferSuggestion combo cost union to 0|4|8; create opportunity-cost.test.ts scaffold
   **Wave 1** *(blocked on Wave 0 completion)*
-  - [ ] 074-02-PLAN.md — engine: TFX-01 team cap filter, TFX-02 sell-side dedup, always-emit combos (D-06), breakEven cost:8
+  - [x] 074-02-PLAN.md — engine: TFX-01 team cap filter, TFX-02 sell-side dedup, always-emit combos (D-06), breakEven cost:8
   **Wave 2** *(blocked on Wave 1 completion)*
-  - [ ] 074-03-PLAN.md — mapper: 5-row output, bankAfter/isAffordable/disabledReason, derive −8 Hit row from best 2FT combo (D-07)
+  - [x] 074-03-PLAN.md — mapper: 5-row output, bankAfter/isAffordable/disabledReason, derive −8 Hit row from best 2FT combo (D-07)
   **Wave 3** *(blocked on Wave 2 completion)*
-  - [ ] 074-04-PLAN.md — UI: TransferPanel manualBank state + remove FtToggle/Suggested Transfers; OpportunityCostTable disabled-row treatment + combo-hit-8 badge; human-verify checkpoint
+  - [x] 074-04-PLAN.md — UI: TransferPanel manualBank state + remove FtToggle/Suggested Transfers; OpportunityCostTable disabled-row treatment + combo-hit-8 badge; human-verify checkpoint
+  **Wave 4** *(gap closure — blocked on Wave 3)*
+  - [ ] 074-05-PLAN.md — gap closure: CR-01 −8 Hit fallback for ftCount=1, CR-02 freeTransfers wiring, WR-01/WR-03/WR-04, IN-01 test file dedup, IN-03 Tailwind cleanup
 **UI hint**: yes
 
 ### Phase 75: Fixture Heat Map v2
