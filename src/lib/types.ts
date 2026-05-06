@@ -237,7 +237,7 @@ export type TransferSuggestion =
         { sell: MergedPlayer; buy: MergedPlayer },
         { sell: MergedPlayer; buy: MergedPlayer }
       ]
-      cost: 0 | 4              // 0 = FREE (both within ftCount), 4 = one hit
+      cost: 0 | 4 | 8          // 0 = FREE (both within ftCount), 4 = one hit, 8 = two simultaneous hits (−8pts)
       xPtsGain: number
       xPtsGainPerGw: number
       breakEvenGws: number | null

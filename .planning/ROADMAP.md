@@ -676,7 +676,15 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   3. User can view 1FT, 2FT, −4 hit, and −8 hit (two hits) scenarios in a single panel without switching views — all four rows visible simultaneously
   4. Each scenario row shows the remaining bank balance after the move; unaffordable moves are visually disabled (greyed out or struck through) rather than silently excluded
   5. When authenticated, bank balance is auto-derived from FPL sell prices; when unauthenticated, user can type their bank balance into a field that immediately updates all affordability checks
-**Plans**: TBD
+**Plans**: 4 plans (4 waves)
+  **Wave 0**
+  - [ ] 074-01-PLAN.md — extend TransferSuggestion combo cost union to 0|4|8; create opportunity-cost.test.ts scaffold
+  **Wave 1** *(blocked on Wave 0 completion)*
+  - [ ] 074-02-PLAN.md — engine: TFX-01 team cap filter, TFX-02 sell-side dedup, always-emit combos (D-06), breakEven cost:8
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 074-03-PLAN.md — mapper: 5-row output, bankAfter/isAffordable/disabledReason, derive −8 Hit row from best 2FT combo (D-07)
+  **Wave 3** *(blocked on Wave 2 completion)*
+  - [ ] 074-04-PLAN.md — UI: TransferPanel manualBank state + remove FtToggle/Suggested Transfers; OpportunityCostTable disabled-row treatment + combo-hit-8 badge; human-verify checkpoint
 **UI hint**: yes
 
 ### Phase 75: Fixture Heat Map v2
