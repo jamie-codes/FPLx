@@ -1,7 +1,8 @@
 ---
 phase: 75
 slug: fixture-heat-map-v2
-status: draft
+status: approved
+reviewed_at: 2026-05-06
 shadcn_initialized: false
 preset: none
 created: 2026-05-06
@@ -38,7 +39,7 @@ Declared values (multiples of 4 — Tailwind v4 default `--spacing: 0.25rem` ⇒
 
 | Token | Value | Usage in this phase |
 |-------|-------|---------------------|
-| 1 | 4px | `gap-1`, `pt-0.5`/`pb-0.5` for DGW label nudge (RESEARCH Pattern 3) |
+| 1 | 4px | `gap-1`, `pt-1`/`pb-1` for DGW label nudge (RESEARCH Pattern 3) |
 | 2 | 8px | `gap-2` between controls in the controls bar; `px-2 py-1` cell padding (preserved from Phase 66) |
 | 3 | 12px | `px-3` button horizontal padding on pill toggles |
 | 4 | 16px | Default element spacing; `mb-3` heading-to-grid gap (Phase 66 preserved) |
@@ -62,11 +63,11 @@ Project ships Geist Sans (body) and Geist Mono (tabular data). This phase uses *
 | Role | Size | Weight | Line Height | Usage |
 |------|------|--------|-------------|-------|
 | Section heading | 20px (`text-xl`) | 700 (`font-bold`) | 1.4 (Tailwind default) | "Fixture Heat Map" h2 above the grid (preserved from Phase 66) |
-| Control label / pill text | 14px (`text-sm`) | 500 (`font-medium`) | 1.5 (Tailwind default) | Horizon pill ("8 GW"), ATT/DEF toggle ("ATT"), owned-filter button ("Owned only") |
+| Control label / pill text | 14px (`text-sm`) | 400 (`font-normal`) unselected · 700 (`font-bold`) selected | 1.5 (Tailwind default) | Horizon pill ("8 GW"), ATT/DEF toggle ("ATT"), owned-filter button ("Owned only") — high-contrast selected state (inverted bg) signals the active pill visually |
 | Cell / column label | 12px (`text-xs`) | 400 (`font-mono` regular) | 1 (`leading-none` on overlay labels) | GW column headers, team short name row headers, single-fixture opponent abbreviation (CONTEXT D-01) |
 | DGW overlay label | 10px (`text-[10px]`) | 400 (`font-mono` regular) | 1 (`leading-none`) | Two opponent abbreviations in DGW cells, absolute-positioned (CONTEXT D-02; RESEARCH Open Question 1 recommends 10px in `h-10` rows) |
 
-**Weights declared:** regular (400) + bold (700). Pill buttons use `font-medium` (500) — already established in `AttDefToggle.tsx:20` and `GwToggle.tsx:108`; treated as a pill-only convention not a third declared weight in tabular content. (Checker note: if strict 2-weight rule applies, `font-medium` may be re-declared as bold to comply; current contract follows existing component precedent.)
+**Weights declared:** regular (400) + bold (700). Two weights only — no `font-medium` (500) in this contract.
 
 **Font-family rules:**
 - All grid content (cells, headers, opponent labels): `font-mono` (Geist Mono) — preserves Phase 66 monospace alignment
@@ -78,6 +79,8 @@ Project ships Geist Sans (body) and Geist Mono (tabular data). This phase uses *
 ## Color
 
 The app uses Tailwind v4 default neutrals (`zinc-*`) for chrome and a 3-tier semantic palette (green / amber / red) for fixture difficulty. The 60/30/10 split below describes the **heat map view specifically**, not the global app.
+
+**Primary visual anchor: the heat-map grid cells, encoded by tier color (green/amber/red).**
 
 | Role | Value | Usage |
 |------|-------|-------|
@@ -157,10 +160,10 @@ The planner/executor must use these existing components verbatim or follow the l
 | Component | Source | Action this phase |
 |-----------|--------|-------------------|
 | `AttDefToggle` | `src/components/club-form/AttDefToggle.tsx` (31 lines) | **Import directly. Do not fork or restyle.** Provide `value: 'ATT' \| 'DEF'` and `onChange`. (CONTEXT mandates verbatim reuse.) |
-| `HorizonToggle` (NEW) | `src/components/club-form/HorizonToggle.tsx` | **Structural copy of `GwToggle`** with options `[8, 12, 16]` and label `"{N} GW"`. Same pill styling: `flex rounded overflow-hidden border border-zinc-300 dark:border-zinc-600`, selected `bg-zinc-900 dark:bg-white text-white dark:text-zinc-900`, `min-h-[44px]`. ~30 LoC. |
-| `OwnedFilterToggle` (NEW) | `src/components/club-form/OwnedFilterToggle.tsx` | **Single button** with `aria-pressed`, `disabled` when `submittedId === null`. Same visual chrome as the pill toggles (single-button variant): rounded, border-zinc-300/600, selected = high-contrast inverse, `min-h-[44px]`. Disabled = `opacity-50 cursor-not-allowed`. ~25 LoC. |
+| `HorizonToggle` (NEW) | `src/components/club-form/HorizonToggle.tsx` | **Structural copy of `GwToggle`** with options `[8, 12, 16]` and label `"{N} GW"`. Same pill styling: `flex rounded overflow-hidden border border-zinc-300 dark:border-zinc-600`, selected `bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold`, unselected `font-normal`, `min-h-[44px]`. ~30 LoC. |
+| `OwnedFilterToggle` (NEW) | `src/components/club-form/OwnedFilterToggle.tsx` | **Single button** with `aria-pressed`, `disabled` when `submittedId === null`. Same visual chrome as the pill toggles (single-button variant): rounded, border-zinc-300/600, selected = high-contrast inverse with `font-bold`, unselected = `font-normal`, `min-h-[44px]`. Disabled = `opacity-50 cursor-not-allowed`. ~25 LoC. |
 | Controls bar wrapper | inside `FixtureHeatMap.tsx` | `<div className="mb-3 flex flex-wrap items-center gap-2">` — single row containing HorizonToggle, AttDefToggle, OwnedFilterToggle in that left-to-right order. `flex-wrap` allows mobile to overflow to a second line gracefully (matches `FixtureSwingDetector.tsx:226` precedent). |
-| `FixtureHeatMap` | `src/components/club-form/FixtureHeatMap.tsx` | **Modified.** New props `{ submittedId: string \| null }`. Internal state: `horizon`, `mode`, `ownedOnly`, `isDark`. Internal hooks: `useSquad(submittedId)`, `usePlayers()` (RESEARCH §Pattern 1 inline derivation, no new `useSquadTeamIds` hook). |
+| `FixtureHeatMap` | `src/components/club-form/FixtureHeatMap.tsx` | **Modified.** New props `{ submittedId: string \| null }`. Internal state: `horizon`, `mode`, `ownedOnly`, `isDark`. Internal hooks: `useSquad(submittedId)`, `usePlayers()` (RESEARCH §Pattern 1 inline derivation, no new `useSquadTeamIds` hook). DGW label nudge uses `top-0 left-1 pt-1` (top label) and `bottom-0 right-1 pb-1` (bottom label) for absolute-positioned opponent abbreviations. |
 
 **Layout invariants (must hold):**
 
@@ -178,11 +181,11 @@ Every interactive element must support all four states. Disabled is not optional
 
 | Element | Default | Hover | Active/Pressed | Disabled |
 |---------|---------|-------|----------------|----------|
-| HorizonToggle button (unselected) | `bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300` | `hover:bg-zinc-50 dark:hover:bg-zinc-700` | `active:scale-95` (Tailwind) | n/a (always enabled) |
-| HorizonToggle button (selected) | `bg-zinc-900 dark:bg-white text-white dark:text-zinc-900` | (no hover state on selected — matches `GwToggle`) | `active:scale-95` | n/a |
+| HorizonToggle button (unselected) | `bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-normal` | `hover:bg-zinc-50 dark:hover:bg-zinc-700` | `active:scale-95` (Tailwind) | n/a (always enabled) |
+| HorizonToggle button (selected) | `bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold` | (no hover state on selected — matches `GwToggle`) | `active:scale-95` | n/a |
 | AttDefToggle | (verbatim — same rules as HorizonToggle) | | | n/a |
-| OwnedFilterToggle (default, can-toggle) | `bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300` | `hover:bg-zinc-50 dark:hover:bg-zinc-700` | `aria-pressed="false"`; `active:scale-95` | n/a |
-| OwnedFilterToggle (active, filter on) | `bg-zinc-900 dark:bg-white text-white dark:text-zinc-900` | (no hover) | `aria-pressed="true"`; `active:scale-95` | n/a |
+| OwnedFilterToggle (default, can-toggle) | `bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-normal` | `hover:bg-zinc-50 dark:hover:bg-zinc-700` | `aria-pressed="false"`; `active:scale-95` | n/a |
+| OwnedFilterToggle (active, filter on) | `bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold` | (no hover) | `aria-pressed="true"`; `active:scale-95` | n/a |
 | OwnedFilterToggle (disabled — `submittedId === null`) | `opacity-50 cursor-not-allowed`; renders in default colour palette | no hover | no press | `disabled` attribute, `aria-disabled="true"`, native `title` tooltip |
 | Fixture cell | colour by `TIER_CLASSES` (single) or inline gradient (DGW) | (no hover) — relies on native `title` tooltip | n/a | n/a |
 | Owned-team row | left-border + tint always | n/a | n/a | n/a |
@@ -279,3 +282,4 @@ These Phase 66 invariants MUST still hold after Phase 75 implementation:
 
 *Phase: 075-fixture-heat-map-v2*
 *Drafted: 2026-05-06*
+*Revised: 2026-05-06 — checker fixes: typography reduced to 2 weights (removed font-medium 500); DGW label spacing corrected to pt-1/pb-1 (4px); focal-point declaration added to Color section*

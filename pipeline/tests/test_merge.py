@@ -176,3 +176,125 @@ def test_blend_disabled_matches_baseline():
     d_xpts = next(p['xPts_1gw'] for p in merged_default if p['id'] == 1)
     f_xpts = next(p['xPts_1gw'] for p in merged_explicit_false if p['id'] == 1)
     assert d_xpts == f_xpts, "default and explicit-False must produce identical xPts (default IS False)"
+
+
+def _build_lookahead_inputs(n_future_fixtures: int):
+    """Build minimal inputs with two teams and n_future_fixtures unfinished fixtures."""
+    elements = [
+        {
+            'id': 1,
+            'web_name': 'PlayerLIV',
+            'element_type': 3,
+            'team': 14,
+            'now_cost': 70,
+            'selected_by_percent': '5.0',
+            'form': '0',
+            'status': 'a',
+            'minutes': 900,
+            'starts': 10,
+            'total_points': 60,
+            'goals_scored': 5,
+            'assists': 3,
+            'expected_goals': '4.5',
+            'expected_assists': '2.5',
+            'cost_change_event': 0,
+            'cost_change_start': 0,
+            'penalties_text': '',
+            'direct_freekicks_text': '',
+            'corners_and_indirect_freekicks_text': '',
+            'news': '',
+            'defensive_contribution': None,
+            'clearances_blocks_interceptions': None,
+            'direct_freekicks_order': None,
+            'penalties_order': None,
+            'corners_and_indirect_freekicks_order': None,
+        },
+        {
+            'id': 2,
+            'web_name': 'PlayerARS',
+            'element_type': 3,
+            'team': 1,
+            'now_cost': 80,
+            'selected_by_percent': '8.0',
+            'form': '0',
+            'status': 'a',
+            'minutes': 900,
+            'starts': 10,
+            'total_points': 60,
+            'goals_scored': 5,
+            'assists': 3,
+            'expected_goals': '4.5',
+            'expected_assists': '2.5',
+            'cost_change_event': 0,
+            'cost_change_start': 0,
+            'penalties_text': '',
+            'direct_freekicks_text': '',
+            'corners_and_indirect_freekicks_text': '',
+            'news': '',
+            'defensive_contribution': None,
+            'clearances_blocks_interceptions': None,
+            'direct_freekicks_order': None,
+            'penalties_order': None,
+            'corners_and_indirect_freekicks_order': None,
+        },
+    ]
+
+    bootstrap = {
+        'elements': elements,
+        'teams': [
+            {'id': 14, 'short_name': 'LIV'},
+            {'id': 1, 'short_name': 'ARS'},
+        ],
+        'events': [{'id': i, 'finished': False, 'is_current': i == 1} for i in range(1, n_future_fixtures + 2)],
+    }
+
+    fixtures = []
+    for gw in range(1, n_future_fixtures + 1):
+        fixtures.append({
+            'event': gw, 'team_h': 14, 'team_a': 1,
+            'team_h_difficulty': 3, 'team_a_difficulty': 3,
+            'finished': False,
+        })
+
+    understat = {}
+    id_map = {'1': {'understat_id': None}, '2': {'understat_id': None}}
+    xmins_stats = {
+        1: {'xmins': 90.0, 'start_prob': 1.0, 'mins_risk': 'safe'},
+        2: {'xmins': 90.0, 'start_prob': 1.0, 'mins_risk': 'safe'},
+    }
+    summaries = {1: {'history': []}, 2: {'history': []}}
+    return bootstrap, fixtures, understat, id_map, xmins_stats, summaries
+
+
+def test_fixture_lookahead_caps_at_32():
+    """Phase 75 HEAT-06: FIXTURE_LOOKAHEAD=32 — upcoming_fixtures capped at 32 per team."""
+    # Build inputs with 40 unfinished fixtures — more than the 32 cap
+    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_lookahead_inputs(40)
+
+    merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                              xmins_stats=xmins_stats, summaries=summaries)
+
+    # Each player has 'fixtures' (upcoming_fixtures list in player dict); check both teams
+    liv_player = next(p for p in merged if p['id'] == 1)
+    ars_player = next(p for p in merged if p['id'] == 2)
+
+    assert len(liv_player['fixtures']) == 32, (
+        f"Expected LIV fixtures capped at 32, got {len(liv_player['fixtures'])}"
+    )
+    assert len(ars_player['fixtures']) == 32, (
+        f"Expected ARS fixtures capped at 32, got {len(ars_player['fixtures'])}"
+    )
+
+
+def test_fixture_lookahead_no_padding_below_32():
+    """Phase 75 HEAT-06: upcoming fixtures not padded when fewer than 32 fixtures exist."""
+    # Build inputs with only 10 unfinished fixtures
+    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_lookahead_inputs(10)
+
+    merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                              xmins_stats=xmins_stats, summaries=summaries)
+
+    liv_player = next(p for p in merged if p['id'] == 1)
+    assert len(liv_player['fixtures']) == 10, (
+        f"Expected LIV fixtures=10, got {len(liv_player['fixtures'])}"
+    )

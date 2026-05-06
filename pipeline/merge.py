@@ -772,14 +772,14 @@ def merge_players(
     # ------------------------------------------------------------------ #
     # 5. Build upcoming fixtures per team (D-03, D-04)
     # ------------------------------------------------------------------ #
-    FIXTURE_LOOKAHEAD = 16
+    FIXTURE_LOOKAHEAD = 32
 
     upcoming = sorted(
         [f for f in fixtures if not f.get('finished') and f.get('event') is not None],
         key=lambda f: f['event'],
     )
 
-    # Per team: next 16 upcoming fixture dicts
+    # Per team: next 32 upcoming fixture dicts
     team_fixtures: dict[int, list[dict]] = {t_id: [] for t_id in teams}
 
     for fix in upcoming:

@@ -699,7 +699,11 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   3. Heat map rows for teams where the user owns players are visually highlighted (distinct background or left border) even when the filter is off, so owned-team fixtures stand out at a glance
   4. User can select an 8 GW, 12 GW, or 16 GW horizon using a pill selector — the grid expands to the chosen width without layout overflow
   5. User can toggle between attacking difficulty view and defensive difficulty view via a two-button pill — both datasets already exist in the pipeline per team per fixture
-**Plans**: TBD
+**Plans**: 2 plans (2 waves)
+  **Wave 1**
+  - [ ] 075-01-PLAN.md — bump LOOKAHEAD pipeline+client 16→32, lift tier() export, add lookahead tests (HEAT-06 infra)
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 075-02-PLAN.md — extend FixtureHeatMap with HEAT-04..HEAT-08: opponent labels, owned filter, horizon pill, ATT/DEF toggle, owned-row highlight, dark-mode gradient
 **UI hint**: yes
 
 ### Phase 76: Analytics Enhancements
