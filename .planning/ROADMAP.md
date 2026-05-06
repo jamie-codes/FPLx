@@ -408,7 +408,20 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   3. Each captain candidate in `CaptainPicksPanel` shows one augmented MC label — "Highest ceiling", "Lowest floor", or "Best P(haul)" — with the corresponding simulated value displayed
   4. TC (Triple Captain) decision engine surfaces the player with the highest P(haul) as the TC recommendation, annotated with the simulated probability
   5. Rank simulator degrades gracefully when squad is not loaded — shows an explanatory prompt rather than an empty chart
-**Plans**: TBD
+**Plans**: 3 plans (2 waves)
+  **Wave 1** *(parallel — disjoint files)*
+  - [ ] 062-01-PLAN.md — MC-04: computeMCLabels pure ranker + McLabel badge + TC callout in CaptainPicksPanel
+  - [ ] 062-02-PLAN.md — MC-03 substrate: install recharts, useEntryRank hook, useGwAverage hook + /api/gw-average route, computeXITrajectory + computeBeatTheAverageProb math
+  **Wave 2** *(blocked on Plan 02 completion)*
+  - [ ] 062-03-PLAN.md — MC-03 UI: RankSimTab component (4th Plan sub-tab) + page.tsx wiring + MobileNav.test.tsx update + human UAT
+  **Cross-cutting constraints:**
+  - Plans 01 and 02 touch DISJOINT files (Plan 01 = mc-labels.{ts,test.ts} + CaptainPicksPanel.{tsx,test.tsx}; Plan 02 = rank-sim.{ts,test.ts} + hooks + /api/gw-average + package.json) — fully parallel-safe
+  - Plan 03 imports recharts (Plan 02 Task 1) and `computeXITrajectory`/`computeBeatTheAverageProb` (Plan 02 Task 4); the page.test.tsx `vi.mock` for RankSimTab MUST land in the SAME plan as the page.tsx import to avoid breaking the existing test suite
+  - RankSimTab does NOT receive `bank` from page.tsx (Research §Pitfall 7) — bank is read from `useSquad`/`useMyTeam` internally
+  - Recharts `ComposedChart` (NOT `AreaChart`) when mixing Area + Line; `hide={true}` (NOT `tooltipType="none"`) on confidence-band Areas (Research §Pitfalls 1, 6)
+  - p10 erase-fill MUST use `fill="var(--background)"` (Research §Pitfall 2) — verified `--background` declared in src/app/globals.css for both light and dark themes
+  - All MC field accesses guard `haul_prob !== undefined` (D-17): TC callout and MC badges are hidden when MC fields absent (pre-Phase 61 cache state)
+**Phase notes**: Pure frontend phase + one tiny new API route (`/api/gw-average` reads gw_review_gw{N}.json — no pipeline change). Recharts v3.x is a new npm dependency (`@types/recharts` MUST NOT be installed — that v1 package is incompatible). `gw_average_pts` sourced from existing gw_review JSON cache (Research Option B), avoiding any `run.py` modification.
 **UI hint**: yes
 
 ### Phase 63: Model Versioning & Calibration Charts
@@ -682,7 +695,7 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 | 59 | v1.9 | 3/3 | Complete | 2026-05-04 |
 | 60 | v1.9 | 2/2 | Complete | 2026-05-04 |
 | 61 | v1.12 | 0/3 | Not started | - |
-| 62 | v1.12 | 0 | Not started | - |
+| 62 | v1.12 | 0/3 | Not started | - |
 | 63 | v1.12 | 0 | Not started | - |
 | 64 | v1.12 | 0 | Not started | - |
 | 65 | v1.12 | 0 | Not started | - |

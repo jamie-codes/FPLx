@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.12
-milestone_name: Modelling & Refinement
-status: in_progress
-stopped_at: Phase 61 complete
-last_updated: "2026-05-05T22:35:00.000Z"
-last_activity: 2026-05-05 -- Phase 61 complete (3 plans, 2 waves — simulate.py MC engine + XPtsCell hover card; 5 pipeline + 11 Vitest tests all green)
+milestone_name: Modelling & Refinement — Carry-forward
+status: executing
+stopped_at: Phase 62 UI-SPEC approved
+last_updated: "2026-05-06T00:28:05.734Z"
+last_activity: 2026-05-06 -- Phase 062 planning complete
 progress:
-  total_phases: 9
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 11
+  total_phases: 20
+  completed_phases: 19
+  total_plans: 56
+  completed_plans: 53
+  percent: 95
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-05-04 — v1.10 started)
 
 Phase: 62 — MC Rank Simulator & Captain Integration (next)
 Plan: Phase 61 complete (3/3 plans) → Phase 62 pending
-Status: Phase 61 complete; Phase 62 ready to plan
-Last activity: 2026-05-05 — Phase 61 complete (simulate.py 10k-sim MC engine + XPtsCell blank%/haul%/floor/ceiling hover card)
+Status: Ready to execute
+Last activity: 2026-05-06 -- Phase 062 planning complete
 
 ## Performance Metrics
 
@@ -85,6 +85,6 @@ Items carried from v1.9:
 
 ## Session Continuity
 
-Last session: 2026-05-05T15:36:54.893Z
-Stopped at: Phase 73 UI-SPEC approved
-Resume file: .planning/phases/073-post-gw-review/073-UI-SPEC.md
+Last session: 2026-05-05T22:49:17.599Z
+Stopped at: Phase 62 UI-SPEC approved
+Resume file: .planning/phases/062-mc-rank-simulator-captain-integration/062-UI-SPEC.md
