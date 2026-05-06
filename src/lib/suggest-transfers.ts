@@ -168,54 +168,58 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
     }
   }
 
-  // ---------- 2-FT combo enumeration (only when ftCount === 2) ----------
-  // For every pair of owned players (out1, out2) and every pair of in-pool candidates
-  // (in1, in2) where position(out1)==position(in1) and position(out2)==position(in2),
-  // additive xPtsGain = (in1.xPts - out1.xPts) + (in2.xPts - out2.xPts).
-  // Budget: bank + sellValue(out1) + sellValue(out2) >= now_cost(in1) + now_cost(in2).
-  // For a 2-transfer combo, cost = 0 when ftCount=2, cost = 4 when ftCount=1.
+  // ---------- 2-FT combo enumeration (always runs — D-06) ----------
+  // Combos are always enumerated regardless of ftCount so that computeOpportunityCostRows()
+  // can derive the −8 Hit row from the best combo (D-07). Cost depends on ftCount:
+  //   ftCount=2 → cost:0 (both legs within free transfers)
+  //   ftCount=1 → cost:4 (second leg is a −4pt hit)
+  // The −8 Hit row (cost:8) is NOT emitted here — it is derived in the mapper (D-07).
+  //
+  // Sell-side dedup (TFX-02): sell2.id !== sell1.id enforced so both legs sell different players.
+  // Buy-side dedup: buy2.id !== buy1.id enforced so both legs buy different players (existing guard).
   const combos: TransferSuggestion[] = []
-  if (ftCount === 2) {
-    for (let i = 0; i < currentPlayers.length; i++) {
-      const sell1 = currentPlayers[i]
-      const pool1 = inPoolByPosition.get(sell1.element_type) ?? []
-      const sell1Pts = horizonScore(sell1, field)
-      const sell1Value = sellValueFor(sell1.id, sellPrices, playerById)
+  for (let i = 0; i < currentPlayers.length; i++) {
+    const sell1 = currentPlayers[i]
+    const pool1 = inPoolByPosition.get(sell1.element_type) ?? []
+    const sell1Pts = horizonScore(sell1, field)
+    const sell1Value = sellValueFor(sell1.id, sellPrices, playerById)
 
-      for (let j = i + 1; j < currentPlayers.length; j++) {
-        const sell2 = currentPlayers[j]
-        const pool2 = inPoolByPosition.get(sell2.element_type) ?? []
-        const sell2Pts = horizonScore(sell2, field)
-        const sell2Value = sellValueFor(sell2.id, sellPrices, playerById)
+    for (let j = i + 1; j < currentPlayers.length; j++) {
+      const sell2 = currentPlayers[j]
+      if (sell2.id === sell1.id) continue          // TFX-02: sell-side dedup (never sell same player twice)
+      const pool2 = inPoolByPosition.get(sell2.element_type) ?? []
+      const sell2Pts = horizonScore(sell2, field)
+      const sell2Value = sellValueFor(sell2.id, sellPrices, playerById)
 
-        for (const buy1 of pool1) {
-          const gain1 = horizonScore(buy1, field) - sell1Pts
-          if (gain1 <= 0) continue  // each leg must individually improve the squad (CR-02)
-          for (const buy2 of pool2) {
-            if (buy2.id === buy1.id) continue   // can't buy the same player twice
-            const gain2 = horizonScore(buy2, field) - sell2Pts
-            if (gain2 <= 0) continue  // each leg must individually improve the squad (CR-02)
-            const xPtsGain = gain1 + gain2
-            if (xPtsGain <= 0) continue
+      for (const buy1 of pool1) {
+        const gain1 = horizonScore(buy1, field) - sell1Pts
+        if (gain1 <= 0) continue  // each leg must individually improve the squad (CR-02)
+        for (const buy2 of pool2) {
+          if (buy2.id === buy1.id) continue   // buy-side dedup: can't buy the same player twice
+          if (sell2.id === sell1.id) continue  // TFX-02: sell-side dedup (redundant inner guard)
+          const gain2 = horizonScore(buy2, field) - sell2Pts
+          if (gain2 <= 0) continue  // each leg must individually improve the squad (CR-02)
+          const xPtsGain = gain1 + gain2
+          if (xPtsGain <= 0) continue
 
-            // Budget check across both transfers
-            if (bank + sell1Value + sell2Value < buy1.now_cost + buy2.now_cost) continue
+          // Budget check across both transfers
+          if (bank + sell1Value + sell2Value < buy1.now_cost + buy2.now_cost) continue
 
-            const xPtsGainPerGw = xPtsGain / horizon
-            // ftCount=2 covers both transfers → FREE. (ftCount=1 path is excluded by the outer if.)
-            const cost: 0 | 4 = 0
-            combos.push({
-              kind: 'combo',
-              transfers: [
-                { sell: sell1, buy: buy1 },
-                { sell: sell2, buy: buy2 },
-              ],
-              cost,
-              xPtsGain,
-              xPtsGainPerGw,
-              breakEvenGws: breakEven(cost, xPtsGainPerGw),
-            })
-          }
+          const xPtsGainPerGw = xPtsGain / horizon
+          // cost:0 when ftCount=2 (both transfers covered by free transfers)
+          // cost:4 when ftCount=1 (second transfer is a −4pt hit)
+          const cost: 0 | 4 = ftCount === 2 ? 0 : 4
+          combos.push({
+            kind: 'combo',
+            transfers: [
+              { sell: sell1, buy: buy1 },
+              { sell: sell2, buy: buy2 },
+            ],
+            cost,
+            xPtsGain,
+            xPtsGainPerGw,
+            breakEvenGws: breakEven(cost, xPtsGainPerGw),
+          })
         }
       }
     }
