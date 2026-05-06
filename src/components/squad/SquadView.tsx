@@ -11,6 +11,9 @@ import type { LifecycleLabel } from '@/lib/lifecycle-label'
 import { computeExplanations } from '@/lib/explain'
 import { computeReplacementShortlist } from '@/lib/replacement-shortlist'
 import { ExplainPanel } from '@/components/squad/ExplainPanel'
+import { computeFragility } from '@/lib/sensitivity'
+import type { Verdict } from '@/lib/recommend'
+import type { CaptaincyCandidate } from '@/lib/captaincy-engine'
 
 interface SquadViewProps {
   picks: SquadPick[]
@@ -19,6 +22,8 @@ interface SquadViewProps {
   labels?: Map<number, LifecycleLabel>
   exactSellPrices?: Map<number, number>
   isAuthenticated?: boolean
+  verdicts?: Map<number, Verdict>               // Phase 65 WHY-03 (D-10)
+  captaincyCandidates?: CaptaincyCandidate[]    // Phase 65 WHY-03 (D-10)
 }
 
 const POSITION_LABELS: Record<number, string> = {
@@ -54,7 +59,7 @@ function StatusBadge({ status, news }: { status: string; news: string }) {
   )
 }
 
-export function SquadView({ picks, allPlayers, entryHistory, labels, exactSellPrices, isAuthenticated }: SquadViewProps) {
+export function SquadView({ picks, allPlayers, entryHistory, labels, exactSellPrices, isAuthenticated, verdicts, captaincyCandidates }: SquadViewProps) {
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
 
   const [isMobile, setIsMobile] = useState(false)
@@ -223,10 +228,41 @@ export function SquadView({ picks, allPlayers, entryHistory, labels, exactSellPr
                         const shortlist = (label === 'sell' || label === 'sell_soon')
                           ? computeReplacementShortlist(player, allPlayers, squadIds, entryHistory.bank)
                           : null
+
+                        // Phase 65 WHY-03 (D-08, D-09, D-10): per-player rejection reasons.
+                        const rejectionReasons: string[] = []
+                        if (verdicts && captaincyCandidates) {
+                          const verdict = verdicts.get(player.id)
+                          if (verdict === 'sell' || verdict === 'hold') {
+                            // Below xPts hold threshold (when verdict='sell')
+                            if (verdict === 'sell') {
+                              rejectionReasons.push('Below xPts hold threshold — consider rotating')
+                            }
+                            // Translate computeFragility short-codes to user-facing copy (Pitfall 4: isTransfer=false)
+                            const { reasons: fragReasons } = computeFragility(player, false)
+                            for (const r of fragReasons) {
+                              if (r === 'start_prob < 70%') {
+                                rejectionReasons.push(`Rotation risk — start probability ${Math.round(player.start_prob * 100)}%`)
+                              } else if (r === 'harder fixture') {
+                                rejectionReasons.push('Difficult fixture this gameweek')
+                              }
+                            }
+                            // Captain rejection (D-09): include only when player is NOT the top candidate.
+                            const capIndex = captaincyCandidates.findIndex(c => c.player.id === player.id)
+                            const topCap = captaincyCandidates[0]
+                            if (topCap && topCap.player.id !== player.id) {
+                              const rank = capIndex === -1 ? '?' : String(capIndex + 1)
+                              rejectionReasons.push(
+                                `Ranked #${rank} at ${POSITION_LABELS[player.element_type]} by xPts — ${topCap.player.web_name} is the captain pick`
+                              )
+                            }
+                          }
+                        }
+
                         return (
                           <tr key={`expand-${pick.element}`}>
                             <td colSpan={isMobile ? 4 : 9} className="px-0 py-0">
-                              <ExplainPanel reasons={reasons} shortlist={shortlist} />
+                              <ExplainPanel reasons={reasons} shortlist={shortlist} rejectionReasons={rejectionReasons} />
                             </td>
                           </tr>
                         )

@@ -9,12 +9,14 @@ import { computeAllGemScores } from '@/lib/gem-score'
 import { computeTransferSuggestions, type ChipState, type SingleTransfer } from '@/lib/transfer-engine'
 import { useClubForm } from '@/lib/hooks/useClubForm'
 import { computeLifecycleLabels } from '@/lib/lifecycle-label'
-import type { ClubForm } from '@/lib/types'
+import type { ClubForm, ScoredPlayer } from '@/lib/types'
 import { computeCaptaincyCandidates } from '@/lib/captaincy-engine'
 import { SquadView } from '@/components/squad/SquadView'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
 import { computeFragility } from '@/lib/sensitivity'
 import { FragilityNote } from '@/components/shared/FragilityNote'
+import { computeVerdicts } from '@/lib/recommend'
+import { HighOwnershipCallout, type HighOwnershipEntry } from '@/components/transfers/HighOwnershipCallout'
 import { CaptaincyPanel } from '@/components/captaincy/CaptaincyPanel'
 import { AuthModal } from '@/components/transfers/AuthModal'
 import { computeAuthExpiryState } from '@/lib/auth-expiry'
@@ -81,6 +83,12 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
     return computeCaptaincyCandidates(squadData.picks, scoredPlayers)
   }, [squadData, scoredPlayers])
 
+  // Phase 65 WHY-03 (D-10): verdicts threaded down to SquadView for rejection-reason derivation.
+  const verdicts = useMemo(() => {
+    if (!squadData || scoredPlayers.length === 0) return new Map()
+    return computeVerdicts(squadData.picks, scoredPlayers)
+  }, [squadData, scoredPlayers])
+
   const exactSellPrices = useMemo(() => {
     if (!myTeamData) return new Map<number, number>()
     return new Map(myTeamData.picks.map(p => [p.element, p.selling_price]))
@@ -113,6 +121,52 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
     () => computeOpportunityCostRows(ocsSuggestions, ocsFtCount),
     [ocsSuggestions, ocsFtCount],
   )
+
+  // Phase 65 WHY-02 (D-11..D-14): top-3 high-ownership players absent from OCS suggestions.
+  // Filter: selected_by_percent > 20 (parseFloat per Pitfall 2) AND id not in suggestedBuyIds.
+  // Sort desc by selected_by_percent, cap at 3 (D-13).
+  const highOwnershipAbsent: HighOwnershipEntry[] = useMemo(() => {
+    if (!squadData || scoredPlayers.length === 0) return []
+    const squadIds = new Set(squadData.picks.map(p => p.element))
+    const suggestedBuyIds = new Set(
+      ocsSuggestions.flatMap(s =>
+        s.kind === 'single' ? [s.buy.id] : s.transfers.map(t => t.buy.id)
+      )
+    )
+    const POSITION_LABELS: Record<number, string> = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' }
+
+    // Pre-compute starting-XI ranks within each position for in-squad copy variant
+    // (RESEARCH Open Q2: "rank within your squad" = starters only at that position).
+    const startingXiByPos = new Map<number, ScoredPlayer[]>()
+    for (const pick of squadData.picks) {
+      if (pick.position >= 12) continue   // exclude bench
+      const player = scoredPlayers.find(p => p.id === pick.element)
+      if (!player) continue
+      const list = startingXiByPos.get(player.element_type) ?? []
+      list.push(player)
+      startingXiByPos.set(player.element_type, list)
+    }
+    for (const list of startingXiByPos.values()) {
+      list.sort((a, b) => (b.xPts_1gw ?? 0) - (a.xPts_1gw ?? 0))
+    }
+
+    return scoredPlayers
+      .filter(p => parseFloat(p.selected_by_percent) > 20)            // Pitfall 2
+      .filter(p => !suggestedBuyIds.has(p.id))                        // absence detection (Pattern 4 / Pitfall 6)
+      .sort((a, b) => parseFloat(b.selected_by_percent) - parseFloat(a.selected_by_percent))
+      .slice(0, 3)                                                    // D-13 cap at 3
+      .map<HighOwnershipEntry>(p => {
+        const inSquad = squadIds.has(p.id)
+        const posCode = POSITION_LABELS[p.element_type] ?? '??'
+        let squadRank: number | undefined
+        if (inSquad) {
+          const list = startingXiByPos.get(p.element_type) ?? []
+          const idx = list.findIndex(x => x.id === p.id)
+          squadRank = idx === -1 ? undefined : idx + 1
+        }
+        return { player: p, inSquad, squadRank, posCode }
+      })
+  }, [squadData, scoredPlayers, ocsSuggestions])
 
   const effectiveEntryHistory = (isAuthenticated && myTeamData)
     ? myTeamData.entry_history
@@ -267,6 +321,8 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
               labels={lifecycleLabels}
               exactSellPrices={exactSellPrices}
               isAuthenticated={isAuthenticated}
+              verdicts={verdicts}
+              captaincyCandidates={captaincyCandidates}
             />
           </div>
 
@@ -297,6 +353,9 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
               week.
             </div>
           )}
+
+          {/* Phase 65 WHY-02: callout above OCS section (D-11) — visible only when entries non-empty. */}
+          <HighOwnershipCallout entries={highOwnershipAbsent} />
 
           {/* OCS section */}
           <div className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3">
