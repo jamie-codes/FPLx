@@ -151,13 +151,14 @@ export function computeRejection(
     reasons.push(`Rotation risk — start probability ${startPct}%`)
   }
 
-  // 3c. Fixture difficulty (RESEARCH Open Q1: medium OR hard, both count for rejection).
+  // 3c. Fixture difficulty — hard fixtures only. Medium fixtures are handled by computeFragility
+  //     in step 3d ('harder fixture' reason), so restricting to hard here prevents double-reporting
+  //     when difficulty_tier === 'medium' (WR-03).
   if (
     player.fixtures.length > 0 &&
-    (player.fixtures[0].difficulty_tier === 'medium' ||
-      player.fixtures[0].difficulty_tier === 'hard')
+    player.fixtures[0].difficulty_tier === 'hard'
   ) {
-    reasons.push(`Difficult fixture (FDR ${player.fixtures[0].difficulty_tier})`)
+    reasons.push(`Difficult fixture (FDR hard)`)
   }
 
   // 3d. Fragility flags (delegated — Don't Hand-Roll). Each fragility reason becomes
