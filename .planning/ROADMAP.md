@@ -141,7 +141,7 @@ See `.planning/milestones/v1.9-ROADMAP.md` for full phase details.
 
 - [x] **Phase 61: MC Simulation Core** — 10k sim engine in pipeline, blank%/haul%/floor/ceiling per player per GW *(complete 2026-05-05)*
 - [x] **Phase 62: MC Rank Simulator & Captain Integration** — 5-GW rank trajectory UI, captain picker MC augmentation *(complete 2026-05-06)*
-- [ ] **Phase 63: Model Versioning & Calibration Charts** — version tags in pipeline, multi-version comparison, calibration reliability diagrams in AccuracyTab
+- [x] **Phase 63: Model Versioning & Calibration Charts** — version tags in pipeline, multi-version comparison, calibration reliability diagrams in AccuracyTab *(complete 2026-05-06)*
 - [ ] **Phase 64: Sensitivity Analysis** — fragility engine over transfer candidates + captain picks, amber indicators
 - [ ] **Phase 65: Rejection Explainer** — "why not?" natural-language engine across GemTable, TransferPanel, SquadView
 
@@ -436,13 +436,13 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   5. Both version comparison and calibration diagram are populated from static `accuracy_backtest.json` — no additional API route or pipeline changes to data flow required beyond `accuracy.py` extensions
 **Plans**: 4 plans (4 waves)
   **Wave 0**
-  - [ ] 063-01-PLAN.md — RED test stubs: 6 Python tests in pipeline/tests/test_accuracy.py covering VER-01 (append/dedup/cold-start) + CAL-01/CAL-02 (structure/sparse-filter/by-position); 6 React tests in AccuracyTab.test.tsx with extended fixture covering VersionHistoryTable + CalibrationSection + PositionTabSelector + legacy-cache suppression
+  - [x] 063-01-PLAN.md — RED test stubs: 6 Python tests in pipeline/tests/test_accuracy.py covering VER-01 (append/dedup/cold-start) + CAL-01/CAL-02 (structure/sparse-filter/by-position); 6 React tests in AccuracyTab.test.tsx with extended fixture covering VersionHistoryTable + CalibrationSection + PositionTabSelector + legacy-cache suppression
   **Wave 1** *(blocked on Plan 01)*
-  - [ ] 063-02-PLAN.md — Python backend: FORMULA_VERSION='v1.12-a' constant + _read_existing_versions helper + version dedup-append logic + _compute_calibration_data decile bucketing helper; extend compute_accuracy_backtest return dict + _empty_backtest cold-start fallback with new versions/calibration keys
+  - [x] 063-02-PLAN.md — Python backend: FORMULA_VERSION='v1.12-a' constant + _read_existing_versions helper + version dedup-append logic + _compute_calibration_data decile bucketing helper; extend compute_accuracy_backtest return dict + _empty_backtest cold-start fallback with new versions/calibration keys
   **Wave 2** *(blocked on Plan 02)*
-  - [ ] 063-03-PLAN.md — TypeScript types: VersionGateFlags, VersionRecord, CalibrationBucket, CalibrationData interfaces in src/lib/types.ts; AccuracySummary gains optional xmins_v2_enabled + bonus_predictor_enabled (Pitfall 6); AccuracyBacktest gains optional versions + calibration
+  - [x] 063-03-PLAN.md — TypeScript types: VersionGateFlags, VersionRecord, CalibrationBucket, CalibrationData interfaces in src/lib/types.ts; AccuracySummary gains optional xmins_v2_enabled + bonus_predictor_enabled (Pitfall 6); AccuracyBacktest gains optional versions + calibration
   **Wave 3** *(blocked on Plan 03)*
-  - [ ] 063-04-PLAN.md — React frontend: VersionHistoryTable + GateFlagsCell + formatRecordedAt (Task 1); CalibrationSection + PositionTabSelector + CalibrationTooltip + recharts ComposedChart with type='number' XAxis and ReferenceLine y=x diagonal (Task 2); both sections wired into AccuracyTab return block above GwSummaryTable; preserves unstaged sortable-column additions to GwSummaryTable/HaulterList
+  - [x] 063-04-PLAN.md — React frontend: VersionHistoryTable + GateFlagsCell + formatRecordedAt (Task 1); CalibrationSection + PositionTabSelector + CalibrationTooltip + recharts ComposedChart with type='number' XAxis and ReferenceLine y=x diagonal (Task 2); both sections wired into AccuracyTab return block above GwSummaryTable; preserves unstaged sortable-column additions to GwSummaryTable/HaulterList
   **Cross-cutting constraints:**
   - Plan 01 (Wave 0) is RED-state by design — Python tests fail at collection (ImportError on FORMULA_VERSION); React tests fail at TS compile on fixtureWithVersionsAndCalibration `versions`/`calibration` literals
   - Plan 02 turns 6 Python tests GREEN; Plan 03 turns TS compilation GREEN (React runtime tests still RED until Plan 04); Plan 04 turns 6 React tests GREEN
