@@ -1,7 +1,7 @@
 ---
 phase: 63
 slug: model-versioning-calibration-charts
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-05-06
