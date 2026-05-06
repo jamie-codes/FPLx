@@ -414,25 +414,46 @@ def _empty_backtest(cache_dir: str = '') -> dict:
     """Return an empty but well-shaped backtest (used when no GWs are finished).
 
     Reads existing flag values from cache_dir so manually-flipped True values
-    are not silently overwritten when finished_gws < 1 (CR-01 fix).
+    are not silently overwritten when finished_gws < 1. Also dedup-appends a
+    FORMULA_VERSION record with hit_rate=0.0 so the first pre-season pipeline run
+    is captured in version history (WR-03 fix).
     """
+    prior_cache = _read_existing_cache(cache_dir)
+    xmins_v2_enabled = bool(prior_cache.get('summary', {}).get('xmins_v2_enabled', False))
+    bonus_predictor_enabled = bool(prior_cache.get('summary', {}).get('bonus_predictor_enabled', False))
+
+    _existing = prior_cache.get('versions', [])
+    existing_versions = _existing if isinstance(_existing, list) else []
+    existing_set = {v.get('formula_version') for v in existing_versions}
+    if FORMULA_VERSION not in existing_set:
+        existing_versions = existing_versions + [{
+            'formula_version': FORMULA_VERSION,
+            'recorded_at': datetime.now(timezone.utc).isoformat(),
+            'hit_rate': 0.0,
+            'gate_flags': {
+                'form_signal_enabled': False,
+                'xmins_v2_enabled': xmins_v2_enabled,
+                'bonus_predictor_enabled': bonus_predictor_enabled,
+            },
+        }]
+
     return {
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'gws_covered': [],
         'summary': {
             'xpts_hit_rate': 0.0,
-            'xpts_blended_hit_rate': 0.0,                                       # Phase 42
-            'form_signal_enabled': False,                                        # Phase 42
-            'xmins_v2_enabled': _read_existing_xmins_v2_flag(cache_dir),        # Phase 52
-            'bonus_predictor_enabled': _read_existing_bonus_predictor_flag(cache_dir),  # Phase 53
-            'blend_alpha_used': BLEND_ALPHA,                                     # Phase 42
-            'mid_tier_hit_rate': 0.0,                                            # Phase 42
-            'mid_tier_blended_hit_rate': 0.0,                                    # Phase 42
+            'xpts_blended_hit_rate': 0.0,            # Phase 42
+            'form_signal_enabled': False,             # Phase 42
+            'xmins_v2_enabled': xmins_v2_enabled,    # Phase 52
+            'bonus_predictor_enabled': bonus_predictor_enabled,  # Phase 53
+            'blend_alpha_used': BLEND_ALPHA,          # Phase 42
+            'mid_tier_hit_rate': 0.0,                 # Phase 42
+            'mid_tier_blended_hit_rate': 0.0,         # Phase 42
             'gws': [],
         },
         'haulters': [],
         'players': [],
-        'versions': _read_existing_versions(cache_dir),                                     # Phase 63 VER-01
+        'versions': existing_versions,                                                               # Phase 63 VER-01
         'calibration': {'by_position': {'all': [], '1': [], '2': [], '3': [], '4': []}},   # Phase 63 CAL-01: full shape with empty arrays
     }
 
