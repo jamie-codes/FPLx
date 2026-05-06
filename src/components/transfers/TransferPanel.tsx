@@ -128,6 +128,10 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
   const highOwnershipAbsent: HighOwnershipEntry[] = useMemo(() => {
     if (!squadData || scoredPlayers.length === 0) return []
     const squadIds = new Set(squadData.picks.map(p => p.element))
+    // CR-02: derive in-squad status from starters only (position < 12) so bench players
+    // are not treated as in-squad — bench players would have inSquad=true but squadRank=undefined
+    // (absent from startingXiByPos), producing the misleading "ranked #?" copy in HighOwnershipCallout.
+    const startingIds = new Set(squadData.picks.filter(p => p.position < 12).map(p => p.element))
     const suggestedBuyIds = new Set(
       ocsSuggestions.flatMap(s =>
         s.kind === 'single' ? [s.buy.id] : s.transfers.map(t => t.buy.id)
@@ -156,7 +160,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
       .sort((a, b) => parseFloat(b.selected_by_percent) - parseFloat(a.selected_by_percent))
       .slice(0, 3)                                                    // D-13 cap at 3
       .map<HighOwnershipEntry>(p => {
-        const inSquad = squadIds.has(p.id)
+        const inSquad = startingIds.has(p.id)
         const posCode = POSITION_LABELS[p.element_type] ?? '??'
         let squadRank: number | undefined
         if (inSquad) {
