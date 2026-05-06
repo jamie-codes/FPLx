@@ -6,15 +6,13 @@ import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
 import { computeAllGemScores } from '@/lib/gem-score'
-import { computeTransferSuggestions, type ChipState, type SingleTransfer } from '@/lib/transfer-engine'
+// transfer-engine import removed in Phase 74 D-02
 import { useClubForm } from '@/lib/hooks/useClubForm'
 import { computeLifecycleLabels } from '@/lib/lifecycle-label'
 import type { ClubForm, ScoredPlayer } from '@/lib/types'
 import { computeCaptaincyCandidates } from '@/lib/captaincy-engine'
 import { SquadView } from '@/components/squad/SquadView'
-import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
-import { computeFragility } from '@/lib/sensitivity'
-import { FragilityNote } from '@/components/shared/FragilityNote'
+// Phase 74 D-02: shared-component imports removed with legacy section
 import { computeVerdicts } from '@/lib/recommend'
 import { HighOwnershipCallout, type HighOwnershipEntry } from '@/components/transfers/HighOwnershipCallout'
 import { CaptaincyPanel } from '@/components/captaincy/CaptaincyPanel'
@@ -24,7 +22,7 @@ import { suggestTransfers } from '@/lib/suggest-transfers'
 import { computeOpportunityCostRows } from '@/lib/opportunity-cost'
 import type { OCSRow } from '@/lib/opportunity-cost'
 import type { OptimiserHorizon, TransferSuggestion } from '@/lib/types'
-import { FtToggle } from '@/components/optimiser/FtToggle'
+// Phase 74 D-03: import of OCS-header toggle removed — engine uses derivedFtCount directly (toggle file preserved in OptimiserPanel)
 import { GwToggle } from '@/components/gem-table/GwToggle'
 import { OpportunityCostTable } from '@/components/transfers/OpportunityCostTable'
 
@@ -42,7 +40,8 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
   const [freeTransfers, setFreeTransfers] = useState<number>(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [ocsHorizon, setOcsHorizon] = useState<OptimiserHorizon>(1)
-  const [ocsFtCount, setOcsFtCount] = useState<1 | 2>(1)
+  // Phase 74 D-08: manual ft-count state removed — derivedFtCount used directly
+  const [manualBank, setManualBank] = useState<number>(0)
 
   const { data: squadData, isLoading: squadLoading, error: squadError } = useSquad(submittedId)
   const { data: playersData, isLoading: playersLoading } = usePlayers()
@@ -57,16 +56,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
     [playersData],
   )
 
-  const transferResult = useMemo(() => {
-    if (!squadData || scoredPlayers.length === 0) return null
-    return computeTransferSuggestions(
-      squadData.picks,
-      scoredPlayers,
-      squadData.entry_history.bank,
-      freeTransfers,
-      squadData.active_chip as ChipState,
-    )
-  }, [squadData, scoredPlayers, freeTransfers])
+  // Phase 74 D-02: legacy transfer-suggestion memo removed
 
   const clubFormMap = useMemo(() => {
     if (!clubFormData) return new Map<number, ClubForm>()
@@ -101,9 +91,13 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
     return myTeamData.entry_history.event_transfers === 0 ? 2 : 1
   }, [isAuthenticated, myTeamData, squadData])
 
+  // Pre-fill manualBank from FPL when authenticated. DO NOT include manualBank in deps (Pitfall 5)
+  // — that would loop on user edits.
   useEffect(() => {
-    setOcsFtCount(derivedFtCount)
-  }, [derivedFtCount])
+    if (isAuthenticated && myTeamData) {
+      setManualBank(myTeamData.entry_history.bank / 10)
+    }
+  }, [isAuthenticated, myTeamData])
 
   const ocsSuggestions: TransferSuggestion[] = useMemo(() => {
     if (!squadData || scoredPlayers.length === 0) return []
@@ -111,15 +105,15 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
       currentPicks: squadData.picks,
       players: scoredPlayers,
       horizon: ocsHorizon,
-      ftCount: ocsFtCount,
-      bank: squadData.entry_history.bank,
+      ftCount: derivedFtCount,
+      bank: Math.round(manualBank * 10),
       sellPrices: exactSellPrices,
     })
-  }, [squadData, scoredPlayers, ocsHorizon, ocsFtCount, exactSellPrices])
+  }, [squadData, scoredPlayers, ocsHorizon, derivedFtCount, manualBank, exactSellPrices])
 
   const ocsRows: OCSRow[] = useMemo(
-    () => computeOpportunityCostRows(ocsSuggestions, ocsFtCount, squadData?.entry_history.bank ?? 0),
-    [ocsSuggestions, ocsFtCount, squadData],
+    () => computeOpportunityCostRows(ocsSuggestions, derivedFtCount, Math.round(manualBank * 10)),
+    [ocsSuggestions, derivedFtCount, manualBank],
   )
 
   // Phase 65 WHY-02 (D-11..D-14): top-3 high-ownership players absent from OCS suggestions.
@@ -236,6 +230,36 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
             />
           </div>
 
+          {/* Bank balance input — TFX-05, D-09..D-12 */}
+          <div className="flex flex-col gap-1">
+            <label htmlFor="bankBalance" className="text-sm text-zinc-600 dark:text-zinc-400">
+              Bank balance
+              <span title="Your available transfer budget in £m. Pre-filled from FPL when connected."
+                    className="text-zinc-400 cursor-help underline underline-offset-2 decoration-dotted ml-1">
+                ?
+              </span>
+            </label>
+            <div className="relative flex items-center">
+              <input
+                id="bankBalance"
+                type="number"
+                min={0}
+                max={20}
+                step={0.1}
+                value={manualBank}
+                onChange={e => setManualBank(Math.max(0, Number(e.target.value)))}
+                placeholder="0.0"
+                className="border border-zinc-300 dark:border-zinc-600 rounded px-3 py-1.5 pr-10 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-full sm:w-28"
+              />
+              <span className="absolute right-3 text-xs text-zinc-400 dark:text-zinc-500 pointer-events-none">
+                £m
+              </span>
+            </div>
+            {isAuthenticated && myTeamData && (
+              <p className="text-xs text-zinc-400 italic">From your FPL account — override if needed.</p>
+            )}
+          </div>
+
           <button
             type="submit"
             className="px-4 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium rounded hover:bg-zinc-700 dark:hover:bg-zinc-200 transition-colors cursor-pointer active:scale-95 transition-transform w-full sm:w-auto"
@@ -335,29 +359,6 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
             <CaptaincyPanel candidates={captaincyCandidates} nextGw={nextGw} />
           )}
 
-          {/* Chip warning */}
-          {transferResult?.type === 'CHIP_WARNING' && transferResult.chip === 'freehit' && (
-            <div className="rounded border border-amber-400 bg-amber-50 dark:bg-amber-950 p-4 text-sm text-amber-800 dark:text-amber-200">
-              <span className="font-semibold">Free Hit active</span> — your squad is temporary this
-              gameweek. Transfer suggestions are paused.
-            </div>
-          )}
-
-          {transferResult?.type === 'CHIP_WARNING' && transferResult.chip === 'wildcard' && (
-            <div className="rounded border border-blue-400 bg-blue-50 dark:bg-blue-950 p-4 text-sm text-blue-800 dark:text-blue-200">
-              <span className="font-semibold">Wildcard active</span> — unlimited transfers
-              available.
-            </div>
-          )}
-
-          {/* Save recommendation */}
-          {transferResult?.type === 'SAVE' && (
-            <div className="rounded border border-green-400 bg-green-50 dark:bg-green-950 p-4 text-sm text-green-800 dark:text-green-200">
-              No transfer improves your squad Gem rating. Save your transfer and bank it for next
-              week.
-            </div>
-          )}
-
           {/* Phase 65 WHY-02: callout above OCS section (D-11) — visible only when entries non-empty. */}
           <HighOwnershipCallout entries={highOwnershipAbsent} />
 
@@ -368,7 +369,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
                 Transfer Opportunity Cost
               </h2>
               <div className="flex flex-wrap items-center gap-3">
-                <FtToggle value={ocsFtCount} onChange={setOcsFtCount} />
+                {/* Phase 74 D-03: OCS header toggle removed — engine uses derivedFtCount directly */}
                 <GwToggle value={ocsHorizon} onChange={setOcsHorizon} />
               </div>
             </div>
@@ -380,160 +381,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
             <OpportunityCostTable rows={ocsRows} horizon={ocsHorizon} />
           </div>
 
-          {/* Transfer suggestions */}
-          {transferResult?.type === 'SUGGESTIONS' && transferResult.suggestions && (
-            <div className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3">
-              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Suggested Transfers</h2>
-
-              <div className="space-y-2">
-                {transferResult.suggestions
-                  .slice(0, freeTransfers * 3)
-                  .map((s: SingleTransfer, i: number) => (
-                    <div
-                      key={i}
-                      className="rounded border border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 space-y-0.5"
-                    >
-                      {/* Row 1: players + badges */}
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-900 dark:text-zinc-100">
-                        <span>Sell</span>
-                        <span className="font-medium">{s.sell.web_name}</span>
-                        <MinsRiskBadge minsRisk={s.sell.mins_risk} mins60Prob={s.sell.mins_60_prob} />
-                        <span className="text-zinc-500 dark:text-zinc-400">({s.sell.gem_score.toFixed(2)})</span>
-                        {/* GW price trend — decision-relevant, always visible */}
-                        {(s.sell.cost_change_event ?? 0) > 0 && (
-                          <span className="text-green-600 text-xs">↑{((s.sell.cost_change_event ?? 0) / 10).toFixed(1)}</span>
-                        )}
-                        {(s.sell.cost_change_event ?? 0) < 0 && (
-                          <span className="text-red-600 text-xs">↓{(Math.abs(s.sell.cost_change_event ?? 0) / 10).toFixed(1)}</span>
-                        )}
-                        {/* Season price trend — hide on mobile */}
-                        {(s.sell.cost_change_start ?? 0) !== 0 && (
-                          <span className="hidden sm:inline text-zinc-400 text-[10px]">({(s.sell.cost_change_start ?? 0) > 0 ? '+' : '-'}{(Math.abs(s.sell.cost_change_start ?? 0) / 10).toFixed(1)}m season)</span>
-                        )}
-                        <span>&rarr;</span>
-                        <span>Buy</span>
-                        <span className="font-medium">{s.buy.web_name}</span>
-                        <span className="text-zinc-500 dark:text-zinc-400">({s.buy.gem_score.toFixed(2)})</span>
-                        {/* GW price trend — decision-relevant, always visible */}
-                        {(s.buy.cost_change_event ?? 0) > 0 && (
-                          <span className="text-green-600 text-xs">↑{((s.buy.cost_change_event ?? 0) / 10).toFixed(1)}</span>
-                        )}
-                        {(s.buy.cost_change_event ?? 0) < 0 && (
-                          <span className="text-red-600 text-xs">↓{(Math.abs(s.buy.cost_change_event ?? 0) / 10).toFixed(1)}</span>
-                        )}
-                        {/* Season price trend — hide on mobile */}
-                        {(s.buy.cost_change_start ?? 0) !== 0 && (
-                          <span className="hidden sm:inline text-zinc-400 text-[10px]">({(s.buy.cost_change_start ?? 0) > 0 ? '+' : '-'}{(Math.abs(s.buy.cost_change_start ?? 0) / 10).toFixed(1)}m season)</span>
-                        )}
-                      </div>
-                      {/* Row 2: stats */}
-                      <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                        Gem improvement:{' '}
-                        <span className="text-zinc-700 dark:text-zinc-300">+{s.gem_delta.toFixed(2)}</span>
-                        {' '}| Cost:{' '}
-                        <span className="text-zinc-700 dark:text-zinc-300">
-                          £{s.approx_cost.toFixed(1)}m
-                        </span>{' '}
-                        <span className="text-zinc-400 dark:text-zinc-500">(approx)</span>
-                        {' '}| xPts (1 GW):{' '}
-                        <span className="text-zinc-700 dark:text-zinc-300">{(s.sell.xPts_1gw ?? 0).toFixed(1)}</span>
-                        {' '}&rarr;{' '}
-                        <span className="text-zinc-700 dark:text-zinc-300">{(s.buy.xPts_1gw ?? 0).toFixed(1)}</span>
-                      </div>
-                      {/* Row 3: budget badge */}
-                      <div>
-                        {s.budget_sufficient ? (
-                          <span className="inline-block text-xs font-medium text-green-700 dark:text-green-200 bg-green-100 dark:bg-green-900 rounded px-1.5 py-0.5">
-                            Affordable
-                          </span>
-                        ) : (
-                          <span className="inline-block text-xs font-medium text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900 rounded px-1.5 py-0.5">
-                            Over budget
-                          </span>
-                        )}
-                      </div>
-                      {/* Row 4: fragility note (Phase 64 SENS-01/02) */}
-                      {(() => {
-                        const xPtsGain = (s.buy.xPts_1gw ?? 0) - (s.sell.xPts_1gw ?? 0)
-                        const { fragile, reasons } = computeFragility(s.buy, true, xPtsGain)
-                        return fragile ? <FragilityNote reasons={reasons} /> : null
-                      })()}
-                    </div>
-                  ))}
-              </div>
-
-              {/* 2-transfer combo */}
-              {transferResult.two_transfer_combo && (
-                <div className="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">
-                  <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">2-Transfer Combo</h3>
-                  {transferResult.two_transfer_combo.map((s: SingleTransfer, i: number) => (
-                    <div
-                      key={i}
-                      className="rounded border border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 space-y-0.5"
-                    >
-                      {/* Row 1: players + badges */}
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-900 dark:text-zinc-100">
-                        <span>Sell</span>
-                        <span className="font-medium">{s.sell.web_name}</span>
-                        <MinsRiskBadge minsRisk={s.sell.mins_risk} mins60Prob={s.sell.mins_60_prob} />
-                        <span className="text-zinc-500 dark:text-zinc-400">({s.sell.gem_score.toFixed(2)})</span>
-                        {/* GW price trend — decision-relevant, always visible */}
-                        {(s.sell.cost_change_event ?? 0) > 0 && (
-                          <span className="text-green-600 text-xs">↑{((s.sell.cost_change_event ?? 0) / 10).toFixed(1)}</span>
-                        )}
-                        {(s.sell.cost_change_event ?? 0) < 0 && (
-                          <span className="text-red-600 text-xs">↓{(Math.abs(s.sell.cost_change_event ?? 0) / 10).toFixed(1)}</span>
-                        )}
-                        {/* Season price trend — hide on mobile */}
-                        {(s.sell.cost_change_start ?? 0) !== 0 && (
-                          <span className="hidden sm:inline text-zinc-400 text-[10px]">({(s.sell.cost_change_start ?? 0) > 0 ? '+' : '-'}{(Math.abs(s.sell.cost_change_start ?? 0) / 10).toFixed(1)}m season)</span>
-                        )}
-                        <span>&rarr;</span>
-                        <span>Buy</span>
-                        <span className="font-medium">{s.buy.web_name}</span>
-                        <span className="text-zinc-500 dark:text-zinc-400">({s.buy.gem_score.toFixed(2)})</span>
-                        {/* GW price trend — decision-relevant, always visible */}
-                        {(s.buy.cost_change_event ?? 0) > 0 && (
-                          <span className="text-green-600 text-xs">↑{((s.buy.cost_change_event ?? 0) / 10).toFixed(1)}</span>
-                        )}
-                        {(s.buy.cost_change_event ?? 0) < 0 && (
-                          <span className="text-red-600 text-xs">↓{(Math.abs(s.buy.cost_change_event ?? 0) / 10).toFixed(1)}</span>
-                        )}
-                        {/* Season price trend — hide on mobile */}
-                        {(s.buy.cost_change_start ?? 0) !== 0 && (
-                          <span className="hidden sm:inline text-zinc-400 text-[10px]">({(s.buy.cost_change_start ?? 0) > 0 ? '+' : '-'}{(Math.abs(s.buy.cost_change_start ?? 0) / 10).toFixed(1)}m season)</span>
-                        )}
-                      </div>
-                      {/* Row 2: stats */}
-                      <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                        Gem improvement:{' '}
-                        <span className="text-zinc-700 dark:text-zinc-300">+{s.gem_delta.toFixed(2)}</span>
-                        {' '}| Cost:{' '}
-                        <span className="text-zinc-700 dark:text-zinc-300">
-                          £{s.approx_cost.toFixed(1)}m
-                        </span>{' '}
-                        <span className="text-zinc-400 dark:text-zinc-500">(approx)</span>
-                        {' '}| xPts (1 GW):{' '}
-                        <span className="text-zinc-700 dark:text-zinc-300">{(s.sell.xPts_1gw ?? 0).toFixed(1)}</span>
-                        {' '}&rarr;{' '}
-                        <span className="text-zinc-700 dark:text-zinc-300">{(s.buy.xPts_1gw ?? 0).toFixed(1)}</span>
-                      </div>
-                      {/* Fragility note (Phase 64 SENS-01/02) — combo cards have no Row 3 budget badge */}
-                      {(() => {
-                        const xPtsGain = (s.buy.xPts_1gw ?? 0) - (s.sell.xPts_1gw ?? 0)
-                        const { fragile, reasons } = computeFragility(s.buy, true, xPtsGain)
-                        return fragile ? <FragilityNote reasons={reasons} /> : null
-                      })()}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <p className="text-xs text-zinc-400 dark:text-zinc-500 pt-1">
-                Prices are approximate (based on current market price, not your actual sell price).
-              </p>
-            </div>
-          )}
+          {/* Phase 74 D-02: legacy section removed */}
         </>
       )}
     </div>

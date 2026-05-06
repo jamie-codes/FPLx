@@ -119,10 +119,12 @@ export function OpportunityCostTable({ rows, horizon }: OpportunityCostTableProp
         <tbody>
           {rows.map((row, i) => {
             const badge = badgeFor(row)
+            const isDisabled = !row.isAffordable
             return (
               <tr
                 key={`${row.kind}-${i}`}
-                className="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                aria-disabled={isDisabled || undefined}
+                className={`border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50${isDisabled ? ' opacity-50' : ''}`}
                 data-testid={`ocs-row-${row.kind}`}
               >
                 <td className="py-2 pl-2 align-top text-zinc-900 dark:text-zinc-100 font-medium">
@@ -132,9 +134,18 @@ export function OpportunityCostTable({ rows, horizon }: OpportunityCostTableProp
                   <PlayerMoveCell row={row} />
                 </td>
                 <td className="py-2 text-right align-top text-zinc-900 dark:text-zinc-100">
-                  <div>{formatXPts(row)}</div>
-                  {row.cost === 4 && (
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400">−4pt hit</div>
+                  <div className={isDisabled ? 'line-through text-zinc-400 dark:text-zinc-600' : ''}>
+                    {formatXPts(row)}
+                  </div>
+                  {row.cost > 0 && (
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400">−{row.cost}pt hit</div>
+                  )}
+                  {row.kind !== 'roll' && (
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Bank: {row.bankAfter >= 0
+                        ? `£${(row.bankAfter / 10).toFixed(1)}m`
+                        : `−£${(Math.abs(row.bankAfter) / 10).toFixed(1)}m`}
+                    </div>
                   )}
                 </td>
                 <td className="py-2 text-right align-top text-zinc-700 dark:text-zinc-300 hidden sm:table-cell">
@@ -147,6 +158,9 @@ export function OpportunityCostTable({ rows, horizon }: OpportunityCostTableProp
                   >
                     {badge.label}
                   </span>
+                  {row.disabledReason && (
+                    <div className="text-xs text-red-600 dark:text-red-400 mt-1">{row.disabledReason}</div>
+                  )}
                 </td>
               </tr>
             )
