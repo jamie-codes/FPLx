@@ -531,7 +531,7 @@ function PlayerDeltaTable({ data }: { data: AccuracyBacktest }) {
               <td className={TD_CLS}>{r.player_name}</td>
               <td className={TD_CLS}>{r.team}</td>
               <td className={TD_CLS}>GW{r.gw}</td>
-              <td className={TD_CLS}>{'​'}{r.actual_pts}{'​'}</td>
+              <td className={TD_CLS}>{r.actual_pts}</td>
               <td className={TD_CLS}>{r.xpts_predicted.toFixed(1)}</td>
               <td className={TD_CLS}><DeltaCell delta={r.xpts_delta} /></td>
             </tr>
