@@ -51,6 +51,12 @@ const BADGE_BY_KIND: Record<OCSRowKind, BadgeConfig> = {
     label: 'Hit',
     title: 'This combination costs a -4pt hit deducted from your score.',
   },
+  'combo-hit-8': {
+    bg: 'bg-red-100 dark:bg-red-900',
+    text: 'text-red-700 dark:text-red-300',
+    label: 'Hit',
+    title: 'This combination costs a −8pt hit (two simultaneous hits) deducted from your score.',
+  },
 }
 
 const MARGINAL_BADGE: BadgeConfig = {

@@ -118,8 +118,8 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
   }, [squadData, scoredPlayers, ocsHorizon, ocsFtCount, exactSellPrices])
 
   const ocsRows: OCSRow[] = useMemo(
-    () => computeOpportunityCostRows(ocsSuggestions, ocsFtCount),
-    [ocsSuggestions, ocsFtCount],
+    () => computeOpportunityCostRows(ocsSuggestions, ocsFtCount, squadData?.entry_history.bank ?? 0),
+    [ocsSuggestions, ocsFtCount, squadData],
   )
 
   // Phase 65 WHY-02 (D-11..D-14): top-3 high-ownership players absent from OCS suggestions.
