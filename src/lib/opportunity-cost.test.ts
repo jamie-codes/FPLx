@@ -10,13 +10,10 @@ import type { TransferSuggestion, MergedPlayer } from './types'
 // computeOpportunityCostRows are populated. Caller passes overrides.
 function makePlayer(overrides: Partial<MergedPlayer> & { id: number }): MergedPlayer {
   return {
-    id: overrides.id,
     web_name: `Player${overrides.id}`,
     element_type: 3,
     team: 1,
     now_cost: 50,
-    selling_price: 50,
-    purchase_price: 50,
     xPts_1gw: 5,
     xPts_3gw: 15,
     xPts_5gw: 25,
