@@ -10,6 +10,7 @@ import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
 import { computeEOCandidates, type EOMode } from '@/lib/eo-candidates'
+import { computeMCLabels, type MCLabel } from '@/lib/mc-labels'
 import type { MergedPlayer } from '@/lib/types'
 
 interface CaptainPicksPanelProps {
@@ -67,18 +68,32 @@ function DangerousToFadeBadge() {
   )
 }
 
+// Phase 62 MC-04: McLabel badge — same amber token as DangerousToFadeBadge (D-17).
+function McLabel({ label, value }: { label: string; value: string }) {
+  return (
+    <span
+      data-testid="mc-label-badge"
+      className="inline-block text-xs font-normal text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900 rounded px-2 py-1"
+    >
+      {label} — {value}
+    </span>
+  )
+}
+
 function CandidateRow({
   candidate,
   rank,
   mode,
   isAuthenticated,
   myTeamPickIds,
+  mcLabel,
 }: {
   candidate: MergedPlayer
   rank: number
   mode: EOMode
   isAuthenticated: boolean
   myTeamPickIds: Set<number>
+  mcLabel?: MCLabel | null
 }) {
   const rawEo = parseFloat(candidate.selected_by_percent)
   const eoPercent = Number.isFinite(rawEo) ? Math.round(rawEo) : 0
@@ -111,6 +126,7 @@ function CandidateRow({
           ~{eoPercent}%
         </span>
         {showDangerBadge && <DangerousToFadeBadge />}
+        {mcLabel && <McLabel label={mcLabel.label} value={mcLabel.value} />}
       </div>
       <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
         <span className="text-xs">{candidate.team_short_name}</span>
@@ -152,6 +168,22 @@ export function CaptainPicksPanel({ submittedId }: CaptainPicksPanelProps = {}) 
     return computeEOCandidates(playersData, mode, 5)
   }, [playersData, mode])
 
+  // Phase 62 MC-04 — TC callout (CONTEXT.md D-18): single highest-haul_prob candidate.
+  const tcCandidate = useMemo<MergedPlayer | null>(() => {
+    if (!eoCandidates.some(c => c.haul_prob !== undefined)) return null
+    return eoCandidates.reduce<MergedPlayer | null>(
+      (best, c) => (c.haul_prob ?? -Infinity) > (best?.haul_prob ?? -Infinity) ? c : best,
+      null,
+    )
+  }, [eoCandidates])
+
+  // Phase 62 MC-04 — MC label cascade (CONTEXT.md D-16/D-17).
+  const mcLabels = useMemo(() => computeMCLabels(eoCandidates), [eoCandidates])
+  const mcLabelMap = useMemo(
+    () => new Map(mcLabels.map(l => [l.playerId, l] as const)),
+    [mcLabels],
+  )
+
   if (isLoading) {
     return (
       <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">
@@ -179,6 +211,17 @@ export function CaptainPicksPanel({ submittedId }: CaptainPicksPanelProps = {}) 
         </p>
       </div>
       <EOModeToggle value={mode} onChange={setMode} />
+      {tcCandidate && (
+        <div
+          data-testid="tc-callout"
+          className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2"
+        >
+          <p className="text-sm text-zinc-700 dark:text-zinc-300">
+            <span className="font-semibold">TC:</span>{' '}
+            {tcCandidate.web_name} — {Math.round((tcCandidate.haul_prob ?? 0) * 100)}% P(haul)
+          </p>
+        </div>
+      )}
       {eoCandidates.length === 0 ? (
         <p className="text-sm text-zinc-500 dark:text-zinc-400 py-4">
           {mode === 'differential_aggressive'
@@ -195,6 +238,7 @@ export function CaptainPicksPanel({ submittedId }: CaptainPicksPanelProps = {}) 
               mode={mode}
               isAuthenticated={isAuthenticated}
               myTeamPickIds={myTeamPickIds}
+              mcLabel={mcLabelMap.get(c.id) ?? null}
             />
           ))}
         </div>

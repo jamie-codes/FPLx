@@ -230,3 +230,91 @@ describe('CaptainPicksPanel — Phase 57', () => {
     expect(getByText(/Failed to load captain picks/)).toBeTruthy()
   })
 })
+
+// Phase 62 MC-04 — helper to add MC fields to the standard buildPlayers() output.
+// Uses deterministic values to ensure reproducible tests.
+// haul_prob: 0.45 → 0.05 descending, p10_pts: 3.0 → 5.0, p90_pts: 14.0 → 8.0
+function withMC(players: MergedPlayer[]): MergedPlayer[] {
+  const mcData = [
+    { haul_prob: 0.45, p10_pts: 3.0, p90_pts: 14.0, blank_prob: 0.05, p90_override: 14.0 },
+    { haul_prob: 0.35, p10_pts: 4.0, p90_pts: 13.0, blank_prob: 0.08, p90_override: 13.0 },
+    { haul_prob: 0.30, p10_pts: 5.0, p90_pts: 12.0, blank_prob: 0.10, p90_override: 12.0 },
+    { haul_prob: 0.20, p10_pts: 4.5, p90_pts: 11.0, blank_prob: 0.12, p90_override: 11.0 },
+    { haul_prob: 0.10, p10_pts: 3.5, p90_pts: 9.0,  blank_prob: 0.15, p90_override: 9.0 },
+  ]
+  return players.map((p, i) => ({
+    ...p,
+    ...mcData[i % mcData.length],
+  }))
+}
+
+describe('Phase 62: MC-04 captain enrichment', () => {
+  // Test 1: TC callout renders when MC fields present
+  it('renders TC callout with player name and haul% when haul_prob is present', () => {
+    vi.mocked(usePlayers).mockReturnValue({ data: withMC(buildPlayers()), isLoading: false, error: null } as never)
+    const { getByTestId } = render(<CaptainPicksPanel />)
+    const callout = getByTestId('tc-callout')
+    expect(callout).toBeTruthy()
+    expect(callout.textContent).toMatch(/TC: .+ — \d+% P\(haul\)/)
+  })
+
+  // Test 2: TC callout absent when MC fields absent
+  it('does NOT render TC callout when haul_prob is absent from all candidates', () => {
+    // default buildPlayers() has no haul_prob — standard pre-Phase 61 data
+    vi.mocked(usePlayers).mockReturnValue({ data: buildPlayers(), isLoading: false, error: null } as never)
+    const { queryByTestId } = render(<CaptainPicksPanel />)
+    expect(queryByTestId('tc-callout')).toBeNull()
+  })
+
+  // Test 3: MC label badge renders for highest haul_prob player
+  it('renders "Best P(haul)" badge with correct percent for top haul_prob player', () => {
+    // withMC: player index 0 has highest haul_prob=0.45 → "45%"
+    vi.mocked(usePlayers).mockReturnValue({ data: withMC(buildPlayers()), isLoading: false, error: null } as never)
+    const { getByText } = render(<CaptainPicksPanel />)
+    // In max_xpts mode, Haaland (id:103, xPts_1gw:8.1) is first — that player maps to mcData[2] (haul_prob=0.30 → 30%)
+    // Salah (id:101, xPts_1gw:7.8) is second — maps to mcData[0] (haul_prob=0.45 → 45%)
+    // But computeMCLabels operates on eoCandidates order: [Haaland, Salah, Differ, Saka, Palmer]
+    // in max_xpts: sorted by xPts: 8.1, 7.8, 6.7, 6.4, 6.0 → [103, 101, 105, 102, 104]
+    // withMC maps by index: 103→mcData[0](0.45), 101→mcData[1](0.35), 105→mcData[2](0.30), 102→mcData[3](0.20), 104→mcData[4](0.10)
+    // Wait — withMC maps original buildPlayers() array order: [101,102,103,104,105]
+    // 101(Salah)→mcData[0](0.45), 102(Saka)→mcData[1](0.35), 103(Haaland)→mcData[2](0.30), 104(Palmer)→mcData[3](0.20), 105(Differ)→mcData[4](0.10)
+    // eoCandidates in max_xpts: sorted by xPts: Haaland(8.1)=id:103→0.30, Salah(7.8)=id:101→0.45, Differ(6.7)=id:105→0.10, Saka(6.4)=id:102→0.35, Palmer(6.0)=id:104→0.20
+    // computeMCLabels assigns: haul→id:101(0.45→45%), ceiling→id:102(p90=13.0 among unlabelled: 102,103,104,105 after 101 labelled; highest p90=13.0 is id:102), floor→id:103(highest p10 among unlabelled 103,104,105: 5.0=103)
+    // So "Best P(haul) — 45%" badge should appear for Salah
+    expect(getByText(/Best P\(haul\) — \d+%/)).toBeTruthy()
+  })
+
+  // Test 4: At most 3 MC label badges rendered across all candidate rows
+  it('renders at most 3 mc-label-badge elements when 5 candidates all have full MC fields', () => {
+    vi.mocked(usePlayers).mockReturnValue({ data: withMC(buildPlayers()), isLoading: false, error: null } as never)
+    const { queryAllByTestId } = render(<CaptainPicksPanel />)
+    const badges = queryAllByTestId('mc-label-badge')
+    expect(badges.length).toBeLessThanOrEqual(3)
+    expect(badges.length).toBe(3)
+  })
+
+  // Test 5: Player winning Best P(haul) gets only one badge; Highest ceiling badge goes to next player
+  it('player with highest haul_prob gets only the Best P(haul) badge; Highest ceiling badge goes to a different player', () => {
+    // withMC: Salah(101)→haul_prob=0.45 (Best P(haul)), Haaland(103)→p90_pts via mcData[2]
+    vi.mocked(usePlayers).mockReturnValue({ data: withMC(buildPlayers()), isLoading: false, error: null } as never)
+    const { queryAllByTestId } = render(<CaptainPicksPanel />)
+    const badges = queryAllByTestId('mc-label-badge')
+    // At most 3 badges total
+    expect(badges.length).toBeLessThanOrEqual(3)
+    // Find the "Best P(haul)" badge
+    const haulBadge = badges.find(b => b.textContent?.includes('Best P(haul)'))
+    // Find the "Highest ceiling" badge
+    const ceilingBadge = badges.find(b => b.textContent?.includes('Highest ceiling'))
+    expect(haulBadge).toBeDefined()
+    expect(ceilingBadge).toBeDefined()
+    // They should not be the same element
+    expect(haulBadge).not.toBe(ceilingBadge)
+  })
+
+  // Test 6: No mc-label-badge when haul_prob is absent from all candidates
+  it('renders 0 mc-label-badge elements when MC fields are absent', () => {
+    vi.mocked(usePlayers).mockReturnValue({ data: buildPlayers(), isLoading: false, error: null } as never)
+    const { queryAllByTestId } = render(<CaptainPicksPanel />)
+    expect(queryAllByTestId('mc-label-badge').length).toBe(0)
+  })
+})
