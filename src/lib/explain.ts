@@ -67,7 +67,7 @@ export function computeExplanations(player: ScoredPlayer): string[] {
 
   // Differential (parseFloat per Pitfall 2 -- selected_by_percent is a string)
   const owned = parseFloat(player.selected_by_percent)
-  if (owned < DIFFERENTIAL_THRESHOLD) {
+  if (!isNaN(owned) && owned < DIFFERENTIAL_THRESHOLD) {
     reasons.push(`Differential \u2014 ${owned.toFixed(1)}% owned`)
   }
 
@@ -168,7 +168,8 @@ export function computeRejection(
   }
 
   // 3e. Ownership context — ALWAYS last (parseFloat per Pitfall 2).
-  const owned = Math.round(parseFloat(player.selected_by_percent))
+  const ownedRaw = parseFloat(player.selected_by_percent)
+  const owned = !isNaN(ownedRaw) ? Math.round(ownedRaw) : 0
   reasons.push(`Owned by ${owned}% of managers`)
 
   return { reasons, xPtsRank }

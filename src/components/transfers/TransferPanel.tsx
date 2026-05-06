@@ -155,7 +155,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
     }
 
     return scoredPlayers
-      .filter(p => parseFloat(p.selected_by_percent) > 20)            // Pitfall 2
+      .filter(p => { const v = parseFloat(p.selected_by_percent); return !isNaN(v) && v > 20 }) // Pitfall 2
       .filter(p => !suggestedBuyIds.has(p.id))                        // absence detection (Pattern 4 / Pitfall 6)
       .sort((a, b) => parseFloat(b.selected_by_percent) - parseFloat(a.selected_by_percent))
       .slice(0, 3)                                                    // D-13 cap at 3

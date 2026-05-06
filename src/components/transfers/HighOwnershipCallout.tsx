@@ -37,7 +37,8 @@ export function HighOwnershipCallout({ entries }: HighOwnershipCalloutProps) {
         &#8505;&#65039; Why aren&apos;t these players appearing?
       </p>
       {entries.map(entry => {
-        const owned = Math.round(parseFloat(entry.player.selected_by_percent))
+        const ownedRaw = parseFloat(entry.player.selected_by_percent)
+        const owned = !isNaN(ownedRaw) ? Math.round(ownedRaw) : 0
         return (
           <p key={entry.player.id} className="text-xs text-zinc-600 dark:text-zinc-400">
             <span className="font-medium">{entry.player.web_name}</span>
