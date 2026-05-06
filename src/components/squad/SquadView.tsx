@@ -250,7 +250,7 @@ export function SquadView({ picks, allPlayers, entryHistory, labels, exactSellPr
                             // Captain rejection (D-09): include only when player is NOT the top candidate.
                             const capIndex = captaincyCandidates.findIndex(c => c.player.id === player.id)
                             const topCap = captaincyCandidates[0]
-                            if (topCap && topCap.player.id !== player.id) {
+                            if (topCap && topCap.player.id !== player.id && verdict === 'sell') {
                               const rank = capIndex === -1 ? '?' : String(capIndex + 1)
                               rejectionReasons.push(
                                 `Ranked #${rank} at ${POSITION_LABELS[player.element_type]} by xPts — ${topCap.player.web_name} is the captain pick`
