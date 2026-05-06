@@ -106,8 +106,12 @@ async function readPlayerCorpus(): Promise<string[]> {
       return []
     }
   }
-  const players = JSON.parse(data) as Array<{ web_name?: string }>
-  return players.map(p => p.web_name).filter((n): n is string => !!n)
+  try {
+    const players = JSON.parse(data) as Array<{ web_name?: string }>
+    return players.map(p => p.web_name).filter((n): n is string => !!n)
+  } catch {
+    return []
+  }
 }
 
 function collectAllowedNames(body: PostBody): string[] {
