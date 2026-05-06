@@ -4,7 +4,7 @@ milestone: v1.12
 milestone_name: Modelling & Refinement — Carry-forward
 status: executing
 last_updated: "2026-05-06T12:20:00.000Z"
-last_activity: 2026-05-06 -- Phase 064 complete (human UAT pending)
+last_activity: 2026-05-06 -- Phase 064 complete
 progress:
   total_phases: 22
   completed_phases: 22
@@ -24,9 +24,9 @@ See: .planning/PROJECT.md (updated 2026-05-04 — v1.10 started)
 
 ## Current Position
 
-Phase: 64 — Sensitivity Analysis (complete, human UAT pending)
-Plan: Phase 64 complete (3/3 plans) → Phase 65 next
-Status: Human UAT in progress — 4 browser checks pending
+Phase: 65 — Rejection Explainer (next)
+Plan: Phase 64 complete (3/3 plans) → Phase 65 pending
+Status: Ready to plan
 Last activity: 2026-05-06 -- Phase 063 complete
 
 ## Performance Metrics

@@ -454,7 +454,7 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   - XAxis MUST have `type="number"` for the 0-1 numeric domain to be respected (Pitfall 4); sparse buckets are filtered out via `.filter(b => b.sample_n >= 5)` not zeroed (Pitfall 5)
 **UI hint**: yes
 
-### Phase 64: Sensitivity Analysis
+### Phase 64: Sensitivity Analysis ✓ Complete (2026-05-06)
 **Goal**: Transfer candidates and captain recommendations carry a fragility flag when the recommendation would reverse under plausible adverse conditions — making it clear which picks are robust and which are conditional
 **Depends on**: Phase 60 (v1.9 complete); operates over existing `MergedPlayer` data in client-side TypeScript
 **Requirements**: SENS-01, SENS-02
