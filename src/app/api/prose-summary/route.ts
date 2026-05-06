@@ -121,18 +121,26 @@ function collectAllowedNames(body: PostBody): string[] {
   return out
 }
 
+function xmlEscape(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
 function buildUserPrompt(body: PostBody): string {
   const cap = body.captains
-    .map(c => `  <player name="${c.name}" team="${c.team}" />`)
+    .map(c => `  <player name="${xmlEscape(c.name)}" team="${xmlEscape(c.team)}" />`)
     .join('\n')
   const transferTag = body.transfer
-    ? `<transfer sell="${body.transfer.sell}" buy="${body.transfer.buy}" />`
+    ? `<transfer sell="${xmlEscape(body.transfer.sell)}" buy="${xmlEscape(body.transfer.buy)}" />`
     : ''
   const chipTag = body.chip.code
     ? `<chip code="${body.chip.code}" bestGw="${body.chip.bestGw ?? ''}" />`
     : ''
   const risks = body.risks
-    .map(r => `  <player name="${r.name}" label="${r.label}" />`)
+    .map(r => `  <player name="${xmlEscape(r.name)}" label="${xmlEscape(r.label)}" />`)
     .join('\n')
   return (
     '<input>\n' +
