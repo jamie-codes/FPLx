@@ -140,7 +140,7 @@ See `.planning/milestones/v1.9-ROADMAP.md` for full phase details.
 ### v1.12 Modelling & Refinement — Carry-forward (Phases 61-65)
 
 - [x] **Phase 61: MC Simulation Core** — 10k sim engine in pipeline, blank%/haul%/floor/ceiling per player per GW *(complete 2026-05-05)*
-- [ ] **Phase 62: MC Rank Simulator & Captain Integration** — 5-GW rank trajectory UI, captain picker MC augmentation
+- [x] **Phase 62: MC Rank Simulator & Captain Integration** — 5-GW rank trajectory UI, captain picker MC augmentation *(complete 2026-05-06)*
 - [ ] **Phase 63: Model Versioning & Calibration Charts** — version tags in pipeline, multi-version comparison, calibration reliability diagrams in AccuracyTab
 - [ ] **Phase 64: Sensitivity Analysis** — fragility engine over transfer candidates + captain picks, amber indicators
 - [ ] **Phase 65: Rejection Explainer** — "why not?" natural-language engine across GemTable, TransferPanel, SquadView
@@ -410,10 +410,10 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   5. Rank simulator degrades gracefully when squad is not loaded — shows an explanatory prompt rather than an empty chart
 **Plans**: 3 plans (2 waves)
   **Wave 1** *(parallel — disjoint files)*
-  - [ ] 062-01-PLAN.md — MC-04: computeMCLabels pure ranker + McLabel badge + TC callout in CaptainPicksPanel
-  - [ ] 062-02-PLAN.md — MC-03 substrate: install recharts, useEntryRank hook, useGwAverage hook + /api/gw-average route, computeXITrajectory + computeBeatTheAverageProb math
+  - [x] 062-01-PLAN.md — MC-04: computeMCLabels pure ranker + McLabel badge + TC callout in CaptainPicksPanel
+  - [x] 062-02-PLAN.md — MC-03 substrate: install recharts, useEntryRank hook, useGwAverage hook + /api/gw-average route, computeXITrajectory + computeBeatTheAverageProb math
   **Wave 2** *(blocked on Plan 02 completion)*
-  - [ ] 062-03-PLAN.md — MC-03 UI: RankSimTab component (4th Plan sub-tab) + page.tsx wiring + MobileNav.test.tsx update + human UAT
+  - [x] 062-03-PLAN.md — MC-03 UI: RankSimTab component (4th Plan sub-tab) + page.tsx wiring + MobileNav.test.tsx update + human UAT
   **Cross-cutting constraints:**
   - Plans 01 and 02 touch DISJOINT files (Plan 01 = mc-labels.{ts,test.ts} + CaptainPicksPanel.{tsx,test.tsx}; Plan 02 = rank-sim.{ts,test.ts} + hooks + /api/gw-average + package.json) — fully parallel-safe
   - Plan 03 imports recharts (Plan 02 Task 1) and `computeXITrajectory`/`computeBeatTheAverageProb` (Plan 02 Task 4); the page.test.tsx `vi.mock` for RankSimTab MUST land in the SAME plan as the page.tsx import to avoid breaking the existing test suite
