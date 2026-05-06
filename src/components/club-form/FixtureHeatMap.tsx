@@ -1,7 +1,13 @@
 'use client'
 
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useClubForm } from '@/lib/hooks/useClubForm'
+import { usePlayers } from '@/lib/hooks/usePlayers'
+import { useSquad } from '@/lib/hooks/useSquad'
+import { tier } from '@/lib/club-form'
+import { AttDefToggle } from './AttDefToggle'
+import { HorizonToggle } from './HorizonToggle'
+import { OwnedFilterToggle } from './OwnedFilterToggle'
 import type { ClubForm, ClubFormFixture, DifficultyTier } from '@/lib/types'
 
 const TIER_CLASSES: Record<DifficultyTier, string> = {
@@ -11,20 +17,65 @@ const TIER_CLASSES: Record<DifficultyTier, string> = {
 }
 
 const TIER_HEX: Record<DifficultyTier, string> = {
-  easy:   '#dcfce7',  // green-100
-  medium: '#fef3c7',  // amber-100
-  hard:   '#fee2e2',  // red-100
+  easy:   '#dcfce7',
+  medium: '#fef3c7',
+  hard:   '#fee2e2',
 }
 
-export function FixtureHeatMap() {
-  const { data, isLoading, error } = useClubForm()
+const TIER_HEX_DARK: Record<DifficultyTier, string> = {
+  easy:   '#14532d',  // green-900
+  medium: '#78350f',  // amber-900
+  hard:   '#7f1d1d',  // red-900
+}
 
-  // Build column event_ids and per-team grouping in a single useMemo.
+function currentTier(f: ClubFormFixture, mode: 'ATT' | 'DEF'): DifficultyTier {
+  return mode === 'ATT' ? f.difficulty_tier : tier(f.defensive_difficulty)
+}
+
+interface Props {
+  submittedId?: string | null
+}
+
+export function FixtureHeatMap({ submittedId = null }: Props) {
+  const { data, isLoading, error } = useClubForm()
+  const { data: squad } = useSquad(submittedId)
+  const { data: players } = usePlayers()
+
+  const [horizon, setHorizon] = useState<8 | 12 | 16>(8)
+  const [mode, setMode] = useState<'ATT' | 'DEF'>('ATT')
+  const [ownedOnly, setOwnedOnly] = useState(false)
+  const [isDark, setIsDark] = useState(false)
+
+  useEffect(() => {
+    setOwnedOnly(false)
+  }, [submittedId])
+
+  useEffect(() => {
+    const html = document.documentElement
+    setIsDark(html.classList.contains('dark'))
+    const observer = new MutationObserver(() => {
+      setIsDark(html.classList.contains('dark'))
+    })
+    observer.observe(html, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
+  }, [])
+
+  const ownedTeamIds = useMemo<Set<number>>(() => {
+    if (!squad?.picks || !players) return new Set()
+    const set = new Set<number>()
+    const playerById = new Map(players.map((p) => [p.id, p]))
+    for (const pick of squad.picks) {
+      const player = playerById.get(pick.element)
+      if (player) set.add(player.team)
+    }
+    return set
+  }, [squad, players])
+
   const grid = useMemo(() => {
     if (!data || data.length === 0) return null
     const allEventIds = Array.from(
       new Set(data.flatMap(t => t.upcoming_fixtures.map(f => f.event_id)))
-    ).sort((a, b) => a - b).slice(0, 8)
+    ).sort((a, b) => a - b).slice(0, horizon)
     const byTeamGw = new Map<number, Map<number, ClubFormFixture[]>>()
     for (const t of data) {
       const m = new Map<number, ClubFormFixture[]>()
@@ -39,7 +90,7 @@ export function FixtureHeatMap() {
       a.team_short_name.localeCompare(b.team_short_name)
     )
     return { allEventIds, byTeamGw, sortedTeams }
-  }, [data])
+  }, [data, horizon])
 
   if (isLoading) {
     return <p className="text-zinc-500 dark:text-zinc-400">Loading fixture heat map...</p>
@@ -59,9 +110,26 @@ export function FixtureHeatMap() {
     )
   }
 
+  const visibleTeams = ownedOnly && submittedId !== null
+    ? grid.sortedTeams.filter(t => ownedTeamIds.has(t.team_id))
+    : grid.sortedTeams
+
+  const tierMap = isDark ? TIER_HEX_DARK : TIER_HEX
+
   return (
     <section className="mb-6" data-testid="fixture-heat-map">
-      <h2 className="text-xl font-bold mb-3">Fixture Heat Map</h2>
+      <div className="mb-3 flex items-center justify-between flex-wrap gap-2">
+        <h2 className="text-xl font-bold">Fixture Heat Map</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <HorizonToggle value={horizon} onChange={setHorizon} />
+          <AttDefToggle value={mode} onChange={setMode} />
+          <OwnedFilterToggle
+            value={ownedOnly}
+            onChange={setOwnedOnly}
+            disabled={submittedId === null}
+          />
+        </div>
+      </div>
       <div className="overflow-x-auto">
         <table className="min-w-[640px] w-full text-xs border-collapse">
           <thead>
@@ -83,58 +151,82 @@ export function FixtureHeatMap() {
             </tr>
           </thead>
           <tbody>
-            {grid.sortedTeams.map(t => (
-              <tr key={t.team_id} className="border-b border-zinc-100 dark:border-zinc-800">
-                <th
-                  scope="row"
-                  className="px-2 py-1 text-left font-mono text-xs w-16 h-8"
+            {ownedOnly && submittedId !== null && visibleTeams.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={grid.allEventIds.length + 1}
+                  className="text-sm text-zinc-500 dark:text-zinc-400 px-4 py-6 text-center"
                 >
-                  {t.team_short_name}
-                </th>
-                {grid.allEventIds.map(gw => {
-                  const fixtures = grid.byTeamGw.get(t.team_id)?.get(gw) ?? []
-                  if (fixtures.length === 0) {
-                    // BGW
-                    return (
-                      <td
-                        key={gw}
-                        className="px-2 py-1 text-center min-w-[48px] h-8 bg-zinc-50 dark:bg-zinc-900"
-                        title="No fixture (BGW)"
-                      />
-                    )
-                  }
-                  if (fixtures.length >= 2) {
-                    // DGW/TGW (Pitfall 1: detect via group.length, NOT total array length)
-                    const colours = fixtures.map(f => TIER_HEX[f.difficulty_tier])
-                    const gradient = colours.length === 2
-                      ? `linear-gradient(to bottom right, ${colours[0]} 50%, ${colours[1]} 50%)`
-                      : `linear-gradient(to bottom right, ${colours[0]} 33%, ${colours[1]} 33% 66%, ${colours[2]} 66%)`
-                    const tooltip = fixtures
-                      .map(f => `${f.opponent_team} (${f.is_home ? 'H' : 'A'}) ${(f.attacking_difficulty ?? 0).toFixed(2)}`)
-                      .join(' / ')
-                    return (
-                      <td
-                        key={gw}
-                        className="px-2 py-1 text-center min-w-[48px] h-8"
-                        style={{ background: gradient }}
-                        title={tooltip}
-                      />
-                    )
-                  }
-                  // Single fixture
-                  const f = fixtures[0]
-                  const tooltip =
-                    `${f.opponent_team} (${f.is_home ? 'H' : 'A'}) — ${(f.attacking_difficulty ?? 0).toFixed(2)}`
-                  return (
-                    <td
-                      key={gw}
-                      className={`px-2 py-1 text-center min-w-[48px] h-8 ${TIER_CLASSES[f.difficulty_tier]}`}
-                      title={tooltip}
-                    />
-                  )
-                })}
+                  No fixtures for owned teams in this window. Try a longer horizon or turn off the filter.
+                </td>
               </tr>
-            ))}
+            ) : (
+              visibleTeams.map(t => {
+                const isOwned = ownedTeamIds.has(t.team_id)
+                const rowClass = isOwned
+                  ? 'border-b border-zinc-100 dark:border-zinc-800 bg-blue-50 dark:bg-blue-950 border-l-2 border-l-blue-500'
+                  : 'border-b border-zinc-100 dark:border-zinc-800'
+                return (
+                  <tr key={t.team_id} className={rowClass} data-owned={isOwned ? 'true' : 'false'}>
+                    <th
+                      scope="row"
+                      className="px-2 py-1 text-left font-mono text-xs w-16 h-8"
+                    >
+                      {t.team_short_name}
+                    </th>
+                    {grid.allEventIds.map(gw => {
+                      const fixtures = grid.byTeamGw.get(t.team_id)?.get(gw) ?? []
+                      if (fixtures.length === 0) {
+                        return (
+                          <td
+                            key={gw}
+                            className="px-2 py-1 text-center min-w-[48px] h-8 bg-zinc-50 dark:bg-zinc-900"
+                            title="No fixture (BGW)"
+                          />
+                        )
+                      }
+                      if (fixtures.length >= 2) {
+                        const colours = fixtures.map(f => tierMap[currentTier(f, mode)])
+                        const gradient = colours.length === 2
+                          ? `linear-gradient(to bottom right, ${colours[0]} 50%, ${colours[1]} 50%)`
+                          : `linear-gradient(to bottom right, ${colours[0]} 33%, ${colours[1]} 33% 66%, ${colours[2]} 66%)`
+                        const tooltip = fixtures
+                          .map(f => `${f.opponent_team} (${f.is_home ? 'H' : 'A'}) ${(mode === 'ATT' ? f.attacking_difficulty : f.defensive_difficulty).toFixed(2)}`)
+                          .join(' / ')
+                        return (
+                          <td
+                            key={gw}
+                            className="relative px-0 py-0 text-center min-w-[48px] h-10"
+                            style={{ background: gradient }}
+                            title={tooltip}
+                          >
+                            <span className="absolute top-0 left-1 text-[10px] font-mono leading-none pt-0.5 text-zinc-900 dark:text-zinc-100">
+                              {fixtures[0].opponent_team}
+                            </span>
+                            <span className="absolute bottom-0 right-1 text-[10px] font-mono leading-none pb-0.5 text-zinc-900 dark:text-zinc-100">
+                              {fixtures[1].opponent_team}
+                            </span>
+                          </td>
+                        )
+                      }
+                      const f = fixtures[0]
+                      const diff = mode === 'ATT' ? f.attacking_difficulty : f.defensive_difficulty
+                      const tooltip =
+                        `${f.opponent_team} (${f.is_home ? 'H' : 'A'}) — ${(diff ?? 0).toFixed(2)}`
+                      return (
+                        <td
+                          key={gw}
+                          className={`px-2 py-1 text-center min-w-[48px] h-8 ${TIER_CLASSES[currentTier(f, mode)]}`}
+                          title={tooltip}
+                        >
+                          <span className="text-xs font-mono">{f.opponent_team}</span>
+                        </td>
+                      )
+                    })}
+                  </tr>
+                )
+              })
+            )}
           </tbody>
         </table>
       </div>

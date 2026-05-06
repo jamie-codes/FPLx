@@ -265,7 +265,7 @@ export default function Home() {
         {activeSection !== 'squad' && activeSubTab === 'insights' && <InsightsTab />}
         {activeSection !== 'squad' && activeSubTab === 'accuracy' && <AccuracyTab />}
         {activeSection !== 'squad' && activeSubTab === 'price-changes' && <PriceChangePanel />}
-        {activeSection !== 'squad' && activeSubTab === 'fixture-heat-map' && <FixtureHeatMap />}
+        {activeSection !== 'squad' && activeSubTab === 'fixture-heat-map' && <FixtureHeatMap submittedId={submittedId} />}
         {activeSection !== 'squad' && activeSubTab === 'value-gems' && <ValueGemsTable />}
         {activeSection === 'plan' && activeSubTab === 'rivals' && (
           <RivalsTab submittedId={submittedId} />
