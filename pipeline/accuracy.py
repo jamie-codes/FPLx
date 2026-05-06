@@ -34,6 +34,7 @@ GATE_MARGIN_PP = 0.02        # Phase 42 ACC-03 / Pitfall 3: require 2pp margin t
 BLEND_ALPHA = 0.4            # Phase 42 ACC-01: form-signal blend coefficient (matches merge.BLEND_ALPHA)
 FORM_WINDOW_GWS = 5          # Phase 42 ACC-01: same window as merge._compute_form_signal default
 FORM_MIN_MINUTES = 270       # Phase 42 ACC-01: same minutes floor as merge._compute_form_signal default
+FORMULA_VERSION = 'v1.12-a'  # Phase 63 D-01 / VER-01: bumped manually when prediction formula changes; pattern v{milestone}-{letter}
 
 
 def _read_existing_xmins_v2_flag(cache_dir: str) -> bool:
@@ -67,6 +68,23 @@ def _read_existing_bonus_predictor_flag(cache_dir: str) -> bool:
         return bool(prev.get('summary', {}).get('bonus_predictor_enabled', False))
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         return False
+
+
+def _read_existing_versions(cache_dir: str) -> list:
+    """Phase 63 VER-01 / D-02 / D-03: preserve version history across backtest runs.
+
+    Returns the existing top-level versions array from the cache, or [] on cold start
+    (file missing or malformed). Matches the guard pattern of _read_existing_xmins_v2_flag.
+    The 'versions' key is at the TOP LEVEL of the JSON, not nested under 'summary'.
+    """
+    try:
+        path = os.path.join(cache_dir, 'accuracy_backtest.json')
+        with open(path, 'r', encoding='utf-8') as f:
+            prev = json.load(f)
+        existing = prev.get('versions', [])
+        return existing if isinstance(existing, list) else []
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return []
 
 
 # ============================================================================
@@ -291,6 +309,9 @@ def compute_accuracy_backtest(
                 'xpts_blended_delta': round(r['actual_pts'] - r['xpts_blended_predicted'], 2),  # Phase 42
             })
 
+    # Phase 63 CAL-01 / CAL-02: precompute calibration data over per_gw_rows.
+    calibration = _compute_calibration_data(per_gw_rows)
+
     overall_xpts_hit = total_xpts_flagged / total_haulters if total_haulters > 0 else 0.0
     overall_xpts_blended_hit = total_xpts_blended_flagged / total_haulters if total_haulters > 0 else 0.0
     overall_mid_tier_hit = total_xpts_mid_flagged / total_mid_tier if total_mid_tier > 0 else 0.0
@@ -305,6 +326,24 @@ def compute_accuracy_backtest(
     # This matches the bootstrap/cold-start behavior of form_signal_enabled.
     xmins_v2_enabled = _read_existing_xmins_v2_flag(cache_dir)
     bonus_predictor_enabled = _read_existing_bonus_predictor_flag(cache_dir)  # Phase 53 BPS-01
+
+    # Phase 63 VER-01 / D-02 / D-03 / D-04: read prior versions, dedup-append new record.
+    # Read at the TOP of the function would also work, but reading here keeps it next to the
+    # other gate-flag handling and avoids interleaving with per_gw_rows population.
+    versions = _read_existing_versions(cache_dir)
+    new_version_record = {
+        'formula_version': FORMULA_VERSION,
+        'recorded_at': datetime.now(timezone.utc).isoformat(),
+        'hit_rate': round(overall_xpts_blended_hit, 4),  # D-04: use blended (Pitfall 1)
+        'gate_flags': {
+            'form_signal_enabled': form_signal_enabled,
+            'xmins_v2_enabled': xmins_v2_enabled,
+            'bonus_predictor_enabled': bonus_predictor_enabled,
+        },
+    }
+    # D-03 dedup (Pitfall 7 — guard empty list before subscripting):
+    if not versions or versions[-1].get('formula_version') != FORMULA_VERSION:
+        versions = versions + [new_version_record]
 
     return {
         'generated_at': datetime.now(timezone.utc).isoformat(),
@@ -322,6 +361,8 @@ def compute_accuracy_backtest(
         },
         'haulters': haulters,
         'players': list(per_player.values()),
+        'versions': versions,                    # Phase 63 VER-01 / D-02
+        'calibration': calibration,             # Phase 63 CAL-01 / CAL-02 (Task 2)
     }
 
 
@@ -374,7 +415,63 @@ def _empty_backtest(cache_dir: str = '') -> dict:
         },
         'haulters': [],
         'players': [],
+        'versions': _read_existing_versions(cache_dir),                                     # Phase 63 VER-01
+        'calibration': {'by_position': {'all': [], '1': [], '2': [], '3': [], '4': []}},   # Phase 63 CAL-01: full shape with empty arrays
     }
+
+
+def _compute_calibration_data(per_gw_rows: dict) -> dict:
+    """Phase 63 CAL-01 / CAL-02 / D-05 / D-06 / D-07: decile calibration by position.
+
+    Per-GW: rank players by xpts_predicted descending, divide into 10 equal-population
+    deciles (0=top, 9=bottom). Compute observed haul rate (actual_pts >= HAULTER_THRESHOLD)
+    per decile, by position (1=GK, 2=DEF, 3=MID, 4=FWD) and aggregated across all positions.
+
+    D-07: filter buckets with sample_n < 5 (they appear as gaps in the chart, not zeros).
+    Open Question 1 resolution: predicted_rate == bucket_mid (decile midpoint as fraction).
+
+    Returns:
+        { 'by_position': { 'all': [bucket, ...], '1': [...], '2': [...], '3': [...], '4': [...] } }
+        Each bucket: { 'bucket_mid': float, 'predicted_rate': float, 'actual_rate': float, 'sample_n': int }
+    """
+    # bucket_haul[pos_key][decile_idx] = haul count; bucket_total[pos_key][decile_idx] = total count
+    bucket_haul: dict = defaultdict(lambda: defaultdict(int))
+    bucket_total: dict = defaultdict(lambda: defaultdict(int))
+
+    for gw, rows in per_gw_rows.items():
+        if not rows:
+            continue
+        n = len(rows)
+        # Rank by xpts_predicted descending; rank_idx 0 = top
+        ranked = sorted(rows, key=lambda r: r['xpts_predicted'], reverse=True)
+        for rank_idx, row in enumerate(ranked):
+            decile = min(int(rank_idx * 10 / n), 9)
+            is_haul = 1 if row['actual_pts'] >= HAULTER_THRESHOLD else 0
+            pos_key = str(row['element_type'])  # Pitfall 3: element_type is int 1-4
+            for pk in ('all', pos_key):
+                bucket_haul[pk][decile] += is_haul
+                bucket_total[pk][decile] += 1
+
+    # D-06: bucket midpoints for 10 deciles -> 0.05, 0.15, ..., 0.95
+    bucket_mids = [round(d * 0.1 + 0.05, 2) for d in range(10)]
+
+    by_position: dict = {}
+    for pos_key in ('all', '1', '2', '3', '4'):
+        buckets: list = []
+        for d in range(10):
+            total = bucket_total[pos_key][d]
+            if total < 5:  # D-07: sparse-bucket filter (Pitfall 5: omit, do not zero)
+                continue
+            haul = bucket_haul[pos_key][d]
+            buckets.append({
+                'bucket_mid': bucket_mids[d],
+                'predicted_rate': bucket_mids[d],  # Open Q1: decile midpoint as predicted rate
+                'actual_rate': round(haul / total, 4),
+                'sample_n': total,
+            })
+        by_position[pos_key] = buckets
+
+    return {'by_position': by_position}
 
 
 def _group_history_by_gw(history: list) -> dict:
