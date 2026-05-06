@@ -158,7 +158,7 @@ describe('Phase 41: AccuracyTab component', () => {
     const firstRowAfterActual = deltaTable.querySelector('tbody tr')!.textContent ?? ''
     // smallest actual_pts in fixture is Haaland/GW32 (1)
     expect(firstRowAfterActual).toContain('Haaland')
-    expect(firstRowAfterActual).toMatch(/\b1\b/)
+    expect(firstRowAfterActual).toContain('1') // actual_pts=1; \b1\b broke when CR-02 removed ZWS word boundaries
   })
 })
 
