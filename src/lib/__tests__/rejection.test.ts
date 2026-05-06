@@ -112,7 +112,10 @@ function makePopulation(
         id: 1000 + i,
         element_type: target.element_type,
         xPts_1gw: baseXpts + (i + 1) * 1.0,
-        gem_score: target.gem_score ?? 0.5,
+        // Use a gem_score higher than the target so posAvg is above the target's
+        // gem_score when sameposBetter > 0 — this ensures target is "below average"
+        // regardless of whether the threshold is > or >= (WR-01 fix).
+        gem_score: Math.max((target.gem_score ?? 0.5) + 0.4, 0.9),
       }),
     )
   }
@@ -207,7 +210,9 @@ describe('computeRejection — Phase 65 WHY-01', () => {
     expect(result.reasons).toContain('Rotation risk — start probability 65%')
   })
 
-  it('includes "Difficult fixture (FDR medium)" when next fixture difficulty_tier === "medium"', () => {
+  it('medium fixture produces fragility reason (step 3d), not a standalone "Difficult fixture" message (WR-03)', () => {
+    // WR-03 fix: step 3c is restricted to hard only. Medium fixtures are handled by
+    // computeFragility in step 3d, producing "Fragile: no longer recommended if: harder fixture".
     const target = makePlayer({
       id: 50,
       element_type: 3,
@@ -217,9 +222,12 @@ describe('computeRejection — Phase 65 WHY-01', () => {
       gem_score: 0.2,
       selected_by_percent: '5.0',
     })
-    const population = makePopulation(target, { sameposBetter: 0 })
+    // sameposBetter: 1 ensures posAvg > target's gem_score so rejection reasons fire
+    const population = makePopulation(target, { sameposBetter: 1 })
     const result = computeRejection(target, population)
-    expect(result.reasons).toContain('Difficult fixture (FDR medium)')
+    // Medium no longer produces "Difficult fixture (FDR medium)"; fragility handles it.
+    expect(result.reasons).not.toContain('Difficult fixture (FDR medium)')
+    expect(result.reasons).toContain('Fragile: no longer recommended if: harder fixture')
   })
 
   it('includes "Difficult fixture (FDR hard)" when next fixture difficulty_tier === "hard"', () => {
@@ -232,7 +240,8 @@ describe('computeRejection — Phase 65 WHY-01', () => {
       gem_score: 0.2,
       selected_by_percent: '5.0',
     })
-    const population = makePopulation(target, { sameposBetter: 0 })
+    // sameposBetter: 1 ensures posAvg > target's gem_score so rejection reasons fire
+    const population = makePopulation(target, { sameposBetter: 1 })
     const result = computeRejection(target, population)
     expect(result.reasons).toContain('Difficult fixture (FDR hard)')
   })
@@ -264,7 +273,8 @@ describe('computeRejection — Phase 65 WHY-01', () => {
       gem_score: 0.2,
       selected_by_percent: '12.5',
     })
-    const population = makePopulation(target, { sameposBetter: 0 })
+    // sameposBetter: 1 ensures posAvg > target's gem_score so rejection reasons fire
+    const population = makePopulation(target, { sameposBetter: 1 })
     const result = computeRejection(target, population)
     // Ownership always appears last; Math.round(12.5) === 13
     expect(result.reasons[result.reasons.length - 1]).toBe('Owned by 13% of managers')
@@ -286,17 +296,19 @@ describe('computeRejection — Phase 65 WHY-01', () => {
   })
 
   it('positions reasons in order: rank, start_prob, fixture, fragility, ownership (per D-07)', () => {
-    // All signals fire: below avg gem, low start_prob (triggers fragility too), medium fixture, owned
+    // All signals fire: below avg gem, low start_prob (triggers fragility too), hard fixture, owned
+    // WR-03: step 3c now only fires for hard fixtures; medium is handled by computeFragility in 3d.
+    // Using hard fixture here so both 3c (fixture) and 3d (fragility via start_prob) fire.
     const target = makePlayer({
       id: 90,
       element_type: 3,
       xPts_1gw: 3.0,
-      start_prob: 0.5,   // < 0.70 → start_prob reason + fragility
-      fixtures: [mediumFixture],  // medium → fixture reason
+      start_prob: 0.5,   // < 0.70 → start_prob reason + fragility (start_prob < 70%)
+      fixtures: [hardFixture],  // hard → "Difficult fixture (FDR hard)" from step 3c
       gem_score: 0.2,
       selected_by_percent: '25.0',
     })
-    // sameposBetter: 1 → rank 2
+    // sameposBetter: 1 → rank 2; also makes posAvg > 0.2 so isStrong = false
     const population = makePopulation(target, { sameposBetter: 1 })
     const result = computeRejection(target, population)
     const reasons = result.reasons
@@ -329,7 +341,8 @@ describe('computeRejection — Phase 65 WHY-01', () => {
         gem_score: 0.2,
         selected_by_percent: '5.0',
       })
-      const population = makePopulation(target, { sameposBetter: 0 })
+      // sameposBetter: 1 ensures posAvg > target's gem_score so rejection reasons fire
+      const population = makePopulation(target, { sameposBetter: 1 })
       const result = computeRejection(target, population)
       const rankReason = result.reasons.find(r => r.startsWith('Ranked #'))
       expect(rankReason).toBeDefined()
