@@ -1,7 +1,8 @@
 ---
 phase: 60
 slug: transfer-route-tree
-status: draft
+status: approved
+reviewed_at: 2026-05-04
 shadcn_initialized: false
 preset: none
 created: 2026-05-04

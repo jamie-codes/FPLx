@@ -1,6 +1,6 @@
 # FPL Analyst — Feature Backlog
 
-**Last updated:** 2026-05-01
+**Last updated:** 2026-05-03
 **Source:** Manager-curated feature roadmap document
 **Status:** Backlog — not yet scoped into milestones
 
@@ -362,6 +362,19 @@ Features already shipped or in-progress are excluded. v1.7 (phases 47-51) covers
 - Surfaces in: SetPieceTakerPanel (phase 26 component)
 **Priority:** Nice-to-have
 **Estimated effort:** Medium (data availability is the constraint — Understat has xG for shots, not deliveries directly)
+
+---
+
+## UX Polish
+
+### UX-01: xPts temporal clarity — "Next N GW" labels
+**Problem:** The `1 GW / 3 GW / 5 GW` horizon toggle labels don't communicate that xPts is always forward-looking (upcoming fixtures only). Users can mistake a player's 1GW xPts for the gameweek just played rather than the next upcoming one.
+**Scope:**
+- Rename toggle labels from `1 GW / 3 GW / 5 GW` → `Next 1 GW / Next 3 GWs / Next 5 GWs`
+- Optionally surface current GW number in column header (e.g. `xPts GW39`) when pipeline passes `current_event` to the UI
+**Files:** `src/components/gem-table/GwToggle.tsx` (toggle labels), `src/components/gem-table/columns.tsx` (column headers)
+**Priority:** Nice-to-have / UX polish
+**Estimated effort:** Low (label change only; GW number in header requires small pipeline wiring)
 
 ---
 

@@ -1,7 +1,8 @@
 ---
 phase: 62
 slug: mc-rank-simulator-captain-integration
-status: draft
+status: approved
+reviewed_at: 2026-05-05
 shadcn_initialized: false
 preset: none
 created: 2026-05-05
@@ -169,7 +170,7 @@ Top-level structure:
     └── Transfer comparison controls
         ├── Label: "Compare a transfer"
         ├── Dropdown row: [Sell ▼] [→] [Buy ▼]
-        └── "Clear" link (text-xs, appears only when dropdowns have selections)
+        └── "Clear comparison" link (text-xs, appears only when dropdowns have selections)
 ```
 
 #### Fan Chart — Recharts implementation notes
@@ -304,7 +305,7 @@ Three stat columns rendered as a `<div className="grid grid-cols-3 gap-4 rounded
 Each column:
 
 ```
-<div className="flex flex-col items-center gap-0.5">
+<div className="flex flex-col items-center gap-0">
   <span className="text-xs text-zinc-500 dark:text-zinc-400">{label}</span>
   <span className={`text-base font-semibold ${valueClass}`}>{value}</span>
 </div>
@@ -405,7 +406,7 @@ No Team ID input in this component — the Squad tab owns authentication/squad l
 5. Chart re-renders with the dashed amber alt XI mean line. Legend row shows both entries.
 6. The stat block (current rank / P values) does NOT update — it always reflects the current XI. The chart visual makes the comparison self-evident.
 
-Clearing the comparison: User clicks the "Clear" text link. Both dropdowns reset to placeholder. Alt XI line removed from chart. Legend entry for alt XI hidden.
+Clearing the comparison: User clicks the "Clear comparison" text link. Both dropdowns reset to placeholder. Alt XI line removed from chart. Legend entry for alt XI hidden.
 
 Selling the captain: If the player selected as "Sell" is the current captain, the captain contribution doubles for the remaining players' highest-xPts pick in the alt XI. The label in the chart legend shows "Alt XI (new captain: [web_name])". Implementation detail — executor to determine new captain for alt XI as: highest `xPts_1gw` in alt XI squad (excluding the new buy's first week if desired).
 
@@ -473,7 +474,7 @@ When `differential_aggressive` mode returns fewer than 3 candidates, MC labels a
 | Buy dropdown placeholder | — Select player to buy — |
 | Buy dropdown disabled state | — Select a player to sell first — |
 | Affordability flag in buy option | (can't afford) |
-| Clear comparison link | Clear |
+| Clear comparison link | Clear comparison |
 | Chart "estimate" note (X-axis annotation) | GW+2–5 repeat GW+1 distribution (independence assumption) |
 | TC callout prefix | TC: |
 | TC callout format | TC: [web_name] — [N]% P(haul) |

@@ -1,7 +1,8 @@
 ---
 phase: 58
 slug: mini-league-rival-tracker
-status: draft
+status: approved
+reviewed_at: 2026-05-04
 shadcn_initialized: false
 preset: none
 created: 2026-05-03

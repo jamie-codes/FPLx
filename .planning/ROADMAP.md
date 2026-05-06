@@ -434,7 +434,24 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   3. AccuracyTab shows a calibration reliability diagram: for players predicted at each haul% bracket (e.g., 30-40%), the diagram shows the actual observed haul rate — a well-calibrated model produces a near-diagonal line
   4. Calibration diagram is broken out by position (GK / DEF / MID / FWD) so position-specific over- or under-confidence is immediately visible
   5. Both version comparison and calibration diagram are populated from static `accuracy_backtest.json` — no additional API route or pipeline changes to data flow required beyond `accuracy.py` extensions
-**Plans**: TBD
+**Plans**: 4 plans (4 waves)
+  **Wave 0**
+  - [ ] 063-01-PLAN.md — RED test stubs: 6 Python tests in pipeline/tests/test_accuracy.py covering VER-01 (append/dedup/cold-start) + CAL-01/CAL-02 (structure/sparse-filter/by-position); 6 React tests in AccuracyTab.test.tsx with extended fixture covering VersionHistoryTable + CalibrationSection + PositionTabSelector + legacy-cache suppression
+  **Wave 1** *(blocked on Plan 01)*
+  - [ ] 063-02-PLAN.md — Python backend: FORMULA_VERSION='v1.12-a' constant + _read_existing_versions helper + version dedup-append logic + _compute_calibration_data decile bucketing helper; extend compute_accuracy_backtest return dict + _empty_backtest cold-start fallback with new versions/calibration keys
+  **Wave 2** *(blocked on Plan 02)*
+  - [ ] 063-03-PLAN.md — TypeScript types: VersionGateFlags, VersionRecord, CalibrationBucket, CalibrationData interfaces in src/lib/types.ts; AccuracySummary gains optional xmins_v2_enabled + bonus_predictor_enabled (Pitfall 6); AccuracyBacktest gains optional versions + calibration
+  **Wave 3** *(blocked on Plan 03)*
+  - [ ] 063-04-PLAN.md — React frontend: VersionHistoryTable + GateFlagsCell + formatRecordedAt (Task 1); CalibrationSection + PositionTabSelector + CalibrationTooltip + recharts ComposedChart with type='number' XAxis and ReferenceLine y=x diagonal (Task 2); both sections wired into AccuracyTab return block above GwSummaryTable; preserves unstaged sortable-column additions to GwSummaryTable/HaulterList
+  **Cross-cutting constraints:**
+  - Plan 01 (Wave 0) is RED-state by design — Python tests fail at collection (ImportError on FORMULA_VERSION); React tests fail at TS compile on fixtureWithVersionsAndCalibration `versions`/`calibration` literals
+  - Plan 02 turns 6 Python tests GREEN; Plan 03 turns TS compilation GREEN (React runtime tests still RED until Plan 04); Plan 04 turns 6 React tests GREEN
+  - Plan 04 MUST read AccuracyTab.tsx from disk (not the committed version) to preserve unstaged sortable-column additions to GwSummaryTable and HaulterList
+  - All `versions`/`calibration` field additions are OPTIONAL on existing interfaces (Pitfall 6 — backward compat with legacy accuracy_backtest.json caches that pre-date Phase 63)
+  - recharts v3.8.1 is already installed (Phase 62); `@types/recharts` MUST NOT be installed (v1 incompatibility)
+  - hit_rate in version records uses `overall_xpts_blended_hit` (line 295 of accuracy.py) NOT `overall_xpts_hit` (Pitfall 1)
+  - `_read_existing_versions` reads `prev.get('versions', [])` from TOP LEVEL not nested under summary (Pitfall 2); guards `(FileNotFoundError, json.JSONDecodeError, OSError)` mirror existing helpers; dedup uses `if not versions or versions[-1].get('formula_version') != FORMULA_VERSION` to avoid IndexError on empty list (Pitfall 7)
+  - XAxis MUST have `type="number"` for the 0-1 numeric domain to be respected (Pitfall 4); sparse buckets are filtered out via `.filter(b => b.sample_n >= 5)` not zeroed (Pitfall 5)
 **UI hint**: yes
 
 ### Phase 64: Sensitivity Analysis

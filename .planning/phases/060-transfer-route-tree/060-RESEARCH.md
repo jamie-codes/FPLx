@@ -734,32 +734,39 @@ const handleConfirmLoad = useCallback((i: number) => {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Where does section-level `horizon` state live?** (Pitfall 4 / A2)
+_Resolutions captured below; planning has incorporated each decision into 060-01-PLAN.md / 060-02-PLAN.md._
+
+1. (RESOLVED) **Where does section-level `horizon` state live?** (Pitfall 4 / A2)
    - What we know: D-07 says "shared with the section-level `HorizonSelector` in `page.tsx`". No such selector exists today. Each Plan sub-tab manages its own horizon.
    - What's unclear: Whether Phase 60 should lift horizon to `page.tsx` (and refactor PlannerTab + ManualPlanTab to consume it as a prop) or keep its own local horizon (and contradict UI-SPEC).
    - Recommendation: **Lift to `page.tsx`**. Add `[planHorizon, setPlanHorizon]` state + render `<HorizonSelector value={planHorizon} onChange={setPlanHorizon} />` in the Plan section header (above the sub-tab nav, only when `activeSection === 'plan'`). Pass `planHorizon` to PlannerTab, ManualPlanTab, RouteTreeTab. This ships D-07 fully; it also makes D-06 ordering meaningful (the user sees the same horizon across all 6 sub-tabs). Effort: ~2 small edits to PlannerTab and ManualPlanTab (replace local `useState<PlannerHorizon>` with prop; remove local `<HorizonSelector>` render in those tabs — but Phase 59 pattern keeps a local one inside ManualPlanTab.tsx:327, so its removal is a Phase-59-touching diff).
+   - **RESOLUTION:** Adopted. 060-02-PLAN.md Task 1 lifts horizon to page.tsx per CONTEXT D-07. PlannerTab and ManualPlanTab consume horizon as a prop and no longer render their own HorizonSelector. RouteTreeTab also consumes the prop (no own HorizonSelector — UI-SPEC §Reused Components honored). ManualPlanTab adds a sync useEffect that mirrors the prop into plan.horizon so Phase 59 localStorage persistence still works.
 
-2. **Where does section-level `chipMode` state live?** (Pitfall 5 / A3)
+2. (RESOLVED) **Where does section-level `chipMode` state live?** (Pitfall 5 / A3)
    - What we know: TRT-06 says the tree respects active chip mode "set in the Planner section header". No such header element exists.
    - What's unclear: Whether Phase 60 also lifts chip-mode state, or accepts that TRT-06 is implementable but inert until later phases.
    - Recommendation: **Defer section-level chip state to a follow-up phase.** Engine accepts `chipMode: PlannerChip = null` arg; UI does not render a `ChipToggle` at the section level in this phase. Document in plan task: "TRT-06 satisfied by engine accepting and respecting `chipMode`; UI exposure deferred."
+   - **RESOLUTION:** Adopted. RouteTreeTab passes chipMode: null constant to the Plan 01 engine. Plan 01 Tests E1–E4 verify TRT-06 at engine level. UI exposure (section-level ChipToggle) is deferred to a follow-up phase.
 
-3. **For unauthenticated users, are sell-root sell prices accurate enough?** (Implicit)
+3. (RESOLVED) **For unauthenticated users, are sell-root sell prices accurate enough?** (Implicit)
    - What we know: Phase 59 D-13 / MTP-07 already handles this with the caveat banner. Phase 60 reuses the same banner per UI-SPEC §States Required.
    - What's unclear: Whether the route tree should suppress the bridge button for unauthenticated users (since prices are approximate, the bridge might be misleading).
    - Recommendation: **Show the bridge button regardless** — Phase 59 already handles approximate prices in Manual Plan with the same caveat banner. Consistency with Phase 59 trumps over-cautious gating.
+   - **RESOLUTION:** Adopted. 060-02-PLAN.md mounts the bridge button regardless of auth state; the Phase 59 caveat banner copy is reused verbatim above the Route Tree summary table when !isAuthenticated.
 
-4. **Does dropping a branch (when root has no positive-gain GW1 replacement) leave fewer than 3 paths visible?** (Pitfall 9 / A1)
+4. (RESOLVED) **Does dropping a branch (when root has no positive-gain GW1 replacement) leave fewer than 3 paths visible?** (Pitfall 9 / A1)
    - What we know: D-03 implies the root's sell happens; Pitfall 9 documents the contradiction.
    - What's unclear: Whether the UI should show "Path A only" (1 path) or always 3 paths even if some have weak GW1 transfers.
    - Recommendation: **Always force the GW1 root sell, even with non-positive replacement.** Always produce 3 paths. The recommended-path highlight will naturally avoid the weak branch. This matches the literal reading of D-03 ("becomes the player sold in GW1 of its branch") and avoids the empty-tree fallback firing for normal squads.
+   - **RESOLUTION:** Adopted. 060-01-PLAN.md Task 2 §forceRootReplacement returns the highest-xPts position-matched candidate within budget even when gain ≤ 0; only branches whose root has zero position-matched candidates after budget filter are dropped (Plan 01 Test H1/H2). For typical squads this produces 3 paths.
 
-5. **Should the bridge confirm prompt fire when the existing plan has steps but no transfers?** (D-08)
+5. (RESOLVED) **Should the bridge confirm prompt fire when the existing plan has steps but no transfers?** (D-08)
    - What we know: D-08 says confirm "If the existing `fplx_manual_plan` localStorage has any steps with transfers".
    - What's unclear: An empty plan (`steps[].transfers.length === 0` for all steps) can have non-zero `steps.length` — does it count as "any steps with transfers"?
    - Recommendation: **Confirm only when `steps.some(s => s.transfers.length > 0)`** — matches the literal D-08 reading. An empty plan (no transfers) is treated as no plan and overwritten silently.
+   - **RESOLUTION:** Adopted. 060-02-PLAN.md Task 2 §handleClickLoad uses existing?.steps.some(s => s.transfers.length > 0) ?? false — confirm fires only when the persisted plan has at least one transfer. Empty plans overwrite silently.
 
 ---
 
