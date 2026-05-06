@@ -686,7 +686,7 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   **Wave 3** *(blocked on Wave 2 completion)*
   - [x] 074-04-PLAN.md — UI: TransferPanel manualBank state + remove FtToggle/Suggested Transfers; OpportunityCostTable disabled-row treatment + combo-hit-8 badge; human-verify checkpoint
   **Wave 4** *(gap closure — blocked on Wave 3)*
-  - [ ] 074-05-PLAN.md — gap closure: CR-01 −8 Hit fallback for ftCount=1, CR-02 freeTransfers wiring, WR-01/WR-03/WR-04, IN-01 test file dedup, IN-03 Tailwind cleanup
+  - [x] 074-05-PLAN.md — gap closure: CR-01 −8 Hit fallback for ftCount=1, CR-02 freeTransfers wiring, WR-01/WR-03/WR-04, IN-01 test file dedup, IN-03 Tailwind cleanup
 **UI hint**: yes
 
 ### Phase 75: Fixture Heat Map v2
