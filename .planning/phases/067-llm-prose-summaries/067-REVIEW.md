@@ -20,8 +20,8 @@ files_reviewed_list:
 findings:
   critical: 1
   warning: 4
-  info: 2
-  total: 7
+  info: 0
+  total: 5
 status: fixed
 fixed_at: 2026-05-06
 ---
