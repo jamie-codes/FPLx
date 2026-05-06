@@ -149,6 +149,10 @@ def generate_weekly_summary(
             print(f'[prose_summary] unexpected error on attempt {attempt}: {e}')
             return None
 
+        if not prose or not prose.strip():
+            print(f'[prose_summary] empty prose on attempt {attempt + 1}')
+            continue
+
         if _passes_guardrail(prose, allowed, player_corpus):
             return {
                 'prose': prose,

@@ -217,6 +217,8 @@ export async function POST(request: Request) {
       return Response.json({ error: 'LLM error', detail: 'upstream call failed' }, { status: 502 })
     }
 
+    if (!prose.trim()) continue
+
     if (passesGuardrail(prose, allowed, corpus)) {
       return Response.json(
         {
