@@ -8,6 +8,11 @@
 //   - isTransfer && xPtsGain < 4.0               → 'taken as a hit (-4pt)'
 import type { MergedPlayer } from '@/lib/types'
 
+// Exported constants for fragility reason strings — import these in callers instead of
+// hardcoding the literal, so that a rename here is caught at compile time.
+export const FRAGILITY_START_PROB = 'start_prob < 70%'
+export const FRAGILITY_HARDER_FIXTURE = 'harder fixture'
+
 export interface FragilityResult {
   fragile: boolean
   reasons: string[]

@@ -11,7 +11,7 @@ import type { LifecycleLabel } from '@/lib/lifecycle-label'
 import { computeExplanations } from '@/lib/explain'
 import { computeReplacementShortlist } from '@/lib/replacement-shortlist'
 import { ExplainPanel } from '@/components/squad/ExplainPanel'
-import { computeFragility } from '@/lib/sensitivity'
+import { computeFragility, FRAGILITY_START_PROB, FRAGILITY_HARDER_FIXTURE } from '@/lib/sensitivity'
 import type { Verdict } from '@/lib/recommend'
 import type { CaptaincyCandidate } from '@/lib/captaincy-engine'
 
@@ -241,9 +241,9 @@ export function SquadView({ picks, allPlayers, entryHistory, labels, exactSellPr
                             // Translate computeFragility short-codes to user-facing copy (Pitfall 4: isTransfer=false)
                             const { reasons: fragReasons } = computeFragility(player, false)
                             for (const r of fragReasons) {
-                              if (r === 'start_prob < 70%') {
+                              if (r === FRAGILITY_START_PROB) {
                                 rejectionReasons.push(`Rotation risk — start probability ${Math.round(player.start_prob * 100)}%`)
-                              } else if (r === 'harder fixture') {
+                              } else if (r === FRAGILITY_HARDER_FIXTURE) {
                                 rejectionReasons.push('Difficult fixture this gameweek')
                               }
                             }
