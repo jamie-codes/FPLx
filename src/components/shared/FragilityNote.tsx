@@ -8,7 +8,15 @@ interface FragilityNoteProps {
   reasons: string[]
 }
 
-export function FragilityNote(_props: FragilityNoteProps) {
-  // STUB — implementation comes in Task 2 (GREEN)
-  return null
+export function FragilityNote({ reasons }: FragilityNoteProps) {
+  if (reasons.length === 0) return null
+  return (
+    <div
+      className="text-xs text-amber-600 dark:text-amber-400"
+      data-testid="fragility-note"
+    >
+      <span aria-hidden="true">⚠ </span>
+      {`no longer recommended if: ${reasons.join(', ')}`}
+    </div>
+  )
 }
