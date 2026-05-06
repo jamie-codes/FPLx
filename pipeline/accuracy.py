@@ -341,8 +341,9 @@ def compute_accuracy_backtest(
             'bonus_predictor_enabled': bonus_predictor_enabled,
         },
     }
-    # D-03 dedup (Pitfall 7 — guard empty list before subscripting):
-    if not versions or versions[-1].get('formula_version') != FORMULA_VERSION:
+    # D-03 dedup: use set membership to catch interior matches, not just tail (CR-01).
+    existing_versions_set = {v.get('formula_version') for v in versions}
+    if FORMULA_VERSION not in existing_versions_set:
         versions = versions + [new_version_record]
 
     return {
