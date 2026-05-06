@@ -430,7 +430,7 @@ export interface ClubForm {
   losses: number
   goals_scored: number
   goals_conceded: number
-  upcoming_fixtures: ClubFormFixture[]   // next 16
+  upcoming_fixtures: ClubFormFixture[]   // next 32
   // Phase 27 FIX-01 — per-team ease aggregates over upcoming windows.
   // Convention: 1.0 = easiest, 0.0 = hardest (inverted from *_difficulty).
   // null when team has zero fixtures in the window (BGW handling).

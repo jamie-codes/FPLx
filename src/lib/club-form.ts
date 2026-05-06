@@ -1,5 +1,14 @@
 import type { ClubForm, ClubFormFixture, DifficultyTier } from '@/lib/types'
 
+// Phase 75 HEAT-07: lifted from inner scope so FixtureHeatMap can import.
+// Tier classification uses FPL-difficulty-scale (fplToAttDiff 0–1).
+// attDiff <= 0.4 → easy (FPL 1–2), attDiff >= 0.6 → hard (FPL 4–5), else medium.
+export function tier(diff: number): DifficultyTier {
+  if (diff <= 0.4) return 'easy'
+  if (diff >= 0.6) return 'hard'
+  return 'medium'
+}
+
 function meanEase(
   fixtures: ClubFormFixture[],
   n: number,
@@ -35,7 +44,7 @@ interface RawBootstrap {
 
 export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[]): ClubForm[] {
   const WINDOW = 5
-  const LOOKAHEAD = 16
+  const LOOKAHEAD = 32
 
   const teams = new Map(bootstrap.teams.map(t => [t.id, t]))
 
@@ -53,14 +62,6 @@ export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[])
     if (hList) hList.push(fix)
     const aList = teamFinished.get(fix.team_a)
     if (aList) aList.push(fix)
-  }
-
-  // 3. Tier classification uses FPL-difficulty-scale (fplToAttDiff 0–1).
-  // attDiff <= 0.4 → easy (FPL 1–2), attDiff >= 0.6 → hard (FPL 4–5), else medium.
-  const tier = (attDiff: number): DifficultyTier => {
-    if (attDiff <= 0.4) return 'easy'
-    if (attDiff >= 0.6) return 'hard'
-    return 'medium'
   }
 
   // Phase 27 FDR++ — parallel 3-game goals-scored window for defensive_difficulty
