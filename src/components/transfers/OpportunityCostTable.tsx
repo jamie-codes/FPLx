@@ -67,7 +67,8 @@ const MARGINAL_BADGE: BadgeConfig = {
 }
 
 function badgeFor(row: OCSRow): BadgeConfig {
-  if (row.kind === 'combo-free' && row.isMarginal === true) return MARGINAL_BADGE
+  if ((row.kind === 'combo-free' || row.kind === 'combo-hit') && row.isMarginal === true)
+    return MARGINAL_BADGE
   return BADGE_BY_KIND[row.kind]
 }
 

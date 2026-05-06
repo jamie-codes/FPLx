@@ -240,4 +240,70 @@ describe('Phase 74: computeOpportunityCostRows', () => {
       expect(rows.find(r => r.kind === 'combo-hit-8')!.breakEvenGws).toBeNull()
     })
   })
+
+  describe('Phase 74-05 gap closure', () => {
+    it('CR-01: -8 Hit row is present when ftCount=1 and only a cost:4 combo exists', () => {
+      const rows = computeOpportunityCostRows(
+        [makeCombo({ ids: [5, 6, 7, 8], cost: 4, xPtsGain: 8.0, xPtsGainPerGw: 8.0 })],
+        1,
+        100,
+      )
+      const hit8 = rows.find(r => r.kind === 'combo-hit-8')
+      expect(hit8).toBeDefined()
+      expect(hit8!.xPtsGain).toBe(8.0)
+      expect(hit8!.xPtsGainNet).toBeCloseTo(0.0, 5)
+      expect(hit8!.cost).toBe(8)
+    })
+
+    it('CR-01: -8 Hit row prefers cost:0 combo when both cost:0 and cost:4 combos exist', () => {
+      const rows = computeOpportunityCostRows(
+        [
+          makeCombo({ ids: [1, 2, 3, 4], cost: 0, xPtsGain: 6.0, xPtsGainPerGw: 6.0 }),
+          makeCombo({ ids: [5, 6, 7, 8], cost: 4, xPtsGain: 9.0, xPtsGainPerGw: 9.0 }),
+        ],
+        2,
+        100,
+      )
+      const hit8 = rows.find(r => r.kind === 'combo-hit-8')!
+      expect(hit8).toBeDefined()
+      // The cost:0 combo has sell1.id=1; the cost:4 combo has sell1.id=5.
+      // Preference for cost:0 means transfers[0].sell.id should be 1.
+      expect(hit8.transfers![0].sell.id).toBe(1)
+    })
+
+    it('CR-01: -8 Hit row transfers reference the cost:4 combo when it is the only combo source', () => {
+      const rows = computeOpportunityCostRows(
+        [makeCombo({ ids: [5, 6, 7, 8], cost: 4, xPtsGain: 8.0, xPtsGainPerGw: 8.0 })],
+        1,
+        100,
+      )
+      const hit8 = rows.find(r => r.kind === 'combo-hit-8')!
+      expect(hit8.transfers![0].sell.id).toBe(5)
+      expect(hit8.transfers![1].sell.id).toBe(7)
+    })
+
+    it('WR-03: combo-hit isMarginal=true when xPtsGainNet < MARGINAL_THRESHOLD', () => {
+      // xPtsGain=4.5 → xPtsGainNet = 4.5 - 4 = 0.5 < 1.0
+      const rows = computeOpportunityCostRows(
+        [makeCombo({ ids: [1, 2, 3, 4], cost: 4, xPtsGain: 4.5, xPtsGainPerGw: 4.5 })],
+        1,
+        100,
+      )
+      const comboHit = rows.find(r => r.kind === 'combo-hit')!
+      expect(comboHit).toBeDefined()
+      expect(comboHit.isMarginal).toBe(true)
+    })
+
+    it('WR-03: combo-hit isMarginal=false when xPtsGainNet >= MARGINAL_THRESHOLD', () => {
+      // xPtsGain=5.5 → xPtsGainNet = 5.5 - 4 = 1.5 >= 1.0
+      const rows = computeOpportunityCostRows(
+        [makeCombo({ ids: [1, 2, 3, 4], cost: 4, xPtsGain: 5.5, xPtsGainPerGw: 5.5 })],
+        1,
+        100,
+      )
+      const comboHit = rows.find(r => r.kind === 'combo-hit')!
+      expect(comboHit).toBeDefined()
+      expect(comboHit.isMarginal).toBe(false)
+    })
+  })
 })

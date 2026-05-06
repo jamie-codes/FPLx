@@ -196,7 +196,6 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
         if (gain1 <= 0) continue  // each leg must individually improve the squad (CR-02)
         for (const buy2 of pool2) {
           if (buy2.id === buy1.id) continue   // buy-side dedup: can't buy the same player twice
-          if (sell2.id === sell1.id) continue  // TFX-02: sell-side dedup (redundant inner guard)
           const gain2 = horizonScore(buy2, field) - sell2Pts
           if (gain2 <= 0) continue  // each leg must individually improve the squad (CR-02)
           const xPtsGain = gain1 + gain2
