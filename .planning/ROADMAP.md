@@ -142,8 +142,8 @@ See `.planning/milestones/v1.9-ROADMAP.md` for full phase details.
 - [x] **Phase 61: MC Simulation Core** — 10k sim engine in pipeline, blank%/haul%/floor/ceiling per player per GW *(complete 2026-05-05)*
 - [x] **Phase 62: MC Rank Simulator & Captain Integration** — 5-GW rank trajectory UI, captain picker MC augmentation *(complete 2026-05-06)*
 - [x] **Phase 63: Model Versioning & Calibration Charts** — version tags in pipeline, multi-version comparison, calibration reliability diagrams in AccuracyTab *(complete 2026-05-06)*
-- [ ] **Phase 64: Sensitivity Analysis** — fragility engine over transfer candidates + captain picks, amber indicators
-- [ ] **Phase 65: Rejection Explainer** — "why not?" natural-language engine across GemTable, TransferPanel, SquadView
+- [x] **Phase 64: Sensitivity Analysis** — fragility engine over transfer candidates + captain picks, amber indicators *(complete 2026-05-06)*
+- [x] **Phase 65: Rejection Explainer** — "why not?" natural-language engine across GemTable, TransferPanel, SquadView *(complete 2026-05-06)*
 
 ### v1.11 Insights & Infrastructure (Phases 66-71)
 
@@ -478,7 +478,7 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   - Pre-existing TEST-57 captain-picks.test.ts failures (5) are NOT regressions — Phase 64 must not introduce additional failures
 **UI hint**: yes
 
-### Phase 65: Rejection Explainer
+### Phase 65: Rejection Explainer ✓ Complete (2026-05-06)
 **Goal**: Users can understand why any player they are curious about did not surface as a transfer target or captain recommendation — turning opaque ranking into an auditable, trust-building explanation
 **Depends on**: Phase 64 (sensitivity flags inform rejection reasons); operates over existing `MergedPlayer` and recommendation engine outputs
 **Requirements**: WHY-01, WHY-02, WHY-03
@@ -490,13 +490,13 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   5. Explanations use plain English with specific values — not generic phrases like "not recommended" — so the user can act on the reasoning
 **Plans**: 5 plans (3 waves)
   **Wave 0**
-  - [ ] 065-01-PLAN.md — RED test stubs: rejection.test.ts (12 cases) + HighOwnershipCallout.test.tsx (7 cases) + ExplainPanel.test.tsx (7 cases)
+  - [x] 065-01-PLAN.md — RED test stubs: rejection.test.ts (12 cases) + HighOwnershipCallout.test.tsx (7 cases) + ExplainPanel.test.tsx (7 cases)
   **Wave 1** *(parallel — disjoint files)*
-  - [ ] 065-02-PLAN.md — TDD: computeRejection() + RejectionResult + thresholds in src/lib/explain.ts (delegates to computeFragility(player, false) and computePositionAverages())
-  - [ ] 065-03-PLAN.md — ExplainPanel rejectionReasons?: string[] prop + new HighOwnershipCallout.tsx component
+  - [x] 065-02-PLAN.md — TDD: computeRejection() + RejectionResult + thresholds in src/lib/explain.ts (delegates to computeFragility(player, false) and computePositionAverages())
+  - [x] 065-03-PLAN.md — ExplainPanel rejectionReasons?: string[] prop + new HighOwnershipCallout.tsx component
   **Wave 2** *(parallel — disjoint files; blocked on Wave 1 completion)*
-  - [ ] 065-04-PLAN.md — GemTable WHY-01 wiring (getRowCanExpand=>true, desktop expand row hidden sm:table-row, mobile rejection panel appended below dl) + manual UAT
-  - [ ] 065-05-PLAN.md — TransferPanel WHY-02 callout (highOwnershipAbsent useMemo cap-3) + verdicts threading + SquadView WHY-03 per-player rejectionReasons (verdict + fragility translation + captain rejection D-09) + manual UAT
+  - [x] 065-04-PLAN.md — GemTable WHY-01 wiring (getRowCanExpand=>true, desktop expand row hidden sm:table-row, mobile rejection panel appended below dl) + manual UAT
+  - [x] 065-05-PLAN.md — TransferPanel WHY-02 callout (highOwnershipAbsent useMemo cap-3) + verdicts threading + SquadView WHY-03 per-player rejectionReasons (verdict + fragility translation + captain rejection D-09) + manual UAT
 **Cross-cutting constraints:**
   - Plan 01 (Wave 0) ships RED tests; Plan 02 turns rejection.test.ts GREEN; Plan 03 turns ExplainPanel.test + HighOwnershipCallout.test GREEN — all three contract files exist before implementation begins
   - Plans 02 and 03 are file-disjoint (explain.ts vs ExplainPanel.tsx + HighOwnershipCallout.tsx) — fully Wave 1 parallel-safe

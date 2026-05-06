@@ -29,9 +29,9 @@
 
 ### Rejection Explainer (WHY)
 
-- [ ] **WHY-01** User can expand any GemTable row and read a natural-language "why not?" explanation for why that player falls below the transfer or captain recommendation threshold — covering at least: ownership%, xPts ranking, start probability, fixture difficulty, and any active fragility flag
-- [ ] **WHY-02** TransferPanel shows a dedicated callout for any player with >20% ownership who is absent from the transfer candidate list — naming the player and giving a one-sentence reason
-- [ ] **WHY-03** Squad view row expand for an owned player explains why they are not recommended to hold or captain — distinguishing between "below xPts threshold", "rotation risk", "difficult fixture", and "fragile recommendation"
+- [x] **WHY-01** User can expand any GemTable row and read a natural-language "why not?" explanation for why that player falls below the transfer or captain recommendation threshold — covering at least: ownership%, xPts ranking, start probability, fixture difficulty, and any active fragility flag *(Phase 65)*
+- [x] **WHY-02** TransferPanel shows a dedicated callout for any player with >20% ownership who is absent from the transfer candidate list — naming the player and giving a one-sentence reason *(Phase 65)*
+- [x] **WHY-03** Squad view row expand for an owned player explains why they are not recommended to hold or captain — distinguishing between "below xPts threshold", "rotation risk", "difficult fixture", and "fragile recommendation" *(Phase 65)*
 
 ### Fixture Heat Map v2 (HEAT)
 
@@ -112,9 +112,9 @@
 | CAL-02 | Phase 63 | — | pending |
 | SENS-01 | Phase 64 | — | pending |
 | SENS-02 | Phase 64 | — | pending |
-| WHY-01 | Phase 65 | — | pending |
-| WHY-02 | Phase 65 | — | pending |
-| WHY-03 | Phase 65 | — | pending |
+| WHY-01 | Phase 65 | 065-VERIFICATION.md | verified |
+| WHY-02 | Phase 65 | 065-VERIFICATION.md | verified |
+| WHY-03 | Phase 65 | 065-VERIFICATION.md | verified |
 | HEAT-04 | Phase 75 | — | pending |
 | HEAT-05 | Phase 75 | — | pending |
 | HEAT-06 | Phase 75 | — | pending |
