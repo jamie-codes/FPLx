@@ -326,6 +326,9 @@ export interface AccuracySummary {
   blend_alpha_used?: number          // alpha used in the blend (default 0.4)
   mid_tier_hit_rate?: number
   mid_tier_blended_hit_rate?: number
+  // Phase 52 / 53 / 63 — gate flags written to JSON but missing from earlier type:
+  xmins_v2_enabled?: boolean         // Phase 52 D-02 gate (preserved across runs)
+  bonus_predictor_enabled?: boolean  // Phase 53 BPS-01 gate (preserved across runs)
 }
 
 export interface AccuracyHaulter {
@@ -365,6 +368,43 @@ export interface AccuracyBacktest {
   summary: AccuracySummary
   haulters: AccuracyHaulter[]
   players: AccuracyPlayer[]
+  // Phase 63 — optional for backward compat with legacy cache pre-dating VER-01/CAL-01:
+  versions?: VersionRecord[]
+  calibration?: CalibrationData
+}
+
+// ============================================================================
+// Phase 63: Model Versioning & Calibration Charts (VER-01/VER-02/CAL-01/CAL-02)
+// ============================================================================
+
+export interface VersionGateFlags {
+  xmins_v2_enabled: boolean
+  bonus_predictor_enabled: boolean
+  form_signal_enabled: boolean
+}
+
+export interface VersionRecord {
+  formula_version: string
+  recorded_at: string    // ISO timestamp from datetime.now(timezone.utc).isoformat()
+  hit_rate: number       // 0..1 (rounded to 4 decimals by accuracy.py)
+  gate_flags: VersionGateFlags
+}
+
+export interface CalibrationBucket {
+  bucket_mid: number       // 0.05..0.95 (decile midpoint)
+  predicted_rate: number   // equals bucket_mid (decile midpoint as fraction)
+  actual_rate: number      // observed haul rate (actual_pts >= 10) for this bucket
+  sample_n: number         // observation count; only buckets with n >= 5 are included
+}
+
+export interface CalibrationData {
+  by_position: {
+    all: CalibrationBucket[]
+    '1': CalibrationBucket[]    // 1 = GK
+    '2': CalibrationBucket[]    // 2 = DEF
+    '3': CalibrationBucket[]    // 3 = MID
+    '4': CalibrationBucket[]    // 4 = FWD
+  }
 }
 
 // Club form fixture (upcoming, per club) — populated by computeClubForm
