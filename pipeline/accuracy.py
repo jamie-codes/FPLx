@@ -34,6 +34,7 @@ GATE_MARGIN_PP = 0.02        # Phase 42 ACC-03 / Pitfall 3: require 2pp margin t
 BLEND_ALPHA = 0.4            # Phase 42 ACC-01: form-signal blend coefficient (matches merge.BLEND_ALPHA)
 FORM_WINDOW_GWS = 5          # Phase 42 ACC-01: same window as merge._compute_form_signal default
 FORM_MIN_MINUTES = 270       # Phase 42 ACC-01: same minutes floor as merge._compute_form_signal default
+FORMULA_VERSION = 'v1.12-a'  # Phase 63 D-01 / VER-01: bumped manually when prediction formula changes; pattern v{milestone}-{letter}
 
 
 def _read_existing_xmins_v2_flag(cache_dir: str) -> bool:
@@ -67,6 +68,23 @@ def _read_existing_bonus_predictor_flag(cache_dir: str) -> bool:
         return bool(prev.get('summary', {}).get('bonus_predictor_enabled', False))
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         return False
+
+
+def _read_existing_versions(cache_dir: str) -> list:
+    """Phase 63 VER-01 / D-02 / D-03: preserve version history across backtest runs.
+
+    Returns the existing top-level versions array from the cache, or [] on cold start
+    (file missing or malformed). Matches the guard pattern of _read_existing_xmins_v2_flag.
+    The 'versions' key is at the TOP LEVEL of the JSON, not nested under 'summary'.
+    """
+    try:
+        path = os.path.join(cache_dir, 'accuracy_backtest.json')
+        with open(path, 'r', encoding='utf-8') as f:
+            prev = json.load(f)
+        existing = prev.get('versions', [])
+        return existing if isinstance(existing, list) else []
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return []
 
 
 # ============================================================================
@@ -306,6 +324,24 @@ def compute_accuracy_backtest(
     xmins_v2_enabled = _read_existing_xmins_v2_flag(cache_dir)
     bonus_predictor_enabled = _read_existing_bonus_predictor_flag(cache_dir)  # Phase 53 BPS-01
 
+    # Phase 63 VER-01 / D-02 / D-03 / D-04: read prior versions, dedup-append new record.
+    # Read at the TOP of the function would also work, but reading here keeps it next to the
+    # other gate-flag handling and avoids interleaving with per_gw_rows population.
+    versions = _read_existing_versions(cache_dir)
+    new_version_record = {
+        'formula_version': FORMULA_VERSION,
+        'recorded_at': datetime.now(timezone.utc).isoformat(),
+        'hit_rate': round(overall_xpts_blended_hit, 4),  # D-04: use blended (Pitfall 1)
+        'gate_flags': {
+            'form_signal_enabled': form_signal_enabled,
+            'xmins_v2_enabled': xmins_v2_enabled,
+            'bonus_predictor_enabled': bonus_predictor_enabled,
+        },
+    }
+    # D-03 dedup (Pitfall 7 — guard empty list before subscripting):
+    if not versions or versions[-1].get('formula_version') != FORMULA_VERSION:
+        versions = versions + [new_version_record]
+
     return {
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'gws_covered': target_gws_desc,
@@ -322,6 +358,8 @@ def compute_accuracy_backtest(
         },
         'haulters': haulters,
         'players': list(per_player.values()),
+        'versions': versions,                    # Phase 63 VER-01 / D-02
+        # NOTE: 'calibration' key added in Task 2 of this plan
     }
 
 
