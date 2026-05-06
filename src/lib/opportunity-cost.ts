@@ -7,7 +7,9 @@
 //   - ftCount=1 → engine emits kind:'single' with cost:0 AND cost:4 AND kind:'combo' with cost:4.
 //   - ftCount=2 → engine emits kind:'single' cost:0 AND kind:'combo' cost:0.
 //   - Suggestions are sorted by xPtsGain desc — Array.find returns the BEST per type.
-//   - D-07: −8 Hit row is derived from the best cost:0 combo; not emitted by the engine.
+//   - D-07: −8 Hit row is derived from the best 2-FT combo (preferring cost:0 when ftCount=2,
+//     falling back to cost:4 when ftCount=1). Not emitted by the engine.
+//     Fix: gap-closure plan 074-05 (CR-01).
 import type { TransferSuggestion, MergedPlayer } from './types'
 
 export type OCSRowKind = 'roll' | 'single-free' | 'single-hit' | 'combo-free' | 'combo-hit' | 'combo-hit-8'
@@ -126,7 +128,7 @@ export function computeOpportunityCostRows(
       breakEvenGws: best2FTHit.breakEvenGws,
       cost: 4,
       transfers: [...best2FTHit.transfers],
-      isMarginal: best2FTHit.xPtsGain < MARGINAL_THRESHOLD,
+      isMarginal: (best2FTHit.xPtsGain - 4) < MARGINAL_THRESHOLD,
       bankAfter: bankAfterComboHit,
       isAffordable: bankAfterComboHit >= 0,
       disabledReason: formatDisabledReason(bankAfterComboHit),
@@ -155,21 +157,24 @@ export function computeOpportunityCostRows(
     })
   }
 
-  // −8 Hit row: reuses best cost:0 combo per D-07. Only xPtsGainNet, cost, and label differ.
-  if (best2FTCombo) {
-    const t1 = best2FTCombo.transfers[0]
-    const t2 = best2FTCombo.transfers[1]
+  // −8 Hit row: reuses best 2-FT combo per D-07 (gap-closure 074-05 CR-01).
+  // Prefers cost:0 combo (ftCount=2 path) but falls back to cost:4 combo (ftCount=1 path)
+  // so the -8 Hit row is always present when any 2-transfer combo exists.
+  const comboForHit8 = best2FTCombo ?? best2FTHit
+  if (comboForHit8) {
+    const t1 = comboForHit8.transfers[0]
+    const t2 = comboForHit8.transfers[1]
     const bankAfter8 =
       bank + sellValueFor(t1.sell) + sellValueFor(t2.sell) - t1.buy.now_cost - t2.buy.now_cost
     rows.push({
       kind: 'combo-hit-8',
       label: '−8 Hit',
-      xPtsGain: best2FTCombo.xPtsGain,
-      xPtsGainNet: best2FTCombo.xPtsGain - 8,
-      xPtsGainPerGw: best2FTCombo.xPtsGainPerGw,
+      xPtsGain: comboForHit8.xPtsGain,
+      xPtsGainNet: comboForHit8.xPtsGain - 8,
+      xPtsGainPerGw: comboForHit8.xPtsGainPerGw,
       breakEvenGws:
-        best2FTCombo.xPtsGainPerGw > 0
-          ? Math.max(1, Math.ceil(8 / best2FTCombo.xPtsGainPerGw))
+        comboForHit8.xPtsGainPerGw > 0
+          ? Math.max(1, Math.ceil(8 / comboForHit8.xPtsGainPerGw))
           : null,
       cost: 8,
       transfers: [t1, t2],

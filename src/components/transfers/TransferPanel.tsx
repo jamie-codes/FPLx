@@ -85,11 +85,15 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
   }, [myTeamData])
 
   const derivedFtCount: 1 | 2 = useMemo(() => {
-    if (!isAuthenticated || !myTeamData) return 1
+    // CR-02 (gap-closure 074-05): unauthenticated path now reads the manual freeTransfers input.
+    // Authenticated path still derives from FPL myTeamData / chip state.
+    if (!isAuthenticated || !myTeamData) {
+      return (freeTransfers >= 2 ? 2 : 1) as 1 | 2
+    }
     const chip = squadData?.active_chip
     if (chip === 'wildcard' || chip === 'freehit') return 1
     return myTeamData.entry_history.event_transfers === 0 ? 2 : 1
-  }, [isAuthenticated, myTeamData, squadData])
+  }, [isAuthenticated, myTeamData, squadData, freeTransfers])
 
   // Pre-fill manualBank from FPL when authenticated. DO NOT include manualBank in deps (Pitfall 5)
   // — that would loop on user edits.
@@ -262,7 +266,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
 
           <button
             type="submit"
-            className="px-4 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium rounded hover:bg-zinc-700 dark:hover:bg-zinc-200 transition-colors cursor-pointer active:scale-95 transition-transform w-full sm:w-auto"
+            className="px-4 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium rounded hover:bg-zinc-700 dark:hover:bg-zinc-200 transition cursor-pointer active:scale-95 w-full sm:w-auto"
           >
             Load Squad
           </button>
