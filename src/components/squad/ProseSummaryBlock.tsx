@@ -13,9 +13,11 @@ export function ProseSummaryBlock({ payload }: Props) {
   const { data: globalProse } = useProseSummary()
   const refresh = useProseRefresh()
   const [override, setOverride] = useState<ProseSummary | null>(null)
+  const [guardrailFailed, setGuardrailFailed] = useState(false)
 
   // D-03: override replaces; D-04: override is component state, lost on unmount
-  const displayed: ProseSummary | null = override ?? globalProse ?? null
+  // D-13: guardrailFailed forces hide even when globalProse is loaded
+  const displayed: ProseSummary | null = guardrailFailed ? null : (override ?? globalProse ?? null)
 
   // D-13: silently hide when no prose available (404 or guardrail rejection)
   if (!displayed) return null
@@ -25,7 +27,10 @@ export function ProseSummaryBlock({ payload }: Props) {
     refresh.mutate(payload, {
       onSuccess: (data) => setOverride(data),
       onError: (e) => {
-        if (e.message === 'GUARDRAIL_FAILED') setOverride(null)
+        if (e.message === 'GUARDRAIL_FAILED') {
+          setOverride(null)
+          setGuardrailFailed(true)
+        }
       },
     })
   }
