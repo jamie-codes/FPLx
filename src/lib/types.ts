@@ -355,6 +355,9 @@ export interface AccuracyPlayerGw {
   // Phase 42 ACC-02 — optional blended fields
   xpts_blended_predicted?: number
   xpts_blended_delta?: number
+  // Phase 76 ACC2-01 — true when model put this player in predicted top-N for this GW
+  // (mirrors xpts_flagged on AccuracyHaulter; sourced from xpts_rank <= TOP_N_PREDICTED in pipeline/accuracy.py)
+  xpts_flagged?: boolean
 }
 
 export interface AccuracyPlayer {

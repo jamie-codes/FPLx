@@ -202,6 +202,9 @@ def compute_accuracy_backtest(
     gw_summaries: list = []
     total_haulters = 0
     total_xpts_flagged = 0
+    # Phase 76 ACC2-01: per-player xpts_flagged lookup keyed by (gw, player_id)
+    # Used to populate xpts_flagged on per_player[pid]['gws'] entries below.
+    xpts_flagged_by_gw_pid: dict = {}
     total_xpts_blended_flagged = 0   # Phase 42 ACC-02
     # Phase 42 ACC-04 mid-tier
     total_mid_tier = 0
@@ -229,6 +232,11 @@ def compute_accuracy_backtest(
         # Pitfall 4: rank ALL players, not just haulters
         xpts_ranked = sorted(rows, key=lambda r: r['xpts_predicted'], reverse=True)
         xpts_rank_by_id = {r['player_id']: i + 1 for i, r in enumerate(xpts_ranked)}
+
+        # Phase 76 ACC2-01: record xpts_flagged for every player in this GW (not just haulters)
+        # so per_player[pid]['gws'] entries can carry xpts_flagged for the Flagged Misses filter.
+        for r in rows:
+            xpts_flagged_by_gw_pid[(gw, r['player_id'])] = xpts_rank_by_id.get(r['player_id'], 9999) <= TOP_N_PREDICTED
 
         # Phase 42 ACC-02: blended ranking
         xpts_blended_ranked = sorted(rows, key=lambda r: r['xpts_blended_predicted'], reverse=True)
@@ -322,6 +330,7 @@ def compute_accuracy_backtest(
                 'xpts_delta': round(r['actual_pts'] - r['xpts_predicted'], 2),
                 'xpts_blended_predicted': r['xpts_blended_predicted'],                          # Phase 42
                 'xpts_blended_delta': round(r['actual_pts'] - r['xpts_blended_predicted'], 2),  # Phase 42
+                'xpts_flagged': xpts_flagged_by_gw_pid.get((gw, pid), False),                  # Phase 76 ACC2-01
             })
 
     # Phase 63 CAL-01 / CAL-02: precompute calibration data over per_gw_rows.
