@@ -160,7 +160,7 @@ See `.planning/milestones/v1.9-ROADMAP.md` for full phase details.
 ### v1.12 Modelling & Refinement — New Phases (74-77)
 
 - [x] **Phase 74: Transfer Engine Overhaul** — 3-per-team cap enforcement, duplicate transfer bug fix, multi-hit view (1FT/2FT/−4/−8), bank balance auto-pull and feasibility checks (complete 2026-05-06)
-- [ ] **Phase 75: Fixture Heat Map v2** — opponent labels per cell, owned-team filtering and row highlighting, user-selectable horizon (8/12/16 GWs), ATT/DEF difficulty toggle
+- [x] **Phase 75: Fixture Heat Map v2** — opponent labels per cell, owned-team filtering and row highlighting, user-selectable horizon (8/12/16 GWs), ATT/DEF difficulty toggle *(complete 2026-05-07)*
 - [ ] **Phase 76: Analytics Enhancements** — routes_to_points pipeline score + GemTable column, Accuracy GW row drill-down, LineupTab manual captain/VC override
 - [ ] **Phase 77: Pitch Visuals & Mobile Polish** — LineupTab kit art with placeholder fallback, Decision tab captain card overflow fix, full mobile layout audit on 390–430px viewport
 
@@ -715,7 +715,13 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   2. GemTable shows a "Routes" column with the `routes_to_points` value, sortable ascending/descending; column is hidden on mobile portrait view
   3. User can click any GW row in the Accuracy GW Summary table to expand a drill-down panel showing which players were xPts-flagged (predicted haul, actual blank) and which were haulers (substantially outperformed xPts) for that GW, with player names and actual vs predicted points
   4. User can tap any player on the LineupTab pitch to arm a captain assignment (amber "C" badge reassignment); a distinct secondary interaction (e.g. long-press or dedicated VC button) assigns vice-captain; the override is session-only and a Reset button restores the algorithm's recommendation
-**Plans**: TBD
+**Plans**: 4 plans (2 waves)
+  **Wave 1** *(parallel — no shared files)*
+  - [ ] 076-01-PLAN.md — RTP-01: pipeline routes_to_points post-loop pass + 5 pytest cases (pipeline/merge.py + new pipeline/tests/test_merge_routes.py)
+  - [ ] 076-03-PLAN.md — ACC2-01: AccuracyTab GwSummaryTable expandable rows + Haulers/Flagged-Misses drill-down sub-tables + 6 vitest cases
+  - [ ] 076-04-PLAN.md — OPT-01: LineupTab captain/VC override (per-card Set C / Set VC pills, auto-shuffle, Reset & squad-refresh clears, no localStorage) + 8 vitest cases
+  **Wave 2** *(blocked on Wave 1 Plan 01 only)*
+  - [ ] 076-02-PLAN.md — RTP-02: MergedPlayer.routes_to_points type + GemTable Routes column accessor + MOBILE_HIDDEN_COLUMNS entry + 4 vitest cases
 **UI hint**: yes
 
 ### Phase 77: Pitch Visuals & Mobile Polish
