@@ -61,13 +61,13 @@
 ### Optimiser Enhancements (OPT)
 
 - [ ] **OPT-01** User can manually assign captain and vice-captain in the LineupTab pitch view — tapping a player arms captain assignment; tapping again or tapping a second player reassigns; VC available via a distinct secondary interaction
-- [ ] **OPT-02** LineupTab pitch renders player kit art (team shirt colours or user-supplied images) alongside the player name to improve visual scannability; graceful fallback to coloured placeholder if image is unavailable
+- [x] **OPT-02** LineupTab pitch renders player kit art (team shirt colours or user-supplied images) alongside the player name to improve visual scannability; graceful fallback to coloured placeholder if image is unavailable
 
 ### Mobile & Desktop Polish (POL)
 
-- [ ] **POL-01** Decision tab CaptainPicksPanel renders within its containing card on desktop without content overflow — card expands to fit or uses an internal scroll region
-- [ ] **POL-02** GemTable and all sub-tables render without edge overflow on 390–430px viewport widths — xPts column and all sortable columns are fully visible without horizontal scroll unless the table is explicitly designed to scroll
-- [ ] **POL-03** Full mobile layout audit across all tabs and sections on Galaxy S26+ (≈430px) — truncated text, misaligned cells, and tap-target violations (<44px) resolved; each tab verified individually
+- [x] **POL-01** Decision tab CaptainPicksPanel renders within its containing card on desktop without content overflow — card expands to fit or uses an internal scroll region
+- [x] **POL-02** GemTable and all sub-tables render without edge overflow on 390–430px viewport widths — xPts column and all sortable columns are fully visible without horizontal scroll unless the table is explicitly designed to scroll
+- [x] **POL-03** Full mobile layout audit across all tabs and sections on Galaxy S26+ (≈430px) — truncated text, misaligned cells, and tap-target violations (<44px) resolved; each tab verified individually
 
 ### Visual Design System (VIS)
 
@@ -160,10 +160,10 @@
 | TFX-04 | Phase 74 | — | pending |
 | TFX-05 | Phase 74 | — | pending |
 | OPT-01 | Phase 76 | — | pending |
-| OPT-02 | Phase 77 | — | pending |
-| POL-01 | Phase 77 | — | pending |
-| POL-02 | Phase 77 | — | pending |
-| POL-03 | Phase 77 | — | pending |
+| OPT-02 | Phase 77 | 077-01 | verified |
+| POL-01 | Phase 77 | 077-01 | verified |
+| POL-02 | Phase 77 | 077-01 | verified |
+| POL-03 | Phase 77 | 077-02 | verified |
 | VIS-01 | Phase 78 | — | pending |
 | VIS-02 | Phase 78 | — | pending |
 | VIS-03 | Phase 78 | — | pending |
