@@ -11,6 +11,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, fireEvent, screen } from '@testing-library/react'
 import type { ScoredPlayer } from '@/lib/types'
 import { createColumns, XPtsCell } from './columns'
+import { MOBILE_HIDDEN_COLUMNS } from './GwToggle'
 
 const PLAYER_A = {
   id: 1,
@@ -195,5 +196,48 @@ describe('XPtsCell — Phase 61 MC-02 hover card MC rows', () => {
     expect(screen.queryByText('Haul%')).toBeNull()
     expect(screen.queryByText('Floor')).toBeNull()
     expect(screen.queryByText('Ceiling')).toBeNull()
+  })
+})
+
+// ─── Phase 76 RTP-02 — routes_to_points column ────────────────────────────────
+describe('Phase 76 RTP-02 — routes_to_points column', () => {
+  it('column header label is "Routes"', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find(c => (c as any).accessorKey === 'routes_to_points') as any
+    expect(col).toBeTruthy()
+    // Header in TanStack Table accessor columns is the value returned by H('Routes', '...');
+    // H returns either a string or a render function depending on impl — render-and-assert.
+    const headerVal = typeof col.header === 'function'
+      ? col.header({ column: { id: 'routes_to_points' } } as any)
+      : col.header
+    const { container } = render(<>{headerVal}</>)
+    expect(container.textContent).toContain('Routes')
+  })
+
+  it('cell renders the integer routes_to_points value', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find(c => (c as any).accessorKey === 'routes_to_points') as any
+    const cellNode = col.cell({
+      getValue: () => 4,
+      row: { original: { ...PLAYER_A, routes_to_points: 4 } },
+    })
+    render(<>{cellNode}</>)
+    expect(screen.getByText('4')).toBeTruthy()
+  })
+
+  it('cell renders em-dash when routes_to_points is undefined', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find(c => (c as any).accessorKey === 'routes_to_points') as any
+    const cellNode = col.cell({
+      getValue: () => undefined,
+      row: { original: { ...PLAYER_A } },
+    })
+    render(<>{cellNode}</>)
+    expect(screen.getByText('—')).toBeTruthy()
+  })
+
+  it('column is hidden on mobile via MOBILE_HIDDEN_COLUMNS', () => {
+    // The convention is `key: false` ⇒ hidden on mobile. Check the literal mapping.
+    expect(MOBILE_HIDDEN_COLUMNS.routes_to_points).toBe(false)
   })
 })
