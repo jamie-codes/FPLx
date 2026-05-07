@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { useAccuracy } from '@/lib/hooks/useAccuracy'
 import type {
   AccuracyBacktest,
@@ -325,6 +325,9 @@ function GwSummaryTable({ data }: { data: AccuracyBacktest }) {
   const [sortKey, setSortKey] = useState<GwSortKey>('gw')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
 
+  // Phase 76 ACC2-01: single-expand drill-down state. expandedGw === r.gw means the row is expanded.
+  const [expandedGw, setExpandedGw] = useState<number | null>(null)
+
   const rows = useMemo(() => {
     const copy = [...data.summary.gws]
     copy.sort((a, b) => {
@@ -362,14 +365,118 @@ function GwSummaryTable({ data }: { data: AccuracyBacktest }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
-            <tr key={r.gw} className={TR_CLS}>
-              <td className={TD_CLS}>GW{r.gw}</td>
-              <td className={TD_CLS}>{r.haulter_count}</td>
-              <td className={TD_CLS}>{r.xpts_flagged}</td>
-              <td className={TD_CLS}><HitRateBadge rate={r.xpts_hit_rate} /></td>
-            </tr>
-          ))}
+          {rows.map((r) => {
+            const isExpanded = expandedGw === r.gw
+            const gwHaulters = data.haulters
+              .filter(h => h.gw === r.gw)
+              .sort((a, b) => b.xpts_predicted - a.xpts_predicted)
+            // Flagged Misses MUST source from data.players[].gws[] — data.haulters only carries
+            // actual_pts >= 10 entries (HAULTER_THRESHOLD = 10 in pipeline/accuracy.py:27), so a
+            // haulters-based filter for actual_pts <= 2 is always [] (mutually exclusive predicates).
+            const gwFlaggedMisses = data.players
+              .flatMap(p =>
+                p.gws
+                  .filter(g => g.gw === r.gw && g.xpts_flagged === true && g.actual_pts <= 2)
+                  .map(g => ({
+                    player_id: p.player_id,
+                    player_name: p.player_name,
+                    team: p.team,
+                    actual_pts: g.actual_pts,
+                    xpts_predicted: g.xpts_predicted,
+                  }))
+              )
+              .sort((a, b) => b.xpts_predicted - a.xpts_predicted)
+            return (
+              <Fragment key={r.gw}>
+                <tr
+                  className={`${TR_CLS} cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700`}
+                  onClick={() => setExpandedGw(isExpanded ? null : r.gw)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      setExpandedGw(isExpanded ? null : r.gw)
+                    }
+                  }}
+                  tabIndex={0}
+                  role="button"
+                  aria-expanded={isExpanded}
+                  aria-controls={`gw-drilldown-${r.gw}`}
+                  aria-label={isExpanded ? `Hide drill-down for GW${r.gw}` : `Show drill-down for GW${r.gw}`}
+                  data-testid={`gw-row-${r.gw}`}
+                >
+                  <td className={TD_CLS}>
+                    GW{r.gw}
+                    <span className="ml-2 text-zinc-400 dark:text-zinc-500" aria-hidden="true">
+                      {isExpanded ? '▴' : '▾'}
+                    </span>
+                  </td>
+                  <td className={TD_CLS}>{r.haulter_count}</td>
+                  <td className={TD_CLS}>{r.xpts_flagged}</td>
+                  <td className={TD_CLS}><HitRateBadge rate={r.xpts_hit_rate} /></td>
+                </tr>
+                {isExpanded && (
+                  <tr id={`gw-drilldown-${r.gw}`} data-testid={`gw-drilldown-${r.gw}`}>
+                    <td colSpan={4} className="bg-zinc-50 dark:bg-zinc-800/50 px-4 py-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+                        {/* Haulers sub-panel */}
+                        <div>
+                          <h3 className="text-sm font-semibold mb-1">Haulers (≥10 pts)</h3>
+                          {gwHaulters.length === 0 ? (
+                            <p className="text-sm text-zinc-500 dark:text-zinc-400 py-2">No haulers this GW.</p>
+                          ) : (
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr>
+                                  <th className="text-left pb-1 border-b border-zinc-200 dark:border-zinc-700 font-semibold">Player</th>
+                                  <th className="text-right pb-1 border-b border-zinc-200 dark:border-zinc-700 font-semibold">Actual</th>
+                                  <th className="text-right pb-1 border-b border-zinc-200 dark:border-zinc-700 font-semibold">Predicted</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {gwHaulters.map(h => (
+                                  <tr key={`${r.gw}-h-${h.player_id}`}>
+                                    <td className="px-2 py-1 text-sm">{h.player_name}</td>
+                                    <td className="px-2 py-1 text-sm text-right tabular-nums">{h.actual_pts}</td>
+                                    <td className="px-2 py-1 text-sm text-right tabular-nums">{h.xpts_predicted.toFixed(1)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+                        </div>
+                        {/* Flagged Misses sub-panel */}
+                        <div>
+                          <h3 className="text-sm font-semibold mb-1">xPts Flagged Misses</h3>
+                          {gwFlaggedMisses.length === 0 ? (
+                            <p className="text-sm text-zinc-500 dark:text-zinc-400 py-2">No flagged misses this GW — predictions held.</p>
+                          ) : (
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr>
+                                  <th className="text-left pb-1 border-b border-zinc-200 dark:border-zinc-700 font-semibold">Player</th>
+                                  <th className="text-right pb-1 border-b border-zinc-200 dark:border-zinc-700 font-semibold">Actual</th>
+                                  <th className="text-right pb-1 border-b border-zinc-200 dark:border-zinc-700 font-semibold">Predicted</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {gwFlaggedMisses.map(h => (
+                                  <tr key={`${r.gw}-m-${h.player_id}`}>
+                                    <td className="px-2 py-1 text-sm">{h.player_name}</td>
+                                    <td className="px-2 py-1 text-sm text-right tabular-nums">{h.actual_pts}</td>
+                                    <td className="px-2 py-1 text-sm text-right tabular-nums">{h.xpts_predicted.toFixed(1)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            )
+          })}
           <tr className="font-semibold bg-zinc-50 dark:bg-zinc-800">
             <td className={TD_CLS}>Overall</td>
             <td className={TD_CLS}>—</td>
