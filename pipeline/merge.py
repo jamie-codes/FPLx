@@ -1097,6 +1097,46 @@ def merge_players(
         if flag is not None:
             p['differential_flag'] = flag
 
+    # ---- Routes to points (Phase 76 RTP-01) ----
+    # Counts distinct point-scoring routes (0..5) per player. Mirrors the differential-flag
+    # pass shape above. Five routes:
+    #   1 penalty taker (penalties_order == 1)
+    #   2 direct FK taker (direct_freekicks_order == 1)
+    #   3 corner taker (corners_and_indirect_freekicks_order == 1)
+    #   4 above-median xG/90 in team (xg_per90 strictly > team median)
+    #   5 above-median xA/90 in team (xa_per90 strictly > team median)
+    # `None` xg_per90 / xa_per90 (promoted-team unmatched players) cleanly skip routes 4-5.
+    # Teams with zero non-null per-90 entries produce no median entry; their players
+    # therefore cannot satisfy routes 4-5 (acceptable per RESEARCH Pitfall 4).
+    team_xg_values: dict[int, list[float]] = {}
+    team_xa_values: dict[int, list[float]] = {}
+    for p in result:
+        if p.get('xg_per90') is not None:
+            team_xg_values.setdefault(p['team'], []).append(p['xg_per90'])
+        if p.get('xa_per90') is not None:
+            team_xa_values.setdefault(p['team'], []).append(p['xa_per90'])
+
+    team_xg_med: dict[int, float] = {t: median(vals) for t, vals in team_xg_values.items() if vals}
+    team_xa_med: dict[int, float] = {t: median(vals) for t, vals in team_xa_values.items() if vals}
+
+    for p in result:
+        routes = 0
+        if p.get('penalties_order') == 1:
+            routes += 1
+        if p.get('direct_freekicks_order') == 1:
+            routes += 1
+        if p.get('corners_and_indirect_freekicks_order') == 1:
+            routes += 1
+        xg = p.get('xg_per90')
+        team_xg_threshold = team_xg_med.get(p['team'])
+        if xg is not None and team_xg_threshold is not None and xg > team_xg_threshold:
+            routes += 1
+        xa = p.get('xa_per90')
+        team_xa_threshold = team_xa_med.get(p['team'])
+        if xa is not None and team_xa_threshold is not None and xa > team_xa_threshold:
+            routes += 1
+        p['routes_to_points'] = routes
+
     # ---- xPts ceiling classification (Phase 28 XPTS-02 D-09) ----
     # Top-tercile sigma per GW window -> high-ceiling boolean.
     for window in (1, 3, 5):

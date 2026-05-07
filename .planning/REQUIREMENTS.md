@@ -47,7 +47,7 @@
 
 ### Routes to Points (RTP)
 
-- [ ] **RTP-01** Pipeline computes a `routes_to_points` score (integer 1–5) per player counting distinct point-scoring routes held: penalty taker, direct FK taker (shots on goal), corner taker, primary goal scorer (above-median xG in team), primary assist provider (above-median xA in team) — written to `merged_players.json`
+- [ ] **RTP-01** Pipeline computes a `routes_to_points` score (integer 0–5) per player counting distinct point-scoring routes held: penalty taker, direct FK taker (shots on goal), corner taker, primary goal scorer (above-median xG in team), primary assist provider (above-median xA in team) — written to `merged_players.json`
 - [ ] **RTP-02** GemTable shows a "Routes" numeric score column using `routes_to_points` data; column is sortable; hidden on mobile portrait view
 
 ### Transfer Engine Fixes & Enhancements (TFX)
