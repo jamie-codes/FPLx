@@ -158,11 +158,11 @@ describe('Phase 72: LineupTab', () => {
       expect(container.querySelector('[data-testid="pitch-row-mid"]')).not.toBeNull()
       expect(container.querySelector('[data-testid="pitch-row-fwd"]')).not.toBeNull()
       expect(container.querySelector('[data-testid="pitch-row-bench"]')).not.toBeNull()
-      // Total starters = 11 (across the 4 XI rows) — use outer pitch-card-{id} divs only (not pitch-card-body-{id})
-      const xiCards = container.querySelectorAll('[data-testid="pitch-row-gk"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"]), [data-testid="pitch-row-def"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"]), [data-testid="pitch-row-mid"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"]), [data-testid="pitch-row-fwd"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])')
+      // Total starters = 11 (across the 4 XI rows) — use outer pitch-card-{id} divs only (not pitch-card-body-{id} or pitch-card-kit-{id})
+      const xiCards = container.querySelectorAll('[data-testid="pitch-row-gk"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"]):not([data-testid^="pitch-card-kit-"]), [data-testid="pitch-row-def"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"]):not([data-testid^="pitch-card-kit-"]), [data-testid="pitch-row-mid"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"]):not([data-testid^="pitch-card-kit-"]), [data-testid="pitch-row-fwd"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"]):not([data-testid^="pitch-card-kit-"])')
       expect(xiCards.length).toBe(11)
       // Bench has 4 cards
-      const benchCards = container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])')
+      const benchCards = container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"]):not([data-testid^="pitch-card-kit-"])')
       expect(benchCards.length).toBe(4)
     })
 
@@ -286,7 +286,7 @@ describe('Phase 72: LineupTab', () => {
       fireEvent.click(legal)
       // After swap: the swapped-in id is now in an XI row, no longer in bench row
       // Use outer pitch-card-{id} divs (not body buttons) to avoid double-counting
-      const benchIds = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])'))
+      const benchIds = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"]):not([data-testid^="pitch-card-kit-"])'))
         .map(c => Number(c.getAttribute('data-testid')!.replace('pitch-card-', '')))
       expect(benchIds).not.toContain(swappedInId)
       // Pending state cleared
@@ -298,7 +298,7 @@ describe('Phase 72: LineupTab', () => {
       setupValidLineup()
       const { container } = render(<LineupTab teamId="123" />)
       // Snapshot the initial bench ids — use outer pitch-card-{id} divs only (Phase 76 refactor)
-      const initialBenchIds = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])'))
+      const initialBenchIds = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"]):not([data-testid^="pitch-card-kit-"])'))
         .map(c => c.getAttribute('data-testid')!.replace('pitch-card-', ''))
       const initialFormation = container.querySelector('[data-testid="lineup-headline-row"]')!.textContent
       // Perform an arbitrary legal swap: arm any starter body button and click any legal bench
@@ -308,7 +308,7 @@ describe('Phase 72: LineupTab', () => {
       if (legalTarget) {
         fireEvent.click(legalTarget)
         // Verify state changed
-        const afterSwapBenchIds = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])'))
+        const afterSwapBenchIds = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"]):not([data-testid^="pitch-card-kit-"])'))
           .map(c => c.getAttribute('data-testid')!.replace('pitch-card-', ''))
         expect(afterSwapBenchIds).not.toEqual(initialBenchIds)
       }
@@ -316,7 +316,7 @@ describe('Phase 72: LineupTab', () => {
       const resetBtn = container.querySelector('[data-testid="lineup-reset"]') as HTMLButtonElement
       fireEvent.click(resetBtn)
       // Bench ids return to initial
-      const restoredBenchIds = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])'))
+      const restoredBenchIds = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"]):not([data-testid^="pitch-card-kit-"])'))
         .map(c => c.getAttribute('data-testid')!.replace('pitch-card-', ''))
       expect(restoredBenchIds).toEqual(initialBenchIds)
       const restoredFormation = container.querySelector('[data-testid="lineup-headline-row"]')!.textContent
