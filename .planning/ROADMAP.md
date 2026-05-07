@@ -721,7 +721,7 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   - [x] 076-03-PLAN.md — ACC2-01: AccuracyTab GwSummaryTable expandable rows + Haulers/Flagged-Misses drill-down sub-tables + 6 vitest cases
   - [x] 076-04-PLAN.md — OPT-01: LineupTab captain/VC override (per-card Set C / Set VC pills, auto-shuffle, Reset & squad-refresh clears, no localStorage) + 8 vitest cases
   **Wave 2** *(blocked on Wave 1 Plan 01 only)*
-  - [ ] 076-02-PLAN.md — RTP-02: MergedPlayer.routes_to_points type + GemTable Routes column accessor + MOBILE_HIDDEN_COLUMNS entry + 4 vitest cases
+  - [x] 076-02-PLAN.md — RTP-02: MergedPlayer.routes_to_points type + GemTable Routes column accessor + MOBILE_HIDDEN_COLUMNS entry + 4 vitest cases
 **UI hint**: yes
 
 ### Phase 77: Pitch Visuals & Mobile Polish
