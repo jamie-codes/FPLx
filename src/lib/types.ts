@@ -198,6 +198,10 @@ export interface MergedPlayer {
   // DGW players: combined probability `1 - (1-p1)*(1-p2)` aggregated across the GW group.
   // GK (element_type=1) and DEF (element_type=2) consume this field; MID/FWD show em-dash in UI.
   cs_prob_1gw?: number
+  // Phase 76 RTP-01: routes to points (0–5) — count of distinct point-scoring routes held.
+  // Routes: pen taker, direct FK taker, corner taker, above-median xG/90 in team,
+  // above-median xA/90 in team. Optional during pipeline rollout; absent on pre-Phase-76 cache.
+  routes_to_points?: number
 }
 
 // Optimiser horizon (Phase 43 OPT-01..OPT-05) — maps to xPts_1gw / xPts_3gw / xPts_5gw fields

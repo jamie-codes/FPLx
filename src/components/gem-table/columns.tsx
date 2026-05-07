@@ -379,6 +379,20 @@ export function createColumns(onCompare: (player: ScoredPlayer) => void, gwN: nu
     },
     enableSorting: true,
   }),
+  // Phase 76 RTP-02: Routes to points — count of distinct point-scoring routes (0..5).
+  // Cell guard mirrors cs_prob_1gw pattern: null/undefined renders em-dash (stale cache);
+  // 0 renders the literal digit (a meaningful "no routes" signal — UI-SPEC §Empty / Loading / Error).
+  col.accessor('routes_to_points', {
+    header: H('Routes', 'Routes to points (0–5): distinct point-scoring routes — penalty taker, direct FK taker, corner taker, above-median xG in team, above-median xA in team. Higher = more ways to score.'),
+    cell: (info) => {
+      const v = info.getValue()
+      if (v === null || v === undefined) {
+        return <span className="text-zinc-400">—</span>
+      }
+      return v.toString()
+    },
+    enableSorting: true,
+  }),
   col.display({
     id: 'trend',
     header: H('Trend', 'Price trend: this GW change (↑/↓) and season-to-date change'),

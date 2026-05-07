@@ -21,6 +21,7 @@ export const MOBILE_HIDDEN_COLUMNS: Record<string, boolean> = {
   regression_signal: false,
   differential_flag: false,
   cs_prob_1gw: false,   // Phase 47 D-09: hidden on mobile (consistent with secondary numeric columns)
+  routes_to_points: false,   // Phase 76 RTP-02: hidden on mobile per phase spec (D-A4: isMobile-only, no portrait branch)
 }
 
 export const PRESET_COLUMN_VISIBILITY: Record<ViewPreset, Record<string, boolean>> = {
