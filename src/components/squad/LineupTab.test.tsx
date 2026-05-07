@@ -158,11 +158,11 @@ describe('Phase 72: LineupTab', () => {
       expect(container.querySelector('[data-testid="pitch-row-mid"]')).not.toBeNull()
       expect(container.querySelector('[data-testid="pitch-row-fwd"]')).not.toBeNull()
       expect(container.querySelector('[data-testid="pitch-row-bench"]')).not.toBeNull()
-      // Total starters = 11 (across the 4 XI rows)
-      const xiCards = container.querySelectorAll('[data-testid="pitch-row-gk"] [data-testid^="pitch-card-"], [data-testid="pitch-row-def"] [data-testid^="pitch-card-"], [data-testid="pitch-row-mid"] [data-testid^="pitch-card-"], [data-testid="pitch-row-fwd"] [data-testid^="pitch-card-"]')
+      // Total starters = 11 (across the 4 XI rows) — use outer pitch-card-{id} divs only (not pitch-card-body-{id})
+      const xiCards = container.querySelectorAll('[data-testid="pitch-row-gk"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"]), [data-testid="pitch-row-def"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"]), [data-testid="pitch-row-mid"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"]), [data-testid="pitch-row-fwd"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])')
       expect(xiCards.length).toBe(11)
       // Bench has 4 cards
-      const benchCards = container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]')
+      const benchCards = container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])')
       expect(benchCards.length).toBe(4)
     })
 
@@ -215,8 +215,9 @@ describe('Phase 72: LineupTab', () => {
     it('arm and disarm — tap a starter twice', () => {
       setupValidLineup()
       const { container } = render(<LineupTab teamId="123" />)
-      // Pick the first DEF starter card (id 3 — DEFs are ids 3-7 per makeValidSquad)
-      const card = container.querySelector('[data-testid="pitch-card-3"]') as HTMLButtonElement
+      // Pick the first DEF starter card body button (id 3 — DEFs are ids 3-7 per makeValidSquad)
+      // Phase 76: body button is pitch-card-body-{id}; data-pending lives on the body button.
+      const card = container.querySelector('[data-testid="pitch-card-body-3"]') as HTMLButtonElement
       expect(card).not.toBeNull()
       fireEvent.click(card)
       expect(card.getAttribute('data-pending')).toBe('true')
@@ -227,17 +228,18 @@ describe('Phase 72: LineupTab', () => {
     it('compatible bench highlight: armed starter highlights legal bench targets and dims incompatible', () => {
       setupValidLineup()
       const { container } = render(<LineupTab teamId="123" />)
-      // Arm a DEF starter (id 3)
-      const defCard = container.querySelector('[data-testid="pitch-card-3"]') as HTMLButtonElement
+      // Arm a DEF starter (id 3) — Phase 76: click the body button
+      const defCard = container.querySelector('[data-testid="pitch-card-body-3"]') as HTMLButtonElement
       fireEvent.click(defCard)
       // At least one bench card must be a legal target
       const legalCards = container.querySelectorAll('[data-testid="pitch-row-bench"] [data-legal-target="true"]')
       expect(legalCards.length).toBeGreaterThanOrEqual(1)
       // The bench GK must be incompatible (DEF cannot swap with GK)
       // makeValidSquad: ids 1,2 are GKs; one will be on bench after optimiseLineup picks 11.
-      const benchCards = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]')) as HTMLButtonElement[]
-      const benchGkCard = benchCards.find(c => {
-        const id = Number(c.getAttribute('data-testid')!.replace('pitch-card-', ''))
+      // Phase 76: body buttons carry disabled; select only body buttons (not outer divs)
+      const benchBodyCards = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-body-"]')) as HTMLButtonElement[]
+      const benchGkCard = benchBodyCards.find(c => {
+        const id = Number(c.getAttribute('data-testid')!.replace('pitch-card-body-', ''))
         return id === 1 || id === 2   // one of the two GKs is on the bench
       })
       expect(benchGkCard).not.toBeUndefined()
@@ -247,16 +249,17 @@ describe('Phase 72: LineupTab', () => {
     it('GK only swaps with GK: armed GK starter highlights only bench GK', () => {
       setupValidLineup()
       const { container } = render(<LineupTab teamId="123" />)
-      // Find the GK starter (only id in the GK row)
-      const gkRowCards = container.querySelectorAll('[data-testid="pitch-row-gk"] [data-testid^="pitch-card-"]')
-      expect(gkRowCards.length).toBe(1)
-      const gkStarterCard = gkRowCards[0] as HTMLButtonElement
+      // Find the GK starter body button (only one in the GK row)
+      // Phase 76: outer cards are divs; body buttons are pitch-card-body-{id}
+      const gkRowBodies = container.querySelectorAll('[data-testid="pitch-row-gk"] [data-testid^="pitch-card-body-"]')
+      expect(gkRowBodies.length).toBe(1)
+      const gkStarterCard = gkRowBodies[0] as HTMLButtonElement
       fireEvent.click(gkStarterCard)
-      // Exactly one bench card has data-legal-target="true" (the bench GK)
+      // Exactly one bench body button has data-legal-target="true" (the bench GK)
       const legalBenchCards = container.querySelectorAll('[data-testid="pitch-row-bench"] [data-legal-target="true"]')
       expect(legalBenchCards.length).toBe(1)
-      // The other 3 bench cards are incompatible (disabled)
-      const disabledBenchCards = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]'))
+      // The other 3 bench body buttons are incompatible (disabled)
+      const disabledBenchCards = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-body-"]'))
         .filter(c => (c as HTMLButtonElement).disabled)
       expect(disabledBenchCards.length).toBe(3)
     })
@@ -264,24 +267,26 @@ describe('Phase 72: LineupTab', () => {
     it('executes swap: arm starter, click legal bench, lineup state updates', () => {
       setupValidLineup()
       const { container } = render(<LineupTab teamId="123" />)
-      // Find a DEF starter and a DEF bench card (same-position swap is always legal).
+      // Find a DEF starter body button and a DEF bench body button (same-position swap is always legal).
       // Per makeValidSquad: ids 3-7 are DEFs; one will be on bench after optimiseLineup picks 11.
-      const defCard = container.querySelector('[data-testid="pitch-card-3"]') as HTMLButtonElement | null
+      // Phase 76: body buttons are pitch-card-body-{id}; data-legal-target lives on them.
+      const defCard = container.querySelector('[data-testid="pitch-card-body-3"]') as HTMLButtonElement | null
       const benchDefCard = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-legal-target="true"]'))[0] as HTMLButtonElement | undefined
       if (!defCard || !benchDefCard) {
         // If id 3 wasn't a starter, retry with id 4
-        const altDefCard = container.querySelector('[data-testid="pitch-card-4"]') as HTMLButtonElement
+        const altDefCard = container.querySelector('[data-testid="pitch-card-body-4"]') as HTMLButtonElement
         fireEvent.click(altDefCard)
       } else {
         fireEvent.click(defCard)
       }
-      // After arming, click the first legal bench card
+      // After arming, click the first legal bench body button
       const legal = container.querySelector('[data-testid="pitch-row-bench"] [data-legal-target="true"]') as HTMLButtonElement
       expect(legal).not.toBeNull()
-      const swappedInId = Number(legal.getAttribute('data-testid')!.replace('pitch-card-', ''))
+      const swappedInId = Number(legal.getAttribute('data-testid')!.replace('pitch-card-body-', ''))
       fireEvent.click(legal)
       // After swap: the swapped-in id is now in an XI row, no longer in bench row
-      const benchIds = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]'))
+      // Use outer pitch-card-{id} divs (not body buttons) to avoid double-counting
+      const benchIds = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])'))
         .map(c => Number(c.getAttribute('data-testid')!.replace('pitch-card-', '')))
       expect(benchIds).not.toContain(swappedInId)
       // Pending state cleared
@@ -292,18 +297,18 @@ describe('Phase 72: LineupTab', () => {
     it('Reset restores algorithm original lineup', () => {
       setupValidLineup()
       const { container } = render(<LineupTab teamId="123" />)
-      // Snapshot the initial bench id at row 0 (bench GK)
-      const initialBenchIds = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]'))
+      // Snapshot the initial bench ids — use outer pitch-card-{id} divs only (Phase 76 refactor)
+      const initialBenchIds = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])'))
         .map(c => c.getAttribute('data-testid')!.replace('pitch-card-', ''))
       const initialFormation = container.querySelector('[data-testid="lineup-headline-row"]')!.textContent
-      // Perform an arbitrary legal swap: arm any starter and click any legal bench
-      const defStarter = container.querySelector('[data-testid="pitch-row-def"] [data-testid^="pitch-card-"]') as HTMLButtonElement
+      // Perform an arbitrary legal swap: arm any starter body button and click any legal bench
+      const defStarter = container.querySelector('[data-testid="pitch-row-def"] [data-testid^="pitch-card-body-"]') as HTMLButtonElement
       fireEvent.click(defStarter)
       const legalTarget = container.querySelector('[data-testid="pitch-row-bench"] [data-legal-target="true"]') as HTMLButtonElement | null
       if (legalTarget) {
         fireEvent.click(legalTarget)
         // Verify state changed
-        const afterSwapBenchIds = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]'))
+        const afterSwapBenchIds = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])'))
           .map(c => c.getAttribute('data-testid')!.replace('pitch-card-', ''))
         expect(afterSwapBenchIds).not.toEqual(initialBenchIds)
       }
@@ -311,7 +316,7 @@ describe('Phase 72: LineupTab', () => {
       const resetBtn = container.querySelector('[data-testid="lineup-reset"]') as HTMLButtonElement
       fireEvent.click(resetBtn)
       // Bench ids return to initial
-      const restoredBenchIds = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]'))
+      const restoredBenchIds = Array.from(container.querySelectorAll('[data-testid="pitch-row-bench"] [data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])'))
         .map(c => c.getAttribute('data-testid')!.replace('pitch-card-', ''))
       expect(restoredBenchIds).toEqual(initialBenchIds)
       const restoredFormation = container.querySelector('[data-testid="lineup-headline-row"]')!.textContent
@@ -322,8 +327,8 @@ describe('Phase 72: LineupTab', () => {
       setupValidLineup()
       const setItemSpy = vi.spyOn(Storage.prototype, 'setItem')
       const { container } = render(<LineupTab teamId="123" />)
-      // Perform a swap
-      const defStarter = container.querySelector('[data-testid="pitch-row-def"] [data-testid^="pitch-card-"]') as HTMLButtonElement
+      // Perform a swap — Phase 76: use body button to arm swap
+      const defStarter = container.querySelector('[data-testid="pitch-row-def"] [data-testid^="pitch-card-body-"]') as HTMLButtonElement
       fireEvent.click(defStarter)
       const legalTarget = container.querySelector('[data-testid="pitch-row-bench"] [data-legal-target="true"]') as HTMLButtonElement | null
       if (legalTarget) fireEvent.click(legalTarget)

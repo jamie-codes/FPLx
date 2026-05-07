@@ -28,10 +28,19 @@ interface PlayerCardProps {
   isCaptain: boolean
   isViceCaptain: boolean
   onTap: (id: number) => void
+  // Phase 76 OPT-01 — pill callbacks; body tap (onTap) keeps existing swap semantics.
+  onSetCaptain: (id: number) => void
+  onSetVc: (id: number) => void
+  canSetCaptain: boolean   // false when this card is already the captain (disables Set C)
+  canSetVc: boolean        // false when this card is already the captain OR VC (disables Set VC)
 }
 
-function PlayerCard({ id, player, isPending, isLegalTarget, isIncompatible, isCaptain, isViceCaptain, onTap }: PlayerCardProps) {
-  const baseCls = 'relative flex flex-col items-stretch justify-center min-h-[64px] sm:min-h-[72px] w-full max-w-[96px] sm:max-w-[112px] rounded border bg-zinc-50 dark:bg-zinc-800 px-2 py-2 text-left transition-shadow'
+function PlayerCard({
+  id, player, isPending, isLegalTarget, isIncompatible, isCaptain, isViceCaptain,
+  onTap, onSetCaptain, onSetVc, canSetCaptain, canSetVc,
+}: PlayerCardProps) {
+  const wrapperCls = 'relative flex flex-col items-stretch w-full max-w-[96px] sm:max-w-[112px] gap-1'
+  const bodyBaseCls = 'relative flex flex-col items-stretch justify-center min-h-[64px] sm:min-h-[72px] w-full rounded border bg-zinc-50 dark:bg-zinc-800 px-2 py-2 text-left transition-shadow'
   const stateCls = isPending
     ? 'border-amber-400 bg-amber-50 dark:bg-amber-950 ring-2 ring-amber-400 ring-offset-1 ring-offset-white dark:ring-offset-zinc-900'
     : isLegalTarget
@@ -39,38 +48,70 @@ function PlayerCard({ id, player, isPending, isLegalTarget, isIncompatible, isCa
     : isIncompatible
     ? 'border-zinc-200 dark:border-zinc-700 opacity-40 cursor-not-allowed'
     : 'border-zinc-200 dark:border-zinc-700 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700'
+  const pillBase = 'flex-1 px-2 py-1 text-xs min-h-[44px] rounded border bg-white dark:bg-zinc-800 transition-all duration-150 cursor-pointer'
+  const pillIdle = 'border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
+  const pillDisabled = 'border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-500 opacity-50 cursor-not-allowed'
+  // UI-SPEC LOCKED DECISION (Phase 76): direct-commit pills, no arm state.
+  // See UI-SPEC.md §OPT-01 line 202 + §Rejected Patterns line 312.
   return (
-    <button
-      type="button"
-      // CRITICAL Pitfall 7: stopPropagation prevents the pitch background's onClick
-      // from firing right after a card click and immediately disarming the pending state.
-      onClick={(e) => { e.stopPropagation(); onTap(id) }}
-      disabled={isIncompatible}
-      data-testid={`pitch-card-${id}`}
-      data-pending={isPending ? 'true' : undefined}
-      data-legal-target={isLegalTarget ? 'true' : undefined}
-      className={`${baseCls} ${stateCls}`}
-    >
-      <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-        {player.web_name}
-      </span>
-      <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-        {(player.xPts_1gw ?? 0).toFixed(1)}
-      </span>
-      <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-        {Math.round((player.start_prob ?? 0) * 100)}%
-      </span>
-      {isCaptain && (
-        <span className="absolute top-1 right-1 text-xs font-semibold text-amber-600 dark:text-amber-400" data-testid="captain-badge">
-          C
+    <div className={wrapperCls} data-testid={`pitch-card-${id}`}>
+      <button
+        type="button"
+        // CRITICAL Pitfall 7 (preserved): stopPropagation prevents the pitch background's onClick
+        // from firing right after a card click and immediately disarming the pending state.
+        onClick={(e) => { e.stopPropagation(); onTap(id) }}
+        disabled={isIncompatible}
+        data-testid={`pitch-card-body-${id}`}
+        data-pending={isPending ? 'true' : undefined}
+        data-legal-target={isLegalTarget ? 'true' : undefined}
+        className={`${bodyBaseCls} ${stateCls}`}
+      >
+        <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+          {player.web_name}
         </span>
-      )}
-      {isViceCaptain && (
-        <span className="absolute top-1 right-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400" data-testid="vc-badge">
-          VC
+        <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+          {(player.xPts_1gw ?? 0).toFixed(1)}
         </span>
-      )}
-    </button>
+        <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+          {Math.round((player.start_prob ?? 0) * 100)}%
+        </span>
+        {isCaptain && (
+          <span className="absolute top-1 right-1 text-xs font-semibold text-amber-600 dark:text-amber-400" data-testid="captain-badge">
+            C
+          </span>
+        )}
+        {isViceCaptain && (
+          <span className="absolute top-1 right-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400" data-testid="vc-badge">
+            VC
+          </span>
+        )}
+      </button>
+      {/* Phase 76 OPT-01: per-card Set C / Set VC pills (siblings of body button to avoid nested <button>) */}
+      <div className="flex gap-1">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onSetCaptain(id) }}
+          disabled={!canSetCaptain}
+          aria-disabled={!canSetCaptain}
+          aria-label={canSetCaptain ? `Make ${player.web_name} captain` : 'Captain'}
+          data-testid={`set-c-${id}`}
+          className={`${pillBase} ${canSetCaptain ? pillIdle : pillDisabled}`}
+        >
+          Set C
+        </button>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onSetVc(id) }}
+          disabled={!canSetVc}
+          aria-disabled={!canSetVc}
+          aria-label={canSetVc ? `Make ${player.web_name} vice-captain` : (isCaptain ? 'Vice-captain — already captain' : 'Vice-captain')}
+          data-testid={`set-vc-${id}`}
+          className={`${pillBase} ${canSetVc ? pillIdle : pillDisabled}`}
+        >
+          Set VC
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -112,6 +153,10 @@ function PitchRow({ position, ids, playerMap, pendingStarterId, legalBenchIds, o
               isCaptain={id === captainId}
               isViceCaptain={id === vcId}
               onTap={onCardTap}
+              onSetCaptain={() => {}} // STUB — Task 2b wires real values
+              onSetVc={() => {}}      // STUB — Task 2b wires real values
+              canSetCaptain={false}   // STUB — Task 2b wires real values
+              canSetVc={false}        // STUB — Task 2b wires real values
             />
           )
         })}
