@@ -107,6 +107,7 @@ function VersionHistoryTable({ data }: { data: AccuracyBacktest }) {
   return (
     <div>
       <h2 className="text-lg font-semibold mb-2">Model Version History</h2>
+      <div className="overflow-x-auto">
       <table className={TABLE_CLS}>
         <thead>
           <tr>
@@ -147,6 +148,7 @@ function VersionHistoryTable({ data }: { data: AccuracyBacktest }) {
           })}
         </tbody>
       </table>
+      </div>
       {versions.length === 1 && (
         <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
           First pipeline run — no version history yet.
@@ -355,6 +357,7 @@ function GwSummaryTable({ data }: { data: AccuracyBacktest }) {
   return (
     <div>
       <h2 className="text-lg font-semibold mb-2">GW Accuracy Summary</h2>
+      <div className="overflow-x-auto">
       <table className={TABLE_CLS}>
         <thead>
           <tr>
@@ -485,6 +488,7 @@ function GwSummaryTable({ data }: { data: AccuracyBacktest }) {
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
   )
 }
@@ -525,6 +529,7 @@ function HaulterList({ data }: { data: AccuracyBacktest }) {
   return (
     <div>
       <h2 className="text-lg font-semibold mb-2">All Haulers (GW Backtest)</h2>
+      <div className="overflow-x-auto">
       <table className={TABLE_CLS}>
         <thead>
           <tr>
@@ -549,6 +554,7 @@ function HaulterList({ data }: { data: AccuracyBacktest }) {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   )
 }
@@ -621,6 +627,7 @@ function PlayerDeltaTable({ data }: { data: AccuracyBacktest }) {
       <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
         Sorted by biggest xPts over-prediction (most negative delta first). Click any column header to re-sort.
       </p>
+      <div className="overflow-x-auto">
       <table className={TABLE_CLS}>
         <thead>
           <tr>
@@ -645,6 +652,7 @@ function PlayerDeltaTable({ data }: { data: AccuracyBacktest }) {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   )
 }

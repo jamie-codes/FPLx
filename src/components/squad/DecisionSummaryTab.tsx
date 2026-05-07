@@ -506,7 +506,7 @@ export function DecisionSummaryTab({
             {captaincyCandidates.slice(0, 3).map((c, i) => (
               <div
                 key={c.player.id}
-                className="rounded border border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3"
+                className="rounded border border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3"
               >
                 {/* Rank + player name */}
                 <div className="flex items-center gap-1.5">
