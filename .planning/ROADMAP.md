@@ -162,7 +162,7 @@ See `.planning/milestones/v1.9-ROADMAP.md` for full phase details.
 - [x] **Phase 74: Transfer Engine Overhaul** — 3-per-team cap enforcement, duplicate transfer bug fix, multi-hit view (1FT/2FT/−4/−8), bank balance auto-pull and feasibility checks (complete 2026-05-06)
 - [x] **Phase 75: Fixture Heat Map v2** — opponent labels per cell, owned-team filtering and row highlighting, user-selectable horizon (8/12/16 GWs), ATT/DEF difficulty toggle *(complete 2026-05-07)*
 - [x] **Phase 76: Analytics Enhancements** — routes_to_points pipeline score + GemTable column, Accuracy GW row drill-down, LineupTab manual captain/VC override *(complete 2026-05-07)*
-- [ ] **Phase 77: Pitch Visuals & Mobile Polish** — LineupTab kit art with placeholder fallback, Decision tab captain card overflow fix, full mobile layout audit on 390–430px viewport
+- [x] **Phase 77: Pitch Visuals & Mobile Polish** — LineupTab kit art with placeholder fallback, Decision tab captain card overflow fix, full mobile layout audit on 390–430px viewport *(complete 2026-05-07)*
 
 ## Phase Details
 
@@ -734,8 +734,8 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   3. GemTable and all sub-tables (Accuracy, Rivals, Value Gems, DefCon) render without horizontal overflow on 390–430px viewport widths — xPts columns and sortable columns are fully visible or the table is explicitly scroll-bounded
   4. Every tab verified individually on a 430px viewport (Galaxy S26+): no truncated text, no misaligned cells, no tap targets below 44px — all violations resolved before the phase is marked complete
 **Plans**: 2 plans
-  - [ ] 077-01-PLAN.md — OPT-02 kit art on PlayerCard + POL-01 captain row flex-wrap + POL-02 AccuracyTab overflow-x-auto wrappers
-  - [ ] 077-02-PLAN.md — POL-03 Playwright install + 7-tab 430px mobile-overflow audit
+  - [x] 077-01-PLAN.md — OPT-02 kit art on PlayerCard + POL-01 captain row flex-wrap + POL-02 AccuracyTab overflow-x-auto wrappers
+  - [x] 077-02-PLAN.md — POL-03 Playwright install + 7-tab 430px mobile-overflow audit
 **UI hint**: yes
 
 ## v1.13 Analytics UX & Intelligence (Phases 78-81)

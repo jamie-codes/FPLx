@@ -4,14 +4,14 @@ milestone: v1.12
 milestone_name: Modelling & Refinement — Carry-forward
 status: executing
 stopped_at: context exhaustion at 78% (2026-05-07)
-last_updated: "2026-05-07T20:04:52.914Z"
-last_activity: 2026-05-07 -- Phase 77 planning complete
+last_updated: "2026-05-07T21:00:00.000Z"
+last_activity: 2026-05-07 -- Phase 77 Plan 02 complete (POL-03 Playwright mobile audit)
 progress:
   total_phases: 27
-  completed_phases: 26
+  completed_phases: 27
   total_plans: 81
-  completed_plans: 79
-  percent: 98
+  completed_plans: 81
+  percent: 100
 ---
 
 # Project State
@@ -25,15 +25,16 @@ See: .planning/PROJECT.md (updated 2026-05-04 — v1.10 started)
 
 ## Current Position
 
-Phase: 77 — Pitch Visuals & Mobile Polish (next)
-Plan: 0 of TBD plans — not yet planned
-Status: Ready to execute
-Last activity: 2026-05-07 -- Phase 77 planning complete
+Phase: 77 — Pitch Visuals & Mobile Polish (complete)
+Plan: 2 of 2 plans — all complete
+Status: Phase complete — v1.12 all phases done
+Last activity: 2026-05-07 -- Phase 77 Plan 02 complete (POL-03 Playwright mobile audit)
 
 ## Performance Metrics
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
+| 77 | 02 | ~10 min | 2 | 5 |
 
 **Previous milestone (v1.9) velocity:**
 
@@ -45,6 +46,8 @@ Last activity: 2026-05-07 -- Phase 77 planning complete
 
 ### Decisions
 
+- [077-02] MobileNav buttons (plain `<button>`, not role=tab) used for navigation at 430px; desktop nav hidden via sm:hidden
+- [077-02] Playwright 1.59.1 installed (exceeds plan's ^1.49.0 floor); Chromium headless-shell v1217 downloaded
 - [v1.9-roadmap] TRT-01 is PURE TYPESCRIPT — no LLM; top-3 sell roots + greedy continuation per branch
 - [v1.9-roadmap] ML-08 requires `p-limit` ^6.1.0 npm install for 3-concurrent-request batching
 - [v1.9-roadmap] MTP-07 sell price caveat shown only when unauthenticated; exact selling_price used when authenticated
