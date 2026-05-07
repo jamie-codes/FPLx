@@ -124,12 +124,17 @@ interface PitchRowProps {
   pendingStarterId: number | null
   legalBenchIds: Set<number> | null
   onCardTap: (id: number) => void
-  captainId: number
-  vcId: number
+  effectiveCaptainId: number
+  effectiveVcId: number
+  onSetCaptain: (id: number) => void
+  onSetVc: (id: number) => void
   isBench?: boolean
 }
 
-function PitchRow({ position, ids, playerMap, pendingStarterId, legalBenchIds, onCardTap, captainId, vcId, isBench = false }: PitchRowProps) {
+function PitchRow({
+  position, ids, playerMap, pendingStarterId, legalBenchIds, onCardTap,
+  effectiveCaptainId, effectiveVcId, onSetCaptain, onSetVc, isBench = false,
+}: PitchRowProps) {
   return (
     <div className="flex items-stretch gap-2 sm:gap-3" data-testid={`pitch-row-${position.toLowerCase()}`}>
       <div className="text-[10px] font-semibold uppercase text-zinc-500 dark:text-zinc-400 tracking-wide w-10 self-center">
@@ -142,6 +147,8 @@ function PitchRow({ position, ids, playerMap, pendingStarterId, legalBenchIds, o
           const isPending = id === pendingStarterId
           const isLegalTarget = isBench && legalBenchIds?.has(id) === true
           const isIncompatible = isBench && legalBenchIds !== null && !legalBenchIds.has(id)
+          const isCaptain = id === effectiveCaptainId
+          const isViceCaptain = id === effectiveVcId
           return (
             <PlayerCard
               key={id}
@@ -150,13 +157,13 @@ function PitchRow({ position, ids, playerMap, pendingStarterId, legalBenchIds, o
               isPending={isPending}
               isLegalTarget={isLegalTarget}
               isIncompatible={isIncompatible}
-              isCaptain={id === captainId}
-              isViceCaptain={id === vcId}
+              isCaptain={isCaptain}
+              isViceCaptain={isViceCaptain}
               onTap={onCardTap}
-              onSetCaptain={() => {}} // STUB — Task 2b wires real values
-              onSetVc={() => {}}      // STUB — Task 2b wires real values
-              canSetCaptain={false}   // STUB — Task 2b wires real values
-              canSetVc={false}        // STUB — Task 2b wires real values
+              onSetCaptain={onSetCaptain}
+              onSetVc={onSetVc}
+              canSetCaptain={!isCaptain}
+              canSetVc={!isCaptain && !isViceCaptain}
             />
           )
         })}
@@ -203,13 +210,20 @@ export function LineupTab({ teamId }: LineupTabProps) {
   // Override state: held lineup; starts as initialLineup, mutated by swaps, restored by Reset.
   // Pitfall 6: any data refetch resets overrides — accepted as session-only behaviour per D-08.
   const [lineup, setLineup] = useState<OptimisedLineup | null>(initialLineup)
-  useEffect(() => {
-    setLineup(initialLineup)
-    setPendingStarterId(null)
-  }, [initialLineup])
 
   // Swap state machine (RESEARCH.md Pattern 5):
   const [pendingStarterId, setPendingStarterId] = useState<number | null>(null)
+
+  // Phase 76 OPT-01: captain/VC override (session-only; cleared by Reset and squad refresh).
+  const [captainOverrideId, setCaptainOverrideId] = useState<number | null>(null)
+  const [vcOverrideId, setVcOverrideId] = useState<number | null>(null)
+
+  useEffect(() => {
+    setLineup(initialLineup)
+    setPendingStarterId(null)
+    setCaptainOverrideId(null)   // Phase 76 OPT-01: clear override on squad refresh (Pitfall 2)
+    setVcOverrideId(null)
+  }, [initialLineup])
 
   function handleStarterTap(id: number) {
     setPendingStarterId(prev => prev === id ? null : id)
@@ -227,6 +241,8 @@ export function LineupTab({ teamId }: LineupTabProps) {
   function handleReset() {
     setPendingStarterId(null)
     setLineup(initialLineup)
+    setCaptainOverrideId(null)   // Phase 76 OPT-01
+    setVcOverrideId(null)
   }
 
   // Compute legal bench targets when a starter is armed (memoised on pendingStarterId + lineup).
@@ -305,12 +321,34 @@ export function LineupTab({ teamId }: LineupTabProps) {
   const starterMids = lineup.starters.filter(id => playerMap.get(id)?.element_type === MID)
   const starterFwds = lineup.starters.filter(id => playerMap.get(id)?.element_type === FWD)
 
+  // Phase 76 OPT-01: effective captain/VC and the override handlers.
+  // Direct-commit pill model per UI-SPEC §OPT-01 (no arm state, no pendingCaptainArmedId).
+  const effectiveCaptainId = captainOverrideId ?? lineup.captainId
+  const effectiveVcId = vcOverrideId ?? lineup.vcId
+
+  const setCaptain = (id: number) => {
+    if (id === effectiveCaptainId) return  // no-op (defence in depth; pill is also disabled)
+    // Auto-shuffle: if the new captain was the VC, move VC to the previous captain.
+    if (id === effectiveVcId) {
+      setVcOverrideId(effectiveCaptainId)
+    }
+    setCaptainOverrideId(id)
+    setPendingStarterId(null)              // mutual exclusion with swap arm
+  }
+
+  const setVc = (id: number) => {
+    if (id === effectiveCaptainId) return  // disabled but defence in depth
+    if (id === effectiveVcId) return       // no-op
+    setVcOverrideId(id)
+    setPendingStarterId(null)
+  }
+
   // Total xPts: sum of starters' xPts_1gw + captain's xPts_1gw (captain doubles per FPL rules).
   const sumStarterXpts = lineup.starters.reduce((acc, id) => {
     const p = playerMap.get(id)
     return acc + ((p?.xPts_1gw ?? 0))
   }, 0)
-  const captainBonus = playerMap.get(lineup.captainId)?.xPts_1gw ?? 0
+  const captainBonus = playerMap.get(effectiveCaptainId)?.xPts_1gw ?? 0
   const totalXPts = sumStarterXpts + captainBonus
 
   const onCardTap = (id: number) => {
@@ -356,12 +394,12 @@ export function LineupTab({ teamId }: LineupTabProps) {
         onClick={handleBackgroundTap}
         data-testid="pitch"
       >
-        <PitchRow position="GK"  ids={starterGks}  playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} captainId={lineup.captainId} vcId={lineup.vcId} />
-        <PitchRow position="DEF" ids={starterDefs} playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} captainId={lineup.captainId} vcId={lineup.vcId} />
-        <PitchRow position="MID" ids={starterMids} playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} captainId={lineup.captainId} vcId={lineup.vcId} />
-        <PitchRow position="FWD" ids={starterFwds} playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} captainId={lineup.captainId} vcId={lineup.vcId} />
+        <PitchRow position="GK"  ids={starterGks}  playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} effectiveCaptainId={effectiveCaptainId} effectiveVcId={effectiveVcId} onSetCaptain={setCaptain} onSetVc={setVc} />
+        <PitchRow position="DEF" ids={starterDefs} playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} effectiveCaptainId={effectiveCaptainId} effectiveVcId={effectiveVcId} onSetCaptain={setCaptain} onSetVc={setVc} />
+        <PitchRow position="MID" ids={starterMids} playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} effectiveCaptainId={effectiveCaptainId} effectiveVcId={effectiveVcId} onSetCaptain={setCaptain} onSetVc={setVc} />
+        <PitchRow position="FWD" ids={starterFwds} playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} effectiveCaptainId={effectiveCaptainId} effectiveVcId={effectiveVcId} onSetCaptain={setCaptain} onSetVc={setVc} />
         <div className="border-t border-zinc-200 dark:border-zinc-700 mt-4 pt-4">
-          <PitchRow position="Bench" ids={lineup.bench} playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} captainId={lineup.captainId} vcId={lineup.vcId} isBench />
+          <PitchRow position="Bench" ids={lineup.bench} playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} effectiveCaptainId={effectiveCaptainId} effectiveVcId={effectiveVcId} onSetCaptain={setCaptain} onSetVc={setVc} isBench />
         </div>
       </div>
 

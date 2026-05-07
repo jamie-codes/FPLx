@@ -348,7 +348,7 @@ describe('Phase 72: LineupTab', () => {
       // Find current captain via the badge.
       const initialBadge = container.querySelector('[data-testid="captain-badge"]') as HTMLElement
       expect(initialBadge).not.toBeNull()
-      const initialCaptainCard = initialBadge.closest('[data-testid^="pitch-card-"]') as HTMLElement
+      const initialCaptainCard = initialBadge.closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
       const initialCaptainId = initialCaptainCard.getAttribute('data-testid')!.replace('pitch-card-', '')
       // Find a starter who is NOT the captain.
       const allCards = Array.from(container.querySelectorAll('[data-testid^="pitch-card-"]')) as HTMLElement[]
@@ -364,7 +364,7 @@ describe('Phase 72: LineupTab', () => {
       // C badge should now be inside the new captain's card.
       const newBadge = container.querySelector('[data-testid="captain-badge"]') as HTMLElement
       expect(newBadge).not.toBeNull()
-      const newBadgeParent = newBadge.closest('[data-testid^="pitch-card-"]') as HTMLElement
+      const newBadgeParent = newBadge.closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
       expect(newBadgeParent.getAttribute('data-testid')).toBe(`pitch-card-${newCaptainId}`)
     })
 
@@ -372,9 +372,9 @@ describe('Phase 72: LineupTab', () => {
       setupValidLineup()
       const { container } = render(<LineupTab teamId="123" />)
       const captainCard = (container.querySelector('[data-testid="captain-badge"]') as HTMLElement)
-        .closest('[data-testid^="pitch-card-"]') as HTMLElement
+        .closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
       const vcCard = (container.querySelector('[data-testid="vc-badge"]') as HTMLElement)
-        .closest('[data-testid^="pitch-card-"]') as HTMLElement
+        .closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
       const captainId = captainCard.getAttribute('data-testid')!.replace('pitch-card-', '')
       const vcId = vcCard.getAttribute('data-testid')!.replace('pitch-card-', '')
       const allCards = Array.from(container.querySelectorAll('[data-testid^="pitch-card-"]')) as HTMLElement[]
@@ -388,7 +388,7 @@ describe('Phase 72: LineupTab', () => {
       const newVcId = setVcBtn.getAttribute('data-testid')!.replace('set-vc-', '')
       fireEvent.click(setVcBtn)
       const newVcBadge = container.querySelector('[data-testid="vc-badge"]') as HTMLElement
-      const newVcParent = newVcBadge.closest('[data-testid^="pitch-card-"]') as HTMLElement
+      const newVcParent = newVcBadge.closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
       expect(newVcParent.getAttribute('data-testid')).toBe(`pitch-card-${newVcId}`)
     })
 
@@ -396,18 +396,18 @@ describe('Phase 72: LineupTab', () => {
       setupValidLineup()
       const { container } = render(<LineupTab teamId="123" />)
       const prevCaptainCard = (container.querySelector('[data-testid="captain-badge"]') as HTMLElement)
-        .closest('[data-testid^="pitch-card-"]') as HTMLElement
+        .closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
       const prevVcCard = (container.querySelector('[data-testid="vc-badge"]') as HTMLElement)
-        .closest('[data-testid^="pitch-card-"]') as HTMLElement
+        .closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
       const prevCaptainId = prevCaptainCard.getAttribute('data-testid')!.replace('pitch-card-', '')
       const prevVcId = prevVcCard.getAttribute('data-testid')!.replace('pitch-card-', '')
       const setCOnVc = prevVcCard.querySelector('[data-testid^="set-c-"]') as HTMLButtonElement
       fireEvent.click(setCOnVc)
       const newCaptainBadge = container.querySelector('[data-testid="captain-badge"]') as HTMLElement
       const newVcBadge = container.querySelector('[data-testid="vc-badge"]') as HTMLElement
-      expect(newCaptainBadge.closest('[data-testid^="pitch-card-"]')!.getAttribute('data-testid'))
+      expect(newCaptainBadge.closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])')!.getAttribute('data-testid'))
         .toBe(`pitch-card-${prevVcId}`)
-      expect(newVcBadge.closest('[data-testid^="pitch-card-"]')!.getAttribute('data-testid'))
+      expect(newVcBadge.closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])')!.getAttribute('data-testid'))
         .toBe(`pitch-card-${prevCaptainId}`)
     })
 
@@ -415,7 +415,7 @@ describe('Phase 72: LineupTab', () => {
       setupValidLineup()
       const { container } = render(<LineupTab teamId="123" />)
       const captainCard = (container.querySelector('[data-testid="captain-badge"]') as HTMLElement)
-        .closest('[data-testid^="pitch-card-"]') as HTMLElement
+        .closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
       const captainId = captainCard.getAttribute('data-testid')!.replace('pitch-card-', '')
       const setVcOnCaptain = captainCard.querySelector('[data-testid^="set-vc-"]') as HTMLButtonElement
       // disabled OR aria-disabled="true" — both are valid per UI-SPEC §Interaction States
@@ -424,10 +424,10 @@ describe('Phase 72: LineupTab', () => {
       fireEvent.click(setVcOnCaptain)
       // C badge still on captain; VC badge NOT on captain.
       const captainBadge = container.querySelector('[data-testid="captain-badge"]')!
-        .closest('[data-testid^="pitch-card-"]') as HTMLElement
+        .closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
       expect(captainBadge.getAttribute('data-testid')).toBe(`pitch-card-${captainId}`)
       const vcBadgeAfter = container.querySelector('[data-testid="vc-badge"]') as HTMLElement
-      const vcBadgeParent = vcBadgeAfter.closest('[data-testid^="pitch-card-"]') as HTMLElement
+      const vcBadgeParent = vcBadgeAfter.closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
       expect(vcBadgeParent.getAttribute('data-testid')).not.toBe(`pitch-card-${captainId}`)
     })
 
@@ -435,7 +435,7 @@ describe('Phase 72: LineupTab', () => {
       setupValidLineup()
       const { container } = render(<LineupTab teamId="123" />)
       const initialCaptainCard = (container.querySelector('[data-testid="captain-badge"]') as HTMLElement)
-        .closest('[data-testid^="pitch-card-"]') as HTMLElement
+        .closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
       const initialCaptainId = initialCaptainCard.getAttribute('data-testid')!
       // Reassign captain to a different player.
       const otherSetC = Array.from(container.querySelectorAll('[data-testid^="set-c-"]'))
@@ -448,7 +448,7 @@ describe('Phase 72: LineupTab', () => {
       const resetBtn = container.querySelector('[data-testid="lineup-reset"]') as HTMLButtonElement
       fireEvent.click(resetBtn)
       const finalCaptainCard = (container.querySelector('[data-testid="captain-badge"]') as HTMLElement)
-        .closest('[data-testid^="pitch-card-"]') as HTMLElement
+        .closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
       expect(finalCaptainCard.getAttribute('data-testid')).toBe(initialCaptainId)
     })
 
@@ -472,7 +472,7 @@ describe('Phase 72: LineupTab', () => {
       // After refresh, the captain badge must follow the algorithm's choice for the new squad,
       // NOT the previously-overridden id (unless coincidentally the same — assert ABSENCE of stale override).
       const finalCaptainCard = container.querySelector('[data-testid="captain-badge"]')
-        ?.closest('[data-testid^="pitch-card-"]')
+        ?.closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])')
       // If the new lineup's algorithm captain happens to equal the previously-overridden id, the test still
       // passes — what matters is that the badge MATCHES the new lineup's recommendation, not that it differs.
       // The strong assertion is: there is exactly one captain badge AND it is on a player from the new lineup.
