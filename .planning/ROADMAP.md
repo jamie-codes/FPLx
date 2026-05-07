@@ -733,7 +733,9 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   2. CaptainPicksPanel on the Decision tab renders entirely within its card container on desktop — no content clips the card boundary; card expands vertically or uses an internal scroll region as needed
   3. GemTable and all sub-tables (Accuracy, Rivals, Value Gems, DefCon) render without horizontal overflow on 390–430px viewport widths — xPts columns and sortable columns are fully visible or the table is explicitly scroll-bounded
   4. Every tab verified individually on a 430px viewport (Galaxy S26+): no truncated text, no misaligned cells, no tap targets below 44px — all violations resolved before the phase is marked complete
-**Plans**: TBD
+**Plans**: 2 plans
+  - [ ] 077-01-PLAN.md — OPT-02 kit art on PlayerCard + POL-01 captain row flex-wrap + POL-02 AccuracyTab overflow-x-auto wrappers
+  - [ ] 077-02-PLAN.md — POL-03 Playwright install + 7-tab 430px mobile-overflow audit
 **UI hint**: yes
 
 ## v1.13 Analytics UX & Intelligence (Phases 78-81)

@@ -6,6 +6,8 @@ import { usePlayers } from '@/lib/hooks/usePlayers'
 import { optimiseLineup } from '@/lib/optimise-lineup'
 import { isLegalSwap, applySwap } from '@/lib/lineup-swap'
 import type { OptimisedLineup, MergedPlayer } from '@/lib/types'
+import { teamKitUrl } from '@/lib/fpl-images'
+import { TEAM_BADGE_CODE, getTeamColour } from '@/lib/team-colours'
 
 // Position codes (mirrors src/lib/optimise-lineup.ts internals)
 const GK = 1
@@ -39,6 +41,11 @@ function PlayerCard({
   id, player, isPending, isLegalTarget, isIncompatible, isCaptain, isViceCaptain,
   onTap, onSetCaptain, onSetVc, canSetCaptain, canSetVc,
 }: PlayerCardProps) {
+  const [kitError, setKitError] = useState(false)
+  const teamCode = TEAM_BADGE_CODE[player.team_short_name]
+  const teamColour = getTeamColour(player.team_short_name)
+  const showFallback = !teamCode || kitError
+
   const wrapperCls = 'relative flex flex-col items-stretch w-full max-w-[96px] sm:max-w-[112px] gap-1'
   const bodyBaseCls = 'relative flex flex-col items-stretch justify-center min-h-[64px] sm:min-h-[72px] w-full rounded border bg-zinc-50 dark:bg-zinc-800 px-2 py-2 text-left transition-shadow'
   const stateCls = isPending
@@ -66,15 +73,40 @@ function PlayerCard({
         data-legal-target={isLegalTarget ? 'true' : undefined}
         className={`${bodyBaseCls} ${stateCls}`}
       >
-        <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-          {player.web_name}
-        </span>
-        <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-          {(player.xPts_1gw ?? 0).toFixed(1)}
-        </span>
-        <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-          {Math.round((player.start_prob ?? 0) * 100)}%
-        </span>
+        {/* Phase 77 OPT-02: kit image + text column in horizontal flex inside body */}
+        <div className="flex flex-row items-center gap-2 w-full">
+          {showFallback ? (
+            <div
+              role="img"
+              aria-label={`${player.team_short_name} team colour`}
+              data-testid={`pitch-card-kit-fallback-${id}`}
+              className="w-6 h-6 sm:w-7 sm:h-7 rounded shrink-0"
+              style={{ background: teamColour.primary }}
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={teamKitUrl(teamCode)}
+              alt={`${player.team_short_name} kit`}
+              width={28}
+              height={28}
+              data-testid={`pitch-card-kit-${id}`}
+              className="w-6 h-6 sm:w-7 sm:h-7 object-contain shrink-0"
+              onError={() => setKitError(true)}
+            />
+          )}
+          <div className="flex flex-col min-w-0 flex-1">
+            <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+              {player.web_name}
+            </span>
+            <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              {(player.xPts_1gw ?? 0).toFixed(1)}
+            </span>
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+              {Math.round((player.start_prob ?? 0) * 100)}%
+            </span>
+          </div>
+        </div>
         {isCaptain && (
           <span className="absolute top-1 right-1 text-xs font-semibold text-amber-600 dark:text-amber-400" data-testid="captain-badge">
             C
