@@ -717,9 +717,9 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   4. User can tap any player on the LineupTab pitch to arm a captain assignment (amber "C" badge reassignment); a distinct secondary interaction (e.g. long-press or dedicated VC button) assigns vice-captain; the override is session-only and a Reset button restores the algorithm's recommendation
 **Plans**: 4 plans (2 waves)
   **Wave 1** *(parallel — no shared files)*
-  - [ ] 076-01-PLAN.md — RTP-01: pipeline routes_to_points post-loop pass + 5 pytest cases (pipeline/merge.py + new pipeline/tests/test_merge_routes.py)
-  - [ ] 076-03-PLAN.md — ACC2-01: AccuracyTab GwSummaryTable expandable rows + Haulers/Flagged-Misses drill-down sub-tables + 6 vitest cases
-  - [ ] 076-04-PLAN.md — OPT-01: LineupTab captain/VC override (per-card Set C / Set VC pills, auto-shuffle, Reset & squad-refresh clears, no localStorage) + 8 vitest cases
+  - [x] 076-01-PLAN.md — RTP-01: pipeline routes_to_points post-loop pass + 5 pytest cases (pipeline/merge.py + new pipeline/tests/test_merge_routes.py)
+  - [x] 076-03-PLAN.md — ACC2-01: AccuracyTab GwSummaryTable expandable rows + Haulers/Flagged-Misses drill-down sub-tables + 6 vitest cases
+  - [x] 076-04-PLAN.md — OPT-01: LineupTab captain/VC override (per-card Set C / Set VC pills, auto-shuffle, Reset & squad-refresh clears, no localStorage) + 8 vitest cases
   **Wave 2** *(blocked on Wave 1 Plan 01 only)*
   - [ ] 076-02-PLAN.md — RTP-02: MergedPlayer.routes_to_points type + GemTable Routes column accessor + MOBILE_HIDDEN_COLUMNS entry + 4 vitest cases
 **UI hint**: yes
