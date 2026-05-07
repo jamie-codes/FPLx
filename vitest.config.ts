@@ -8,7 +8,7 @@ export default defineConfig({
     // All existing *.test.ts unit tests are DOM-agnostic and pass in jsdom without change.
     // Vitest v4 removed environmentMatchGlobs; jsdom is a safe superset for this codebase.
     environment: 'jsdom',
-    exclude: ['**/node_modules/**', '**/dist/**', '.claude/**'],
+    exclude: ['**/node_modules/**', '**/dist/**', '.claude/**', 'e2e/**'],
   },
   resolve: {
     alias: {
