@@ -15,7 +15,9 @@ import type { AccuracyBacktest } from '@/lib/types'
 
 const mockedUseAccuracy = vi.mocked(useAccuracy)
 
-const fixtureBacktest: AccuracyBacktest = {
+// ACC2-01: xpts_flagged on player gw entries — see UI-SPEC threshold A2
+// Cast needed because AccuracyPlayerGw.xpts_flagged is currently optional; the runtime data carries it.
+const fixtureBacktest = {
   generated_at: '2026-04-30T00:00:00Z',
   gws_covered: [32, 31, 30, 29, 28],
   summary: {
@@ -37,18 +39,29 @@ const fixtureBacktest: AccuracyBacktest = {
     {
       player_id: 1, player_name: 'Salah', team: 'LIV',
       gws: [
-        { gw: 32, actual_pts: 18, xpts_predicted: 8.2, xpts_delta: 9.8 },
-        { gw: 31, actual_pts: 2, xpts_predicted: 12.0, xpts_delta: -10.0 },
+        // Salah GW32: hauler (actual=18), xpts_flagged=true — in data.haulters so NOT a flagged miss
+        { gw: 32, actual_pts: 18, xpts_predicted: 8.2, xpts_delta: 9.8, xpts_flagged: true },
+        // Salah GW31: actual=2, xpts_flagged=true — qualifies as a flagged miss
+        { gw: 31, actual_pts: 2, xpts_predicted: 12.0, xpts_delta: -10.0, xpts_flagged: true },
       ],
     },
     {
       player_id: 2, player_name: 'Haaland', team: 'MCI',
       gws: [
-        { gw: 32, actual_pts: 1, xpts_predicted: 9.0, xpts_delta: -8.0 },
+        // Haaland GW32: actual=1 (<=2), xpts_flagged=true — REQUIRED for Flagged Misses test (UI-SPEC threshold A2)
+        // data.haulters cannot contain this entry because actual_pts=1 < HAULTER_THRESHOLD=10
+        { gw: 32, actual_pts: 1, xpts_predicted: 9.0, xpts_delta: -8.0, xpts_flagged: true },
+      ],
+    },
+    {
+      // Non-flagged-miss player to verify filter excludes them
+      player_id: 3, player_name: 'Saka', team: 'ARS',
+      gws: [
+        { gw: 32, actual_pts: 6, xpts_predicted: 5.5, xpts_delta: 0.5, xpts_flagged: false },
       ],
     },
   ],
-}
+} as unknown as AccuracyBacktest
 
 const fixtureWithVersionsAndCalibration: AccuracyBacktest = {
   ...fixtureBacktest,
@@ -159,6 +172,76 @@ describe('Phase 41: AccuracyTab component', () => {
     // smallest actual_pts in fixture is Haaland/GW32 (1)
     expect(firstRowAfterActual).toContain('Haaland')
     expect(firstRowAfterActual).toContain('1') // actual_pts=1; \b1\b broke when CR-02 removed ZWS word boundaries
+  })
+
+  describe('ACC2-01: GW row drill-down', () => {
+    it('clicking a GW row toggles aria-expanded between false and true', () => {
+      mockedUseAccuracy.mockReturnValue({ data: fixtureBacktest, isLoading: false, error: null } as never)
+      const { container } = render(<AccuracyTab />)
+      const gw32Row = container.querySelector('[data-testid="gw-row-32"]') as HTMLElement
+      expect(gw32Row).not.toBeNull()
+      expect(gw32Row.getAttribute('aria-expanded')).toBe('false')
+      fireEvent.click(gw32Row)
+      expect(gw32Row.getAttribute('aria-expanded')).toBe('true')
+      fireEvent.click(gw32Row)
+      expect(gw32Row.getAttribute('aria-expanded')).toBe('false')
+    })
+
+    it('drill-down panel renders with the gw-drilldown-{n} testid when expanded', () => {
+      mockedUseAccuracy.mockReturnValue({ data: fixtureBacktest, isLoading: false, error: null } as never)
+      const { container } = render(<AccuracyTab />)
+      expect(container.querySelector('[data-testid="gw-drilldown-32"]')).toBeNull()
+      const gw32Row = container.querySelector('[data-testid="gw-row-32"]') as HTMLElement
+      fireEvent.click(gw32Row)
+      expect(container.querySelector('[data-testid="gw-drilldown-32"]')).not.toBeNull()
+    })
+
+    it('drill-down Haulers sub-table contains the GW haulers (Salah GW32, actual=18)', () => {
+      mockedUseAccuracy.mockReturnValue({ data: fixtureBacktest, isLoading: false, error: null } as never)
+      const { container } = render(<AccuracyTab />)
+      const gw32Row = container.querySelector('[data-testid="gw-row-32"]') as HTMLElement
+      fireEvent.click(gw32Row)
+      const drilldown = container.querySelector('[data-testid="gw-drilldown-32"]') as HTMLElement
+      expect(drilldown.textContent).toContain('Haulers')   // section heading from UI-SPEC
+      expect(drilldown.textContent).toContain('Salah')
+      expect(drilldown.textContent).toContain('18')        // actual_pts
+    })
+
+    it('drill-down Flagged Misses sub-table contains players where xpts_flagged && actual_pts <= 2', () => {
+      mockedUseAccuracy.mockReturnValue({ data: fixtureBacktest, isLoading: false, error: null } as never)
+      const { container } = render(<AccuracyTab />)
+      const gw32Row = container.querySelector('[data-testid="gw-row-32"]') as HTMLElement
+      fireEvent.click(gw32Row)
+      const drilldown = container.querySelector('[data-testid="gw-drilldown-32"]') as HTMLElement
+      expect(drilldown.textContent).toContain('xPts Flagged Misses')   // section heading from UI-SPEC
+      expect(drilldown.textContent).toContain('Haaland')
+      expect(drilldown.textContent).toContain('1')         // actual_pts
+      expect(drilldown.textContent).toContain('9.0')       // xpts_predicted toFixed(1)
+    })
+
+    it('single-expand: opening a second GW row collapses the first', () => {
+      mockedUseAccuracy.mockReturnValue({ data: fixtureBacktest, isLoading: false, error: null } as never)
+      const { container } = render(<AccuracyTab />)
+      const gw32Row = container.querySelector('[data-testid="gw-row-32"]') as HTMLElement
+      const gw31Row = container.querySelector('[data-testid="gw-row-31"]') as HTMLElement
+      fireEvent.click(gw32Row)
+      expect(container.querySelector('[data-testid="gw-drilldown-32"]')).not.toBeNull()
+      fireEvent.click(gw31Row)
+      expect(container.querySelector('[data-testid="gw-drilldown-32"]')).toBeNull()
+      expect(container.querySelector('[data-testid="gw-drilldown-31"]')).not.toBeNull()
+      expect(gw32Row.getAttribute('aria-expanded')).toBe('false')
+      expect(gw31Row.getAttribute('aria-expanded')).toBe('true')
+    })
+
+    it('keyboard Enter on a focused GW row expands the drill-down', () => {
+      mockedUseAccuracy.mockReturnValue({ data: fixtureBacktest, isLoading: false, error: null } as never)
+      const { container } = render(<AccuracyTab />)
+      const gw32Row = container.querySelector('[data-testid="gw-row-32"]') as HTMLElement
+      expect(gw32Row.getAttribute('tabindex')).toBe('0')
+      expect(gw32Row.getAttribute('role')).toBe('button')
+      fireEvent.keyDown(gw32Row, { key: 'Enter' })
+      expect(gw32Row.getAttribute('aria-expanded')).toBe('true')
+    })
   })
 })
 
