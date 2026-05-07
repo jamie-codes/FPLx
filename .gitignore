@@ -56,3 +56,9 @@ pipeline/cache/
 # Python bytecode
 pipeline/__pycache__/
 *.pyc
+
+# Playwright (Phase 77 POL-03)
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
