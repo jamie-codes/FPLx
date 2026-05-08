@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.12
 milestone_name: Modelling & Refinement — Carry-forward
-status: executing
-stopped_at: context exhaustion at 78% (2026-05-07)
-last_updated: "2026-05-07T21:00:00.000Z"
-last_activity: 2026-05-07 -- Phase 77 Plan 02 complete (POL-03 Playwright mobile audit)
+status: in_progress
+last_updated: "2026-05-08T00:00:00.000Z"
+last_activity: 2026-05-08 -- Phase 78 wave 1 complete (078-01 done); wave 2 starting
 progress:
-  total_phases: 27
+  total_phases: 28
   completed_phases: 27
-  total_plans: 81
+  total_plans: 84
   completed_plans: 81
-  percent: 100
+  percent: 96
 ---
 
 # Project State
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-05-04 — v1.10 started)
 
 ## Current Position
 
-Phase: 77 — Pitch Visuals & Mobile Polish (complete)
-Plan: 2 of 2 plans — all complete
-Status: Phase complete — v1.12 all phases done
-Last activity: 2026-05-07 -- Phase 77 Plan 02 complete (POL-03 Playwright mobile audit)
+Phase: 78 — UI Visual Foundation (ready to execute)
+Plan: 1 of 3 plans — wave 2 executing
+Status: Phase executing — wave 2 in progress (078-02 page.tsx + 078-03 LastUpdated/MobileNav in parallel)
+Last activity: 2026-05-08 -- Phase 78 planned (3 plans: 078-01 globals.css Wave 1, 078-02 page.tsx Wave 2, 078-03 LastUpdated+MobileNav Wave 2)
 
 ## Performance Metrics
 

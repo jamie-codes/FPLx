@@ -2,58 +2,58 @@
   {
     "id": "att_home_goal_share",
     "category": "attacking",
-    "statement": "54.9% of all goals this season have been scored by the home team (511/931).",
-    "confidence_pct": 54.9,
-    "sample_n": 511,
-    "sample_total": 931
+    "statement": "55.2% of all goals this season have been scored by the home team (532/964).",
+    "confidence_pct": 55.2,
+    "sample_n": 532,
+    "sample_total": 964
   },
   {
     "id": "att_top_xg_overperformers",
     "category": "attacking",
-    "statement": "16 of 84 attackers (xG >= 3) have outscored their xG by 30%+ this season (19.0%).",
-    "confidence_pct": 19.0,
-    "sample_n": 16,
-    "sample_total": 84
+    "statement": "18 of 87 attackers (xG >= 3) have outscored their xG by 30%+ this season (20.7%).",
+    "confidence_pct": 20.7,
+    "sample_n": 18,
+    "sample_total": 87
   },
   {
     "id": "att_top_team_goal_share",
     "category": "attacking",
-    "statement": "MCI have scored 7.1% of all PL goals this season (66/931).",
-    "confidence_pct": 7.1,
-    "sample_n": 66,
-    "sample_total": 931
+    "statement": "MCI have scored 7.2% of all PL goals this season (69/964).",
+    "confidence_pct": 7.2,
+    "sample_n": 69,
+    "sample_total": 964
   },
   {
     "id": "cap_double_digit_haul_rate",
     "category": "captaincy",
-    "statement": "Double-digit hauls (10+ pts) occur in 4.6% of player appearances (463/10065).",
+    "statement": "Double-digit hauls (10+ pts) occur in 4.6% of player appearances (475/10338).",
     "confidence_pct": 4.6,
-    "sample_n": 463,
-    "sample_total": 10065
+    "sample_n": 475,
+    "sample_total": 10338
   },
   {
     "id": "cap_top3_xpts_share",
     "category": "captaincy",
-    "statement": "The top 3 captaincy options account for 1.7% of available xPts this GW (from 317 eligible players).",
-    "confidence_pct": 1.7,
+    "statement": "The top 3 captaincy options account for 3.0% of available xPts this GW (from 330 eligible players).",
+    "confidence_pct": 3.0,
     "sample_n": 3,
-    "sample_total": 317
+    "sample_total": 330
   },
   {
     "id": "def_cs_rate_top6_vs_rest",
     "category": "defensive",
-    "statement": "Top-6 teams kept clean sheets in 31.5% of their finished appearances (64/203).",
-    "confidence_pct": 31.5,
-    "sample_n": 64,
-    "sample_total": 203
+    "statement": "Top-6 teams kept clean sheets in 31.6% of their finished appearances (66/209).",
+    "confidence_pct": 31.6,
+    "sample_n": 66,
+    "sample_total": 209
   },
   {
     "id": "def_cs_home_vs_away",
     "category": "defensive",
-    "statement": "Home teams keep clean sheets in 28.2% of finished fixtures (96/340), away teams in 24.1%.",
-    "confidence_pct": 28.2,
-    "sample_n": 96,
-    "sample_total": 340
+    "statement": "Home teams keep clean sheets in 28.4% of finished fixtures (99/349), away teams in 23.5%.",
+    "confidence_pct": 28.4,
+    "sample_n": 99,
+    "sample_total": 349
   },
   {
     "id": "def_cs_streak_ge2",
@@ -66,25 +66,25 @@
   {
     "id": "player_diff_count",
     "category": "player",
-    "statement": "82 of 273 regular starters (30.0%) are differentials — high xPts with low ownership.",
-    "confidence_pct": 30.0,
-    "sample_n": 82,
-    "sample_total": 273
+    "statement": "88 of 274 regular starters (32.1%) are differentials — high xPts with low ownership.",
+    "confidence_pct": 32.1,
+    "sample_n": 88,
+    "sample_total": 274
   },
   {
     "id": "player_sell_signal_count",
     "category": "player",
-    "statement": "8 of 273 regular starters (2.9%) carry a SELL signal — actual returns outpace xG+xA, regression likely.",
-    "confidence_pct": 2.9,
-    "sample_n": 8,
-    "sample_total": 273
+    "statement": "7 of 274 regular starters (2.6%) carry a SELL signal — actual returns outpace xG+xA, regression likely.",
+    "confidence_pct": 2.6,
+    "sample_n": 7,
+    "sample_total": 274
   },
   {
     "id": "player_buy_signal_count",
     "category": "player",
-    "statement": "1 of 273 regular starters (0.4%) carry a BUY signal — actual returns trail xG+xA over the last 5 GW.",
-    "confidence_pct": 0.4,
-    "sample_n": 1,
-    "sample_total": 273
+    "statement": "2 of 274 regular starters (0.7%) carry a BUY signal — actual returns trail xG+xA over the last 5 GW.",
+    "confidence_pct": 0.7,
+    "sample_n": 2,
+    "sample_total": 274
   }
 ]

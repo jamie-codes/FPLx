@@ -750,7 +750,8 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   3. Section tabs (Analyse/Plan/Squad) and sub-tabs render as filled pills with a clearly distinguished active state; navigation is sticky on scroll
   4. A "Last updated X ago" data freshness badge appears in the nav area on every section; badge colour shifts amber when data is >2h stale
   5. Light mode background is softened to off-white (#F7F8FC range); dark mode card background is deep navy (#111827 range); card borders are visible and distinct from background in both modes
-**Plans**: TBD
+**Plans**: 3 (Wave 1: 078-01 globals.css tokens ✓; Wave 2: 078-02 page.tsx pill nav [parallel], 078-03 LastUpdated + MobileNav [parallel])
+**Status**: In progress (1/3 plans complete)
 **UI hint**: yes
 
 ### Phase 79: Insight Card Redesign

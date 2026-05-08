@@ -1,1 +1,8322 @@
-{}
+{
+  "1": {
+    "cumulative_net": 29316,
+    "last_now_cost": 61,
+    "velocity_history": [
+      29316
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "2": {
+    "cumulative_net": -59,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -59
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "3": {
+    "cumulative_net": -33,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -33
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "4": {
+    "cumulative_net": -109,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -109
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "5": {
+    "cumulative_net": 24139,
+    "last_now_cost": 72,
+    "velocity_history": [
+      24139
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "6": {
+    "cumulative_net": 27612,
+    "last_now_cost": 61,
+    "velocity_history": [
+      27612
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "7": {
+    "cumulative_net": 5834,
+    "last_now_cost": 56,
+    "velocity_history": [
+      5834
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "8": {
+    "cumulative_net": -96572,
+    "last_now_cost": 60,
+    "velocity_history": [
+      -96572
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "9": {
+    "cumulative_net": -3,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "10": {
+    "cumulative_net": 1373,
+    "last_now_cost": 50,
+    "velocity_history": [
+      1373
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "11": {
+    "cumulative_net": 2463,
+    "last_now_cost": 51,
+    "velocity_history": [
+      2463
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "13": {
+    "cumulative_net": 365,
+    "last_now_cost": 37,
+    "velocity_history": [
+      365
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "14": {
+    "cumulative_net": -10,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "15": {
+    "cumulative_net": -171,
+    "last_now_cost": 37,
+    "velocity_history": [
+      -171
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "16": {
+    "cumulative_net": 99345,
+    "last_now_cost": 98,
+    "velocity_history": [
+      99345
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "17": {
+    "cumulative_net": -2837,
+    "last_now_cost": 78,
+    "velocity_history": [
+      -2837
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "18": {
+    "cumulative_net": -1222,
+    "last_now_cost": 68,
+    "velocity_history": [
+      -1222
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "19": {
+    "cumulative_net": -749,
+    "last_now_cost": 68,
+    "velocity_history": [
+      -749
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "20": {
+    "cumulative_net": 1565,
+    "last_now_cost": 65,
+    "velocity_history": [
+      1565
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "21": {
+    "cumulative_net": -21851,
+    "last_now_cost": 72,
+    "velocity_history": [
+      -21851
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "22": {
+    "cumulative_net": -293,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -293
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "23": {
+    "cumulative_net": -1,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "24": {
+    "cumulative_net": -15,
+    "last_now_cost": 51,
+    "velocity_history": [
+      -15
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "25": {
+    "cumulative_net": -22,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -22
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "26": {
+    "cumulative_net": -7273,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -7273
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "28": {
+    "cumulative_net": -16,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -16
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "29": {
+    "cumulative_net": -3,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "30": {
+    "cumulative_net": -6493,
+    "last_now_cost": 73,
+    "velocity_history": [
+      -6493
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "31": {
+    "cumulative_net": -362,
+    "last_now_cost": 64,
+    "velocity_history": [
+      -362
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "266": {
+    "cumulative_net": 4943,
+    "last_now_cost": 73,
+    "velocity_history": [
+      4943
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "662": {
+    "cumulative_net": -154,
+    "last_now_cost": 53,
+    "velocity_history": [
+      -154
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "666": {
+    "cumulative_net": 158871,
+    "last_now_cost": 89,
+    "velocity_history": [
+      158871
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "700": {
+    "cumulative_net": 2110,
+    "last_now_cost": 42,
+    "velocity_history": [
+      2110
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "711": {
+    "cumulative_net": 0,
+    "last_now_cost": 44,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "725": {
+    "cumulative_net": -4322,
+    "last_now_cost": 51,
+    "velocity_history": [
+      -4322
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "759": {
+    "cumulative_net": 2,
+    "last_now_cost": 40,
+    "velocity_history": [
+      2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "32": {
+    "cumulative_net": 858,
+    "last_now_cost": 51,
+    "velocity_history": [
+      858
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "33": {
+    "cumulative_net": -40,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -40
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "34": {
+    "cumulative_net": -26,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -26
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "35": {
+    "cumulative_net": -1,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "36": {
+    "cumulative_net": -2397,
+    "last_now_cost": 47,
+    "velocity_history": [
+      -2397
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "37": {
+    "cumulative_net": -1361,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -1361
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "38": {
+    "cumulative_net": -8327,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -8327
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "39": {
+    "cumulative_net": -423,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -423
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "40": {
+    "cumulative_net": -163,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -163
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "41": {
+    "cumulative_net": -108,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -108
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "42": {
+    "cumulative_net": -29,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -29
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "43": {
+    "cumulative_net": -232,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -232
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "44": {
+    "cumulative_net": 30,
+    "last_now_cost": 40,
+    "velocity_history": [
+      30
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "45": {
+    "cumulative_net": -130,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -130
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "46": {
+    "cumulative_net": -20,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -20
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "47": {
+    "cumulative_net": -67366,
+    "last_now_cost": 75,
+    "velocity_history": [
+      -67366
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "48": {
+    "cumulative_net": 253,
+    "last_now_cost": 59,
+    "velocity_history": [
+      253
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "49": {
+    "cumulative_net": -6,
+    "last_now_cost": 55,
+    "velocity_history": [
+      -6
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "50": {
+    "cumulative_net": 294,
+    "last_now_cost": 53,
+    "velocity_history": [
+      294
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "51": {
+    "cumulative_net": -1,
+    "last_now_cost": 55,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "53": {
+    "cumulative_net": -89,
+    "last_now_cost": 51,
+    "velocity_history": [
+      -89
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "54": {
+    "cumulative_net": -3646,
+    "last_now_cost": 53,
+    "velocity_history": [
+      -3646
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "55": {
+    "cumulative_net": -191,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -191
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "56": {
+    "cumulative_net": 0,
+    "last_now_cost": 50,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "57": {
+    "cumulative_net": -3,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "58": {
+    "cumulative_net": -71,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -71
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "59": {
+    "cumulative_net": -2114,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -2114
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "60": {
+    "cumulative_net": -82,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -82
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "61": {
+    "cumulative_net": -8,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -8
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "62": {
+    "cumulative_net": -19,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -19
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "63": {
+    "cumulative_net": -340,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -340
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "64": {
+    "cumulative_net": -64554,
+    "last_now_cost": 88,
+    "velocity_history": [
+      -64554
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "65": {
+    "cumulative_net": -33,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -33
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "389": {
+    "cumulative_net": 23,
+    "last_now_cost": 51,
+    "velocity_history": [
+      23
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "456": {
+    "cumulative_net": 10,
+    "last_now_cost": 58,
+    "velocity_history": [
+      10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "688": {
+    "cumulative_net": -133,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -133
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "699": {
+    "cumulative_net": -182,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -182
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "701": {
+    "cumulative_net": -10,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "702": {
+    "cumulative_net": 797,
+    "last_now_cost": 43,
+    "velocity_history": [
+      797
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "703": {
+    "cumulative_net": -318,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -318
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "710": {
+    "cumulative_net": -30,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -30
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "719": {
+    "cumulative_net": -26,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -26
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "754": {
+    "cumulative_net": 10,
+    "last_now_cost": 45,
+    "velocity_history": [
+      10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "757": {
+    "cumulative_net": 0,
+    "last_now_cost": 40,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "768": {
+    "cumulative_net": -4,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -4
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "781": {
+    "cumulative_net": 3,
+    "last_now_cost": 40,
+    "velocity_history": [
+      3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "792": {
+    "cumulative_net": -1,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "808": {
+    "cumulative_net": -744,
+    "last_now_cost": 58,
+    "velocity_history": [
+      -744
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "183": {
+    "cumulative_net": -17,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -17
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "184": {
+    "cumulative_net": -36,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -36
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "185": {
+    "cumulative_net": -44,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -44
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "186": {
+    "cumulative_net": 1,
+    "last_now_cost": 43,
+    "velocity_history": [
+      1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "187": {
+    "cumulative_net": -411,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -411
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "188": {
+    "cumulative_net": -81,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -81
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "189": {
+    "cumulative_net": -1,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "190": {
+    "cumulative_net": 245,
+    "last_now_cost": 38,
+    "velocity_history": [
+      245
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "191": {
+    "cumulative_net": -2949,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -2949
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "192": {
+    "cumulative_net": -203,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -203
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "193": {
+    "cumulative_net": -171,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -171
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "194": {
+    "cumulative_net": -10,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "195": {
+    "cumulative_net": -194,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -194
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "196": {
+    "cumulative_net": 0,
+    "last_now_cost": 40,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "197": {
+    "cumulative_net": -128,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -128
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "198": {
+    "cumulative_net": -196,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -196
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "199": {
+    "cumulative_net": -238,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -238
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "200": {
+    "cumulative_net": -1678,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -1678
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "201": {
+    "cumulative_net": 0,
+    "last_now_cost": 54,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "202": {
+    "cumulative_net": -4,
+    "last_now_cost": 52,
+    "velocity_history": [
+      -4
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "203": {
+    "cumulative_net": 18,
+    "last_now_cost": 47,
+    "velocity_history": [
+      18
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "204": {
+    "cumulative_net": 0,
+    "last_now_cost": 49,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "205": {
+    "cumulative_net": -244,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -244
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "206": {
+    "cumulative_net": -126,
+    "last_now_cost": 47,
+    "velocity_history": [
+      -126
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "207": {
+    "cumulative_net": -132,
+    "last_now_cost": 47,
+    "velocity_history": [
+      -132
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "208": {
+    "cumulative_net": 0,
+    "last_now_cost": 50,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "209": {
+    "cumulative_net": -13,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -13
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "210": {
+    "cumulative_net": 48,
+    "last_now_cost": 48,
+    "velocity_history": [
+      48
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "211": {
+    "cumulative_net": -196,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -196
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "212": {
+    "cumulative_net": -1,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "213": {
+    "cumulative_net": -6,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -6
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "214": {
+    "cumulative_net": 459,
+    "last_now_cost": 43,
+    "velocity_history": [
+      459
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "215": {
+    "cumulative_net": -744,
+    "last_now_cost": 53,
+    "velocity_history": [
+      -744
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "216": {
+    "cumulative_net": 27,
+    "last_now_cost": 48,
+    "velocity_history": [
+      27
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "217": {
+    "cumulative_net": -288,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -288
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "218": {
+    "cumulative_net": -769,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -769
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "219": {
+    "cumulative_net": -16,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -16
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "470": {
+    "cumulative_net": -15365,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -15365
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "614": {
+    "cumulative_net": -247,
+    "last_now_cost": 56,
+    "velocity_history": [
+      -247
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "676": {
+    "cumulative_net": -148,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -148
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "680": {
+    "cumulative_net": -45,
+    "last_now_cost": 52,
+    "velocity_history": [
+      -45
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "722": {
+    "cumulative_net": -42,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -42
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "776": {
+    "cumulative_net": 2,
+    "last_now_cost": 45,
+    "velocity_history": [
+      2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "784": {
+    "cumulative_net": 2,
+    "last_now_cost": 45,
+    "velocity_history": [
+      2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "820": {
+    "cumulative_net": 2,
+    "last_now_cost": 45,
+    "velocity_history": [
+      2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "66": {
+    "cumulative_net": -7,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "67": {
+    "cumulative_net": -2450,
+    "last_now_cost": 46,
+    "velocity_history": [
+      -2450
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "68": {
+    "cumulative_net": -263,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -263
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "69": {
+    "cumulative_net": -62,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -62
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "70": {
+    "cumulative_net": -10,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "71": {
+    "cumulative_net": -2,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "72": {
+    "cumulative_net": 48378,
+    "last_now_cost": 52,
+    "velocity_history": [
+      48378
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "73": {
+    "cumulative_net": -48,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -48
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "74": {
+    "cumulative_net": 10475,
+    "last_now_cost": 47,
+    "velocity_history": [
+      10475
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "75": {
+    "cumulative_net": 37,
+    "last_now_cost": 38,
+    "velocity_history": [
+      37
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "76": {
+    "cumulative_net": -24,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -24
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "77": {
+    "cumulative_net": -3138,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -3138
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "78": {
+    "cumulative_net": -160,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -160
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "79": {
+    "cumulative_net": -7,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "80": {
+    "cumulative_net": 44,
+    "last_now_cost": 39,
+    "velocity_history": [
+      44
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "81": {
+    "cumulative_net": -111,
+    "last_now_cost": 69,
+    "velocity_history": [
+      -111
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "84": {
+    "cumulative_net": -6886,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -6886
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "85": {
+    "cumulative_net": 236,
+    "last_now_cost": 49,
+    "velocity_history": [
+      236
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "86": {
+    "cumulative_net": 136,
+    "last_now_cost": 50,
+    "velocity_history": [
+      136
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "87": {
+    "cumulative_net": -633,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -633
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "88": {
+    "cumulative_net": -21,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -21
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "89": {
+    "cumulative_net": -2,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "90": {
+    "cumulative_net": -8056,
+    "last_now_cost": 51,
+    "velocity_history": [
+      -8056
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "91": {
+    "cumulative_net": 0,
+    "last_now_cost": 50,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "92": {
+    "cumulative_net": -13,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -13
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "93": {
+    "cumulative_net": -33,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -33
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "94": {
+    "cumulative_net": -5,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "95": {
+    "cumulative_net": -8,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -8
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "96": {
+    "cumulative_net": -3,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "97": {
+    "cumulative_net": -189,
+    "last_now_cost": 67,
+    "velocity_history": [
+      -189
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "98": {
+    "cumulative_net": 39,
+    "last_now_cost": 54,
+    "velocity_history": [
+      39
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "99": {
+    "cumulative_net": -15,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -15
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "100": {
+    "cumulative_net": 29878,
+    "last_now_cost": 46,
+    "velocity_history": [
+      29878
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "391": {
+    "cumulative_net": 0,
+    "last_now_cost": 48,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "685": {
+    "cumulative_net": -88,
+    "last_now_cost": 41,
+    "velocity_history": [
+      -88
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "687": {
+    "cumulative_net": -36,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -36
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "697": {
+    "cumulative_net": -1081,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -1081
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "713": {
+    "cumulative_net": -58,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -58
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "721": {
+    "cumulative_net": 5,
+    "last_now_cost": 44,
+    "velocity_history": [
+      5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "756": {
+    "cumulative_net": -2,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "782": {
+    "cumulative_net": 34,
+    "last_now_cost": 40,
+    "velocity_history": [
+      34
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "799": {
+    "cumulative_net": 8,
+    "last_now_cost": 45,
+    "velocity_history": [
+      8
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "801": {
+    "cumulative_net": -1,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "806": {
+    "cumulative_net": 0,
+    "last_now_cost": 40,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "807": {
+    "cumulative_net": 2278,
+    "last_now_cost": 54,
+    "velocity_history": [
+      2278
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "27": {
+    "cumulative_net": 10,
+    "last_now_cost": 48,
+    "velocity_history": [
+      10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "83": {
+    "cumulative_net": -16827,
+    "last_now_cost": 57,
+    "velocity_history": [
+      -16827
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "101": {
+    "cumulative_net": -18667,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -18667
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "102": {
+    "cumulative_net": -46,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -46
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "103": {
+    "cumulative_net": -69,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -69
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "104": {
+    "cumulative_net": -45,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -45
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "105": {
+    "cumulative_net": 2957,
+    "last_now_cost": 38,
+    "velocity_history": [
+      2957
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "106": {
+    "cumulative_net": -8308,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -8308
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "107": {
+    "cumulative_net": -384,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -384
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "108": {
+    "cumulative_net": -391,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -391
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "109": {
+    "cumulative_net": -166,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -166
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "110": {
+    "cumulative_net": -2940,
+    "last_now_cost": 46,
+    "velocity_history": [
+      -2940
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "111": {
+    "cumulative_net": -174,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -174
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "112": {
+    "cumulative_net": 0,
+    "last_now_cost": 45,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "113": {
+    "cumulative_net": -5067,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -5067
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "114": {
+    "cumulative_net": -67,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -67
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "115": {
+    "cumulative_net": -7,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "116": {
+    "cumulative_net": -22,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -22
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "117": {
+    "cumulative_net": -8,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -8
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "118": {
+    "cumulative_net": -4,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -4
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "120": {
+    "cumulative_net": -13027,
+    "last_now_cost": 69,
+    "velocity_history": [
+      -13027
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "121": {
+    "cumulative_net": -813,
+    "last_now_cost": 56,
+    "velocity_history": [
+      -813
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "122": {
+    "cumulative_net": 2,
+    "last_now_cost": 52,
+    "velocity_history": [
+      2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "123": {
+    "cumulative_net": -13,
+    "last_now_cost": 46,
+    "velocity_history": [
+      -13
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "124": {
+    "cumulative_net": -341,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -341
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "125": {
+    "cumulative_net": -136,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -136
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "126": {
+    "cumulative_net": 197,
+    "last_now_cost": 49,
+    "velocity_history": [
+      197
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "127": {
+    "cumulative_net": -2,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "128": {
+    "cumulative_net": -5,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "129": {
+    "cumulative_net": -75,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -75
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "130": {
+    "cumulative_net": -11,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -11
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "131": {
+    "cumulative_net": -61,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -61
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "132": {
+    "cumulative_net": -7,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "133": {
+    "cumulative_net": -7,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "134": {
+    "cumulative_net": 0,
+    "last_now_cost": 45,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "136": {
+    "cumulative_net": -128869,
+    "last_now_cost": 74,
+    "velocity_history": [
+      -128869
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "137": {
+    "cumulative_net": -69,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -69
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "748": {
+    "cumulative_net": 7,
+    "last_now_cost": 49,
+    "velocity_history": [
+      7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "797": {
+    "cumulative_net": 35,
+    "last_now_cost": 45,
+    "velocity_history": [
+      35
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "810": {
+    "cumulative_net": 11,
+    "last_now_cost": 45,
+    "velocity_history": [
+      11
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "819": {
+    "cumulative_net": 10,
+    "last_now_cost": 40,
+    "velocity_history": [
+      10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "823": {
+    "cumulative_net": 1,
+    "last_now_cost": 40,
+    "velocity_history": [
+      1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "824": {
+    "cumulative_net": 2,
+    "last_now_cost": 40,
+    "velocity_history": [
+      2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "826": {
+    "cumulative_net": 15,
+    "last_now_cost": 45,
+    "velocity_history": [
+      15
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "138": {
+    "cumulative_net": 78,
+    "last_now_cost": 42,
+    "velocity_history": [
+      78
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "139": {
+    "cumulative_net": 22942,
+    "last_now_cost": 45,
+    "velocity_history": [
+      22942
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "140": {
+    "cumulative_net": -55,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -55
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "141": {
+    "cumulative_net": 0,
+    "last_now_cost": 40,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "142": {
+    "cumulative_net": -1,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "143": {
+    "cumulative_net": 899,
+    "last_now_cost": 42,
+    "velocity_history": [
+      899
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "144": {
+    "cumulative_net": -8,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -8
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "145": {
+    "cumulative_net": -433,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -433
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "146": {
+    "cumulative_net": 758,
+    "last_now_cost": 45,
+    "velocity_history": [
+      758
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "147": {
+    "cumulative_net": 0,
+    "last_now_cost": 45,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "148": {
+    "cumulative_net": 14710,
+    "last_now_cost": 44,
+    "velocity_history": [
+      14710
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "149": {
+    "cumulative_net": -2,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "150": {
+    "cumulative_net": -5,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "151": {
+    "cumulative_net": 27579,
+    "last_now_cost": 46,
+    "velocity_history": [
+      27579
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "152": {
+    "cumulative_net": 4,
+    "last_now_cost": 43,
+    "velocity_history": [
+      4
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "153": {
+    "cumulative_net": 2,
+    "last_now_cost": 44,
+    "velocity_history": [
+      2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "154": {
+    "cumulative_net": -1,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "155": {
+    "cumulative_net": -11,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -11
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "156": {
+    "cumulative_net": 10,
+    "last_now_cost": 38,
+    "velocity_history": [
+      10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "157": {
+    "cumulative_net": 4487,
+    "last_now_cost": 61,
+    "velocity_history": [
+      4487
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "158": {
+    "cumulative_net": 774,
+    "last_now_cost": 56,
+    "velocity_history": [
+      774
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "159": {
+    "cumulative_net": -102,
+    "last_now_cost": 58,
+    "velocity_history": [
+      -102
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "160": {
+    "cumulative_net": 2214,
+    "last_now_cost": 55,
+    "velocity_history": [
+      2214
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "161": {
+    "cumulative_net": -1,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "162": {
+    "cumulative_net": -10,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "163": {
+    "cumulative_net": 7769,
+    "last_now_cost": 51,
+    "velocity_history": [
+      7769
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "164": {
+    "cumulative_net": 2,
+    "last_now_cost": 55,
+    "velocity_history": [
+      2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "165": {
+    "cumulative_net": 0,
+    "last_now_cost": 54,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "166": {
+    "cumulative_net": -226,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -226
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "167": {
+    "cumulative_net": 1243,
+    "last_now_cost": 45,
+    "velocity_history": [
+      1243
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "169": {
+    "cumulative_net": -5173,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -5173
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "170": {
+    "cumulative_net": -80,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -80
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "171": {
+    "cumulative_net": 0,
+    "last_now_cost": 49,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "172": {
+    "cumulative_net": -11,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -11
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "173": {
+    "cumulative_net": -6922,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -6922
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "174": {
+    "cumulative_net": 0,
+    "last_now_cost": 50,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "175": {
+    "cumulative_net": -19,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -19
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "176": {
+    "cumulative_net": 0,
+    "last_now_cost": 45,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "177": {
+    "cumulative_net": -1,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "178": {
+    "cumulative_net": 52924,
+    "last_now_cost": 63,
+    "velocity_history": [
+      52924
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "179": {
+    "cumulative_net": 0,
+    "last_now_cost": 55,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "180": {
+    "cumulative_net": -4,
+    "last_now_cost": 52,
+    "velocity_history": [
+      -4
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "181": {
+    "cumulative_net": -11,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -11
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "744": {
+    "cumulative_net": 4,
+    "last_now_cost": 45,
+    "velocity_history": [
+      4
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "761": {
+    "cumulative_net": -1,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "783": {
+    "cumulative_net": 13468,
+    "last_now_cost": 55,
+    "velocity_history": [
+      13468
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "795": {
+    "cumulative_net": 6,
+    "last_now_cost": 45,
+    "velocity_history": [
+      6
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "220": {
+    "cumulative_net": -27145,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -27145
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "221": {
+    "cumulative_net": 87,
+    "last_now_cost": 43,
+    "velocity_history": [
+      87
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "222": {
+    "cumulative_net": 0,
+    "last_now_cost": 40,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "223": {
+    "cumulative_net": 13,
+    "last_now_cost": 39,
+    "velocity_history": [
+      13
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "224": {
+    "cumulative_net": -15638,
+    "last_now_cost": 61,
+    "velocity_history": [
+      -15638
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "225": {
+    "cumulative_net": -5542,
+    "last_now_cost": 56,
+    "velocity_history": [
+      -5542
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "226": {
+    "cumulative_net": -15706,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -15706
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "227": {
+    "cumulative_net": 111,
+    "last_now_cost": 47,
+    "velocity_history": [
+      111
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "228": {
+    "cumulative_net": -5654,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -5654
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "229": {
+    "cumulative_net": -5,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "230": {
+    "cumulative_net": -1266,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -1266
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "231": {
+    "cumulative_net": -9,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -9
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "232": {
+    "cumulative_net": 19,
+    "last_now_cost": 40,
+    "velocity_history": [
+      19
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "233": {
+    "cumulative_net": 1343,
+    "last_now_cost": 37,
+    "velocity_history": [
+      1343
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "234": {
+    "cumulative_net": -3,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "235": {
+    "cumulative_net": -106024,
+    "last_now_cost": 104,
+    "velocity_history": [
+      -106024
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "236": {
+    "cumulative_net": -11295,
+    "last_now_cost": 70,
+    "velocity_history": [
+      -11295
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "237": {
+    "cumulative_net": -31836,
+    "last_now_cost": 65,
+    "velocity_history": [
+      -31836
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "238": {
+    "cumulative_net": -2347,
+    "last_now_cost": 64,
+    "velocity_history": [
+      -2347
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "239": {
+    "cumulative_net": -19,
+    "last_now_cost": 60,
+    "velocity_history": [
+      -19
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "240": {
+    "cumulative_net": -4,
+    "last_now_cost": 59,
+    "velocity_history": [
+      -4
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "241": {
+    "cumulative_net": -5278,
+    "last_now_cost": 57,
+    "velocity_history": [
+      -5278
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "244": {
+    "cumulative_net": 20,
+    "last_now_cost": 49,
+    "velocity_history": [
+      20
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "245": {
+    "cumulative_net": 0,
+    "last_now_cost": 49,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "246": {
+    "cumulative_net": -151,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -151
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "247": {
+    "cumulative_net": 66,
+    "last_now_cost": 43,
+    "velocity_history": [
+      66
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "248": {
+    "cumulative_net": 0,
+    "last_now_cost": 45,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "249": {
+    "cumulative_net": -129423,
+    "last_now_cost": 75,
+    "velocity_history": [
+      -129423
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "250": {
+    "cumulative_net": -158,
+    "last_now_cost": 62,
+    "velocity_history": [
+      -158
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "251": {
+    "cumulative_net": -3,
+    "last_now_cost": 65,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "252": {
+    "cumulative_net": 4200,
+    "last_now_cost": 40,
+    "velocity_history": [
+      4200
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "453": {
+    "cumulative_net": -560,
+    "last_now_cost": 64,
+    "velocity_history": [
+      -560
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "672": {
+    "cumulative_net": -123,
+    "last_now_cost": 46,
+    "velocity_history": [
+      -123
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "743": {
+    "cumulative_net": -3,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "789": {
+    "cumulative_net": 7,
+    "last_now_cost": 40,
+    "velocity_history": [
+      7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "803": {
+    "cumulative_net": 9,
+    "last_now_cost": 40,
+    "velocity_history": [
+      9
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "829": {
+    "cumulative_net": 31,
+    "last_now_cost": 45,
+    "velocity_history": [
+      31
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "253": {
+    "cumulative_net": 29982,
+    "last_now_cost": 51,
+    "velocity_history": [
+      29982
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "254": {
+    "cumulative_net": -102,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -102
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "255": {
+    "cumulative_net": -21,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -21
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "256": {
+    "cumulative_net": 59097,
+    "last_now_cost": 59,
+    "velocity_history": [
+      59097
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "257": {
+    "cumulative_net": 72059,
+    "last_now_cost": 52,
+    "velocity_history": [
+      72059
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "258": {
+    "cumulative_net": 6994,
+    "last_now_cost": 50,
+    "velocity_history": [
+      6994
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "259": {
+    "cumulative_net": -117,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -117
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "261": {
+    "cumulative_net": 7590,
+    "last_now_cost": 44,
+    "velocity_history": [
+      7590
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "262": {
+    "cumulative_net": 96,
+    "last_now_cost": 40,
+    "velocity_history": [
+      96
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "263": {
+    "cumulative_net": -183,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -183
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "264": {
+    "cumulative_net": -1,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "265": {
+    "cumulative_net": 10,
+    "last_now_cost": 40,
+    "velocity_history": [
+      10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "267": {
+    "cumulative_net": 101622,
+    "last_now_cost": 64,
+    "velocity_history": [
+      101622
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "268": {
+    "cumulative_net": -5,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "269": {
+    "cumulative_net": -15,
+    "last_now_cost": 47,
+    "velocity_history": [
+      -15
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "270": {
+    "cumulative_net": 107,
+    "last_now_cost": 47,
+    "velocity_history": [
+      107
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "271": {
+    "cumulative_net": 1318,
+    "last_now_cost": 50,
+    "velocity_history": [
+      1318
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "272": {
+    "cumulative_net": 1628,
+    "last_now_cost": 49,
+    "velocity_history": [
+      1628
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "273": {
+    "cumulative_net": 9952,
+    "last_now_cost": 50,
+    "velocity_history": [
+      9952
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "274": {
+    "cumulative_net": -56,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -56
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "275": {
+    "cumulative_net": -10,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "276": {
+    "cumulative_net": 1609,
+    "last_now_cost": 43,
+    "velocity_history": [
+      1609
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "277": {
+    "cumulative_net": -1,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "278": {
+    "cumulative_net": -6,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -6
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "279": {
+    "cumulative_net": 0,
+    "last_now_cost": 45,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "280": {
+    "cumulative_net": -1,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "281": {
+    "cumulative_net": 30,
+    "last_now_cost": 44,
+    "velocity_history": [
+      30
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "282": {
+    "cumulative_net": -1,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "283": {
+    "cumulative_net": 84514,
+    "last_now_cost": 76,
+    "velocity_history": [
+      84514
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "284": {
+    "cumulative_net": -73,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -73
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "285": {
+    "cumulative_net": -13,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -13
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "286": {
+    "cumulative_net": 14,
+    "last_now_cost": 44,
+    "velocity_history": [
+      14
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "580": {
+    "cumulative_net": 4745,
+    "last_now_cost": 65,
+    "velocity_history": [
+      4745
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "654": {
+    "cumulative_net": 8366,
+    "last_now_cost": 59,
+    "velocity_history": [
+      8366
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "677": {
+    "cumulative_net": -48,
+    "last_now_cost": 62,
+    "velocity_history": [
+      -48
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "690": {
+    "cumulative_net": -26,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -26
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "712": {
+    "cumulative_net": 1264,
+    "last_now_cost": 58,
+    "velocity_history": [
+      1264
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "723": {
+    "cumulative_net": 5407,
+    "last_now_cost": 45,
+    "velocity_history": [
+      5407
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "732": {
+    "cumulative_net": 41,
+    "last_now_cost": 55,
+    "velocity_history": [
+      41
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "762": {
+    "cumulative_net": 15,
+    "last_now_cost": 45,
+    "velocity_history": [
+      15
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "773": {
+    "cumulative_net": 4,
+    "last_now_cost": 40,
+    "velocity_history": [
+      4
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "780": {
+    "cumulative_net": 14,
+    "last_now_cost": 45,
+    "velocity_history": [
+      14
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "793": {
+    "cumulative_net": 20,
+    "last_now_cost": 40,
+    "velocity_history": [
+      20
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "798": {
+    "cumulative_net": -3,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "242": {
+    "cumulative_net": 10727,
+    "last_now_cost": 52,
+    "velocity_history": [
+      10727
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "243": {
+    "cumulative_net": -12,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -12
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "287": {
+    "cumulative_net": -9598,
+    "last_now_cost": 56,
+    "velocity_history": [
+      -9598
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "288": {
+    "cumulative_net": -17,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -17
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "289": {
+    "cumulative_net": -31,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -31
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "290": {
+    "cumulative_net": -2485,
+    "last_now_cost": 53,
+    "velocity_history": [
+      -2485
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "291": {
+    "cumulative_net": -29663,
+    "last_now_cost": 57,
+    "velocity_history": [
+      -29663
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "292": {
+    "cumulative_net": -647,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -647
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "293": {
+    "cumulative_net": 426,
+    "last_now_cost": 49,
+    "velocity_history": [
+      426
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "294": {
+    "cumulative_net": 11,
+    "last_now_cost": 42,
+    "velocity_history": [
+      11
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "295": {
+    "cumulative_net": -5003,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -5003
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "296": {
+    "cumulative_net": -7,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "297": {
+    "cumulative_net": -47,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -47
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "298": {
+    "cumulative_net": -1,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "299": {
+    "cumulative_net": -3485,
+    "last_now_cost": 62,
+    "velocity_history": [
+      -3485
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "300": {
+    "cumulative_net": -123,
+    "last_now_cost": 55,
+    "velocity_history": [
+      -123
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "301": {
+    "cumulative_net": -3,
+    "last_now_cost": 52,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "302": {
+    "cumulative_net": -368,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -368
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "303": {
+    "cumulative_net": -8501,
+    "last_now_cost": 52,
+    "velocity_history": [
+      -8501
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "304": {
+    "cumulative_net": 7,
+    "last_now_cost": 48,
+    "velocity_history": [
+      7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "305": {
+    "cumulative_net": -7,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "306": {
+    "cumulative_net": -7,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "307": {
+    "cumulative_net": -9,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -9
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "308": {
+    "cumulative_net": -1,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "309": {
+    "cumulative_net": 0,
+    "last_now_cost": 45,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "310": {
+    "cumulative_net": 1109,
+    "last_now_cost": 57,
+    "velocity_history": [
+      1109
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "311": {
+    "cumulative_net": -765,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -765
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "312": {
+    "cumulative_net": -3,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "313": {
+    "cumulative_net": -26,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -26
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "419": {
+    "cumulative_net": -1421,
+    "last_now_cost": 63,
+    "velocity_history": [
+      -1421
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "630": {
+    "cumulative_net": -311,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -311
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "667": {
+    "cumulative_net": 1,
+    "last_now_cost": 42,
+    "velocity_history": [
+      1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "704": {
+    "cumulative_net": -6,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -6
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "705": {
+    "cumulative_net": -49,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -49
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "707": {
+    "cumulative_net": -3,
+    "last_now_cost": 53,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "728": {
+    "cumulative_net": 42,
+    "last_now_cost": 50,
+    "velocity_history": [
+      42
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "779": {
+    "cumulative_net": 24,
+    "last_now_cost": 45,
+    "velocity_history": [
+      24
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "314": {
+    "cumulative_net": 5972,
+    "last_now_cost": 49,
+    "velocity_history": [
+      5972
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "315": {
+    "cumulative_net": -4,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -4
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "316": {
+    "cumulative_net": -586,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -586
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "317": {
+    "cumulative_net": 1099,
+    "last_now_cost": 45,
+    "velocity_history": [
+      1099
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "318": {
+    "cumulative_net": -226,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -226
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "319": {
+    "cumulative_net": 294,
+    "last_now_cost": 43,
+    "velocity_history": [
+      294
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "320": {
+    "cumulative_net": -50,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -50
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "321": {
+    "cumulative_net": -29,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -29
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "322": {
+    "cumulative_net": -421,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -421
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "323": {
+    "cumulative_net": -44,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -44
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "324": {
+    "cumulative_net": -10449,
+    "last_now_cost": 62,
+    "velocity_history": [
+      -10449
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "325": {
+    "cumulative_net": -100,
+    "last_now_cost": 56,
+    "velocity_history": [
+      -100
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "327": {
+    "cumulative_net": -8,
+    "last_now_cost": 53,
+    "velocity_history": [
+      -8
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "328": {
+    "cumulative_net": -521,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -521
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "329": {
+    "cumulative_net": -71557,
+    "last_now_cost": 59,
+    "velocity_history": [
+      -71557
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "330": {
+    "cumulative_net": -86,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -86
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "331": {
+    "cumulative_net": 2,
+    "last_now_cost": 48,
+    "velocity_history": [
+      2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "332": {
+    "cumulative_net": 53,
+    "last_now_cost": 49,
+    "velocity_history": [
+      53
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "333": {
+    "cumulative_net": -3,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "334": {
+    "cumulative_net": 0,
+    "last_now_cost": 45,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "335": {
+    "cumulative_net": -1718,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -1718
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "336": {
+    "cumulative_net": -45,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -45
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "337": {
+    "cumulative_net": -6315,
+    "last_now_cost": 60,
+    "velocity_history": [
+      -6315
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "338": {
+    "cumulative_net": -67,
+    "last_now_cost": 53,
+    "velocity_history": [
+      -67
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "424": {
+    "cumulative_net": -197,
+    "last_now_cost": 51,
+    "velocity_history": [
+      -197
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "664": {
+    "cumulative_net": -158,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -158
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "727": {
+    "cumulative_net": -67,
+    "last_now_cost": 53,
+    "velocity_history": [
+      -67
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "731": {
+    "cumulative_net": -24,
+    "last_now_cost": 57,
+    "velocity_history": [
+      -24
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "737": {
+    "cumulative_net": 36,
+    "last_now_cost": 45,
+    "velocity_history": [
+      36
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "770": {
+    "cumulative_net": -11,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -11
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "786": {
+    "cumulative_net": 5,
+    "last_now_cost": 40,
+    "velocity_history": [
+      5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "168": {
+    "cumulative_net": 43,
+    "last_now_cost": 46,
+    "velocity_history": [
+      43
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "339": {
+    "cumulative_net": -9,
+    "last_now_cost": 41,
+    "velocity_history": [
+      -9
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "340": {
+    "cumulative_net": -14,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -14
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "341": {
+    "cumulative_net": -954,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -954
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "342": {
+    "cumulative_net": -1155,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -1155
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "343": {
+    "cumulative_net": -13284,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -13284
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "344": {
+    "cumulative_net": 1885,
+    "last_now_cost": 39,
+    "velocity_history": [
+      1885
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "345": {
+    "cumulative_net": -82,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -82
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "346": {
+    "cumulative_net": 1355,
+    "last_now_cost": 37,
+    "velocity_history": [
+      1355
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "347": {
+    "cumulative_net": -12207,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -12207
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "348": {
+    "cumulative_net": -239,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -239
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "349": {
+    "cumulative_net": -7,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "350": {
+    "cumulative_net": -12254,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -12254
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "351": {
+    "cumulative_net": -44,
+    "last_now_cost": 51,
+    "velocity_history": [
+      -44
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "352": {
+    "cumulative_net": -10,
+    "last_now_cost": 51,
+    "velocity_history": [
+      -10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "353": {
+    "cumulative_net": -10,
+    "last_now_cost": 52,
+    "velocity_history": [
+      -10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "354": {
+    "cumulative_net": -2854,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -2854
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "355": {
+    "cumulative_net": -1,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "356": {
+    "cumulative_net": -571,
+    "last_now_cost": 47,
+    "velocity_history": [
+      -571
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "357": {
+    "cumulative_net": -3,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "358": {
+    "cumulative_net": 220,
+    "last_now_cost": 48,
+    "velocity_history": [
+      220
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "359": {
+    "cumulative_net": 0,
+    "last_now_cost": 45,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "360": {
+    "cumulative_net": -1,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "361": {
+    "cumulative_net": -1,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "362": {
+    "cumulative_net": -50,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -50
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "363": {
+    "cumulative_net": -31,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -31
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "364": {
+    "cumulative_net": -1,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "365": {
+    "cumulative_net": -522,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -522
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "493": {
+    "cumulative_net": -53,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -53
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "660": {
+    "cumulative_net": 11897,
+    "last_now_cost": 48,
+    "velocity_history": [
+      11897
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "665": {
+    "cumulative_net": -391,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -391
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "691": {
+    "cumulative_net": 585,
+    "last_now_cost": 58,
+    "velocity_history": [
+      585
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "698": {
+    "cumulative_net": 54744,
+    "last_now_cost": 56,
+    "velocity_history": [
+      54744
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "706": {
+    "cumulative_net": 787,
+    "last_now_cost": 40,
+    "velocity_history": [
+      787
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "741": {
+    "cumulative_net": -24,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -24
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "787": {
+    "cumulative_net": 10,
+    "last_now_cost": 44,
+    "velocity_history": [
+      10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "366": {
+    "cumulative_net": -4742,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -4742
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "367": {
+    "cumulative_net": -2100,
+    "last_now_cost": 41,
+    "velocity_history": [
+      -2100
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "368": {
+    "cumulative_net": 170,
+    "last_now_cost": 38,
+    "velocity_history": [
+      170
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "369": {
+    "cumulative_net": 2046,
+    "last_now_cost": 39,
+    "velocity_history": [
+      2046
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "370": {
+    "cumulative_net": -3685,
+    "last_now_cost": 57,
+    "velocity_history": [
+      -3685
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "371": {
+    "cumulative_net": -4598,
+    "last_now_cost": 56,
+    "velocity_history": [
+      -4598
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "372": {
+    "cumulative_net": 268,
+    "last_now_cost": 57,
+    "velocity_history": [
+      268
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "373": {
+    "cumulative_net": -72351,
+    "last_now_cost": 61,
+    "velocity_history": [
+      -72351
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "374": {
+    "cumulative_net": -9565,
+    "last_now_cost": 55,
+    "velocity_history": [
+      -9565
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "375": {
+    "cumulative_net": -39,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -39
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "376": {
+    "cumulative_net": -2,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "377": {
+    "cumulative_net": -3,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "378": {
+    "cumulative_net": -1054,
+    "last_now_cost": 37,
+    "velocity_history": [
+      -1054
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "379": {
+    "cumulative_net": -356,
+    "last_now_cost": 37,
+    "velocity_history": [
+      -356
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "380": {
+    "cumulative_net": 769,
+    "last_now_cost": 37,
+    "velocity_history": [
+      769
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "381": {
+    "cumulative_net": -17139,
+    "last_now_cost": 140,
+    "velocity_history": [
+      -17139
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "382": {
+    "cumulative_net": -13088,
+    "last_now_cost": 83,
+    "velocity_history": [
+      -13088
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "383": {
+    "cumulative_net": -4,
+    "last_now_cost": 80,
+    "velocity_history": [
+      -4
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "384": {
+    "cumulative_net": -2025,
+    "last_now_cost": 73,
+    "velocity_history": [
+      -2025
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "385": {
+    "cumulative_net": -29,
+    "last_now_cost": 63,
+    "velocity_history": [
+      -29
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "386": {
+    "cumulative_net": -5802,
+    "last_now_cost": 62,
+    "velocity_history": [
+      -5802
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "387": {
+    "cumulative_net": 17315,
+    "last_now_cost": 70,
+    "velocity_history": [
+      17315
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "388": {
+    "cumulative_net": 60,
+    "last_now_cost": 54,
+    "velocity_history": [
+      60
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "390": {
+    "cumulative_net": -11074,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -11074
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "392": {
+    "cumulative_net": -10,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "393": {
+    "cumulative_net": 1785,
+    "last_now_cost": 42,
+    "velocity_history": [
+      1785
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "394": {
+    "cumulative_net": -3,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "395": {
+    "cumulative_net": 0,
+    "last_now_cost": 45,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "396": {
+    "cumulative_net": -105,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -105
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "397": {
+    "cumulative_net": -1,
+    "last_now_cost": 65,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "398": {
+    "cumulative_net": -6,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -6
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "499": {
+    "cumulative_net": -19589,
+    "last_now_cost": 103,
+    "velocity_history": [
+      -19589
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "661": {
+    "cumulative_net": -57841,
+    "last_now_cost": 90,
+    "velocity_history": [
+      -57841
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "686": {
+    "cumulative_net": 1848,
+    "last_now_cost": 43,
+    "velocity_history": [
+      1848
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "692": {
+    "cumulative_net": 0,
+    "last_now_cost": 49,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "746": {
+    "cumulative_net": 7,
+    "last_now_cost": 45,
+    "velocity_history": [
+      7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "760": {
+    "cumulative_net": -8,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -8
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "830": {
+    "cumulative_net": 73,
+    "last_now_cost": 45,
+    "velocity_history": [
+      73
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "832": {
+    "cumulative_net": 38,
+    "last_now_cost": 40,
+    "velocity_history": [
+      38
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "82": {
+    "cumulative_net": -50012,
+    "last_now_cost": 81,
+    "velocity_history": [
+      -50012
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "182": {
+    "cumulative_net": -96,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -96
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "260": {
+    "cumulative_net": 14158,
+    "last_now_cost": 51,
+    "velocity_history": [
+      14158
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "399": {
+    "cumulative_net": -59,
+    "last_now_cost": 53,
+    "velocity_history": [
+      -59
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "401": {
+    "cumulative_net": -1390,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -1390
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "402": {
+    "cumulative_net": -2503,
+    "last_now_cost": 57,
+    "velocity_history": [
+      -2503
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "403": {
+    "cumulative_net": -783,
+    "last_now_cost": 58,
+    "velocity_history": [
+      -783
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "404": {
+    "cumulative_net": -16,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -16
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "405": {
+    "cumulative_net": -98,
+    "last_now_cost": 52,
+    "velocity_history": [
+      -98
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "406": {
+    "cumulative_net": 6400,
+    "last_now_cost": 54,
+    "velocity_history": [
+      6400
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "407": {
+    "cumulative_net": 3722,
+    "last_now_cost": 53,
+    "velocity_history": [
+      3722
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "408": {
+    "cumulative_net": -2139,
+    "last_now_cost": 55,
+    "velocity_history": [
+      -2139
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "409": {
+    "cumulative_net": 103,
+    "last_now_cost": 54,
+    "velocity_history": [
+      103
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "410": {
+    "cumulative_net": -91,
+    "last_now_cost": 46,
+    "velocity_history": [
+      -91
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "411": {
+    "cumulative_net": 110568,
+    "last_now_cost": 52,
+    "velocity_history": [
+      110568
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "412": {
+    "cumulative_net": 0,
+    "last_now_cost": 50,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "413": {
+    "cumulative_net": -388,
+    "last_now_cost": 83,
+    "velocity_history": [
+      -388
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "414": {
+    "cumulative_net": -4521,
+    "last_now_cost": 80,
+    "velocity_history": [
+      -4521
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "415": {
+    "cumulative_net": 71,
+    "last_now_cost": 69,
+    "velocity_history": [
+      71
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "416": {
+    "cumulative_net": 1429,
+    "last_now_cost": 62,
+    "velocity_history": [
+      1429
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "417": {
+    "cumulative_net": 209251,
+    "last_now_cost": 66,
+    "velocity_history": [
+      209251
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "418": {
+    "cumulative_net": 87249,
+    "last_now_cost": 64,
+    "velocity_history": [
+      87249
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "420": {
+    "cumulative_net": -4,
+    "last_now_cost": 63,
+    "velocity_history": [
+      -4
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "421": {
+    "cumulative_net": -902,
+    "last_now_cost": 63,
+    "velocity_history": [
+      -902
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "422": {
+    "cumulative_net": 56,
+    "last_now_cost": 58,
+    "velocity_history": [
+      56
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "423": {
+    "cumulative_net": 86,
+    "last_now_cost": 59,
+    "velocity_history": [
+      86
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "425": {
+    "cumulative_net": 0,
+    "last_now_cost": 54,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "427": {
+    "cumulative_net": -2881,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -2881
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "428": {
+    "cumulative_net": -3,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "429": {
+    "cumulative_net": -9,
+    "last_now_cost": 47,
+    "velocity_history": [
+      -9
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "430": {
+    "cumulative_net": 171533,
+    "last_now_cost": 146,
+    "velocity_history": [
+      171533
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "736": {
+    "cumulative_net": 8742,
+    "last_now_cost": 56,
+    "velocity_history": [
+      8742
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "739": {
+    "cumulative_net": -5,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "740": {
+    "cumulative_net": -8,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -8
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "742": {
+    "cumulative_net": -1,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "763": {
+    "cumulative_net": 5,
+    "last_now_cost": 45,
+    "velocity_history": [
+      5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "764": {
+    "cumulative_net": -5,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "794": {
+    "cumulative_net": -12,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -12
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "119": {
+    "cumulative_net": -45730,
+    "last_now_cost": 84,
+    "velocity_history": [
+      -45730
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "431": {
+    "cumulative_net": 5,
+    "last_now_cost": 47,
+    "velocity_history": [
+      5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "432": {
+    "cumulative_net": -9,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -9
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "433": {
+    "cumulative_net": 0,
+    "last_now_cost": 40,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "434": {
+    "cumulative_net": 2706,
+    "last_now_cost": 38,
+    "velocity_history": [
+      2706
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "435": {
+    "cumulative_net": -10,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "436": {
+    "cumulative_net": -301,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -301
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "437": {
+    "cumulative_net": -88,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -88
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "438": {
+    "cumulative_net": -213,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -213
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "439": {
+    "cumulative_net": 8,
+    "last_now_cost": 41,
+    "velocity_history": [
+      8
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "440": {
+    "cumulative_net": -5604,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -5604
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "441": {
+    "cumulative_net": 2086,
+    "last_now_cost": 41,
+    "velocity_history": [
+      2086
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "442": {
+    "cumulative_net": 1848,
+    "last_now_cost": 44,
+    "velocity_history": [
+      1848
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "443": {
+    "cumulative_net": -930,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -930
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "444": {
+    "cumulative_net": -667,
+    "last_now_cost": 41,
+    "velocity_history": [
+      -667
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "445": {
+    "cumulative_net": -5,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "446": {
+    "cumulative_net": 54,
+    "last_now_cost": 37,
+    "velocity_history": [
+      54
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "447": {
+    "cumulative_net": 9238,
+    "last_now_cost": 37,
+    "velocity_history": [
+      9238
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "448": {
+    "cumulative_net": 1814,
+    "last_now_cost": 37,
+    "velocity_history": [
+      1814
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "449": {
+    "cumulative_net": 12137,
+    "last_now_cost": 104,
+    "velocity_history": [
+      12137
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "450": {
+    "cumulative_net": -2336,
+    "last_now_cost": 81,
+    "velocity_history": [
+      -2336
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "451": {
+    "cumulative_net": -1,
+    "last_now_cost": 70,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "452": {
+    "cumulative_net": -1874,
+    "last_now_cost": 62,
+    "velocity_history": [
+      -1874
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "454": {
+    "cumulative_net": -5,
+    "last_now_cost": 59,
+    "velocity_history": [
+      -5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "455": {
+    "cumulative_net": -23,
+    "last_now_cost": 59,
+    "velocity_history": [
+      -23
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "457": {
+    "cumulative_net": 34333,
+    "last_now_cost": 58,
+    "velocity_history": [
+      34333
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "458": {
+    "cumulative_net": 7142,
+    "last_now_cost": 47,
+    "velocity_history": [
+      7142
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "459": {
+    "cumulative_net": -48,
+    "last_now_cost": 47,
+    "velocity_history": [
+      -48
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "460": {
+    "cumulative_net": -3,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "461": {
+    "cumulative_net": 19,
+    "last_now_cost": 43,
+    "velocity_history": [
+      19
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "462": {
+    "cumulative_net": -40,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -40
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "463": {
+    "cumulative_net": -18,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -18
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "464": {
+    "cumulative_net": -2,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "465": {
+    "cumulative_net": -13,
+    "last_now_cost": 63,
+    "velocity_history": [
+      -13
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "466": {
+    "cumulative_net": -1,
+    "last_now_cost": 58,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "467": {
+    "cumulative_net": -597,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -597
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "468": {
+    "cumulative_net": -11,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -11
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "681": {
+    "cumulative_net": -8405,
+    "last_now_cost": 73,
+    "velocity_history": [
+      -8405
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "733": {
+    "cumulative_net": 3700,
+    "last_now_cost": 51,
+    "velocity_history": [
+      3700
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "755": {
+    "cumulative_net": -3,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "769": {
+    "cumulative_net": 1,
+    "last_now_cost": 45,
+    "velocity_history": [
+      1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "771": {
+    "cumulative_net": -13,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -13
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "788": {
+    "cumulative_net": -1,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "827": {
+    "cumulative_net": 10,
+    "last_now_cost": 45,
+    "velocity_history": [
+      10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "52": {
+    "cumulative_net": -257,
+    "last_now_cost": 53,
+    "velocity_history": [
+      -257
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "135": {
+    "cumulative_net": 76,
+    "last_now_cost": 73,
+    "velocity_history": [
+      76
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "469": {
+    "cumulative_net": -407,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -407
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "471": {
+    "cumulative_net": 4,
+    "last_now_cost": 39,
+    "velocity_history": [
+      4
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "472": {
+    "cumulative_net": -1,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "473": {
+    "cumulative_net": -13348,
+    "last_now_cost": 53,
+    "velocity_history": [
+      -13348
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "474": {
+    "cumulative_net": -248,
+    "last_now_cost": 52,
+    "velocity_history": [
+      -248
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "475": {
+    "cumulative_net": 67,
+    "last_now_cost": 49,
+    "velocity_history": [
+      67
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "476": {
+    "cumulative_net": 2460,
+    "last_now_cost": 50,
+    "velocity_history": [
+      2460
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "477": {
+    "cumulative_net": -1360,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -1360
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "478": {
+    "cumulative_net": -736,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -736
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "479": {
+    "cumulative_net": -4,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -4
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "480": {
+    "cumulative_net": -7,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "481": {
+    "cumulative_net": -192,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -192
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "482": {
+    "cumulative_net": -23,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -23
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "483": {
+    "cumulative_net": -66,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -66
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "484": {
+    "cumulative_net": -20,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -20
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "485": {
+    "cumulative_net": -24510,
+    "last_now_cost": 74,
+    "velocity_history": [
+      -24510
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "486": {
+    "cumulative_net": -1435,
+    "last_now_cost": 65,
+    "velocity_history": [
+      -1435
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "487": {
+    "cumulative_net": -564,
+    "last_now_cost": 61,
+    "velocity_history": [
+      -564
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "488": {
+    "cumulative_net": 11667,
+    "last_now_cost": 68,
+    "velocity_history": [
+      11667
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "489": {
+    "cumulative_net": 849,
+    "last_now_cost": 59,
+    "velocity_history": [
+      849
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "490": {
+    "cumulative_net": 106,
+    "last_now_cost": 59,
+    "velocity_history": [
+      106
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "491": {
+    "cumulative_net": -741,
+    "last_now_cost": 53,
+    "velocity_history": [
+      -741
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "492": {
+    "cumulative_net": -2,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "494": {
+    "cumulative_net": -19,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -19
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "495": {
+    "cumulative_net": 0,
+    "last_now_cost": 45,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "496": {
+    "cumulative_net": -3,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "497": {
+    "cumulative_net": 4270,
+    "last_now_cost": 44,
+    "velocity_history": [
+      4270
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "498": {
+    "cumulative_net": 0,
+    "last_now_cost": 45,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "500": {
+    "cumulative_net": 17464,
+    "last_now_cost": 54,
+    "velocity_history": [
+      17464
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "501": {
+    "cumulative_net": -43,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -43
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "674": {
+    "cumulative_net": -1078,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -1078
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "684": {
+    "cumulative_net": -19283,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -19283
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "689": {
+    "cumulative_net": -292,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -292
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "714": {
+    "cumulative_net": -6088,
+    "last_now_cost": 67,
+    "velocity_history": [
+      -6088
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "753": {
+    "cumulative_net": -7,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "765": {
+    "cumulative_net": -8,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -8
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "772": {
+    "cumulative_net": 7,
+    "last_now_cost": 45,
+    "velocity_history": [
+      7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "12": {
+    "cumulative_net": -31,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -31
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "400": {
+    "cumulative_net": 82,
+    "last_now_cost": 47,
+    "velocity_history": [
+      82
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "426": {
+    "cumulative_net": 34,
+    "last_now_cost": 50,
+    "velocity_history": [
+      34
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "502": {
+    "cumulative_net": 3134,
+    "last_now_cost": 46,
+    "velocity_history": [
+      3134
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "503": {
+    "cumulative_net": -12,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -12
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "504": {
+    "cumulative_net": -20,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -20
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "505": {
+    "cumulative_net": -1088,
+    "last_now_cost": 51,
+    "velocity_history": [
+      -1088
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "506": {
+    "cumulative_net": -3763,
+    "last_now_cost": 52,
+    "velocity_history": [
+      -3763
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "507": {
+    "cumulative_net": -6085,
+    "last_now_cost": 47,
+    "velocity_history": [
+      -6085
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "508": {
+    "cumulative_net": -5158,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -5158
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "509": {
+    "cumulative_net": -2,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "510": {
+    "cumulative_net": 10,
+    "last_now_cost": 42,
+    "velocity_history": [
+      10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "511": {
+    "cumulative_net": 28,
+    "last_now_cost": 43,
+    "velocity_history": [
+      28
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "512": {
+    "cumulative_net": -3,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "513": {
+    "cumulative_net": -152,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -152
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "514": {
+    "cumulative_net": -124,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -124
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "515": {
+    "cumulative_net": -43353,
+    "last_now_cost": 77,
+    "velocity_history": [
+      -43353
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "516": {
+    "cumulative_net": -1164,
+    "last_now_cost": 57,
+    "velocity_history": [
+      -1164
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "517": {
+    "cumulative_net": -11619,
+    "last_now_cost": 56,
+    "velocity_history": [
+      -11619
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "518": {
+    "cumulative_net": -1,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "519": {
+    "cumulative_net": -7,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "520": {
+    "cumulative_net": 0,
+    "last_now_cost": 50,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "521": {
+    "cumulative_net": -216,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -216
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "522": {
+    "cumulative_net": 64,
+    "last_now_cost": 47,
+    "velocity_history": [
+      64
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "523": {
+    "cumulative_net": 9,
+    "last_now_cost": 45,
+    "velocity_history": [
+      9
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "524": {
+    "cumulative_net": -4,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -4
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "525": {
+    "cumulative_net": 1946,
+    "last_now_cost": 71,
+    "velocity_history": [
+      1946
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "526": {
+    "cumulative_net": 19596,
+    "last_now_cost": 59,
+    "velocity_history": [
+      19596
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "527": {
+    "cumulative_net": 3073,
+    "last_now_cost": 52,
+    "velocity_history": [
+      3073
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "669": {
+    "cumulative_net": -281,
+    "last_now_cost": 55,
+    "velocity_history": [
+      -281
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "675": {
+    "cumulative_net": -171,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -171
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "693": {
+    "cumulative_net": 0,
+    "last_now_cost": 54,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "696": {
+    "cumulative_net": -12,
+    "last_now_cost": 60,
+    "velocity_history": [
+      -12
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "715": {
+    "cumulative_net": -239,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -239
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "716": {
+    "cumulative_net": -28,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -28
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "729": {
+    "cumulative_net": -1,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "734": {
+    "cumulative_net": 134,
+    "last_now_cost": 59,
+    "velocity_history": [
+      134
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "805": {
+    "cumulative_net": -16,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -16
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "814": {
+    "cumulative_net": 41,
+    "last_now_cost": 45,
+    "velocity_history": [
+      41
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "528": {
+    "cumulative_net": -59,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -59
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "529": {
+    "cumulative_net": -239,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -239
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "530": {
+    "cumulative_net": -35,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -35
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "531": {
+    "cumulative_net": -27438,
+    "last_now_cost": 47,
+    "velocity_history": [
+      -27438
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "532": {
+    "cumulative_net": -721,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -721
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "533": {
+    "cumulative_net": 0,
+    "last_now_cost": 40,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "534": {
+    "cumulative_net": -91,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -91
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "535": {
+    "cumulative_net": -5,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "536": {
+    "cumulative_net": -6,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -6
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "537": {
+    "cumulative_net": -5,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "538": {
+    "cumulative_net": -83,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -83
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "539": {
+    "cumulative_net": -169,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -169
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "540": {
+    "cumulative_net": -103,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -103
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "541": {
+    "cumulative_net": -183,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -183
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "542": {
+    "cumulative_net": -15,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -15
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "543": {
+    "cumulative_net": -66,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -66
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "544": {
+    "cumulative_net": -1514,
+    "last_now_cost": 53,
+    "velocity_history": [
+      -1514
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "545": {
+    "cumulative_net": -1,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "546": {
+    "cumulative_net": 3,
+    "last_now_cost": 49,
+    "velocity_history": [
+      3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "547": {
+    "cumulative_net": -7190,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -7190
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "548": {
+    "cumulative_net": -1,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "549": {
+    "cumulative_net": -3,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "550": {
+    "cumulative_net": 14,
+    "last_now_cost": 47,
+    "velocity_history": [
+      14
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "551": {
+    "cumulative_net": -266,
+    "last_now_cost": 47,
+    "velocity_history": [
+      -266
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "552": {
+    "cumulative_net": -110,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -110
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "553": {
+    "cumulative_net": -133,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -133
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "554": {
+    "cumulative_net": -90,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -90
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "555": {
+    "cumulative_net": -6,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -6
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "556": {
+    "cumulative_net": 0,
+    "last_now_cost": 45,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "557": {
+    "cumulative_net": 2,
+    "last_now_cost": 43,
+    "velocity_history": [
+      2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "558": {
+    "cumulative_net": -43,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -43
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "559": {
+    "cumulative_net": -2,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "560": {
+    "cumulative_net": -2607,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -2607
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "561": {
+    "cumulative_net": -238,
+    "last_now_cost": 51,
+    "velocity_history": [
+      -238
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "562": {
+    "cumulative_net": -162,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -162
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "563": {
+    "cumulative_net": -7,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "564": {
+    "cumulative_net": -8,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -8
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "668": {
+    "cumulative_net": -971,
+    "last_now_cost": 51,
+    "velocity_history": [
+      -971
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "670": {
+    "cumulative_net": -17054,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -17054
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "678": {
+    "cumulative_net": -135,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -135
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "683": {
+    "cumulative_net": -9675,
+    "last_now_cost": 41,
+    "velocity_history": [
+      -9675
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "694": {
+    "cumulative_net": -3430,
+    "last_now_cost": 46,
+    "velocity_history": [
+      -3430
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "724": {
+    "cumulative_net": -85,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -85
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "730": {
+    "cumulative_net": -10633,
+    "last_now_cost": 53,
+    "velocity_history": [
+      -10633
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "735": {
+    "cumulative_net": -6,
+    "last_now_cost": 55,
+    "velocity_history": [
+      -6
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "774": {
+    "cumulative_net": 6,
+    "last_now_cost": 40,
+    "velocity_history": [
+      6
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "775": {
+    "cumulative_net": -2,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "800": {
+    "cumulative_net": 3,
+    "last_now_cost": 49,
+    "velocity_history": [
+      3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "812": {
+    "cumulative_net": -378,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -378
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "813": {
+    "cumulative_net": -6,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -6
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "821": {
+    "cumulative_net": 7,
+    "last_now_cost": 45,
+    "velocity_history": [
+      7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "822": {
+    "cumulative_net": 7,
+    "last_now_cost": 45,
+    "velocity_history": [
+      7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "565": {
+    "cumulative_net": -4973,
+    "last_now_cost": 47,
+    "velocity_history": [
+      -4973
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "566": {
+    "cumulative_net": -11,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -11
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "567": {
+    "cumulative_net": 3005,
+    "last_now_cost": 39,
+    "velocity_history": [
+      3005
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "568": {
+    "cumulative_net": 6922,
+    "last_now_cost": 52,
+    "velocity_history": [
+      6922
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "569": {
+    "cumulative_net": -1926,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -1926
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "570": {
+    "cumulative_net": 298,
+    "last_now_cost": 42,
+    "velocity_history": [
+      298
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "571": {
+    "cumulative_net": -11,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -11
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "572": {
+    "cumulative_net": -23,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -23
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "573": {
+    "cumulative_net": 32,
+    "last_now_cost": 41,
+    "velocity_history": [
+      32
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "574": {
+    "cumulative_net": 247,
+    "last_now_cost": 43,
+    "velocity_history": [
+      247
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "575": {
+    "cumulative_net": -6778,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -6778
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "576": {
+    "cumulative_net": -2,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "577": {
+    "cumulative_net": -16,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -16
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "578": {
+    "cumulative_net": -47,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -47
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "579": {
+    "cumulative_net": -6,
+    "last_now_cost": 85,
+    "velocity_history": [
+      -6
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "581": {
+    "cumulative_net": 204,
+    "last_now_cost": 68,
+    "velocity_history": [
+      204
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "582": {
+    "cumulative_net": -1676,
+    "last_now_cost": 64,
+    "velocity_history": [
+      -1676
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "583": {
+    "cumulative_net": 4,
+    "last_now_cost": 64,
+    "velocity_history": [
+      4
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "584": {
+    "cumulative_net": 1745,
+    "last_now_cost": 62,
+    "velocity_history": [
+      1745
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "585": {
+    "cumulative_net": 151,
+    "last_now_cost": 52,
+    "velocity_history": [
+      151
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "586": {
+    "cumulative_net": -55,
+    "last_now_cost": 52,
+    "velocity_history": [
+      -55
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "587": {
+    "cumulative_net": 19,
+    "last_now_cost": 52,
+    "velocity_history": [
+      19
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "588": {
+    "cumulative_net": -34,
+    "last_now_cost": 53,
+    "velocity_history": [
+      -34
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "589": {
+    "cumulative_net": -1,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "590": {
+    "cumulative_net": -1,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "591": {
+    "cumulative_net": -248,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -248
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "592": {
+    "cumulative_net": -1,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "593": {
+    "cumulative_net": -1332,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -1332
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "594": {
+    "cumulative_net": 0,
+    "last_now_cost": 45,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "595": {
+    "cumulative_net": -18,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -18
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "596": {
+    "cumulative_net": -12433,
+    "last_now_cost": 71,
+    "velocity_history": [
+      -12433
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "597": {
+    "cumulative_net": 19772,
+    "last_now_cost": 63,
+    "velocity_history": [
+      19772
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "598": {
+    "cumulative_net": -5,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "599": {
+    "cumulative_net": -151,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -151
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "673": {
+    "cumulative_net": 1328,
+    "last_now_cost": 55,
+    "velocity_history": [
+      1328
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "717": {
+    "cumulative_net": -22945,
+    "last_now_cost": 64,
+    "velocity_history": [
+      -22945
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "726": {
+    "cumulative_net": 301,
+    "last_now_cost": 69,
+    "velocity_history": [
+      301
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "745": {
+    "cumulative_net": -9,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -9
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "750": {
+    "cumulative_net": -6,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -6
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "751": {
+    "cumulative_net": -3,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "790": {
+    "cumulative_net": 15,
+    "last_now_cost": 45,
+    "velocity_history": [
+      15
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "796": {
+    "cumulative_net": 4030,
+    "last_now_cost": 50,
+    "velocity_history": [
+      4030
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "804": {
+    "cumulative_net": -22,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -22
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "811": {
+    "cumulative_net": 8,
+    "last_now_cost": 45,
+    "velocity_history": [
+      8
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "818": {
+    "cumulative_net": 87,
+    "last_now_cost": 45,
+    "velocity_history": [
+      87
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "326": {
+    "cumulative_net": -47,
+    "last_now_cost": 51,
+    "velocity_history": [
+      -47
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "600": {
+    "cumulative_net": -1046,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -1046
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "601": {
+    "cumulative_net": -56,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -56
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "602": {
+    "cumulative_net": -82,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -82
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "603": {
+    "cumulative_net": -6127,
+    "last_now_cost": 41,
+    "velocity_history": [
+      -6127
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "604": {
+    "cumulative_net": -4,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -4
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "605": {
+    "cumulative_net": -82,
+    "last_now_cost": 41,
+    "velocity_history": [
+      -82
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "606": {
+    "cumulative_net": -12527,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -12527
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "607": {
+    "cumulative_net": -2,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -2
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "608": {
+    "cumulative_net": -13,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -13
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "609": {
+    "cumulative_net": -57,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -57
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "610": {
+    "cumulative_net": -4020,
+    "last_now_cost": 41,
+    "velocity_history": [
+      -4020
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "611": {
+    "cumulative_net": -16,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -16
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "612": {
+    "cumulative_net": -237,
+    "last_now_cost": 59,
+    "velocity_history": [
+      -237
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "613": {
+    "cumulative_net": -1003,
+    "last_now_cost": 57,
+    "velocity_history": [
+      -1003
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "615": {
+    "cumulative_net": -9152,
+    "last_now_cost": 55,
+    "velocity_history": [
+      -9152
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "616": {
+    "cumulative_net": -3,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "617": {
+    "cumulative_net": -1,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "618": {
+    "cumulative_net": -12,
+    "last_now_cost": 48,
+    "velocity_history": [
+      -12
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "619": {
+    "cumulative_net": -4,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -4
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "620": {
+    "cumulative_net": -14,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -14
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "621": {
+    "cumulative_net": -76,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -76
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "622": {
+    "cumulative_net": -3,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "623": {
+    "cumulative_net": 64,
+    "last_now_cost": 43,
+    "velocity_history": [
+      64
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "624": {
+    "cumulative_net": -110781,
+    "last_now_cost": 78,
+    "velocity_history": [
+      -110781
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "625": {
+    "cumulative_net": -55,
+    "last_now_cost": 56,
+    "velocity_history": [
+      -55
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "626": {
+    "cumulative_net": -124,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -124
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "659": {
+    "cumulative_net": -230,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -230
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "671": {
+    "cumulative_net": -389,
+    "last_now_cost": 58,
+    "velocity_history": [
+      -389
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "679": {
+    "cumulative_net": -1253,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -1253
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "708": {
+    "cumulative_net": -2097,
+    "last_now_cost": 55,
+    "velocity_history": [
+      -2097
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "718": {
+    "cumulative_net": -14,
+    "last_now_cost": 50,
+    "velocity_history": [
+      -14
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "738": {
+    "cumulative_net": 18,
+    "last_now_cost": 45,
+    "velocity_history": [
+      18
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "747": {
+    "cumulative_net": -11,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -11
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "752": {
+    "cumulative_net": 6,
+    "last_now_cost": 40,
+    "velocity_history": [
+      6
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "758": {
+    "cumulative_net": -7,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -7
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "785": {
+    "cumulative_net": -46,
+    "last_now_cost": 54,
+    "velocity_history": [
+      -46
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "791": {
+    "cumulative_net": -2354,
+    "last_now_cost": 55,
+    "velocity_history": [
+      -2354
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "802": {
+    "cumulative_net": 1,
+    "last_now_cost": 50,
+    "velocity_history": [
+      1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "815": {
+    "cumulative_net": -1341,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -1341
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "825": {
+    "cumulative_net": 8,
+    "last_now_cost": 40,
+    "velocity_history": [
+      8
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "627": {
+    "cumulative_net": -93,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -93
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "628": {
+    "cumulative_net": -3875,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -3875
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "629": {
+    "cumulative_net": 111,
+    "last_now_cost": 39,
+    "velocity_history": [
+      111
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "631": {
+    "cumulative_net": -15,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -15
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "632": {
+    "cumulative_net": -5,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "633": {
+    "cumulative_net": -374,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -374
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "634": {
+    "cumulative_net": -52,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -52
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "635": {
+    "cumulative_net": -184,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -184
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "636": {
+    "cumulative_net": 198,
+    "last_now_cost": 44,
+    "velocity_history": [
+      198
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "637": {
+    "cumulative_net": -18,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -18
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "638": {
+    "cumulative_net": -478,
+    "last_now_cost": 38,
+    "velocity_history": [
+      -478
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "639": {
+    "cumulative_net": 0,
+    "last_now_cost": 40,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "640": {
+    "cumulative_net": -10,
+    "last_now_cost": 40,
+    "velocity_history": [
+      -10
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "641": {
+    "cumulative_net": -348,
+    "last_now_cost": 39,
+    "velocity_history": [
+      -348
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "642": {
+    "cumulative_net": -152,
+    "last_now_cost": 56,
+    "velocity_history": [
+      -152
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "643": {
+    "cumulative_net": -568,
+    "last_now_cost": 52,
+    "velocity_history": [
+      -568
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "644": {
+    "cumulative_net": -73,
+    "last_now_cost": 51,
+    "velocity_history": [
+      -73
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "645": {
+    "cumulative_net": -8,
+    "last_now_cost": 51,
+    "velocity_history": [
+      -8
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "646": {
+    "cumulative_net": -2933,
+    "last_now_cost": 53,
+    "velocity_history": [
+      -2933
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "647": {
+    "cumulative_net": 0,
+    "last_now_cost": 55,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "648": {
+    "cumulative_net": -5,
+    "last_now_cost": 53,
+    "velocity_history": [
+      -5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "649": {
+    "cumulative_net": 0,
+    "last_now_cost": 50,
+    "velocity_history": [
+      0
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "650": {
+    "cumulative_net": -58,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -58
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "651": {
+    "cumulative_net": -250,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -250
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "652": {
+    "cumulative_net": -311,
+    "last_now_cost": 43,
+    "velocity_history": [
+      -311
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "653": {
+    "cumulative_net": -5,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "655": {
+    "cumulative_net": -13,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -13
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "656": {
+    "cumulative_net": -3,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -3
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "657": {
+    "cumulative_net": 62,
+    "last_now_cost": 44,
+    "velocity_history": [
+      62
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "658": {
+    "cumulative_net": -851,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -851
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "663": {
+    "cumulative_net": -28,
+    "last_now_cost": 49,
+    "velocity_history": [
+      -28
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "682": {
+    "cumulative_net": -11,
+    "last_now_cost": 42,
+    "velocity_history": [
+      -11
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "695": {
+    "cumulative_net": -50,
+    "last_now_cost": 44,
+    "velocity_history": [
+      -50
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "709": {
+    "cumulative_net": -172,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -172
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "720": {
+    "cumulative_net": -321,
+    "last_now_cost": 52,
+    "velocity_history": [
+      -321
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "749": {
+    "cumulative_net": 236,
+    "last_now_cost": 42,
+    "velocity_history": [
+      236
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "766": {
+    "cumulative_net": 83,
+    "last_now_cost": 40,
+    "velocity_history": [
+      83
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "767": {
+    "cumulative_net": 5,
+    "last_now_cost": 45,
+    "velocity_history": [
+      5
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "777": {
+    "cumulative_net": -1,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "778": {
+    "cumulative_net": -1,
+    "last_now_cost": 45,
+    "velocity_history": [
+      -1
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "809": {
+    "cumulative_net": 43,
+    "last_now_cost": 45,
+    "velocity_history": [
+      43
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "816": {
+    "cumulative_net": 89,
+    "last_now_cost": 46,
+    "velocity_history": [
+      89
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "817": {
+    "cumulative_net": -413,
+    "last_now_cost": 52,
+    "velocity_history": [
+      -413
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "828": {
+    "cumulative_net": 51,
+    "last_now_cost": 40,
+    "velocity_history": [
+      51
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  },
+  "831": {
+    "cumulative_net": 64,
+    "last_now_cost": 40,
+    "velocity_history": [
+      64
+    ],
+    "dates": [
+      "2026-05-06"
+    ]
+  }
+}

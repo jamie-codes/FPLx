@@ -1,7 +1,7 @@
 ---
 phase: 78
 slug: ui-visual-foundation
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-05-08
@@ -81,16 +81,15 @@ Declared values (multiples of 4):
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| xs | 4px | Icon gaps, dot indicator gap in badge |
+| xs | 4px | Icon gaps, dot indicator gap in badge, pill badge vertical padding (`py-1`) |
 | sm | 8px | Pill badge padding horizontal (`px-2` = 8px) |
 | md | 16px | Section padding, nav row horizontal padding |
 | lg | 24px | Content spacing below sticky nav |
 | xl | 32px | Major content block gaps |
-| 2xl | 48px | Page-level section breaks |
+| 2xl | 48px | Not used in this phase |
 | 3xl | 64px | Not used in this phase |
 
 **Exceptions:**
-- Pill badge vertical padding: `py-0.5` (2px) — deliberate sub-scale value for inline badge height control (D-10)
 - Touch target minimum: `min-h-[44px]` on all interactive nav buttons — enforced on pill nav buttons per established pattern in MobileNav (D-05, existing MobileNav line ~40)
 
 **Pill nav row gaps:** `gap-2` (8px) between pill items within a nav row.
@@ -203,7 +202,7 @@ Section button active state in MobileNav bottom bar uses `text-zinc-900 dark:tex
 
 Normal state:
 ```
-<span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs bg-surface-elevated text-muted">
+<span class="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs bg-surface-elevated text-muted">
   <span aria-hidden="true">●</span>
   Updated {relativeTime}
 </span>
@@ -211,7 +210,7 @@ Normal state:
 
 Stale state (`stale === true`):
 ```
-<span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400">
+<span class="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400">
   <span aria-hidden="true">⚠</span>
   Updated {relativeTime}
 </span>

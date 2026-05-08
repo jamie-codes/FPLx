@@ -34,23 +34,23 @@ This phase extends three existing components within the established design langu
 
 ## Spacing Scale
 
-Declared values (multiples of 4 — Tailwind v4 default `--spacing: 0.25rem` ⇒ 4px unit). This phase uses existing project spacing only.
+Declared values from the standard 8-point scale (multiples of 4 — Tailwind v4 default `--spacing: 0.25rem` ⇒ 4px unit). This phase uses existing project spacing only. Standard scale = {4, 8, 16, 24, 32, 48, 64}; component-local sizing values that are multiples of 4 (44, 64, 72, 88, 96) are also permitted for tap-target / card-height constraints.
 
 | Token | Value | Usage in this phase |
 |-------|-------|---------------------|
 | 1 | 4px | `top-1 right-1` C/VC badge offset (preserved from `LineupTab.tsx:64`); `ml-1` chevron gap on GW row |
-| 2 | 8px | `gap-2` between sub-tables in drill-down panel (mobile); `mr-2`/`ml-2` chevron-to-text spacing |
-| 3 | 12px | `px-3` row padding inside drill-down sub-tables; `px-3` Set-C / Set-VC pill horizontal padding |
-| 4 | 16px | `gap-4` between Haulers and Flagged-Misses sub-tables on desktop (`sm:grid-cols-2 gap-4`); `mb-4` between drill-down header and table body |
+| 2 | 8px | `gap-2` between sub-tables in drill-down panel (mobile); `mr-2`/`ml-2` chevron-to-text spacing; `px-2` row padding inside drill-down sub-tables; `px-2` Set-C / Set-VC pill horizontal padding |
+| 4 | 16px | `gap-4` between Haulers and Flagged-Misses sub-tables on desktop (`sm:grid-cols-2 gap-4`); `mb-4` between drill-down header and table body; `py-4` vertical padding on the drill-down `<td colSpan={4}>` cell |
 | 6 | 24px | `py-6` empty-state vertical padding inside drill-down (when GW has no haulers AND no misses) |
 
-**Component-local sizing tokens (not global):**
+**Component-local sizing tokens (multiples of 4, not part of the standard 8-point scale):**
 - Tap targets: `min-h-[44px]` on the GW summary row (entire row clickable, must be ≥44px tall) and on the per-card "Set C" / "Set VC" buttons (matches existing `LineupTab.tsx` Reset button at line 285)
-- GW summary row default `py-1` (32px effective via line-height) is augmented to `py-2` (≥40px) when interactive — the project already has `min-h-[44px]` precedent on toggles; the GW row gets `py-2 sm:py-1.5` and `min-h-[44px]` to satisfy WCAG 2.5.5 AAA tap targets while preserving desktop density
+- GW summary row uses `py-2 min-h-[44px]` at all breakpoints — the `min-h-[44px]` constraint guarantees the WCAG 2.5.5 AAA tap target while `py-2` (8px) keeps the row visually compact. No breakpoint variant on the vertical padding.
 - PlayerCard `min-h-[64px] sm:min-h-[72px]` (preserved from `LineupTab.tsx:34`); captain-arm visual ring adds `ring-2 ring-amber-500 ring-offset-1` (no extra layout space)
+- PlayerCard grows to `min-h-[88px] sm:min-h-[96px]` to accommodate the pill row (88, 96 — both multiples of 4)
 - Routes column width: no explicit `w-*`; column auto-sizes to header `Routes` (~56px) — matches `cs_prob_1gw` precedent (no width override)
 
-**Exceptions:** none. All values are multiples of 4 (4, 8, 12, 16, 24, 32, 40, 44, 64, 72).
+**Exceptions:** none. All values are multiples of 4 and either come from the standard 8-point scale {4, 8, 16, 24, 32, 48, 64} or are component-local sizing constraints (44, 64, 72, 88, 96). 12px is NOT used anywhere in this phase.
 
 ---
 
@@ -197,7 +197,7 @@ The planner/executor must use these existing components verbatim or follow the l
 | `MOBILE_HIDDEN_COLUMNS` map | `src/components/gem-table/GwToggle.tsx:5–24` | **Modify.** Add one entry `routes_to_points: false` (the convention is `key: false` ⇒ hidden on mobile width <640px). |
 | `PRESET_COLUMN_VISIBILITY` map | `src/components/gem-table/GwToggle.tsx:26–69` | **No change.** Routes column is visible in all desktop presets (default / compact / analysis) per RESEARCH Open Question 4 recommendation. |
 | `GwSummaryTable` | `src/components/accuracy/AccuracyTab.tsx:322–383` | **Modify.** Wrap each row in a `Fragment`. Make the existing `<tr>` clickable (`onClick`, `onKeyDown`, `tabIndex=0`, `role="button"`, `aria-expanded`, `aria-controls`, chevron). Add a conditional second `<tr>` rendering the drill-down panel beneath when `expandedGw === r.gw`. State: single `expandedGw: number \| null` (single-expand pattern per RESEARCH Open Question 7). |
-| Drill-down sub-tables (NEW, inline in `AccuracyTab.tsx`) | new code in same file | Two sub-tables side-by-side on `sm:` (`grid-cols-2 gap-4`), stacked on mobile (`grid-cols-1 gap-2`). Each sub-table: `<h3 className="text-sm font-semibold mb-1">` heading + 3-column table (Player / Actual / Predicted) using existing `TABLE_CLS`/`TR_CLS`/`TD_CLS` constants from `AccuracyTab.tsx:66–68`. ~80 LoC. |
+| Drill-down sub-tables (NEW, inline in `AccuracyTab.tsx`) | new code in same file | Two sub-tables side-by-side on `sm:` (`grid-cols-2 gap-4`), stacked on mobile (`grid-cols-1 gap-2`). Each sub-table: `<h3 className="text-sm font-semibold mb-1">` heading + 3-column table (Player / Actual / Predicted) using existing `TABLE_CLS`/`TR_CLS`/`TD_CLS` constants from `AccuracyTab.tsx:66–68`. Sub-table row cell padding `px-2 py-1`. The wrapping drill-down `<td colSpan={4}>` uses `py-4` vertical padding. ~80 LoC. |
 | `PlayerCard` | `src/components/squad/LineupTab.tsx:22–75` | **Modify.** Add two pill buttons beneath the existing badge area: `<button data-testid="set-c-{id}">Set C</button>` and `<button data-testid="set-vc-{id}">Set VC</button>`. Visible at all times. The amber-ring "captain-armed" visual is REUSED from the existing `isPending` swap arm style — but RESEARCH Pitfall 1's mutual-exclusion rule means only one arming mode is active at a time, so visual reuse is unambiguous. ~25 LoC. |
 | `LineupTab` (state machine) | `src/components/squad/LineupTab.tsx:125–185` | **Modify.** Add two state slots (`captainOverrideId: number \| null`, `vcOverrideId: number \| null`). Derive `effectiveCaptainId = captainOverrideId ?? lineup.captainId` and `effectiveVcId = vcOverrideId ?? lineup.vcId`. Extend `handleReset()` and the `useEffect([initialLineup])` to clear both new slots. Phase 76 does NOT add `pendingCaptainArmedId` per the resolved interaction-copy decision above (always-visible pills, no arm state). ~30 LoC. |
 | `Reset` button | `src/components/squad/LineupTab.tsx:280–288` | **Modify.** No visual change. Behavioural extension: `handleReset` clears `captainOverrideId` and `vcOverrideId` in addition to existing `setPendingStarterId(null)` + `setLineup(initialLineup)`. Existing `aria-label="Reset to recommended lineup"` already semantically covers captain reset. |
@@ -206,9 +206,9 @@ The planner/executor must use these existing components verbatim or follow the l
 
 1. **GemTable column order** preserved — Routes column inserted near `cs_prob_1gw` (logical "additional analytics signal" cluster). Existing column tests in `columns.test.tsx` continue passing without index renumbering (TanStack Table v8 sorts by accessor key, not by physical column index).
 2. **Accuracy GW summary table** preserves all existing columns, the existing sort behaviour on column headers, and the `Overall` summary row (line 373–378). Only the `<tr>` body rendering changes; `<thead>` is untouched.
-3. **Drill-down `<tr>` is INSIDE the parent `<table>`** (same `<tbody>`) using `<td colSpan={4}>` — NOT a portal, NOT a modal, NOT a sibling element. This preserves table layout (no double-border, no width re-flow on expand).
+3. **Drill-down `<tr>` is INSIDE the parent `<table>`** (same `<tbody>`) using `<td colSpan={4}>` — NOT a portal, NOT a modal, NOT a sibling element. This preserves table layout (no double-border, no width re-flow on expand). The `<td colSpan={4}>` cell uses `py-4` (16px) vertical padding.
 4. **PlayerCard** preserves its existing single-`<button>` outer wrapper for the swap interaction. The Set C / Set VC pills are NESTED `<button>`s — but per HTML spec, nested `<button>` is invalid. Resolution: refactor PlayerCard's outer `<button>` to a `<div role="button" tabIndex={0}>` with `onClick` + `onKeyDown`, OR move the Set C / Set VC pills OUTSIDE the PlayerCard `<button>` (as siblings) wrapped in a parent `<div>` that contains both. **Recommendation: siblings inside a parent `<div>`** — keeps the card body a pure `<button>` (preserves keyboard semantics for swap arm) and the pills as separate `<button>`s (preserves their independent keyboard semantics). The parent `<div>` wraps both. See "Pitfall: nested button elements" below.
-5. **PlayerCard min-height grows** from `min-h-[64px] sm:min-h-[72px]` to `min-h-[88px] sm:min-h-[96px]` to accommodate the pill row. Existing pitch row layout (`flex items-stretch gap-2 sm:gap-3`) flexes naturally.
+5. **PlayerCard min-height grows** from `min-h-[64px] sm:min-h-[72px]` to `min-h-[88px] sm:min-h-[96px]` to accommodate the pill row. Existing pitch row layout (the parent grid spacing in `LineupTab.tsx`, preserved verbatim) flexes naturally — Phase 76 does NOT modify the parent grid's gap classes.
 6. **Reset button** position, label, and styling unchanged.
 
 ---
@@ -221,12 +221,12 @@ Every interactive element must support all four states. Disabled is not optional
 |---------|---------|-------|----------------|----------|
 | Routes column header (sort) | `text-zinc-700 dark:text-zinc-300 cursor-pointer` (preserved per `columns.tsx` H() helper) | underline + text colour shift (preserved) | sort-arrow ↑/↓ visible; `aria-sort` attribute | n/a (always sortable when column visible) |
 | Routes cell (data) | render integer 0–5 OR em-dash for null/undefined | n/a (cells aren't interactive in this column) | n/a | n/a |
-| GW summary row (drill-down trigger) | `cursor-pointer` + `min-h-[44px]` + chevron `▾` | `hover:bg-zinc-50 dark:hover:bg-zinc-700` | `aria-expanded="true"`; chevron flips to `▴`; row background NOT changed (chevron alone signals state — no row tint) | n/a (always expandable) |
-| Drill-down panel | rendered when `expandedGw === r.gw`; `bg-zinc-50 dark:bg-zinc-800/50` | n/a (panel itself is not hoverable; rows inside are not interactive in v1) | n/a | n/a |
-| Drill-down sub-table row | `text-sm` zinc neutral | n/a (rows are display-only in v1; future: click → player profile drawer is deferred) | n/a | n/a |
+| GW summary row (drill-down trigger) | `cursor-pointer` + `py-2 min-h-[44px]` + chevron `▾` | `hover:bg-zinc-50 dark:hover:bg-zinc-700` | `aria-expanded="true"`; chevron flips to `▴`; row background NOT changed (chevron alone signals state — no row tint) | n/a (always expandable) |
+| Drill-down panel | rendered when `expandedGw === r.gw`; `bg-zinc-50 dark:bg-zinc-800/50`; outer `<td colSpan={4}>` cell `py-4` | n/a (panel itself is not hoverable; rows inside are not interactive in v1) | n/a | n/a |
+| Drill-down sub-table row | `text-sm` zinc neutral; cell padding `px-2 py-1` | n/a (rows are display-only in v1; future: click → player profile drawer is deferred) | n/a | n/a |
 | Set C pill (default — not captain) | `bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-600 rounded px-2 py-1 text-xs min-h-[44px] cursor-pointer` | `hover:bg-zinc-50 dark:hover:bg-zinc-700` | `active:scale-95`; on click → flashes amber-ring on the card for ~150ms then settles | n/a in v1 |
 | Set C pill (current captain) | rendered as visually inert: `opacity-50 cursor-not-allowed` + `aria-pressed="true"` + label still reads `Set C` (the static C badge above already communicates "is captain") | no hover | no press | `disabled` attribute, `aria-disabled="true"` |
-| Set VC pill (default — not VC) | same chrome as Set C pill | same | same | n/a |
+| Set VC pill (default — not VC) | same chrome as Set C pill (`px-2 py-1 min-h-[44px]`) | same | same | n/a |
 | Set VC pill (current VC) | same inert treatment as Set C pill (current captain) — `opacity-50 cursor-not-allowed` + `aria-pressed="true"` | no hover | no press | `disabled`, `aria-disabled="true"` |
 | Set VC pill (target is current captain) | shown as inert: `opacity-50 cursor-not-allowed` with native `title="Captain cannot be vice-captain"` | no hover | no press (clicks are silently ignored as defence in depth) | `disabled`, `aria-disabled="true"` |
 | PlayerCard body (preserved) | preserved per `LineupTab.tsx:33–75` | preserved | preserved | preserved |
@@ -344,8 +344,8 @@ Every interactive element must support all four states. Disabled is not optional
   {isViceCaptain && <span className="absolute top-1 right-1 ..." data-testid="vc-badge">VC</span>}
   {/* New: Set C / Set VC pill row, sibling of the body button */}
   <div className="flex gap-1 mt-1">
-    <button data-testid={`set-c-${id}`} ...>Set C</button>
-    <button data-testid={`set-vc-${id}`} ...>Set VC</button>
+    <button data-testid={`set-c-${id}`} className="px-2 py-1 min-h-[44px] ...">Set C</button>
+    <button data-testid={`set-vc-${id}`} className="px-2 py-1 min-h-[44px] ...">Set VC</button>
   </div>
 </div>
 ```
@@ -386,7 +386,8 @@ These Phase 72 invariants MUST still hold after Phase 76 implementation:
 
 - [ ] `expandedGw: number \| null` state (single-expand) — matches `FixtureSwingDetector` `expandedTeamId` pattern
 - [ ] `Fragment` wraps each `(row + optional drill-down row)` pair
-- [ ] Drill-down `<tr>` uses `<td colSpan={4}>` (4 columns in `GwSummaryTable`)
+- [ ] Drill-down `<tr>` uses `<td colSpan={4}>` (4 columns in `GwSummaryTable`) with `py-4` vertical padding
+- [ ] Sub-table cell padding uses `px-2 py-1` (no 12px / `px-3` / `py-3`)
 - [ ] Chevron `▾` / `▴` rendered inline after GW number with `aria-hidden="true"` (decorative)
 - [ ] `tabIndex={0}` + `role="button"` + `onKeyDown` for Enter/Space activation
 - [ ] `aria-expanded` + `aria-controls` linking row to drill-down panel
