@@ -138,7 +138,12 @@ def compute_insights(
         if ins.get('id') in _TRIVIAL_PATTERN_IDS:
             continue
         # Defensive shape check: drop any dict missing required keys.
-        required = {'id', 'category', 'statement', 'confidence_pct', 'sample_n', 'sample_total'}
+        required = {
+            'id', 'category', 'statement', 'confidence_pct', 'sample_n', 'sample_total',
+            'title', 'metric_value', 'metric_label', 'takeaway', 'action_hint',
+            'benchmark_value', 'gw_coverage', 'player_ids', 'team_ids',
+            'player_names', 'team_names', 'signal_label',
+        }
         if not required.issubset(ins.keys()):
             continue
         if ins['category'] not in CATEGORIES:
@@ -177,10 +182,26 @@ def _defensive_patterns(merged: list, bootstrap: dict, fixtures: list) -> list:
             'confidence_pct': confidence_pct,
             'sample_n': int(sample_n),
             'sample_total': int(total),
+            'title': INSIGHT_TITLES['def_cs_home_vs_away'],
+            'metric_value': float(home_pct),
+            'metric_label': 'CS rate at home',
+            'takeaway': (
+                f'Home defenders keep clean sheets {home_pct}% of the time — '
+                f'{round(home_pct - away_pct, 1)}pp more than away sides.'
+            ),
+            'action_hint': INSIGHT_ACTION_HINTS['def_cs_home_vs_away'],
+            'benchmark_value': BENCHMARK_DEFAULTS['def_cs_home_vs_away'],
+            'gw_coverage': f'GW1–{max((f.get("event") or 0) for f in finished)}',
+            'player_ids': [],
+            'team_ids': [],
+            'player_names': [],
+            'team_names': [],
+            'signal_label': _signal_label('defensive', confidence_pct, 'def_cs_home_vs_away'),
         })
 
     # def_cs_rate_top6_vs_rest: clean-sheet rate of top-6 PL teams
     teams = bootstrap.get('teams', [])
+    teams_by_id = {t['id']: t for t in teams}
     # Sort teams by 'position' field if present, else fall back to total fixture points
     teams_with_pos = [t for t in teams if t.get('position') is not None]
     if len(teams_with_pos) >= 6:
@@ -230,6 +251,24 @@ def _defensive_patterns(merged: list, bootstrap: dict, fixtures: list) -> list:
                 'confidence_pct': confidence_pct,
                 'sample_n': int(top6_cs),
                 'sample_total': int(top6_appearances),
+                'title': INSIGHT_TITLES['def_cs_rate_top6_vs_rest'],
+                'metric_value': float(confidence_pct),
+                'metric_label': 'top-6 CS rate',
+                'takeaway': (
+                    f"The league's top six teams keep clean sheets {confidence_pct}% of the time — "
+                    f'{top6_cs} from {top6_appearances} appearances.'
+                ),
+                'action_hint': INSIGHT_ACTION_HINTS['def_cs_rate_top6_vs_rest'],
+                'benchmark_value': BENCHMARK_DEFAULTS['def_cs_rate_top6_vs_rest'],
+                'gw_coverage': f'GW1–{max((f.get("event") or 0) for f in finished)}',
+                'player_ids': [],
+                'team_ids': sorted(int(tid) for tid in top6_ids),
+                'player_names': [],
+                'team_names': sorted(
+                    teams_by_id.get(tid, {}).get('short_name', f'Team{tid}')
+                    for tid in top6_ids
+                ),
+                'signal_label': _signal_label('defensive', confidence_pct, 'def_cs_rate_top6_vs_rest'),
             })
 
     # def_cs_streak_ge2: fraction of teams with a current 2+ CS streak
@@ -275,6 +314,21 @@ def _defensive_patterns(merged: list, bootstrap: dict, fixtures: list) -> list:
             'confidence_pct': confidence_pct,
             'sample_n': int(streak_ge2_count),
             'sample_total': int(sample_total),
+            'title': INSIGHT_TITLES['def_cs_streak_ge2'],
+            'metric_value': float(confidence_pct),
+            'metric_label': 'teams on 2+ CS streak',
+            'takeaway': (
+                f'{streak_ge2_count} of {sample_total} PL teams are riding a clean-sheet streak '
+                f'of two or more fixtures right now.'
+            ),
+            'action_hint': INSIGHT_ACTION_HINTS['def_cs_streak_ge2'],
+            'benchmark_value': BENCHMARK_DEFAULTS['def_cs_streak_ge2'],
+            'gw_coverage': f'GW1–{max((f.get("event") or 0) for f in finished)}',
+            'player_ids': [],
+            'team_ids': [],
+            'player_names': [],
+            'team_names': [],
+            'signal_label': _signal_label('defensive', confidence_pct, 'def_cs_streak_ge2'),
         })
 
     return out
@@ -309,6 +363,21 @@ def _attacking_patterns(merged: list, bootstrap: dict, fixtures: list, summaries
             'confidence_pct': confidence_pct,
             'sample_n': int(sample_n_att),
             'sample_total': int(sample_total_att),
+            'title': INSIGHT_TITLES['att_top_xg_overperformers'],
+            'metric_value': float(confidence_pct),
+            'metric_label': 'attackers beating xG by 30%+',
+            'takeaway': (
+                f'{sample_n_att} of {sample_total_att} high-volume attackers are outscoring '
+                f'their xG by 30% or more — regression watch.'
+            ),
+            'action_hint': INSIGHT_ACTION_HINTS['att_top_xg_overperformers'],
+            'benchmark_value': BENCHMARK_DEFAULTS['att_top_xg_overperformers'],
+            'gw_coverage': f'GW1–{max((f.get("event") or 0) for f in finished)}',
+            'player_ids': [int(p.get('id') or 0) for p in overperformers[:5] if p.get('id')],
+            'team_ids': [],
+            'player_names': [str(p.get('web_name') or '') for p in overperformers[:5] if p.get('web_name')],
+            'team_names': [],
+            'signal_label': _signal_label('attacking', confidence_pct, 'att_top_xg_overperformers'),
         })
 
     # att_home_goal_share: fraction of finished-fixture goals by home team
@@ -328,6 +397,18 @@ def _attacking_patterns(merged: list, bootstrap: dict, fixtures: list, summaries
                 'confidence_pct': confidence_pct,
                 'sample_n': int(home_goals),
                 'sample_total': int(total_goals),
+                'title': INSIGHT_TITLES['att_home_goal_share'],
+                'metric_value': float(confidence_pct),
+                'metric_label': 'of league goals scored at home',
+                'takeaway': f'Home teams are scoring {confidence_pct}% of all PL goals this season.',
+                'action_hint': INSIGHT_ACTION_HINTS['att_home_goal_share'],
+                'benchmark_value': BENCHMARK_DEFAULTS['att_home_goal_share'],
+                'gw_coverage': f'GW1–{max((f.get("event") or 0) for f in finished)}',
+                'player_ids': [],
+                'team_ids': [],
+                'player_names': [],
+                'team_names': [],
+                'signal_label': _signal_label('attacking', confidence_pct, 'att_home_goal_share'),
             })
 
     # att_top_team_goal_share: share of goals by top-scoring team
@@ -359,6 +440,21 @@ def _attacking_patterns(merged: list, bootstrap: dict, fixtures: list, summaries
                     'confidence_pct': confidence_pct,
                     'sample_n': int(top_team_goals),
                     'sample_total': int(total_all_goals),
+                    'title': INSIGHT_TITLES['att_top_team_goal_share'],
+                    'metric_value': float(confidence_pct),
+                    'metric_label': 'PL goals from top-scoring side',
+                    'takeaway': (
+                        f'{top_team_short} have produced {confidence_pct}% of all PL goals this season '
+                        f'— {top_team_goals} of {total_all_goals}.'
+                    ),
+                    'action_hint': INSIGHT_ACTION_HINTS['att_top_team_goal_share'],
+                    'benchmark_value': BENCHMARK_DEFAULTS['att_top_team_goal_share'],
+                    'gw_coverage': f'GW1–{max((f.get("event") or 0) for f in finished)}',
+                    'player_ids': [],
+                    'team_ids': [int(top_team_id)],
+                    'player_names': [],
+                    'team_names': [str(top_team_short)],
+                    'signal_label': _signal_label('attacking', confidence_pct, 'att_top_team_goal_share'),
                 })
 
     return out
@@ -393,6 +489,21 @@ def _player_patterns(merged: list, summaries: dict, finished_gws: int) -> list:
                 'confidence_pct': confidence_pct_buy,
                 'sample_n': int(sample_n_buy),
                 'sample_total': int(sample_total),
+                'title': INSIGHT_TITLES['player_buy_signal_count'],
+                'metric_value': float(confidence_pct_buy),
+                'metric_label': 'starters with BUY signal',
+                'takeaway': (
+                    f'{sample_n_buy} of {sample_total} regular starters carry a BUY signal — '
+                    f'returns trail xG+xA over the last 5 GWs.'
+                ),
+                'action_hint': INSIGHT_ACTION_HINTS['player_buy_signal_count'],
+                'benchmark_value': BENCHMARK_DEFAULTS['player_buy_signal_count'],
+                'gw_coverage': f'GW1–{finished_gws}',
+                'player_ids': [int(p.get('id') or 0) for p in buy_players[:5] if p.get('id')],
+                'team_ids': [],
+                'player_names': [str(p.get('web_name') or '') for p in buy_players[:5] if p.get('web_name')],
+                'team_names': [],
+                'signal_label': _signal_label('player', confidence_pct_buy, 'player_buy_signal_count'),
             })
 
         # player_sell_signal_count: players with regression_signal == 'sell'
@@ -410,6 +521,21 @@ def _player_patterns(merged: list, summaries: dict, finished_gws: int) -> list:
                 'confidence_pct': confidence_pct_sell,
                 'sample_n': int(sample_n_sell),
                 'sample_total': int(sample_total),
+                'title': INSIGHT_TITLES['player_sell_signal_count'],
+                'metric_value': float(confidence_pct_sell),
+                'metric_label': 'starters with SELL signal',
+                'takeaway': (
+                    f'{sample_n_sell} of {sample_total} regular starters carry a SELL signal — '
+                    f'returns outpace xG+xA, regression likely.'
+                ),
+                'action_hint': INSIGHT_ACTION_HINTS['player_sell_signal_count'],
+                'benchmark_value': BENCHMARK_DEFAULTS['player_sell_signal_count'],
+                'gw_coverage': f'GW1–{finished_gws}',
+                'player_ids': [int(p.get('id') or 0) for p in sell_players[:5] if p.get('id')],
+                'team_ids': [],
+                'player_names': [str(p.get('web_name') or '') for p in sell_players[:5] if p.get('web_name')],
+                'team_names': [],
+                'signal_label': _signal_label('player', confidence_pct_sell, 'player_sell_signal_count'),
             })
 
         # player_diff_count: players with differential_flag == 'diff'
@@ -427,6 +553,21 @@ def _player_patterns(merged: list, summaries: dict, finished_gws: int) -> list:
                 'confidence_pct': confidence_pct_diff,
                 'sample_n': int(sample_n_diff),
                 'sample_total': int(sample_total),
+                'title': INSIGHT_TITLES['player_diff_count'],
+                'metric_value': float(confidence_pct_diff),
+                'metric_label': 'starters flagged differential',
+                'takeaway': (
+                    f'{sample_n_diff} of {sample_total} regular starters are differentials — '
+                    f'high xPts with low ownership.'
+                ),
+                'action_hint': INSIGHT_ACTION_HINTS['player_diff_count'],
+                'benchmark_value': BENCHMARK_DEFAULTS['player_diff_count'],
+                'gw_coverage': f'GW1–{finished_gws}',
+                'player_ids': [int(p.get('id') or 0) for p in diff_players[:5] if p.get('id')],
+                'team_ids': [],
+                'player_names': [str(p.get('web_name') or '') for p in diff_players[:5] if p.get('web_name')],
+                'team_names': [],
+                'signal_label': _signal_label('player', confidence_pct_diff, 'player_diff_count'),
             })
 
         # player_template_trap_count: players with differential_flag == 'trap'
@@ -444,6 +585,21 @@ def _player_patterns(merged: list, summaries: dict, finished_gws: int) -> list:
                 'confidence_pct': confidence_pct_trap,
                 'sample_n': int(sample_n_trap),
                 'sample_total': int(sample_total),
+                'title': INSIGHT_TITLES['player_template_trap_count'],
+                'metric_value': float(confidence_pct_trap),
+                'metric_label': 'starters flagged template trap',
+                'takeaway': (
+                    f'{sample_n_trap} of {sample_total} regular starters are template traps — '
+                    f'widely held but underperforming on xPts.'
+                ),
+                'action_hint': INSIGHT_ACTION_HINTS['player_template_trap_count'],
+                'benchmark_value': BENCHMARK_DEFAULTS['player_template_trap_count'],
+                'gw_coverage': f'GW1–{finished_gws}',
+                'player_ids': [int(p.get('id') or 0) for p in trap_players[:5] if p.get('id')],
+                'team_ids': [],
+                'player_names': [str(p.get('web_name') or '') for p in trap_players[:5] if p.get('web_name')],
+                'team_names': [],
+                'signal_label': _signal_label('player', confidence_pct_trap, 'player_template_trap_count'),
             })
 
     return out
@@ -477,6 +633,21 @@ def _captaincy_patterns(merged: list, summaries: dict) -> list:
                 'confidence_pct': confidence_pct,
                 'sample_n': int(sample_n),
                 'sample_total': int(sample_total),
+                'title': INSIGHT_TITLES['cap_top3_xpts_share'],
+                'metric_value': float(confidence_pct),
+                'metric_label': 'xPts share of top-3 captaincy options',
+                'takeaway': (
+                    f'The top three captaincy options account for {confidence_pct}% of all available xPts this GW '
+                    f'(from {sample_total} eligible players).'
+                ),
+                'action_hint': INSIGHT_ACTION_HINTS['cap_top3_xpts_share'],
+                'benchmark_value': BENCHMARK_DEFAULTS['cap_top3_xpts_share'],
+                'gw_coverage': 'this GW',
+                'player_ids': [int(p.get('id') or 0) for p in top3 if p.get('id')],
+                'team_ids': [],
+                'player_names': [str(p.get('web_name') or '') for p in top3 if p.get('web_name')],
+                'team_names': [],
+                'signal_label': _signal_label('captaincy', confidence_pct, 'cap_top3_xpts_share'),
             })
 
     # cap_double_digit_haul_rate: fraction of player appearances with 10+ points
@@ -502,6 +673,21 @@ def _captaincy_patterns(merged: list, summaries: dict) -> list:
             'confidence_pct': confidence_pct,
             'sample_n': int(double_digit_appearances),
             'sample_total': int(total_appearances),
+            'title': INSIGHT_TITLES['cap_double_digit_haul_rate'],
+            'metric_value': float(confidence_pct),
+            'metric_label': 'appearances yielding 10+ pts',
+            'takeaway': (
+                f'Double-digit hauls (10+ pts) occur in {confidence_pct}% of player appearances this season '
+                f'({double_digit_appearances}/{total_appearances}).'
+            ),
+            'action_hint': INSIGHT_ACTION_HINTS['cap_double_digit_haul_rate'],
+            'benchmark_value': BENCHMARK_DEFAULTS['cap_double_digit_haul_rate'],
+            'gw_coverage': 'season-to-date',
+            'player_ids': [],
+            'team_ids': [],
+            'player_names': [],
+            'team_names': [],
+            'signal_label': _signal_label('captaincy', confidence_pct, 'cap_double_digit_haul_rate'),
         })
 
     return out
