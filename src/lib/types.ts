@@ -588,16 +588,40 @@ export interface CaptainPicks {
   eo_adjusted: CaptainPick | null
 }
 
-// Insights data (Phase 33 INS-01/INS-02/INS-03/INS-04 — pipeline writes pipeline/cache/insights.json)
-// The pipeline emits a flat array of Insight (no wrapper object — D-12 + RESEARCH §A1).
-// Tier badge (HIGH/MEDIUM/LOW) is derived client-side from confidence_pct (D-04).
+// Insights data (Phase 33 INS-01..INS-06 — pipeline writes pipeline/cache/insights.json)
+// Extended in Phase 79 (Plan 02): 10 new structured fields + signal_label emitted by pipeline.
+// The pipeline emits a flat array of Insight (no wrapper object).
+
+export type SignalLabel =
+  | 'Strong signal'
+  | 'Watchlist'
+  | 'Weak signal'
+  | 'Trap risk'
+  | 'Regression risk'
+  | 'Hidden gem'
+
 export interface Insight {
+  // Existing 6 fields (kept for backwards compat — D-03)
   id: string                                              // stable pattern key (e.g. 'def_cs_home_vs_away')
   category: 'defensive' | 'attacking' | 'player' | 'captaincy'
   statement: string                                       // human-readable, specific, non-trivial
   confidence_pct: number                                  // 0-100 (rounded to 1 d.p. by pipeline)
   sample_n: number                                        // numerator (how many times pattern held true)
   sample_total: number                                    // denominator (>= 10 enforced by pipeline D-03)
+  // New structured fields (D-01, Phase 79)
+  title: string                                           // short card heading (e.g. "Home Clean Sheet Advantage")
+  metric_value: number                                    // headline number (float, 0-100)
+  metric_label: string                                    // axis/unit label (e.g. "CS rate at home")
+  takeaway: string                                        // plain-English meaning sentence
+  action_hint: string                                     // verb-led ≤7-word recommendation
+  benchmark_value: number                                 // reference line for progress bar (float, 0-100)
+  gw_coverage: string                                     // e.g. "GW1–34"
+  player_ids: number[]                                    // FPL player IDs (empty list if not player-specific)
+  team_ids: number[]                                      // FPL team IDs (empty list if not team-specific)
+  player_names: string[]                                  // web_name per player_id — embedded by pipeline
+  team_names: string[]                                    // short_name per team_id — embedded by pipeline
+  // Signal label (D-04/D-05) — emitted by pipeline, not derived client-side
+  signal_label: SignalLabel
 }
 
 // Phase 58 (ML-01..ML-08) — Mini-League Rival Tracker.
