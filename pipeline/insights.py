@@ -28,6 +28,79 @@ CATEGORIES = ('defensive', 'attacking', 'player', 'captaincy')
 _POS_LABEL = {1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD'}
 
 
+# Phase 79 (D-04) — signal label rule matrix.
+def _signal_label(category: str, confidence_pct: float, insight_id: str) -> str:
+    """Map (category, confidence_pct) to one of 6 signal labels.
+
+    Rule precedence: category-specific overrides run BEFORE generic threshold checks.
+    Per D-04 in 079-CONTEXT.md.
+    """
+    # Category-specific overrides (highest precedence)
+    if category == 'player' and confidence_pct >= 65:
+        return 'Hidden gem'
+    if category in ('attacking', 'player') and confidence_pct < 45:
+        return 'Trap risk'
+    if category == 'defensive' and confidence_pct < 45:
+        return 'Regression risk'
+    # Generic threshold checks
+    if confidence_pct >= 70:
+        return 'Strong signal'
+    if confidence_pct >= 55:
+        return 'Watchlist'
+    return 'Weak signal'
+
+
+# Phase 79 (D-01) — per-insight benchmark reference values for the progress-bar
+# benchmark line. Tuned defaults; planner-locked values per planning guidance.
+BENCHMARK_DEFAULTS = {
+    'def_cs_home_vs_away':           25.0,  # historical PL CS rate ~25%
+    'def_cs_rate_top6_vs_rest':      35.0,  # top-6 keep CS ~35%
+    'def_cs_streak_ge2':             20.0,  # ~1 in 5 teams on a 2+ CS streak (baseline)
+    'att_top_xg_overperformers':     50.0,  # 50/50 baseline (overperform vs not)
+    'att_home_goal_share':           50.0,  # 50/50 equal baseline
+    'att_top_team_goal_share':       33.0,  # one-third of league goals from top scorer (baseline)
+    'player_buy_signal_count':       15.0,  # ~15% of starters carry a buy signal (baseline)
+    'player_sell_signal_count':      15.0,  # ~15% of starters carry a sell signal (baseline)
+    'player_diff_count':             10.0,  # 10% ownership as mid-tier differential threshold
+    'player_template_trap_count':    15.0,  # ~15% of starters template traps (baseline)
+    'cap_top3_xpts_share':           33.0,  # three-captain split 33% each (equal baseline)
+    'cap_double_digit_haul_rate':    15.0,  # 15% haul rate historical baseline
+}
+DEFAULT_BENCHMARK = 50.0  # neutral fallback for any insight added later
+
+# Phase 79 (D-01) — per-insight title strings (<=4 words, noun phrase, no abbreviations).
+INSIGHT_TITLES = {
+    'def_cs_home_vs_away':         'Home Clean Sheet Edge',
+    'def_cs_rate_top6_vs_rest':    'Top Team Clean Sheets',
+    'def_cs_streak_ge2':           'Active Clean Sheet Streaks',
+    'att_top_xg_overperformers':   'xG Overperformers',
+    'att_home_goal_share':         'Home Field Goal Share',
+    'att_top_team_goal_share':     'Top Scorer Dependence',
+    'player_buy_signal_count':     'Buy Signal Count',
+    'player_sell_signal_count':    'Sell Signal Count',
+    'player_diff_count':           'Differential Count',
+    'player_template_trap_count':  'Template Trap Count',
+    'cap_top3_xpts_share':         'Captain Concentration Risk',
+    'cap_double_digit_haul_rate':  'Double-Digit Haul Rate',
+}
+
+# Phase 79 (D-01) — per-insight action hint strings (verb-led, <=7 words, no hedging, no player names).
+INSIGHT_ACTION_HINTS = {
+    'def_cs_home_vs_away':         'Target home defenders in good runs',
+    'def_cs_rate_top6_vs_rest':    'Prioritise top-six defence assets',
+    'def_cs_streak_ge2':           'Ride hot defensive streaks',
+    'att_top_xg_overperformers':   'Hold xG overperformers, expect regression',
+    'att_home_goal_share':         'Favour home attackers with good fixtures',
+    'att_top_team_goal_share':     'Assess captain risk from top scorer reliance',
+    'player_buy_signal_count':     'Scan buy signals for next transfer',
+    'player_sell_signal_count':    'Review sell signals before deadline',
+    'player_diff_count':           'Check ownership before buying differentials',
+    'player_template_trap_count':  'Avoid template traps trending downwards',
+    'cap_top3_xpts_share':         'Spread captain risk across teams',
+    'cap_double_digit_haul_rate':  'Price in haul probability for captain picks',
+}
+
+
 def compute_insights(
     merged: list,
     bootstrap: dict,
