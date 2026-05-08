@@ -330,4 +330,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-06 — Phase 74 (Transfer Engine Overhaul) complete. TFX-01–TFX-05 all verified: 3-per-team cap, sell-side dedup, simultaneous 1FT/2FT/−4/−8 view, bank affordability, and unauthenticated freeTransfers wiring. v1.12 milestone (24/24 phases) complete.*
+*Last updated: 2026-05-08 — Phase 080 (GW-Specific Intelligence) complete. GWI-01–GWI-05 all verified: rotation-risk detection pipeline, GWInsight discriminated union + /api/gw-intel route + useGWIntel hook, InsightsTab "This Gameweek" section with 4 card types + XptsTrajectoryBar, RotationRiskBadge in SetPieceTakerPanel + OpportunityCostTable. v1.13 milestone in progress.*
