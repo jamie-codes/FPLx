@@ -85,7 +85,7 @@ function PlayerCard({
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={teamKitUrl(teamCode)}
+              src={teamKitUrl(teamCode!)}
               alt={`${player.team_short_name} kit`}
               width={28}
               height={28}
