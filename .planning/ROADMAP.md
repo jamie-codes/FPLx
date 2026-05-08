@@ -793,7 +793,11 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   3. Pipeline computes a `table_stakes_label` per team for the final 6 GWs — one of: title battle / European chase / relegation battle / nothing-to-play-for — and exposes it as a context field influencing squad-selection likelihood narrative
   4. Player fixture-run cards show a 3-GW forward outlook: narrative summary ("Thiago: 3 easy away fixtures — prime hold") plus xPts trajectory bar for the next 3 GWs; surfaced for top differentials and high-ownership players
   5. All GW-specific cards display the relevant GW range label (e.g. "GW36–38") and degrade to an empty-state placeholder ("GW insights will appear once fixtures are confirmed") rather than error or blank when data is unavailable
-**Plans**: TBD
+**Plans**: 4 plans
+  - [ ] 080-01-PLAN.md — Pipeline data layer: european_cup_dates.py, _xpts_per_gw, gw_intel.py (rotation_risk + table_stakes + compute_gw_intel), run.py wiring, pytest scaffolding
+  - [ ] 080-02-PLAN.md — TypeScript contracts: GWInsight union + rotation_risk field, /api/gw-intel route, useGWIntel hook, RotationRiskBadge component + tests
+  - [ ] 080-03-PLAN.md — InsightsTab "This Gameweek" section: GWIntelSection + 4 card subcomponents + XptsTrajectoryBar; extended test suite
+  - [ ] 080-04-PLAN.md — RotationRiskBadge integration in SetPieceTakerPanel team headers + OpportunityCostTable buy-player rows
 **UI hint**: yes
 
 ### Phase 81: Team Shields & Visual Identity

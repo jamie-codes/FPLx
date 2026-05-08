@@ -322,6 +322,56 @@ def _xpts_ngw(
     return round(total, 2), components
 
 
+def _xpts_per_gw(
+    xg_per90: float | None,
+    xa_per90: float | None,
+    start_prob: float,
+    xmins: float,
+    element_type: int,
+    fixtures: list,
+    n_gws: int,
+    xmins_v2_enabled: bool = False,
+    mins_60_prob: float | None = None,
+    bonus_predictor_enabled: bool = False,
+    bonus_ev: float | None = None,
+) -> list[float]:
+    """Return list of xPts per GW group (Phase 80 GWI-04, D-12).
+
+    Length: min(n_gws, available_gws_in_fixtures). Each entry is the sum of
+    xPts across all fixtures that share the same event_id (DGW combined).
+    Mirrors _xpts_ngw groupby pattern; returns per-GW breakdown instead of total.
+    Empty/zero guard: returns [0.0] * n_gws.
+    """
+    from itertools import groupby
+
+    if not fixtures or start_prob <= 0 or xmins <= 0:
+        return [0.0] * n_gws
+
+    grouped: list[tuple[int, list]] = []
+    for event_id, group in groupby(fixtures, key=lambda f: f['event_id']):
+        grouped.append((event_id, list(group)))
+
+    result: list[float] = []
+    for _event_id, gw_fixtures in grouped[:n_gws]:
+        gw_total = 0.0
+        for fix in gw_fixtures:
+            comp = _compute_xpts_fixture(
+                xg_per90 if xg_per90 is not None else 0.0,
+                xa_per90 if xa_per90 is not None else 0.0,
+                start_prob,
+                xmins,
+                element_type,
+                fix.get('defensive_difficulty', 0.5),
+                xmins_v2_enabled=xmins_v2_enabled,
+                mins_60_prob=mins_60_prob,
+                bonus_predictor_enabled=bonus_predictor_enabled,
+                bonus_ev=bonus_ev,
+            )
+            gw_total += comp['total']
+        result.append(round(gw_total, 2))
+    return result
+
+
 def _compute_xpts_sigma(
     xg_per90: float,
     xa_per90: float,
