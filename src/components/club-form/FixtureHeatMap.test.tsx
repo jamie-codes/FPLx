@@ -375,4 +375,46 @@ describe('FixtureHeatMap', () => {
     expect(container.querySelectorAll('thead th').length).toBe(9)
     expect(container.querySelectorAll('tbody tr').length).toBe(1)
   })
+
+  // ===========================================================================
+  // Phase 81 SHD-02 — Row header crest
+  // ===========================================================================
+
+  it('SHD-02: row <th> has w-20 (not w-16)', () => {
+    const data: ClubForm[] = [
+      team(1, 'ARS', [fix({ opp: 'X', home: true, gw: 34, tier: 'easy' })]),
+    ]
+    mockUseClubForm.mockReturnValue({ data, isLoading: false, error: null })
+    const { container } = render(<FixtureHeatMap />)
+    const rowHead = container.querySelector('tbody tr:nth-child(1) th[scope="row"]')!
+    expect(rowHead).not.toBeNull()
+    expect(rowHead.className).toMatch(/w-20/)
+    expect(rowHead.className).not.toMatch(/w-16/)
+  })
+
+  it('SHD-02: row <th> renders an <img> crest adjacent to team abbrev for known team (ARS)', () => {
+    const data: ClubForm[] = [
+      team(1, 'ARS', [fix({ opp: 'X', home: true, gw: 34, tier: 'easy' })]),
+    ]
+    mockUseClubForm.mockReturnValue({ data, isLoading: false, error: null })
+    const { container } = render(<FixtureHeatMap />)
+    const rowHead = container.querySelector('tbody tr:nth-child(1) th[scope="row"]')!
+    const img = rowHead.querySelector('img')
+    expect(img).not.toBeNull()
+    expect(img!.getAttribute('src')).toContain('/badges/t3.png')
+    expect(img!.className).toMatch(/w-5/)
+    expect(img!.className).toMatch(/h-5/)
+  })
+
+  it('SHD-02: all 20 teams render a crest element (img or fallback span) in their row header', () => {
+    mockUseClubForm.mockReturnValue({ data: build20TeamsAllEasy(), isLoading: false, error: null })
+    const { container } = render(<FixtureHeatMap />)
+    const rowHeads = Array.from(container.querySelectorAll('tbody tr th[scope="row"]'))
+    expect(rowHeads.length).toBe(20)
+    rowHeads.forEach(th => {
+      const hasCrest = th.querySelector('img') !== null
+      const hasFallback = th.querySelector('span.rounded-full') !== null || th.querySelector('[aria-label*="fallback"]') !== null
+      expect(hasCrest || hasFallback).toBe(true)
+    })
+  })
 })
