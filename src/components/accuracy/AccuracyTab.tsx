@@ -388,6 +388,24 @@ function GwSummaryTable({ data }: { data: AccuracyBacktest }) {
     return <span className="ml-1 text-xs">{sortDir === 'asc' ? '↑' : '↓'}</span>
   }
 
+  // WR-02: hoist flagged-misses computation out of rows.map() to avoid O(rows × players × gws)
+  // on every sort-triggered re-render. Keyed on data.players — stable reference between sorts.
+  const flaggedMissesByGw = useMemo(() => {
+    const map = new Map<number, { player_id: number; player_name: string; team: string; actual_pts: number; xpts_predicted: number }[]>()
+    for (const p of data.players) {
+      for (const g of p.gws) {
+        if (g.xpts_flagged === true && g.actual_pts <= 2) {
+          const entry = map.get(g.gw) ?? []
+          entry.push({ player_id: p.player_id, player_name: p.player_name, team: p.team,
+                       actual_pts: g.actual_pts, xpts_predicted: g.xpts_predicted })
+          map.set(g.gw, entry)
+        }
+      }
+    }
+    map.forEach(list => list.sort((a, b) => b.xpts_predicted - a.xpts_predicted))
+    return map
+  }, [data.players])
+
   return (
     <div>
       <h2 className="text-lg font-semibold mb-2">GW Accuracy Summary</h2>
@@ -410,19 +428,8 @@ function GwSummaryTable({ data }: { data: AccuracyBacktest }) {
             // Flagged Misses MUST source from data.players[].gws[] — data.haulters only carries
             // actual_pts >= 10 entries (HAULTER_THRESHOLD = 10 in pipeline/accuracy.py:27), so a
             // haulters-based filter for actual_pts <= 2 is always [] (mutually exclusive predicates).
-            const gwFlaggedMisses = data.players
-              .flatMap(p =>
-                p.gws
-                  .filter(g => g.gw === r.gw && g.xpts_flagged === true && g.actual_pts <= 2)
-                  .map(g => ({
-                    player_id: p.player_id,
-                    player_name: p.player_name,
-                    team: p.team,
-                    actual_pts: g.actual_pts,
-                    xpts_predicted: g.xpts_predicted,
-                  }))
-              )
-              .sort((a, b) => b.xpts_predicted - a.xpts_predicted)
+            // WR-02: lookup from flaggedMissesByGw memo (computed once per data.players change).
+            const gwFlaggedMisses = flaggedMissesByGw.get(r.gw) ?? []
             return (
               <Fragment key={r.gw}>
                 <tr
