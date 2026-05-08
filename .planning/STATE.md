@@ -4,8 +4,8 @@ milestone: v1.13
 milestone_name: Analytics UX & Intelligence
 status: executing
 stopped_at: Phase 80 context gathered
-last_updated: "2026-05-08T11:08:28.021Z"
-last_activity: 2026-05-08 -- Phase 80 planning complete
+last_updated: "2026-05-08T11:22:10.804Z"
+last_activity: 2026-05-08 -- Phase 080 execution started
 progress:
   total_phases: 29
   completed_phases: 22
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-04 — v1.10 started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.13 Analytics UX & Intelligence — insight card redesign, table density/readability, team shields, visual identity
+**Current focus:** Phase 080 — gw-specific-intelligence
 
 ## Current Position
 
-Phase: 79 — Insight Card Redesign
-Plan: 4 of 4 plans complete
-Status: Ready to execute
-Last activity: 2026-05-08 -- Phase 80 planning complete
+Phase: 080 (gw-specific-intelligence) — EXECUTING
+Plan: 1 of 4
+Status: Executing Phase 080
+Last activity: 2026-05-08 -- Phase 080 execution started
 
 ## Performance Metrics
 
