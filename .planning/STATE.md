@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.13
 milestone_name: Analytics UX & Intelligence
-status: in_progress
-last_updated: "2026-05-08T10:00:00.000Z"
-last_activity: 2026-05-08 -- Phase 79 Wave 1 complete (Plans 01+02: pipeline extension + TS types + CSS variable)
+status: complete
+last_updated: "2026-05-08T10:30:00.000Z"
+last_activity: 2026-05-08 -- Phase 79 complete (17/17 must-haves verified; insight card redesign fully landed)
 progress:
   total_phases: 28
   completed_phases: 28
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-05-04 — v1.10 started)
 ## Current Position
 
 Phase: 79 — Insight Card Redesign
-Plan: 3 of 4 plans complete — Wave 2 done, Wave 3 next
-Status: In progress — Wave 2 complete (Plan 03: InsightsTab rewrite); executing Wave 3 (Plan 04: verification)
-Last activity: 2026-05-08 -- Phase 79 Wave 2 complete: InsightsTab rewritten (5-zone cards, DecisionSummary, CollapsibleSection, 17/17 tests pass)
+Plan: 4 of 4 plans complete
+Status: Complete — all 3 waves done, 17/17 must-haves verified, manual UX checkpoint approved
+Last activity: 2026-05-08 -- Phase 79 complete: insight card redesign, signal badges, Decision Summary, progress bars
 
 ## Performance Metrics
 

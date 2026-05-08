@@ -776,7 +776,7 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   **Wave 2** *(blocked on Wave 1 completion)*
   - [x] 079-03-PLAN.md — InsightsTab rewrite: 5-zone InsightCard, CollapsibleSection, sticky DecisionSummary panel, SIGNAL_CLASSES; component test rewrite (2026-05-08)
   **Wave 3** *(blocked on Wave 2 completion)*
-  - [ ] 079-04-PLAN.md — Integration verification: API passthrough confirmation, full test suites, manual UX checkpoint (sticky scroll + methodology expand)
+  - [x] 079-04-PLAN.md — Integration verification: API passthrough confirmation, full test suites, manual UX checkpoint (sticky scroll + methodology expand) (2026-05-08)
   **Cross-cutting constraints:**
   - Plan 01 regenerates `pipeline/cache/insights.json` to the 17-field shape; Plan 03 cannot ship without it (RESEARCH Pitfall 1)
   - Plan 02 defines `SignalLabel` and `--nav-height`; Plan 03 references both (compile-time enforcement via `Record<SignalLabel, string>`)
