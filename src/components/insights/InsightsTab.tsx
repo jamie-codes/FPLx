@@ -2,7 +2,16 @@
 
 import { useState } from 'react'
 import { useInsights } from '@/lib/hooks/useInsights'
-import type { Insight, SignalLabel } from '@/lib/types'
+import { useGWIntel } from '@/lib/hooks/useGWIntel'
+import type {
+  Insight,
+  SignalLabel,
+  GWInsight,
+  PositionOpportunityCard,
+  RotationRiskCard,
+  DGWBGWCard,
+  FixtureRunCard,
+} from '@/lib/types'
 
 // Phase 79 D-04/D-05/D-06: signal_label is computed by the pipeline (NOT derived client-side).
 // Maps below convert the 6-label vocabulary to Tailwind classes (per UI-SPEC §Color) and Unicode icons.
@@ -181,42 +190,155 @@ function DecisionSummary({ insights }: { insights: Insight[] }) {
   )
 }
 
+// ---------- Phase 80 GWI: GW-specific intelligence cards ----------
+
+function PositionOpportunityCardView({ card }: { card: PositionOpportunityCard }) {
+  return (
+    <div className="rounded border border-border bg-surface p-4 space-y-2">
+      <span className="text-xs text-muted">{card.gw_label}</span>
+      <h3 className="text-[15px] font-semibold leading-tight">
+        Position opportunity: {card.position}
+      </h3>
+      <p className="text-sm">{card.narrative}</p>
+    </div>
+  )
+}
+
+function RotationRiskCardView({ card }: { card: RotationRiskCard }) {
+  return (
+    <div className="rounded border border-border bg-surface p-4 space-y-2">
+      <span className="text-xs text-muted">{card.gw_label}</span>
+      <h3 className="text-[15px] font-semibold leading-tight">
+        Rotation risk: {card.team_short_name}
+      </h3>
+      <p className="text-sm">
+        {card.competition} fixture clash within 3 days of PL kickoff.
+      </p>
+      {card.table_stakes_label && (
+        <p className="text-xs text-muted">Context: {card.table_stakes_label}</p>
+      )}
+    </div>
+  )
+}
+
+function DGWBGWCardView({ card }: { card: DGWBGWCard }) {
+  const kindLabel = card.is_dgw ? 'Double Gameweek' : 'Blank Gameweek'
+  return (
+    <div className="rounded border border-border bg-surface p-4 space-y-2">
+      <span className="text-xs text-muted">{card.gw_label}</span>
+      <h3 className="text-[15px] font-semibold leading-tight">
+        {kindLabel}: {card.team_short_name}
+      </h3>
+      <p className="text-sm">
+        {card.is_dgw
+          ? 'Two PL fixtures this GW — combined xPts uplift available.'
+          : 'No PL fixture this GW — 0 pts unless replaced.'}
+      </p>
+    </div>
+  )
+}
+
+function XptsTrajectoryBar({
+  gw_xpts, gw_numbers, is_dgw, current_gw_index,
+}: {
+  gw_xpts: number[]
+  gw_numbers: number[]
+  is_dgw: boolean[]
+  current_gw_index: number
+}) {
+  const max = Math.max(...gw_xpts, 0.01)
+  return (
+    <div className="flex items-end h-10 gap-2" aria-label="3-GW xPts trajectory">
+      {gw_xpts.map((x, i) => {
+        const heightPx = Math.max(4, Math.min(32, Math.round((x / max) * 32)))
+        const isCurrent = i === current_gw_index
+        const fillCls = isCurrent ? 'bg-primary' : 'bg-surface-elevated'
+        const dgwSuffix = is_dgw[i] ? '†' : ''
+        return (
+          <div key={i} className="flex flex-col items-center gap-1 flex-1 min-w-0">
+            <span
+              className={`w-full ${fillCls} rounded-sm`}
+              style={{ height: `${heightPx}px` }}
+              aria-label={`GW${gw_numbers[i] ?? '?'}: ${x.toFixed(1)} projected xPts`}
+            />
+            <span className="text-xs text-muted">
+              GW{gw_numbers[i] ?? '?'}{dgwSuffix}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function FixtureRunCardView({ card }: { card: FixtureRunCard }) {
+  const hasDgw = card.is_dgw.some(Boolean)
+  return (
+    <div className="rounded border border-border bg-surface p-4 space-y-2">
+      <span className="text-xs text-muted">{card.gw_label}</span>
+      <h3 className="text-[15px] font-semibold leading-tight">{card.web_name}</h3>
+      <p className="text-sm">{card.narrative}</p>
+      <XptsTrajectoryBar
+        gw_xpts={card.gw_xpts}
+        gw_numbers={card.gw_numbers}
+        is_dgw={card.is_dgw}
+        current_gw_index={0}
+      />
+      {hasDgw && (
+        <p className="text-xs text-muted">† Double Gameweek</p>
+      )}
+    </div>
+  )
+}
+
+function GWCard({ card }: { card: GWInsight }) {
+  switch (card.type) {
+    case 'position_opportunity':
+      return <PositionOpportunityCardView card={card} />
+    case 'rotation_risk':
+      return <RotationRiskCardView card={card} />
+    case 'dgw_bgw':
+      return <DGWBGWCardView card={card} />
+    case 'fixture_run':
+      return <FixtureRunCardView card={card} />
+    default: {
+      // Exhaustiveness check; unknown card types are dropped silently.
+      const _never: never = card
+      void _never
+      return null
+    }
+  }
+}
+
+function GWIntelSection() {
+  const { data, isLoading, error } = useGWIntel()
+  const cards: GWInsight[] = data?.cards ?? []
+
+  // GWI-05: ALWAYS render section wrapper — never return null.
+  return (
+    <CollapsibleSection label="This Gameweek" count={cards.length}>
+      {isLoading && (
+        <p className="text-sm text-muted">Loading GW insights…</p>
+      )}
+      {!isLoading && (error || cards.length === 0) && (
+        <p className="text-sm text-muted">
+          GW insights will appear once fixtures are confirmed.
+        </p>
+      )}
+      {!isLoading && !error && cards.length > 0 && cards.map((card) => (
+        <GWCard key={card.id} card={card} />
+      ))}
+    </CollapsibleSection>
+  )
+}
+
 // ---------- InsightsTab (top-level) ----------
 
 export function InsightsTab() {
   const { data, isLoading, error } = useInsights()
 
-  if (isLoading) {
-    return (
-      <p className="text-sm text-muted text-center py-8">
-        Loading insights…
-      </p>
-    )
-  }
-
-  if (error) {
-    return (
-      <p className="text-sm text-negative py-4">
-        Failed to load insights. Check the pipeline output and refresh.
-      </p>
-    )
-  }
-
-  if (!data || data.length === 0) {
-    return (
-      <section className="mt-6 space-y-2" aria-label="Insights not available">
-        <h2 className="text-lg font-semibold">No insights available yet</h2>
-        <p className="text-sm text-muted">
-          Run the pipeline to generate pattern data for this season.
-        </p>
-      </section>
-    )
-  }
-
-  // Build sections.
-  // Priority Insights = top PRIORITY_LIMIT by confidence_pct (dedup by visibility — same insight
-  // may also appear in its category section per D-10 + planner discretion: "show in both").
-  const sortedByConfidence = [...data].sort((a, b) => b.confidence_pct - a.confidence_pct)
+  // Compute season-insights derived data (only when data exists)
+  const sortedByConfidence = data ? [...data].sort((a, b) => b.confidence_pct - a.confidence_pct) : []
   const priority = sortedByConfidence.slice(0, PRIORITY_LIMIT)
 
   const byCategory: Record<Exclude<SectionKey, 'priority'>, Insight[]> = {
@@ -225,34 +347,60 @@ export function InsightsTab() {
     player:    [],
     captaincy: [],
   }
-  for (const insight of data) {
-    const cat = insight.category as Exclude<SectionKey, 'priority'>
-    if (cat in byCategory) {
-      byCategory[cat].push(insight)
-    } else {
-      console.warn(`InsightsTab: unknown category "${cat}", insight ${insight.id} dropped`)
+  if (data) {
+    for (const insight of data) {
+      const cat = insight.category as Exclude<SectionKey, 'priority'>
+      if (cat in byCategory) {
+        byCategory[cat].push(insight)
+      } else {
+        console.warn(`InsightsTab: unknown category "${cat}", insight ${insight.id} dropped`)
+      }
     }
   }
 
   return (
-    <section className="mt-6 space-y-6" aria-label="Season pattern insights">
-      <DecisionSummary insights={data} />
+    <section className="mt-6 space-y-6" aria-label="Insights">
+      {/* Phase 80 D-07: GW intel section first, ALWAYS rendered (GWI-05). */}
+      <GWIntelSection />
 
-      {SECTION_ORDER.map((key) => {
-        const items = key === 'priority' ? priority : byCategory[key]
-        if (items.length === 0) return null
-        return (
-          <CollapsibleSection key={key} label={SECTION_LABELS[key]} count={items.length}>
-            {items.map((insight) => (
-              <InsightCard key={`${key}-${insight.id}`} insight={insight} />
-            ))}
-          </CollapsibleSection>
-        )
-      })}
-
-      <p className="text-xs text-muted mt-4">
-        Patterns shown only when seen in 10 or more fixtures.
-      </p>
+      {/* Season-pattern insights (Phase 79) — handles its own loading/error/empty state. */}
+      {isLoading && (
+        <p className="text-sm text-muted text-center py-8">
+          Loading insights…
+        </p>
+      )}
+      {!isLoading && error && (
+        <p className="text-sm text-negative py-4">
+          Failed to load insights. Check the pipeline output and refresh.
+        </p>
+      )}
+      {!isLoading && !error && (!data || data.length === 0) && (
+        <div className="space-y-2" aria-label="Insights not available">
+          <h2 className="text-lg font-semibold">No insights available yet</h2>
+          <p className="text-sm text-muted">
+            Run the pipeline to generate pattern data for this season.
+          </p>
+        </div>
+      )}
+      {!isLoading && !error && data && data.length > 0 && (
+        <>
+          <DecisionSummary insights={data} />
+          {SECTION_ORDER.map((key) => {
+            const items = key === 'priority' ? priority : byCategory[key]
+            if (items.length === 0) return null
+            return (
+              <CollapsibleSection key={key} label={SECTION_LABELS[key]} count={items.length}>
+                {items.map((insight) => (
+                  <InsightCard key={`${key}-${insight.id}`} insight={insight} />
+                ))}
+              </CollapsibleSection>
+            )
+          })}
+          <p className="text-xs text-muted mt-4">
+            Patterns shown only when seen in 10 or more fixtures.
+          </p>
+        </>
+      )}
     </section>
   )
 }
