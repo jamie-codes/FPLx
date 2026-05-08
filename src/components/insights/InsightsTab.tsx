@@ -155,7 +155,7 @@ function DecisionSummary({ insights }: { insights: Insight[] }) {
     .slice(0, DECISION_TOP_N)
   // D-07 fallback: if fewer than 3 have entity lists, fall back to top-3 by confidence overall
   const top3 =
-    withEntities.length > 0
+    withEntities.length >= DECISION_TOP_N
       ? withEntities
       : [...insights].sort((a, b) => b.confidence_pct - a.confidence_pct).slice(0, DECISION_TOP_N)
   if (top3.length === 0) return null
