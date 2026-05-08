@@ -721,7 +721,10 @@ function DataHealthPanel() {
     pillCls = RED_PILL_CLS
     canExpand = false
   } else {
-    const overall = rollUpStatus(data.sanity_checks)
+    // WR-03: guard against malformed API response where sanity_checks is not an array.
+    const overall = Array.isArray(data.sanity_checks)
+      ? rollUpStatus(data.sanity_checks)
+      : 'error'
     if (overall === 'error') { pillText = 'Errors';   pillCls = RED_PILL_CLS }
     else if (overall === 'warn')  { pillText = 'Warnings'; pillCls = TIER_CLASSES.MEDIUM }
     else                          { pillText = 'All OK';   pillCls = TIER_CLASSES.HIGH }
@@ -758,7 +761,7 @@ function DataHealthPanel() {
             </tr>
           </thead>
           <tbody>
-            {data.sanity_checks.map(check => (
+            {(data.sanity_checks ?? []).map(check => (
               <tr key={check.id} className={TR_CLS}>
                 <td className={TD_CLS}>{SANITY_CHECK_LABELS[check.id]}</td>
                 <td className={TD_CLS}><SanityIcon status={check.status} /></td>
