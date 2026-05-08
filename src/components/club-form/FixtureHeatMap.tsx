@@ -37,6 +37,105 @@ interface Props {
   submittedId?: string | null
 }
 
+// --- HeatMapRow: module-level to avoid remount on every FixtureHeatMap render ---
+
+interface HeatMapRowProps {
+  t: ClubForm
+  grid: { allEventIds: number[]; byTeamGw: Map<number, Map<number, ClubFormFixture[]>> }
+  mode: 'ATT' | 'DEF'
+  tierMap: Record<DifficultyTier, string>
+  ownedTeamIds: Set<number>
+}
+
+function HeatMapRow({ t, grid, mode, tierMap, ownedTeamIds }: HeatMapRowProps) {
+  const { src, onError, showFallback, fallbackColour, initial } = useTeamBadge(t.team_short_name)
+  const isOwned = ownedTeamIds.has(t.team_id)
+  const rowClass = isOwned
+    ? 'border-b border-zinc-100 dark:border-zinc-800 bg-blue-50 dark:bg-blue-950 border-l-2 border-l-blue-500'
+    : 'border-b border-zinc-100 dark:border-zinc-800'
+  return (
+    <tr className={rowClass} data-owned={isOwned ? 'true' : 'false'}>
+      <th scope="row" className="px-2 py-1 text-left font-mono text-xs w-20 h-8">
+        <span className="flex items-center gap-1">
+          {showFallback ? (
+            <span
+              aria-hidden="true"
+              className="w-5 h-5 rounded-full flex items-center justify-center text-white font-semibold text-[10px] shrink-0"
+              style={{ background: fallbackColour }}
+            >
+              {initial}
+            </span>
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={src!}
+              alt=""
+              width={20}
+              height={20}
+              className="w-5 h-5 object-contain shrink-0"
+              onError={onError}
+            />
+          )}
+          <span>{t.team_short_name}</span>
+        </span>
+      </th>
+      {grid.allEventIds.map(gw => {
+        const fixtures = grid.byTeamGw.get(t.team_id)?.get(gw) ?? []
+        if (fixtures.length === 0) {
+          return (
+            <td
+              key={gw}
+              className="px-2 py-1 text-center min-w-[48px] h-8 bg-zinc-50 dark:bg-zinc-900"
+              title="No fixture (BGW)"
+            />
+          )
+        }
+        if (fixtures.length >= 2) {
+          const colours = fixtures.map(f => tierMap[currentTier(f, mode)])
+          const gradient = colours.length === 2
+            ? `linear-gradient(to bottom right, ${colours[0]} 50%, ${colours[1]} 50%)`
+            : `linear-gradient(to bottom right, ${colours[0]} 33%, ${colours[1]} 33% 66%, ${colours[2]} 66%)`
+          const tooltip = fixtures
+            .map(f => `${f.opponent_team} (${f.is_home ? 'H' : 'A'}) ${(mode === 'ATT' ? f.attacking_difficulty : f.defensive_difficulty).toFixed(2)}`)
+            .join(' / ')
+          return (
+            <td
+              key={gw}
+              className="relative px-0 py-0 text-center min-w-[48px] h-10"
+              style={{ background: gradient }}
+              title={tooltip}
+            >
+              <span className="absolute top-0 left-1 text-[10px] font-mono leading-none pt-0.5 text-zinc-900 dark:text-zinc-100">
+                {fixtures[0].opponent_team}
+              </span>
+              <span className="absolute bottom-0 right-1 text-[10px] font-mono leading-none pb-0.5 text-zinc-900 dark:text-zinc-100">
+                {fixtures[1].opponent_team}
+              </span>
+              {fixtures.length >= 3 && (
+                <span className="absolute bottom-0 left-1 text-[10px] font-mono leading-none pb-0.5 text-zinc-900 dark:text-zinc-100">
+                  {fixtures[2].opponent_team}
+                </span>
+              )}
+            </td>
+          )
+        }
+        const f = fixtures[0]
+        const diff = mode === 'ATT' ? f.attacking_difficulty : f.defensive_difficulty
+        const tooltip = `${f.opponent_team} (${f.is_home ? 'H' : 'A'}) — ${(diff ?? 0).toFixed(2)}`
+        return (
+          <td
+            key={gw}
+            className={`px-2 py-1 text-center min-w-[48px] h-8 ${TIER_CLASSES[currentTier(f, mode)]}`}
+            title={tooltip}
+          >
+            <span className="text-xs font-mono">{f.opponent_team}</span>
+          </td>
+        )
+      })}
+    </tr>
+  )
+}
+
 export function FixtureHeatMap({ submittedId = null }: Props) {
   const { data, isLoading, error } = useClubForm()
   const { data: squad } = useSquad(submittedId)
@@ -117,93 +216,6 @@ export function FixtureHeatMap({ submittedId = null }: Props) {
 
   const tierMap = isDark ? TIER_HEX_DARK : TIER_HEX
 
-  // HeatMapRow is defined inside FixtureHeatMap to close over grid, mode, tierMap,
-  // and ownedTeamIds — this satisfies react-hooks/rules-of-hooks (useTeamBadge is
-  // called at the top level of the HeatMapRow component function, not inside a loop).
-  function HeatMapRow({ t }: { t: ClubForm }) {
-    const { src, onError, showFallback, fallbackColour, initial } = useTeamBadge(t.team_short_name)
-    const isOwned = ownedTeamIds.has(t.team_id)
-    const rowClass = isOwned
-      ? 'border-b border-zinc-100 dark:border-zinc-800 bg-blue-50 dark:bg-blue-950 border-l-2 border-l-blue-500'
-      : 'border-b border-zinc-100 dark:border-zinc-800'
-    return (
-      <tr className={rowClass} data-owned={isOwned ? 'true' : 'false'}>
-        <th scope="row" className="px-2 py-1 text-left font-mono text-xs w-20 h-8">
-          <span className="flex items-center gap-1">
-            {showFallback ? (
-              <span
-                aria-hidden="true"
-                className="w-5 h-5 rounded-full flex items-center justify-center text-white font-semibold text-[10px] shrink-0"
-                style={{ background: fallbackColour }}
-              >
-                {initial}
-              </span>
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={src!}
-                alt=""
-                width={20}
-                height={20}
-                className="w-5 h-5 object-contain shrink-0"
-                onError={onError}
-              />
-            )}
-            <span>{t.team_short_name}</span>
-          </span>
-        </th>
-        {grid!.allEventIds.map(gw => {
-          const fixtures = grid!.byTeamGw.get(t.team_id)?.get(gw) ?? []
-          if (fixtures.length === 0) {
-            return (
-              <td
-                key={gw}
-                className="px-2 py-1 text-center min-w-[48px] h-8 bg-zinc-50 dark:bg-zinc-900"
-                title="No fixture (BGW)"
-              />
-            )
-          }
-          if (fixtures.length >= 2) {
-            const colours = fixtures.map(f => tierMap[currentTier(f, mode)])
-            const gradient = colours.length === 2
-              ? `linear-gradient(to bottom right, ${colours[0]} 50%, ${colours[1]} 50%)`
-              : `linear-gradient(to bottom right, ${colours[0]} 33%, ${colours[1]} 33% 66%, ${colours[2]} 66%)`
-            const tooltip = fixtures
-              .map(f => `${f.opponent_team} (${f.is_home ? 'H' : 'A'}) ${(mode === 'ATT' ? f.attacking_difficulty : f.defensive_difficulty).toFixed(2)}`)
-              .join(' / ')
-            return (
-              <td
-                key={gw}
-                className="relative px-0 py-0 text-center min-w-[48px] h-10"
-                style={{ background: gradient }}
-                title={tooltip}
-              >
-                <span className="absolute top-0 left-1 text-[10px] font-mono leading-none pt-0.5 text-zinc-900 dark:text-zinc-100">
-                  {fixtures[0].opponent_team}
-                </span>
-                <span className="absolute bottom-0 right-1 text-[10px] font-mono leading-none pb-0.5 text-zinc-900 dark:text-zinc-100">
-                  {fixtures[1].opponent_team}
-                </span>
-              </td>
-            )
-          }
-          const f = fixtures[0]
-          const diff = mode === 'ATT' ? f.attacking_difficulty : f.defensive_difficulty
-          const tooltip = `${f.opponent_team} (${f.is_home ? 'H' : 'A'}) — ${(diff ?? 0).toFixed(2)}`
-          return (
-            <td
-              key={gw}
-              className={`px-2 py-1 text-center min-w-[48px] h-8 ${TIER_CLASSES[currentTier(f, mode)]}`}
-              title={tooltip}
-            >
-              <span className="text-xs font-mono">{f.opponent_team}</span>
-            </td>
-          )
-        })}
-      </tr>
-    )
-  }
-
   return (
     <section className="mb-6" data-testid="fixture-heat-map">
       <div className="mb-3 flex items-center justify-between flex-wrap gap-2">
@@ -249,7 +261,16 @@ export function FixtureHeatMap({ submittedId = null }: Props) {
                 </td>
               </tr>
             ) : (
-              visibleTeams.map(t => <HeatMapRow key={t.team_id} t={t} />)
+              visibleTeams.map(t => (
+                <HeatMapRow
+                  key={t.team_id}
+                  t={t}
+                  grid={grid}
+                  mode={mode}
+                  tierMap={tierMap}
+                  ownedTeamIds={ownedTeamIds}
+                />
+              ))
             )}
           </tbody>
         </table>
