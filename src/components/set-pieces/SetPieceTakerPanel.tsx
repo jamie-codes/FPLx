@@ -3,9 +3,10 @@
 import { useMemo } from 'react'
 import { useSetPieces } from '@/lib/hooks/useSetPieces'
 import { usePlayers } from '@/lib/hooks/usePlayers'
-import type { SetPieceTaker } from '@/lib/types'
+import type { SetPieceTaker, SetPieceTeam } from '@/lib/types'
 import { SetPieceChangeAlert } from './SetPieceChangeAlert'
 import { RotationRiskBadge } from '@/components/shared/RotationRiskBadge'
+import { useTeamBadge } from '@/lib/hooks/useTeamBadge'
 
 function TakerRow({ label, taker }: { label: string; taker: SetPieceTaker }) {
   const name = taker.name || '\u2014'
@@ -21,6 +22,37 @@ function TakerRow({ label, taker }: { label: string; taker: SetPieceTaker }) {
         </span>
       )}
     </p>
+  )
+}
+
+function SetPieceTakerCard({
+  team,
+  rotationRisk,
+}: {
+  team: SetPieceTeam
+  rotationRisk: boolean
+}) {
+  const { src, onError, showFallback } = useTeamBadge(team.team_short_name)
+  return (
+    <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 relative overflow-hidden">
+      {!showFallback && src && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt=""
+          aria-hidden="true"
+          className="absolute bottom-0 right-0 w-14 h-14 opacity-10 pointer-events-none object-contain"
+          onError={onError}
+        />
+      )}
+      <p className="text-sm font-semibold mb-1 flex items-center gap-2">
+        <span>{team.team_short_name}</span>
+        <RotationRiskBadge rotationRisk={rotationRisk} />
+      </p>
+      <TakerRow label="Penalties" taker={team.penalty_taker} />
+      <TakerRow label="Direct FK" taker={team.fk_taker} />
+      <TakerRow label="Corners" taker={team.corner_taker} />
+    </div>
   )
 }
 
@@ -74,18 +106,11 @@ export function SetPieceTakerPanel() {
           <SetPieceChangeAlert changeCount={data.change_count} />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {data.teams.map((team) => (
-              <div
+              <SetPieceTakerCard
                 key={team.team_id}
-                className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3"
-              >
-                <p className="text-sm font-semibold mb-1 flex items-center gap-2">
-                  <span>{team.team_short_name}</span>
-                  <RotationRiskBadge rotationRisk={rotationRiskByTeam[team.team_id] ?? false} />
-                </p>
-                <TakerRow label="Penalties" taker={team.penalty_taker} />
-                <TakerRow label="Direct FK" taker={team.fk_taker} />
-                <TakerRow label="Corners" taker={team.corner_taker} />
-              </div>
+                team={team}
+                rotationRisk={rotationRiskByTeam[team.team_id] ?? false}
+              />
             ))}
           </div>
         </>
