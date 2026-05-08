@@ -111,7 +111,7 @@ def _detect_dgw_bgw(merged: list, next_gw: int) -> dict[int, str]:
     DGW: >=2 fixtures with event_id == next_gw. BGW: 0 fixtures with event_id == next_gw.
     Pitfall 6: count by event_id, not by len(fixtures).
     """
-    team_counts: dict[int, int] = defaultdict(int)
+    team_counts: dict[int, int] = {}
     team_seen: set[int] = set()
     for p in merged:
         tid = p.get('team')
