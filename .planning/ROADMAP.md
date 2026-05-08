@@ -810,10 +810,11 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   3. A shared `useTeamBadge(teamCode)` hook or utility resolves the PL badge URL for any team code and is used as the single source of truth for all crest placements across the app; graceful fallback to a coloured initial-letter swatch when the image fails to load
 **Plans**: 4 plans
 Plans:
-- [ ] 081-01-PLAN.md — useTeamBadge hook + unit tests (SHD-03, Wave 1)
-- [ ] 081-02-PLAN.md — SetPieceTakerPanel ghost watermark + sub-component extraction (SHD-01, Wave 2)
-- [ ] 081-03-PLAN.md — FixtureHeatMap row header crest + HeatMapRow extraction (SHD-02, Wave 2)
-- [ ] 081-04-PLAN.md — LineupTab kit-error state migration to useTeamBadge (SHD-03 cleanup, Wave 3, optional)
+- [x] 081-01-PLAN.md — useTeamBadge hook + unit tests (SHD-03, Wave 1)
+- [x] 081-02-PLAN.md — SetPieceTakerPanel ghost watermark + sub-component extraction (SHD-01, Wave 2)
+- [x] 081-03-PLAN.md — FixtureHeatMap row header crest + HeatMapRow extraction (SHD-02, Wave 2)
+- [x] 081-04-PLAN.md — LineupTab kit-error state migration to useTeamBadge (SHD-03 cleanup, Wave 3, optional)
+**Status**: ✅ Complete (2026-05-08)
 **UI hint**: yes
 
 ---
@@ -863,4 +864,4 @@ Plans:
 | 78 | v1.13 | 0 | Not started | - |
 | 79 | v1.13 | 0 | Not started | - |
 | 80 | v1.13 | 0 | Not started | - |
-| 81 | v1.13 | 0 | Not started | - |
+| 81 | v1.13 | 4/4 | Complete | 2026-05-08 |
