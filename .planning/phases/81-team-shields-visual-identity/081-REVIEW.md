@@ -16,7 +16,7 @@ findings:
   warning: 3
   info: 2
   total: 6
-status: issues_found
+status: fixed
 ---
 
 # Phase 81: Code Review Report
