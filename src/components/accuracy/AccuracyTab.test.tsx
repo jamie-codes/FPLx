@@ -9,11 +9,18 @@ vi.mock('@/lib/hooks/useAccuracy', () => ({
   useAccuracy: vi.fn(),
 }))
 
+// Phase 82 DH-02: mock useDataHealth so DataHealthPanel renders without network calls.
+vi.mock('@/lib/hooks/useDataHealth', () => ({
+  useDataHealth: vi.fn(),
+}))
+
 import { AccuracyTab } from '@/components/accuracy/AccuracyTab'
 import { useAccuracy } from '@/lib/hooks/useAccuracy'
+import { useDataHealth } from '@/lib/hooks/useDataHealth'
 import type { AccuracyBacktest } from '@/lib/types'
 
 const mockedUseAccuracy = vi.mocked(useAccuracy)
+const mockedUseDataHealth = vi.mocked(useDataHealth)
 
 // ACC2-01: xpts_flagged on player gw entries — see UI-SPEC threshold A2
 // Cast needed because AccuracyPlayerGw.xpts_flagged is currently optional; the runtime data carries it.
@@ -105,6 +112,8 @@ const fixtureWithVersionsAndCalibration: AccuracyBacktest = {
 describe('Phase 41: AccuracyTab component', () => {
   beforeEach(() => {
     mockedUseAccuracy.mockReset()
+    // DataHealthPanel uses its own hook — default to loading state so it renders without crashing.
+    mockedUseDataHealth.mockReturnValue({ data: undefined, isLoading: true, error: null } as never)
   })
 
   it('ACC-02: renders 5 per-GW rows plus an Overall summary row', () => {
@@ -248,6 +257,8 @@ describe('Phase 41: AccuracyTab component', () => {
 describe('Phase 63: VersionHistoryTable + CalibrationSection', () => {
   beforeEach(() => {
     mockedUseAccuracy.mockReset()
+    // DataHealthPanel uses its own hook — default to loading state so it renders without crashing.
+    mockedUseDataHealth.mockReturnValue({ data: undefined, isLoading: true, error: null } as never)
   })
 
   it('VER-02: VersionHistoryTable renders heading and one row per version when data.versions present', () => {
