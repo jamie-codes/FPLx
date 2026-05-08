@@ -330,4 +330,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-08 — Phase 080 (GW-Specific Intelligence) complete. GWI-01–GWI-05 all verified: rotation-risk detection pipeline, GWInsight discriminated union + /api/gw-intel route + useGWIntel hook, InsightsTab "This Gameweek" section with 4 card types + XptsTrajectoryBar, RotationRiskBadge in SetPieceTakerPanel + OpportunityCostTable. v1.13 milestone in progress.*
+*Last updated: 2026-05-08 — Phase 081 (Team Shields & Visual Identity) complete. SHD-01–SHD-03 all verified: useTeamBadge hook (crest URL + error state + fallback), ghost watermark crest in SetPieceTakerPanel, inline 20px crest in FixtureHeatMap row headers, LineupTab kit-error state migrated to hook. v1.13 milestone complete (Phases 78–81).*
