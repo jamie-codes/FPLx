@@ -796,8 +796,8 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 **Plans**: 4 plans
   - [x] 080-01-PLAN.md — Pipeline data layer: european_cup_dates.py, _xpts_per_gw, gw_intel.py (rotation_risk + table_stakes + compute_gw_intel), run.py wiring, pytest scaffolding
   - [x] 080-02-PLAN.md — TypeScript contracts: GWInsight union + rotation_risk field, /api/gw-intel route, useGWIntel hook, RotationRiskBadge component + tests
-  - [ ] 080-03-PLAN.md — InsightsTab "This Gameweek" section: GWIntelSection + 4 card subcomponents + XptsTrajectoryBar; extended test suite
-  - [ ] 080-04-PLAN.md — RotationRiskBadge integration in SetPieceTakerPanel team headers + OpportunityCostTable buy-player rows
+  - [x] 080-03-PLAN.md — InsightsTab "This Gameweek" section: GWIntelSection + 4 card subcomponents + XptsTrajectoryBar; extended test suite
+  - [x] 080-04-PLAN.md — RotationRiskBadge integration in SetPieceTakerPanel team headers + OpportunityCostTable buy-player rows
 **UI hint**: yes
 
 ### Phase 81: Team Shields & Visual Identity
