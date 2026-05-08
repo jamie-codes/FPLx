@@ -4,7 +4,7 @@ milestone: v1.12
 milestone_name: Modelling & Refinement — Carry-forward
 status: in_progress
 last_updated: "2026-05-08T00:00:00.000Z"
-last_activity: 2026-05-08 -- Phase 78 wave 1 complete (078-01 done); wave 2 starting
+last_activity: 2026-05-08 -- Phase 78 all plans complete (078-01/02/03); verifying
 progress:
   total_phases: 28
   completed_phases: 27
@@ -25,8 +25,8 @@ See: .planning/PROJECT.md (updated 2026-05-04 — v1.10 started)
 ## Current Position
 
 Phase: 78 — UI Visual Foundation (ready to execute)
-Plan: 1 of 3 plans — wave 2 executing
-Status: Phase executing — wave 2 in progress (078-02 page.tsx + 078-03 LastUpdated/MobileNav in parallel)
+Plan: 3 of 3 plans — all complete
+Status: Phase verifying — all 3 plans executed; running verification
 Last activity: 2026-05-08 -- Phase 78 planned (3 plans: 078-01 globals.css Wave 1, 078-02 page.tsx Wave 2, 078-03 LastUpdated+MobileNav Wave 2)
 
 ## Performance Metrics
