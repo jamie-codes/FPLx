@@ -20,6 +20,8 @@ from bonus import compute_bonus_predictions
 from simulate import compute_simulations
 from price_changes import compute_price_change_predictions
 from insights import compute_insights
+from gw_intel import compute_gw_intel, _apply_rotation_risk
+from european_cup_dates import EUROPEAN_CUP_DATES
 from accuracy import compute_accuracy_backtest, build_predictions_snapshot
 
 
@@ -210,10 +212,21 @@ def run(dry_run: bool = False):
         save('merged_players.json', merged)
         save('captain_picks.json', captain_picks)  # Phase 31 CAP-03/CAP-04
 
+        # Phase 80 GWI-01 (D-02/D-03): rotation_risk flag per player from cup-fixture clash.
+        merged = _apply_rotation_risk(merged, fixtures, EUROPEAN_CUP_DATES)
+        save('merged_players.json', merged)  # re-save to persist rotation_risk field
+
         # Phase 33 INS-02/03/04 — pattern statements with confidence weights
         insights = compute_insights(merged, bootstrap, fixtures, summaries, finished_gws)
         save('insights.json', insights)
         print(f"Insights computed: {len(insights)} pattern(s) emitted")
+
+        # Phase 80 GWI-02/GWI-03/GWI-04 (D-05): GW-specific intelligence cards
+        gw_intel = compute_gw_intel(
+            merged, bootstrap, fixtures, summaries, finished_gws, EUROPEAN_CUP_DATES
+        )
+        save('gw_intel.json', gw_intel)
+        print(f"GW intel computed: {len(gw_intel.get('cards', []))} card(s) emitted")
 
         # SP-02: Set-piece snapshot diff
         print("Computing set-piece snapshot diff...")
