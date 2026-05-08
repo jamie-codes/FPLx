@@ -11,50 +11,59 @@ const mockedUseLastUpdated = vi.mocked(useLastUpdated)
 const NOW = new Date('2026-04-29T12:00:00Z').getTime()
 const isoMinutesBefore = (mins: number) => new Date(NOW - mins * 60_000).toISOString()
 
-function getDisplayP(container: HTMLElement): HTMLParagraphElement {
-  const p = container.querySelector('p')
-  if (!p) throw new Error('expected <p> element')
-  return p as HTMLParagraphElement
+function getDisplaySpan(container: HTMLElement): HTMLSpanElement {
+  const span = container.querySelector('span')
+  if (!span) throw new Error('expected <span> element')
+  return span as HTMLSpanElement
 }
 
 describe('LastUpdatedDisplay', () => {
-  it('renders the relativeTime string verbatim', () => {
+  it('renders the relativeTime string with Updated prefix', () => {
     render(<LastUpdatedDisplay relativeTime="3 hours ago" stale={false} />)
-    expect(screen.getByText('3 hours ago')).toBeDefined()
+    expect(screen.getByText('Updated 3 hours ago', { exact: false })).toBeDefined()
   })
 
-  it('uses zinc colour when not stale', () => {
+  it('uses surface-elevated token when not stale', () => {
     const { container } = render(<LastUpdatedDisplay relativeTime="3 hours ago" stale={false} />)
-    const p = getDisplayP(container)
-    expect(p.className).toContain('text-zinc-400')
-    expect(p.className).not.toContain('text-amber-600')
+    const span = getDisplaySpan(container)
+    expect(span.className).toContain('bg-surface-elevated')
+    expect(span.className).toContain('text-muted')
+    expect(span.className).not.toContain('bg-amber-50')
   })
 
   it('uses amber colour when stale', () => {
     const { container } = render(<LastUpdatedDisplay relativeTime="3 hours ago" stale={true} />)
-    const p = getDisplayP(container)
-    expect(p.className).toContain('text-amber-600')
-    expect(p.className).toContain('dark:text-amber-500')
-    expect(p.className).not.toContain('text-zinc-400')
+    const span = getDisplaySpan(container)
+    expect(span.className).toContain('text-amber-600')
+    expect(span.className).toContain('dark:text-amber-400')
+    expect(span.className).toContain('bg-amber-50')
+    expect(span.className).not.toContain('bg-surface-elevated')
   })
 
-  it('applies base classes text-xs and mt-1 when not stale', () => {
+  it('applies base pill classes when not stale', () => {
     const { container } = render(<LastUpdatedDisplay relativeTime="3 hours ago" stale={false} />)
-    const p = getDisplayP(container)
-    expect(p.className).toContain('text-xs')
-    expect(p.className).toContain('mt-1')
+    const span = getDisplaySpan(container)
+    expect(span.className).toContain('text-xs')
+    expect(span.className).toContain('rounded-full')
+    expect(span.className).toContain('px-2')
+    expect(span.className).toContain('py-1')
   })
 
-  it('applies base classes text-xs and mt-1 when stale', () => {
+  it('applies base pill classes when stale', () => {
     const { container } = render(<LastUpdatedDisplay relativeTime="3 hours ago" stale={true} />)
-    const p = getDisplayP(container)
-    expect(p.className).toContain('text-xs')
-    expect(p.className).toContain('mt-1')
+    const span = getDisplaySpan(container)
+    expect(span.className).toContain('text-xs')
+    expect(span.className).toContain('rounded-full')
+    expect(span.className).toContain('px-2')
+    expect(span.className).toContain('py-1')
   })
 
   it('does not render "(stale)" suffix when stale is true', () => {
-    render(<LastUpdatedDisplay relativeTime="3 hours ago" stale={true} />)
-    expect(screen.getByText('3 hours ago').textContent).toBe('3 hours ago')
+    const { container } = render(<LastUpdatedDisplay relativeTime="3 hours ago" stale={true} />)
+    const span = getDisplaySpan(container)
+    // Full textContent includes the dot character + "Updated 3 hours ago"
+    expect(span.textContent).not.toContain('(stale)')
+    expect(span.textContent).toContain('Updated 3 hours ago')
   })
 })
 
@@ -79,7 +88,7 @@ describe('LastUpdated (connected)', () => {
       data: { last_updated: isoMinutesBefore(60), stale: false },
     } as any)
     render(<LastUpdated />)
-    expect(screen.getByText('1 hour ago')).toBeDefined()
+    expect(screen.getByText('Updated 1 hour ago', { exact: false })).toBeDefined()
   })
 
   it('does not render a blank label on first paint when data is cached', () => {
@@ -87,9 +96,9 @@ describe('LastUpdated (connected)', () => {
       data: { last_updated: isoMinutesBefore(60), stale: false },
     } as any)
     const { container } = render(<LastUpdated />)
-    const p = container.querySelector('p')
-    // p should be null (not rendered) or have non-empty text — never an empty <p>
-    if (p) expect(p.textContent).not.toBe('')
+    const span = container.querySelector('span')
+    // span should be null (not rendered) or have non-empty text — never an empty <span>
+    if (span) expect(span.textContent).not.toBe('')
   })
 
   it('re-formats label after 30 seconds elapse crossing a band boundary', async () => {
@@ -97,14 +106,14 @@ describe('LastUpdated (connected)', () => {
       data: { last_updated: isoMinutesBefore(59), stale: false },
     } as any)
     render(<LastUpdated />)
-    expect(screen.getByText('59 min ago')).toBeDefined()
+    expect(screen.getByText('Updated 59 min ago', { exact: false })).toBeDefined()
 
     act(() => {
       vi.setSystemTime(NOW + 60_000)
       vi.advanceTimersByTime(60_000)
     })
 
-    expect(screen.getByText('1 hour ago')).toBeDefined()
+    expect(screen.getByText('Updated 1 hour ago', { exact: false })).toBeDefined()
   })
 
   it('clears interval on unmount', () => {
@@ -122,7 +131,7 @@ describe('LastUpdated (connected)', () => {
       data: { last_updated: isoMinutesBefore(60), stale: true },
     } as any)
     const { container } = render(<LastUpdated />)
-    const p = getDisplayP(container)
-    expect(p.className).toContain('text-amber-600')
+    const span = getDisplaySpan(container)
+    expect(span.className).toContain('text-amber-600')
   })
 })

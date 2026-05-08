@@ -7,11 +7,19 @@ import { formatRelativeTime } from '@/lib/formatRelativeTime'
 /** Pure render function for testing (DAT-02). Receives a pre-formatted label
  *  so all Date logic stays in the connected component. */
 export function LastUpdatedDisplay({ relativeTime, stale }: { relativeTime: string; stale: boolean }) {
-  const colourClass = stale ? 'text-amber-600 dark:text-amber-500' : 'text-zinc-400'
+  if (!stale) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs bg-surface-elevated text-muted">
+        <span aria-hidden="true">●</span>
+        Updated {relativeTime}
+      </span>
+    )
+  }
   return (
-    <p className={`text-xs mt-1 ${colourClass}`}>
-      {relativeTime}
-    </p>
+    <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400">
+      <span aria-hidden="true">⚠</span>
+      Updated {relativeTime}
+    </span>
   )
 }
 
