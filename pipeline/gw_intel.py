@@ -5,7 +5,7 @@ ZERO HTTP calls -- all data passed as arguments (matches insights.py / defcon.py
 """
 
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from itertools import groupby
 from typing import Any
 
@@ -309,5 +309,5 @@ def compute_gw_intel(
     return {
         'cards': cards,
         'team_stakes': team_stakes,
-        'generated_at': datetime.utcnow().isoformat() + 'Z',
+        'generated_at': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
     }
