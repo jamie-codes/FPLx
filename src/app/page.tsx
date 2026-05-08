@@ -165,48 +165,56 @@ export default function Home() {
   return (
     <>
       <main className="max-w-7xl mx-auto px-4 pt-2 pb-8 max-sm:pb-24 overflow-x-hidden">
-        {/* Header */}
+        {/* Header — scrolls away */}
         <div className="flex items-center gap-3 mb-2">
           <span className="font-[family-name:var(--font-honk)] text-5xl text-zinc-900 dark:text-white leading-none">FPLx</span>
           <div className="ml-auto flex items-center gap-2">
-            <LastUpdated />
             <ThemeToggle />
           </div>
         </div>
 
-        {/* Section navigation */}
-        <nav aria-label="Section navigation" className="hidden sm:flex gap-4 border-b border-zinc-200 dark:border-zinc-700 mb-0">
-          {SECTIONS.map((section) => (
-            <button
-              key={section.id}
-              className={`pb-2 px-1 text-sm font-medium ${activeSection === section.id ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}
-              onClick={() => handleSectionChange(section.id)}
-              aria-current={activeSection === section.id ? 'page' : undefined}
-            >
-              {section.label}
-            </button>
-          ))}
-        </nav>
+        {/* Sticky nav wrapper — section tabs + sub-tabs (D-07, D-08) */}
+        <div className="sticky top-0 z-40 bg-surface/95 backdrop-blur-sm border-b border-border -mx-4 px-4">
+          {/* Section navigation */}
+          <nav aria-label="Section navigation" className="hidden sm:flex items-center gap-2 py-2">
+            {SECTIONS.map((section) => (
+              <button
+                key={section.id}
+                className={`px-4 py-1.5 text-sm font-medium rounded-full min-h-[44px] transition-colors ${activeSection === section.id ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
+                onClick={() => handleSectionChange(section.id)}
+                aria-current={activeSection === section.id ? 'page' : undefined}
+              >
+                {section.label}
+              </button>
+            ))}
+            <div className="ml-auto">
+              <LastUpdated />
+            </div>
+          </nav>
 
-        {/* Sub-tab row — rendered for any section with subTabs.length > 0 (D-08) */}
-        {(() => {
-          const activeSectionDef = SECTIONS.find(s => s.id === activeSection)!
-          if (!activeSectionDef.subTabs.length) return null
-          return (
-            <nav aria-label={`${activeSectionDef.label} sub-tabs`} className="hidden sm:flex gap-4 mb-6 border-b border-zinc-200 dark:border-zinc-700">
-              {activeSectionDef.subTabs.map((sub) => (
-                <button
-                  key={sub.id}
-                  className={`pb-2 px-1 text-sm font-medium ${activeSubTab === sub.id ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}
-                  onClick={() => handleSubTabChange(sub.id)}
-                  aria-current={activeSubTab === sub.id ? 'page' : undefined}
-                >
-                  {sub.label}
-                </button>
-              ))}
-            </nav>
-          )
-        })()}
+          {/* Sub-tab row — rendered for any section with subTabs.length > 0 (D-08) */}
+          {(() => {
+            const activeSectionDef = SECTIONS.find(s => s.id === activeSection)!
+            if (!activeSectionDef.subTabs.length) return null
+            return (
+              <nav aria-label={`${activeSectionDef.label} sub-tabs`} className="hidden sm:flex items-center gap-2 py-2">
+                {activeSectionDef.subTabs.map((sub) => (
+                  <button
+                    key={sub.id}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-full min-h-[44px] transition-colors ${activeSubTab === sub.id ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
+                    onClick={() => handleSubTabChange(sub.id)}
+                    aria-current={activeSubTab === sub.id ? 'page' : undefined}
+                  >
+                    {sub.label}
+                  </button>
+                ))}
+              </nav>
+            )
+          })()}
+        </div>
+
+        {/* Spacing below sticky nav — lg (24px) per UI-SPEC spacing scale */}
+        <div className="h-6" />
 
         {/* D-07: Section-level HorizonSelector — only when Plan section is active */}
         {activeSection === 'plan' && (
