@@ -774,7 +774,7 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   - [x] 079-01-PLAN.md — Pipeline extension: `_signal_label()` helper + 11 new structured fields per insight + `pipeline/tests/test_insights.py` + cache regeneration (2026-05-08)
   - [x] 079-02-PLAN.md — TypeScript `Insight` interface + `SignalLabel` union + `--nav-height: 96px` token in globals.css (2026-05-08)
   **Wave 2** *(blocked on Wave 1 completion)*
-  - [ ] 079-03-PLAN.md — InsightsTab rewrite: 5-zone InsightCard, CollapsibleSection, sticky DecisionSummary panel, SIGNAL_CLASSES; component test rewrite
+  - [x] 079-03-PLAN.md — InsightsTab rewrite: 5-zone InsightCard, CollapsibleSection, sticky DecisionSummary panel, SIGNAL_CLASSES; component test rewrite (2026-05-08)
   **Wave 3** *(blocked on Wave 2 completion)*
   - [ ] 079-04-PLAN.md — Integration verification: API passthrough confirmation, full test suites, manual UX checkpoint (sticky scroll + methodology expand)
   **Cross-cutting constraints:**

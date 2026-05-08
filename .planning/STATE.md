@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-05-04 — v1.10 started)
 ## Current Position
 
 Phase: 79 — Insight Card Redesign
-Plan: 2 of 4 plans complete — Wave 1 done, Wave 2 next
-Status: In progress — Wave 1 complete (Plans 01+02); executing Wave 2 (Plan 03: InsightsTab rewrite)
-Last activity: 2026-05-08 -- Phase 79 Wave 1 complete: pipeline 17-field shape + SignalLabel type + --nav-height token
+Plan: 3 of 4 plans complete — Wave 2 done, Wave 3 next
+Status: In progress — Wave 2 complete (Plan 03: InsightsTab rewrite); executing Wave 3 (Plan 04: verification)
+Last activity: 2026-05-08 -- Phase 79 Wave 2 complete: InsightsTab rewritten (5-zone cards, DecisionSummary, CollapsibleSection, 17/17 tests pass)
 
 ## Performance Metrics
 
