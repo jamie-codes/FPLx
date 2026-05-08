@@ -387,6 +387,37 @@ export interface AccuracyBacktest {
 }
 
 // ============================================================================
+// Phase 82: Data Health Dashboard (DH-01/02/03)
+// ============================================================================
+
+export type SanityCheckId =
+  | 'player_count'
+  | 'missing_player_delta'
+  | 'understat_null_pct'
+  | 'pipeline_stale'
+
+export type SanityCheckStatus = 'ok' | 'warn' | 'error'
+
+export interface SanityCheck {
+  id: SanityCheckId
+  status: SanityCheckStatus
+  value: number | boolean
+  threshold: string
+}
+
+export interface DataHealth {
+  generated_at: string                      // ISO 8601 UTC
+  timestamps: Record<string, string>        // artifact name -> ISO UTC
+  total_player_count: number
+  prev_player_count: number | null          // null on first run (D-16)
+  missing_player_delta: number              // absolute delta (Pitfall 3)
+  understat_id_null_count: number
+  fpl_proxy_fallback_count: number
+  xg_per90_null_count: number
+  sanity_checks: SanityCheck[]
+}
+
+// ============================================================================
 // Phase 63: Model Versioning & Calibration Charts (VER-01/VER-02/CAL-01/CAL-02)
 // ============================================================================
 
