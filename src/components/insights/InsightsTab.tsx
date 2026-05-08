@@ -99,7 +99,12 @@ function InsightCard({ insight }: { insight: Insight }) {
 
       {/* Methodology (INS-06, D-14) */}
       <details className="text-xs text-muted">
-        <summary className="cursor-pointer select-none">Methodology</summary>
+        <summary
+          className="cursor-pointer select-none"
+          aria-label={`Methodology for ${insight.title}`}
+        >
+          Methodology
+        </summary>
         <p className="mt-1">
           Sample: {insight.sample_n}/{insight.sample_total} · {insight.gw_coverage} · Confidence: {insight.confidence_pct.toFixed(1)}%
         </p>
@@ -141,7 +146,7 @@ function DecisionSummary({ insights }: { insights: Insight[] }) {
     .slice(0, DECISION_TOP_N)
   // D-07 fallback: if fewer than 3 have entity lists, fall back to top-3 by confidence overall
   const top3 =
-    withEntities.length >= DECISION_TOP_N
+    withEntities.length > 0
       ? withEntities
       : [...insights].sort((a, b) => b.confidence_pct - a.confidence_pct).slice(0, DECISION_TOP_N)
   if (top3.length === 0) return null
@@ -221,8 +226,11 @@ export function InsightsTab() {
     captaincy: [],
   }
   for (const insight of data) {
-    if (insight.category in byCategory) {
-      byCategory[insight.category].push(insight)
+    const cat = insight.category as Exclude<SectionKey, 'priority'>
+    if (cat in byCategory) {
+      byCategory[cat].push(insight)
+    } else {
+      console.warn(`InsightsTab: unknown category "${cat}", insight ${insight.id} dropped`)
     }
   }
 
