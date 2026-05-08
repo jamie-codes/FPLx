@@ -2,17 +2,34 @@
 // Wave 0: rewritten by Plan 03 to satisfy Nyquist rule.
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 
 vi.mock('@/lib/hooks/useInsights', () => ({
   useInsights: vi.fn(),
 }))
 
+vi.mock('@/lib/hooks/useGWIntel', () => ({
+  useGWIntel: vi.fn(),
+}))
+
 import { InsightsTab } from '@/components/insights/InsightsTab'
 import { useInsights } from '@/lib/hooks/useInsights'
-import type { Insight } from '@/lib/types'
+import { useGWIntel } from '@/lib/hooks/useGWIntel'
+import type { Insight, GWIntelResponse } from '@/lib/types'
 
 const mockedUseInsights = vi.mocked(useInsights)
+const mockedUseGWIntel = vi.mocked(useGWIntel)
+
+function mockGWIntel(
+  data: GWIntelResponse | undefined,
+  opts: { loading?: boolean; error?: Error | null } = {},
+) {
+  mockedUseGWIntel.mockReturnValue({
+    data,
+    isLoading: opts.loading ?? false,
+    error: opts.error ?? null,
+  } as unknown as ReturnType<typeof useGWIntel>)
+}
 
 // Six-insight fixture covering all 6 signal labels and all 4 categories.
 // Confidence values chosen so signal_label values match D-04 rules:
@@ -156,6 +173,8 @@ function mockData(data: Insight[] | undefined, opts: { loading?: boolean; error?
 describe('Phase 79: InsightsTab component', () => {
   beforeEach(() => {
     mockedUseInsights.mockReset()
+    mockedUseGWIntel.mockReset()
+    mockGWIntel({ cards: [], team_stakes: [], generated_at: '2026-05-08T00:00:00Z' })
   })
 
   describe('5 zones (INS-01)', () => {
@@ -386,5 +405,160 @@ describe('Phase 79: InsightsTab component', () => {
       expect(container.textContent).toContain('No insights available yet')
       expect(container.textContent).toContain('Run the pipeline to generate pattern data for this season.')
     })
+  })
+})
+
+describe('Phase 80: This Gameweek section (GWI-02, GWI-04, GWI-05)', () => {
+  it('renders the "This Gameweek" section header', () => {
+    mockData([])
+    mockGWIntel({ cards: [], team_stakes: [], generated_at: '2026-05-08T00:00:00Z' })
+    render(<InsightsTab />)
+    expect(screen.getByText('This Gameweek')).toBeTruthy()
+  })
+
+  it('renders empty-state placeholder when cards array is empty (GWI-05)', () => {
+    mockData([])
+    mockGWIntel({ cards: [], team_stakes: [], generated_at: '2026-05-08T00:00:00Z' })
+    render(<InsightsTab />)
+    expect(
+      screen.getByText('GW insights will appear once fixtures are confirmed.')
+    ).toBeTruthy()
+  })
+
+  it('renders empty-state placeholder when useGWIntel returns undefined data (GWI-05)', () => {
+    mockData([])
+    mockGWIntel(undefined)
+    render(<InsightsTab />)
+    expect(
+      screen.getByText('GW insights will appear once fixtures are confirmed.')
+    ).toBeTruthy()
+  })
+
+  it('renders empty-state placeholder on fetch error (GWI-05)', () => {
+    mockData([])
+    mockGWIntel(undefined, { error: new Error('500') })
+    render(<InsightsTab />)
+    expect(
+      screen.getByText('GW insights will appear once fixtures are confirmed.')
+    ).toBeTruthy()
+  })
+
+  it('renders FixtureRunCard with narrative and 3 trajectory bars', () => {
+    mockData([])
+    mockGWIntel({
+      cards: [{
+        type: 'fixture_run',
+        id: 'fixture_run_1',
+        gw_label: 'GW36–38',
+        player_id: 1,
+        web_name: 'Salah',
+        narrative: 'Salah: 3 easy home fixtures — prime hold',
+        gw_xpts: [8.5, 6.2, 5.0],
+        gw_numbers: [36, 37, 38],
+        is_dgw: [false, false, false],
+      }],
+      team_stakes: [],
+      generated_at: '2026-05-08T00:00:00Z',
+    })
+    const { container } = render(<InsightsTab />)
+    expect(screen.getByText('Salah: 3 easy home fixtures — prime hold')).toBeTruthy()
+    // 3 axis labels
+    expect(screen.getByText('GW36')).toBeTruthy()
+    expect(screen.getByText('GW37')).toBeTruthy()
+    expect(screen.getByText('GW38')).toBeTruthy()
+    // 3 bar elements (each has aria-label "GW{N}: {x.x} projected xPts")
+    const bars = container.querySelectorAll('[aria-label$="projected xPts"]')
+    expect(bars.length).toBe(3)
+  })
+
+  it('renders DGW marker (†) on FixtureRunCard when any is_dgw=true', () => {
+    mockData([])
+    mockGWIntel({
+      cards: [{
+        type: 'fixture_run',
+        id: 'fixture_run_2',
+        gw_label: 'GW36–38',
+        player_id: 2,
+        web_name: 'Haaland',
+        narrative: 'Haaland: 3 easy home fixtures — prime hold',
+        gw_xpts: [12.0, 4.5, 5.0],
+        gw_numbers: [36, 37, 38],
+        is_dgw: [true, false, false],
+      }],
+      team_stakes: [],
+      generated_at: '2026-05-08T00:00:00Z',
+    })
+    render(<InsightsTab />)
+    expect(screen.getByText('GW36†')).toBeTruthy()
+    expect(screen.getByText('† Double Gameweek')).toBeTruthy()
+  })
+
+  it('renders RotationRiskCard with team short name', () => {
+    mockData([])
+    mockGWIntel({
+      cards: [{
+        type: 'rotation_risk',
+        id: 'rotation_risk_8',
+        gw_label: 'GW36',
+        team_id: 8,
+        team_short_name: 'CHE',
+        competition: 'Cup/European',
+        table_stakes_label: 'European chase',
+      }],
+      team_stakes: [],
+      generated_at: '2026-05-08T00:00:00Z',
+    })
+    render(<InsightsTab />)
+    expect(screen.getByText(/Rotation risk: CHE/)).toBeTruthy()
+    expect(screen.getByText(/European chase/)).toBeTruthy()
+  })
+
+  it('renders DGWBGWCard with DGW vs BGW labels', () => {
+    mockData([])
+    mockGWIntel({
+      cards: [
+        {
+          type: 'dgw_bgw',
+          id: 'dgw_bgw_13_36',
+          gw_label: 'GW36',
+          team_id: 13,
+          team_short_name: 'MCI',
+          is_dgw: true,
+        },
+        {
+          type: 'dgw_bgw',
+          id: 'dgw_bgw_5_36',
+          gw_label: 'GW36',
+          team_id: 5,
+          team_short_name: 'BRE',
+          is_dgw: false,
+        },
+      ],
+      team_stakes: [],
+      generated_at: '2026-05-08T00:00:00Z',
+    })
+    render(<InsightsTab />)
+    expect(screen.getByText(/Double Gameweek: MCI/)).toBeTruthy()
+    expect(screen.getByText(/Blank Gameweek: BRE/)).toBeTruthy()
+  })
+
+  it('renders "This Gameweek" section before any season insights section in DOM order', () => {
+    mockData([
+      {
+        id: 'p1', category: 'defensive', statement: 's', confidence_pct: 90,
+        sample_n: 10, sample_total: 10, title: 'T', metric_value: 50, metric_label: 'L',
+        takeaway: 't', action_hint: 'a', benchmark_value: 0, gw_coverage: 'GW1-34',
+        player_ids: [], team_ids: [], player_names: [], team_names: [],
+        signal_label: 'Strong signal',
+      },
+    ])
+    mockGWIntel({ cards: [], team_stakes: [], generated_at: '2026-05-08T00:00:00Z' })
+    const { container } = render(<InsightsTab />)
+    const html = container.innerHTML
+    const gwIdx = html.indexOf('This Gameweek')
+    const priorityIdx = html.indexOf('Priority Insights')
+    expect(gwIdx).toBeGreaterThanOrEqual(0)
+    expect(priorityIdx).toBeGreaterThanOrEqual(0)
+    expect(gwIdx).toBeLessThan(priorityIdx)  // D-07: GW section first
   })
 })
