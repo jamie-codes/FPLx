@@ -9,7 +9,7 @@ from datetime import datetime
 from itertools import groupby
 from typing import Any
 
-from merge import _xpts_per_gw, _compute_xpts_fixture
+from merge import _xpts_per_gw
 
 
 def _apply_rotation_risk(
