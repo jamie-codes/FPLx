@@ -36,7 +36,7 @@ def _signal_label(category: str, confidence_pct: float, insight_id: str) -> str:
     Per D-04 in 079-CONTEXT.md.
     """
     # Category-specific overrides (highest precedence)
-    if category == 'player' and confidence_pct >= 65:
+    if category == 'player' and 65 <= confidence_pct < 70:
         return 'Hidden gem'
     if category in ('attacking', 'player') and confidence_pct < 45:
         return 'Trap risk'
@@ -183,15 +183,18 @@ def _defensive_patterns(merged: list, bootstrap: dict, fixtures: list) -> list:
             'sample_n': int(sample_n),
             'sample_total': int(total),
             'title': INSIGHT_TITLES['def_cs_home_vs_away'],
-            'metric_value': float(home_pct),
-            'metric_label': 'CS rate at home',
+            'metric_value': float(home_pct if home_pct >= away_pct else away_pct),
+            'metric_label': 'CS rate at home' if home_pct >= away_pct else 'CS rate away',
             'takeaway': (
                 f'Home defenders keep clean sheets {home_pct}% of the time — '
                 f'{round(home_pct - away_pct, 1)}pp more than away sides.'
+                if home_pct >= away_pct else
+                f'Away defenders keep clean sheets {away_pct}% of the time — '
+                f'{round(away_pct - home_pct, 1)}pp more than home sides.'
             ),
             'action_hint': INSIGHT_ACTION_HINTS['def_cs_home_vs_away'],
             'benchmark_value': BENCHMARK_DEFAULTS['def_cs_home_vs_away'],
-            'gw_coverage': f'GW1–{max((f.get("event") or 0) for f in finished)}',
+            'gw_coverage': (lambda _gw: f'GW1–{_gw}' if _gw > 0 else 'pre-season')(max((f.get("event") or 0 for f in finished), default=0)),
             'player_ids': [],
             'team_ids': [],
             'player_names': [],
@@ -260,7 +263,7 @@ def _defensive_patterns(merged: list, bootstrap: dict, fixtures: list) -> list:
                 ),
                 'action_hint': INSIGHT_ACTION_HINTS['def_cs_rate_top6_vs_rest'],
                 'benchmark_value': BENCHMARK_DEFAULTS['def_cs_rate_top6_vs_rest'],
-                'gw_coverage': f'GW1–{max((f.get("event") or 0) for f in finished)}',
+                'gw_coverage': (lambda _gw: f'GW1–{_gw}' if _gw > 0 else 'pre-season')(max((f.get("event") or 0 for f in finished), default=0)),
                 'player_ids': [],
                 'team_ids': sorted(int(tid) for tid in top6_ids),
                 'player_names': [],
@@ -274,6 +277,8 @@ def _defensive_patterns(merged: list, bootstrap: dict, fixtures: list) -> list:
     # def_cs_streak_ge2: fraction of teams with a current 2+ CS streak
     all_team_ids = {t['id'] for t in teams}
     if len(all_team_ids) >= MIN_SAMPLE_TOTAL:
+        if not finished:
+            return out
         # Sort finished fixtures by event (gameweek) ascending
         sorted_finished = sorted(finished, key=lambda f: f.get('event') or 0)
         streak_ge2_count = 0
@@ -323,7 +328,7 @@ def _defensive_patterns(merged: list, bootstrap: dict, fixtures: list) -> list:
             ),
             'action_hint': INSIGHT_ACTION_HINTS['def_cs_streak_ge2'],
             'benchmark_value': BENCHMARK_DEFAULTS['def_cs_streak_ge2'],
-            'gw_coverage': f'GW1–{max((f.get("event") or 0) for f in finished)}',
+            'gw_coverage': (lambda _gw: f'GW1–{_gw}' if _gw > 0 else 'pre-season')(max((f.get("event") or 0 for f in finished), default=0)),
             'player_ids': [],
             'team_ids': [],
             'player_names': [],
@@ -372,10 +377,10 @@ def _attacking_patterns(merged: list, bootstrap: dict, fixtures: list, summaries
             ),
             'action_hint': INSIGHT_ACTION_HINTS['att_top_xg_overperformers'],
             'benchmark_value': BENCHMARK_DEFAULTS['att_top_xg_overperformers'],
-            'gw_coverage': f'GW1–{max((f.get("event") or 0) for f in finished)}',
-            'player_ids': [int(p.get('id') or 0) for p in overperformers[:5] if p.get('id')],
+            'gw_coverage': (lambda _gw: f'GW1–{_gw}' if _gw > 0 else 'pre-season')(max((f.get("event") or 0 for f in finished), default=0)),
+            'player_ids': [int(pid) for pid, _ in [(p.get('id'), p.get('web_name', '')) for p in overperformers[:5] if p.get('id')]],
             'team_ids': [],
-            'player_names': [str(p.get('web_name') or '') for p in overperformers[:5] if p.get('web_name')],
+            'player_names': [str(name) for _, name in [(p.get('id'), p.get('web_name', '')) for p in overperformers[:5] if p.get('id')]],
             'team_names': [],
             'signal_label': _signal_label('attacking', confidence_pct, 'att_top_xg_overperformers'),
         })
@@ -403,7 +408,7 @@ def _attacking_patterns(merged: list, bootstrap: dict, fixtures: list, summaries
                 'takeaway': f'Home teams are scoring {confidence_pct}% of all PL goals this season.',
                 'action_hint': INSIGHT_ACTION_HINTS['att_home_goal_share'],
                 'benchmark_value': BENCHMARK_DEFAULTS['att_home_goal_share'],
-                'gw_coverage': f'GW1–{max((f.get("event") or 0) for f in finished)}',
+                'gw_coverage': (lambda _gw: f'GW1–{_gw}' if _gw > 0 else 'pre-season')(max((f.get("event") or 0 for f in finished), default=0)),
                 'player_ids': [],
                 'team_ids': [],
                 'player_names': [],
@@ -449,7 +454,7 @@ def _attacking_patterns(merged: list, bootstrap: dict, fixtures: list, summaries
                     ),
                     'action_hint': INSIGHT_ACTION_HINTS['att_top_team_goal_share'],
                     'benchmark_value': BENCHMARK_DEFAULTS['att_top_team_goal_share'],
-                    'gw_coverage': f'GW1–{max((f.get("event") or 0) for f in finished)}',
+                    'gw_coverage': (lambda _gw: f'GW1–{_gw}' if _gw > 0 else 'pre-season')(max((f.get("event") or 0 for f in finished), default=0)),
                     'player_ids': [],
                     'team_ids': [int(top_team_id)],
                     'player_names': [],
@@ -499,9 +504,9 @@ def _player_patterns(merged: list, summaries: dict, finished_gws: int) -> list:
                 'action_hint': INSIGHT_ACTION_HINTS['player_buy_signal_count'],
                 'benchmark_value': BENCHMARK_DEFAULTS['player_buy_signal_count'],
                 'gw_coverage': f'GW1–{finished_gws}',
-                'player_ids': [int(p.get('id') or 0) for p in buy_players[:5] if p.get('id')],
+                'player_ids': [int(pid) for pid, _ in [(p.get('id'), p.get('web_name', '')) for p in buy_players[:5] if p.get('id')]],
                 'team_ids': [],
-                'player_names': [str(p.get('web_name') or '') for p in buy_players[:5] if p.get('web_name')],
+                'player_names': [str(name) for _, name in [(p.get('id'), p.get('web_name', '')) for p in buy_players[:5] if p.get('id')]],
                 'team_names': [],
                 'signal_label': _signal_label('player', confidence_pct_buy, 'player_buy_signal_count'),
             })
@@ -531,9 +536,9 @@ def _player_patterns(merged: list, summaries: dict, finished_gws: int) -> list:
                 'action_hint': INSIGHT_ACTION_HINTS['player_sell_signal_count'],
                 'benchmark_value': BENCHMARK_DEFAULTS['player_sell_signal_count'],
                 'gw_coverage': f'GW1–{finished_gws}',
-                'player_ids': [int(p.get('id') or 0) for p in sell_players[:5] if p.get('id')],
+                'player_ids': [int(pid) for pid, _ in [(p.get('id'), p.get('web_name', '')) for p in sell_players[:5] if p.get('id')]],
                 'team_ids': [],
-                'player_names': [str(p.get('web_name') or '') for p in sell_players[:5] if p.get('web_name')],
+                'player_names': [str(name) for _, name in [(p.get('id'), p.get('web_name', '')) for p in sell_players[:5] if p.get('id')]],
                 'team_names': [],
                 'signal_label': _signal_label('player', confidence_pct_sell, 'player_sell_signal_count'),
             })
@@ -563,9 +568,9 @@ def _player_patterns(merged: list, summaries: dict, finished_gws: int) -> list:
                 'action_hint': INSIGHT_ACTION_HINTS['player_diff_count'],
                 'benchmark_value': BENCHMARK_DEFAULTS['player_diff_count'],
                 'gw_coverage': f'GW1–{finished_gws}',
-                'player_ids': [int(p.get('id') or 0) for p in diff_players[:5] if p.get('id')],
+                'player_ids': [int(pid) for pid, _ in [(p.get('id'), p.get('web_name', '')) for p in diff_players[:5] if p.get('id')]],
                 'team_ids': [],
-                'player_names': [str(p.get('web_name') or '') for p in diff_players[:5] if p.get('web_name')],
+                'player_names': [str(name) for _, name in [(p.get('id'), p.get('web_name', '')) for p in diff_players[:5] if p.get('id')]],
                 'team_names': [],
                 'signal_label': _signal_label('player', confidence_pct_diff, 'player_diff_count'),
             })
@@ -595,9 +600,9 @@ def _player_patterns(merged: list, summaries: dict, finished_gws: int) -> list:
                 'action_hint': INSIGHT_ACTION_HINTS['player_template_trap_count'],
                 'benchmark_value': BENCHMARK_DEFAULTS['player_template_trap_count'],
                 'gw_coverage': f'GW1–{finished_gws}',
-                'player_ids': [int(p.get('id') or 0) for p in trap_players[:5] if p.get('id')],
+                'player_ids': [int(pid) for pid, _ in [(p.get('id'), p.get('web_name', '')) for p in trap_players[:5] if p.get('id')]],
                 'team_ids': [],
-                'player_names': [str(p.get('web_name') or '') for p in trap_players[:5] if p.get('web_name')],
+                'player_names': [str(name) for _, name in [(p.get('id'), p.get('web_name', '')) for p in trap_players[:5] if p.get('id')]],
                 'team_names': [],
                 'signal_label': _signal_label('player', confidence_pct_trap, 'player_template_trap_count'),
             })
