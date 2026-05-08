@@ -769,7 +769,18 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   4. InsightsTab is divided into labelled sections: Priority Insights (highest-signal), Defensive Patterns, Attacking Patterns, Player-Specific Patterns — each section collapsible, with a count badge on the section header
   5. A "Decision Summary" sticky panel at the top of InsightsTab lists the top 3 current actionable angles with affected player/team chips so the user's first scroll reveals what to do today
   6. Each card has a hover/expand area revealing methodology: sample size, GWs covered, confidence rationale — so the user can verify the reasoning without leaving the page
-**Plans**: TBD
+**Plans**: 4 plans (3 waves)
+  **Wave 1** *(parallel — disjoint files)*
+  - [ ] 079-01-PLAN.md — Pipeline extension: `_signal_label()` helper + 11 new structured fields per insight + `pipeline/tests/test_insights.py` + cache regeneration
+  - [ ] 079-02-PLAN.md — TypeScript `Insight` interface + `SignalLabel` union + `--nav-height: 96px` token in globals.css
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 079-03-PLAN.md — InsightsTab rewrite: 5-zone InsightCard, CollapsibleSection, sticky DecisionSummary panel, SIGNAL_CLASSES; component test rewrite
+  **Wave 3** *(blocked on Wave 2 completion)*
+  - [ ] 079-04-PLAN.md — Integration verification: API passthrough confirmation, full test suites, manual UX checkpoint (sticky scroll + methodology expand)
+  **Cross-cutting constraints:**
+  - Plan 01 regenerates `pipeline/cache/insights.json` to the 17-field shape; Plan 03 cannot ship without it (RESEARCH Pitfall 1)
+  - Plan 02 defines `SignalLabel` and `--nav-height`; Plan 03 references both (compile-time enforcement via `Record<SignalLabel, string>`)
+  - Plan 03 must satisfy all 6 INS-XX requirements via tests in `InsightsTab.test.tsx` BEFORE Plan 04 verifies integration
 **UI hint**: yes
 
 ### Phase 80: GW-Specific Intelligence
