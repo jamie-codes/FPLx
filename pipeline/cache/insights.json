@@ -5,7 +5,19 @@
     "statement": "55.2% of all goals this season have been scored by the home team (532/964).",
     "confidence_pct": 55.2,
     "sample_n": 532,
-    "sample_total": 964
+    "sample_total": 964,
+    "title": "Home Field Goal Share",
+    "metric_value": 55.2,
+    "metric_label": "of league goals scored at home",
+    "takeaway": "Home teams are scoring 55.2% of all PL goals this season.",
+    "action_hint": "Favour home attackers with good fixtures",
+    "benchmark_value": 50.0,
+    "gw_coverage": "GW1–35",
+    "player_ids": [],
+    "team_ids": [],
+    "player_names": [],
+    "team_names": [],
+    "signal_label": "Watchlist"
   },
   {
     "id": "att_top_xg_overperformers",
@@ -13,7 +25,31 @@
     "statement": "18 of 87 attackers (xG >= 3) have outscored their xG by 30%+ this season (20.7%).",
     "confidence_pct": 20.7,
     "sample_n": 18,
-    "sample_total": 87
+    "sample_total": 87,
+    "title": "xG Overperformers",
+    "metric_value": 20.7,
+    "metric_label": "attackers beating xG by 30%+",
+    "takeaway": "18 of 87 high-volume attackers are outscoring their xG by 30% or more — regression watch.",
+    "action_hint": "Hold xG overperformers, expect regression",
+    "benchmark_value": 50.0,
+    "gw_coverage": "GW1–35",
+    "player_ids": [
+      266,
+      47,
+      50,
+      200,
+      215
+    ],
+    "team_ids": [],
+    "player_names": [
+      "Eze",
+      "Rogers",
+      "Buendía",
+      "Anthony",
+      "Flemming"
+    ],
+    "team_names": [],
+    "signal_label": "Trap risk"
   },
   {
     "id": "att_top_team_goal_share",
@@ -21,7 +57,23 @@
     "statement": "MCI have scored 7.2% of all PL goals this season (69/964).",
     "confidence_pct": 7.2,
     "sample_n": 69,
-    "sample_total": 964
+    "sample_total": 964,
+    "title": "Top Scorer Dependence",
+    "metric_value": 7.2,
+    "metric_label": "PL goals from top-scoring side",
+    "takeaway": "MCI have produced 7.2% of all PL goals this season — 69 of 964.",
+    "action_hint": "Assess captain risk from top scorer reliance",
+    "benchmark_value": 33.0,
+    "gw_coverage": "GW1–35",
+    "player_ids": [],
+    "team_ids": [
+      13
+    ],
+    "player_names": [],
+    "team_names": [
+      "MCI"
+    ],
+    "signal_label": "Trap risk"
   },
   {
     "id": "cap_double_digit_haul_rate",
@@ -29,15 +81,47 @@
     "statement": "Double-digit hauls (10+ pts) occur in 4.6% of player appearances (475/10338).",
     "confidence_pct": 4.6,
     "sample_n": 475,
-    "sample_total": 10338
+    "sample_total": 10338,
+    "title": "Double-Digit Haul Rate",
+    "metric_value": 4.6,
+    "metric_label": "appearances yielding 10+ pts",
+    "takeaway": "Double-digit hauls (10+ pts) occur in 4.6% of player appearances this season (475/10338).",
+    "action_hint": "Price in haul probability for captain picks",
+    "benchmark_value": 15.0,
+    "gw_coverage": "season-to-date",
+    "player_ids": [],
+    "team_ids": [],
+    "player_names": [],
+    "team_names": [],
+    "signal_label": "Weak signal"
   },
   {
     "id": "cap_top3_xpts_share",
     "category": "captaincy",
-    "statement": "The top 3 captaincy options account for 3.0% of available xPts this GW (from 330 eligible players).",
+    "statement": "The top 3 captaincy options account for 3.0% of available xPts this GW (from 331 eligible players).",
     "confidence_pct": 3.0,
     "sample_n": 3,
-    "sample_total": 330
+    "sample_total": 331,
+    "title": "Captain Concentration Risk",
+    "metric_value": 3.0,
+    "metric_label": "xPts share of top-3 captaincy options",
+    "takeaway": "The top three captaincy options account for 3.0% of all available xPts this GW (from 331 eligible players).",
+    "action_hint": "Spread captain risk across teams",
+    "benchmark_value": 33.0,
+    "gw_coverage": "this GW",
+    "player_ids": [
+      430,
+      82,
+      411
+    ],
+    "team_ids": [],
+    "player_names": [
+      "Haaland",
+      "Semenyo",
+      "O'Reilly"
+    ],
+    "team_names": [],
+    "signal_label": "Weak signal"
   },
   {
     "id": "def_cs_rate_top6_vs_rest",
@@ -45,7 +129,33 @@
     "statement": "Top-6 teams kept clean sheets in 31.6% of their finished appearances (66/209).",
     "confidence_pct": 31.6,
     "sample_n": 66,
-    "sample_total": 209
+    "sample_total": 209,
+    "title": "Top Team Clean Sheets",
+    "metric_value": 31.6,
+    "metric_label": "top-6 CS rate",
+    "takeaway": "The league's top six teams keep clean sheets 31.6% of the time — 66 from 209 appearances.",
+    "action_hint": "Prioritise top-six defence assets",
+    "benchmark_value": 35.0,
+    "gw_coverage": "GW1–35",
+    "player_ids": [],
+    "team_ids": [
+      1,
+      2,
+      4,
+      12,
+      13,
+      14
+    ],
+    "player_names": [],
+    "team_names": [
+      "ARS",
+      "AVL",
+      "BOU",
+      "LIV",
+      "MCI",
+      "MUN"
+    ],
+    "signal_label": "Regression risk"
   },
   {
     "id": "def_cs_home_vs_away",
@@ -53,7 +163,19 @@
     "statement": "Home teams keep clean sheets in 28.4% of finished fixtures (99/349), away teams in 23.5%.",
     "confidence_pct": 28.4,
     "sample_n": 99,
-    "sample_total": 349
+    "sample_total": 349,
+    "title": "Home Clean Sheet Edge",
+    "metric_value": 28.4,
+    "metric_label": "CS rate at home",
+    "takeaway": "Home defenders keep clean sheets 28.4% of the time — 4.9pp more than away sides.",
+    "action_hint": "Target home defenders in good runs",
+    "benchmark_value": 25.0,
+    "gw_coverage": "GW1–35",
+    "player_ids": [],
+    "team_ids": [],
+    "player_names": [],
+    "team_names": [],
+    "signal_label": "Regression risk"
   },
   {
     "id": "def_cs_streak_ge2",
@@ -61,15 +183,51 @@
     "statement": "1 of 20 teams are on a clean-sheet streak of 2 or more fixtures (5.0%).",
     "confidence_pct": 5.0,
     "sample_n": 1,
-    "sample_total": 20
+    "sample_total": 20,
+    "title": "Active Clean Sheet Streaks",
+    "metric_value": 5.0,
+    "metric_label": "teams on 2+ CS streak",
+    "takeaway": "1 of 20 PL teams are riding a clean-sheet streak of two or more fixtures right now.",
+    "action_hint": "Ride hot defensive streaks",
+    "benchmark_value": 20.0,
+    "gw_coverage": "GW1–35",
+    "player_ids": [],
+    "team_ids": [],
+    "player_names": [],
+    "team_names": [],
+    "signal_label": "Regression risk"
   },
   {
     "id": "player_diff_count",
     "category": "player",
-    "statement": "88 of 274 regular starters (32.1%) are differentials — high xPts with low ownership.",
-    "confidence_pct": 32.1,
-    "sample_n": 88,
-    "sample_total": 274
+    "statement": "87 of 274 regular starters (31.8%) are differentials — high xPts with low ownership.",
+    "confidence_pct": 31.8,
+    "sample_n": 87,
+    "sample_total": 274,
+    "title": "Differential Count",
+    "metric_value": 31.8,
+    "metric_label": "starters flagged differential",
+    "takeaway": "87 of 274 regular starters are differentials — high xPts with low ownership.",
+    "action_hint": "Check ownership before buying differentials",
+    "benchmark_value": 10.0,
+    "gw_coverage": "GW1–35",
+    "player_ids": [
+      17,
+      26,
+      725,
+      32,
+      50
+    ],
+    "team_ids": [],
+    "player_names": [
+      "Ødegaard",
+      "Zubimendi",
+      "Hincapie",
+      "Martinez",
+      "Buendía"
+    ],
+    "team_names": [],
+    "signal_label": "Trap risk"
   },
   {
     "id": "player_sell_signal_count",
@@ -77,7 +235,31 @@
     "statement": "7 of 274 regular starters (2.6%) carry a SELL signal — actual returns outpace xG+xA, regression likely.",
     "confidence_pct": 2.6,
     "sample_n": 7,
-    "sample_total": 274
+    "sample_total": 274,
+    "title": "Sell Signal Count",
+    "metric_value": 2.6,
+    "metric_label": "starters with SELL signal",
+    "takeaway": "7 of 274 regular starters carry a SELL signal — returns outpace xG+xA, regression likely.",
+    "action_hint": "Review sell signals before deadline",
+    "benchmark_value": 15.0,
+    "gw_coverage": "GW1–35",
+    "player_ids": [
+      311,
+      698,
+      450,
+      515,
+      516
+    ],
+    "team_ids": [],
+    "player_names": [
+      "Beto",
+      "Okafor",
+      "Cunha",
+      "Gibbs-White",
+      "Hudson-Odoi"
+    ],
+    "team_names": [],
+    "signal_label": "Trap risk"
   },
   {
     "id": "player_buy_signal_count",
@@ -85,6 +267,24 @@
     "statement": "2 of 274 regular starters (0.7%) carry a BUY signal — actual returns trail xG+xA over the last 5 GW.",
     "confidence_pct": 0.7,
     "sample_n": 2,
-    "sample_total": 274
+    "sample_total": 274,
+    "title": "Buy Signal Count",
+    "metric_value": 0.7,
+    "metric_label": "starters with BUY signal",
+    "takeaway": "2 of 274 regular starters carry a BUY signal — returns trail xG+xA over the last 5 GWs.",
+    "action_hint": "Scan buy signals for next transfer",
+    "benchmark_value": 15.0,
+    "gw_coverage": "GW1–35",
+    "player_ids": [
+      225,
+      235
+    ],
+    "team_ids": [],
+    "player_names": [
+      "James",
+      "Palmer"
+    ],
+    "team_names": [],
+    "signal_label": "Trap risk"
   }
 ]
