@@ -1,8 +1,11 @@
 'use client'
 
+import { useMemo } from 'react'
 import { useSetPieces } from '@/lib/hooks/useSetPieces'
+import { usePlayers } from '@/lib/hooks/usePlayers'
 import type { SetPieceTaker } from '@/lib/types'
 import { SetPieceChangeAlert } from './SetPieceChangeAlert'
+import { RotationRiskBadge } from '@/components/shared/RotationRiskBadge'
 
 function TakerRow({ label, taker }: { label: string; taker: SetPieceTaker }) {
   const name = taker.name || '\u2014'
@@ -23,6 +26,20 @@ function TakerRow({ label, taker }: { label: string; taker: SetPieceTaker }) {
 
 export function SetPieceTakerPanel() {
   const { data, isLoading, error } = useSetPieces()
+  const { data: playersData } = usePlayers()
+
+  // Phase 80 GWI-01 (D-04, D-16): derive team-level rotation risk by aggregating
+  // any-player-on-this-team-flagged. Players with rotation_risk=true imply the
+  // team has a cup/European fixture within 3 days of an upcoming PL fixture.
+  const rotationRiskByTeam = useMemo(() => {
+    const map: Record<number, boolean> = {}
+    for (const p of playersData ?? []) {
+      if (p.rotation_risk) {
+        map[p.team] = true
+      }
+    }
+    return map
+  }, [playersData])
 
   return (
     <section className="space-y-4">
@@ -61,7 +78,10 @@ export function SetPieceTakerPanel() {
                 key={team.team_id}
                 className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3"
               >
-                <p className="text-sm font-semibold mb-1">{team.team_short_name}</p>
+                <p className="text-sm font-semibold mb-1 flex items-center gap-2">
+                  <span>{team.team_short_name}</span>
+                  <RotationRiskBadge rotationRisk={rotationRiskByTeam[team.team_id] ?? false} />
+                </p>
                 <TakerRow label="Penalties" taker={team.penalty_taker} />
                 <TakerRow label="Direct FK" taker={team.fk_taker} />
                 <TakerRow label="Corners" taker={team.corner_taker} />
