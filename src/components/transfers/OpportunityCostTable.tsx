@@ -7,6 +7,7 @@
 
 import type { OCSRow, OCSRowKind } from '@/lib/opportunity-cost'
 import type { OptimiserHorizon } from '@/lib/types'
+import { RotationRiskBadge } from '@/components/shared/RotationRiskBadge'
 
 interface OpportunityCostTableProps {
   rows: OCSRow[]
@@ -96,6 +97,7 @@ function PlayerMoveCell({ row }: { row: OCSRow }) {
           <span className="text-zinc-500 dark:text-zinc-400">→</span>
           <span className="text-zinc-500 dark:text-zinc-400 text-xs">Buy</span>
           <span className="font-medium">{t.buy.web_name}</span>
+          <RotationRiskBadge rotationRisk={t.buy.rotation_risk ?? false} />
         </div>
       ))}
     </div>
