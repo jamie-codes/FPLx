@@ -771,8 +771,8 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   6. Each card has a hover/expand area revealing methodology: sample size, GWs covered, confidence rationale — so the user can verify the reasoning without leaving the page
 **Plans**: 4 plans (3 waves)
   **Wave 1** *(parallel — disjoint files)*
-  - [ ] 079-01-PLAN.md — Pipeline extension: `_signal_label()` helper + 11 new structured fields per insight + `pipeline/tests/test_insights.py` + cache regeneration
-  - [ ] 079-02-PLAN.md — TypeScript `Insight` interface + `SignalLabel` union + `--nav-height: 96px` token in globals.css
+  - [x] 079-01-PLAN.md — Pipeline extension: `_signal_label()` helper + 11 new structured fields per insight + `pipeline/tests/test_insights.py` + cache regeneration (2026-05-08)
+  - [x] 079-02-PLAN.md — TypeScript `Insight` interface + `SignalLabel` union + `--nav-height: 96px` token in globals.css (2026-05-08)
   **Wave 2** *(blocked on Wave 1 completion)*
   - [ ] 079-03-PLAN.md — InsightsTab rewrite: 5-zone InsightCard, CollapsibleSection, sticky DecisionSummary panel, SIGNAL_CLASSES; component test rewrite
   **Wave 3** *(blocked on Wave 2 completion)*
