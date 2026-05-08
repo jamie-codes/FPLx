@@ -14,7 +14,7 @@
 - ✅ **v1.9 Competitive Intelligence** — Phases 56-60 (shipped 2026-05-04)
 - **v1.11 Insights & Infrastructure** — Phases 66-73 (Phases 66-71 planned; 72-73 complete 2026-05-05)
 - **v1.12 Modelling & Refinement** — Phases 61-65 (carry-forward) + 74-77 (in progress)
-- **v1.13 Analytics UX & Intelligence** — Phases 78-81 (planned)
+- ✅ **v1.13 Analytics UX & Intelligence** — Phases 78-81 (complete 2026-05-08)
 
 ## Phases
 
