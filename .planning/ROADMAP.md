@@ -808,7 +808,12 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
   1. Each Set Piece taker box uses the team's crest as a low-opacity background or box header element — the crest is visible behind or above the content without obscuring player names or taker roles
   2. Fixture Heat Map row headers display the club crest (small, ~24px) alongside the team abbreviation so the team is identifiable without reading the text
   3. A shared `useTeamBadge(teamCode)` hook or utility resolves the PL badge URL for any team code and is used as the single source of truth for all crest placements across the app; graceful fallback to a coloured initial-letter swatch when the image fails to load
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 081-01-PLAN.md — useTeamBadge hook + unit tests (SHD-03, Wave 1)
+- [ ] 081-02-PLAN.md — SetPieceTakerPanel ghost watermark + sub-component extraction (SHD-01, Wave 2)
+- [ ] 081-03-PLAN.md — FixtureHeatMap row header crest + HeatMapRow extraction (SHD-02, Wave 2)
+- [ ] 081-04-PLAN.md — LineupTab kit-error state migration to useTeamBadge (SHD-03 cleanup, Wave 3, optional)
 **UI hint**: yes
 
 ---

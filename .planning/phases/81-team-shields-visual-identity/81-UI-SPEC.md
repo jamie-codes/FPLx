@@ -56,7 +56,7 @@ Exceptions:
 | Body | 14px (text-sm) | 400 (normal) | 1.5 |
 | Label / Abbrev | 12px (text-xs) | 400 (font-mono) | 1 (leading-none, single-line data) |
 | Card heading | 14px (text-sm) | 600 (font-semibold) | 1.25 |
-| Fallback initial | 12px (text-xs) | 700 (font-bold) | 1 (single character, vertically centred) |
+| Fallback initial | 12px (text-xs) | 600 (font-semibold) | 1 (single character, vertically centred) |
 
 Notes:
 - All label/abbrev text in FixtureHeatMap uses font-mono (Geist Mono) — carry-forward from existing `<th>` and `<td>` class conventions.
@@ -182,7 +182,7 @@ className="px-2 py-1 text-left font-mono text-xs w-16 h-8"
   <span className="flex items-center gap-1">
     {showFallback ? (
       <span
-        className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0"
+        className="w-5 h-5 rounded-full flex items-center justify-center text-white font-semibold text-xs shrink-0"
         style={{ background: fallbackColour }}
         aria-label={`${t.team_short_name} crest fallback`}
       >
@@ -216,7 +216,7 @@ Two size variants, one per placement:
 
 | Placement | Size | Classes |
 |-----------|------|---------|
-| Heat map row header | 20px × 20px | `w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0` |
+| Heat map row header | 20px × 20px | `w-5 h-5 rounded-full flex items-center justify-center text-white font-semibold text-xs shrink-0` |
 | Ghost watermark (SetPieceTakerPanel) | NOT shown as swatch (ghost renders nothing on fallback) | n/a |
 
 **Ghost fallback rule:** No swatch at the ghost position. A coloured circle with an initial letter at opacity-10 would be unreadable and visually incorrect. Omit the element entirely when `showFallback` is true in the ghost context.
