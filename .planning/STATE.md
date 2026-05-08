@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.12
-milestone_name: Modelling & Refinement — Carry-forward
-status: in_progress
+milestone: v1.13
+milestone_name: Analytics UX & Intelligence
+status: planned
 last_updated: "2026-05-08T00:00:00.000Z"
-last_activity: 2026-05-08 -- Phase 78 all plans complete (078-01/02/03); verifying
+last_activity: 2026-05-08 -- Phase 78 complete (design tokens, sticky pill nav, LastUpdated badge, MobileNav tokens)
 progress:
   total_phases: 28
-  completed_phases: 27
+  completed_phases: 28
   total_plans: 84
-  completed_plans: 81
-  percent: 96
+  completed_plans: 84
+  percent: 100
 ---
 
 # Project State
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-04 — v1.10 started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.10 Modelling & Trust — Monte Carlo simulator, calibration charts, model versioning, sensitivity analysis, rejection explainer
+**Current focus:** v1.13 Analytics UX & Intelligence — insight card redesign, table density/readability, team shields, visual identity
 
 ## Current Position
 
-Phase: 78 — UI Visual Foundation (ready to execute)
-Plan: 3 of 3 plans — all complete
-Status: Phase verifying — all 3 plans executed; running verification
-Last activity: 2026-05-08 -- Phase 78 planned (3 plans: 078-01 globals.css Wave 1, 078-02 page.tsx Wave 2, 078-03 LastUpdated+MobileNav Wave 2)
+Phase: 79 — Insight Card Redesign (next up)
+Plan: 0 of ? plans — not started
+Status: Phase 78 complete — ready to discuss/plan Phase 79
+Last activity: 2026-05-08 -- Phase 78 complete (CSS token foundation, sticky pill nav, LastUpdated badge, MobileNav tokens)
 
 ## Performance Metrics
 

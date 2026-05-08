@@ -744,14 +744,18 @@ _v1.9 phase details archived to `.planning/milestones/v1.9-ROADMAP.md`_
 **Goal**: Establish a coherent design system — color tokens, typography, and navigation chrome — that makes the app feel like a polished analytics product rather than a data debug view
 **Depends on**: Phase 77 (v1.12 complete)
 **Requirements**: VIS-01, VIS-02, VIS-03, VIS-04, VIS-05
+**Completion date**: 2026-05-08
 **Success Criteria** (what must be TRUE):
   1. CSS custom properties define a complete light/dark color token set (background, surface, elevated surface, text, muted, border, primary accent, secondary accent, positive/warning/negative) — no hardcoded hex values remain in core layout or card components
   2. App-wide font is Inter or Geist; all numeric data columns use `font-variant-numeric: tabular-nums` so values align vertically in tables
   3. Section tabs (Analyse/Plan/Squad) and sub-tabs render as filled pills with a clearly distinguished active state; navigation is sticky on scroll
   4. A "Last updated X ago" data freshness badge appears in the nav area on every section; badge colour shifts amber when data is >2h stale
   5. Light mode background is softened to off-white (#F7F8FC range); dark mode card background is deep navy (#111827 range); card borders are visible and distinct from background in both modes
-**Plans**: 3 (Wave 1: 078-01 globals.css tokens ✓; Wave 2: 078-02 page.tsx pill nav ✓, 078-03 LastUpdated + MobileNav ✓)
-**Status**: Complete (3/3 plans)
+**Plans**: 3 (all complete)
+  - [x] 078-01-PLAN.md — VIS-01/02/05: full CSS token set in globals.css (11 tokens, @theme inline wiring, Arial removed, tabular-nums)
+  - [x] 078-02-PLAN.md — VIS-03/04: sticky pill nav in page.tsx (rounded-full buttons, bg-surface/95 wrapper, LastUpdated in nav row)
+  - [x] 078-03-PLAN.md — VIS-03/04: LastUpdated span pill badge + MobileNav token alignment
+**Status**: ✅ Complete (2026-05-08)
 **UI hint**: yes
 
 ### Phase 79: Insight Card Redesign
