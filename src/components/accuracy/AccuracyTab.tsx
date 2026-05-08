@@ -2,6 +2,7 @@
 
 import { Fragment, useMemo, useState } from 'react'
 import { useAccuracy } from '@/lib/hooks/useAccuracy'
+import { useDataHealth } from '@/lib/hooks/useDataHealth'
 import type {
   AccuracyBacktest,
   AccuracyHaulter,
@@ -9,6 +10,8 @@ import type {
   VersionGateFlags,
   CalibrationBucket,
   CalibrationData,
+  DataHealth,         // Phase 82 DH-02
+  SanityCheck,        // Phase 82 DH-02
 } from '@/lib/types'
 import {
   ComposedChart,
@@ -34,6 +37,37 @@ function getHitRateTier(rate: number): Tier {
   if (rate >= 0.50) return 'HIGH'
   if (rate >= 0.30) return 'MEDIUM'
   return 'LOW'
+}
+
+// ============================================================================
+// Phase 82 DH-02: Data Health Panel helpers
+// ============================================================================
+
+const SANITY_CHECK_LABELS: Record<SanityCheck['id'], string> = {
+  player_count:         'Player count',
+  missing_player_delta: 'Missing player delta',
+  understat_null_pct:   'Understat null %',
+  pipeline_stale:       'Pipeline stale',
+}
+
+const RED_PILL_CLS = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+
+function rollUpStatus(checks: SanityCheck[]): 'ok' | 'warn' | 'error' {
+  if (checks.some(c => c.status === 'error')) return 'error'
+  if (checks.some(c => c.status === 'warn'))  return 'warn'
+  return 'ok'
+}
+
+function formatSanityValue(check: SanityCheck): string {
+  if (typeof check.value === 'boolean') return check.value ? 'true' : 'false'
+  if (check.id === 'understat_null_pct') return `${check.value.toFixed(2)}%`
+  return String(check.value)
+}
+
+function SanityIcon({ status }: { status: 'ok' | 'warn' | 'error' }) {
+  if (status === 'ok')   return <span className="text-green-600 dark:text-green-400" aria-label="ok">✓</span>
+  if (status === 'warn') return <span className="text-amber-600 dark:text-amber-400" aria-label="warning">⚠</span>
+  return <span className="text-red-600 dark:text-red-400" aria-label="error">✗</span>
 }
 
 function HitRateBadge({ rate }: { rate: number }) {
@@ -657,28 +691,113 @@ function PlayerDeltaTable({ data }: { data: AccuracyBacktest }) {
   )
 }
 
+// ============================================================================
+// Phase 82 DH-02: Data Health Panel
+// ============================================================================
+
+function DataHealthPanel() {
+  const { data, isLoading, error } = useDataHealth()
+  const [isExpanded, setIsExpanded] = useState<boolean>(false)
+  // NOTE: NO useEffect on `data` resetting isExpanded — Pitfall 6.
+  // The 60s refetchInterval re-renders this component but state is preserved.
+
+  let pillText: string
+  let pillCls: string
+  let canExpand: boolean
+
+  if (isLoading && !data) {
+    pillText = 'Loading…'
+    pillCls = TIER_CLASSES.LOW
+    canExpand = false
+  } else if (error || !data) {
+    pillText = 'Unavailable'
+    pillCls = RED_PILL_CLS
+    canExpand = false
+  } else {
+    const overall = rollUpStatus(data.sanity_checks)
+    if (overall === 'error') { pillText = 'Errors';   pillCls = RED_PILL_CLS }
+    else if (overall === 'warn')  { pillText = 'Warnings'; pillCls = TIER_CLASSES.MEDIUM }
+    else                          { pillText = 'All OK';   pillCls = TIER_CLASSES.HIGH }
+    canExpand = true
+  }
+
+  return (
+    <div data-testid="data-health-panel">
+      <button
+        type="button"
+        aria-expanded={canExpand ? isExpanded : false}
+        aria-disabled={!canExpand}
+        disabled={!canExpand}
+        onClick={() => setIsExpanded(e => !e)}
+        className="flex items-center gap-2 w-full text-left min-h-[44px]"
+      >
+        <h2 className="text-lg font-semibold">Data Health</h2>
+        <span className={`inline-block text-xs rounded px-2 py-0.5 ${pillCls}`}>
+          {pillText}
+        </span>
+        {canExpand && (
+          <span aria-hidden="true">{isExpanded ? '▴' : '▾'}</span>
+        )}
+      </button>
+
+      {isExpanded && data && (
+        <table className={TABLE_CLS}>
+          <thead>
+            <tr>
+              <th scope="col" className={TH_CLS}>Check</th>
+              <th scope="col" className={TH_CLS}>Status</th>
+              <th scope="col" className={TH_CLS}>Value</th>
+              <th scope="col" className={TH_CLS}>Threshold</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.sanity_checks.map(check => (
+              <tr key={check.id} className={TR_CLS}>
+                <td className={TD_CLS}>{SANITY_CHECK_LABELS[check.id]}</td>
+                <td className={TD_CLS}><SanityIcon status={check.status} /></td>
+                <td className={TD_CLS}>{formatSanityValue(check)}</td>
+                <td className={TD_CLS}>{check.threshold}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  )
+}
+
 export function AccuracyTab() {
   const { data, isLoading, error } = useAccuracy()
 
+  // DH-02 D-10/D-11: panel always renders, regardless of useAccuracy state.
+  const panel = <DataHealthPanel />
+
   if (isLoading) {
     return (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">
-        Loading accuracy data…
-      </p>
+      <section className="mt-6 space-y-8" aria-label="Projection accuracy">
+        {panel}
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">
+          Loading accuracy data…
+        </p>
+      </section>
     )
   }
 
   if (error) {
     return (
-      <p className="text-sm text-red-600 dark:text-red-400 py-4">
-        Failed to load accuracy data. Run the pipeline and refresh.
-      </p>
+      <section className="mt-6 space-y-8" aria-label="Projection accuracy">
+        {panel}
+        <p className="text-sm text-red-600 dark:text-red-400 py-4">
+          Failed to load accuracy data. Run the pipeline and refresh.
+        </p>
+      </section>
     )
   }
 
   if (!data) {
     return (
-      <section className="mt-6 space-y-2" aria-label="Accuracy not available">
+      <section className="mt-6 space-y-8" aria-label="Projection accuracy">
+        {panel}
         <h2 className="text-lg font-semibold">No accuracy data yet</h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Run the pipeline to generate backtest data.
@@ -689,6 +808,7 @@ export function AccuracyTab() {
 
   return (
     <section className="mt-6 space-y-8" aria-label="Projection accuracy">
+      {panel}
       {data.versions && data.versions.length >= 1 && <VersionHistoryTable data={data} />}
       {data.calibration && <CalibrationSection data={data} />}
       <GwSummaryTable data={data} />
