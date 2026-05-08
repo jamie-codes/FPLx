@@ -7,7 +7,8 @@ import { optimiseLineup } from '@/lib/optimise-lineup'
 import { isLegalSwap, applySwap } from '@/lib/lineup-swap'
 import type { OptimisedLineup, MergedPlayer } from '@/lib/types'
 import { teamKitUrl } from '@/lib/fpl-images'
-import { TEAM_BADGE_CODE, getTeamColour } from '@/lib/team-colours'
+import { TEAM_BADGE_CODE } from '@/lib/team-colours'
+import { useTeamBadge } from '@/lib/hooks/useTeamBadge'
 
 // Position codes (mirrors src/lib/optimise-lineup.ts internals)
 const GK = 1
@@ -41,10 +42,8 @@ function PlayerCard({
   id, player, isPending, isLegalTarget, isIncompatible, isCaptain, isViceCaptain,
   onTap, onSetCaptain, onSetVc, canSetCaptain, canSetVc,
 }: PlayerCardProps) {
-  const [kitError, setKitError] = useState(false)
+  const { onError, showFallback, fallbackColour } = useTeamBadge(player.team_short_name)
   const teamCode = TEAM_BADGE_CODE[player.team_short_name]
-  const teamColour = getTeamColour(player.team_short_name)
-  const showFallback = !teamCode || kitError
 
   const wrapperCls = 'relative flex flex-col items-stretch w-full max-w-[96px] sm:max-w-[112px] gap-1'
   const bodyBaseCls = 'relative flex flex-col items-stretch justify-center min-h-[64px] sm:min-h-[72px] w-full rounded border bg-zinc-50 dark:bg-zinc-800 px-2 py-2 text-left transition-shadow'
@@ -81,7 +80,7 @@ function PlayerCard({
               aria-label={`${player.team_short_name} team colour`}
               data-testid={`pitch-card-kit-fallback-${id}`}
               className="w-6 h-6 sm:w-7 sm:h-7 rounded shrink-0"
-              style={{ background: teamColour.primary }}
+              style={{ background: fallbackColour }}
             />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
@@ -92,7 +91,7 @@ function PlayerCard({
               height={28}
               data-testid={`pitch-card-kit-${id}`}
               className="w-6 h-6 sm:w-7 sm:h-7 object-contain shrink-0"
-              onError={() => setKitError(true)}
+              onError={onError}
             />
           )}
           <div className="flex flex-col min-w-0 flex-1">
