@@ -128,6 +128,10 @@ def run(dry_run: bool = False):
     source = _get_source()
 
     try:
+        # DH-01 (D-12): timestamps accumulator — recorded at write-time after each tracked save().
+        from datetime import datetime as _dt_dh, timezone as _tz_dh
+        timestamps: dict[str, str] = {}
+
         # Test hook: simulate failure before fetching (for testing stale-cache path)
         if os.getenv('MOCK_FAIL_VALIDATION', '').lower() == 'true':
             raise RuntimeError("Mock validation failure for testing")
@@ -210,15 +214,18 @@ def run(dry_run: bool = False):
         )
         merged = compute_simulations(merged, xmins_v2_enabled)
         save('merged_players.json', merged)
+        timestamps['merged_players.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
         save('captain_picks.json', captain_picks)  # Phase 31 CAP-03/CAP-04
 
         # Phase 80 GWI-01 (D-02/D-03): rotation_risk flag per player from cup-fixture clash.
         merged = _apply_rotation_risk(merged, fixtures, EUROPEAN_CUP_DATES)
         save('merged_players.json', merged)  # re-save to persist rotation_risk field
+        timestamps['merged_players.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
 
         # Phase 33 INS-02/03/04 — pattern statements with confidence weights
         insights = compute_insights(merged, bootstrap, fixtures, summaries, finished_gws)
         save('insights.json', insights)
+        timestamps['insights.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
         print(f"Insights computed: {len(insights)} pattern(s) emitted")
 
         # Phase 80 GWI-02/GWI-03/GWI-04 (D-05): GW-specific intelligence cards
@@ -226,6 +233,7 @@ def run(dry_run: bool = False):
             merged, bootstrap, fixtures, summaries, finished_gws, EUROPEAN_CUP_DATES
         )
         save('gw_intel.json', gw_intel)
+        timestamps['gw_intel.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
         print(f"GW intel computed: {len(gw_intel.get('cards', []))} card(s) emitted")
 
         # SP-02: Set-piece snapshot diff
@@ -288,6 +296,7 @@ def run(dry_run: bool = False):
         print("Computing accuracy backtest...")
         backtest_data = compute_accuracy_backtest(summaries, finished_gws, bootstrap, fixtures, cache_dir=cache_dir)
         save('accuracy_backtest.json', backtest_data)
+        timestamps['accuracy_backtest.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
         print(f"Accuracy backtest: {len(backtest_data.get('gws_covered', []))} GWs covered, "
               f"{len(backtest_data.get('haulters', []))} haulter entries")
 
@@ -370,8 +379,19 @@ def run(dry_run: bool = False):
             'merged_count': len(merged),
         }
         save('last_updated.json', last_updated)
+        timestamps['last_updated.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
 
         print(f"Pipeline complete: {player_count} players, {team_count} teams, {fixture_count} fixtures, {len(merged)} merged")
+
+        # DH-01: data_health.json is the LAST artifact written (after every other save()).
+        # Wrapped in nested try/except (mirrors prose_summary at line 351) so a compute
+        # error cannot poison run.py and falsely mark last_updated.json as stale (Pitfall 1).
+        try:
+            from data_health import compute_data_health
+            compute_data_health(merged, timestamps, cache_dir, pipeline_stale=False)
+            print("Data health written.")
+        except Exception as dh_exc:
+            print(f"[data_health] non-fatal error: {dh_exc}", file=sys.stderr)
 
     except Exception as exc:
         # Stale-cache fallback (per D-06): preserve prior cache, mark as stale
