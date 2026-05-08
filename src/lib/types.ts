@@ -202,6 +202,10 @@ export interface MergedPlayer {
   // Routes: pen taker, direct FK taker, corner taker, above-median xG/90 in team,
   // above-median xA/90 in team. Optional during pipeline rollout; absent on pre-Phase-76 cache.
   routes_to_points?: number
+  // Phase 80 GWI-01 (D-04): rotation risk flag — true when team has a European/cup
+  // fixture within 3 days of an upcoming PL fixture. Computed in run.py post-merge step
+  // by _apply_rotation_risk(). Optional during pipeline rollout; UI defaults to false.
+  rotation_risk?: boolean
 }
 
 // Optimiser horizon (Phase 43 OPT-01..OPT-05) — maps to xPts_1gw / xPts_3gw / xPts_5gw fields
@@ -622,6 +626,67 @@ export interface Insight {
   team_names: string[]                                    // short_name per team_id — embedded by pipeline
   // Signal label (D-04/D-05) — emitted by pipeline, not derived client-side
   signal_label: SignalLabel
+}
+
+// Phase 80 (GWI-02..GWI-04) — GW-specific intelligence cards
+// Source: pipeline/gw_intel.py compute_gw_intel() output schema
+// The pipeline emits a wrapper object: { cards: GWInsight[], team_stakes: [...], generated_at: string }
+
+export type TableStakesLabel =
+  | 'title battle'
+  | 'European chase'
+  | 'relegation battle'
+  | 'nothing-to-play-for'
+
+export interface PositionOpportunityCard {
+  type: 'position_opportunity'
+  id: string
+  gw_label: string
+  position: 'GK' | 'DEF' | 'MID' | 'FWD'
+  narrative: string
+}
+
+export interface RotationRiskCard {
+  type: 'rotation_risk'
+  id: string
+  gw_label: string
+  team_id: number
+  team_short_name: string
+  competition: string
+  table_stakes_label: TableStakesLabel | null
+}
+
+export interface DGWBGWCard {
+  type: 'dgw_bgw'
+  id: string
+  gw_label: string
+  team_id: number
+  team_short_name: string
+  is_dgw: boolean
+}
+
+export interface FixtureRunCard {
+  type: 'fixture_run'
+  id: string
+  gw_label: string
+  player_id: number
+  web_name: string
+  narrative: string
+  gw_xpts: number[]
+  gw_numbers: number[]
+  is_dgw: boolean[]
+}
+
+export type GWInsight =
+  | PositionOpportunityCard
+  | RotationRiskCard
+  | DGWBGWCard
+  | FixtureRunCard
+
+export interface GWIntelResponse {
+  cards: GWInsight[]
+  team_stakes: Array<{ team_id: number; team_short_name: string; label: TableStakesLabel }>
+  generated_at: string
 }
 
 // Phase 58 (ML-01..ML-08) — Mini-League Rival Tracker.
