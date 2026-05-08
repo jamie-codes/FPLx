@@ -31,7 +31,12 @@ export async function GET() {
       status: 200,
       headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
     })
-  } catch {
+  } catch (err) {
+    const isNotFound =
+      err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT'
+    if (isNotFound) {
+      return Response.json({ error: 'GW intel not available' }, { status: 404 })
+    }
     return Response.json({ error: 'Failed to load GW insights' }, { status: 500 })
   }
 }
