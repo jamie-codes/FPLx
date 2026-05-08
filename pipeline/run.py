@@ -23,6 +23,7 @@ from insights import compute_insights
 from gw_intel import compute_gw_intel, _apply_rotation_risk
 from european_cup_dates import EUROPEAN_CUP_DATES
 from accuracy import compute_accuracy_backtest, build_predictions_snapshot
+from data_health import _sanitize_error
 
 
 def _get_cache_dir() -> str:
@@ -411,14 +412,14 @@ def run(dry_run: bool = False):
                 last_updated = {'last_updated': timestamp, 'source': source}
 
             last_updated['stale'] = True
-            last_updated['error_message'] = str(exc)
+            last_updated['error_message'] = _sanitize_error(exc)
         else:
             # First-ever run failed — write minimal stale record
             last_updated = {
                 'last_updated': timestamp,
                 'stale': True,
                 'source': source,
-                'error_message': str(exc),
+                'error_message': _sanitize_error(exc),
             }
 
         # Always write stale record locally (Blob may be unavailable)
