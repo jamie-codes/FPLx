@@ -408,7 +408,8 @@ def run(dry_run: bool = False):
             try:
                 with open(last_updated_path, 'r', encoding='utf-8') as f:
                     last_updated = json.load(f)
-            except Exception:
+            except Exception as read_exc:
+                print(f"[run] warning: could not read prior last_updated.json: {read_exc}", file=sys.stderr)
                 last_updated = {'last_updated': timestamp, 'source': source}
 
             last_updated['stale'] = True
