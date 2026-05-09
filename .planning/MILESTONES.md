@@ -1,14 +1,25 @@
 # Milestones
 
+## v1.15 Pipeline Intelligence (Shipped: 2026-05-09)
+
+**Phases completed:** 2 phantom phases (86, 87) — delivered early via v1.14 Phases 82 and 84; no additional implementation required
+**Timeline:** 2026-05-09 (pre-delivered)
+
+**Key accomplishments:** all requirements delivered as part of v1.14 (see below)
+
+---
+
 ## v1.14 Analytics Depth (Shipped: 2026-05-09)
 
-**Phases completed:** 2 phases (83, 85) of 4 planned; Phases 82 and 84 deferred to v1.15
-**Timeline:** 2026-05-09 (1 day)
+**Phases completed:** 4 phases (82, 83, 84, 85)
+**Timeline:** 2026-05-08 → 2026-05-09 (2 days)
 
 **Key accomplishments:**
 
-1. GK Save-Point Projections (Phase 83): Poisson-floor `E[floor(N/3)] = Σ P(N ≥ 3k)` formula; `save_pts_ev` per GK fixture; XPtsCell "Saves" row; `save_predictor_enabled` gate (default OFF); `var_saves ≈ E[saves]/9` sigma component — GK-01/GK-02/GK-03
-2. SPQ UI (Phase 85): DeliveryQualityBadge with Elite/Good/Weak tier in FK and Corner rows; `sp_tier` computed server-side via quartile logic in `/api/set-pieces` — SPQ-03
+1. Data Health Dashboard (Phase 82): `pipeline/data_health.py` computes per-artifact timestamps, player counts, null-xG metrics, 4-entry `sanity_checks[]`; `DataHealthPanel` in AccuracyTab with status pill + signal rows; `/api/data-health` route + `useDataHealth` (staleTime: 0, refetchInterval: 60s); `_sanitize_error()` strips env-var tokens and paths — DH-01/DH-02/DH-03
+2. GK Save-Point Projections (Phase 83): Poisson-floor `E[floor(N/3)] = Σ P(N ≥ 3k)` formula; `save_pts_ev` per GK fixture; XPtsCell "Saves" row; `save_predictor_enabled` gate (default OFF); `var_saves ≈ E[saves]/9` sigma component — GK-01/GK-02/GK-03
+3. Set-Piece Delivery Pipeline (Phase 84): `pipeline/set_piece_quality.py` scrapes Understat per-team shots, aggregates by `player_assisted`, applies EB shrinkage k=20; `sp_quality.json` with corner/FK danger scores; `sp_unmatched_count` surfaced in data_health sanity checks; try/except isolation — SPQ-01/SPQ-02
+4. SPQ UI (Phase 85): DeliveryQualityBadge with Elite/Good/Weak tier in FK and Corner rows; `sp_tier` computed server-side via quartile logic in `/api/set-pieces` — SPQ-03
 
 ---
 

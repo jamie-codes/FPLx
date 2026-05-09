@@ -668,17 +668,11 @@ Option C requires no prop change and is sufficient for correctness — but D-07 
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **elementType prop on XPtsCell**
-   - What we know: The current `XPtsCell` signature (lines 28-57) does not include `elementType` in its prop list
-   - What's unclear: Whether the column accessor at the call site can pass `element_type` from the `ScoredPlayer` row, and whether to add it as a prop or use Option C (skip the guard)
-   - Recommendation: Add `elementType?: number` prop to `XPtsCell` for full compliance with D-07; the column renderer has access to `row.original.element_type`
+1. **elementType prop on XPtsCell** — RESOLVED: Option A chosen. Add `elementType?: number` prop to `XPtsCell`; the column accessor passes `row.original.element_type`. Implemented in Plan 83-04 Task 1 Change 5.
 
-2. **save_pts: 0.0 vs omitting key in components**
-   - What we know: D-07 says "BGW GKs render save_pts = 0.0 with no breakdown row" — but also "pipeline omits the field when gate OFF or non-GK"
-   - What's unclear: Whether `_xpts_ngw` should always emit `save_pts: 0.0` in the components dict (for shape consistency) or omit it for non-GKs
-   - Recommendation: Initialize `save_pts: 0.0` in `first_gw_components` dict for shape consistency; the TypeScript `c.save_pts > 0` guard handles the no-row case
+2. **save_pts: 0.0 vs omitting key in components** — RESOLVED: Option A chosen. Initialize `save_pts: 0.0` in `first_gw_components` dict for shape consistency; TypeScript uses `c.save_pts > 0` guard for the render condition. Implemented in Plan 83-02 Task 1 Change 11.
 
 ---
 

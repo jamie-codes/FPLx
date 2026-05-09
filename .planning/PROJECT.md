@@ -22,13 +22,20 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
-## Current Milestone: v1.15 Pipeline Intelligence
+## Current Milestone: v1.16 Modelling & Trust
 
-**Goal:** Complete the two features deferred from v1.14 — pipeline observability via a Data Health Dashboard and set-piece delivery quality data via the SPQ pipeline scraper.
+**Goal:** Deepen forecast transparency and pipeline reliability — Monte Carlo uncertainty bands, calibration evidence, sensitivity flags, rejection reasons, automatic pipeline scheduling, lineup intelligence, a decision history backtester, and a set-piece delivery league table.
 
 **Target features:**
-- DH-01/02/03: Data Health Dashboard — `data_health.json` written last in `run.py` with per-file timestamps, player counts, null xG/xA counts, and sanity checks; collapsible panel in AccuracyTab; `/api/data-health` route + `useDataHealth` hook (staleTime: 0, refetchInterval: 60s)
-- SPQ-01/02: Set-piece delivery pipeline — Understat per-team shot events scraper (corner + direct-FK situations, grouped by `player_assisted`); `corner_danger_score`, `fk_danger_score`, `delivery_quality_rank`, `sp_sample_n` per taker written to `sp_quality.json` and merged into `SetPieceTakerPanel` data (SPQ-03 UI already ships in v1.14)
+- MC-01: Monte Carlo Simulator — per-player 5-GW point distributions, rank trajectory under uncertainty
+- CAL-01: Calibration Charts — xPts forecast accuracy vs actuals by GW and position
+- SENS-01: Sensitivity Analysis — fragility flags for players who collapse on start_prob or fixture drop
+- WHY-01: Rejection Explainer — plain-English reasons why the engine passed on a player
+- SCRAPER-01: FPL news scraper — injury/suspension flags in TransferPanel and GemTable
+- REFRESH-01: Event-based GitHub Actions triggers — deadline-aware automatic pipeline runs
+- DH-04: Cron history sparkline — last 7 pipeline run statuses in Data Health panel
+- BACK-01: Decision history backtester — GW-by-GW captain/transfer ROI vs optimal, regret score
+- SPQ-04: Set-piece league table — all 20 teams ranked by delivery quality in Set Pieces tab
 
 ## Planned (Deprioritised): v1.10 Modelling & Trust
 

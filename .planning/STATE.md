@@ -1,13 +1,13 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.15
-milestone_name: Pipeline Intelligence
+milestone: v1.16
+milestone_name: Modelling & Trust
 status: planning
 stopped_at: ""
 last_updated: "2026-05-09T00:00:00.000Z"
-last_activity: 2026-05-09 -- v1.15 roadmap created (Phases 86-87)
+last_activity: 2026-05-09 -- Milestone v1.16 started
 progress:
-  total_phases: 2
+  total_phases: 0
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-08 — v1.14 milestone started)
 
 ## Current Position
 
-Phase: 86 (planned) — Data Health Dashboard
+Phase: Not started (defining requirements)
 Plan: —
-Status: Roadmap complete; awaiting `/gsd-plan-phase 86`
-Last activity: 2026-05-09 — v1.15 roadmap created (Phases 86, 87)
+Status: Defining requirements
+Last activity: 2026-05-09 — Milestone v1.16 Modelling & Trust started
 
 ## Performance Metrics
 
