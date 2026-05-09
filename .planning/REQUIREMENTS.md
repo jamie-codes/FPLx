@@ -59,8 +59,8 @@
 
 | REQ-ID | Phase | Plan | Status |
 |--------|-------|------|--------|
-| DH-01  | TBD   | —    | pending |
-| DH-02  | TBD   | —    | pending |
-| DH-03  | TBD   | —    | pending |
-| SPQ-01 | TBD   | —    | pending |
-| SPQ-02 | TBD   | —    | pending |
+| DH-01  | 86    | —    | pending |
+| DH-02  | 86    | —    | pending |
+| DH-03  | 86    | —    | pending |
+| SPQ-01 | 87    | —    | pending |
+| SPQ-02 | 87    | —    | pending |

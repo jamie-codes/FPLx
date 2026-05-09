@@ -5,9 +5,9 @@ milestone_name: Pipeline Intelligence
 status: planning
 stopped_at: ""
 last_updated: "2026-05-09T00:00:00.000Z"
-last_activity: 2026-05-09 -- Milestone v1.15 started
+last_activity: 2026-05-09 -- v1.15 roadmap created (Phases 86-87)
 progress:
-  total_phases: 0
+  total_phases: 2
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-08 — v1.14 milestone started)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 86 (planned) — Data Health Dashboard
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-09 — Milestone v1.15 started
+Status: Roadmap complete; awaiting `/gsd-plan-phase 86`
+Last activity: 2026-05-09 — v1.15 roadmap created (Phases 86, 87)
 
 ## Performance Metrics
 
