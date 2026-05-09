@@ -29,6 +29,7 @@ export function XPtsCell({
   value,
   ceiling,
   components,
+  elementType,
   minsRisk,
   mins60Prob,
   window,
@@ -45,7 +46,9 @@ export function XPtsCell({
     cs_pts: number
     bonus_pts: number
     appearance_pts: number
+    save_pts?: number    // Phase 83 GK-02 — GK save-point EV; present and >0 only for GKs when gate ON
   } | undefined
+  elementType?: number   // Phase 83 GK-02 / D-07 — defense-in-depth render guard (1=GK)
   minsRisk?: MinsRisk
   mins60Prob?: number
   window: 1 | 3 | 5
@@ -81,8 +84,10 @@ export function XPtsCell({
 
   const c = components!
   // Total computed from components — NOT from xPts_1gw. Satisfies XPT-02 sum invariant.
+  // Phase 83 GK-02 / D-06 / D-08: cardTotal includes save_pts so the displayed Total
+  // matches xPts_1gw within 0.015 (Vitest invariant in XPtsCell-saves.test.tsx).
   const cardTotal = (
-    c.appearance_pts + c.goal_pts + c.assist_pts + c.cs_pts + c.bonus_pts
+    c.appearance_pts + c.goal_pts + c.assist_pts + c.cs_pts + c.bonus_pts + (c.save_pts ?? 0)
   ).toFixed(2)
 
   // Phase 61 MC-02 (D-13): show MC stats only when window===1 and all 4 MC props defined
@@ -92,11 +97,17 @@ export function XPtsCell({
     && p10Pts !== undefined
     && p90Pts !== undefined
 
+  // Phase 83 GK-02 / D-07: insert "Saves" row AFTER "Clean sheet" and BEFORE "Bonus"
+  // ONLY for GKs (elementType===1) when save_pts is present and > 0. BGW GKs have
+  // save_pts=0.0 -> row suppressed by the > 0 guard. Non-GKs blocked by elementType===1.
   const rows: [string, string][] = [
     ['Appearance', c.appearance_pts.toFixed(2)],
     ['Goals',      c.goal_pts.toFixed(2)],
     ['Assists',    c.assist_pts.toFixed(2)],
     ['Clean sheet', c.cs_pts.toFixed(2)],
+    ...(c.save_pts !== undefined && c.save_pts > 0 && elementType === 1
+      ? [['Saves', c.save_pts.toFixed(2)] as [string, string]]
+      : []),
     ['Bonus',      c.bonus_pts.toFixed(2)],
   ]
 
@@ -276,6 +287,7 @@ export function createColumns(onCompare: (player: ScoredPlayer) => void, gwN: nu
         value={info.getValue()}
         ceiling={info.row.original.xPts_ceiling_1gw}
         components={info.row.original.xPts_components_1gw ?? undefined}
+        elementType={info.row.original.element_type}
         minsRisk={info.row.original.mins_risk}
         mins60Prob={info.row.original.mins_60_prob}
         window={1}

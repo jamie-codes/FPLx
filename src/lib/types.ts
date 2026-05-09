@@ -159,6 +159,7 @@ export interface MergedPlayer {
     cs_pts: number
     bonus_pts: number
     appearance_pts: number    // Phase 48 XPT-01/XPT-02: start_prob × 2 per fixture
+    save_pts?: number         // Phase 83 GK-01 — GK Poisson-floor save EV; pipeline writes 0.0 for non-GK / gate-OFF, >0 for gate-ON GK only
   } | null
   // Regression signal (Phase 29 DATA-03, REG-01, REG-02).
   // Optional — absent when signal cannot be computed (player has <900 min in 5-GW window,
