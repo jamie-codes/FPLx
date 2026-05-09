@@ -140,11 +140,14 @@ export function GwReviewTab({ teamId, settledGws }: GwReviewTabProps) {
 
   // ───── Data-rendered branch (PGW-01 happy path) ─────
   const review: GwReview = data
-  const deltaIsOptimal = review.captain_delta === 0
+  const captainDelta = review.captain_delta ?? null
+  const deltaIsOptimal = captainDelta === 0
   const deltaLabel = deltaIsOptimal ? 'Optimal captain - no delta' : 'Captain delta'
-  const deltaValue = deltaIsOptimal
-    ? '0'
-    : `+${review.captain_delta}pts missed`
+  const deltaValue = captainDelta == null
+    ? '—'
+    : deltaIsOptimal
+      ? '0'
+      : `+${captainDelta}pts missed`
   const deltaClass = deltaIsOptimal
     ? 'text-green-600 dark:text-green-400'
     : 'text-amber-700 dark:text-amber-300'
@@ -180,7 +183,7 @@ export function GwReviewTab({ teamId, settledGws }: GwReviewTabProps) {
         <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
           {review.captain_name}
         </span>
-        {!deltaIsOptimal && (
+        {captainDelta != null && !deltaIsOptimal && (
           <span className="text-xs text-zinc-500 dark:text-zinc-400 ml-2">
             Optimal: {review.optimal_captain_name}
           </span>
