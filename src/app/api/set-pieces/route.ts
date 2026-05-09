@@ -72,6 +72,9 @@ export async function GET() {
   let payload: SetPieceChanges
   try {
     payload = JSON.parse(primaryRaw) as SetPieceChanges
+    if (!payload || !Array.isArray(payload.teams)) {
+      return Response.json({ error: 'Failed to load set-piece data' }, { status: 500 })
+    }
   } catch {
     return Response.json({ error: 'Failed to load set-piece data' }, { status: 500 })
   }
