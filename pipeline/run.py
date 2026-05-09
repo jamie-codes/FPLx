@@ -411,7 +411,8 @@ def run(dry_run: bool = False):
         # error cannot poison run.py and falsely mark last_updated.json as stale (Pitfall 1).
         try:
             from data_health import compute_data_health
-            compute_data_health(merged, timestamps, cache_dir, pipeline_stale=False)
+            compute_data_health(merged, timestamps, cache_dir, pipeline_stale=False,
+                                sp_unmatched_count=sp_unmatched_count)
             print("Data health written.")
         except Exception as dh_exc:
             print(f"[data_health] non-fatal error: {dh_exc}", file=sys.stderr)

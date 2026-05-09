@@ -175,3 +175,68 @@ def test_pipeline_stale_check(tmp_path):
     check_ok = next(c for c in result_ok['sanity_checks'] if c['id'] == 'pipeline_stale')
     assert check_ok['status'] == 'ok'
     assert check_ok['value'] is False
+
+
+# ------------------------------------------------------------------ Phase 84 SPQ-02 / D-04 / D-05
+
+def test_sp_unmatched_check_omitted_when_none(tmp_path):
+    """D-05: sp_unmatched_count omitted (default None) -> sanity_checks remains 4 entries.
+
+    Preserves backward compatibility: existing callers that don't pass the new kwarg
+    see no behavioral change. RESEARCH Pitfall 6.
+    """
+    merged = [_make_player() for _ in range(800)]
+    result = compute_data_health(merged, _make_timestamps(), str(tmp_path))
+    assert len(result['sanity_checks']) == 4
+    ids = [c['id'] for c in result['sanity_checks']]
+    assert 'sp_unmatched_ids' not in ids
+
+
+def test_sp_unmatched_check_appended_when_int(tmp_path):
+    """D-04: sp_unmatched_count=25 -> 5th sanity_check appended with status='error'."""
+    merged = [_make_player() for _ in range(800)]
+    result = compute_data_health(
+        merged, _make_timestamps(), str(tmp_path),
+        sp_unmatched_count=25,
+    )
+    assert len(result['sanity_checks']) == 5
+    check = next(c for c in result['sanity_checks'] if c['id'] == 'sp_unmatched_ids')
+    assert check['status'] == 'error'
+    assert check['value'] == 25
+    assert check['threshold'] == '<= 5'
+
+
+def test_sp_unmatched_threshold_ok(tmp_path):
+    """D-04: sp_unmatched_count=3 -> status='ok' (boundary check at 5)."""
+    merged = [_make_player() for _ in range(800)]
+    result = compute_data_health(
+        merged, _make_timestamps(), str(tmp_path),
+        sp_unmatched_count=3,
+    )
+    check = next(c for c in result['sanity_checks'] if c['id'] == 'sp_unmatched_ids')
+    assert check['status'] == 'ok'
+    assert check['value'] == 3
+
+
+def test_sp_unmatched_threshold_warn(tmp_path):
+    """D-04: sp_unmatched_count=15 -> status='warn' (in 6..20 range)."""
+    merged = [_make_player() for _ in range(800)]
+    result = compute_data_health(
+        merged, _make_timestamps(), str(tmp_path),
+        sp_unmatched_count=15,
+    )
+    check = next(c for c in result['sanity_checks'] if c['id'] == 'sp_unmatched_ids')
+    assert check['status'] == 'warn'
+    assert check['value'] == 15
+
+
+def test_sp_unmatched_threshold_error_boundary(tmp_path):
+    """D-04: sp_unmatched_count=21 -> status='error' (just past 20 boundary)."""
+    merged = [_make_player() for _ in range(800)]
+    result = compute_data_health(
+        merged, _make_timestamps(), str(tmp_path),
+        sp_unmatched_count=21,
+    )
+    check = next(c for c in result['sanity_checks'] if c['id'] == 'sp_unmatched_ids')
+    assert check['status'] == 'error'
+    assert check['value'] == 21
