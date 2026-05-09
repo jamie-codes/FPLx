@@ -821,7 +821,8 @@ Plans:
 ## v1.14 Analytics Depth (Phases 82-85)
 
 - [x] **Phase 82: Data Health Dashboard** — `data_health.json` artifact, collapsible AccuracyTab panel, `/api/data-health` route with 60s refetch (complete 2026-05-08)
-- [x] **Phase 83: GK Save-Point Projections** — Poisson-floor `save_pts` in xPts pipeline, XPtsCell breakdown row for GKs, `save_predictor_enabled` gate (default OFF) (completed 2026-05-09)
+- [x] **Phase 83: GK Save-Point Projections** — Poisson-floor `save_pts` in xPts pipeline, XPtsCell breakdown row for GKs, `save_predictor_enabled` gate (default OFF)
+ (completed 2026-05-09)
 - [ ] **Phase 84: Set-Piece Threat Assisted Pipeline** — per-team Understat shot scrape, `player_assisted` aggregation, `sp_quality.json` with corner/FK danger scores
 - [ ] **Phase 85: Set-Piece Threat Assisted UI** — delivery-quality tier badges in SetPieceTakerPanel, `/api/set-pieces` extension, sample-size tooltip
 
@@ -875,7 +876,13 @@ Plans:
   3. The entire scrape step in `run.py` is wrapped in try/except (mirroring the existing `prose_summary` pattern at run.py:351) so a 403 bot-protection response or network failure does NOT poison `merged_players.json` or any other artifact — a stale or absent `sp_quality.json` is the only failure mode
   4. Unmatched Understat IDs encountered during shot aggregation are logged and the count is surfaced as a sanity-check entry in DH-01 (`data_health.json sanity_checks[]`) so silent shot-drop on the 43-null-Understat-ID population is visible
   5. A pytest case feeds a fixture of mixed shot situations (corners, FKs, open play, penalties) and asserts the aggregator only counts `FromCorner` and `DirectFreekick` events grouped by `player_assisted` — guarding against the shooter-vs-deliverer pitfall (RESEARCH Pitfall 2)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+**Wave 1**
+- [ ] 84-01-PLAN.md — pipeline/set_piece_quality.py (scrape, EB shrinkage k=20, sp_quality.json) + pytest + run.py try/except isolation (SPQ-01, SPQ-02, Wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion — pipeline/run.py file overlap)*
+- [ ] 84-02-PLAN.md — pipeline/data_health.py sp_unmatched_count kwarg + _check_sp_unmatched helper + 5 new pytest cases + run.py compute_data_health() call site update (SPQ-02, Wave 2)
 
 ### Phase 85: Set-Piece Threat Assisted UI
 **Goal**: Users see set-piece taker delivery quality at a glance in SetPieceTakerPanel — Elite/Good/Weak tier badges with a sample-size tooltip — so they can prefer takers whose deliveries actually generate xG

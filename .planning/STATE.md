@@ -3,13 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.14
 milestone_name: Analytics Depth
 status: executing
-stopped_at: Phase 83 UI-SPEC approved
-last_updated: "2026-05-09T09:06:10.457Z"
+stopped_at: Phase 84 planned — ready to execute
+resume_file: .planning/phases/84-set-piece-threat-assisted-pipeline/84-01-PLAN.md
+last_updated: "2026-05-09T12:00:00.000Z"
 last_activity: 2026-05-09
 progress:
   total_phases: 33
   completed_phases: 26
-  total_plans: 88
+  total_plans: 90
   completed_plans: 87
   percent: 99
 ---
@@ -21,7 +22,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-08 — v1.14 milestone started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 83 — gk-save-point-projections
+**Current focus:** Phase 84 — set-piece-threat-assisted-pipeline
 
 ## Current Position
 
