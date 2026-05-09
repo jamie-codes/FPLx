@@ -71,11 +71,29 @@ def _check_pipeline_stale(stale: bool) -> dict:
     }
 
 
+def _check_sp_unmatched(count: int) -> dict:
+    """Phase 84 D-04: ok if count <= 5, warn if 5 < count <= 20, error if > 20.
+
+    Mirrors _check_missing_delta() thresholds exactly. The 43-known-null
+    Understat-ID population means this check will typically be warn/error
+    until the ID map is extended -- that is the desired visibility (per CONTEXT.md
+    decision text), not a bug.
+    """
+    if count <= 5:
+        status = 'ok'
+    elif count <= 20:
+        status = 'warn'
+    else:
+        status = 'error'
+    return {'id': 'sp_unmatched_ids', 'status': status, 'value': count, 'threshold': '<= 5'}
+
+
 def compute_data_health(
     merged: list,
     timestamps: dict,
     cache_dir: str,
     pipeline_stale: bool = False,
+    sp_unmatched_count: int | None = None,
 ) -> dict:
     """Compute data_health.json artifact and write via save().
 
@@ -84,6 +102,10 @@ def compute_data_health(
         timestamps: Dict of artifact name -> ISO UTC write-time string (from run.py accumulator).
         cache_dir: Path to the local cache directory (used to read prior data_health.json for delta).
         pipeline_stale: Whether the pipeline is stale (passed from run.py's last_updated['stale']).
+        sp_unmatched_count: Phase 84 D-04 -- count of unmatched Understat IDs from
+            run_sp_quality(). When None (default, including the failure case per D-05),
+            no sp_unmatched_ids entry is added to sanity_checks. When an int, a 5th
+            sanity_check entry is appended with thresholds ok 0-5 / warn 6-20 / error > 20.
 
     Returns:
         dict: The data_health result (also written to cache via save()).
@@ -125,6 +147,10 @@ def compute_data_health(
         _check_understat_null_pct(understat_pct),
         _check_pipeline_stale(pipeline_stale),
     ]
+    # Phase 84 D-04: append sp_unmatched_ids check only when caller passed an int.
+    # When None (failure case from run_sp_quality), entry is omitted (D-05 / Pitfall 6).
+    if sp_unmatched_count is not None:
+        sanity_checks.append(_check_sp_unmatched(sp_unmatched_count))
 
     result = {
         'generated_at': datetime.now(timezone.utc).isoformat(),
