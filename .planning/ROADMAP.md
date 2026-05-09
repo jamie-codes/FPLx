@@ -823,7 +823,7 @@ Plans:
 - [x] **Phase 82: Data Health Dashboard** — `data_health.json` artifact, collapsible AccuracyTab panel, `/api/data-health` route with 60s refetch (complete 2026-05-08)
 - [x] **Phase 83: GK Save-Point Projections** — Poisson-floor `save_pts` in xPts pipeline, XPtsCell breakdown row for GKs, `save_predictor_enabled` gate (default OFF)
  (completed 2026-05-09)
-- [ ] **Phase 84: Set-Piece Threat Assisted Pipeline** — per-team Understat shot scrape, `player_assisted` aggregation, `sp_quality.json` with corner/FK danger scores
+- [x] **Phase 84: Set-Piece Threat Assisted Pipeline** — per-team Understat shot scrape, `player_assisted` aggregation, `sp_quality.json` with corner/FK danger scores
 - [ ] **Phase 85: Set-Piece Threat Assisted UI** — delivery-quality tier badges in SetPieceTakerPanel, `/api/set-pieces` extension, sample-size tooltip
 
 ### Phase 82: Data Health Dashboard
@@ -879,10 +879,10 @@ Plans:
 **Plans**: 2 plans
 Plans:
 **Wave 1**
-- [ ] 84-01-PLAN.md — pipeline/set_piece_quality.py (scrape, EB shrinkage k=20, sp_quality.json) + pytest + run.py try/except isolation (SPQ-01, SPQ-02, Wave 1)
+- [x] 84-01-PLAN.md — pipeline/set_piece_quality.py (scrape, EB shrinkage k=20, sp_quality.json) + pytest + run.py try/except isolation (SPQ-01, SPQ-02, Wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion — pipeline/run.py file overlap)*
-- [ ] 84-02-PLAN.md — pipeline/data_health.py sp_unmatched_count kwarg + _check_sp_unmatched helper + 5 new pytest cases + run.py compute_data_health() call site update (SPQ-02, Wave 2)
+- [x] 84-02-PLAN.md — pipeline/data_health.py sp_unmatched_count kwarg + _check_sp_unmatched helper + 5 new pytest cases + run.py compute_data_health() call site update (SPQ-02, Wave 2)
 
 ### Phase 85: Set-Piece Threat Assisted UI
 **Goal**: Users see set-piece taker delivery quality at a glance in SetPieceTakerPanel — Elite/Good/Weak tier badges with a sample-size tooltip — so they can prefer takers whose deliveries actually generate xG
@@ -894,7 +894,9 @@ Plans:
   3. `/api/set-pieces` is EXTENDED (not replaced; no new route) to include `corner_danger_score`, `fk_danger_score`, `delivery_quality_rank`, and `sp_sample_n` per taker by reading `sp_quality.json` alongside the existing taker artifact
   4. When `sp_quality.json` is missing or a taker has no entry, the card renders the "—" insufficient-data badge gracefully — no error, no blank card, no console noise — verified by a Vitest case with a taker fixture omitted from the quality map
   5. Layout audit on 390–430px viewport confirms the new badge does not overflow the taker card or push existing fields out of view (consistent with v1.13 mobile polish standards)
-**Plans**: TBD
+**Plans**: 2 plans
+  - [x] 85-01-PLAN.md — Extend SetPieceTaker type and /api/set-pieces route with sp_quality merge + server-side sp_tier (Wave 1)
+  - [ ] 85-02-PLAN.md — Render delivery-quality tier badge on FK/Corner rows + Vitest coverage + mobile layout audit (Wave 2)
 **UI hint**: yes
 
 ---
@@ -948,4 +950,4 @@ Plans:
 | 82 | v1.14 | 0 | Not started | - |
 | 83 | v1.14 | 4/4 | Complete    | 2026-05-09 |
 | 84 | v1.14 | 0 | Not started | - |
-| 85 | v1.14 | 0 | Not started | - |
+| 85 | v1.14 | 1/2 | In Progress|  |

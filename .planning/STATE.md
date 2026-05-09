@@ -3,16 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.14
 milestone_name: Analytics Depth
 status: executing
-stopped_at: Phase 84 planned — ready to execute
-resume_file: .planning/phases/84-set-piece-threat-assisted-pipeline/84-01-PLAN.md
-last_updated: "2026-05-09T12:00:00.000Z"
-last_activity: 2026-05-09
+stopped_at: "Phase 85 planned — 2 plans ready (85-01-PLAN.md Wave 1: types+route; 85-02-PLAN.md Wave 2: UI+tests)"
+last_updated: "2026-05-09T14:56:17.317Z"
+last_activity: 2026-05-09 -- Phase 85 execution started
 progress:
-  total_phases: 33
-  completed_phases: 26
-  total_plans: 90
-  completed_plans: 87
-  percent: 99
+  total_phases: 4
+  completed_phases: 3
+  total_plans: 11
+  completed_plans: 9
+  percent: 82
 ---
 
 # Project State
@@ -22,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-08 — v1.14 milestone started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 84 — set-piece-threat-assisted-pipeline
+**Current focus:** Phase 85 — set-piece-threat-assisted-ui
 
 ## Current Position
 
-Phase: 84
-Plan: Not started
-Status: Executing Phase 83
-Last activity: 2026-05-09
+Phase: 85 (set-piece-threat-assisted-ui) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 85
+Last activity: 2026-05-09 -- Phase 85 execution started
 
 ## Performance Metrics
 
@@ -105,6 +104,6 @@ Items carried from v1.9:
 
 ## Session Continuity
 
-Last session: 2026-05-08T20:20:20.114Z
-Stopped at: Phase 83 UI-SPEC approved
-Resume file: .planning/phases/83-gk-save-point-projections/83-UI-SPEC.md
+Last session: 2026-05-09
+Stopped at: Phase 85 planned — 2 plans ready (85-01-PLAN.md Wave 1: types+route; 85-02-PLAN.md Wave 2: UI+tests)
+Resume file: .planning/phases/85-set-piece-threat-assisted-ui/85-01-PLAN.md
