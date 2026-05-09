@@ -17,6 +17,7 @@
 - ✅ **v1.13 Analytics UX & Intelligence** — Phases 78-81 (complete 2026-05-08)
 - **v1.14 Analytics Depth** — Phases 82-85 (started 2026-05-08)
 - **v1.15 Pipeline Intelligence** — Phases 86-87 (started 2026-05-09)
+- **v1.16 Modelling & Trust** — Phases 88-96 (started 2026-05-09)
 
 ## Phases
 
@@ -931,6 +932,239 @@ Plans:
   4. Unmatched Understat IDs encountered during shot aggregation are logged and the count is surfaced as a sanity-check entry in DH-01 (`data_health.json sanity_checks[]`) so silent shot-drop on the 43-null-Understat-ID population is visible
   5. A pytest case feeds a fixture of mixed shot situations (corners, FKs, open play, penalties) and asserts the aggregator only counts `FromCorner` and `DirectFreekick` events grouped by `player_assisted` — guarding against the shooter-vs-deliverer pitfall
 
+## v1.16 Modelling & Trust (Phases 88-96)
+
+- [ ] **Phase 88: FPL News Flags UI** — surface `news` / `news_added` / `chance_of_playing_next_round` as banner/badge in TransferPanel and status indicator in GemTable; gated by `news_flag_enabled` display config (SCRAPER-01)
+- [ ] **Phase 89: Event-Aware Pipeline Scheduling** — `pipeline/refresh_gate.py` deadline-guard, dense Fri/Sat/Sun cron entries in `.github/workflows/pipeline.yml`, `concurrency: cancel-in-progress` guard (REFRESH-01)
+- [ ] **Phase 90: Monte Carlo Simulation Pipeline** — per-player 5-GW MC over existing Poisson/Bernoulli params, ≥1000 iterations, writes `xPts_5gw_p10/p50/p90` and `rank_trajectory` to `merged_players.json`; `mc_enabled` gate in `accuracy_backtest.json` (MC-01)
+- [ ] **Phase 91: Calibration Charts** — AccuracyTab predicted-xPts-decile vs actuals over last 5 GWs with per-position breakdown; recharts (already installed) (CAL-01)
+- [ ] **Phase 92: Cron History Sparkline** — extend `data_health.json` with rolling `history` (last 7 runs); render `DataHealthSparkline` recharts `<LineChart>` inside existing `DataHealthPanel`; zero new API routes/hooks (DH-04)
+- [ ] **Phase 93: Sensitivity Analysis Enhancements** — extend Phase 64 fragility engine with 5 perturbations (start_prob -0.15, mins_60 -0.10, fixture +1 tier, cost +0.5m, news flip to "doubt"); ROBUST / FRAGILE (1 reverses) / KNIFE EDGE (2+ reverse); GemTable + TransferPanel (SENS-01)
+- [ ] **Phase 94: Rejection Explainer Enhancements** — extend Phase 65 explainer with deterministic gate-cascade (≥6 predicates); search field entry point in TransferPanel ("Why isn't X recommended?") + head-to-head mode in GemTable expand ("Why is X ranked above Y?") (WHY-01)
+- [ ] **Phase 95: Set-Piece Delivery League Table** — all 20 PL teams ranked by composite delivery-quality score, toggle within Set Pieces tab, separate insufficient-sample section; client-side aggregation in `src/lib/setPieceLeague.ts`; zero pipeline changes (SPQ-04)
+- [ ] **Phase 96: Captain Decision Backtester** — pipeline saves `captain_picks_gw{N}.json` per run; `/api/decision-history` + `useDecisionHistory`; new "Back" sub-tab in Accuracy section; GW-by-GW captain regret vs snapshotted recommendation; authenticated FPL API for actual captain; localStorage ring buffer last 38 GWs (BACK-01)
+
+### Phase 88: FPL News Flags UI
+**Goal**: Users see official FPL news (injuries, suspensions, chance-of-playing) directly in TransferPanel and GemTable — never click into a player to discover they are flagged — without any new pipeline scraping
+**Depends on**: Phase 87 (v1.15 complete); reuses `news`, `news_added`, and `chance_of_playing_next_round` fields already produced by `pipeline/merge.py`
+**Requirements**: SCRAPER-01
+**Success Criteria** (what must be TRUE):
+  1. TransferPanel renders a news banner on any candidate row whose `chance_of_playing_next_round` is below 100 OR whose `news` string is non-empty — banner shows the literal `news` text (e.g. "Knock - 50% chance of playing"), the `news_added` timestamp formatted relative to now, and an amber/red severity tone derived from `chance_of_playing_next_round` (75=amber, ≤50=red)
+  2. GemTable carries a small status indicator in the Player cell for any flagged player — visible in the default and compact presets, hidden on portrait mobile only when player name truncation would clash; row-expand panel echoes the full `news` text and `news_added` timestamp
+  3. The full feature is gated by a single `news_flag_enabled` display flag (read from `accuracy_backtest.json` like other gates) — when OFF the banner and indicator render nothing and downstream layout is unchanged, so the gate is a true kill switch with no residual chrome
+  4. Zero new pipeline work: a Vitest case asserts the component reads only existing `MergedPlayer` fields and a single new `useNewsFlagEnabled()` accessor — no new fetcher, no new query key, no new API route
+  5. When all three news fields are absent or null on a player (cold-start cache, freshly promoted player), the banner and indicator render nothing — verified by a Vitest case with a player fixture missing every news field
+**Plans**: 2 plans (2 waves)
+  **Wave 0**
+  - [ ] 088-01-PLAN.md — RED scaffolding: TransferPanel news-banner test cases (5), GemTable status-indicator test cases (4), `news_flag_enabled` gate read in `useNewsFlagEnabled` test (3); shared `NewsBadge` / `NewsBanner` component contracts in src/components/news/
+  **Wave 1** *(blocked on Wave 0 completion)*
+  - [ ] 088-02-PLAN.md — Implement `NewsBadge` (GemTable Player-cell variant + row-expand variant) + `NewsBanner` (TransferPanel candidate-row variant) + `useNewsFlagEnabled` accessor over `useAccuracy`; wire into TransferPanel and GemTable; severity-tone helper; mobile-portrait truncation guard
+  **Cross-cutting constraints:**
+  - `news_flag_enabled` MUST gate every render path — the gate is read once per render via `useNewsFlagEnabled()` (single source of truth); never inline `accuracy.news_flag_enabled` inside leaf components
+  - Severity-tone helper lives in `src/lib/newsSeverity.ts` and is unit-tested in isolation — UI components consume tone tokens, never raw `chance_of_playing_next_round` ints
+  - `NewsBadge` and `NewsBanner` MUST gracefully render nothing (empty fragment, not a 0-height div) when the player has no news — guards layout-shift on healthy players
+**Phase notes**: SCRAPER-02 (external press/injury feed scraping) is explicitly OUT OF SCOPE per REQUIREMENTS.md — this phase is display-only over fields already in `merged_players.json`. Severity thresholds: `chance_of_playing_next_round === null || === 100` → no flag; `=== 75` → amber tone; `≤ 50` → red tone; non-empty `news` with `chance_of_playing_next_round === 100` (e.g. "Returned from international duty") → zinc/info tone. `news_flag_enabled` gate ships ON by default since the underlying data is already in production. This phase intentionally precedes Phase 93 — SENS-01's "news flip to 'doubt'" perturbation depends on the news-flag taxonomy defined here.
+**UI hint**: yes
+
+### Phase 89: Event-Aware Pipeline Scheduling
+**Goal**: Pipeline data is fresh in the 90-minute window before each GW deadline without burning Actions minutes the rest of the week — a dense conditional cron schedule plus a deadline-guard script run pipeline only when it matters, while a concurrency guard prevents race conditions with the existing 4×/day baseline
+**Depends on**: Phase 87 (v1.15 complete); extends existing `.github/workflows/pipeline.yml` daily cron and reuses `events[].deadline_time` from FPL bootstrap
+**Requirements**: REFRESH-01
+**Success Criteria** (what must be TRUE):
+  1. `pipeline/refresh_gate.py` reads `events[].deadline_time` from the FPL bootstrap payload and exits with status 0 (skip) when the next deadline is more than 90 minutes away or has already passed by more than 90 minutes — and exits with a sentinel "proceed" status only inside the deadline window; pytest cases cover before-window, in-window, and post-window timestamps with a fixed `now` parameter
+  2. `.github/workflows/pipeline.yml` carries dense `schedule:` cron entries covering Friday/Saturday/Sunday GW windows (typical FPL deadline days) at 15-minute or 30-minute granularity — every additional cron entry runs `refresh_gate.py` first and short-circuits the pipeline step when the gate skips, so the cron fires often but the pipeline body executes only inside windows
+  3. The workflow declares `concurrency: { group: pipeline, cancel-in-progress: true }` so a deadline-window run can pre-empt an in-flight daily-cron run rather than racing on Vercel Blob writes — verified by inspecting the rendered workflow YAML in CI
+  4. The existing 4×/day baseline cron is preserved and continues to refresh data outside deadline windows — REFRESH-01 is additive, not a replacement
+  5. When the FPL bootstrap fetch fails (network, 5xx), `refresh_gate.py` exits with the "skip" status (NOT proceed) — never run pipeline on broken bootstrap data; pytest case asserts the failure-skip behaviour with a mocked HTTP error
+**Plans**: 2 plans (2 waves)
+  **Wave 0**
+  - [ ] 089-01-PLAN.md — RED: `pipeline/tests/test_refresh_gate.py` (6 cases: before-window / in-window / after-window / failure-skip / DGW double-deadline / cold-bootstrap)
+  **Wave 1** *(blocked on Wave 0 completion)*
+  - [ ] 089-02-PLAN.md — Implement `pipeline/refresh_gate.py` (90-min window math, configurable via env var `PIPELINE_DEADLINE_WINDOW_MINUTES=90`); update `.github/workflows/pipeline.yml` with dense Fri/Sat/Sun cron entries, refresh_gate guard step, and `concurrency` block; manual UAT: trigger workflow_dispatch outside window confirms skip, inside window confirms proceed
+  **Cross-cutting constraints:**
+  - `refresh_gate.py` MUST NOT import from `pipeline/run.py` — it is a thin standalone deadline-math utility so a syntax error in `run.py` cannot break gating
+  - Bootstrap fetch in `refresh_gate.py` reuses the existing FPL proxy retry/timeout helper (mirroring `pipeline/merge.py`) — no duplicated HTTP logic
+  - `concurrency: cancel-in-progress: true` MUST be set at workflow level (not job level) so the trailing daily-cron job is also cancellable when a deadline trigger fires
+  - The dense cron entries are documented in a comment block at the top of `pipeline.yml` listing each cron's intent (e.g. `# Fri 17:30 UTC — typical Sat-deadline T-2h`) so future maintenance is self-explanatory
+**Phase notes**: GitHub Actions has no native event-driven cron — the dense-cron + guard-script pattern is the documented best practice (per REQUIREMENTS.md "Out of Scope" note: "True event-driven GitHub Actions (Actions has no conditional cron — dense cron + guard is the pattern)"). DGW handling: when two deadlines are within the same day (e.g. GW33 DGW per MEMORY.md), the gate proceeds inside the 90-min window of EITHER deadline. `PIPELINE_DEADLINE_WINDOW_MINUTES` env var is a knob: default 90, can be tightened to 60 if Actions minutes burn becomes a concern post-launch. No TypeScript changes in this phase — pure DevOps.
+**UI hint**: no
+
+### Phase 90: Monte Carlo Simulation Pipeline
+**Goal**: Pipeline produces per-player 5-GW xPts uncertainty bands (p10/p50/p90) and a rank trajectory under uncertainty — written into `merged_players.json` so every downstream consumer (GemTable, TransferPanel, CaptainPicksPanel) can read distributional data without any new HTTP round-trip
+**Depends on**: Phase 87 (v1.15 complete); reuses `_compute_xpts_fixture` Poisson/Bernoulli parameters from `pipeline/merge.py` (no new HTTP calls)
+**Requirements**: MC-01
+**Success Criteria** (what must be TRUE):
+  1. `pipeline/simulate.py` runs ≥1000 Monte Carlo iterations per player over the next 5 GWs using Poisson goal/assist distributions and Bernoulli CS distributions drawn from existing pipeline parameters; per-player output written to `merged_players.json` includes `xPts_5gw_p10`, `xPts_5gw_p50`, `xPts_5gw_p90` (10th/50th/90th percentile of cumulative 5-GW xPts) and `rank_trajectory` (a length-5 array of position-relative percentile ranks across the 5-GW horizon)
+  2. The whole MC stage is gated by `mc_enabled` flag in `accuracy_backtest.json` (default OFF) — when OFF, simulate.py is skipped entirely in `run.py` and the four MC fields are absent from `merged_players.json` (NOT zero-filled), so consumers that read the fields can gracefully degrade
+  3. BGW players in the 5-GW horizon contribute zero points for that GW in every iteration; DGW players run two fixtures per GW iteration combined; both behaviours covered by pytest cases against a synthetic 5-GW fixture mix
+  4. Simulation results are written once per pipeline run and consumed as static JSON — no client-side simulation, no added page-load latency; a pytest case asserts iteration count is `≥ 1000` (configurable via `MC_ITERATIONS=1000` env var) and seeded determinism (`MC_SEED=42`) so cache regeneration is reproducible across CI runs
+  5. `simulate.py` MUST NOT import from `merge.py` (mirroring the v1.10 Phase 61 D-02 isolation rule from STATE.md) — Poisson/Bernoulli math is duplicated as a thin internal helper so a refactor of `merge.py` cannot silently break MC output
+**Plans**: 3 plans (2 waves)
+  **Wave 0**
+  - [ ] 090-01-PLAN.md — RED: `pipeline/tests/test_simulate.py` (6 cases: percentile invariants, BGW zero-fill, DGW combine, iteration-count gate, seed determinism, mc_enabled OFF skip); MergedPlayer types extension with 4 optional MC fields in `src/lib/types.ts`
+  **Wave 1** *(parallel — file-disjoint)*
+  - [ ] 090-02-PLAN.md — `pipeline/simulate.py` (`compute_simulations`, `_simulate_player`, `_cs_prob_sim` reimplementing the 3-line Poisson formula inline per D-02 isolation); `run.py` integration after `merge.py`, before `data_health.py`; `numpy>=1.26.0` requirement (already pinned in v1.10 Phase 61 work — confirm)
+  - [ ] 090-03-PLAN.md — `accuracy.py` `mc_enabled` gate plumbing + cold-start fallback that writes `mc_enabled: false` on first run; pytest case for cold-start
+  **Cross-cutting constraints:**
+  - All four MC fields MUST be optional on `MergedPlayer` (`?:`) so legacy cache reads do not break — Pitfall 6 from Phase 63 calibration phase
+  - Plan 02 and Plan 03 are file-disjoint (`simulate.py` + `run.py` patch vs `accuracy.py`) and run Wave 1 in parallel
+  - `MC_ITERATIONS` and `MC_SEED` are env-var configurable but default to 1000 / 42 in code so a developer running `python -m pipeline.run` locally gets identical output to CI without env setup
+  - `xPts_5gw_p50` MUST be approximately equal to `xPts_5gw` (within 5% sample tolerance at iter=1000) — pytest invariant guards against accidental decoupling of MC from the deterministic xPts engine
+**Phase notes**: This is the v1.16 MC scope — pipeline + `merged_players.json` extension only. Rank simulator UI, MC captain integration, and per-player blank/haul probabilities (the v1.10 Phase 62 work) are NOT included; if ever wanted they'd land as MC-03/MC-04 in a later milestone. The `rank_trajectory` field is position-relative (player ranked vs same-position peers per GW) so it answers "is this MID likely to climb the MID rankings over the next 5 GWs?" rather than answering an overall-rank question. ≥1000 iterations chosen as the floor (10x lower than v1.10 Phase 61's 10,000) because v1.16 only writes percentiles, not full distributions — Monte Carlo error on percentile estimates at n=1000 is well below the precision GemTable can display. Gate ships OFF — flip to ON requires confirming non-regression on a pipeline run end-to-end.
+**UI hint**: no
+
+### Phase 91: Calibration Charts
+**Goal**: AccuracyTab gains a calibration chart showing predicted-xPts decile vs actual points per decile over the last 5 GWs — broken out by position — so users (and the developer) can see at a glance whether the model is well-calibrated or systematically over/under-predicting at any decile or position
+**Depends on**: Phase 87 (v1.15 complete); recharts already installed since Phase 63 (`recharts` v3.x); extends `pipeline/accuracy.py` and `AccuracyTab.tsx`
+**Requirements**: CAL-01
+**Success Criteria** (what must be TRUE):
+  1. `pipeline/accuracy.py` extends `accuracy_backtest.json` with a `calibration` block: per-decile records of `predicted_mean`, `actual_mean`, `sample_n` over the last 5 GWs, with a `by_position` map keyed `GK / DEF / MID / FWD` containing the same three fields per decile per position
+  2. AccuracyTab renders a calibration chart (recharts `ComposedChart`) with the predicted-xPts decile on the X axis (numeric 0–1 domain), actual-mean line plus a `y = x` reference line on the Y axis — a perfectly calibrated model traces the reference; deviations are immediately visible
+  3. A position-tab selector (GK / DEF / MID / FWD / All) toggles the chart between aggregate and per-position views without re-fetching — both datasets ship in the same `accuracy_backtest.json` payload
+  4. Sparse buckets (sample_n < 5) are filtered out of the chart (NOT zeroed) so a near-empty decile cannot mislead the eye — verified by a Vitest case with a fixture containing one bucket below the threshold
+  5. The calibration block is OPTIONAL on the `AccuracyBacktest` interface so legacy `accuracy_backtest.json` caches predating this phase do not break the AccuracyTab render path — Pitfall 6 pattern from Phase 63
+**Plans**: 4 plans (3 waves)
+  **Wave 0**
+  - [ ] 091-01-PLAN.md — RED: `pipeline/tests/test_accuracy_calibration.py` (6 cases: decile bucketing math, by-position structure, sparse-filter, cold-start absence, 5-GW window, sample_n integrity); React `AccuracyTab.test.tsx` extension with calibration fixture and 5 RED cases
+  **Wave 1** *(parallel — file-disjoint)*
+  - [ ] 091-02-PLAN.md — `pipeline/accuracy.py`: `_compute_calibration_data` decile bucketing helper + `compute_accuracy_backtest` return-dict extension + `_empty_backtest` cold-start fallback with empty calibration block
+  - [ ] 091-03-PLAN.md — TypeScript types: `CalibrationBucket`, `CalibrationData`, `AccuracyBacktest.calibration?` optional field in `src/lib/types.ts`
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 091-04-PLAN.md — `CalibrationSection` component in AccuracyTab (recharts `ComposedChart` with `XAxis type="number"`, `ReferenceLine y=x` diagonal, `PositionTabSelector`, sparse-filter at component edge); manual UAT in light + dark mode
+**Cross-cutting constraints:**
+  - `XAxis` MUST have `type="number"` for the 0-1 numeric domain to be respected (Pitfall 4 from Phase 63 calibration work — same pitfall applies)
+  - Sparse-bucket filter `b.sample_n >= 5` lives at the component edge, not in the pipeline — pipeline writes everything; UI decides what to render
+  - `@types/recharts` MUST NOT be installed (v1 incompatibility per Phase 62 / 63 notes)
+  - `calibration` field is OPTIONAL on `AccuracyBacktest` — legacy cache compatibility (Pitfall 6 from Phase 63)
+**Phase notes**: This is a complement to the existing accuracy backtest table — the table answers "what was our hit rate?" and the chart answers "where does the model under/over-predict?". Position breakdown is the differentiator: GKs and DEFs share a different scoring distribution from MIDs and FWDs, so an aggregate calibration line can hide position-specific drift. Independent of MC-01 (Phase 90) — uses the existing accuracy backtest data, not MC percentiles. CAL-02 (multi-version comparison) was shipped in v1.10 Phase 63; this phase is just the chart-and-position-breakdown.
+**UI hint**: yes
+
+### Phase 92: Cron History Sparkline
+**Goal**: DataHealthPanel grows a tiny sparkline showing the last 7 pipeline runs at a glance — green/amber/red points trace whether the pipeline is healthy, intermittently failing, or broken — without any new API route or hook beyond the existing `useDataHealth`
+**Depends on**: Phase 87 (v1.15 complete; DataHealthPanel exists); extends existing `pipeline/data_health.py` and the `DataHealthPanel` component already mounted in AccuracyTab
+**Requirements**: DH-04
+**Success Criteria** (what must be TRUE):
+  1. `pipeline/data_health.py` extends `data_health.json` with a rolling `history` array containing the last 7 entries — each entry has `timestamp` (ISO-8601 string) and `overall_status` ("ok" | "warning" | "error") — the array is appended to (with a 7-element cap) on every pipeline run rather than recomputed from scratch
+  2. `DataHealthSparkline` component renders the 7-point series inside the existing `DataHealthPanel` using a recharts `<LineChart>` with status-colour-coded dots (green = ok, amber = warning, red = error) and an inline tooltip showing the timestamp + status on hover
+  3. Zero new API routes and zero new hooks — the sparkline reads the existing `useDataHealth()` query, just consuming a new optional `history?: HistoryEntry[]` field; cold-start (no history yet) renders a 1-point placeholder with the literal "first run" tooltip rather than an empty chart
+  4. The history append is atomic-write-safe: a pytest case feeds three sequential runs and asserts the array is FIFO-capped at 7 entries with correct chronological order — guards against duplicate or reordered entries during partial-failure recovery
+  5. When `history` field is absent from `data_health.json` (legacy cache predating this phase), the sparkline gracefully renders nothing and the rest of `DataHealthPanel` is unchanged — verified by a Vitest case with the fixture's `history` field deleted
+**Plans**: 2 plans (2 waves)
+  **Wave 0**
+  - [ ] 092-01-PLAN.md — RED: `pipeline/tests/test_data_health_history.py` (4 cases: append + FIFO cap, cold-start, status enum, atomic write order); `DataHealthSparkline.test.tsx` (5 cases: 7-point render, dot colour mapping, tooltip, cold-start placeholder, missing-field graceful)
+  **Wave 1** *(blocked on Wave 0 completion)*
+  - [ ] 092-02-PLAN.md — Implement `_append_history` helper in `pipeline/data_health.py` (read-prev / append / cap-7 / write-back); extend `DataHealth` interface in `types.ts` with optional `history?: HistoryEntry[]`; build `DataHealthSparkline` component (recharts `<LineChart>` with `<Dot>` custom render for colour mapping); mount inside existing `DataHealthPanel` body
+  **Cross-cutting constraints:**
+  - The 7-element cap lives in `pipeline/data_health.py` (not the UI) so the cache file size stays bounded regardless of UI behaviour
+  - `history` field is OPTIONAL on `DataHealth` — legacy compatibility
+  - `DataHealthSparkline` MUST be a sibling component inside `DataHealthPanel` (NOT a sub-route) so DH-04 ships with zero changes to navigation, routing, or hooks
+  - Status colour mapping reuses `TIER_CLASSES` palette from Phase 82 — green/amber/red tokens, no hardcoded hex
+**Phase notes**: Builds on Phase 82's `data_health.json` — that phase wrote per-run snapshots; this phase adds the rolling history series. The 7-run window matches the conversational meaning of "the last week" (one run per day at the daily-cron baseline) without growing the cache file unbounded. DH-05 (history graph beyond 7 runs) is explicitly deferred per REQUIREMENTS.md "Future Requirements". Append happens AFTER all sanity checks compute their final overall_status, so the entry is always self-consistent.
+**UI hint**: yes
+
+### Phase 93: Sensitivity Analysis Enhancements
+**Goal**: Extend the v1.10 Phase 64 fragility flag from a binary ROBUST/FRAGILE to a 5-perturbation tristate (ROBUST / FRAGILE / KNIFE EDGE) so users can distinguish picks that survive everything, picks that survive most things, and picks that hinge on multiple knife-edge assumptions
+**Depends on**: Phase 88 (SCRAPER-01 news-flag taxonomy supplies the "news flip to 'doubt'" perturbation input); operates over existing `MergedPlayer` data in client-side TypeScript; extends the `computeFragility` engine shipped in v1.10 Phase 64
+**Requirements**: SENS-01
+**Success Criteria** (what must be TRUE):
+  1. `computeFragility` is extended to evaluate 5 named perturbations against each candidate: (a) `start_prob -= 0.15`, (b) `mins_60_prob -= 0.10`, (c) `fixture difficulty +1 tier`, (d) `cost += 0.5m`, (e) `news flips to "doubt"` (chance_of_playing_next_round set to 50); each perturbation independently checks whether the recommendation reverses (transfer dropped from candidate list, or captain falls out of top-3)
+  2. Result is a tristate `'robust' | 'fragile' | 'knife_edge'` — ROBUST when zero perturbations reverse, FRAGILE when exactly one reverses, KNIFE EDGE when two or more reverse — replacing the v1.10 binary flag everywhere it currently appears
+  3. GemTable row-expand panel and TransferPanel candidate cards both render the tristate via a `FragilityBadge` (extending the existing `FragilityNote`) — KNIFE EDGE uses a stronger amber/red tone than FRAGILE; the badge lists the specific perturbations that reversed, so the user reads "no longer recommended if: harder fixture OR news flips to doubt" not just "fragile"
+  4. The "news flip to 'doubt'" perturbation reuses the news-flag severity taxonomy from Phase 88 — no duplicated constants; a Vitest case asserts that simulating `chance_of_playing_next_round = 50` deterministically yields the "doubt" branch
+  5. Fragility computation remains pure TypeScript over `MergedPlayer` fields — no new API call, no pipeline change; a Vitest case asserts the engine is callable from a node environment (mirroring the v1.10 Phase 64 `@vitest-environment node` pattern)
+**Plans**: 4 plans (2 waves)
+  **Wave 0**
+  - [ ] 093-01-PLAN.md — RED: extend `src/lib/sensitivity.test.ts` with 5-perturbation cases (≥12 cases covering each perturbation in isolation, ROBUST when none reverse, FRAGILE when one, KNIFE EDGE when two and three, BGW guard, news-flag input shape)
+  **Wave 1** *(parallel — file-disjoint)*
+  - [ ] 093-02-PLAN.md — Extend `computeFragility` in `src/lib/sensitivity.ts` to evaluate the 5 perturbations and return `{ tier: 'robust' | 'fragile' | 'knife_edge', reasons: string[] }` (preserving the v1.10 reason-fragment vocabulary); shared perturbation table extracted as a constant for testability
+  - [ ] 093-03-PLAN.md — `FragilityBadge` component (extends `FragilityNote` styling; KNIFE EDGE = amber-red tone, FRAGILE = amber tone, ROBUST = no badge); RTL tests for tristate rendering and reason-list join
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 093-04-PLAN.md — Wire-up: GemTable row-expand panel + TransferPanel candidate-row injection (replace existing `FragilityNote` callsites); manual UAT covering all 3 tiers on at least one real player
+  **Cross-cutting constraints:**
+  - Perturbation values (-0.15, -0.10, +1 tier, +0.5m, news=50) are extracted as named constants in `sensitivity.ts` (e.g. `PERTURB_START_PROB = -0.15`) — never inlined as magic numbers
+  - `computeFragility` parameter widening (already done in v1.10 Phase 64 to accept `MergedPlayer`) is preserved — Pitfall 2 from that phase
+  - The reason-fragment vocabulary stays consistent with v1.10 Phase 64 ("start_prob < 70%" / "harder fixture" / "taken as a hit") — the new fragments are "minutes risk drop" / "price up £0.5m" / "news flips to doubt"
+  - KNIFE EDGE rendering MUST NOT use a pill/filled-bg style — to preserve visual distinction from severity badges (Pitfall 4 from v1.10 Phase 64)
+**Phase notes**: This is an enhancement of the v1.10 Phase 64 fragility engine, NOT a replacement — the existing `computeFragility` API is preserved and extended; downstream callers (TransferPanel Row 4 injection, CaptainPicksPanel CandidateRow tail) re-render with no signature change. The 5 perturbations are deliberately small, plausible adverse moves — not worst-case. The KNIFE EDGE bucket exists because users trust binary ROBUST/FRAGILE less when picks straddle multiple thresholds simultaneously. Depends on Phase 88 — without the SCRAPER-01 news taxonomy, the fifth perturbation has no input to manipulate.
+**UI hint**: yes
+
+### Phase 94: Rejection Explainer Enhancements
+**Goal**: Extend the v1.10 Phase 65 rejection explainer with two new entry points — a search field in TransferPanel ("Why isn't X recommended?") and a head-to-head comparison in GemTable expand ("Why is X ranked above Y?") — turning the engine from a passive expand-row feature into an actively queryable explainer
+**Depends on**: Phase 87 (v1.15 complete); extends the existing `computeRejection` engine shipped in v1.10 Phase 65 (`src/lib/explain.ts`) — operates over existing `MergedPlayer` and recommendation engine outputs
+**Requirements**: WHY-01
+**Success Criteria** (what must be TRUE):
+  1. TransferPanel renders a "Why isn't X recommended?" search field above the candidate list — typing a player name autocompletes against the full player list; selecting a player surfaces a callout panel with the same gate-cascade explanation (≥6 predicates: ownership %, fixture tier, form signal, start_prob, price trend, lifecycle label) the row-expand path already produces
+  2. GemTable row-expand grows a head-to-head mode triggered by a dedicated "Compare with…" button inside the expand panel — selecting a second player produces a "Why is X ranked above Y?" callout naming the specific predicates that flipped (e.g. "Salah is ranked above Saka because: higher xPts (+1.2), better fixture (easy vs medium), lower fragility tier")
+  3. The deterministic gate-cascade evaluates ≥6 predicates in a fixed order so the same input always produces the same explanation — covered by a Vitest case asserting two consecutive calls with identical inputs return character-equal output strings
+  4. Both new entry points reuse the existing `computeRejection` engine (no parallel rejection logic) — a Vitest case asserts the head-to-head explainer composes `computeRejection(playerA)` and `computeRejection(playerB)` outputs rather than duplicating predicate evaluation
+  5. Both new surfaces degrade gracefully when squad data is unavailable (unauthenticated user) — the search field still works for any player without ownership-of-squad context, and the head-to-head still works for any two players without squad context; the WHY-02 high-ownership callout from Phase 65 is unchanged
+**Plans**: 4 plans (3 waves)
+  **Wave 0**
+  - [ ] 094-01-PLAN.md — RED: `src/lib/explain.test.ts` extended with head-to-head test cases (8 cases: predicate-order determinism, identical-input idempotence, head-to-head composition, no-squad-context graceful, ≥6 predicates surfaced, name-autocomplete shape contract); `WhyNotSearchField.test.tsx` (4 RED cases); `HeadToHeadCallout.test.tsx` (5 RED cases)
+  **Wave 1** *(parallel — file-disjoint)*
+  - [ ] 094-02-PLAN.md — Engine extension: `computeHeadToHead(playerA, playerB)` in `src/lib/explain.ts` composing `computeRejection` outputs and emitting an ordered comparison string; predicate ordering constant extracted for stability; reasons-fragment vocabulary preserved from Phase 65
+  - [ ] 094-03-PLAN.md — `WhyNotSearchField.tsx` (TransferPanel section header injection; autocomplete over `usePlayers()` data; selected-player callout reusing `ExplainPanel.rejectionReasons` shape) + `HeadToHeadCallout.tsx` (GemTable row-expand "Compare with…" button + secondary-player picker); RTL tests
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 094-04-PLAN.md — Wire-up: TransferPanel search-field placement above candidate list (Row 0 injection); GemTable row-expand "Compare with…" button injection alongside existing rejection panel; manual UAT covering both entry points and at least one head-to-head between an owned and unowned player
+  **Cross-cutting constraints:**
+  - `computeRejection` MUST remain unchanged — Phase 65 callsites continue to work; new functionality is additive via `computeHeadToHead`
+  - Predicate evaluation order is fixed and named (e.g. `PREDICATE_ORDER = ['rank', 'rotation', 'fixture', 'form', 'price', 'lifecycle']`) so the explainer output is deterministic across runs
+  - Search field uses `usePlayers()` data — the existing single source of truth (query key `['players']`) — no new fetch
+  - Both new surfaces honour the WHY-02 callout from Phase 65 — no overlap, no duplicate text for the same player
+**Phase notes**: This is an enhancement of the v1.10 Phase 65 rejection explainer, NOT a replacement. WHY-02 (>20% ownership callout) and WHY-03 (squad-row rejection per-player) from Phase 65 are unchanged. The two new entry points are intentionally additive — the existing GemTable row-expand explanation surface stays in place; the new "Compare with…" button is a sibling action, not a replacement. The ≥6 predicate floor is a quality bar — the engine MUST surface at least six distinct gate predicates (not six instances of the same one) so the explanation feels comprehensive rather than narrow. Independent of Phase 93 — they share the "explain" domain but neither depends on the other.
+**UI hint**: yes
+
+### Phase 95: Set-Piece Delivery League Table
+**Goal**: Set Pieces tab grows a league-wide ranking of all 20 PL teams by composite delivery-quality score — so a manager browsing for set-piece value can see "which clubs have the best deliveries this season?" without inspecting every team's takers individually
+**Depends on**: Phase 87 (v1.15 complete); reuses `sp_quality.json` shipped in v1.14 Phase 84 / v1.15 Phase 87 (no pipeline change)
+**Requirements**: SPQ-04
+**Success Criteria** (what must be TRUE):
+  1. A toggle within the existing Set Pieces tab switches between the per-team taker view (current) and a league-table view ranking all 20 PL teams by composite delivery quality — corner danger + free-kick danger combined into a single score per team using the existing Empirical-Bayes shrinkage means
+  2. League table renders teams in descending order of composite score; each row shows team crest, team name, composite score, corner score, FK score, sample-n indicator, and primary taker (top-ranked corner taker named for context)
+  3. Teams with insufficient sample (composite score null because both corner and FK sample sizes fall below their respective gates) are shown in a separate "Insufficient Data" section below the main table — never silently dropped, never falsely ranked
+  4. Aggregation is pure client-side TypeScript in `src/lib/setPieceLeague.ts` over the existing `sp_quality.json` payload — zero pipeline changes, zero new API routes, zero new hooks (reuses the existing `/api/set-pieces` data flow already consumed by SetPieceTakerPanel)
+  5. The toggle state is session-only (component-local React state) — switching tabs and returning resets to the per-team view; this matches the existing GemTable preset toggle behaviour from v1.5 and avoids surprising state survival
+**Plans**: 2 plans (2 waves)
+  **Wave 0**
+  - [ ] 095-01-PLAN.md — RED: `src/lib/setPieceLeague.test.ts` (8 cases: composite formula, descending order, null-handling for insufficient sample, primary-taker extraction, EB shrinkage preservation, deterministic order on tie, empty-input graceful, all-20-teams coverage); `SetPieceLeagueTable.test.tsx` (5 RED cases)
+  **Wave 1** *(blocked on Wave 0 completion)*
+  - [ ] 095-02-PLAN.md — Implement `aggregateSetPieceLeague` in `src/lib/setPieceLeague.ts`; build `SetPieceLeagueTable` component; toggle wiring inside `SetPieceTakerPanel` (segmented "Takers / League Table" pill above existing content); team-crest reuse via `useTeamBadge()` from v1.13 Phase 81
+  **Cross-cutting constraints:**
+  - Composite score formula extracted as a named constant function (`computeCompositeScore(corner, fk)`) so the weighting can be tuned without touching the table component
+  - "Insufficient Data" section uses the same null-tolerant pattern as the v1.14 Phase 85 "—" badge — never crash, never blank
+  - Toggle state lives in `SetPieceTakerPanel` component-local state — does NOT lift to page.tsx (no need for cross-tab sharing)
+  - `useTeamBadge` from Phase 81 is the single source for crest URLs — no inline image paths
+**Phase notes**: SPQ-04 is intentionally pure client-side because all the data already exists from v1.14 Phase 84's pipeline work (`sp_quality.json` written per taker). The aggregation step is a one-line groupby-team-and-mean that doesn't warrant a pipeline change. The composite score weighting (corner vs FK) is initially equal-weight; the constant function form makes future tuning trivial. SPQ-05 (cross-season alerts) is explicitly deferred per REQUIREMENTS.md.
+**UI hint**: yes
+
+### Phase 96: Captain Decision Backtester
+**Goal**: Users can browse a GW-by-GW retrospective of their own captain decisions vs the model's snapshotted recommendation — every GW is scored on captain regret (how many points the user lost vs the model's pick at decision time, NOT vs retrospective max) — so the manager learns whether their gut overrides actually beat the model or quietly hurt
+**Depends on**: Phase 87 (v1.15 complete); requires authenticated FPL API access for actual-captain backfill (already in production via session cookie); writes a new pipeline artifact and adds a new sub-tab to the Accuracy section
+**Requirements**: BACK-01
+**Success Criteria** (what must be TRUE):
+  1. Pipeline saves `captain_picks_gw{N}.json` to Vercel Blob after each run — mirroring the existing `predictions_snapshot_gw{N}.json` pattern from Phase 41 — so every GW the model's top-3 captain recommendation at decision time is durably snapshotted and cannot drift retrospectively
+  2. `/api/decision-history` route reads the per-GW snapshots, joins with the user's actual captain pulled from the authenticated `/entry/{id}/event/{gw}/picks/` endpoint, and returns a per-GW timeline of regret scores; `useDecisionHistory` TanStack Query hook consumes the route
+  3. A new "Back" sub-tab appears in the Accuracy section showing GW-by-GW captain regret: user's captain (player + actual points) vs model's snapshotted top recommendation (player + actual points) vs regret score (model_pts × 2 − user_pts × 2; positive = user lost points by overriding model); the chart highlights GWs where regret was largest
+  4. localStorage ring buffer caches the last 38 GWs of joined data per team ID — the chart loads from local cache first then refreshes in background, so a user with many historical GWs sees the timeline instantly on revisit
+  5. When the authenticated FPL API call fails (cookie expired) the screen degrades gracefully — model snapshots still render with "actual captain unavailable — log in to see regret score" placeholder per row; never errors, never blocks the rest of the AccuracyTab
+**Plans**: 4 plans (3 waves)
+  **Wave 0**
+  - [ ] 096-01-PLAN.md — RED scaffolding: `pipeline/tests/test_captain_snapshots.py` (4 cases: snapshot write, idempotent repeat, blob path convention, cold-start GW-1 absence); `src/lib/regret.test.ts` (8 cases: regret formula, missing-actual graceful, ring-buffer FIFO 38, top-3 snapshot shape, deterministic order, BGW handling, captain swap mid-window, localStorage key by team ID); `BackTab.test.tsx` (5 RED cases); types in `src/lib/types.ts` (`CaptainPickSnapshot`, `RegretEntry`, `DecisionHistory`)
+  **Wave 1** *(parallel — file-disjoint)*
+  - [ ] 096-02-PLAN.md — Pipeline path: `pipeline/captain_snapshots.py` (writes `captain_picks_gw{N}.json` to Blob with timestamp + top-3 array); `run.py` integration after `merge.py` and the existing `captain_picks.json` write (so this phase is a side-write, not a replacement)
+  - [ ] 096-03-PLAN.md — Regret engine + hook: `src/lib/regret.ts` (`computeRegret`, `mergeWithLocalCache`, `RING_BUFFER_SIZE = 38`); `useDecisionHistory.ts` hook composing snapshot fetch + authenticated picks fetch; `/api/decision-history` route proxying snapshot reads
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 096-04-PLAN.md — `BackTab` sub-tab component (timeline list + per-GW regret rows + cookie-expired graceful degradation message); page.tsx wiring under the Accuracy section sub-tab nav (so AccuracyTab grows from "Summary / Calibration" to "Summary / Calibration / Back"); manual UAT covering an authenticated multi-GW history
+**Cross-cutting constraints:**
+  - The model snapshot is captured at decision time (per-pipeline-run write) so retrospective max-pts is NEVER what the regret is computed against — Pitfall: comparing user-pick to retrospective-max paints every override as a loss, which is unfair and uninformative
+  - localStorage ring buffer key is `decisionHistory:teamId:{id}` so swapping team IDs (researching another manager's history) does not corrupt the user's own cache
+  - `captain_picks_gw{N}.json` snapshots persist forever (no Blob TTL) — they are decision evidence, deleting them would break the regret retrospective
+  - `useDecisionHistory` MUST handle the unauthenticated path — actual-captain backfill fails cleanly, snapshot data still renders
+  - The new "Back" sub-tab MUST reuse the existing AccuracyTab nav pattern — no new top-level nav entry
+**Phase notes**: This is the most complex phase in v1.16 — pipeline write + new API route + new hook + new sub-tab + localStorage caching. Sequenced near the end of the milestone so simpler wins ship first. Authenticated FPL API picks endpoint is already used by `useMyTeam` so cookie management is already solved. Ring buffer size 38 = full PL season; cumulative storage at ~10KB per GW × 38 ≈ 400KB which fits comfortably in localStorage (per REQUIREMENTS.md "Out of Scope" note: IndexedDB is overkill). BACK-02 (transfer regret backtester) is explicitly deferred to v1.17 because it requires a Python port of `suggestTransfers()` — out of scope here. The regret formula `(model_pts − user_pts) × 2` accounts for the captain points-doubling rule.
+**UI hint**: yes
+
+
 ---
 
 ## Progress
@@ -985,3 +1219,12 @@ Plans:
 | 85 | v1.14 | 2/2 | Complete    | 2026-05-09 |
 | 86 | v1.15 | - | Merged into Phase 82 | 2026-05-08 |
 | 87 | v1.15 | - | Merged into Phase 84 | 2026-05-09 |
+| 88 | v1.16 | 0/2 | Not started | - |
+| 89 | v1.16 | 0/2 | Not started | - |
+| 90 | v1.16 | 0/3 | Not started | - |
+| 91 | v1.16 | 0/4 | Not started | - |
+| 92 | v1.16 | 0/2 | Not started | - |
+| 93 | v1.16 | 0/4 | Not started | - |
+| 94 | v1.16 | 0/4 | Not started | - |
+| 95 | v1.16 | 0/2 | Not started | - |
+| 96 | v1.16 | 0/4 | Not started | - |

@@ -71,12 +71,12 @@
 
 | REQ-ID | Phase | Plan | Status |
 |--------|-------|------|--------|
-| MC-01 | TBD | — | pending |
-| CAL-01 | TBD | — | pending |
-| SENS-01 | TBD | — | pending |
-| WHY-01 | TBD | — | pending |
-| SCRAPER-01 | TBD | — | pending |
-| REFRESH-01 | TBD | — | pending |
-| DH-04 | TBD | — | pending |
-| BACK-01 | TBD | — | pending |
-| SPQ-04 | TBD | — | pending |
+| MC-01 | Phase 90 | — | pending |
+| CAL-01 | Phase 91 | — | pending |
+| SENS-01 | Phase 93 | — | pending |
+| WHY-01 | Phase 94 | — | pending |
+| SCRAPER-01 | Phase 88 | — | pending |
+| REFRESH-01 | Phase 89 | — | pending |
+| DH-04 | Phase 92 | — | pending |
+| BACK-01 | Phase 96 | — | pending |
+| SPQ-04 | Phase 95 | — | pending |
