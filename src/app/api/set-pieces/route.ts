@@ -92,9 +92,9 @@ export async function GET() {
     // 1) Merge raw sp_quality fields onto every taker (penalty/fk/corner) by id->string lookup.
     const mergedTeams: SetPieceTeam[] = payload.teams.map((team) => ({
       ...team,
-      penalty_taker: mergeSpQualityIntoTaker(team.penalty_taker, qmap!),
-      fk_taker: mergeSpQualityIntoTaker(team.fk_taker, qmap!),
-      corner_taker: mergeSpQualityIntoTaker(team.corner_taker, qmap!),
+      penalty_taker: mergeSpQualityIntoTaker(team.penalty_taker, qmap),
+      fk_taker: mergeSpQualityIntoTaker(team.fk_taker, qmap),
+      corner_taker: mergeSpQualityIntoTaker(team.corner_taker, qmap),
     }))
 
     // 2) Build the rank pool from FK+corner takers ONLY (penalty takers excluded per D-01;
