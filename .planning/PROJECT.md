@@ -4,7 +4,9 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
-v1.14 complete (2026-05-09) — All 4 phases shipped: Phase 82 (Data Health Dashboard), Phase 83 (GK save-point projections), Phase 84 (SPQ pipeline), Phase 85 (SPQ UI — DeliveryQualityBadge with Elite/Good/Weak tier in FK and Corner rows, sp_tier computed server-side via quartile logic in /api/set-pieces).
+v1.15 started (2026-05-09) — Pipeline Intelligence: Data Health Dashboard (DH-01/02/03) and SPQ pipeline (SPQ-01/02), completing the two features deferred from v1.14.
+
+v1.14 partial (2026-05-09) — Phase 83 (GK save-point projections: Poisson-floor saves math, xPts 6th component, gate persistence, XPtsCell "Saves" row) and Phase 85 (SPQ UI: DeliveryQualityBadge Elite/Good/Weak tier in FK and Corner rows, sp_tier quartile logic in /api/set-pieces) shipped. Phases 82 (Data Health) and 84 (SPQ pipeline) deferred to v1.15.
 
 v1.11 started (2026-05-04) — Insights & Infrastructure milestone: LLM prose summaries, fixture heat map, in-app alerts, event-based pipeline refresh, post-GW review, decision history ROI, transfer regret backtester.
 
@@ -20,14 +22,13 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
-## Current Milestone: v1.14 Analytics Depth
+## Current Milestone: v1.15 Pipeline Intelligence
 
-**Goal:** Deepen analytical quality with GK save-point projections fully integrated into xPts, pipeline data health visibility in the Accuracy tab, and set-piece delivery quality rankings grounded in Understat shot data.
+**Goal:** Complete the two features deferred from v1.14 — pipeline observability via a Data Health Dashboard and set-piece delivery quality data via the SPQ pipeline scraper.
 
 **Target features:**
-- GK-01: Save-point projections — opponent xG → expected saves → save pts EV as a named component in the XPtsCell hover card breakdown for GKs
-- DQ-01: Data Health section — collapsible panel in Accuracy tab showing last pipeline run timestamp, missing player count, null xG/xA count, model sanity checks, failed cron detection
-- SP-QUAL-01: Set-piece delivery quality ranking — Understat shot data filtered by situation (FromCorner/SetPiece/DirectFreekick) aggregated per taker as corner danger score, FK danger score, and composite delivery quality rank in SetPieceTakerPanel
+- DH-01/02/03: Data Health Dashboard — `data_health.json` written last in `run.py` with per-file timestamps, player counts, null xG/xA counts, and sanity checks; collapsible panel in AccuracyTab; `/api/data-health` route + `useDataHealth` hook (staleTime: 0, refetchInterval: 60s)
+- SPQ-01/02: Set-piece delivery pipeline — Understat per-team shot events scraper (corner + direct-FK situations, grouped by `player_assisted`); `corner_danger_score`, `fk_danger_score`, `delivery_quality_rank`, `sp_sample_n` per taker written to `sp_quality.json` and merged into `SetPieceTakerPanel` data (SPQ-03 UI already ships in v1.14)
 
 ## Planned (Deprioritised): v1.10 Modelling & Trust
 
@@ -325,4 +326,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-09 — Phase 83 (GK Save-Point Projections) complete. Poisson-floor saves math, xPts 6th component, gate persistence, XPtsCell "Saves" row. GK-01/GK-02/GK-03 validated.*
+*Last updated: 2026-05-09 — v1.15 Pipeline Intelligence started. DH-01/02/03 (Data Health Dashboard) and SPQ-01/02 (set-piece delivery pipeline) are the two active requirements, carried from v1.14.*

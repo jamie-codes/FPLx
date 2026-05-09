@@ -1,5 +1,17 @@
 # Milestones
 
+## v1.14 Analytics Depth (Shipped: 2026-05-09)
+
+**Phases completed:** 2 phases (83, 85) of 4 planned; Phases 82 and 84 deferred to v1.15
+**Timeline:** 2026-05-09 (1 day)
+
+**Key accomplishments:**
+
+1. GK Save-Point Projections (Phase 83): Poisson-floor `E[floor(N/3)] = Σ P(N ≥ 3k)` formula; `save_pts_ev` per GK fixture; XPtsCell "Saves" row; `save_predictor_enabled` gate (default OFF); `var_saves ≈ E[saves]/9` sigma component — GK-01/GK-02/GK-03
+2. SPQ UI (Phase 85): DeliveryQualityBadge with Elite/Good/Weak tier in FK and Corner rows; `sp_tier` computed server-side via quartile logic in `/api/set-pieces` — SPQ-03
+
+---
+
 ## v1.9 Competitive Intelligence (Shipped: 2026-05-04)
 
 **Phases completed:** 5 phases (56-60), 13 plans

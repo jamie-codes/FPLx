@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.14
-milestone_name: Analytics Depth
-status: milestone_complete
-stopped_at: "Phase 85 planned — 2 plans ready (85-01-PLAN.md Wave 1: types+route; 85-02-PLAN.md Wave 2: UI+tests)"
-last_updated: "2026-05-09T14:56:17.317Z"
-last_activity: 2026-05-09 -- Phase 85 execution started
+milestone: v1.15
+milestone_name: Pipeline Intelligence
+status: planning
+stopped_at: ""
+last_updated: "2026-05-09T00:00:00.000Z"
+last_activity: 2026-05-09 -- Milestone v1.15 started
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 11
-  completed_plans: 9
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-08 — v1.14 milestone started)
 
 ## Current Position
 
-Phase: 85
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-05-09
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-09 — Milestone v1.15 started
 
 ## Performance Metrics
 
