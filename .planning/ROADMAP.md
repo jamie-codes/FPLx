@@ -15,6 +15,7 @@
 - **v1.11 Insights & Infrastructure** — Phases 66-73 (Phases 66-71 planned; 72-73 complete 2026-05-05)
 - **v1.12 Modelling & Refinement** — Phases 61-65 (carry-forward) + 74-77 (in progress)
 - ✅ **v1.13 Analytics UX & Intelligence** — Phases 78-81 (complete 2026-05-08)
+- **v1.14 Analytics Depth** — Phases 82-85 (started 2026-05-08)
 
 ## Phases
 
@@ -817,6 +818,78 @@ Plans:
 **Status**: ✅ Complete (2026-05-08)
 **UI hint**: yes
 
+## v1.14 Analytics Depth (Phases 82-85)
+
+- [x] **Phase 82: Data Health Dashboard** — `data_health.json` artifact, collapsible AccuracyTab panel, `/api/data-health` route with 60s refetch (complete 2026-05-08)
+- [ ] **Phase 83: GK Save-Point Projections** — Poisson-floor `save_pts` in xPts pipeline, XPtsCell breakdown row for GKs, `save_predictor_enabled` gate (default OFF)
+- [ ] **Phase 84: Set-Piece Threat Assisted Pipeline** — per-team Understat shot scrape, `player_assisted` aggregation, `sp_quality.json` with corner/FK danger scores
+- [ ] **Phase 85: Set-Piece Threat Assisted UI** — delivery-quality tier badges in SetPieceTakerPanel, `/api/set-pieces` extension, sample-size tooltip
+
+### Phase 82: Data Health Dashboard
+**Goal**: Users can see at a glance whether the daily pipeline succeeded — per-artifact freshness, missing-player counts, null-xG categories, and sanity-check status — without leaving the app or inspecting JSON
+**Depends on**: Phase 81 (v1.13 complete); extends `pipeline/run.py`, `AccuracyTab.tsx`, `/api/accuracy` pattern
+**Requirements**: DH-01, DH-02, DH-03
+**Success Criteria** (what must be TRUE):
+  1. Pipeline writes `pipeline/cache/data_health.json` as the LAST step in `run.py` (after every other artifact) — JSON contains per-file write timestamps for each cache artifact, total player count, missing-player delta vs previous run, three distinct null-xG metrics (`understat_id null count`, `FPL-proxy-fallback count`, `xg_per90 null count`), and a `sanity_checks` array with `id/status/value/threshold` per check
+  2. AccuracyTab renders a collapsible "Data Health" panel at the top of the tab, collapsed by default, with a single status pill (green = all OK / amber = warnings / red = errors) reusing existing `TIER_CLASSES`; expanded body shows signal rows with status icon, label, value, and threshold
+  3. `/api/data-health` route reads `data_health.json` from Vercel Blob (USE_BLOB=true) or local cache (USE_BLOB=false), mirroring `/api/accuracy`; `useDataHealth` TanStack Query hook uses `staleTime: 0` and `refetchInterval: 60_000` so the panel reflects current pipeline state, not a 6h-cached snapshot
+  4. Error messages written to `data_health.json` are sanitized via `_sanitize_error()` — environment-variable-shaped tokens (e.g. `BLOB_READ_WRITE_TOKEN`) and absolute paths are stripped, content truncated at 200 characters — verified by a pytest case that feeds a tokenised exception and asserts the redacted output
+  5. Zero new HTTP calls are introduced: this phase is observability-only, computed entirely from existing pipeline outputs and run-state metadata
+**Plans**: 3 plans
+Plans:
+- [x] 82-01-PLAN.md — Pipeline data_health.py + run.py instrumentation + pytest (DH-01, Wave 1)
+- [x] 82-02-PLAN.md — /api/data-health route + useDataHealth hook + DataHealth/SanityCheck types (DH-03, Wave 2)
+- [x] 82-03-PLAN.md — DataHealthPanel sub-component in AccuracyTab.tsx (DH-02, Wave 3)
+**UI hint**: yes
+
+### Phase 83: GK Save-Point Projections
+**Goal**: Goalkeepers receive a calibrated save-points component in their xPts forecast, surfaced transparently in the XPtsCell hover card, gated OFF by default until a 5-GW shadow run validates non-regression
+**Depends on**: Phase 82 (Data Health observability is in place to validate gate-flip rollout); extends `pipeline/merge.py`, new `pipeline/saves.py`, `columns.tsx` (XPtsCell)
+**Requirements**: GK-01, GK-02, GK-03
+**Success Criteria** (what must be TRUE):
+  1. Pipeline computes `save_pts_ev` per GK per upcoming fixture using the Poisson-floor formula `E[floor(N/3)] = Σ P(N ≥ 3k)` over opponent xG (NOT the naive `expected_saves / 3`); the value is written to `xPts_components_1gw.save_pts` and added to `xPts_1gw / 3gw / 5gw` totals; `var_saves ≈ E[saves]/9` is added to `_compute_xpts_sigma` so GK ceiling ranking remains correct
+  2. XPtsCell hover card shows a "Saves" component row when `save_pts > 0` and `element_type === 1` only; non-GK players never render the row, and BGW GKs render `save_pts = 0.0` with no breakdown row
+  3. A Vitest invariant test asserts `Math.abs(cardTotal − xPts_1gw) ≤ 0.015` for a GK fixture so the new component never silently breaks the hover card sum integrity (per RESEARCH Pitfall 1)
+  4. `save_predictor_enabled` gate flag is written to `accuracy_backtest.json` (default OFF on cold start); the GK ceiling-captaincy filter excludes `element_type === 1` from `_compute_captain_picks` consistent with the prose-summary convention
+  5. The gate ships OFF — no production-visible save_pts contribution until a non-regression shadow run over ≥5 GWs is recorded (this phase delivers the engine and gate; flip is a deliberate later operation)
+**Plans**: 4 plans
+Plans:
+**Wave 1**
+- [x] 83-01-PLAN.md — pipeline/saves.py Poisson-floor math module + pytest test_saves.py (GK-01, Wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 83-02-PLAN.md — merge.py: opponent_xg_per_game enrichment + _compute_xpts_fixture/_xpts_ngw/_xpts_per_gw/_compute_xpts_sigma extension + captain GK guard + 5 new pytest cases (GK-01, GK-03, Wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 83-03-PLAN.md — accuracy.py + run.py save_predictor_enabled gate plumbing + 3 cold-start pytest cases (GK-03, Wave 3)
+- [ ] 83-04-PLAN.md — types.ts + columns.tsx XPtsCell save_pts + Vitest XPtsCell-saves.test.tsx invariant (GK-02, Wave 3)
+**UI hint**: yes
+
+### Phase 84: Set-Piece Threat Assisted Pipeline
+**Goal**: Pipeline produces a per-taker measure of set-piece delivery quality — aggregate xG generated by shots they assisted from corners and direct free kicks — written as a separate artifact so a scrape failure cannot poison `merged_players.json`
+**Depends on**: Phase 82 (DH sanity checks surface unmatched-ID counts emitted by this phase)
+**Requirements**: SPQ-01, SPQ-02
+**Success Criteria** (what must be TRUE):
+  1. Pipeline scrapes per-team Understat shot events from `https://understat.com/team/{name}/2025` (~20 requests, primary takers only, 24h disk cache); shots are filtered to `situation IN ('FromCorner', 'DirectFreekick')` and aggregated by `player_assisted` (NOT shooter) so the metric measures the deliverer's threat, not aerial threat from receivers
+  2. Per-taker output written to `pipeline/cache/sp_quality.json` includes `corner_danger_score` (mean xG per assisted corner shot, null when sample n < 5), `fk_danger_score` (mean xG per direct-FK shot, null when n < 3), `delivery_quality_rank` (composite using Empirical-Bayes shrinkage k=20 to position-mean, null when both scores are null), and `sp_sample_n` (sample count)
+  3. The entire scrape step in `run.py` is wrapped in try/except (mirroring the existing `prose_summary` pattern at run.py:351) so a 403 bot-protection response or network failure does NOT poison `merged_players.json` or any other artifact — a stale or absent `sp_quality.json` is the only failure mode
+  4. Unmatched Understat IDs encountered during shot aggregation are logged and the count is surfaced as a sanity-check entry in DH-01 (`data_health.json sanity_checks[]`) so silent shot-drop on the 43-null-Understat-ID population is visible
+  5. A pytest case feeds a fixture of mixed shot situations (corners, FKs, open play, penalties) and asserts the aggregator only counts `FromCorner` and `DirectFreekick` events grouped by `player_assisted` — guarding against the shooter-vs-deliverer pitfall (RESEARCH Pitfall 2)
+**Plans**: TBD
+
+### Phase 85: Set-Piece Threat Assisted UI
+**Goal**: Users see set-piece taker delivery quality at a glance in SetPieceTakerPanel — Elite/Good/Weak tier badges with a sample-size tooltip — so they can prefer takers whose deliveries actually generate xG
+**Depends on**: Phase 84 (`sp_quality.json` must exist before UI can render); extends existing `/api/set-pieces` route (no new route)
+**Requirements**: SPQ-03
+**Success Criteria** (what must be TRUE):
+  1. SetPieceTakerPanel renders a delivery-quality tier badge in each taker card: Elite (top quartile, green) / Good (middle half, zinc) / Weak (bottom quartile, amber) / "—" (insufficient data, grey) — tier classes reuse the existing `TIER_CLASSES` palette
+  2. Hovering a tier badge shows a tooltip with the literal wording "xG generated by this taker's assisted set-piece shots — measures how often their deliveries produce high-xG chances (n=[sp_sample_n] shots)" — substituting the actual `sp_sample_n` value
+  3. `/api/set-pieces` is EXTENDED (not replaced; no new route) to include `corner_danger_score`, `fk_danger_score`, `delivery_quality_rank`, and `sp_sample_n` per taker by reading `sp_quality.json` alongside the existing taker artifact
+  4. When `sp_quality.json` is missing or a taker has no entry, the card renders the "—" insufficient-data badge gracefully — no error, no blank card, no console noise — verified by a Vitest case with a taker fixture omitted from the quality map
+  5. Layout audit on 390–430px viewport confirms the new badge does not overflow the taker card or push existing fields out of view (consistent with v1.13 mobile polish standards)
+**Plans**: TBD
+**UI hint**: yes
+
 ---
 
 ## Progress
@@ -865,3 +938,7 @@ Plans:
 | 79 | v1.13 | 0 | Not started | - |
 | 80 | v1.13 | 0 | Not started | - |
 | 81 | v1.13 | 4/4 | Complete | 2026-05-08 |
+| 82 | v1.14 | 0 | Not started | - |
+| 83 | v1.14 | 1/4 | In Progress|  |
+| 84 | v1.14 | 0 | Not started | - |
+| 85 | v1.14 | 0 | Not started | - |
