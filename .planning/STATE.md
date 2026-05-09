@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.14
 milestone_name: Analytics Depth
-status: executing
+status: milestone_complete
 stopped_at: "Phase 85 planned — 2 plans ready (85-01-PLAN.md Wave 1: types+route; 85-02-PLAN.md Wave 2: UI+tests)"
 last_updated: "2026-05-09T14:56:17.317Z"
 last_activity: 2026-05-09 -- Phase 85 execution started
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 11
   completed_plans: 9
-  percent: 82
+  percent: 100
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-08 — v1.14 milestone started)
 
 ## Current Position
 
-Phase: 85 (set-piece-threat-assisted-ui) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 85
-Last activity: 2026-05-09 -- Phase 85 execution started
+Phase: 85
+Plan: Not started
+Status: Milestone complete
+Last activity: 2026-05-09
 
 ## Performance Metrics
 
