@@ -201,7 +201,8 @@ def _build_minimal_inputs_for_components():
 
 
 def test_merge_players_writes_xpts_components_1gw():
-    """WR-03 integration: merge_players must write xPts_components_1gw with all five keys,
+    """WR-03 integration: merge_players must write xPts_components_1gw with all six keys
+    (Phase 83 GK-01 adds save_pts as always-present sixth component),
     and component sum must equal xPts_1gw within ±0.01 (XPT-02 sum invariant)."""
     bootstrap, fixtures, understat, id_map, xmins_stats, summaries = (
         _build_minimal_inputs_for_components()
@@ -216,8 +217,8 @@ def test_merge_players_writes_xpts_components_1gw():
     )
     components = player['xPts_components_1gw']
 
-    # All five required keys must be present
-    required_keys = {'appearance_pts', 'goal_pts', 'assist_pts', 'cs_pts', 'bonus_pts'}
+    # All six required keys must be present (save_pts added in Phase 83 GK-01 as always-present sixth component)
+    required_keys = {'appearance_pts', 'goal_pts', 'assist_pts', 'cs_pts', 'bonus_pts', 'save_pts'}
     assert required_keys == set(components.keys()), (
         f"xPts_components_1gw has unexpected keys: {set(components.keys())}"
     )

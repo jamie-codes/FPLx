@@ -2,6 +2,7 @@
 custom FDR from rolling goals conceded, and next 5 fixture difficulty scores."""
 
 from typing import Optional
+from saves import poisson_floor_save_pts, AWAY_FACTOR, HOME_FACTOR
 
 
 def _safe_float(val, default: float = 0.0) -> float:
@@ -194,6 +195,8 @@ def _compute_xpts_fixture(
     mins_60_prob: float | None = None,
     bonus_predictor_enabled: bool = False,
     bonus_ev: float | None = None,
+    save_predictor_enabled: bool = False,           # Phase 83 GK-01
+    opponent_xg_per_game: float = 0.0,              # Phase 83 GK-01 / D-02 (lambda for poisson_floor_save_pts)
 ) -> dict:
     """Compute expected FPL points for a single fixture (Phase 28 DATA-02).
 
@@ -214,7 +217,7 @@ def _compute_xpts_fixture(
     """
     # Guard against degenerate inputs
     if xmins <= 0 or start_prob <= 0:
-        return {'total': 0.0, 'goal_pts': 0.0, 'assist_pts': 0.0, 'cs_pts': 0.0, 'bonus_pts': 0.0, 'appearance_pts': 0.0}
+        return {'total': 0.0, 'goal_pts': 0.0, 'assist_pts': 0.0, 'cs_pts': 0.0, 'bonus_pts': 0.0, 'appearance_pts': 0.0, 'save_pts': 0.0}
 
     xg = xg_per90 if xg_per90 is not None else 0.0
     xa = xa_per90 if xa_per90 is not None else 0.0
@@ -250,7 +253,14 @@ def _compute_xpts_fixture(
     # appearance points are per game started, not per minute.
     appearance_pts = start_prob * 2
 
-    total = goal_pts + assist_pts + cs_pts + bonus_pts + appearance_pts
+    # Phase 83 GK-01: save points for GKs when gate ON. element_type guard lives
+    # here, NOT in saves.poisson_floor_save_pts (CONTEXT.md D-03 / Pitfall 3).
+    if element_type == 1 and save_predictor_enabled:
+        save_pts = poisson_floor_save_pts(opponent_xg_per_game)
+    else:
+        save_pts = 0.0
+
+    total = goal_pts + assist_pts + cs_pts + bonus_pts + appearance_pts + save_pts
     return {
         'total': round(total, 3),
         'goal_pts': round(goal_pts, 3),
@@ -258,6 +268,7 @@ def _compute_xpts_fixture(
         'cs_pts': round(cs_pts, 3),
         'bonus_pts': round(bonus_pts, 3),
         'appearance_pts': round(appearance_pts, 3),
+        'save_pts': round(save_pts, 3),  # Phase 83 GK-01 — always present (0.0 for non-GK / gate-OFF)
     }
 
 
@@ -273,6 +284,7 @@ def _xpts_ngw(
     mins_60_prob: float | None = None,
     bonus_predictor_enabled: bool = False,
     bonus_ev: float | None = None,
+    save_predictor_enabled: bool = False,   # Phase 83 GK-01
 ) -> tuple:
     """Project xPts across N upcoming GWs, DGW-aware (Phase 28 DATA-02 D-04, D-06).
 
@@ -294,7 +306,7 @@ def _xpts_ngw(
         grouped.append((event_id, list(group)))
 
     total = 0.0
-    first_gw_components = {'goal_pts': 0.0, 'assist_pts': 0.0, 'cs_pts': 0.0, 'bonus_pts': 0.0, 'appearance_pts': 0.0}
+    first_gw_components = {'goal_pts': 0.0, 'assist_pts': 0.0, 'cs_pts': 0.0, 'bonus_pts': 0.0, 'appearance_pts': 0.0, 'save_pts': 0.0}
 
     for gw_idx, (_event_id, gw_fixtures) in enumerate(grouped[:n_gws]):
         for fix in gw_fixtures:
@@ -309,6 +321,8 @@ def _xpts_ngw(
                 mins_60_prob=mins_60_prob,
                 bonus_predictor_enabled=bonus_predictor_enabled,
                 bonus_ev=bonus_ev,
+                save_predictor_enabled=save_predictor_enabled,                          # Phase 83 GK-01
+                opponent_xg_per_game=fix.get('opponent_xg_per_game', 0.0),               # Phase 83 GK-01 / D-02
             )
             total += result['total']
             if gw_idx == 0 and n_gws == 1:
@@ -334,6 +348,7 @@ def _xpts_per_gw(
     mins_60_prob: float | None = None,
     bonus_predictor_enabled: bool = False,
     bonus_ev: float | None = None,
+    save_predictor_enabled: bool = False,   # Phase 83 GK-01
 ) -> list[float]:
     """Return list of xPts per GW group (Phase 80 GWI-04, D-12).
 
@@ -366,6 +381,8 @@ def _xpts_per_gw(
                 mins_60_prob=mins_60_prob,
                 bonus_predictor_enabled=bonus_predictor_enabled,
                 bonus_ev=bonus_ev,
+                save_predictor_enabled=save_predictor_enabled,                          # Phase 83 GK-01
+                opponent_xg_per_game=fix.get('opponent_xg_per_game', 0.0),               # Phase 83 GK-01 / D-02
             )
             gw_total += comp['total']
         result.append(round(gw_total, 2))
@@ -384,6 +401,7 @@ def _compute_xpts_sigma(
     mins_60_prob: float | None = None,
     bonus_predictor_enabled: bool = False,
     bonus_ev: float | None = None,
+    save_predictor_enabled: bool = False,   # Phase 83 GK-01
 ) -> float:
     """Analytical sigma for xPts across an N-GW window (Phase 28 XPTS-02 D-09).
 
@@ -422,6 +440,12 @@ def _compute_xpts_sigma(
             var_cs = cs_prob * (1 - cs_prob) * (CS_PTS[element_type] ** 2)
 
             total_var += var_goal + var_assist + var_cs
+
+            # Phase 83 GK-01 / D-11: save variance for GKs when gate ON.
+            # Var[floor(N/3)] ~ lambda/9 (continuous approximation; acceptable for ceiling classification).
+            if element_type == 1 and save_predictor_enabled:
+                lam_saves = fix.get('opponent_xg_per_game', 0.0)
+                total_var += lam_saves / 9.0
 
     return math.sqrt(total_var)
 
@@ -596,7 +620,7 @@ def _compute_captain_picks(result: list, gameweek: int | None = None) -> dict:
 
     POSITION_MAP = {1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD'}
 
-    eligible = [p for p in result if p.get('status') == 'a']
+    eligible = [p for p in result if p.get('status') == 'a' and p.get('element_type') != 1]   # Phase 83 GK-03 / D-10 — exclude GKs from captaincy
 
     def _pick_dict(p: dict, *, eo_threshold: float | None = None) -> dict:
         d = {
@@ -661,6 +685,7 @@ def merge_players(
     xmins_v2_enabled: bool = False,
     bonus_stats: dict | None = None,
     bonus_predictor_enabled: bool = False,
+    save_predictor_enabled: bool = False,   # Phase 83 GK-01 / GK-03
 ) -> tuple[list, dict]:
     """Merge FPL bootstrap + Understat xG/xA into a unified player list.
 
@@ -848,6 +873,7 @@ def merge_players(
                 'difficulty_tier': difficulty_tiers.get(opp_id, 'medium'),                   # UNCHANGED
                 'attacking_difficulty': difficulty_scores.get(opp_id, 0.5),                  # NEW (DATA-01, D-01) — same as difficulty_score
                 'defensive_difficulty': defensive_difficulty_scores.get(opp_id, 0.5),        # NEW (DATA-01, D-02)
+                'opponent_xg_per_game': round(team_xgs.get(opp_id, 0.0) * AWAY_FACTOR, 4),  # Phase 83 GK-01 / D-02 — opponent is traveling (is_home=True for our team)
             })
 
         # Away team perspective
@@ -861,6 +887,7 @@ def merge_players(
                 'difficulty_tier': difficulty_tiers.get(opp_id, 'medium'),                   # UNCHANGED
                 'attacking_difficulty': difficulty_scores.get(opp_id, 0.5),                  # NEW
                 'defensive_difficulty': defensive_difficulty_scores.get(opp_id, 0.5),        # NEW
+                'opponent_xg_per_game': round(team_xgs.get(opp_id, 0.0) * HOME_FACTOR, 4),  # Phase 83 GK-01 / D-02 — opponent is at home (is_home=False for our team)
             })
 
     # ------------------------------------------------------------------ #
@@ -1061,18 +1088,21 @@ def merge_players(
             element['element_type'], player_fixtures, 1,
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
             bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
+            save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
         )
         xpts_3gw, _ = _xpts_ngw(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 3,
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
             bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
+            save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
         )
         xpts_5gw, _ = _xpts_ngw(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 5,
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
             bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
+            save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
         )
         player['xPts_1gw'] = xpts_1gw
         player['xPts_3gw'] = xpts_3gw
@@ -1105,18 +1135,21 @@ def merge_players(
             element['element_type'], player_fixtures, 1,
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
             bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
+            save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
         )
         player['_sigma_3gw'] = _compute_xpts_sigma(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 3,
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
             bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
+            save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
         )
         player['_sigma_5gw'] = _compute_xpts_sigma(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 5,
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
             bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
+            save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
         )
 
         result.append(player)
