@@ -4,6 +4,8 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
+v1.14 in progress (2026-05-08) — Phase 82 complete: Data Health Dashboard shipped (`data_health.json` pipeline artifact, `/api/data-health` route, collapsible `DataHealthPanel` in AccuracyTab with 60s refetch).
+
 v1.11 started (2026-05-04) — Insights & Infrastructure milestone: LLM prose summaries, fixture heat map, in-app alerts, event-based pipeline refresh, post-GW review, decision history ROI, transfer regret backtester.
 
 v1.10 planned (2026-05-04) — Modelling & Trust phases 61-65 defined in ROADMAP.md (MC, calibration, versioning, sensitivity, rejection explainer); deprioritised mid-season in favour of v1.11. Work to resume post-season.
@@ -18,21 +20,14 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
-## Current Milestone: v1.12 Modelling & Refinement
+## Current Milestone: v1.14 Analytics Depth
 
-**Goal:** Resurrect the deprioritised v1.10 modelling depth (Monte Carlo, calibration, versioning, sensitivity, rejection explainer) while fixing known bugs in transfer suggestions and the optimiser, and refining analytics UI across Heat Map, Accuracy Tab, and GemTable.
+**Goal:** Deepen analytical quality with GK save-point projections fully integrated into xPts, pipeline data health visibility in the Accuracy tab, and set-piece delivery quality rankings grounded in Understat shot data.
 
 **Target features:**
-- MC-01/02/03/04: Monte Carlo simulation — blank%, haul%, floor/ceiling per player; 5-GW rank trajectory simulator; captain MC labels
-- VER-01/02 + CAL-01/02: Model version history tracking + calibration reliability diagrams by position
-- SENS-01/02: Sensitivity/fragility flags on transfer candidates and captain picks
-- WHY-01/02/03: "Why not?" rejection explainer (GemTable, TransferPanel callout, Squad view)
-- HEAT2-01..05: Heat Map v2 — opponent labels per cell, team filtering, extended horizon, ATT/DEF split, squad overlay
-- ACC2-01: Accuracy drill-down — click GW row to see flagged players and haulers
-- RTP-01: Routes to Points — numeric score column in GemTable (pen, FK, corners, goals, assists routes)
-- TFR2-01..04: Transfer engine fixes — 3-per-team cap, duplicate transfer bug, multi-hit support (-4/-8), bank balance auto-pull/manual entry
-- OPT2-01/02: Optimiser enhancements — manual captain/VC override, pitch visual with player kit art
-- POL-01..03: Polish — Decision tab captain overflow fix, full mobile layout audit (Galaxy S26+)
+- GK-01: Save-point projections — opponent xG → expected saves → save pts EV as a named component in the XPtsCell hover card breakdown for GKs
+- DQ-01: Data Health section — collapsible panel in Accuracy tab showing last pipeline run timestamp, missing player count, null xG/xA count, model sanity checks, failed cron detection
+- SP-QUAL-01: Set-piece delivery quality ranking — Understat shot data filtered by situation (FromCorner/SetPiece/DirectFreekick) aggregated per taker as corner danger score, FK danger score, and composite delivery quality rank in SetPieceTakerPanel
 
 ## Planned (Deprioritised): v1.10 Modelling & Trust
 
@@ -330,4 +325,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-08 — Phase 081 (Team Shields & Visual Identity) complete. SHD-01–SHD-03 all verified: useTeamBadge hook (crest URL + error state + fallback), ghost watermark crest in SetPieceTakerPanel, inline 20px crest in FixtureHeatMap row headers, LineupTab kit-error state migrated to hook. v1.13 milestone complete (Phases 78–81).*
+*Last updated: 2026-05-09 — Phase 83 (GK Save-Point Projections) complete. Poisson-floor saves math, xPts 6th component, gate persistence, XPtsCell "Saves" row. GK-01/GK-02/GK-03 validated.*
