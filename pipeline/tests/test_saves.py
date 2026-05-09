@@ -3,12 +3,15 @@
 Run: python -m pytest pipeline/tests/test_saves.py -q
 """
 
+import json
 import math
+import os
 import pytest
 
 # conftest.py inserts pipeline/ onto sys.path -- use bare import.
 from saves import poisson_floor_save_pts
 from merge import _compute_xpts_fixture, _compute_xpts_sigma, _compute_captain_picks
+from accuracy import _read_existing_save_predictor_flag
 
 
 def test_symbol_exists():
@@ -184,3 +187,37 @@ def test_captain_excludes_gks():
         f"Ceiling pick must be the MID, not the GK. Got: {picks['ceiling']}"
     )
     assert picks['ceiling']['id'] == 2
+
+
+# ---- Phase 83 Plan 03 gate cold-start / preserved / missing-key tests ----
+
+
+def test_gate_cold_start(tmp_path):
+    """GK-03 / D-09: _read_existing_save_predictor_flag returns False when no
+    accuracy_backtest.json exists in cache_dir.
+    """
+    # tmp_path is empty — no accuracy_backtest.json present
+    result = _read_existing_save_predictor_flag(str(tmp_path))
+    assert result is False
+
+
+def test_gate_preserved_when_cache_has_true(tmp_path):
+    """GK-03 / D-09: a prior cache containing save_predictor_enabled=true survives
+    the read; manual flips persist across pipeline runs.
+    """
+    cache_path = tmp_path / 'accuracy_backtest.json'
+    cache_path.write_text(json.dumps({
+        'summary': {'save_predictor_enabled': True}
+    }), encoding='utf-8')
+    result = _read_existing_save_predictor_flag(str(tmp_path))
+    assert result is True
+
+
+def test_gate_default_when_cache_missing_key(tmp_path):
+    """Defensive: cached file with no save_predictor_enabled key returns False."""
+    cache_path = tmp_path / 'accuracy_backtest.json'
+    cache_path.write_text(json.dumps({
+        'summary': {'bonus_predictor_enabled': True}   # other gates present, save flag missing
+    }), encoding='utf-8')
+    result = _read_existing_save_predictor_flag(str(tmp_path))
+    assert result is False
