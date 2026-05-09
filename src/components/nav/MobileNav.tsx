@@ -1,6 +1,8 @@
 'use client'
 
 import { SECTIONS, type Section, type SubTab } from '@/app/page'
+import { LastUpdated } from '@/components/LastUpdated'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 
 interface MobileNavProps {
   activeSection: Section
@@ -15,15 +17,19 @@ export function MobileNav({ activeSection, activeSubTab, onSectionChange, onSubT
       className="sm:hidden fixed bottom-0 inset-x-0 bg-surface border-t border-border nav-safe-bottom z-50"
       aria-label="Mobile navigation"
     >
+      <div className="flex items-center justify-between px-4 py-1.5 border-b border-border">
+        <LastUpdated />
+        <ThemeToggle />
+      </div>
       {(() => {
         const activeSectionDef = SECTIONS.find(s => s.id === activeSection)!
         if (!activeSectionDef.subTabs.length) return null
         return (
-          <div className="flex gap-2 px-4 py-2 border-b border-border">
+          <div className="flex gap-2 px-4 py-2 border-b border-border overflow-x-auto">
             {activeSectionDef.subTabs.map((sub) => (
               <button
                 key={sub.id}
-                className={`px-3 py-1 text-xs font-medium rounded-full active:scale-95 transition-transform ${activeSubTab === sub.id ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}
+                className={`px-3 py-1 text-xs font-medium rounded-full active:scale-95 transition-transform shrink-0 ${activeSubTab === sub.id ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}
                 onClick={() => onSubTabChange(sub.id)}
                 aria-current={activeSubTab === sub.id ? 'page' : undefined}
               >

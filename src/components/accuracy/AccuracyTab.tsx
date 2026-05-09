@@ -111,6 +111,7 @@ const GATE_LABEL: Record<keyof VersionGateFlags, string> = {
   xmins_v2_enabled: 'xmins v2',
   bonus_predictor_enabled: 'bonus predictor',
   form_signal_enabled: 'form signal',
+  save_predictor_enabled: 'save predictor',
 }
 
 function GateFlagsCell({ flags }: { flags: VersionGateFlags }) {
