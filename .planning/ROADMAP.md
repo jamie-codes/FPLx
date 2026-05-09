@@ -821,7 +821,7 @@ Plans:
 ## v1.14 Analytics Depth (Phases 82-85)
 
 - [x] **Phase 82: Data Health Dashboard** — `data_health.json` artifact, collapsible AccuracyTab panel, `/api/data-health` route with 60s refetch (complete 2026-05-08)
-- [ ] **Phase 83: GK Save-Point Projections** — Poisson-floor `save_pts` in xPts pipeline, XPtsCell breakdown row for GKs, `save_predictor_enabled` gate (default OFF)
+- [x] **Phase 83: GK Save-Point Projections** — Poisson-floor `save_pts` in xPts pipeline, XPtsCell breakdown row for GKs, `save_predictor_enabled` gate (default OFF) (completed 2026-05-09)
 - [ ] **Phase 84: Set-Piece Threat Assisted Pipeline** — per-team Understat shot scrape, `player_assisted` aggregation, `sp_quality.json` with corner/FK danger scores
 - [ ] **Phase 85: Set-Piece Threat Assisted UI** — delivery-quality tier badges in SetPieceTakerPanel, `/api/set-pieces` extension, sample-size tooltip
 
@@ -861,8 +861,8 @@ Plans:
 - [x] 83-02-PLAN.md — merge.py: opponent_xg_per_game enrichment + _compute_xpts_fixture/_xpts_ngw/_xpts_per_gw/_compute_xpts_sigma extension + captain GK guard + 5 new pytest cases (GK-01, GK-03, Wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 83-03-PLAN.md — accuracy.py + run.py save_predictor_enabled gate plumbing + 3 cold-start pytest cases (GK-03, Wave 3)
-- [ ] 83-04-PLAN.md — types.ts + columns.tsx XPtsCell save_pts + Vitest XPtsCell-saves.test.tsx invariant (GK-02, Wave 3)
+- [x] 83-03-PLAN.md — accuracy.py + run.py save_predictor_enabled gate plumbing + 3 cold-start pytest cases (GK-03, Wave 3)
+- [x] 83-04-PLAN.md — types.ts + columns.tsx XPtsCell save_pts + Vitest XPtsCell-saves.test.tsx invariant (GK-02, Wave 3)
 **UI hint**: yes
 
 ### Phase 84: Set-Piece Threat Assisted Pipeline
@@ -939,6 +939,6 @@ Plans:
 | 80 | v1.13 | 0 | Not started | - |
 | 81 | v1.13 | 4/4 | Complete | 2026-05-08 |
 | 82 | v1.14 | 0 | Not started | - |
-| 83 | v1.14 | 2/4 | In Progress|  |
+| 83 | v1.14 | 4/4 | Complete   | 2026-05-09 |
 | 84 | v1.14 | 0 | Not started | - |
 | 85 | v1.14 | 0 | Not started | - |
