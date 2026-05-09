@@ -99,12 +99,16 @@ export async function GET() {
 
     // 2) Build the rank pool from FK+corner takers ONLY (penalty takers excluded per D-01;
     //    penalty sp_tier remains null even when delivery_quality_rank is present).
+    //    Deduplicate by taker ID so dual-role takers are not counted twice.
     const ranks: number[] = []
+    const seen = new Set<number>()
     for (const team of mergedTeams) {
-      const fkRank = team.fk_taker.delivery_quality_rank
-      const cornerRank = team.corner_taker.delivery_quality_rank
-      if (typeof fkRank === 'number') ranks.push(fkRank)
-      if (typeof cornerRank === 'number') ranks.push(cornerRank)
+      for (const taker of [team.fk_taker, team.corner_taker]) {
+        if (typeof taker.delivery_quality_rank === 'number' && taker.id != null && !seen.has(taker.id)) {
+          seen.add(taker.id)
+          ranks.push(taker.delivery_quality_rank)
+        }
+      }
     }
     const cutoffs = computeQuartileCutoffs(ranks)
 
