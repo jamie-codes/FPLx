@@ -340,6 +340,7 @@ export interface AccuracySummary {
   // Phase 52 / 53 / 63 — gate flags written to JSON but missing from earlier type:
   xmins_v2_enabled?: boolean         // Phase 52 D-02 gate (preserved across runs)
   bonus_predictor_enabled?: boolean  // Phase 53 BPS-01 gate (preserved across runs)
+  save_predictor_enabled?: boolean   // Phase 83 GK-01 gate (preserved across runs)
 }
 
 export interface AccuracyHaulter {
@@ -426,6 +427,7 @@ export interface VersionGateFlags {
   xmins_v2_enabled: boolean
   bonus_predictor_enabled: boolean
   form_signal_enabled: boolean
+  save_predictor_enabled: boolean
 }
 
 export interface VersionRecord {

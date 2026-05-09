@@ -45,6 +45,7 @@ def test_xpts_components_sum_to_total_single_fixture():
         + result['cs_pts']
         + result['bonus_pts']
         + result['appearance_pts']
+        + result['save_pts']
     )
     assert abs(component_sum - result['total']) < 0.01
 
@@ -100,6 +101,7 @@ def test_xpts_components_sum_integrity_with_bonus_flag(bonus_predictor_enabled, 
         + result['cs_pts']
         + result['bonus_pts']
         + result['appearance_pts']
+        + result['save_pts']
     )
     assert abs(component_sum - result['total']) < 0.01, \
         f"Sum drift for flag={bonus_predictor_enabled}, ev={bonus_ev}: " \
@@ -120,6 +122,7 @@ def test_xpts_components_sum_integrity_both_gates_on():
         + result['cs_pts']
         + result['bonus_pts']
         + result['appearance_pts']
+        + result['save_pts']
     )
     # Pitfall 3: relaxed to ±0.02 to absorb cumulative rounding under two active gates.
     assert abs(component_sum - result['total']) < 0.02, \
