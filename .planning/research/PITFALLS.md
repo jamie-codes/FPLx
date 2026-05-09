@@ -1,431 +1,160 @@
-# Domain Pitfalls — v1.9 Competitive Intelligence
+# Domain Pitfalls — v1.16 Modelling & Trust
 
-**Domain:** FPL Analyst — adding MTP-01 (Manual Transfer Planner), ML-01 (Mini-League Rival Tracker), EO-01 (Effective Ownership), and TREE-01 (Transfer Route Tree) to an existing FPL analytics app.
-**Researched:** 2026-05-03
-**Source confidence:** HIGH on FPL sell price rules (premierleague.com official + community sources agree); HIGH on FT banking rule changes (official PL announcement for 2024/25); HIGH on integration pitfalls (verified against `src/lib/free-transfer-engine.ts`, `src/lib/planning-engine.ts`, `src/lib/types.ts`); MEDIUM on FPL API undocumented behaviours (community research, unconfirmed by official docs); MEDIUM on EO approximation limits (community reverse-engineering).
+**Domain:** FPL Analyst — adding **SCRAPER-01** (FPL official news feed scraper), **REFRESH-01** (event-based GitHub Actions triggers), **DH-04** (cron history sparkline), **BACK-01** (decision history backtester), **SPQ-04** (set-piece league table), **WHY-01** (rejection explainer), and **SENS-01** (sensitivity analysis) to the existing Next.js 16 / React 19 / Python pipeline application.
 
-This document catalogues mistakes that will cause v1.9 features to ship broken or to silently corrupt downstream consumers. Pitfalls are scoped to features being **added to this existing system** — generic software engineering advice is not the focus.
+**Researched:** 2026-05-09
 
----
+**Source confidence:** HIGH on existing FPL bootstrap-static fields (`news`, `status`, `chance_of_playing_next_round`, `chance_of_playing_this_round`) verified live in `pipeline/cache/fpl_bootstrap.json`; HIGH on existing GitHub Actions cron (verified at `.github/workflows/pipeline.yml`, runs 4x daily at 6/12/18/00 UTC); HIGH on `data_health.json` and `sp_quality.json` already shipped in v1.14/v1.15 (Phase 82, 84); HIGH on Phase 64 `computeFragility()` and Phase 65 `computeRejection()` already shipped (verified in `src/lib/sensitivity.ts` and `src/lib/explain.ts`); HIGH on existing `localStorage` patterns at 15 call sites including `fplx_manual_plan` and `fpl_team_id` keys; HIGH on Vercel Blob `USE_BLOB` toggle pattern across all existing `/api/*` routes.
 
-## Critical Pitfalls
-
-These cause silent financial simulation errors, misleading UI, or broken integration with existing engines. Address in the corresponding phase or they will leak into shipped code.
-
-### Pitfall C1: free-transfer-engine.ts implements the pre-2024/25 FT banking rules
-
-**Phase:** MTP-01, TREE-01
-
-**What goes wrong:** The 2024/25 FPL season introduced two breaking rule changes ([official PL announcement](https://www.premierleague.com/en/news/4058895)):
-
-1. **FT bank cap raised from 1 to 4** — managers can now accumulate up to 5 free transfers (1 weekly + 4 banked), not the old cap of 2. Yet `computeNextFTState` in `src/lib/free-transfer-engine.ts` has `Math.min(1, unused)` on line 20 (normal GW path) and `Math.min(1, currentAvailable - 1)` on line 14 (Free Hit path), both capping bank at 1. Any MTP-01 simulation starting from a state where the user has 3+ FTs will immediately be wrong.
-
-2. **Wildcard and Free Hit no longer reset banked transfers** — under the old rule, using WC/FH forfeited all banked FTs. Since 2024/25, banked FTs are preserved through chip plays. Yet the wildcard path in `computeNextFTState` (line 10) unconditionally returns `{ available: 1, banked: 0 }`, discarding all banked transfers. A TREE-01 path that includes a wildcard step will silently undercount FTs for every subsequent step.
-
-**Why it happens:** The FT engine was written during v1.3 (2026-04-29), before the 2024/25 rule change was identified as a gap. The v1.7/v1.8 work reused this engine without re-auditing the rules.
-
-**Consequences:**
-- MTP-01 financial simulation shows fewer FTs than the user actually has — suggests unnecessary hits.
-- TREE-01 paths through wildcard nodes underestimate FTs in all downstream steps, making hit-heavy paths look worse than they are.
-- PlannerTab (v1.3) has the same bug but it only affects users with >1 banked FT; it was never caught because the UI defaults `initialFTState = { available: 1, banked: 0 }` (line 55 of PlannerTab.tsx), masking the engine bug with a conservative input.
-
-**Prevention:**
-- Fix `computeNextFTState` before writing any MTP-01 code:
-  - Normal GW: `const banked = Math.min(4, unused)` (cap at 4 banked, max 5 available)
-  - Wildcard: preserve banked transfers — `return { available: 1 + Math.min(4, currentAvailable - 1), banked: Math.min(4, currentAvailable - 1) }`
-  - Free Hit: same as wildcard (banked transfers preserved through chip play)
-- Update `FTState.banked` JSDoc in `types.ts` to state the range is now 0–4.
-- Write regression tests: start with 4 banked, use wildcard, assert 5 available next GW.
-- Fix the PlannerTab `initialFTState` default — it should read from `entry_history.event_transfers` and `entry_history.bank` to derive actual FT state, not assume 1.
-
-**Detection:** Unit test `computeNextFTState({ available: 5, banked: 4 }, 0, null)` — should return `{ available: 5, banked: 4 }`. Currently returns `{ available: 2, banked: 1 }`.
+This document catalogues mistakes that will cause v1.16 features to ship broken, silently corrupt the existing pipeline, or violate documented invariants. Each pitfall is mapped to the phase that should guard against it. Phase 64 (SENS-01) and Phase 65 (WHY-01) have already shipped — pitfalls below cover regression risks and remaining surface area, NOT greenfield concerns for those features.
 
 ---
 
-### Pitfall C2: Sell price ≠ buy price — asymmetric profit formula
+## Pitfall Table
 
-**Phase:** MTP-01
+### SCRAPER-01: FPL Official News Feed Scraper
 
-**What goes wrong:** FPL sell price is calculated as:
+| Pitfall | Risk Level | Prevention Strategy | Which Phase |
+|---|---|---|---|
+| **The data already exists in bootstrap — don't scrape what's free.** `bootstrap-static.elements[].news` is already pulled by the pipeline (verified at `pipeline/merge.py:992`) and includes injury text like "Knee injury - 25% chance of playing". `chance_of_playing_next_round` and `chance_of_playing_this_round` are also present. Scraping `https://fantasy.premierleague.com/news/` adds zero info beyond what the JSON API exposes — and risks a Cloudflare ban that kills the WHOLE pipeline (which depends on the same domain). | CRITICAL | Re-scope SCRAPER-01: surface the existing `news` + `chance_of_playing_*` fields more prominently in TransferPanel and GemTable rather than scraping HTML. If the user genuinely wants the news *feed* (commentary articles, not player flags), scope it as "fetch `https://fantasy.premierleague.com/api/event/{id}/live/` and parse explainer text" — official JSON endpoint, no scraping. Document the decision in CONTEXT.md and resist scope creep into HTML scraping. | SCRAPER-01 |
+| **Scraping shares Cloudflare with the FPL JSON API — bot ban kills bootstrap fetch.** If SCRAPER-01 does scrape HTML and triggers Cloudflare bot detection on `fantasy.premierleague.com`, the **same origin** serves `/api/bootstrap-static/`. The cron pipeline that fetches bootstrap will also be banned. The Understat client already has bot-protection logging (`understat_client.py:107`) — this is a real failure mode. | CRITICAL | If HTML scraping is unavoidable: (1) use a separate User-Agent string identifying the scraper; (2) add jittered backoff (≥ 2s between requests, exponential on 429/403); (3) wrap fetch in `try/except` so a scraper failure does NOT abort the rest of `run.py` (mirror the prose-summary non-fatal pattern at `run.py:351`); (4) fall back to bootstrap `news` field on any non-200 response. Test: simulate 403 from the news endpoint and assert `merged_players.json` still writes successfully. | SCRAPER-01 |
+| **Fragile HTML — class names change with no warning.** FPL ships unannounced UI rewrites (e.g. the 2024 rewrite changed all selectors). A regex or DOM-selector against `<div class="player-news-card">` breaks silently — pipeline keeps writing `news_scraped: []` and the UI shows "No news" for everyone. | HIGH | Build a structural detector: after parsing, assert `len(parsed_news) > 0` for at least one currently-injured player (cross-reference `bootstrap.elements` where `chance_of_playing_next_round in {0, 25, 50, 75}`). If zero matches, log "Selector drift suspected" and emit a sanity check failure into `data_health.json`. Don't silently overwrite the previous good cache — preserve last-known-good with a stale flag (mirror `last_updated.json` stale pattern). | SCRAPER-01 |
+| **Rate-limit / `robots.txt` violations.** `fantasy.premierleague.com/robots.txt` may explicitly disallow `/news/` or set a Crawl-delay. Aggressive polling (e.g. every cron run = 4×/day) on top of bootstrap fetch raises baseline traffic from this IP. | HIGH | Check `robots.txt` BEFORE first run (`requests.get('https://fantasy.premierleague.com/robots.txt')` — visible in any browser). If `/news/` is disallowed: do not scrape at all, fall back to the API news field. If allowed: cap to once-per-cron (every 6h), respect any `Crawl-delay` directive. Log compliance state in `data_health.json` so future contributors see the constraint. | SCRAPER-01 |
+| **News text de-duplication — same injury reported across runs.** `news` from bootstrap is a single string; the scraper may produce a list of articles. Without de-duplication keyed on player + news_added_timestamp, the UI shows the same "Knee injury - returning Mon" 4 times across runs. | MEDIUM | Use the existing `news_added` field already in `bootstrap.elements[]` (ISO timestamp, verified) as the dedup key. Drop entries where `news_added` is unchanged from the last cache. Test: run pipeline twice with no input change and assert second run produces zero new news entries. | SCRAPER-01 |
+| **Injury news leaks user PII / sensitive content into Vercel Blob cache.** The official feed sometimes embeds tweet quotes, manager interview snippets, or third-party tracking pixels. If the scraper writes raw HTML to Blob, those pixels fire on user view. | MEDIUM | Sanitise all scraped text: strip `<script>`, `<img>`, and `<iframe>`; use `bleach` (already in Python ecosystem; or add `html.parser` strip-tags) before writing to JSON. Escape on the React side too (React auto-escapes string children — fine — but never use `dangerouslySetInnerHTML`). Test: feed a fixture with `<script>` and assert it's stripped. | SCRAPER-01 |
+| **TransferPanel + GemTable already display `news` — don't double-render.** Both components already read `MergedPlayer.news` (line 26 in `types.ts`). If SCRAPER-01 adds a NEW field like `scraped_news_html`, downstream renderers may show both stale-bootstrap `news` AND fresh `scraped_news_html` simultaneously. | MEDIUM | Single source of truth: have the pipeline merge scraped + bootstrap news into the existing `news` field with a precedence rule (scraped wins if newer than bootstrap `news_added`). Do NOT introduce a parallel field. Test: assert `MergedPlayer.news` is the only news-bearing field after pipeline runs. | SCRAPER-01 |
 
-```
-sell_price = buy_price + floor((current_price - buy_price) / 2 × 10) / 10
-```
+### REFRESH-01: Event-Based GitHub Actions Triggers
 
-Key consequences:
-- A player bought at £6.0m now worth £6.3m sells for **£6.1m** (not £6.3m — you only get half the rise, rounded down).
-- A player bought at £6.0m now worth £5.9m sells for **£5.9m** (full loss — falls are not halved).
-- A player bought at £6.0m still worth £6.0m sells for **£6.0m** (no change — correct).
-- A player bought at £6.0m now worth £6.1m sells for **£6.0m** (£0.1m rise gives zero profit — the halving rounds down to zero).
+| Pitfall | Risk Level | Prevention Strategy | Which Phase |
+|---|---|---|---|
+| **GW-deadline-detection off-by-one (timezone).** FPL `event.deadline_time` is ISO 8601 UTC (verified in `fpl-adapter.ts:38`). GitHub Actions cron runs in UTC. But the FPL site displays deadlines in UK local (BST/GMT) — a GW31 deadline of "Sat 11:30 BST" is `10:30 UTC` in summer, `11:30 UTC` in winter. A naive trigger that fires "1h before deadline" computed in BST will fire at the wrong UTC time during DST transitions (last Sunday in March / October). | HIGH | Always compute deadline math in UTC (`Date.parse(deadline_time)` returns ms-since-epoch, TZ-safe). Never use `toLocaleString` or implicit local-TZ math. Add a unit test using a deadline string spanning the BST→GMT transition (e.g. 2026-10-25 02:00 UTC) and assert "1h-before" is computed correctly. Reference `useRivals.ts:65` (`Date.parse(currentEvent.deadline_time)`) — already follows this pattern; mirror it. | REFRESH-01 |
+| **Double-trigger — cron and event-trigger both fire.** Existing `pipeline.yml` already runs 4×/day at fixed UTC times. If REFRESH-01 adds `repository_dispatch` or a deadline-triggered workflow, both can fire within minutes (e.g. 6am cron + "1h before 7am deadline" trigger). Two pipeline runs in parallel race for the Vercel Blob upload — last writer wins, but partial writes can corrupt cache files mid-run. | HIGH | Add a workflow-level concurrency guard: `concurrency: { group: pipeline, cancel-in-progress: false }` (GitHub Actions native). Second run queues, waits for first to finish. Also: when REFRESH-01 schedules an event-driven run, add a "skip if cron ran < 30min ago" precondition by checking `last_updated.json` age via a curl-and-parse step. Test: trigger workflow_dispatch twice in quick succession and verify one queues. | REFRESH-01 |
+| **GitHub Actions API rate limits — workflow_dispatch quota.** Anonymous repo-dispatch is rate-limited; PAT-authenticated dispatch is 5,000 req/h per token. If the trigger source is a serverless function checking deadlines every minute and dispatching, a buggy loop burns the quota in 17 min. | MEDIUM | Don't poll-and-dispatch from a serverless function. Use GitHub's native cron schedule (already in `pipeline.yml`) with multiple `cron:` entries — one per known deadline window. Compute the schedule at deploy time from the season fixture list, write 38 `cron:` entries (one per GW), regenerate when fixtures shift. Test: validate the generated YAML against `https://crontab.guru` parser. | REFRESH-01 |
+| **Deadline shifts mid-week — fixture rescheduling.** When a PL fixture moves (e.g. broadcast change), `event.deadline_time` updates in the FPL API, but the cron schedule already encoded in `pipeline.yml` is now wrong. The trigger fires at the OLD deadline. | MEDIUM | Don't try to be too clever with scheduled triggers. Instead: keep the existing 4×/day cron (already covers most cases) and add ONE event trigger 30min before the *next event's deadline* computed dynamically inside the workflow (`run.py` reads `bootstrap.events`, finds next deadline, schedules a follow-up via `gh workflow run` if more than 8h away from the next regular cron). Test: simulate a fixture reschedule and assert the next pipeline run still happens within 30min of the new deadline. | REFRESH-01 |
+| **FPL API returns stale data immediately after deadline.** Right at deadline, `bootstrap-static` cache on FPL's CDN may be 5–15min stale (lineups, last-minute injuries not yet reflected). A pipeline run triggered at "deadline + 1min" reads pre-deadline data and writes it to Blob — then no scheduled run for another 6h, so users see stale "lineups" for hours. | MEDIUM | For event-triggered runs around deadline: re-fetch bootstrap with a small delay (15min after deadline + retry on `cache-control: max-age` mismatch). Use `If-Modified-Since` if FPL honours it (test: `curl -I` and check headers). Document the latency in the UI (the existing `LastUpdated` "Updated X ago" already covers this — reuse it). | REFRESH-01 |
+| **GitHub Actions secrets leak in trigger logs.** REFRESH-01 may pass deadline metadata as workflow_dispatch inputs. If those inputs include any computed token (e.g. an HMAC of the deadline + a secret), logs leak the token. | LOW | Never pass secrets as workflow inputs. Use `secrets.*` references only inside `env:` blocks (existing pattern at `pipeline.yml:13-15`). If REFRESH-01 needs an HMAC: compute it inside the workflow from `secrets.*`, not in the dispatch payload. | REFRESH-01 |
+| **Concurrency guard interaction with manual `workflow_dispatch`.** A user who hits "Run workflow" in the GH UI while a deadline-trigger run is in flight: the dispatch enqueues. If both runs target the same Vercel Blob, the second run silently overwrites the first run's output. Mostly harmless (both runs produce equivalent output) but the timestamp delta confuses the existing DH-01 staleness check. | LOW | The `concurrency` key (already noted above) handles this. Document that REFRESH-01 + `workflow_dispatch` share the same group. Test: trigger both and assert only one ends up in the Blob output. | REFRESH-01 |
 
-The existing `generatePlan()` and `generateChipStep()` already have a `sellPrices` parameter and use `MyTeamPick.selling_price` from the authenticated endpoint — this is correct. **The trap is in MTP-01's manual entry mode**, where the user inputs players without auth. If MTP-01 defaults to `now_cost` as the sell price (like the unauthenticated path in `planning-engine.ts` line 105), the budget simulation will overestimate sell proceeds for players who rose and underestimate for players who fell.
+### DH-04: Cron History Sparkline
 
-**Why it happens:** `selling_price` is only available from `/api/my-team/` (requires auth cookie). The unauthenticated public endpoint (`entry/{id}/event/{gw}/picks/`) does not include sell prices — the Zod schema (`SquadPicksResponseSchema` vs `MyTeamResponseSchema`) explicitly separates these two shapes. MTP-01's manual mode has no authenticated source to pull from.
+| Pitfall | Risk Level | Prevention Strategy | Which Phase |
+|---|---|---|---|
+| **No DB — history must persist across Vercel Blob writes without state.** Each pipeline run overwrites `data_health.json` (verified — single snapshot pattern from Phase 82). To show a 7-run sparkline, the writer must read the previous `data_health.json`, append the new run summary, trim to last 7, and write back. Race conditions if two runs overlap (REFRESH-01 introduces this risk). | HIGH | Store history as a separate file `pipeline/cache/cron_history.json` with append-then-trim semantics. Read previous file before writing; on read failure (cold start), initialize as `[]`. Use Vercel Blob's atomic write semantics — avoid read-modify-write races by combining with the REFRESH-01 concurrency guard. Test: simulate two pipeline runs writing in parallel and assert no entries are lost. | DH-04 |
+| **Sparkline data structure becomes unbounded — Blob size growth.** A naive "append every run" with no trim grows linearly. At 4×/day = 1,460 runs/year × ~200 bytes = 300KB/year — small, but if any run includes the full sanity-check breakdown (each check ~150 bytes × 5 checks = 750 bytes per run), it climbs to 1MB/year and Vercel Blob list-and-fetch latency degrades. | MEDIUM | Hard cap at last 30 runs (10 days at 4×/day cadence is plenty for a 7-run sparkline). Store only `{ run_at, status, duration_sec, error_summary?: string }` per entry — NOT the full data_health snapshot. Document the schema in `cron_history.json` writer. Test: write 35 entries and assert file contains 30. | DH-04 |
+| **"Status" enum drift — sparkline colour breaks.** If `data_health.json.status` is currently `'green' | 'amber' | 'red'` and a future change adds `'unknown'`, the sparkline that switch-cases on three values silently falls through to a default (often invisible/transparent). | MEDIUM | Use a Tailwind class map with an explicit fallback colour for unknown statuses (`zinc-300`). Add a TypeScript exhaustiveness check (`assertNever`) on the discriminator. Vitest test: render sparkline with each status and assert a non-transparent colour class is applied. | DH-04 |
+| **Sparkline misleads on partial-day data.** First 7 runs after a feature deploy show "100% success" because no failures happened yet. User mistakes recency for reliability. Conversely: a single transient 4-min outage (e.g. GitHub Actions runner unavailable) shows as "1 of 7 failed = 14% downtime" which is alarmist. | LOW | Show absolute counts not percentages ("6 OK, 1 failed"). Tooltip on each bar shows the run timestamp + error message (when failed). For < 7 runs, show empty placeholder bars (grey) so the user understands the sparkline is incomplete. Mirror the "Insufficient data" pattern from existing CalibrationSection. | DH-04 |
+| **6h staleTime on `useDataHealth` already overridden** — DH-04 inherits this. Phase 82 already set `staleTime: 0, refetchInterval: 60_000` on `useDataHealth`. The sparkline component must NOT add its own slower refetch (e.g. via a separate `useQuery(['cron-history'], ...)` with `staleTime: 6h`). | LOW | Either embed the sparkline data inside the existing `useDataHealth` payload (single hook), OR use the same staleTime/refetchInterval for `useCronHistory`. Don't introduce a hook with stricter caching. Document in the hook's JSDoc. | DH-04 |
 
-**Consequences:** User inputs a manual plan, sees a budget of £2.5m, believes they can afford a player at £8.2m, but actual sell proceeds are £8.0m (the player rose) and they'd actually be £0.2m short. The MTP-01 UI would not flag this.
+### BACK-01: Decision History Backtester
 
-**Prevention:**
-- In MTP-01 manual mode, show a sell price input field per player (pre-populated from `selling_price` if auth available, otherwise defaulting to `now_cost` with a visible warning: "Using current price as sell price — log in for exact sell prices").
-- Use a helper function `computeSellPrice(buyPrice, currentPrice): number` that implements the floor formula — do not inline this arithmetic.
-- Display sell price vs buy price as distinct columns in MTP-01's player table. The difference is the "locked profit/loss" that affects budget.
-- Never use `now_cost` silently as sell price in a budget simulation. Either use authenticated `selling_price` or show the caveat prominently.
+| Pitfall | Risk Level | Prevention Strategy | Which Phase |
+|---|---|---|---|
+| **localStorage 5–10MB quota — silent failure when full.** Browsers cap localStorage at 5MB (Safari) to 10MB (Chrome) per origin. Recording every captain pick + transfer + chip decision per GW for a season fills the quota fast: 38 GWs × ~3KB per decision snapshot (squad + chosen + alt + scoring delta) = ~115KB. Add user's existing `fplx_manual_plan` (variable, can be 50–200KB), `fpl_team_id`, theme, etc. — at multi-season aggregation, quota errors. Setter throws `QuotaExceededError`; React state continues without persistence. | HIGH | Wrap every `localStorage.setItem` in try/catch and degrade gracefully (toast notification "History full — clearing oldest entries" + auto-trim). Implement a ring buffer: keep last 38 GWs (one season), drop older. Use `JSON.stringify` size pre-check before write. Add a "Clear history" button in the UI. Test: mock localStorage with a 100KB limit and assert auto-trim kicks in. Reference `MEMORY.md` autonomous-session note — this codebase already has 15 localStorage call sites; pile-up is a real risk. | BACK-01 |
+| **GW boundary bug — "decision made" vs "decision applied" timing.** A user views the captaincy panel BEFORE the GW31 deadline. They consider Salah but ultimately captain Haaland. The decision-history record must capture (a) the candidates available at decision time, (b) the *user's* pick, (c) what *actually happened* (after the GW finishes — `event_history.points` available 2h after final whistle). If the recorder fires too early, it records 0 actual points; too late, it misses the user's intent. | HIGH | Two-phase record: Phase A (at user action / before deadline): write `{ gw, intent: 'captain', player_id, candidates, deadline_time }`. Phase B (after GW finishes): a daily reconciler reads `bootstrap.events[].finished` and merges in `actual_points` from `element-summary`. Never write actuals at decision time. Use the existing `useGwReview` hook pattern (mirrors Phase 56 GW Review) for the after-the-fact reconciliation. Test: simulate a decision recorded mid-GW and assert `actual_points` is null until reconciliation runs. | BACK-01 |
+| **"Optimal" hindsight bias — comparing user's pick to post-hoc optimal is unfair.** A backtester that ranks the user's captain choice against "the player who scored the most points in retrospect" makes every user look bad — even captaining Haaland 38 times will lose to "captain whoever scored highest each week". This is a known anti-pattern in fantasy sports backtesting. | CRITICAL | Compare against **what the user could have known at decision time**: the top-3 ceiling captains from `captain_picks.json` snapshot at decision time (already shipped). Define "regret" as `actual_points_of_top_ranked_alternative - actual_points_of_user_choice`, NOT vs the league-wide max. Document this in the UI tooltip. Provide an alternative "what-if optimal in hindsight" view but label it clearly as "Hindsight: not actionable". Test: assert regret is computed against the top-3 model picks from the saved snapshot, not against `max(all_players.actual_points)`. | BACK-01 |
+| **Snapshot drift — pipeline data evolves between decision and review.** When the user records a decision at GW31, `merged_players.json` reflects the model state at that moment. By GW36 review, `merged_players.json` is regenerated 5 times — but the *score* the user can attribute to the decision must use the model snapshot from GW31, not GW36 (where Salah's xPts has been retrospectively updated). | HIGH | Snapshot only the minimum data needed at decision time (player IDs + their xPts/captaincy rank at that moment). Don't try to reload the full historical model. Store snapshots as `decision_history[{gw, taken: {player_id, source_xpts, source_rank}, alternatives: [{player_id, source_xpts}], deadline_time}]`. Reconcile against `actual_points` from `element-summary` (those are immutable historical facts). Test: assert `source_xpts` snapshotted at decision time is preserved across pipeline re-runs. | BACK-01 |
+| **Local-only history — no cross-device, no sharing.** A user signs in on their phone after using desktop all season. localStorage doesn't sync. They see no history. Reasonable expectation that fails. | MEDIUM | Document this prominently in the UI (one-line note: "History is stored locally on this device"). Optionally: add a one-click "Export JSON" / "Import JSON" pair so the user can manually move history between devices. Don't try to sync via Vercel Blob — it's single-user single-tenant by design (PROJECT.md decision). | BACK-01 |
+| **Time travel test pollution — `Date.now()` in tests.** The two-phase record/reconcile flow needs date math. Existing tests in this codebase use `vi.useFakeTimers()` (verified in `formatRelativeTime.test.ts`). New code that uses `Date.now()` instead of an injected `now` parameter will produce flaky tests at month boundaries. | LOW | Pure functions take `nowMs: number` as parameter (mirrors `formatRelativeTime(iso, nowMs?)` pattern). React hooks call `Date.now()` once per render and pass down. Test: 10 test runs with frozen time produce identical results. | BACK-01 |
+| **Decision history schema versioning.** The `decision_history` JSON in localStorage is a long-lived artifact. v2 of the backtester adds a new field (e.g. `chip_used`); old entries don't have it. Reading old entries with `decision.chip_used.toUpperCase()` crashes. | LOW | Embed `version: 1` in every record. On read, run a migration function (`migrate(record): RecordV2`) that adds defaults for missing fields. Test: load v1 fixture in v2 reader and assert no crash. Document the migration pattern for future additions. | BACK-01 |
 
-**Detection:** Test `computeSellPrice(60, 63) === 61` (not 63). Test `computeSellPrice(60, 59) === 59` (full loss). Test `computeSellPrice(60, 61) === 60` (zero gain despite £0.1m rise).
+### SPQ-04: Set-Piece League Table (all 20 teams)
 
----
+| Pitfall | Risk Level | Prevention Strategy | Which Phase |
+|---|---|---|---|
+| **`sp_quality.json` has null fields when teams have low sample counts** — Phase 84 already enforces `n >= 5` for corners and `n >= 3` for FKs (verified in REQUIREMENTS.md SPQ-02). Building a league table that sorts by `delivery_quality_rank` will silently drop teams with null ranks to the bottom (or top, depending on sort direction). | HIGH | Render unranked teams in a separate "Insufficient sample" section below the ranked table, NOT mixed in. Show their sample size (`sp_sample_n`) so the user understands why. Mirror the existing CalibrationSection "n >= 5" pattern from Phase 82. Test: include a team with `delivery_quality_rank: null` in fixture and assert it appears in the unranked section, not at position 21. | SPQ-04 |
+| **Empirical-Bayes shrinkage k=20 hides true outliers.** Phase 84 chose k=20 (~half a season). Mid-season (GW20–25), every taker's score is heavily shrunk to position-mean — the league table looks bunched and uninteresting. Late season (GW36+), shrinkage releases and rankings shift dramatically. The user sees the ranking shift week-to-week and loses trust. | MEDIUM | Display the sample count as a column in the league table (already in data). Add a tooltip on the rank: "Score shrunk toward league mean (k=20); confidence increases with more samples". Consider a "Confidence" pill (low/medium/high based on sample_n) per row. Don't change k — it's a documented Phase 84 decision. Reference: `featureslookup feature-backlog.md`. | SPQ-04 |
+| **Teams without a primary corner taker shouldn't appear at all.** Some PL teams rotate corner takers heavily (no single player has `corners_and_indirect_freekicks_order == 1`). If SPQ-04 iterates `sp_quality.json` keyed by player_id and pivots to teams via `merged_players[].team`, a team with zero primary takers shows as "—" or worse, a phantom row. | MEDIUM | Iterate teams (all 20) as rows, then look up the primary taker per team. If no primary taker found, show "Rotated" in the player column with a neutral grey badge — distinct from "Insufficient sample" (which means primary exists but data is sparse). Test: a team with no `corners_and_indirect_freekicks_order==1` player produces a "Rotated" row. | SPQ-04 |
+| **League-wide sort instability — adjacent ranks differ by 0.001 xG.** With shrinkage applied, two teams may sit at `delivery_quality_rank` 0.0834 vs 0.0835. The displayed rank (1, 2, 3, ...) flips week-to-week from rounding noise. Users perceive instability as bug. | MEDIUM | Round display values to 2 decimals (the underlying data is ~xG-per-shot, 0.05–0.20 range). Use a tier-based ordering in addition to numeric rank: Elite (top 6) / Good (mid 8) / Weak (bottom 6) — already shipped in SPQ-03 — and sort by tier first, score second. Visual: tier pills first, numeric rank as secondary. Mirror existing `TIER_CLASSES` pattern. | SPQ-04 |
+| **DGW skew — teams playing twice this GW dominate aggregation.** Per `MEMORY.md`, GW33 and GW36 are likely DGWs. If SPQ-04 displays "set-piece threat THIS GW" instead of season-long, a DGW team shows 2× the volume of a single-GW team — making them look "more dangerous" by sheer volume rather than per-set-piece quality. | MEDIUM | Keep the metric as season-long average xG-per-shot (per-shot, NOT per-90 or per-GW). Don't add a "this GW" filter. If a per-GW projection is wanted in future, it must use shots-per-GW × xG-per-shot — but season-aggregate is the v1.16 spec. Test: a DGW team in fixtures still ranks by per-shot xG, not by total volume. | SPQ-04 |
+| **Visual conflict with existing `SetPieceTakerPanel`.** Phase 26 already shows penalty/FK/corner takers per team in cards. SPQ-04 adds a sortable league-wide table. If both render on the same `/set-pieces` page, users get a confusing two-tier view. | LOW | Decide layout in CONTEXT.md: either replace the per-team cards with the league table (simpler), or add the table as a "League View" toggle alongside the existing card view (preserves Phase 26 work). Recommended: add a tabs switcher within Set Pieces tab — "Per Team" (existing) | "League Table" (new). Don't break the existing UI. | SPQ-04 |
 
-### Pitfall C3: FPL `entry/{id}/event/{gw}/picks/` returns the previous GW's squad before a manager confirms this week's picks
+### WHY-01: Rejection Explainer (already shipped Phase 65 — regression risks)
 
-**Phase:** ML-01
+| Pitfall | Risk Level | Prevention Strategy | Which Phase |
+|---|---|---|---|
+| **Confusing users with negative framing on strong players.** Phase 65 already implements adaptive framing (`D-04`: strong players get "No rejection signals", weak players get reasons). Regression risk: a future change to the threshold (`gem_score >= positionAverage.gem_score AND no fragility AND start_prob >= 0.70`) could either flip a borderline player into negative framing (user sees "Why not Salah?" with a list of nits) or hide rejection reasons for clearly-poor picks. | MEDIUM | Lock the adaptive-framing threshold via a Vitest snapshot test on a fixture with 5 player profiles spanning the spectrum (clear-buy / borderline-buy / mid / borderline-reject / clear-reject). Any change to the threshold breaks the snapshot, forcing explicit review. Reference 065-RESEARCH.md D-04. | WHY-01 (regression) |
+| **Rejection reasons cite stale data after pipeline refresh.** The expand row reads `ScoredPlayer` from React Query cache (6h staleTime). If pipeline runs and updates xPts, the rejection text ("Below xPts threshold for position") may say "rank 14" when fresh data has the player at "rank 8". User confusion. | LOW | Ensure WHY-01 reads from the same in-memory `scoredPlayers` array used by the GemTable rows — they're already in sync. Don't introduce a parallel hook for rejection. Test: change xPts in fixture and assert rejection text updates within the same render. | WHY-01 (regression) |
+| **Captain rejection — "named top candidate" can change mid-render.** Phase 65 D-09: "Captain rejection included — names top candidate explicitly if player is not #1". If `captaincyCandidates` is recomputed (e.g. after a manual squad change), the named candidate flips from Salah to Haaland mid-interaction — user perceives this as a glitch. | LOW | Memoise `captaincyCandidates` at the SquadView level (verified pattern in Phase 65). Pass as a stable prop to ExplainPanel. Test: re-render with same input and assert text is identical. | WHY-01 (regression) |
+| **WHY-02 callout — "absent high-ownership player" set-difference bug.** Phase 65 D-13 caps at top 3 by `selected_by_percent`. If two suggested transfers BUY two of the top-3 high-ownership players, the callout shrinks to 1 entry — but the heading "Why aren't these players appearing?" still reads as plural. | LOW | Render the heading conditional on count: "this player" (singular) / "these players" (plural). If count is 0, hide the entire callout. Test: assert heading text matches count for 0/1/2/3 entries. | WHY-01 (regression) |
 
-**What goes wrong:** The FPL picks endpoint is keyed by `event_id` (gameweek number). For a rival who has **not yet confirmed their squad** for the current GW (i.e. before the deadline), querying `entry/{id}/event/{current_gw}/picks/` will return a 404 or the last confirmed squad (the previous GW). The API has no field that tells you whether the picks you received are from this GW or the previous one.
+### SENS-01: Sensitivity Analysis (already shipped Phase 64 — regression + tuning risks)
 
-This is distinct from the "stale rival squad" issue — it's a structural limitation: the API only surfaces confirmed squads. A rival's pre-deadline pending transfers are invisible.
+| Pitfall | Risk Level | Prevention Strategy | Which Phase |
+|---|---|---|---|
+| **Threshold tuning — `start_prob < 0.70` and `xPtsGain < 4.0` are arbitrary.** Phase 64 D-07 / D-10 lock these values. They're defensible defaults, but as the season progresses and chips are used, the *meaning* of these thresholds shifts. Late-season, every player's `start_prob` drops as rotation increases — every transfer becomes "fragile" and the warning loses signal. | HIGH | Schedule a calibration check post-season: backtest fragile-flagged transfers vs non-flagged for actual outcome variance. If fragile-flagged transfers don't actually have higher variance, the threshold is wrong. Don't ship a UI knob for the user — keep it model-internal, but document the defaults in DECISIONS.md so future tuning is traceable. Add to `data_health.json` sanity checks: "fragile_transfer_pct" should sit in 15-40% range; if it spikes to 80%, alert. | SENS-01 (tuning) |
+| **False positives on mid-season fixture swings.** D-04: fragile if `buy.fixtures[0].difficulty_tier === 'medium'`. The "medium" tier is computed from rolling-game `defensive_difficulty` (verified in `merge.py:782`). When a team's form swings (e.g. Spurs' defensive xGA spikes after a key injury), every transfer in becomes "fragile on fixture" for 2-3 weeks until the rolling window updates. | MEDIUM | Track "fragile-on-fixture" trigger rate in `data_health.json`. If > 50% of suggested transfers trip this in a single GW, log a warning ("Fixture difficulty model may be over-reacting"). Consider widening the rolling window from 3-game to 5-game during volatile periods. Don't auto-tune — surface as a sanity check. | SENS-01 (tuning) |
+| **Hit-cost fragility doesn't account for chip context.** D-09/D-10: hit-fragility applies to transfer candidates only when `xPtsGain < 4.0`. But during Wildcard week, ALL transfers are free — `xPtsGain < 4` is irrelevant. Showing "fragile if taken as a hit" for a Wildcard transfer is misleading. | MEDIUM | Pass active chip context (from `useChipHistory` or planner state) into `computeFragility`. Skip the hit check entirely when `chip in {wildcard, free_hit}`. Test: assert no hit-fragility flag appears for transfers within an active wildcard plan. Reference `065-RESEARCH.md` for chip-aware patterns. | SENS-01 (tuning) |
+| **Fragility warning fatigue — every transfer flagged.** Combined with WHY-01 rejection panel and existing severity badges (Phase 47-51), a single transfer card can show: severity badge + fragility warning + rejection reasons + opportunity cost row. Visual noise. | LOW | Audit the combined visual density on a transfer card with all warnings active. If > 3 amber/red signals per card, deprioritise lower-confidence ones (e.g. fragility-on-fixture only when no other amber signal is shown). Manual UAT pass before each release. | SENS-01 (UX) |
 
-**Consequences:**
-- ML-01 shows a rival as owning players they've already transferred out.
-- Differential intelligence (players the user owns that rivals don't) is wrong.
-- "Blocking vs attacking move" flags are wrong — you think a rival owns your target when they've already sold them.
+### Cross-Cutting Pitfalls (affect multiple v1.16 features)
 
-**Prevention:**
-- Always query picks for `current_gw - 1` (the last **finished** GW) rather than the current live GW — this is deterministic and confirmed.
-- If you want this-GW data, display a banner: "Rival squads as of GW{n} deadline — picks made after that deadline are not visible."
-- Cross-reference the `entry_history.event` field in the response to detect if the returned data is from the expected GW. If `response.entry_history.event !== target_gw`, show a "squad not yet confirmed" indicator for that rival.
-- Use the `is_current` and `finished` flags from the bootstrap `events` array to determine the last confirmed GW correctly.
-
-**Detection:** Integration test with a known team ID: query picks for an upcoming GW before the deadline and verify the `entry_history.event` field in the response matches the target GW.
-
----
-
-### Pitfall C4: Parallel fetching of N rival picks triggers rate-limiting on the FPL API
-
-**Phase:** ML-01
-
-**What goes wrong:** ML-01 needs to fetch:
-1. `leagues-classic/{league_id}/standings/` — paginated, 50 results per page, multiple pages for 100+ rival leagues.
-2. `entry/{id}/event/{gw}/picks/` — one request per rival.
-
-A league with 20 rivals requires 20 parallel picks requests. A league with 100 requires 100. The FPL API has no documented rate limit, but community experience is that firing 20+ parallel requests from a single IP causes transient 429s or connection resets — especially from a Vercel serverless function where the outbound IP may be shared across deployments.
-
-The current proxy `[...proxy]/route.ts` fires single requests (`next: { revalidate: 0 }`) with no concurrency throttle. Routing 50 picks requests through it simultaneously will likely result in some returning 502 errors (the proxy already catches these — line 36).
-
-**Consequences:** ML-01 shows an incomplete rival list. Some rivals have squads, others show "squad unavailable" errors. The errors are non-deterministic (varies by load), making the feature feel unreliable rather than surfacing a clear message.
-
-**Prevention:**
-- **Client-side sequential or batched fetching:** use a `pLimit(3)` or similar concurrency limiter (available via `p-limit` — already may be in the dependency tree) to fetch rival picks in batches of 3 at a time.
-- **Cap total rivals at 20:** for a personal tool, cap ML-01 to the top 20 rivals by league position. This keeps total requests to 20 and eliminates the scaling problem.
-- **Server-side aggregation route:** create a single `/api/rival-squads?league={id}&gw={n}` route that fetches all picks server-side, handles retries internally, and returns a single JSON payload. The UI makes one request. The route uses sequential fetches with a 100ms delay between requests to avoid burst.
-- **Exponential backoff on 429:** the proxy route should detect 429 responses and include a `Retry-After` header passthrough rather than immediately returning 502.
-- **Cache the league standings for the session:** once fetched, standings don't change mid-session. Use TanStack Query with a 30-minute `staleTime` for standings data to avoid refetching on every tab switch.
-
-**Detection:** Test with a 50-member league. Measure how many requests succeed vs fail. Assert >95% success rate with concurrency limited to 3.
-
----
-
-### Pitfall C5: `selected_by_percent` is overall ownership, not top-10k ownership — EO% will be systematically wrong for any differential player
-
-**Phase:** EO-01
-
-**What goes wrong:** `selected_by_percent` on the FPL bootstrap element is the ownership percentage across **all 10+ million FPL managers**. Top-10k ownership is consistently different:
-- High-ownership template players (Salah, Haaland) have similar ownership at all levels.
-- Differentials owned by 3% overall may be owned by 8–12% in the top 10k (smart money moves earlier).
-- Popular cheap enablers may be at 40% overall but only 15% top-10k (mass market picks avoided by serious managers).
-
-EO-01's spec says "EO% per player (estimated ownership among top 10k, not overall ownership)" but the only available data field is `selected_by_percent`. The approximation is non-trivial and skewed in the direction that matters most — differential players are the ones where EO matters for rank protection, and they're exactly the ones where the approximation is worst.
-
-**Why it happens:** Top-10k ownership data requires either scraping the top-10k league standings (ML-01 infrastructure), or using community tools (LiveFPL, FPLAnalytics) that aggregate this. The FPL API has no first-class endpoint for it.
-
-**Consequences:**
-- EO-adjusted captain recommendations show the wrong captain as "rank protecting."
-- "Dangerous to fade" labels fire on players who 3% own but top-10k barely own — giving false urgency.
-- A player labelled "high upside differential" may actually be widely held by top-10k managers, making it a rank-neutral pick rather than rank-chasing.
-
-**Prevention:**
-- Be explicit about what EO-01 is computing: label the field `overall_ownership_pct` in the data, not `eo_pct`. The UI can display "~EO (approx.)" with a tooltip explaining the approximation.
-- If ML-01 is built in the same milestone, use it: compute **actual top-N rival ownership** from the fetched rival squads. This is true EO for the user's mini-league context, which is actually more useful than population-level EO. Label it "Your league EO%."
-- If using `selected_by_percent` as a proxy, apply a documented skew correction: high-ownership players (>20%) are close to accurate; mid-ownership (5–20%) skew toward being higher in top-10k; low-ownership (<5%) are often 2× higher in top-10k. Frame this as an approximation with uncertainty, not a precise figure.
-- Never present overall ownership as "top-10k EO" without a caveat. This would be actively misleading for the differential player decisions where EO matters most.
-
-**Detection:** Compare `selected_by_percent` against the LiveFPL top-10k ownership table for 5 test players. Document the mean absolute error for the approximation.
+| Pitfall | Risk Level | Prevention Strategy | Which Phase |
+|---|---|---|---|
+| **`MergedPlayer` schema drift continues — v1.16 will add 5+ optional fields.** SCRAPER-01 may add `news_scraped_at?`, BACK-01 doesn't touch MergedPlayer (localStorage), SPQ-04 reuses Phase 84 fields, but SCRAPER-01 + WHY-01 / SENS-01 may add derived flags. Each `?` defers shape verification at runtime. The v1.14 PITFALLS.md flagged this; it remains true. | MEDIUM | Continue the post-milestone tech-debt sweep pattern (mirrors Phase 35). For new fields in v1.16: add a Vitest schema test that loads `pipeline/cache/merged_players.json` and asserts every documented field is present. After v1.16 ships, schedule the `?` → required flip as a sweep phase. | All v1.16 |
+| **Pipeline run ordering — REFRESH-01 + DH-04 + SCRAPER-01 all touch `run.py`.** Existing v1.14 PITFALLS notes the 22-step `run.py` order. v1.16 adds: SCRAPER-01 (after bootstrap fetch, before merge), REFRESH-01 (post-pipeline, schedules next run), DH-04 (read history, append, write — last step). Wrong order means stale data flows into derived files. | HIGH | Document the canonical order in a single `run.py` comment block. New steps:<br>`fetch bootstrap → fetch fixtures → fetch news (SCRAPER-01) → merge_players (consumes scraped news) → ... existing 22 steps ... → data_health → cron_history (DH-04) → save last_updated → schedule_next_trigger (REFRESH-01)`. Add a smoke test that runs the full pipeline and asserts each output file's mtime is later than its inputs'. | All v1.16 |
+| **`USE_BLOB` toggle — every new API route must follow the pattern.** v1.16 may add `/api/cron-history` (DH-04), `/api/sp-league-table` (SPQ-04), `/api/decision-history` (BACK-01 — though localStorage-first). Skipping the USE_BLOB toggle means production reads from local filesystem (which doesn't exist in Vercel runtime) → 500 errors. | HIGH | New routes must mirror `src/app/api/data-health/route.ts` (USE_BLOB toggle). BACK-01 is localStorage-only — does NOT need an API route at all (single-user, no server-side persistence). Test: deploy preview branch with USE_BLOB=true and verify each new route returns 200; locally with USE_BLOB=false expect file read. | All v1.16 |
+| **`data_health.json` payload size — sparkline data + sanity checks + cron history could exceed safe limits.** Each new feature adds metrics. A bloated `data_health.json` (> 100KB) makes the 60-second poll (Phase 82) bandwidth-heavy on mobile. | MEDIUM | Split: keep `data_health.json` as the live snapshot; new `cron_history.json` as the history file (DH-04 reads both). Don't lump everything into one file. Hard cap on `data_health.json` at 50KB; size-check at write time and log a warning. | DH-04 |
+| **TanStack Query cache invalidation across new hooks.** v1.16 adds at least 3 hooks (`useCronHistory`, `useSpLeagueTable`, `useDecisionHistory`). Each must declare a stable `queryKey` and reasonable staleTime. Naive `staleTime: 0` everywhere causes refetch storms. | LOW | Mirror existing pattern: 6h for slow-moving server data (sp league table), 60s for live operational data (cron history), session-scoped for client-only state (decision history — useState + localStorage, no React Query). Document each hook's chosen value in JSDoc. | All v1.16 |
 
 ---
 
-### Pitfall C6: TREE-01 combinatorial explosion with FT bank accumulation creates exponential path counts
+## Phase-Specific Warning Summary
 
-**Phase:** TREE-01
-
-**What goes wrong:** TREE-01 generates branching multi-week transfer paths. The naive branching factor is:
-- GW1: transfer (0, 1, 2 transfers, or chip) × top-N candidates = many paths.
-- GW2: for each GW1 outcome, repeat.
-- GW3: for each GW2 outcome, repeat.
-
-With the fixed-2-FT old rule, the branching was bounded: max 2 transfers per GW from a small pool. With the corrected 5-FT bank rule (Pitfall C1 fix), a manager with 5 banked FTs in GW1 could make 5 transfers — from 15 sell candidates × top-20 buys per position = hundreds of combinations **per transfer**, with 5 transfers that's intractable.
-
-Even without the 5-FT edge case: if TREE-01 considers {0, 1, 2} transfers each GW with the top-5 candidates for each transfer count, that's roughly 11 paths per GW × 11 × 11 = 1,331 leaf nodes for a 3-GW tree. The existing `generatePlan` already does greedy selection (max 1 transfer per step), not a full tree search.
-
-**Consequences:** TREE-01 either:
-- (a) Tries to enumerate all paths → freezes the browser tab on any realistic input.
-- (b) Uses the same greedy algorithm as `generatePlan` → only generates 1 path, not a branching tree, making TREE-01 misleading in name.
-
-**Prevention:**
-- Define TREE-01's scope explicitly: "show the top 3–5 distinct paths" not "show all paths." Use a beam search: at each GW step, keep only the top K paths by cumulative xPts, prune the rest.
-- Bound the branching factor: for each path-step, consider at most `{roll, 1-FT best, 2-FT best, chip}` — that's 4 branches per step, not N×M combinations. The "best 1-FT" is already computed by `generatePlan`. TREE-01 adds the branching **between these top-level choices**, not within them.
-- Hard cap on chip branching: if a wildcard is played in step 1, the squad is restructured — TREE-01 should show this as a distinct sub-tree with a "WC applied" badge and re-run `generateChipStep` to populate it, not branch further within the WC sub-tree.
-- Compute paths lazily: only generate GW2 branches for the top-3 GW1 paths, only generate GW3 branches for the top-3 GW2 paths per GW1 parent.
-
-**Detection:** Time the tree generation on a real squad with `console.time`. Assert it completes in <500ms. If it takes >2s, the branching factor is too high.
+| Phase | Top 3 invariants to test before merge |
+|---|---|
+| **SCRAPER-01** | (1) Pipeline emits valid `merged_players.json` even when news scrape returns 403; (2) `bootstrap.elements[].news` is preserved as fallback when scrape is empty; (3) Selector-drift detector triggers when zero injured players are found in scraped output. |
+| **REFRESH-01** | (1) Two simultaneous workflow runs serialize via `concurrency:` (queue, don't race); (2) Deadline math computed in UTC survives BST→GMT transition fixture; (3) `gh workflow run` quota is preserved across 38 GW deadline schedules. |
+| **DH-04** | (1) Sparkline shows absolute counts not percentages; (2) `cron_history.json` trims to last 30 entries on every write; (3) Status enum exhaustiveness check catches drift. |
+| **BACK-01** | (1) `localStorage.setItem` wrapped in try/catch with auto-trim on QuotaExceededError; (2) Two-phase record (intent at decision time, actuals after GW finishes) — no actuals written at decision time; (3) Regret computed against snapshotted top-3 model picks, NEVER post-hoc max(actual_points). |
+| **SPQ-04** | (1) Teams with `delivery_quality_rank: null` render in separate "Insufficient sample" section, not at position 21; (2) Tier ordering precedes numeric rank; (3) Sample-count column always visible, tooltip explains shrinkage. |
+| **WHY-01** | (1) Adaptive-framing threshold locked via Vitest snapshot; (2) Captain rejection text stable across re-render; (3) WHY-02 heading singular/plural matches count. |
+| **SENS-01** | (1) Hit-fragility skipped during active wildcard/free hit; (2) Fragile-transfer-pct sanity check in `data_health.json`; (3) Threshold defaults documented in DECISIONS.md for future tuning. |
 
 ---
 
-## Moderate Pitfalls
+## Cross-Cutting Pitfall: localStorage Pile-Up
 
-### Pitfall M1: xPts projection accuracy degrades rapidly beyond 2 GWs — TREE-01 paths scored at 3-GW horizon will rank incorrectly
+15 existing localStorage call sites (verified) + BACK-01 adds another high-volume key. Cumulative quota risk:
 
-**Phase:** TREE-01
+| Key | Owner | Estimated size | Growth pattern |
+|---|---|---|---|
+| `fpl_team_id` | Auth | <50 bytes | Static |
+| `fplx_manual_plan` | Phase 59 | 50–200 KB | Per-edit |
+| `fpl_theme` | Phase 22 | <50 bytes | Static |
+| `fpl_horizon_*` | Phase 64+ | <100 bytes each | Static |
+| `fpl_decision_history` (NEW) | BACK-01 | 1–5 KB per GW × 38 GW = 40–190 KB | Append per GW |
 
-**What goes wrong:** The existing `xPts_1gw` values are computed from fixture difficulty × goal/assist/CS Poisson models. These already have noise: the Phase 40/41 accuracy pipeline shows 16.7% hit rate for haulters (5-GW backtest). Over 3 GWs, errors compound and fixture schedules have higher uncertainty (player injuries, rotation changes, team form shifts). A path that looks £4 better over 3 GWs than an alternative may actually be within the noise band of the model.
-
-**Consequences:** TREE-01 presents a false precision: "Path A scores 42.3 xPts, Path B scores 41.1 xPts — choose Path A." The 1.2 xPts difference at 3 GWs is well within model error. The user may make suboptimal decisions based on spurious precision.
-
-**Prevention:**
-- Display xPts per path as ranges, not point estimates. Use existing `xPts_90th_1gw` per player to compute a path ceiling alongside the path mean.
-- Add a caveat label: "GW3 projections have high uncertainty — consider the 1-GW view for near-term decisions."
-- Weight the path score with a discount factor for future GWs (matching the existing `LOOK_AHEAD_DISCOUNT = 0.8` in `planning-engine.ts`).
-- Do not rank paths where the delta is less than 2 xPts over the 3-GW horizon — call them "roughly equivalent."
-
-**Detection:** Compare two paths that both keep the same squad for GW1 but differ in GW3. If TREE-01 ranks one above the other solely on GW3 xPts, the discount factor is too low.
+Total worst case: ~400 KB — well under Chrome's 10MB but tight on Safari's 5MB if the user has other apps in the same origin. **Action:** add a single `localStorage` health check on app load (mirror `data_health` pattern client-side) that warns if total origin usage > 50% of quota.
 
 ---
 
-### Pitfall M2: Mode toggle state for EO-01 leaking across sections
+## Cross-Cutting Pitfall: FPL Deadline Timing Edge Cases
 
-**Phase:** EO-01
+REFRESH-01 + BACK-01 + WHY-01 (already shipped) all read `event.deadline_time`. Common edge cases:
 
-**What goes wrong:** EO-01 introduces a strategy mode toggle (Max xPts / Protect Rank / Chase Rank / Differential Aggressive). This toggle needs to affect captain recommendations, transfer suggestions, and potentially the bench order. If this state is lifted to the wrong level (too high = global, too low = component-local), it either:
-- (a) Resets whenever the user navigates away (if stored in a tab-local component state).
-- (b) Unexpectedly changes behaviour in unrelated sections (if stored at page level without clear ownership).
-
-The existing `gemPreset` state in `page.tsx` (the view preset for GemTable) is a prior example of state that needed lifting — it was originally component-local and had to be moved to persist across sub-tab navigation (v1.5 GEM-04).
-
-**Consequences:** User sets "Protect Rank" mode, navigates to Club Form tab, returns to Squad tab — mode is reset to default. Or worse, the mode state persists in a way that silently changes the captain recommendation card in the Decision Summary section.
-
-**Prevention:**
-- Use localStorage persistence for the EO mode toggle (same pattern as `gemPreset` and `fpl_team_id`).
-- Scope the mode effect explicitly: document which UI surfaces respond to the mode toggle and which do not. The EO mode should affect: captain EV display, transfer suggestion framing, ownership impact labels. It should **not** affect: xPts values (these are mode-independent), GemTable sorting, historical data displays.
-- Give the mode a clear default ("Max xPts") that matches current pre-EO-01 behaviour — so the feature adds on top without changing the default experience.
-- If the mode affects the Decision Summary, add a visible badge to the Decision Summary header: "Mode: Protect Rank" — so the user always knows what mode is active.
-
-**Detection:** Navigate away and back. Assert mode persists. Assert that xPts column values do not change between modes (mode affects display framing, not model outputs).
-
----
-
-### Pitfall M3: Captain EV adjustment for EO-01 creating confusing signal when combined with existing xPts display
-
-**Phase:** EO-01
-
-**What goes wrong:** The existing `CaptainPicksPanel` (Phase 31) shows `xPts_1gw` and `xPts_90th_1gw` per captain candidate, sorted by raw expected points. EO-01 wants to add an "EO-adjusted captain EV" — which is not a different xPts value but a **rank movement expectation** (e.g., "captaining player X when 55% of managers captain him gives you +0 expected rank movement; captaining Y at 3% EO gives you +12k expected rank positions if he hauls").
-
-These are fundamentally different numbers: one is expected fantasy points, the other is expected rank movement. Displaying them in the same component or the same column risks the user confusing "EO-adjusted xPts" (which doesn't exist) with rank-movement score.
-
-**Consequences:** User believes the EO-adjusted number is a modified xPts value and uses it to evaluate the player's raw scoring potential. Or user ignores it because they don't understand what the column represents. Either outcome dilutes the feature value.
-
-**Prevention:**
-- Use distinct labels and units: "xPts" for expected points, "Rank EV" or "Rank delta" for EO-adjusted captain score. Never put both in a column called "xPts (EO-adjusted)."
-- The EO-adjusted captain card should be a separate section from the existing CaptainPicksPanel, not an extension of it. Model it after the existing 2-card layout (ceiling / EO-adjusted) — but make the EO card clearly labelled "Rank protection" or "Differential pick."
-- Add a tooltip on the EO-adjusted captain score explaining the calculation: "Expected rank movement vs field based on ownership% and captain xPts."
-
-**Detection:** User test (informal): can you explain what the number means? If not, the label is wrong.
-
----
-
-### Pitfall M4: MTP-01 hit cost display getting out of sync with FT bank state during multi-step simulation
-
-**Phase:** MTP-01
-
-**What goes wrong:** In MTP-01, the user manually sequences GW-by-GW transfers. The hit cost display for each GW step depends on the FT state at that step, which is the cumulative result of all prior steps. If the user edits an earlier step (e.g., adds a transfer to GW1), all subsequent hit costs must recompute. This is the same problem `ftStateAfterStepIndex()` solves in `planning-engine.ts` for the automated planner.
-
-If MTP-01 implements hit cost display without replaying the full FT state from step 0 on every edit, it will show stale hit costs. A user who rolls GW1, rolls GW2, then makes 3 transfers in GW3 would see GW3 cost as "one hit (-4 pts)" but actually have 3 banked FTs and pay 0 pts.
-
-**Consequences:** User plans a sequence that shows 3 hits at -12pts, but the actual hit count is 0. Or vice versa. The financial simulation is the core value of MTP-01 — if it's wrong, the feature is actively harmful.
-
-**Prevention:**
-- Reuse `ftStateAfterStepIndex()` directly from `planning-engine.ts` — do not reimplement FT state replay in MTP-01.
-- The MTP-01 state model should be: `{ steps: ManualStep[] }` where each step is rendered by replaying the full FT chain from `initialFTState`, not by storing a per-step FT snapshot that can drift.
-- Use Immer for the steps array (same `useImmer` pattern as PlannerTab) — mutations are safe, but always recompute derived values (hit cost, bank balance) from the full chain on any edit.
-- Derive bank balance after each step as `bankBalance - sum(buyCosts) + sum(sellPrices)` replayed from step 0, not as an incrementally updated value that can accumulate drift.
-
-**Detection:** Test: set up a 3-GW sequence where GW1 and GW2 roll (0 transfers), and GW3 uses 3 transfers. Verify FT bank at GW3 is 5 available (1 weekly + 2 banked from GW1 + 2 banked from GW2, capped at 5), hit cost is 0, not -8 pts.
-
----
-
-### Pitfall M5: Wildcard chip in TREE-01 making branching meaningless for that sub-tree
-
-**Phase:** TREE-01
-
-**What goes wrong:** When a wildcard is included in a TREE-01 path, the "squad after wildcard" is a near-optimal restructure of 15 players. This means:
-- The post-WC squad has no meaningful relationship to the pre-WC squad.
-- The "transfer savings" framing ("you'll need fewer hits in GW3 if you WC now") is replaced by a completely different squad structure.
-- GW2 and GW3 branches off a WC step in GW1 are based on a different starting squad than all non-WC paths — they cannot be compared on a xPts-delta basis.
-
-Additionally, if TREE-01 generates WC sub-paths by branching further (considering 15 possible transfer combinations from the new WC squad), it creates a combinatorial explosion (Pitfall C6 interaction).
-
-**Consequences:** TREE-01's comparison table shows paths that are incommensurable: one is "roll, roll, hit" from current squad, another is "WC now, roll, roll" from a completely different squad. The user sees different xPts totals but doesn't understand they're looking at entirely different future squads. Decision quality suffers.
-
-**Prevention:**
-- Treat WC (and FH) as a **separate top-level path**, not as a branch within the main tree. Present it as: "Option A: Normal transfer path (no chip)" and "Option B: Wildcard now." These are displayed side-by-side, not as branches of a shared tree.
-- For the WC option, show the projected new squad (from `generateChipStep`) and its xPts, but clearly label it "Squad after WC" and do not branch further.
-- FH is a one-GW special case — show projected FH xPts for GW1 only, then the reverted squad for GW2+.
-- BB and TC do not change the squad, so they fit naturally into branch paths and don't need special handling.
-
-**Detection:** Verify that a TREE-01 result containing a WC path shows the post-WC squad explicitly and does not have sub-branches from the WC node.
-
----
-
-### Pitfall M6: ML-01 rival squad data not respecting GW boundary — fetching picks for a live GW during live scoring
-
-**Phase:** ML-01
-
-**What goes wrong:** During a live GW (after the deadline but before all matches complete), the `entry/{id}/event/{gw}/picks/` endpoint returns the confirmed squad but `active_chip` may change (chip played post-deadline is visible in the live scoring API), and `entry_history` values (event_total, points, rank) are provisional. More critically, the live-points endpoint (`event/{gw}/live/`) data drives actual scoring, but the picks endpoint only shows the static squad — autosubs applied during the GW are only visible in a different endpoint.
-
-ML-01 shows rival captain and chip status. If queried mid-GW: the captain is the pre-deadline captain, not the effective captain after autosubs.
-
-**Consequences:** "Rival captain is Player X" is wrong if Player X got injured in the first match and the autosub VC is now the effective captain. This makes differential analysis ("I'm differentiating against rivals by captaining Y") incorrect mid-GW.
-
-**Prevention:**
-- ML-01 is framed as a **pre-deadline planning tool** — it should only be used before the GW deadline, not mid-GW.
-- Add a UI guard: if `events.find(e => e.is_current && !e.finished)` is true (live GW in progress), show a banner: "Live GW in progress — rival data reflects pre-deadline picks and may not account for autosubs."
-- Use the last **finished** GW for rival squad analysis as the reliable data source for squad structure, captain history, and chip usage.
-
-**Detection:** Mock the bootstrap event object with `is_current: true, finished: false`. Assert the live-GW warning banner renders.
-
----
-
-## Minor Pitfalls
-
-### Pitfall m1: MTP-01 break-even week calculation needs to account for FT bank value
-
-**Phase:** MTP-01
-
-**What goes wrong:** The existing `TransferSuggestion` type and `suggestTransfers()` compute `breakEvenGws = ceil(4 / xPtsGainPerGw)` for hit transfers. MTP-01 should also display break-even for hits, but the calculation ignores the opportunity cost of spending a banked FT. A hit taken when you have 2 FTs available is different from a hit taken when you have 1 FT — the banked FT has option value (you could have rolled it to give yourself 2 FTs next GW instead).
-
-**Prevention:** For now, keep the same `ceil(hitCost / xPtsGainPerGw)` formula. Add a note to MTP-01 plan: break-even ignores FT option value. Revisit in SENS-01 (sensitivity analysis feature from backlog).
-
----
-
-### Pitfall m2: React state mutation when editing MTP-01 steps out-of-order (non-sequential edits)
-
-**Phase:** MTP-01
-
-**What goes wrong:** If the user edits GW3 before GW2, the financial state at GW3 depends on GW2 which hasn't been set yet. If the state management naively applies edits in isolation without a full re-derive, GW3 sees a stale bank balance.
-
-**Prevention:** Use the same replay pattern from `ftStateAfterStepIndex()` — always derive all step states from scratch from `initialFTState` and `initialBank`. Never store derived financial state; only store user intent (which transfers to make each GW).
-
----
-
-### Pitfall m3: EO-01 mode toggle not being visible enough — user unaware their view is filtered
-
-**Phase:** EO-01
-
-**What goes wrong:** If the EO mode is set to "Protect Rank" and the user returns to the squad view days later, the captain recommendation will show a different player than expected. They won't remember they set the mode and will be confused why the recommendation changed.
-
-**Prevention:** Persistent mode state (localStorage) must come with persistent mode **display**. Show the active mode in the section header at all times (not just in the toggle controls). Use a coloured badge: blue="Max xPts" (default), green="Protect Rank", amber="Chase Rank", red="Differential Aggressive."
-
----
-
-### Pitfall m4: TREE-01 using `xPts_1gw` (single GW) as the scoring signal for all GW steps
-
-**Phase:** TREE-01
-
-**What goes wrong:** `planning-engine.ts` already uses `xPts_1gw` for all steps, even in a 5-GW horizon. This means the plan doesn't adapt to known fixture changes beyond GW1 — a player with a difficult fixture in GW1 but an easy GW2 double is always scored by their GW1 xPts. `xPts_3gw` and `xPts_5gw` aggregate over the horizon but can't be used per-step without prorating (which the current engine doesn't do).
-
-TREE-01 may want to use per-GW xPts (i.e., `xPts_1gw * fixtureCountForGw(player, targetGw)`) which the existing `fixtureCountForGw()` already enables. This is what `planning-engine.ts` does on line 116. This is correct for known upcoming fixtures. The problem is that `xPts_1gw` is calibrated to a "typical" fixture — the fixture difficulty is already baked in via the pipeline. Using `xPts_1gw * fixtureCount` double-counts fixture difficulty.
-
-**Prevention:** Review the pipeline to confirm whether `xPts_1gw` already reflects the specific upcoming fixture difficulty or whether it's a per-90 baseline. If it's fixture-adjusted, the `* fixtureCountForGw()` multiplication is correct for DGW only. Document this clearly in TREE-01 plan before writing code.
-
----
-
-### Pitfall m5: ML-01 league standings pagination not handled — only first 50 rivals shown
-
-**Phase:** ML-01
-
-**What goes wrong:** The `leagues-classic/{id}/standings/` endpoint returns a paginated response with a `has_next` boolean and `results` array per page (approximately 50 results per page). If ML-01 only fetches page 1, leagues with 51+ members silently truncate at 50. For a personal tool capped at top-20 rivals, this is fine — but the implementation must explicitly select the page containing the user's own position and nearby rivals, not blindly take page 1.
-
-**Prevention:**
-- Fetch only enough pages to get the user's position ± the desired rival count (e.g. 10 above and 10 below).
-- Use the `entry` field in standings to find the user's own position (compare to team ID from localStorage).
-- Hard cap at 20 rivals regardless of league size — this is a personal planning tool, not a full league dashboard.
-
----
-
-## Phase-Specific Warning Matrix
-
-| Phase | Feature | Likely Pitfall(s) | Mitigation | Surface in Plan |
-|-------|---------|-------------------|------------|-----------------|
-| MTP-01 | Manual Transfer Planner | C1 (FT engine wrong), C2 (sell price formula), M4 (hit cost drift), m1 (break-even) | Fix free-transfer-engine.ts first; use `computeSellPrice()` helper; replay FT state from step 0 | "Fix FT engine before writing any MTP-01 code" in plan |
-| ML-01 | Mini-League Tracker | C3 (stale picks), C4 (rate limits), M6 (live GW boundary), m5 (pagination) | Use last finished GW; batch requests to 3 concurrent; cap at 20 rivals | "Rate limit strategy required" section in plan |
-| EO-01 | Effective Ownership | C5 (selected_by_percent wrong proxy), M2 (mode state leak), M3 (EV confusion), m3 (invisible mode) | Label as approximation; use ML-01 rival data for mini-league EO; scope mode effects explicitly | "EO approximation caveats" + "Mode persistence" sections in plan |
-| TREE-01 | Transfer Route Tree | C6 (combinatorial explosion), C1 (FT engine), M1 (xPts degradation), M5 (WC meaningless branching), m4 (xPts fixture double-count) | Beam search with K=4 branches; treat WC as separate option; discount future GW scores | "Branching factor bound" + "WC as separate path" in plan |
-| All | — | C1 (FT engine bug affects all financial simulation) | Fix `computeNextFTState` in a standalone phase or as the first task in MTP-01 | Pre-condition in every v1.9 plan |
-
----
-
-## Technical Debt Integration Patterns
-
-### FT engine fix is a pre-condition, not a feature task
-
-The `computeNextFTState` bug (Pitfall C1) affects MTP-01, TREE-01, and the existing PlannerTab. It should be fixed in a dedicated pre-work commit before any v1.9 feature code is written. Tests for the corrected behaviour should be added to `src/lib/free-transfer-engine.test.ts` (create if it doesn't exist).
-
-The fix requires updating `FTState.banked` semantics throughout: the type allows any `number` but existing code assumes `banked` is 0 or 1. After the fix, `banked` can be 0–4. Audit for any code that uses `banked` directly as a boolean.
-
-### sell price in existing planning engine
-
-`generatePlan()` and `generateChipStep()` already handle `sellPrices` correctly — they use `selling_price` from auth if available, otherwise fall back to `now_cost`. MTP-01 must follow the same pattern and must not introduce a separate sell price calculation path.
-
-### MTP-01 state model must be derived, not stored
-
-The existing `PlannerTab` uses `useImmer` to store `PlanResult` as a mutable tree. MTP-01 should use the same pattern but with a derived-state discipline: the per-step FT state and bank balance are always computed from first principles (replay from `initialFTState`), never stored as independent state.
-
-### ML-01 TanStack Query staleTime
-
-The existing proxy at `[...proxy]/route.ts` has `next: { revalidate: 0 }` (no server-side cache). TanStack Query hooks use 6h staleTime for player data. For ML-01 rival data, use 30min staleTime — frequent enough to catch late pre-deadline changes, infrequent enough to avoid hammering the FPL API on every tab switch.
-
-### EO-01 mode toggle: localStorage key must be namespaced
-
-The app already uses `fpl_team_id` as a localStorage key. EO-01 must use a namespaced key like `fpl_eo_mode` to avoid collision. Document all localStorage keys in a constants file.
-
----
-
-## Integration-Specific Failure Modes
-
-### Financial simulation correctness chain
-
-MTP-01's core value is: "if I make these transfers in these GWs, what will my bank and FT state be?" The correctness of this depends on three inputs all being correct simultaneously:
-1. `selling_price` values (Pitfall C2) — wrong if not authenticated.
-2. `computeNextFTState` (Pitfall C1) — wrong with old engine.
-3. Hit cost replay from step 0 (Pitfall M4) — wrong if derived incrementally.
-
-All three must be fixed before MTP-01 ships. Any one failing silently means the feature gives wrong financial advice.
-
-### TREE-01 depends on a correct FT engine
-
-TREE-01's path scoring includes projected hit costs over multiple GWs. These are only correct if the FT engine correctly models the new 5-FT bank and chip-preserving rules (Pitfall C1). TREE-01 cannot be accurately tested until the FT engine is fixed.
-
-### EO-01 + ML-01 synergy
-
-If ML-01 ships before EO-01, EO-01 can use the fetched rival squads to compute accurate mini-league EO% rather than relying on the `selected_by_percent` approximation (Pitfall C5). Recommend shipping ML-01 first, then EO-01 consumes ML-01 data.
+1. **DST transitions (BST↔GMT)** — last Sunday of March (BST start) and October (GMT start). FPL deadlines often fall on Saturday 11:30; the next-day Sunday transition can confuse "hours until deadline" math. **Mitigation:** always compute in UTC via `Date.parse()`.
+2. **Mid-week deadline shifts** — broadcast reschedules. The deadline for a Tuesday game can move to Wednesday with 48h notice. **Mitigation:** treat `deadline_time` as authoritative on every read, never cache.
+3. **DGW deadlines** — the deadline for the FIRST fixture of the DGW is the FPL deadline (verified). Players on the SECOND fixture of a DGW can have lineup uncertainty until match day. **Mitigation:** `xmins` already handles this via existing rotation flags; BACK-01 should record the *deadline time*, not "first match kickoff".
+4. **Christmas / blank gameweek** — `event.finished` may take longer than usual; reconciliation must not run until `finished == true`. **Mitigation:** BACK-01 reconciler polls `bootstrap.events[gw].finished` before reading actuals; do not assume "GW is over because deadline + 48h passed".
 
 ---
 
 ## Sources
 
-- [Premier League — FPL Big Changes Announced 2024/25](https://www.premierleague.com/en/news/4058895) — official rule change: 5-FT bank, chips preserve bank (HIGH confidence)
-- [Fantasy Football Scout — Do I keep my free transfers when I use an FPL Wildcard?](https://www.fantasyfootballscout.co.uk/2024/10/03/do-i-keep-my-free-transfers-when-i-use-an-fpl-wildcard) — corroborates wildcard preserves banked FTs (HIGH)
-- [Fantasy Football Scout — Do I keep my saved transfers when using the Free Hit chip?](https://www.fantasyfootballscout.co.uk/2025/03/13/do-i-keep-my-saved-transfers-when-using-the-free-hit-chip) — Free Hit also preserves banked FTs (HIGH)
-- [Premier League — How price changes work](https://www.premierleague.com/en/news/2858775) — official sell price formula (HIGH)
-- [FPL Focus — How FPL Price Changes Work](https://fpl.page/article/how-fpl-price-changes-work-tool-predictor) — sell price = buy + floor(rise/2), full fall on drops (HIGH — matches official)
-- [Fantasy Football Hub — FPL Price Changes](https://www.fantasyfootballhub.co.uk/fpl-price-changes) — price change mechanics (MEDIUM)
-- [Fantasy Football Pundit — FPL Effective Ownership](https://www.fantasyfootballpundit.com/fpl-effective-ownership/) — EO definition and top-10k vs overall divergence (MEDIUM)
-- [LiveFPL — Top 10k Ownership](https://plan.livefpl.net/top10k) — live top-10k ownership data; demonstrates divergence from overall selected_by_percent (MEDIUM)
-- [Premier League — FPL API entry picks endpoint](https://medium.com/@frenzelts/fantasy-premier-league-api-endpoints-a-detailed-guide-acbd5598eb19) — endpoint structure; stale picks behaviour inferred from "picks keyed by event_id" + community behaviour reports (MEDIUM — undocumented FPL API edge cases)
-- [FPL API Cheatsheet — Cheatography](https://cheatography.com/sertalpbilal/cheat-sheets/fpl-api-endpoints/history/279325) — endpoint inventory including leagues-classic pagination (MEDIUM)
-- Local code verified: `src/lib/free-transfer-engine.ts`, `src/lib/planning-engine.ts`, `src/lib/types.ts`, `src/lib/squad-adapter.ts`, `src/components/planner/PlannerTab.tsx` (HIGH — read directly)
+- `pipeline/merge.py` — `news` field (line 992), pipeline run order (already documented in v1.14 PITFALLS)
+- `pipeline/cache/fpl_bootstrap.json` — verified `news`, `news_added`, `chance_of_playing_next_round`, `chance_of_playing_this_round` fields present per element
+- `.github/workflows/pipeline.yml` — existing 4×/day cron, USE_BLOB env, BLOB_READ_WRITE_TOKEN secret
+- `src/lib/types.ts` — PlayerStatus enum (`a/d/i/s/u/n`), `MergedPlayer.news` (line 26, 129)
+- `src/lib/fpl-adapter.ts` — `deadline_time` Zod schema (line 38)
+- `src/lib/hooks/useRivals.ts` — `Date.parse(currentEvent.deadline_time)` UTC pattern (line 65)
+- `src/components/planner/ManualPlanTab.tsx` — `fplx_manual_plan` localStorage key (line 4), team-id storage (line 260)
+- `.planning/phases/064-sensitivity-analysis/064-RESEARCH.md` — Phase 64 SENS-01 already shipped, decisions D-01 through D-12 locked
+- `.planning/phases/065-rejection-explainer/065-RESEARCH.md` — Phase 65 WHY-01/02/03 already shipped, adaptive-framing rule
+- `.planning/REQUIREMENTS.md` — DH-01/02/03 (Phase 82), SPQ-01/02 (Phase 84), SPQ-03 (Phase 85) shipped; v1.16 features deferred from v1.15 (lines 39-46)
+- `.planning/research/FEATURES.md` — v1.14 feature landscape including DQ-01 sparkline differentiator (line 186)
+- `.planning/research/STACK.md` — v1.14 stack delta (no new deps); applies to v1.16 (no new deps expected for any feature)
+- `MEMORY.md` — DGW in GW33/GW36 (informs deadline pitfalls and SPQ-04 DGW skew); FPL auth login 502 bug (informs SCRAPER-01 fragility — same domain)
+- FPL `bootstrap-static` — `events[].deadline_time` (UTC ISO 8601), `events[].finished` (bool), `elements[].news_added` (ISO timestamp) — verified live at `https://fantasy.premierleague.com/api/bootstrap-static/`
+- Vercel Blob limits — single-blob writes are atomic; concurrent writes = last-writer-wins (no built-in versioning)
+- GitHub Actions — `concurrency:` keyword for workflow serialization; `workflow_dispatch` rate limits (5,000/h authenticated)

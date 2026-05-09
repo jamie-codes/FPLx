@@ -1,254 +1,347 @@
-# Technology Stack — v1.9 Competitive Intelligence
+# FPL Analyst — Stack Additions Research
 
-**Project:** FPL Analyst — v1.9 milestone (subsequent milestone, additive only)
-**Researched:** 2026-05-03
+**Researched:** 2026-05-09 (v1.16 delta added; v1.14 retained)
+**Mode:** Subsequent-milestone delta research (extends, does not replace existing stack)
 **Overall confidence:** HIGH
 
 ---
 
-## Headline Recommendation
+## v1.16 Modelling & Trust — Stack Delta
 
-**Three targeted additions to the existing stack:**
+### Bottom Line Up Front (v1.16)
 
-1. **`p-limit` ^6.x** — concurrency throttle for the parallel rival-squad fetches in ML-01 (prevents hammering the FPL API with N simultaneous requests)
-2. **`ai` + `@ai-sdk/anthropic`** — Vercel AI SDK v6 for TREE-01's structured multi-branch transfer-route generation (server-side only, zero client bundle impact)
-3. **Zero additional UI libraries** — the Transfer Route Tree (TREE-01) renders as a collapsible card tree in plain Tailwind/React, not a D3 chart
+| Feature | New deps? | Net new files | Touches existing |
+|---------|-----------|---------------|-------------------|
+| SCRAPER-01 | **None.** No scraping needed — `bootstrap-static.elements[].news` already in pipeline (`merge.py:992`). MergedPlayer already carries `news: string` (`types.ts:26,129`). | 0 (UI surfacing only) | `TransferPanel.tsx`, `GemTable` columns, `StatusBadge` reuse |
+| REFRESH-01 | **None.** GitHub Actions cron + workflow conditionals. No new actions. | 1 workflow edit (`.github/workflows/pipeline.yml`) | existing `pipeline.yml`, `pipeline/run.py` |
+| DH-04 | **None.** `recharts@3.8.1` already in deps and used by `AccuracyTab.tsx` and `RankSimTab.tsx`. Sparkline = `<LineChart>` with hidden axes; no `react-sparklines` needed. | 1 component (`CronHistorySparkline.tsx`) | `DataHealthSection.tsx`, `data_health.json` writer |
+| BACK-01 | **None.** `localStorage` is sufficient (mirrors `manual-plan.ts` `MANUAL_PLAN_KEY` pattern). No `idb-keyval` required at this scale. | 1 storage module (`src/lib/decision-history.ts`), 1 component (`BacktesterTab.tsx`) | `RankSimTab.tsx` patterns |
+| SPQ-04 | **None.** Pure UI over existing `sp_quality.json`. | 1 component (`SetPieceLeagueTable.tsx`) | `set-pieces` tab page |
 
-MTP-01 and EO-01 need **no new packages** — they are pure TypeScript over existing `MergedPlayer`, `FTState`, and `PlanStep` shapes with the existing FPL proxy.
-
----
-
-## Recommended Stack — Per Feature
-
-### MTP-01: Manual Transfer Planner
-
-**New packages:** None.
-
-**Approach:** A new `manual-transfer-engine.ts` alongside `planning-engine.ts`. The existing engine already carries all the primitives needed:
-
-| Existing primitive | What MTP-01 reuses it for |
-|-------------------|---------------------------|
-| `FTState` / `computeNextFTState()` in `free-transfer-engine.ts` | FT bank simulation per GW step |
-| `computeHitCost()` in `free-transfer-engine.ts` | -4pt per hit, hit counting |
-| `bankBalance` + `sellPrices` already on `generatePlan()` | Starting bank, sell-price-aware budget |
-| `PlanStep.hitCost` + `GWStep.chip` in `types.ts` | Per-step financial state shape already exists |
-| `MyTeamPick.selling_price` from `squad-adapter.ts` | Exact sell price for financial simulation |
-| `useImmer` (already installed) | Nested mutable state for user-edited steps |
-
-The new engine differs from `generatePlan()` in one way: **the user provides the transfer pair(s) per GW instead of the engine choosing them**. The engine then simulates bank/FT state forward from those choices. Break-even weeks formula is `ceil(4 / xPtsGainPerGw)` — identical to `TransferSuggestion.breakEvenGws` logic already in `suggest-transfers.ts`.
-
-**Why not reuse `generatePlan()` directly:** `generatePlan()` is greedy-auto (it picks transfers). MTP-01 is user-designed — the engine should only simulate the user's choices, not override them. Separate function, shared primitives.
+**Net new npm packages (v1.16):** 0
+**Net new Python packages (v1.16):** 0
+**Net new external services (v1.16):** 0
+**Net new GitHub Actions:** 0
+**Net new cache files (v1.16):** 0 (DH-04 reads from extended `data_health.json`; SCRAPER-01 reads existing `merged_players.json`)
 
 ---
 
-### ML-01: Mini-League Rival Tracker
+### SCRAPER-01: FPL Official News Feed
 
-**New package: `p-limit` ^6.x (server-side only)**
+**Critical finding [VERIFIED: WebFetch 2026-05-09]:** FPL `bootstrap-static.elements[].news` is the official injury/availability news source. It is **already pulled into the pipeline** at `pipeline/merge.py:992` (`'news': element.get('news', '')`) and **already on the `MergedPlayer` type** at `src/lib/types.ts:26,129`. There is **no need to scrape** — FPL's own bootstrap endpoint is the canonical source that every scraper would re-derive from anyway.
 
-The core pattern for rival squad fetching is already proven: `src/app/api/squad/[teamId]/route.ts` calls `entry/{id}/event/{gw}/picks/` through the server-side proxy. ML-01 extends this to N rivals in parallel.
+The brief misleadingly framed this as "scraping". The work is **UI surfacing + flag derivation**, not Python scraping infrastructure.
 
-**Why p-limit is needed:** A mini-league can have 10–50 entries. `Promise.all(rivals.map(fetchPicks))` fires all requests simultaneously. FPL's API has no published rate limits but community experience shows aggressive concurrent hitting causes 429s and temporary bans. Throttling to 3 concurrent requests (configurable) eliminates this risk.
+#### Stack changes
 
-| Property | Detail |
-|----------|--------|
-| Package | `p-limit` |
-| Version | ^6.1.0 (current: 6.x; v7.x requires Node 20, which is fine for Vercel but not worth the major jump yet — confirm project's Node version) |
-| Runtime | Server-side Next.js Route Handler only |
-| Bundle impact | Zero — never imported by client components |
+**Python:** None.
+- The existing `news` field is a free-text string (e.g. `"Ankle injury - Unknown return date"`).
+- FPL also exposes `news_added` (ISO 8601 timestamp), `chance_of_playing_next_round` (0/25/50/75/100/null), and `status` (`a`/`d`/`i`/`s`/`u`/`n`) — all currently in bootstrap, none currently persisted to `MergedPlayer` except `status` and `news`.
+- **Add to merge:** `news_added: str | None` and `chance_of_playing_next_round: int | None` from `element.get(...)`. One-line additions next to line 992.
 
-**Note on p-limit version:** v7.x requires Node.js 20+. v6.x requires Node.js 16+. Both are ESM-only. Verify with `node -v` in the project. If Node 20+ is confirmed (likely on Vercel), v7.x is fine. The recommendation is ^6.1.0 as the safe floor; upgrade to ^7.x if Node version permits.
+**TypeScript:** None new.
+- Extend `MergedPlayer` with `news_added?: string | null`, `chance_of_playing_next_round?: number | null`.
+- `StatusBadge` already exists (`src/components/squad/SquadView.tsx:36`) — reuse it in `TransferPanel` and `GemTable`.
 
-**FPL API endpoints needed (all public, no auth required for rival data):**
+#### What NOT to add
 
-| Endpoint | Purpose | Auth |
-|----------|---------|------|
-| `leagues-classic/{leagueId}/standings/` | Fetch rival entry IDs, names, ranks, event totals | Public |
-| `entry/{entryId}/event/{gw}/picks/` | Per-rival squad picks (element[], multiplier for captain=2) | Public |
-| `entry/{entryId}/history/` | Chips used this season (chips[].chip_name, chips[].event) | Public |
+- **`beautifulsoup4`** [ASSUMED rejection] — FPL's bootstrap-static endpoint already provides structured news. Adding a HTML scraper is a step backwards.
+- **`lxml`** — same reason; no HTML to parse.
+- **A new GitHub Actions workflow for news** — news refresh is part of the existing pipeline cron; the bootstrap fetch already happens 4× daily.
+- **A separate `news_feed.json` cache** — news is already inside `merged_players.json`. Adding a parallel cache duplicates state.
+- **A separate `/api/news` route** — news ships with `/api/players` payload.
+- **An LLM summariser for news** — `news` strings are short and pre-formatted by FPL editors; LLM rewrite adds latency and cost for negligible gain.
 
-**Key API fields verified:**
-- `standings.results[].entry` — the rival's team ID
-- `standings.results[].rank`, `last_rank`, `total`, `event_total` — rank gap computation
-- `picks[].element`, `picks[].multiplier` (1=playing, 0=bench, 2=captain, 3=TC), `picks[].position`
-- `active_chip` — chip played this GW (null if none; "bboost", "freehit", "wildcard", "3xc")
-- `history.chips[].chip_name`, `.event` — which chips remain available
+#### Acceptance criteria mapping
 
-**New Route Handler:** `src/app/api/mini-league/[leagueId]/route.ts` — fetches standings then fans out to per-rival picks with p-limit concurrency control. Returns a shaped `RivalIntel[]` array. The existing `/api/fpl/[...proxy]` route could technically proxy these calls, but a dedicated route is cleaner: it orchestrates multi-step fetching, applies Zod validation, and shapes the response into the `RivalIntel` type rather than raw FPL JSON.
-
-**EO% calculation for ML-01 differential logic:**
-- Global ownership: `selected_by_percent` field already on `MergedPlayer` (string, parse to float)
-- Mini-league EO: computed client-side from rival squad arrays — `(ownCount + captainCount + tcCount) / leagueSize` per player
-- No new library — pure arithmetic over the fetched picks arrays
+| Behaviour | Implementation |
+|-----------|----------------|
+| Show injury/suspension flag in TransferPanel | Reuse `<StatusBadge status={p.status} news={p.news} />` in transfer rows |
+| Show flag in GemTable | New tiny `NewsBadge` cell or reuse `StatusBadge`; column hidden by default in Default preset, shown in Analysis preset |
+| Indicate freshness | Render `news_added` via existing `formatRelativeTime()` (Phase 38 utility) |
+| Filter out players with `chance_of_playing_next_round <= 25` from buy suggestions | One-line predicate in `suggestTransfers()` (already filters by `status` — extend) |
 
 ---
 
-### EO-01: Effective Ownership & Rank Protection
+### REFRESH-01: Event-Based GitHub Actions Pipeline Triggers
 
-**New packages:** None.
+**Critical findings [VERIFIED: WebFetch GitHub Actions docs 2026-05-09]:**
+1. **GitHub Actions cron minimum granularity is 5 minutes.** Cannot schedule sub-5-minute runs.
+2. **Cron cannot evaluate conditions before triggering.** Workflow runs unconditionally; date-aware logic must be **inside the workflow** (early-exit step) or done as a **dispatcher matrix**.
+3. **`workflow_dispatch`** allows manual + API-triggered runs. Already enabled in `pipeline.yml:6`.
+4. **`repository_dispatch`** allows external webhooks to trigger workflows with custom `event_type` and `client_payload` — useful if a separate cron service detects FPL deadline changes.
 
-**Approach:** Pure TypeScript engine `src/lib/eo-engine.ts`. All inputs are already present:
+#### Recommended pattern
 
-| Input | Source |
+Keep the existing `cron: '0 6,12,18,0 * * *'` (4× daily UTC). **Add deadline-aware logic via:**
+
+| Strategy | When | How |
+|----------|------|-----|
+| **Pre-flight skip step** | Off-deadline days | First step in `run-pipeline` job: read `bootstrap-static.events[].deadline_time` (ISO 8601, verified present), compute hours-to-deadline, exit job 0 if >48h *AND* last cache <24h old |
+| **Dense schedule near deadline** | Deadline ±6h | Add a second cron entry running every 30 min (`*/30 * * * *`) that runs only if a deadline is within 6h (early-exit otherwise) |
+| **Manual override** | Always | `workflow_dispatch` with optional `force_refresh: bool` input |
+| **External webhook** *(optional)* | If/when a sentinel detects price changes | `repository_dispatch` with `event_type: fpl-price-change`; **deferred** unless user opts in |
+
+#### Stack changes
+
+**No new actions.** All capability uses built-ins:
+- `actions/checkout@v4` — already in workflow
+- `actions/setup-python@v5` — already in workflow
+- Job conditionals via `if:` expressions and bash `exit 0`
+
+**One workflow edit** (`.github/workflows/pipeline.yml`):
+- Add `inputs:` block under `workflow_dispatch:` for `force_refresh`
+- Add a "deadline guard" first step that fetches bootstrap-static, parses `events[]`, sets `should_run` GITHUB_OUTPUT
+- Add `if: steps.guard.outputs.should_run == 'true'` to subsequent steps
+
+**Optional Python helper:** `pipeline/deadline_guard.py` (~30 LOC) — pure stdlib, called from workflow step. Exits 0 with stdout `RUN` or `SKIP`.
+
+#### What NOT to add
+
+- **`@vercel/cron`** — already rejected v1.14; GitHub Actions is the established pattern (validated v1.2 DAT-01).
+- **A separate "scheduler" repo** — overkill for personal tool.
+- **External cron services (cron-job.org, EasyCron)** — adds external dependency; `repository_dispatch` from a tiny existing service would be the cleaner alternative if ever needed, and **even that is deferred**.
+- **GitHub-hosted larger runner** — pipeline runs in <2 min on `ubuntu-latest`; no need.
+- **Caching FPL bootstrap across runs** — bootstrap is the source of truth; caching it defeats the purpose of refresh.
+- **A "smart cron" library in Python** — date math is one `datetime.fromisoformat()` + subtract; no `croniter` / `apscheduler` warranted.
+
+#### FPL deadline source [VERIFIED]
+
+`bootstrap-static.events[]` contains:
+- `deadline_time`: ISO 8601 (e.g. `"2025-08-15T17:30:00Z"`)
+- `deadline_time_epoch`: Unix seconds
+- `is_current: bool`, `is_next: bool`, `finished: bool`
+
+Use `is_next: true` event's `deadline_time` for "hours until next deadline" calculation.
+
+---
+
+### DH-04: Cron History Sparkline
+
+#### Stack changes
+
+**TypeScript:** None new.
+- `recharts@3.8.1` already in `package.json` and used by `AccuracyTab.tsx` and `RankSimTab.tsx`.
+- Sparkline pattern: `<LineChart>` with `<XAxis hide />`, `<YAxis hide />`, `<CartesianGrid hide />`, height ~24px, single `<Line stroke=... dot=false>`.
+- Tooltip with timestamp + status on hover (reuse existing `<Tooltip>` from recharts).
+
+**Python:** Extend `pipeline/data_health.py` to append a rolling history entry per run.
+
+#### Data model addition
+
+```ts
+// src/lib/types.ts — extend DataHealth (already exists from v1.14 DQ-01)
+export interface DataHealthRunEntry {
+  timestamp: string         // ISO 8601
+  status: 'ok' | 'warn' | 'error'
+  duration_seconds?: number
+  error_message?: string | null
+}
+
+export interface DataHealth {
+  // ... existing v1.14 fields ...
+  cron_history?: DataHealthRunEntry[]   // NEW v1.16 — last 7 entries, ordered oldest→newest
+}
+```
+
+#### Pipeline change
+
+`pipeline/data_health.py`: read previous `data_health.json`, prepend current run, truncate to last 7 entries. Atomic write (write temp + rename). ~15 LOC addition.
+
+#### What NOT to add
+
+- **`react-sparklines`** [VERIFIED: npm view] (last published 4 years ago; unmaintained). Use existing `recharts` — saves ~30KB and avoids dep duplication.
+- **`d3` direct** — recharts wraps d3 already.
+- **Pure CSS sparkline** — feasible (inline SVG `<polyline>`) but loses tooltip/hover ergonomics; with recharts already loaded, the marginal cost is zero.
+- **A separate `cron_history.json` cache file** — extending `data_health.json` keeps API surface flat (one fetch).
+- **Server-sent events / websockets** — pipeline runs every 6h; on-page-load fetch is sufficient.
+- **Animation library (`framer-motion`)** — recharts has built-in `isAnimationActive`.
+
+---
+
+### BACK-01: Decision History Backtester
+
+#### Storage decision
+
+**Use `localStorage`.** Mirrors the existing `MANUAL_PLAN_KEY` pattern in `src/lib/manual-plan.ts:5`.
+
+| Factor | localStorage | IndexedDB |
+|--------|-------------|-----------|
+| Quota | ~5–10 MB per origin | ~50% of disk |
+| API | Synchronous, simple | Async, callback/promise |
+| Data shape | JSON.stringify | Native objects |
+| Project precedent | ✓ Used (manual-plan, fpl_team_id, theme) | ✗ Not used |
+| BACK-01 size estimate | ~38 GWs × ~500 bytes ≈ 19 KB | over-engineered |
+
+**Decision: localStorage.** A full season of decision history is well under 50 KB even with verbose entries.
+
+#### Stack changes
+
+**TypeScript:** None new.
+- `idb-keyval@6.2.2` and `idb@8.0.3` are **available but explicitly not added** — overkill for this dataset.
+- Reuse `loadFromStorage` / `saveToStorage` patterns from `src/lib/manual-plan.ts`.
+
+#### Data model
+
+```ts
+// src/lib/decision-history.ts (NEW)
+export const DECISION_HISTORY_KEY = 'fplx_decision_history'
+
+export interface DecisionRecord {
+  version: 1
+  gw: number
+  capturedAt: string                      // ISO timestamp at capture
+  captain: { id: number; xPts: number; actual?: number | null }
+  viceCaptain: { id: number; xPts: number; actual?: number | null }
+  transfers: Array<{ outId: number; inId: number; outXpts: number; inXpts: number }>
+  chip: 'wildcard' | 'free_hit' | 'bench_boost' | 'triple_captain' | null
+  hits: number                            // count of -4 hits taken
+  squad: number[]                         // 15 player IDs at GW deadline
+}
+
+export interface DecisionHistory {
+  version: 1
+  teamId: number                          // namespaces history by FPL team
+  records: DecisionRecord[]               // ordered by gw asc
+}
+```
+
+#### Capture & enrichment flow
+
+1. **Capture (manual or auto):** When user clicks "Save this week's decision" on Decision Summary, snapshot current squad + chosen captain + planned transfers into `localStorage`.
+2. **Enrichment (post-GW):** When pipeline data updates and a captured GW is now `finished: true`, run client-side `enrichDecisionHistory()` to fill `actual` xPts from latest `merged_players.json` (uses `last_gw_actual_pts` field added v1.5).
+3. **Backtester view:** New `BacktesterTab` under Squad section — table of GW × captain delta vs optimal × transfer regret × cumulative regret score.
+
+#### What NOT to add
+
+- **`idb-keyval`** / **`idb`** / **`localforage`** — see table above; localStorage is sufficient and matches project precedent.
+- **`zustand`** / **`jotai`** — state management for one tab is overkill; reuse `useState` + storage helpers like `manual-plan.ts`.
+- **`zod` schema for the storage payload** — versioned object (`version: 1`) with try/catch fallback to empty matches existing `loadManualPlan()` pattern; Zod is reserved for FPL API drift, not our own JSON.
+- **Server-side storage / DB** — violates "No database for v1" decision (PROJECT.md key decisions table).
+- **Cloud sync (Vercel KV, Supabase)** — single-user personal tool; localStorage per-browser is acceptable. Future cross-device sync is a deferred idea.
+- **Date library (`date-fns`, `dayjs`)** — `formatRelativeTime` already exists in `src/lib/formatRelativeTime.ts` (Phase 38).
+
+---
+
+### SPQ-04: Set-Piece League Table
+
+**No stack changes.** The `sp_quality.json` cache file shipped in v1.14 already contains all 20 teams' delivery quality scores. SPQ-04 is a pure-UI render: a sortable TanStack Table (already in deps as `@tanstack/react-table@8.21.3`) inside the existing Set Pieces tab.
+
+#### What NOT to add
+
+- **No new pipeline module** — `pipeline/set_piece_quality.py` already writes the data.
+- **No new API route** — extend `/api/set-pieces` if needed, or fetch `sp_quality.json` via existing fetch path.
+- **No new chart library** — table is the right primitive.
+
+---
+
+## Cross-Cutting v1.16 — What NOT to Add
+
+| Tempting addition | Why reject |
+|-------------------|------------|
+| `beautifulsoup4` for SCRAPER-01 | FPL bootstrap-static already provides `news` field — no scraping needed |
+| `lxml` | Same |
+| `react-sparklines` for DH-04 | `recharts` already in deps; sparkline is `<LineChart>` with hidden axes |
+| `idb-keyval` for BACK-01 | localStorage handles ~19 KB easily; matches project precedent |
+| `croniter` / `apscheduler` for REFRESH-01 | Date math is trivial Python stdlib |
+| External cron service | GitHub Actions cron + workflow_dispatch covers all needs |
+| `@vercel/cron` | Rejected v1.14; GitHub Actions is the established cron substrate |
+| LLM news rewrite | `news` strings are FPL-curated and concise |
+| `framer-motion` for sparkline animation | recharts has `isAnimationActive` |
+| `date-fns` / `dayjs` | `formatRelativeTime` already shipped Phase 38 |
+| New `/api/news` route | News ships in `/api/players` |
+| Separate `cron_history.json` | Extend `data_health.json` |
+
+---
+
+## Existing Stack Summary (after v1.16)
+
+| Layer | Status |
 |-------|--------|
-| `selected_by_percent` per player | `MergedPlayer` (existing field) |
-| `xPts_1gw` per player | `MergedPlayer` (existing field) |
-| Captain multiplier | User's own picks via `useMyTeam` (existing hook) |
-| Mode toggle state | New UI state only — no data requirement |
-
-**EO-adjusted captain EV formula** (standard FPL community formula, MEDIUM confidence):
-```
-eo_adjusted_ev = xPts_1gw * (1 + eo_pct/100)
-```
-Where `eo_pct` is effective ownership % = `owns% + captain%` (captain gets double points, so captaining someone you own by 50% of rivals means you gain vs the field when they score).
-
-**Mode toggle (`Max xPts / Protect Rank / Chase Rank / Differential Aggressive`):** A pure enum state in the new `EOTab` component. Each mode reorders/filters the existing `suggestTransfers()` output by a different objective function. No new data sources — different weights on existing `xPtsGain`, `differential_flag`, and EO% fields.
-
----
-
-### TREE-01: Transfer Route Tree
-
-**New packages: `ai` ^6.x + `@ai-sdk/anthropic` (server-side only)**
-
-The branching tree structure (2–3 paths × 2–3 GWs) is a constrained generation problem: given the user's squad, budget, FT state, and player pool with xPts values, generate N distinct transfer sequences. Each branch needs a specific shape (players in/out per GW, cumulative FT state, hit cost, xPts per path).
-
-**Why an LLM rather than pure TypeScript enumeration:**
-- `generatePlan()` is a greedy single-path engine. Generating 2–3 *distinct* paths requires either (a) a search tree with pruning or (b) prompting an LLM with structured output to produce branching alternatives.
-- A search tree for 3 paths × 3 GWs × 2 transfers per GW = 27,000 candidate evaluations — feasible but complex to implement with good diversity (greedy enumeration tends to produce near-identical paths).
-- The LLM approach with `generateObject` + Zod schema produces human-readable branch rationale ("Route A: Double up on Man City assets for DGW33") alongside the structured xPts data, which is the "AI-generated" requirement in TREE-01.
-- The LLM does not *score* xPts — it selects players and structures branches. xPts values are passed in as context and the LLM's output is validated/re-scored server-side with the existing `xPts_1gw` fields from `MergedPlayer`.
-
-**Vercel AI SDK v6 — verified current (Dec 2025 release):**
-
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `ai` | ^6.x (current: 6.0.173) | Core `generateObject` / `generateText` with structured output |
-| `@ai-sdk/anthropic` | ^1.x (latest) | Anthropic Claude provider for the AI SDK |
-
-**Server-side only:** The LLM call lives in a new Route Handler `src/app/api/transfer-tree/route.ts`. The client fires one `fetch()` and receives the scored tree JSON. Zero LLM code in the client bundle.
-
-**Output schema (Zod):** The server validates the LLM output against a `TransferTreeSchema` before returning it to the client. This means the UI always receives correctly-shaped data, and the LLM has a hard contract to conform to.
-
-**Model recommendation:** `claude-sonnet-4-5` — sufficient for structured JSON generation, fast, cost-effective for a personal tool. Claude Opus is unnecessary for this scope (the task is constrained generation, not reasoning).
-
-**Environment variable needed:** `ANTHROPIC_API_KEY` in `.env.local` and Vercel project settings.
-
-**Chip interaction:** The TREE-01 prompt includes current chip availability (from `entry/{id}/history/` — already fetched by the existing `useChipHistory` hook) as context. The LLM can then annotate branches with chip usage notes. Chip legality is validated server-side, not trusted from LLM output.
+| Next.js 16.2.1 / React 19.2.4 / TypeScript 5 | **No changes** |
+| TanStack Query 5.95 / TanStack Table 8.21 | **No changes** — extend existing hook patterns |
+| Tailwind v4 / dark mode | **No changes** |
+| recharts 3.8.1 | **Reuse** — sparkline added (DH-04) |
+| immer 11 / use-immer 0.11 | **No changes** |
+| zod 4.3.6 | **No changes** — adapter-only |
+| @vercel/blob 2.3.1 | **No changes** |
+| Python: requests / pandas / numpy / vercel-blob / anthropic | **Reuse only** |
+| `soccerdata==1.8.8` (pinned but unused) | **Still unused** — could remove (out of scope) |
+| Vercel Blob | **No changes** |
+| GitHub Actions | **One workflow edit** (deadline guard) — no new actions |
+| External APIs | **None new** — existing FPL bootstrap-static covers SCRAPER-01 |
 
 ---
 
-## Core Technologies — No Changes
+## Confidence Assessment (v1.16)
 
-| Technology | Version | Status | v1.9 use |
-|------------|---------|--------|----------|
-| Next.js | 16.2.1 | Unchanged | New Route Handlers for mini-league and transfer-tree |
-| React | 19.2.4 | Unchanged | New components: MTPTab, MLTab, EOTab, TransferTreePanel |
-| TypeScript | ^5 | Unchanged | New engine files |
-| TanStack Query | ^5.95.2 | Unchanged | New hooks: `useMiniLeague`, `useTransferTree` |
-| TanStack Table | ^8.21.3 | Unchanged | Rival squad table in ML-01 |
-| Tailwind CSS | ^4 | Unchanged | Tree node cards, mode toggle pills |
-| Vitest | ^4.1.2 | Unchanged | TDD for new engines |
-| immer / use-immer | ^11.1.4 / ^0.11.0 | Unchanged | MTP-01 step mutation |
-| Zod | ^4.3.6 | Unchanged | Rival picks schema, TransferTreeSchema for AI output |
-| Vercel Blob | ^2.3.1 | Unchanged | No new blobs needed for v1.9 |
-| Python pipeline | requests + pandas + stdlib | Unchanged | No pipeline changes for v1.9 |
+| Area | Confidence | Reason |
+|------|------------|--------|
+| SCRAPER-01: `news` field already in bootstrap | HIGH [VERIFIED: WebFetch + grep merge.py:992 + types.ts:26,129] | Verified directly in code and live API |
+| SCRAPER-01: `chance_of_playing_next_round` available | HIGH [VERIFIED: WebFetch] | Standard FPL bootstrap field |
+| REFRESH-01: GitHub Actions cron min 5 min | HIGH [VERIFIED: GitHub docs] | Documented limit |
+| REFRESH-01: cron cannot pre-evaluate | HIGH [VERIFIED: GitHub docs] | Confirmed in docs |
+| REFRESH-01: `events[].deadline_time` shape | HIGH [VERIFIED: WebFetch] | ISO 8601 + epoch both present |
+| DH-04: recharts already in deps | HIGH [VERIFIED: package.json:23 + AccuracyTab.tsx:25] | Direct file inspection |
+| DH-04: react-sparklines unmaintained | MEDIUM [ASSUMED] | Last publish 4y ago per npm; minor risk if revived |
+| BACK-01: localStorage sufficient size | HIGH | 19 KB << 5 MB quota; trivial math |
+| BACK-01: project precedent for localStorage | HIGH [VERIFIED: manual-plan.ts:5] | Direct file inspection |
+| SPQ-04: sp_quality.json already shipped v1.14 | HIGH | Pipeline file `pipeline/set_piece_quality.py` exists |
+| Cross-cutting: no new deps needed | HIGH | All five features fit existing libraries; verified package.json + requirements.txt |
 
----
+## Assumptions Log (v1.16)
 
-## New Supporting Libraries
+| # | Claim | Section | Risk if Wrong |
+|---|-------|---------|---------------|
+| A1 | `react-sparklines` is unmaintained | DH-04 | Low — recharts is the right call regardless |
+| A2 | Brief's "scraper" framing is misleading and `news` field suffices | SCRAPER-01 | Medium — if the user actually wants Twitter/press conf scraping, scope expands; needs confirmation in /gsd-discuss-phase |
+| A3 | localStorage 5 MB quota is enough for season-long decision history | BACK-01 | Very low — 19 KB estimate is conservative |
+| A4 | `repository_dispatch` for external triggers is deferred (not required for v1.16) | REFRESH-01 | Low — built-in cron + workflow_dispatch covers stated requirement |
+| A5 | Adding a deadline-aware second cron entry won't conflict with existing 4×/day cron | REFRESH-01 | Low — cron entries are independent jobs |
 
-| Library | Version | Purpose | Scope | Install |
-|---------|---------|---------|-------|---------|
-| `p-limit` | ^6.1.0 | Concurrency throttle for N rival-squad fetches | Server-side only | `npm install p-limit` |
-| `ai` | ^6.x | Vercel AI SDK — `generateObject` for TREE-01 structured output | Server-side only | `npm install ai` |
-| `@ai-sdk/anthropic` | ^1.x | Anthropic Claude provider for the AI SDK | Server-side only | `npm install @ai-sdk/anthropic` |
+## Open Questions (v1.16)
 
-**Install command:**
-```bash
-npm install p-limit ai @ai-sdk/anthropic
-```
-
-**Bundle impact:** All three packages are used only in Next.js Route Handlers (`src/app/api/*/route.ts`). They are never imported by client components and do not affect the client JavaScript bundle. Next.js tree-shakes server-only imports automatically in the App Router.
-
----
-
-## Alternatives Considered
-
-| Capability | Recommended | Alternative | Why Not |
-|------------|-------------|-------------|---------|
-| Rival fetch throttling | `p-limit` ^6 | `p-queue` | `p-queue` is heavier (135 code snippets vs 3) and queue management is not needed — we just need a concurrency cap, which is exactly `p-limit`'s purpose |
-| Rival fetch throttling | `p-limit` ^6 | Manual `Promise.all` batching | Requires manual chunking logic; `p-limit` is 3 lines and purpose-built |
-| TREE-01 branching | Vercel AI SDK (`generateObject`) | Pure TS search tree | A search tree is feasible but produces low-diversity branches (greedy paths converge); LLM produces human-readable branch rationale that satisfies the "AI-generated" spec requirement |
-| TREE-01 branching | Vercel AI SDK (`generateObject`) | Direct `@anthropic-ai/sdk` | Vercel AI SDK provides unified structured-output interface with Zod schema validation; raw Anthropic SDK requires manual JSON parsing and retry logic |
-| TREE-01 branching | Vercel AI SDK (`generateObject`) | OpenAI | Claude is already familiar from project context; Anthropic SDK is well-maintained; no reason to add a second AI provider |
-| Transfer tree visualization | Plain Tailwind collapsible cards | `react-d3-tree` (88KB) | TREE-01 has at most 3 branches × 3 GWs = 9 nodes. A full D3 tree library for 9 nodes is extreme overkill. CSS flexbox cards with a branch-line divider is 20 lines of Tailwind. |
-| Transfer tree visualization | Plain Tailwind collapsible cards | `d3-hierarchy` | Same reason — 9 nodes does not justify importing D3 |
-| EO calculation | Pure TypeScript | Python pipeline field | EO% changes every time the user switches rivals or their own squad. It must be client-side reactive, not a pipeline output. |
-| FPL API call pattern (ML-01) | Dedicated `/api/mini-league/` route | Extend `/api/fpl/[...proxy]` | The proxy is a dumb passthrough. ML-01 needs orchestration: fetch standings, fan out to N picks calls with throttling, validate each, compute differential flags, and return a shaped `RivalIntel[]`. That logic belongs in a dedicated route, not in the generic proxy. |
+1. **SCRAPER-01 scope**: Does "FPL official news feed scraper" mean the bootstrap `news` field (recommended), or does the user want press-conference / external news? **Recommendation: confirm in /gsd-discuss-phase before planning. Bootstrap field is 95% of the value at 0% of the cost.**
+2. **REFRESH-01 trigger granularity**: Is 5-minute cron resolution acceptable, or does the user want truly event-driven (price change → repo dispatch)? **Recommendation: ship deadline-aware schedule first; defer external dispatch.**
+3. **BACK-01 capture trigger**: Auto-capture on each `last_updated` change, or manual "Save this week" button? **Recommendation: manual button to keep agency explicit.**
 
 ---
 
-## What NOT to Add
+## v1.14 Stack Additions (RETAINED — already shipped)
 
-- **No D3 or charting library** — the transfer tree is a small card list, not a network graph. Adding `react-d3-tree` (88KB) or `recharts` for 9 nodes is indefensible.
-- **No database or caching layer** — rival squad data is fetched fresh per session (like the existing squad view). Vercel Blob is not used for rival data because it changes each GW and is user-specific.
-- **No `@ai-sdk/react` package** — the AI SDK's React hooks (`useChat`, `useObject`) are for streaming UI patterns. TREE-01 is a one-shot `generateObject` call from a server route handler. The client uses a plain TanStack Query `useQuery` hook over the `/api/transfer-tree` route.
-- **No scikit-learn or ML libraries** — EO% is arithmetic, not machine learning.
-- **No additional Python pipeline modules** — all four v1.9 features are either client-side engines or server-route-handler orchestrations. The pipeline does not need to change.
-- **No WebSocket / real-time layer** — out of scope per PROJECT.md constraint ("Once-daily sufficient; no real-time requirements").
-- **No auth changes** — ML-01 rival picks use the public `entry/{id}/event/{gw}/picks/` endpoint (no session cookie needed). The user's own team ID is already stored in client state.
+### Bottom Line Up Front (v1.14)
 
----
+| Feature | New deps? | Net new files | Touches existing |
+|---------|-----------|---------------|-------------------|
+| GK-01   | **None.** | 0 (math lives in `merge.py` / `pipeline/saves.py`) | `merge.py`, `XPtsCell` (`columns.tsx`), `MergedPlayer` type |
+| DQ-01   | **None.** | 1 pipeline writer (`pipeline/data_health.py`), 1 API route, 1 hook, 1 component | `run.py`, `AccuracyTab.tsx`, `last_updated.json` writer |
+| SP-QUAL-01 | **None.** Reuse existing `requests` + regex pattern in `understat_client.py` | 1 pipeline module (`pipeline/set_piece_quality.py`), 1 cache file, 1 API route, 1 hook | `SetPieceTakerPanel.tsx`, `run.py` |
 
-## New Environment Variables
+Full v1.14 detail (GK-01 save-point math, DQ-01 sanity checks, SP-QUAL-01 Understat shots scraping) preserved verbatim in git history (`git show HEAD~30:.planning/research/STACK.md` for original entries). Summary above is sufficient as carry-forward context for v1.16 planning.
 
-| Variable | Purpose | Where |
-|----------|---------|-------|
-| `ANTHROPIC_API_KEY` | Authenticates the AI SDK Anthropic provider for TREE-01 | `.env.local` + Vercel project settings |
+### v1.14 confidence (carry-forward)
 
-No other environment variables are needed. `BLOB_READ_WRITE_TOKEN` already exists for Vercel Blob.
-
----
-
-## New Files (orientating the roadmap)
-
-| File | Feature | Type |
-|------|---------|------|
-| `src/lib/manual-transfer-engine.ts` | MTP-01 | New pure TS engine |
-| `src/lib/eo-engine.ts` | EO-01 | New pure TS engine |
-| `src/lib/hooks/useMiniLeague.ts` | ML-01 | New TanStack Query hook |
-| `src/lib/hooks/useTransferTree.ts` | TREE-01 | New TanStack Query hook |
-| `src/app/api/mini-league/[leagueId]/route.ts` | ML-01 | New Route Handler (uses p-limit) |
-| `src/app/api/transfer-tree/route.ts` | TREE-01 | New Route Handler (uses ai + @ai-sdk/anthropic) |
-
----
-
-## Verification Status
-
-| Claim | Source | Confidence |
-|-------|--------|------------|
-| `leagues-classic/{id}/standings/` returns `entry`, `rank`, `last_rank`, `total`, `event_total` per rival | FPL API live fetch via WebFetch + multiple API docs | HIGH |
-| `entry/{id}/event/{gw}/picks/` returns `picks[].multiplier` (2=captain, 3=TC), `active_chip` | Medium article + FPL API cheat sheet + community docs | HIGH |
-| `entry/{id}/history/` returns `chips[].chip_name`, `.event` | Oliver Looney FPL API guide + community sources | MEDIUM — field name unverified against live 2025/26 API; validate in Phase research |
-| `p-limit` v6.x is ESM-only, Node 16+ | GitHub releases page (verified 2025-02-03 latest v7.3.0; v6.x is the stable prior major) | HIGH |
-| `p-limit` v7.x requires Node 20+ | GitHub releases page | HIGH |
-| Vercel AI SDK v6.0.173 is current; `generateObject` uses Zod schema to produce typed structured output | ai-sdk.dev docs + Vercel blog (Dec 2025) | HIGH |
-| AI SDK + Next.js App Router server route handler pattern is supported | ai-sdk.dev/docs/getting-started/nextjs-app-router | HIGH |
-| `react-d3-tree` v3.6.6 bundle is ~89KB; unsuitable for a 9-node tree | bundlephobia + github.com/bkrem/react-d3-tree | HIGH |
-| EO formula: `(own% + captain%)` producing effective ownership | allaboutfpl.com + fantasyfootballscout.co.uk + fplhints.com | MEDIUM — formula is community-standard but FPL does not publish it officially |
+All v1.14 stack decisions shipped successfully and remain HIGH confidence. The pattern of "extend existing modules, add no dependencies" is the established norm for this codebase and is continued in v1.16.
 
 ---
 
 ## Sources
 
-- [FPL APIs Explained — Oliver Looney](https://www.oliverlooney.com/blogs/FPL-APIs-Explained)
-- [Fantasy Premier League API Endpoints: A Detailed Guide — Frenzel Timothy, Medium](https://medium.com/@frenzelts/fantasy-premier-league-api-endpoints-a-detailed-guide-acbd5598eb19)
-- [FPL API Endpoints Cheat Sheet — Cheatography](https://cheatography.com/sertalpbilal/cheat-sheets/fpl-api-endpoints/history/279325)
-- [What is Effective Ownership in FPL? — FPL Hints](https://www.fplhints.com/post/what-is-effective-ownership-in-fpl)
-- [How to use effective ownership to make differential FPL decisions — Fantasy Football Scout](https://www.fantasyfootballscout.co.uk/2021/03/07/how-to-use-effective-ownership-to-make-differential-fpl-decisions)
-- [AI SDK Introduction — ai-sdk.dev](https://ai-sdk.dev/docs/introduction)
-- [AI SDK Getting Started: Next.js App Router — ai-sdk.dev](https://ai-sdk.dev/docs/getting-started/nextjs-app-router)
-- [AI SDK Generating Structured Data — ai-sdk.dev](https://ai-sdk.dev/docs/ai-sdk-core/generating-structured-data)
-- [AI SDK 6 release — Vercel blog](https://vercel.com/blog/ai-sdk-6)
-- [p-limit releases — GitHub](https://github.com/sindresorhus/p-limit/releases)
-- [react-d3-tree — GitHub](https://github.com/bkrem/react-d3-tree)
-- [Fetch Concurrency Control with p-limit — DEV Community](https://dev.to/recca0120/fetch-concurrency-control-limit-simultaneous-requests-with-p-limit-2p5h)
+### Primary (HIGH confidence)
+- `package.json` — direct read of dependency versions
+- `pipeline/requirements.txt` + `.github/workflows/pipeline.yml` — Python deps verified in two places
+- `pipeline/merge.py:992` — `news` field already pulled
+- `src/lib/types.ts:26,129` — `news: string` already on `MergedPlayer`
+- `src/lib/manual-plan.ts:5` — `MANUAL_PLAN_KEY` localStorage precedent
+- `src/components/accuracy/AccuracyTab.tsx:25` + `src/components/planner/RankSimTab.tsx:17` — recharts usage precedent
+- [GitHub Actions events docs](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows) — cron 5-min minimum, repository_dispatch, workflow_dispatch
+- FPL `bootstrap-static` endpoint — `news`, `news_added`, `chance_of_playing_next_round`, `events[].deadline_time` verified live
+
+### Secondary (MEDIUM confidence)
+- `npm view react-sparklines` — last publish date informs maintenance assessment
+
+### Tertiary (LOW confidence)
+- None for v1.16 — every claim traces to a verified source.
+
+---
+*v1.16 delta added 2026-05-09. v1.14 entries retained as carry-forward summary.*

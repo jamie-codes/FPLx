@@ -1,6 +1,6 @@
-# Requirements — FPL Analyst v1.15
+# Requirements — FPL Analyst v1.16
 
-**Milestone:** v1.15 Pipeline Intelligence
+**Milestone:** v1.16 Modelling & Trust
 **Started:** 2026-05-09
 **Status:** Active
 
@@ -8,50 +8,62 @@
 
 ## v1 Requirements
 
-### Data Health Dashboard (DH)
+### Modelling & Trust
 
-- [ ] **DH-01** Pipeline writes `pipeline/cache/data_health.json` as the last step in `run.py` (after all other artifacts); JSON contains: per-file write timestamps for each artifact, total player count, missing-player delta vs previous run, `understat_id null count`, `FPL-proxy-fallback count`, `xg_per90 null count`, and a `sanity_checks` array with `id/status/value/threshold` per check; error messages sanitized via `_sanitize_error()` (strips env-var tokens, paths; truncates at 200 chars)
-- [ ] **DH-02** AccuracyTab shows a collapsible "Data Health" panel (collapsed by default, rendered at the top); panel header shows a single status pill (green = all OK / amber = warnings / red = errors); body shows signal rows with status icon, label, value, and threshold; reuses existing `TIER_CLASSES` for colour coding
-- [ ] **DH-03** `/api/data-health` route reads `data_health.json` from Vercel Blob (USE_BLOB=true) or local cache (USE_BLOB=false), following the same pattern as `/api/accuracy`; `useDataHealth` TanStack Query hook uses `staleTime: 0` and `refetchInterval: 60_000` (NOT 6h — data health must reflect current state)
+- [ ] **MC-01** Per-player Monte Carlo simulation over 5 GWs — samples `xPts_1gw` distributions (Poisson/Bernoulli parameters from existing pipeline), runs ≥1000 iterations, writes `xPts_5gw_p10/p50/p90` and `rank_trajectory` per player to `merged_players.json`; gated by `mc_enabled` flag in `accuracy_backtest.json`
+- [ ] **CAL-01** AccuracyTab calibration chart — plots predicted xPts decile vs actual points per decile over the last 5 GWs; uses existing recharts; shows per-position breakdown; complements the existing accuracy backtest table
 
-### Set-Piece Delivery Pipeline (SPQ)
+### Sensitivity & Explainability
 
-- [ ] **SPQ-01** Pipeline scrapes per-team Understat shot events from `https://understat.com/team/{name}/2025` (primary takers only; ~20 requests; 24h disk cache); aggregates xG from shots where `situation IN ('FromCorner', 'DirectFreekick')` grouped by `player_assisted` to identify the set-piece deliverer; writes `pipeline/cache/sp_quality.json`; entire scrape step wrapped in try/except so a 403 bot-protection response does not poison `merged_players.json`
-- [ ] **SPQ-02** Per-taker pipeline output: `corner_danger_score` (mean xG per assisted corner shot, null when < 5 samples), `fk_danger_score` (mean xG per direct-FK shot, null when < 3 samples), `delivery_quality_rank` (composite rank using Empirical-Bayes shrinkage k=20 to position-mean, null when both scores are null), `sp_sample_n` (sample count); unmatched Understat IDs logged and count surfaced in DH-01 sanity checks
+- [ ] **SENS-01** Per-player fragility badge — 5 perturbations (start_prob −0.15, mins_60 −0.10, fixture +1 tier, cost +0.5m, news flip to "doubt"); ROBUST (nothing reverses ranking) / FRAGILE (1 perturbation reverses) / KNIFE EDGE (2+ reverse); rendered in GemTable and TransferPanel; pure TypeScript, no pipeline changes
+- [ ] **WHY-01** Rejection explainer — deterministic gate-cascade (≥6 predicates: ownership %, fixture tier, form signal, start_prob, price trend, lifecycle label) explains why the engine ranked a player low; two entry points: search field in TransferPanel ("Why isn't X recommended?") and head-to-head in GemTable expand ("Why is X ranked above Y?")
+
+### Pipeline
+
+- [ ] **SCRAPER-01** FPL news flags in UI — surface `news`, `news_added`, and `chance_of_playing_next_round` fields (already in pipeline/merge.py) as a news banner/badge in TransferPanel and a status indicator in GemTable; no new pipeline scraping; gated by `news_flag_enabled` display config
+- [ ] **REFRESH-01** Event-aware pipeline scheduling — add deadline-guard script `pipeline/refresh_gate.py` that exits early unless within 90-min window of next GW deadline (reads `events[].deadline_time` from FPL bootstrap); add dense `schedule:` cron entries to `.github/workflows/pipeline.yml` for Fri/Sat/Sun GW windows; add `concurrency: cancel-in-progress` guard to prevent race with existing 4×/day cron
+- [ ] **DH-04** Cron history sparkline — extend `data_health.json` with a rolling `history` array (last 7 run entries: timestamp + overall_status); render as `DataHealthSparkline` using recharts `<LineChart>` inside existing `DataHealthPanel` in AccuracyTab; zero new API routes or hooks
+
+### Analysis
+
+- [ ] **BACK-01** Captain decision backtester — pipeline saves `captain_picks_gw{N}.json` to Vercel Blob after each run (mirroring existing `predictions_snapshot_gw{N}.json` pattern); `/api/decision-history` + `useDecisionHistory` hook reads snapshots; new "Back" sub-tab in Accuracy section shows GW-by-GW captain regret score (user's pick vs snapshotted top recommendation at decision time — NOT retrospective max); authenticated FPL API `/entry/{id}/event/{gw}/picks/` used to backfill actual captain per GW; localStorage ring buffer stores last 38 GWs
+- [ ] **SPQ-04** Set-piece delivery league table — all 20 PL teams ranked by composite delivery quality score (aggregated from `sp_quality.json`); rendered as a toggle within the existing Set Pieces tab; teams with insufficient sample shown in a separate section; zero pipeline changes; client-side aggregation in `src/lib/setPieceLeague.ts`
 
 ---
 
-## Previously Shipped (v1.14)
+## Previously Shipped (v1.15 / v1.14)
 
-- [x] **SPQ-03** SetPieceTakerPanel shows delivery-quality tier badges — Elite / Good / Weak / "—"; tooltip shows xG per assisted shot with sample count; `/api/set-pieces` extended with `sp_quality` fields — shipped Phase 85
-- [x] **GK-01/02/03** GK save-point projections (Poisson-floor formula, XPtsCell Saves row, gate) — shipped Phase 83
+- [x] **DH-01/02/03** Data Health Dashboard — shipped Phase 82 (2026-05-08)
+- [x] **SPQ-01/02** Set-Piece Delivery Pipeline — shipped Phase 84 (2026-05-09)
+- [x] **SPQ-03** SetPieceTakerPanel delivery-quality badges — shipped Phase 85 (2026-05-09)
+- [x] **GK-01/02/03** GK save-point projections — shipped Phase 83 (2026-05-09)
 
 ---
 
 ## Future Requirements (deferred)
 
-- TC-01: Triple Captain decision engine comparing current GW vs future windows
-- BB-01: Bench Boost readiness score (bench xPts × start_prob across all 4 bench players)
-- FH-01: Free Hit squad builder from full 700-player pool (greedy + local search)
-- WC-01: Wildcard structure comparison (2–3 squad structures scored over 5/8/15 GW horizon)
-- SCRAPER-01: Lineup news scraper (FPL official news feed integration)
-- SPQ-04: Set-piece quality league-wide table (all 20 teams ranked by delivery quality)
-- GK-04: Penalty-save modelling (sample < 1/season; defer to off-season when sample grows)
-- NLP-01: LLM prose summaries (weekly plain-English advice grounded in model output)
-- ALERT-01: In-app alert system (price/injury/set-piece change banners, deadline reminders)
-- REFRESH-01: Event-based pipeline refresh (deadline-aware GitHub Actions triggers)
-- BACK-01: Decision history & regret backtester (captain/transfer ROI tracking)
-- DH-04: Cron success history graph (sparkline of last 7 pipeline runs)
+- BACK-02: Transfer regret backtester (requires Python port of `suggestTransfers()` — deferred v1.17)
+- SCRAPER-02: External press/injury feed scraping (third-party sources — deferred post-season)
+- TC-01: Triple Captain decision engine
+- BB-01: Bench Boost readiness score
+- FH-01: Free Hit squad builder
+- WC-01: Wildcard structure comparison
+- SPQ-05: Set-piece taker change alerts across seasons
+- GK-04: Penalty-save modelling (< 1 sample/season)
+- NLP-01: LLM prose summaries
+- ALERT-01: In-app alert system
+- DH-05: Cron success history graph beyond 7 runs
 
 ---
 
 ## Out of Scope
 
-- Push notifications or email alerts (in-app only)
-- Real-time within-GW probability updates
-- Live predicted lineup scraping from third-party sites
-- Per-player penalty-save rate modelling (< 1 sample/season for most GKs)
-- xT model for set-piece delivery (xG-from-assisted-shots sufficient)
+- HTML scraping of `fantasy.premierleague.com` (Cloudflare bot protection; bootstrap JSON sufficient)
+- True event-driven GitHub Actions (Actions has no conditional cron — dense cron + guard is the pattern)
+- Transfer regret backtester in v1.16 (needs Python port first)
+- IndexedDB for decision history (localStorage sufficient for 38-GW season; ~400KB)
+- Real-time within-GW updates
+- Push notifications or email alerts
 
 ---
 
@@ -59,8 +71,12 @@
 
 | REQ-ID | Phase | Plan | Status |
 |--------|-------|------|--------|
-| DH-01  | 86    | —    | pending |
-| DH-02  | 86    | —    | pending |
-| DH-03  | 86    | —    | pending |
-| SPQ-01 | 87    | —    | pending |
-| SPQ-02 | 87    | —    | pending |
+| MC-01 | TBD | — | pending |
+| CAL-01 | TBD | — | pending |
+| SENS-01 | TBD | — | pending |
+| WHY-01 | TBD | — | pending |
+| SCRAPER-01 | TBD | — | pending |
+| REFRESH-01 | TBD | — | pending |
+| DH-04 | TBD | — | pending |
+| BACK-01 | TBD | — | pending |
+| SPQ-04 | TBD | — | pending |
