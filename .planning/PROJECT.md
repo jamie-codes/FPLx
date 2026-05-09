@@ -4,7 +4,7 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
-v1.14 in progress (2026-05-08) — Phase 82 complete: Data Health Dashboard shipped (`data_health.json` pipeline artifact, `/api/data-health` route, collapsible `DataHealthPanel` in AccuracyTab with 60s refetch).
+v1.14 complete (2026-05-09) — All 4 phases shipped: Phase 82 (Data Health Dashboard), Phase 83 (GK save-point projections), Phase 84 (SPQ pipeline), Phase 85 (SPQ UI — DeliveryQualityBadge with Elite/Good/Weak tier in FK and Corner rows, sp_tier computed server-side via quartile logic in /api/set-pieces).
 
 v1.11 started (2026-05-04) — Insights & Infrastructure milestone: LLM prose summaries, fixture heat map, in-app alerts, event-based pipeline refresh, post-GW review, decision history ROI, transfer regret backtester.
 
