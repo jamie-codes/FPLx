@@ -559,7 +559,7 @@ export interface PlanResult {
   startingGw: number                 // first GW in the plan
 }
 
-// Set-piece changes data (SP-01/SP-02)
+// Set-piece changes data (SP-01/SP-02; SPQ-03 sp_quality fields added in Phase 85)
 export interface SetPieceTaker {
   id: number | null
   name: string
@@ -568,6 +568,13 @@ export interface SetPieceTaker {
   selected_by_percent?: string
   fixtures?: FixtureEntry[]
   roles?: string[]  // all primary roles this player holds for their team
+  // SPQ-03 (Phase 85 D-03): sp_quality fields merged from sp_quality.json by /api/set-pieces.
+  // All optional — omitted entirely when sp_quality.json is missing or taker has no entry.
+  corner_danger_score?: number | null
+  fk_danger_score?: number | null
+  delivery_quality_rank?: number | null
+  sp_sample_n?: number | null
+  sp_tier?: 'Elite' | 'Good' | 'Weak' | null
 }
 
 export interface SetPieceTeam {
