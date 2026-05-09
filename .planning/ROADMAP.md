@@ -858,7 +858,7 @@ Plans:
 - [x] 83-01-PLAN.md — pipeline/saves.py Poisson-floor math module + pytest test_saves.py (GK-01, Wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 83-02-PLAN.md — merge.py: opponent_xg_per_game enrichment + _compute_xpts_fixture/_xpts_ngw/_xpts_per_gw/_compute_xpts_sigma extension + captain GK guard + 5 new pytest cases (GK-01, GK-03, Wave 2)
+- [x] 83-02-PLAN.md — merge.py: opponent_xg_per_game enrichment + _compute_xpts_fixture/_xpts_ngw/_xpts_per_gw/_compute_xpts_sigma extension + captain GK guard + 5 new pytest cases (GK-01, GK-03, Wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 83-03-PLAN.md — accuracy.py + run.py save_predictor_enabled gate plumbing + 3 cold-start pytest cases (GK-03, Wave 3)
@@ -939,6 +939,6 @@ Plans:
 | 80 | v1.13 | 0 | Not started | - |
 | 81 | v1.13 | 4/4 | Complete | 2026-05-08 |
 | 82 | v1.14 | 0 | Not started | - |
-| 83 | v1.14 | 1/4 | In Progress|  |
+| 83 | v1.14 | 2/4 | In Progress|  |
 | 84 | v1.14 | 0 | Not started | - |
 | 85 | v1.14 | 0 | Not started | - |
