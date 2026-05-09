@@ -824,7 +824,7 @@ Plans:
 - [x] **Phase 83: GK Save-Point Projections** — Poisson-floor `save_pts` in xPts pipeline, XPtsCell breakdown row for GKs, `save_predictor_enabled` gate (default OFF)
  (completed 2026-05-09)
 - [x] **Phase 84: Set-Piece Threat Assisted Pipeline** — per-team Understat shot scrape, `player_assisted` aggregation, `sp_quality.json` with corner/FK danger scores
-- [ ] **Phase 85: Set-Piece Threat Assisted UI** — delivery-quality tier badges in SetPieceTakerPanel, `/api/set-pieces` extension, sample-size tooltip
+- [x] **Phase 85: Set-Piece Threat Assisted UI** — delivery-quality tier badges in SetPieceTakerPanel, `/api/set-pieces` extension, sample-size tooltip (completed 2026-05-09)
 
 ### Phase 82: Data Health Dashboard
 **Goal**: Users can see at a glance whether the daily pipeline succeeded — per-artifact freshness, missing-player counts, null-xG categories, and sanity-check status — without leaving the app or inspecting JSON
@@ -896,7 +896,7 @@ Plans:
   5. Layout audit on 390–430px viewport confirms the new badge does not overflow the taker card or push existing fields out of view (consistent with v1.13 mobile polish standards)
 **Plans**: 2 plans
   - [x] 85-01-PLAN.md — Extend SetPieceTaker type and /api/set-pieces route with sp_quality merge + server-side sp_tier (Wave 1)
-  - [ ] 85-02-PLAN.md — Render delivery-quality tier badge on FK/Corner rows + Vitest coverage + mobile layout audit (Wave 2)
+  - [x] 85-02-PLAN.md — Render delivery-quality tier badge on FK/Corner rows + Vitest coverage + mobile layout audit (Wave 2)
 **UI hint**: yes
 
 ---
@@ -950,4 +950,4 @@ Plans:
 | 82 | v1.14 | 0 | Not started | - |
 | 83 | v1.14 | 4/4 | Complete    | 2026-05-09 |
 | 84 | v1.14 | 0 | Not started | - |
-| 85 | v1.14 | 1/2 | In Progress|  |
+| 85 | v1.14 | 2/2 | Complete   | 2026-05-09 |
