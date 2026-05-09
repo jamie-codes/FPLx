@@ -227,6 +227,24 @@ def run(dry_run: bool = False):
         save('merged_players.json', merged)  # re-save to persist rotation_risk field
         timestamps['merged_players.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
 
+        # Phase 84 SPQ-01 / SPQ-02: set-piece delivery quality.
+        # Wrapped in try/except (mirrors prose_summary at line 325-367) so a 403
+        # bot-protection or network failure cannot poison merged_players.json.
+        # Initialise sp_unmatched_count BEFORE try (CONTEXT.md D-05 / Pitfall 2)
+        # so the failure case never reaches compute_data_health() with a false 0.
+        # Plan 02 (Phase 84) will extend the compute_data_health() call site below
+        # to pass sp_unmatched_count once data_health.py adds the matching kwarg.
+        sp_unmatched_count = None
+        try:
+            from set_piece_quality import run_sp_quality
+            sp_unmatched_count = run_sp_quality(understat, id_map, cache_dir)
+            if sp_unmatched_count is not None:
+                print(f"SP quality written: {sp_unmatched_count} unmatched Understat IDs")
+            else:
+                print("SP quality: returned None (scrape failed, stale sp_quality.json preserved)")
+        except Exception as sp_exc:
+            print(f"[set_piece_quality] non-fatal error: {sp_exc}", file=sys.stderr)
+
         # Phase 33 INS-02/03/04 — pattern statements with confidence weights
         insights = compute_insights(merged, bootstrap, fixtures, summaries, finished_gws)
         save('insights.json', insights)
