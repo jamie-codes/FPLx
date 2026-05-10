@@ -13,7 +13,7 @@ import { computeEOCandidates, type EOMode } from '@/lib/eo-candidates'
 import { computeMCLabels, type MCLabel } from '@/lib/mc-labels'
 import type { MergedPlayer } from '@/lib/types'
 import { computeFragility } from '@/lib/sensitivity'
-import { FragilityNote } from '@/components/shared/FragilityNote'
+import { FragilityBadge } from '@/components/shared/FragilityBadge'
 
 interface CaptainPicksPanelProps {
   submittedId?: string | null
@@ -149,10 +149,10 @@ function CandidateRow({
       <span className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
         {((candidate.xPts_1gw ?? 0) * 2).toFixed(1)} pts (C)
       </span>
-      {/* Fragility note (Phase 64 SENS-01/02) — captain has no hit condition (D-09) */}
+      {/* Fragility badge (Phase 93 SENS-01) — tristate; captain path skips cost perturbation (D-04) */}
       {(() => {
-        const { fragile, reasons } = computeFragility(candidate, false)
-        return fragile ? <FragilityNote reasons={reasons} /> : null
+        const { tier, reasons } = computeFragility(candidate, false)
+        return tier !== 'robust' ? <FragilityBadge tier={tier} reasons={reasons} /> : null
       })()}
     </div>
   )

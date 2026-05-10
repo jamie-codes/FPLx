@@ -9,6 +9,8 @@ import type { OCSRow, OCSRowKind } from '@/lib/opportunity-cost'
 import type { OptimiserHorizon } from '@/lib/types'
 import { RotationRiskBadge } from '@/components/shared/RotationRiskBadge'
 import { NewsBanner } from '@/components/news/NewsBanner'
+import { computeFragility } from '@/lib/sensitivity'
+import { FragilityBadge } from '@/components/shared/FragilityBadge'
 
 interface OpportunityCostTableProps {
   rows: OCSRow[]
@@ -91,22 +93,29 @@ function PlayerMoveCell({ row }: { row: OCSRow }) {
   }
   return (
     <div className="space-y-0.5">
-      {row.transfers.map((t, i) => (
-        <div key={i} className="flex flex-wrap items-center gap-x-2 text-sm text-zinc-900 dark:text-zinc-100">
-          <span className="text-zinc-500 dark:text-zinc-400 text-xs">Sell</span>
-          <span className="font-medium">{t.sell.web_name}</span>
-          <span className="text-zinc-500 dark:text-zinc-400">→</span>
-          <span className="text-zinc-500 dark:text-zinc-400 text-xs">Buy</span>
-          <span className="font-medium">{t.buy.web_name}</span>
-          <RotationRiskBadge rotationRisk={t.buy.rotation_risk ?? false} />
-          {/* Phase 88 SCRAPER-01: news banner for buy candidate (D-07) */}
-          <NewsBanner
-            news={t.buy.news ?? ''}
-            news_added={t.buy.news_added}
-            chance_of_playing_next_round={t.buy.chance_of_playing_next_round}
-          />
-        </div>
-      ))}
+      {row.transfers.map((t, i) => {
+        // Phase 93 SENS-01 (D-11): per-leg fragility for the BUY candidate (transfer path).
+        const { tier, reasons } = computeFragility(t.buy, true, row.xPtsGainNet)
+        return (
+          <div key={i}>
+            <div className="flex flex-wrap items-center gap-x-2 text-sm text-zinc-900 dark:text-zinc-100">
+              <span className="text-zinc-500 dark:text-zinc-400 text-xs">Sell</span>
+              <span className="font-medium">{t.sell.web_name}</span>
+              <span className="text-zinc-500 dark:text-zinc-400">→</span>
+              <span className="text-zinc-500 dark:text-zinc-400 text-xs">Buy</span>
+              <span className="font-medium">{t.buy.web_name}</span>
+              <RotationRiskBadge rotationRisk={t.buy.rotation_risk ?? false} />
+              {/* Phase 88 SCRAPER-01: news banner for buy candidate (D-07) */}
+              <NewsBanner
+                news={t.buy.news ?? ''}
+                news_added={t.buy.news_added}
+                chance_of_playing_next_round={t.buy.chance_of_playing_next_round}
+              />
+            </div>
+            {tier !== 'robust' && <FragilityBadge tier={tier} reasons={reasons} />}
+          </div>
+        )
+      })}
     </div>
   )
 }

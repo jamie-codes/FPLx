@@ -25,6 +25,8 @@ import { GwToggle, getColumnVisibility, type ViewPreset } from './GwToggle'
 import { PresetToggle } from './PresetToggle'
 import { LandscapeTip } from '@/components/set-pieces/LandscapeTip'
 import { computeRejection } from '@/lib/explain'
+import { computeFragility } from '@/lib/sensitivity'
+import { FragilityBadge } from '@/components/shared/FragilityBadge'
 
 // Phase 65 WHY-01: position-code label for adaptive-framing rejection-panel rendering.
 const POSITION_CODES_LABEL: Record<number, string> = {
@@ -355,6 +357,11 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                             chance_of_playing_next_round={row.original.chance_of_playing_next_round}
                             enabled={newsFlagEnabled}
                           />
+                          {/* Phase 93 SENS-01 (D-10): FragilityBadge after RowExpandNewsSection — viewing surface, isTransfer=false */}
+                          {(() => {
+                            const { tier, reasons } = computeFragility(row.original, false)
+                            return tier !== 'robust' ? <FragilityBadge tier={tier} reasons={reasons} /> : null
+                          })()}
                         </td>
                       </tr>
                       {/* NEW desktop expand row — rejection panel ONLY (D-02 + Pitfall 5: hidden sm:table-row) */}
@@ -372,6 +379,11 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                             chance_of_playing_next_round={row.original.chance_of_playing_next_round}
                             enabled={newsFlagEnabled}
                           />
+                          {/* Phase 93 SENS-01 (D-10): FragilityBadge after RowExpandNewsSection — viewing surface, isTransfer=false */}
+                          {(() => {
+                            const { tier, reasons } = computeFragility(row.original, false)
+                            return tier !== 'robust' ? <FragilityBadge tier={tier} reasons={reasons} /> : null
+                          })()}
                         </td>
                       </tr>
                     </>

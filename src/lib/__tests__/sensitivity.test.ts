@@ -1,11 +1,7 @@
 // Phase 64+93 (SENS-01): computeFragility — pure-function unit tests.
 // @vitest-environment node
 import { describe, it, expect } from 'vitest'
-// RED phase: FRAGILITY_MINS60 + FRAGILITY_NEWS_DOUBT are not yet exported from sensitivity.ts.
-// They will be added in 093-02. Vitest transpiles with esbuild (no TS type-check) so the
-// import resolves at runtime — the symbols are undefined until 093-02 ships.
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error — named exports FRAGILITY_MINS60/FRAGILITY_NEWS_DOUBT missing until 093-02
+// 093-02 shipped FRAGILITY_MINS60 + FRAGILITY_NEWS_DOUBT; @ts-expect-error removed (no longer needed).
 import {
   computeFragility,
   FRAGILITY_START_PROB,
