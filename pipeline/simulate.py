@@ -215,9 +215,9 @@ def compute_simulations(merged: list, xmins_v2_enabled: bool) -> list:
     for h in range(5):
         pools = defaultdict(list)
         for p in result:
-            pos = p.get('element_type', 3) or 3
+            pos = p.get('element_type')
             if pos not in (1, 2, 3, 4):
-                pos = 3
+                continue
             val = p.get('_p50_by_horizon', [0.0] * 5)[h]
             pools[pos].append((val, p))
         for pos, pool in pools.items():
