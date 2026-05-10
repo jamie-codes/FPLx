@@ -456,6 +456,9 @@ export interface CalibrationBucket {
   predicted_rate: number   // equals bucket_mid (decile midpoint as fraction)
   actual_rate: number      // observed haul rate (actual_pts >= 10) for this bucket
   sample_n: number         // observation count; only buckets with n >= 5 are included
+  // Phase 91 CAL-01 (D-06): optional for legacy-cache compat — Phase 63 caches lack these fields.
+  predicted_mean?: number  // mean xpts_predicted within decile (rounded 2dp by pipeline)
+  actual_mean?: number     // mean actual_pts within decile (rounded 2dp by pipeline)
 }
 
 export interface CalibrationData {
