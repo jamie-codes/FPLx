@@ -956,7 +956,7 @@ Plans:
   5. When all three news fields are absent or null on a player (cold-start cache, freshly promoted player), the banner and indicator render nothing — verified by a Vitest case with a player fixture missing every news field
 **Plans**: 2 plans (2 waves)
   **Wave 0**
-  - [ ] 088-01-PLAN.md — RED scaffolding: TransferPanel news-banner test cases (5), GemTable status-indicator test cases (4), `news_flag_enabled` gate read in `useNewsFlagEnabled` test (3); shared `NewsBadge` / `NewsBanner` component contracts in src/components/news/
+  - [x] 088-01-PLAN.md — RED scaffolding: TransferPanel news-banner test cases (5), GemTable status-indicator test cases (4), `news_flag_enabled` gate read in `useNewsFlagEnabled` test (3); shared `NewsBadge` / `NewsBanner` component contracts in src/components/news/
   **Wave 1** *(blocked on Wave 0 completion)*
   - [ ] 088-02-PLAN.md — Implement `NewsBadge` (GemTable Player-cell variant + row-expand variant) + `NewsBanner` (TransferPanel candidate-row variant) + `useNewsFlagEnabled` accessor over `useAccuracy`; wire into TransferPanel and GemTable; severity-tone helper; mobile-portrait truncation guard
   **Cross-cutting constraints:**
@@ -1219,7 +1219,7 @@ Plans:
 | 85 | v1.14 | 2/2 | Complete    | 2026-05-09 |
 | 86 | v1.15 | - | Merged into Phase 82 | 2026-05-08 |
 | 87 | v1.15 | - | Merged into Phase 84 | 2026-05-09 |
-| 88 | v1.16 | 0/2 | Not started | - |
+| 88 | v1.16 | 1/2 | In Progress|  |
 | 89 | v1.16 | 0/2 | Not started | - |
 | 90 | v1.16 | 0/3 | Not started | - |
 | 91 | v1.16 | 0/4 | Not started | - |
