@@ -365,6 +365,21 @@ Features already shipped or in-progress are excluded. v1.7 (phases 47-51) covers
 
 ---
 
+## Planning Intelligence
+
+### GWT-01: GW-Targeted Transfer Recommendations
+**Problem:** The current transfer recommendation system is horizon-agnostic — it doesn't let the manager plan *for a specific upcoming GW*. If GW36 looks great for a particular player, the manager can't currently answer "who should I buy *now* to be set up for GW36?" and intelligently save their free transfer.
+**Scope:**
+- Input: a target GW number (e.g. GW36)
+- Output: ranked list of players who are recommended for that specific GW (based on fixtures, form, xPts projection), with context label showing whether the recommendation is single-GW or multi-GW (e.g. "good for GW36 only" vs "good for GW35–38")
+- Surfaces the horizon decision: is this a short-term buy or a longer hold?
+- Enables the manager to answer: "I'm in GW33 — who should I target in 3 GWs and how many FTs do I need to save?"
+**Files:** Likely a new sub-mode or filter in the existing TransferPanel + ManualPlannerTab
+**Priority:** High — enables proactive rather than reactive transfer planning
+**Estimated effort:** Medium (uses existing fixture-aware xPts data; mostly UI + filtering logic)
+
+---
+
 ## UX Polish
 
 ### UX-01: xPts temporal clarity — "Next N GW" labels
