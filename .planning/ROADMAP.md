@@ -1220,7 +1220,7 @@ Plans:
 | 86 | v1.15 | - | Merged into Phase 82 | 2026-05-08 |
 | 87 | v1.15 | - | Merged into Phase 84 | 2026-05-09 |
 | 88 | v1.16 | 2/2 | Complete    | 2026-05-10 |
-| 89 | v1.16 | 2/2 | Complete   | 2026-05-10 |
+| 89 | v1.16 | 2/2 | Complete    | 2026-05-10 |
 | 90 | v1.16 | 0/3 | Not started | - |
 | 91 | v1.16 | 0/4 | Not started | - |
 | 92 | v1.16 | 0/2 | Not started | - |
