@@ -12,9 +12,11 @@ import type {
   CalibrationData,
   DataHealth,         // Phase 82 DH-02
   SanityCheck,        // Phase 82 DH-02
+  HistoryEntry,       // Phase 92 DH-04
 } from '@/lib/types'
 import {
   ComposedChart,
+  LineChart,             // Phase 92 DH-04: lighter chart for the cron history sparkline
   Line,
   ReferenceLine,
   XAxis,
@@ -830,6 +832,87 @@ function PlayerDeltaTable({ data }: { data: AccuracyBacktest }) {
 }
 
 // ============================================================================
+// Phase 92 DH-04: DataHealthSparkline (rolling 7-entry status history)
+// ============================================================================
+
+const SPARKLINE_STATUS_COLOR = {
+  ok:      'var(--color-positive)',
+  warning: 'var(--color-warning)',
+  error:   'var(--color-negative)',
+} as const
+
+const SPARKLINE_STATUS_Y = { ok: 2, warning: 1, error: 0 } as const
+
+const SPARKLINE_STATUS_LABEL: Record<HistoryEntry['overall_status'], string> = {
+  ok:      'OK',
+  warning: 'Warning',
+  error:   'Error',
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function SparklineDot(props: any) {
+  const { cx, cy, payload } = props
+  const fill = payload?.timestamp === null
+    ? 'var(--muted)'
+    : SPARKLINE_STATUS_COLOR[payload?.overall_status as keyof typeof SPARKLINE_STATUS_COLOR] ?? 'var(--muted)'
+  return <circle cx={cx} cy={cy} r={4} fill={fill} stroke="none" />
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function SparklineTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null
+  const entry = payload[0].payload
+  if (entry.timestamp === null) {
+    return (
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-1 text-xs">
+        <p className="italic text-zinc-500 dark:text-zinc-400">First run</p>
+      </div>
+    )
+  }
+  const label = SPARKLINE_STATUS_LABEL[entry.overall_status as HistoryEntry['overall_status']] ?? entry.overall_status
+  return (
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-1 text-xs space-y-0.5">
+      <p className="font-semibold text-zinc-900 dark:text-zinc-100">{label}</p>
+      <p className="text-zinc-500 dark:text-zinc-400">{new Date(entry.timestamp).toLocaleString()}</p>
+    </div>
+  )
+}
+
+function DataHealthSparkline({ history }: { history: HistoryEntry[] }) {
+  const chartData = history.length === 0
+    ? [{ i: 0, y: 2 as 0 | 1 | 2, timestamp: null as string | null, overall_status: 'ok' as const }]
+    : history.map((e, i) => ({
+        i,
+        y: SPARKLINE_STATUS_Y[e.overall_status] ?? 0,
+        timestamp: e.timestamp as string | null,
+        overall_status: e.overall_status,
+      }))
+
+  return (
+    <div data-testid="data-health-sparkline" className="mt-2">
+      {/* initialDimension ensures SVG renders in jsdom test environment (ResizeObserver inactive there) */}
+      <ResponsiveContainer width="100%" height={40} initialDimension={{ width: 400, height: 40 }}>
+        <LineChart data={chartData}>
+          <XAxis hide />
+          <YAxis hide domain={[0, 2]} />
+          <Tooltip content={<SparklineTooltip />} />
+          <Line
+            type="monotone"
+            dataKey="y"
+            stroke="rgba(161,161,170,0.4)"
+            strokeWidth={1}
+            dot={<SparklineDot />}
+            activeDot={false}
+            isAnimationActive={false}
+            connectNulls={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+// ============================================================================
 // Phase 82 DH-02: Data Health Panel
 // ============================================================================
 
@@ -880,6 +963,8 @@ function DataHealthPanel() {
           <span aria-hidden="true">{isExpanded ? '▴' : '▾'}</span>
         )}
       </button>
+
+      {data?.history && <DataHealthSparkline history={data.history} />}
 
       {isExpanded && data && (
         <table className={TABLE_CLS}>
