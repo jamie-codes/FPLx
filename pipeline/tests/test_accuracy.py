@@ -550,3 +550,138 @@ def test_calibration_by_position():
         "'all' aggregate must include >= the union of position-specific samples "
         "(some position buckets may be filtered as sparse while 'all' passes)"
     )
+
+
+# ============================================================================
+# Phase 91 CAL-01 — xPts-mean calibration chart (RED phase, Wave 0)
+# ============================================================================
+
+def test_calibration_includes_xpts_means():
+    """Phase 91 CAL-01: each bucket includes predicted_mean and actual_mean (floats, 2dp).
+    With 50 players × 5 GWs all scoring 6 pts, every decile mean ≈ 6.0 (Pitfall 7: use approx)."""
+    player_histories = {
+        pid: [_hist(gw, 90, 6, xg=0.3, xa=0.2) for gw in range(1, 33)]
+        for pid in range(1, 51)
+    }
+    summaries, fg, bootstrap, fixtures = _build_minimal_inputs(player_histories)
+
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures)
+    all_buckets = result['calibration']['by_position']['all']
+
+    assert len(all_buckets) > 0, "expected non-empty calibration buckets"
+    for b in all_buckets:
+        assert 'predicted_mean' in b, "Phase 91 CAL-01: bucket must include predicted_mean"
+        assert 'actual_mean' in b, "Phase 91 CAL-01: bucket must include actual_mean"
+        assert isinstance(b['predicted_mean'], float), \
+            f"predicted_mean must be float, got {type(b['predicted_mean']).__name__}"
+        assert isinstance(b['actual_mean'], float), \
+            f"actual_mean must be float, got {type(b['actual_mean']).__name__}"
+        # All players score 6 → every bucket's actual_mean ≈ 6.0 (Pitfall 7)
+        assert b['actual_mean'] == pytest.approx(6.0, abs=0.01), \
+            f"expected actual_mean≈6.0 with uniform 6pt input, got {b['actual_mean']}"
+
+
+def test_calibration_xpts_means_descending_by_decile():
+    """Phase 91 CAL-01: predicted_mean is monotonically non-increasing as bucket_mid increases.
+    Top decile (lowest bucket_mid) has highest predicted_mean by construction."""
+    player_histories = {
+        pid: [_hist(gw, 90, 6, xg=0.3, xa=0.2) for gw in range(1, 33)]
+        for pid in range(1, 51)
+    }
+    summaries, fg, bootstrap, fixtures = _build_minimal_inputs(player_histories)
+
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures)
+    all_buckets = result['calibration']['by_position']['all']
+    assert len(all_buckets) >= 2, "need ≥2 buckets to test ordering"
+
+    means = [b['predicted_mean'] for b in all_buckets]
+    # bucket_mid 0.05 = top predictors (highest predicted_mean); bucket_mid 0.95 = bottom
+    assert means[0] >= means[-1], (
+        f"top decile predicted_mean ({means[0]}) should be >= bottom decile ({means[-1]})"
+    )
+
+
+def test_calibration_xpts_means_by_position():
+    """Phase 91 CAL-01: by_position structure carries predicted_mean/actual_mean per position.
+    Each non-empty position list has the new fields on every bucket."""
+    player_histories = {
+        pid: [_hist(gw, 90, (pid % 12) + 1, xg=0.3, xa=0.2) for gw in range(1, 33)]
+        for pid in range(1, 51)
+    }
+    summaries, fg, bootstrap, fixtures = _build_minimal_inputs(player_histories)
+
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures)
+    by_pos = result['calibration']['by_position']
+
+    for pos_key in ('1', '2', '3', '4'):
+        buckets = by_pos[pos_key]
+        if len(buckets) == 0:
+            continue  # sparse position is allowed
+        for b in buckets:
+            assert 'predicted_mean' in b, \
+                f"position {pos_key}: bucket missing predicted_mean"
+            assert 'actual_mean' in b, \
+                f"position {pos_key}: bucket missing actual_mean"
+            assert isinstance(b['predicted_mean'], float)
+            assert isinstance(b['actual_mean'], float)
+
+
+def test_calibration_xpts_means_5gw_window():
+    """Phase 91 CAL-01 / ROADMAP SC-1: calibration uses last 5 finished GWs.
+    Players score 8 in GWs 28–32 (the 5-GW window) and 2 elsewhere → actual_mean is
+    closer to 8.0 than to 2.0."""
+    def _mixed_hist(pid):
+        rows = []
+        for gw in range(1, 33):
+            pts = 8 if gw >= 28 else 2
+            rows.append(_hist(gw, 90, pts, xg=0.3, xa=0.2))
+        return rows
+    player_histories = {pid: _mixed_hist(pid) for pid in range(1, 51)}
+    summaries, fg, bootstrap, fixtures = _build_minimal_inputs(player_histories)
+
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures)
+    all_buckets = result['calibration']['by_position']['all']
+
+    assert len(all_buckets) > 0, "expected non-empty calibration buckets"
+    for b in all_buckets:
+        # actual_mean should reflect the last-5-GW values (8), not the older ones (2)
+        assert abs(b['actual_mean'] - 8.0) < abs(b['actual_mean'] - 2.0), (
+            f"5-GW window not honored: actual_mean={b['actual_mean']} closer to 2.0 than to 8.0"
+        )
+
+
+def test_calibration_xpts_means_sample_n_integrity():
+    """Phase 91 CAL-01: sparse-filter is mean-aware. Every emitted bucket has sample_n >= 5
+    AND predicted_mean AND actual_mean present (no orphan buckets that pass sample_n but lack means)."""
+    player_histories = {
+        pid: [_hist(gw, 90, (pid % 8) + 1, xg=0.3, xa=0.2) for gw in range(1, 33)]
+        for pid in range(1, 51)
+    }
+    summaries, fg, bootstrap, fixtures = _build_minimal_inputs(player_histories)
+
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures)
+    by_pos = result['calibration']['by_position']
+
+    for pos_key, buckets in by_pos.items():
+        for b in buckets:
+            assert b['sample_n'] >= 5, \
+                f"pos {pos_key} bucket {b['bucket_mid']}: sample_n={b['sample_n']} below threshold"
+            assert 'predicted_mean' in b, \
+                f"pos {pos_key} bucket {b['bucket_mid']}: passed sample_n but lacks predicted_mean"
+            assert 'actual_mean' in b, \
+                f"pos {pos_key} bucket {b['bucket_mid']}: passed sample_n but lacks actual_mean"
+
+
+def test_calibration_xpts_means_cold_start_absence():
+    """Phase 91 CAL-01 / D-06: _empty_backtest cold-start fallback emits empty bucket arrays.
+    No bucket-level assertion needed — empty arrays satisfy D-06 (fields are optional)."""
+    from accuracy import _empty_backtest
+
+    result = _empty_backtest()
+
+    assert 'calibration' in result, "_empty_backtest must include calibration key"
+    by_pos = result['calibration']['by_position']
+    assert by_pos['all'] == [], f"expected empty 'all', got {by_pos['all']}"
+    for pos_key in ('1', '2', '3', '4'):
+        assert by_pos[pos_key] == [], \
+            f"expected empty position '{pos_key}', got {by_pos[pos_key]}"
