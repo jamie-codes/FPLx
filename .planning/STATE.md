@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: Modelling & Trust
-status: planning
-stopped_at: Phase 90 context gathered
-last_updated: "2026-05-10T11:04:41.340Z"
+status: in_progress
+stopped_at: Phase 90 executing — Wave 0 starting
+last_updated: "2026-05-10T12:05:00.000Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 9
   completed_phases: 2
-  total_plans: 4
+  total_plans: 10
   completed_plans: 4
-  percent: 100
+  percent: 44
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09 — v1.16 milestone started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 89 — event-aware-pipeline-scheduling
+**Current focus:** Phase 90 — monte-carlo-simulation-pipeline
 
 ## Current Position
 
 Phase: 90
-Plan: Not started
-Status: Ready to plan
+Plan: Ready to execute — 3 plans (2 waves)
+Status: Ready to execute
 Last activity: 2026-05-10
 
 ## Performance Metrics
