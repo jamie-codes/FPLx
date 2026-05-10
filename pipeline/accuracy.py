@@ -44,13 +44,7 @@ def _read_existing_xmins_v2_flag(cache_dir: str) -> bool:
     once (manually flipped to True after a successful 5-GW shadow run) and preserved
     on subsequent backtests. Default False on cold start (file missing/malformed).
     """
-    try:
-        path = os.path.join(cache_dir, 'accuracy_backtest.json')
-        with open(path, 'r', encoding='utf-8') as f:
-            prev = json.load(f)
-        return bool(prev.get('summary', {}).get('xmins_v2_enabled', False))
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
-        return False
+    return bool(_read_existing_cache(cache_dir).get('summary', {}).get('xmins_v2_enabled', False))
 
 
 def _read_existing_bonus_predictor_flag(cache_dir: str) -> bool:
@@ -61,13 +55,7 @@ def _read_existing_bonus_predictor_flag(cache_dir: str) -> bool:
     shadow run) and preserved on subsequent backtests. Default False on cold start
     (file missing/malformed).
     """
-    try:
-        path = os.path.join(cache_dir, 'accuracy_backtest.json')
-        with open(path, 'r', encoding='utf-8') as f:
-            prev = json.load(f)
-        return bool(prev.get('summary', {}).get('bonus_predictor_enabled', False))
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
-        return False
+    return bool(_read_existing_cache(cache_dir).get('summary', {}).get('bonus_predictor_enabled', False))
 
 
 def _read_existing_save_predictor_flag(cache_dir: str) -> bool:
@@ -79,13 +67,7 @@ def _read_existing_save_predictor_flag(cache_dir: str) -> bool:
     False on cold start (file missing/malformed). Mirrors
     _read_existing_bonus_predictor_flag exactly.
     """
-    try:
-        path = os.path.join(cache_dir, 'accuracy_backtest.json')
-        with open(path, 'r', encoding='utf-8') as f:
-            prev = json.load(f)
-        return bool(prev.get('summary', {}).get('save_predictor_enabled', False))
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
-        return False
+    return bool(_read_existing_cache(cache_dir).get('summary', {}).get('save_predictor_enabled', False))
 
 
 def _read_existing_mc_enabled_flag(cache_dir: str) -> bool:
@@ -97,13 +79,7 @@ def _read_existing_mc_enabled_flag(cache_dir: str) -> bool:
     backtests. Default False on cold start (file missing/malformed). Mirrors
     _read_existing_save_predictor_flag exactly.
     """
-    try:
-        path = os.path.join(cache_dir, 'accuracy_backtest.json')
-        with open(path, 'r', encoding='utf-8') as f:
-            prev = json.load(f)
-        return bool(prev.get('summary', {}).get('mc_enabled', False))
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
-        return False
+    return bool(_read_existing_cache(cache_dir).get('summary', {}).get('mc_enabled', False))
 
 
 def _read_existing_versions(cache_dir: str) -> list:
