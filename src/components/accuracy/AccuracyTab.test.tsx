@@ -109,6 +109,35 @@ const fixtureWithVersionsAndCalibration: AccuracyBacktest = {
   },
 }
 
+// Phase 91 CAL-01 fixture: 3 buckets with predicted_mean/actual_mean + 1 legacy-shape bucket
+// to exercise the component-edge filter (Pitfall 5: filter must drop legacy bucket from
+// xPts chart but KEEP it in haul-rate chart).
+// Cast as AccuracyBacktest because predicted_mean/actual_mean fields are added to
+// CalibrationBucket in Plan 091-03; using unknown cast to keep compile clean until then.
+const fixtureWithXptsMeans = {
+  ...fixtureBacktest,
+  versions: fixtureWithVersionsAndCalibration.versions,
+  calibration: {
+    by_position: {
+      all: [
+        { bucket_mid: 0.05, predicted_rate: 0.05, actual_rate: 0.04, sample_n: 25,
+          predicted_mean: 7.20, actual_mean: 6.50 },
+        { bucket_mid: 0.15, predicted_rate: 0.15, actual_rate: 0.12, sample_n: 25,
+          predicted_mean: 5.80, actual_mean: 5.10 },
+        { bucket_mid: 0.95, predicted_rate: 0.95, actual_rate: 0.88, sample_n: 25,
+          predicted_mean: 1.50, actual_mean: 1.80 },
+        // Legacy bucket: sample_n>=5 but new fields absent.
+        // Filter MUST drop from xPts chart, KEEP in haul-rate chart (Pitfall 5).
+        { bucket_mid: 0.55, predicted_rate: 0.55, actual_rate: 0.40, sample_n: 25 },
+      ],
+      '1': [],
+      '2': [],
+      '3': [],
+      '4': [],
+    },
+  },
+} as unknown as AccuracyBacktest
+
 describe('Phase 41: AccuracyTab component', () => {
   beforeEach(() => {
     mockedUseAccuracy.mockReset()
@@ -336,5 +365,69 @@ describe('Phase 63: VersionHistoryTable + CalibrationSection', () => {
     // Legacy-cache fixture has neither field — sections must not render
     expect(queryByText('Model Version History')).toBeNull()
     expect(queryByText('Calibration Reliability')).toBeNull()
+  })
+})
+
+
+describe('Phase 91 CAL-01: xPts-mean calibration chart', () => {
+  beforeEach(() => {
+    mockedUseAccuracy.mockReset()
+    mockedUseDataHealth.mockReturnValue({ data: undefined, isLoading: true, error: null } as never)
+  })
+
+  it('Phase 91 CAL-01: xPts chart container renders when calibration has predicted_mean fields', () => {
+    mockedUseAccuracy.mockReturnValue({ data: fixtureWithXptsMeans, isLoading: false, error: null } as never)
+    const { container } = render(<AccuracyTab />)
+    expect(container.querySelector('[data-testid="calibration-xpts-chart"]')).toBeTruthy()
+  })
+
+  it('Phase 91 CAL-01: xPts chart filters legacy buckets missing predicted_mean (Pitfall 5)', () => {
+    mockedUseAccuracy.mockReturnValue({ data: fixtureWithXptsMeans, isLoading: false, error: null } as never)
+    const { container } = render(<AccuracyTab />)
+    const xptsChart = container.querySelector('[data-testid="calibration-xpts-chart"]') as HTMLElement
+    expect(xptsChart).toBeTruthy()
+    // recharts renders Line dots as <circle> elements inside .recharts-line-dots
+    const dots = xptsChart.querySelectorAll('.recharts-line-dots circle, .recharts-line .recharts-line-dot')
+    // 3 buckets have predicted_mean; the 4th (legacy) is filtered out
+    expect(dots.length).toBe(3)
+  })
+
+  it('Phase 91 CAL-01: xPts chart heading reads "Predicted vs Actual xPts"', () => {
+    mockedUseAccuracy.mockReturnValue({ data: fixtureWithXptsMeans, isLoading: false, error: null } as never)
+    const { getByText } = render(<AccuracyTab />)
+    expect(getByText('Predicted vs Actual xPts')).toBeTruthy()
+  })
+
+  it('Phase 91 CAL-01: single PositionTabSelector drives both haul-rate and xPts charts (D-02)', () => {
+    mockedUseAccuracy.mockReturnValue({ data: fixtureWithXptsMeans, isLoading: false, error: null } as never)
+    const { container } = render(<AccuracyTab />)
+
+    // EXACTLY ONE tablist (selector is shared, not duplicated)
+    const tablists = container.querySelectorAll('[role="tablist"][aria-label="Calibration position filter"]')
+    expect(tablists.length).toBe(1)
+
+    // Click GK pill (index 1: All=0, GK=1, DEF=2, MID=3, FWD=4)
+    const tabs = tablists[0].querySelectorAll('[role="tab"]')
+    const gkTab = tabs[1] as HTMLButtonElement
+    fireEvent.click(gkTab)
+
+    // Both chart containers persist after position change
+    expect(container.querySelector('[data-testid="calibration-chart"]')).toBeTruthy()
+    expect(container.querySelector('[data-testid="calibration-xpts-chart"]')).toBeTruthy()
+  })
+
+  it('Phase 91 CAL-01: xPts chart shows empty-state overlay when active position has no usable buckets', () => {
+    mockedUseAccuracy.mockReturnValue({ data: fixtureWithXptsMeans, isLoading: false, error: null } as never)
+    const { container, getAllByText } = render(<AccuracyTab />)
+
+    // Switch to GK (empty bucket list for '1')
+    const tablist = container.querySelector('[role="tablist"][aria-label="Calibration position filter"]')!
+    const gkTab = tablist.querySelectorAll('[role="tab"]')[1] as HTMLButtonElement
+    fireEvent.click(gkTab)
+
+    // Both charts now show the empty-state overlay with the same text;
+    // use getAllByText because the same copy will appear twice (once per chart) in Plan 091-04.
+    const overlays = getAllByText(/Insufficient sample \(n<5\) for GK this window\./)
+    expect(overlays.length).toBeGreaterThanOrEqual(1)
   })
 })
