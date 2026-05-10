@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: Modelling & Trust
 status: executing
-stopped_at: Phase 92 UI-SPEC approved
-last_updated: "2026-05-10T16:14:15.562Z"
-last_activity: 2026-05-10 -- Phase 92 planning complete
+stopped_at: Phase 92 complete
+last_updated: "2026-05-10T17:45:00.000Z"
+last_activity: 2026-05-10 -- Phase 92 complete
 progress:
   total_phases: 9
-  completed_phases: 4
-  total_plans: 13
-  completed_plans: 11
-  percent: 85
+  completed_phases: 5
+  total_plans: 15
+  completed_plans: 13
+  percent: 87
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09 — v1.16 milestone started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 91 — calibration-charts
+**Current focus:** Phase 93 — sensitivity-analysis-enhancements
 
 ## Current Position
 
-Phase: 92
+Phase: 93
 Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-10 -- Phase 92 planning complete
+Status: Ready to plan
+Last activity: 2026-05-10 -- Phase 92 complete
 
 ## Performance Metrics
 
