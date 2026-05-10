@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: Modelling & Trust
-status: verifying
-stopped_at: Phase 89 Plan 02 — complete (REFRESH-01 closed, UAT approved)
-last_updated: "2026-05-10T10:01:35.135Z"
+status: planning
+stopped_at: Phase 90 context gathered
+last_updated: "2026-05-10T11:04:41.340Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 9
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-05-09 — v1.16 milestone started)
 
 ## Current Position
 
-Phase: 89 (event-aware-pipeline-scheduling) — COMPLETE
-Plan: 2 of 2 — All 3 tasks complete; UAT approved by user
-Status: Phase complete — ready for verification
+Phase: 90
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-05-10
 
 ## Performance Metrics
@@ -101,6 +101,6 @@ Items carried from v1.9:
 
 ## Session Continuity
 
-Last session: 2026-05-10T11:15:00.000Z
-Stopped at: Phase 89 Plan 02 — complete (REFRESH-01 closed, UAT approved)
-Resume file: None — advance to Phase 90 (MC-01)
+Last session: 2026-05-10T11:04:41.332Z
+Stopped at: Phase 90 context gathered
+Resume file: .planning/phases/90-monte-carlo-simulation-pipeline/90-CONTEXT.md
