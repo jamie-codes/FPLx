@@ -1,9 +1,27 @@
 name: Data Pipeline
 
+# Phase 89 (REFRESH-01): event-aware scheduling.
+# Cron entries below are documented for maintenance:
+#   1. Baseline 4x/day (UNCHANGED, D-05)        - keeps data fresh outside GW windows
+#   2. Sat/Sun dense (NEW, D-04)                - covers FPL 10:30-11:30 UTC weekend deadlines
+#   3. Fri dense (NEW, D-04)                    - covers Fri 17:30-19:30 UTC early-kick / Cup deadlines
+# Each scheduled trigger runs pipeline/refresh_gate.py first (D-01); the
+# pipeline body executes only when the gate writes run=true to $GITHUB_OUTPUT
+# OR the workflow was triggered manually via workflow_dispatch (D-02, D-03).
+
 on:
   schedule:
-    - cron: '0 6,12,18,0 * * *'  # 4x daily: 6am, 12pm, 6pm, midnight UTC
+    - cron: '0 6,12,18,0 * * *'      # Baseline 4x daily: 6am, 12pm, 6pm, midnight UTC
+    - cron: '0,30 8-13 * * 6,0'      # Sat/Sun 08:00-13:30 UTC every 30 min (covers weekend FPL deadlines)
+    - cron: '0,30 16-20 * * 5'       # Fri 16:00-20:30 UTC every 30 min (early-kick / Cup rounds)
   workflow_dispatch:
+
+# D-06: workflow-level concurrency so an incoming deadline-window run
+# pre-empts any in-flight daily-cron run including its trailing job steps,
+# preventing Vercel Blob write races.
+concurrency:
+  group: pipeline
+  cancel-in-progress: true
 
 jobs:
   run-pipeline:
@@ -27,5 +45,13 @@ jobs:
         run: |
           pip install requests==2.32.3 pandas==2.2.3 vercel-blob==0.4.2 python-dotenv==1.0.1 anthropic==0.40.0
 
+      - name: Check deadline gate
+        id: gate
+        if: github.event_name == 'schedule'
+        run: python pipeline/refresh_gate.py
+
       - name: Run pipeline
+        if: |
+          github.event_name == 'workflow_dispatch' ||
+          steps.gate.outputs.run == 'true'
         run: python pipeline/run.py
