@@ -112,6 +112,7 @@ const GATE_LABEL: Record<keyof VersionGateFlags, string> = {
   bonus_predictor_enabled: 'bonus predictor',
   form_signal_enabled: 'form signal',
   save_predictor_enabled: 'save predictor',
+  mc_enabled: 'MC sim',
 }
 
 function GateFlagsCell({ flags }: { flags: VersionGateFlags }) {
