@@ -939,7 +939,7 @@ Plans:
 - [x] **Phase 90: Monte Carlo Simulation Pipeline** — per-player 5-GW MC over existing Poisson/Bernoulli params, ≥1000 iterations, writes `xPts_5gw_p10/p50/p90` and `rank_trajectory` to `merged_players.json`; `mc_enabled` gate in `accuracy_backtest.json` (MC-01) (completed 2026-05-10)
 - [x] **Phase 91: Calibration Charts** — AccuracyTab predicted-xPts-decile vs actuals over last 5 GWs with per-position breakdown; recharts (already installed) (CAL-01) (completed 2026-05-10)
 - [x] **Phase 92: Cron History Sparkline** — extend `data_health.json` with rolling `history` (last 7 runs); render `DataHealthSparkline` recharts `<LineChart>` inside existing `DataHealthPanel`; zero new API routes/hooks (DH-04) (completed 2026-05-10)
-- [ ] **Phase 93: Sensitivity Analysis Enhancements** — extend Phase 64 fragility engine with 5 perturbations (start_prob -0.15, mins_60 -0.10, fixture +1 tier, cost +0.5m, news flip to "doubt"); ROBUST / FRAGILE (1 reverses) / KNIFE EDGE (2+ reverse); GemTable + TransferPanel (SENS-01)
+- [x] **Phase 93: Sensitivity Analysis Enhancements** *(complete 2026-05-10)* — extend Phase 64 fragility engine with 5 perturbations (start_prob -0.15, mins_60 -0.10, fixture +1 tier, cost +0.5m, news flip to "doubt"); ROBUST / FRAGILE (1 reverses) / KNIFE EDGE (2+ reverse); GemTable + TransferPanel (SENS-01)
 - [ ] **Phase 94: Rejection Explainer Enhancements** — extend Phase 65 explainer with deterministic gate-cascade (≥6 predicates); search field entry point in TransferPanel ("Why isn't X recommended?") + head-to-head mode in GemTable expand ("Why is X ranked above Y?") (WHY-01)
 - [ ] **Phase 95: Set-Piece Delivery League Table** — all 20 PL teams ranked by composite delivery-quality score, toggle within Set Pieces tab, separate insufficient-sample section; client-side aggregation in `src/lib/setPieceLeague.ts`; zero pipeline changes (SPQ-04)
 - [ ] **Phase 96: Captain Decision Backtester** — pipeline saves `captain_picks_gw{N}.json` per run; `/api/decision-history` + `useDecisionHistory`; new "Back" sub-tab in Accuracy section; GW-by-GW captain regret vs snapshotted recommendation; authenticated FPL API for actual captain; localStorage ring buffer last 38 GWs (BACK-01)
@@ -1074,12 +1074,12 @@ Plans:
   5. Fragility computation remains pure TypeScript over `MergedPlayer` fields — no new API call, no pipeline change; a Vitest case asserts the engine is callable from a node environment (mirroring the v1.10 Phase 64 `@vitest-environment node` pattern)
 **Plans**: 4 plans (3 waves)
   **Wave 0**
-  - [ ] 093-01-PLAN.md — RED: extend `src/lib/sensitivity.test.ts` with 5-perturbation cases (≥12 cases covering each perturbation in isolation, ROBUST when none reverse, FRAGILE when one, KNIFE EDGE when two and three, BGW guard, news-flag input shape)
+  - [x] 093-01-PLAN.md — RED: extend `src/lib/sensitivity.test.ts` with 5-perturbation cases (≥12 cases covering each perturbation in isolation, ROBUST when none reverse, FRAGILE when one, KNIFE EDGE when two and three, BGW guard, news-flag input shape)
   **Wave 1** *(parallel — file-disjoint)*
-  - [ ] 093-02-PLAN.md — Extend `computeFragility` in `src/lib/sensitivity.ts` to evaluate the 5 perturbations and return `{ tier: 'robust' | 'fragile' | 'knife_edge', reasons: string[] }` (preserving the v1.10 reason-fragment vocabulary); shared perturbation table extracted as a constant for testability
-  - [ ] 093-03-PLAN.md — `FragilityBadge` component (extends `FragilityNote` styling; KNIFE EDGE = amber-red tone, FRAGILE = amber tone, ROBUST = no badge); RTL tests for tristate rendering and reason-list join
+  - [x] 093-02-PLAN.md — Extend `computeFragility` in `src/lib/sensitivity.ts` to evaluate the 5 perturbations and return `{ tier: 'robust' | 'fragile' | 'knife_edge', reasons: string[] }` (preserving the v1.10 reason-fragment vocabulary); shared perturbation table extracted as a constant for testability
+  - [x] 093-03-PLAN.md — `FragilityBadge` component (extends `FragilityNote` styling; KNIFE EDGE = amber-red tone, FRAGILE = amber tone, ROBUST = no badge); RTL tests for tristate rendering and reason-list join
   **Wave 2** *(blocked on Wave 1 completion)*
-  - [ ] 093-04-PLAN.md — Wire-up: GemTable row-expand panel + TransferPanel candidate-row injection (replace existing `FragilityNote` callsites); manual UAT covering all 3 tiers on at least one real player
+  - [x] 093-04-PLAN.md — Wire-up: GemTable row-expand panel + TransferPanel candidate-row injection (replace existing `FragilityNote` callsites); manual UAT covering all 3 tiers on at least one real player
   **Cross-cutting constraints:**
   - Perturbation values (-0.15, -0.10, +1 tier, +0.5m, news=50) are extracted as named constants in `sensitivity.ts` (e.g. `PERTURB_START_PROB = -0.15`) — never inlined as magic numbers
   - `computeFragility` parameter widening (already done in v1.10 Phase 64 to accept `MergedPlayer`) is preserved — Pitfall 2 from that phase
