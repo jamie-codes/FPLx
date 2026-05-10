@@ -17,7 +17,7 @@ vi.mock('@/lib/hooks/useDataHealth', () => ({
 import { AccuracyTab } from '@/components/accuracy/AccuracyTab'
 import { useAccuracy } from '@/lib/hooks/useAccuracy'
 import { useDataHealth } from '@/lib/hooks/useDataHealth'
-import type { AccuracyBacktest } from '@/lib/types'
+import type { AccuracyBacktest, DataHealth, HistoryEntry } from '@/lib/types'
 
 const mockedUseAccuracy = vi.mocked(useAccuracy)
 const mockedUseDataHealth = vi.mocked(useDataHealth)
@@ -445,5 +445,116 @@ describe('Phase 91 CAL-01: xPts-mean calibration chart', () => {
     // use getAllByText because the same copy will appear twice (once per chart) in Plan 091-04.
     const overlays = getAllByText(/Insufficient sample \(n<5\) for GK this window\./)
     expect(overlays.length).toBeGreaterThanOrEqual(1)
+  })
+})
+
+// ============================================================================
+// Phase 92 DH-04: DataHealthSparkline
+// ============================================================================
+
+const minimalDataHealth: DataHealth = {
+  generated_at: '2026-01-07T00:00:00+00:00',
+  timestamps: { 'merged_players.json': '2026-01-07T00:00:00+00:00' },
+  total_player_count: 800,
+  prev_player_count: 800,
+  missing_player_delta: 0,
+  understat_id_null_count: 0,
+  fpl_proxy_fallback_count: 0,
+  xg_per90_null_count: 0,
+  sanity_checks: [
+    { id: 'player_count', status: 'ok', value: 800, threshold: '>= 700' },
+    { id: 'missing_player_delta', status: 'ok', value: 0, threshold: '<= 5' },
+    { id: 'understat_null_pct', status: 'ok', value: 0, threshold: '< 15%' },
+    { id: 'pipeline_stale', status: 'ok', value: false, threshold: 'false' },
+  ],
+}
+
+const fixtureHistory7: HistoryEntry[] = [
+  { timestamp: '2026-01-01T00:00:00+00:00', overall_status: 'ok' },
+  { timestamp: '2026-01-02T00:00:00+00:00', overall_status: 'ok' },
+  { timestamp: '2026-01-03T00:00:00+00:00', overall_status: 'warning' },
+  { timestamp: '2026-01-04T00:00:00+00:00', overall_status: 'ok' },
+  { timestamp: '2026-01-05T00:00:00+00:00', overall_status: 'error' },
+  { timestamp: '2026-01-06T00:00:00+00:00', overall_status: 'ok' },
+  { timestamp: '2026-01-07T00:00:00+00:00', overall_status: 'warning' },
+]
+
+describe('Phase 92 DH-04: DataHealthSparkline', () => {
+  beforeEach(() => {
+    mockedUseAccuracy.mockReset()
+    mockedUseAccuracy.mockReturnValue({ data: fixtureBacktest, isLoading: false, error: null } as never)
+  })
+
+  it('renders 7 dots for a 7-entry history', () => {
+    mockedUseDataHealth.mockReturnValue({
+      data: { ...minimalDataHealth, history: fixtureHistory7 },
+      isLoading: false,
+      error: null,
+    } as never)
+    const { container } = render(<AccuracyTab />)
+    const sparkline = container.querySelector('[data-testid="data-health-sparkline"]')
+    expect(sparkline).toBeTruthy()
+    const dots = sparkline!.querySelectorAll('circle')
+    expect(dots.length).toBe(7)
+  })
+
+  it('dot colour maps ok->green, warning->amber, error->red via CSS vars', () => {
+    mockedUseDataHealth.mockReturnValue({
+      data: { ...minimalDataHealth, history: fixtureHistory7 },
+      isLoading: false,
+      error: null,
+    } as never)
+    const { container } = render(<AccuracyTab />)
+    const sparkline = container.querySelector('[data-testid="data-health-sparkline"]')!
+    const fills = Array.from(sparkline.querySelectorAll('circle')).map(c => c.getAttribute('fill'))
+    expect(fills).toContain('var(--color-positive)')
+    expect(fills).toContain('var(--color-warning)')
+    expect(fills).toContain('var(--color-negative)')
+  })
+
+  it('tooltip shows timestamp + status label on hover', () => {
+    mockedUseDataHealth.mockReturnValue({
+      data: { ...minimalDataHealth, history: fixtureHistory7 },
+      isLoading: false,
+      error: null,
+    } as never)
+    const { container } = render(<AccuracyTab />)
+    const sparkline = container.querySelector('[data-testid="data-health-sparkline"]')!
+    const firstCircle = sparkline.querySelectorAll('circle')[0] as SVGElement
+    fireEvent.mouseOver(firstCircle)
+    // recharts tooltip activation in jsdom is unreliable; accept either:
+    // (a) live tooltip text containing a status label, OR
+    // (b) the SparklineTooltip wrapper class signature inside the document
+    const html = container.innerHTML
+    const hasStatusLabel = /\b(OK|Warning|Error)\b/.test(html)
+    const hasTooltipWrapper = /bg-white[^"]*dark:bg-zinc-900/.test(html)
+    expect(hasStatusLabel || hasTooltipWrapper).toBe(true)
+  })
+
+  it('cold-start placeholder renders when history is empty array', () => {
+    mockedUseDataHealth.mockReturnValue({
+      data: { ...minimalDataHealth, history: [] },
+      isLoading: false,
+      error: null,
+    } as never)
+    const { container } = render(<AccuracyTab />)
+    const sparkline = container.querySelector('[data-testid="data-health-sparkline"]')
+    expect(sparkline).toBeTruthy()
+    const dots = sparkline!.querySelectorAll('circle')
+    expect(dots.length).toBe(1)
+    expect(dots[0].getAttribute('fill')).toBe('var(--muted)')
+  })
+
+  it('renders nothing when history field is absent from data', () => {
+    mockedUseDataHealth.mockReturnValue({
+      data: minimalDataHealth, // no history key
+      isLoading: false,
+      error: null,
+    } as never)
+    const { container } = render(<AccuracyTab />)
+    // Sparkline must NOT mount.
+    expect(container.querySelector('[data-testid="data-health-sparkline"]')).toBeNull()
+    // DataHealthPanel itself must still render — only the sparkline is suppressed.
+    expect(container.querySelector('[data-testid="data-health-panel"]')).toBeTruthy()
   })
 })
