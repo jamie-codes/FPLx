@@ -1051,7 +1051,7 @@ Plans:
   5. When `history` field is absent from `data_health.json` (legacy cache predating this phase), the sparkline gracefully renders nothing and the rest of `DataHealthPanel` is unchanged — verified by a Vitest case with the fixture's `history` field deleted
 **Plans**: 2 plans (2 waves)
   **Wave 0**
-  - [ ] 092-01-PLAN.md — RED: `pipeline/tests/test_data_health_history.py` (4 cases: append + FIFO cap, cold-start, status enum, atomic write order); `DataHealthSparkline.test.tsx` (5 cases: 7-point render, dot colour mapping, tooltip, cold-start placeholder, missing-field graceful)
+  - [x] 092-01-PLAN.md — RED: `pipeline/tests/test_data_health_history.py` (4 cases: append + FIFO cap, cold-start, status enum, atomic write order); `DataHealthSparkline.test.tsx` (5 cases: 7-point render, dot colour mapping, tooltip, cold-start placeholder, missing-field graceful)
   **Wave 1** *(blocked on Wave 0 completion)*
   - [ ] 092-02-PLAN.md — Implement `_append_history` helper in `pipeline/data_health.py` (read-prev / append / cap-7 / write-back); extend `DataHealth` interface in `types.ts` with optional `history?: HistoryEntry[]`; build `DataHealthSparkline` component (recharts `<LineChart>` with `<Dot>` custom render for colour mapping); mount inside existing `DataHealthPanel` body
   **Cross-cutting constraints:**
