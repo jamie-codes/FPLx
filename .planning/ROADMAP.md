@@ -1053,7 +1053,7 @@ Plans:
   **Wave 0**
   - [x] 092-01-PLAN.md — RED: `pipeline/tests/test_data_health_history.py` (4 cases: append + FIFO cap, cold-start, status enum, atomic write order); `DataHealthSparkline.test.tsx` (5 cases: 7-point render, dot colour mapping, tooltip, cold-start placeholder, missing-field graceful)
   **Wave 1** *(blocked on Wave 0 completion)*
-  - [ ] 092-02-PLAN.md — Implement `_append_history` helper in `pipeline/data_health.py` (read-prev / append / cap-7 / write-back); extend `DataHealth` interface in `types.ts` with optional `history?: HistoryEntry[]`; build `DataHealthSparkline` component (recharts `<LineChart>` with `<Dot>` custom render for colour mapping); mount inside existing `DataHealthPanel` body
+  - [x] 092-02-PLAN.md — Implement `_append_history` helper in `pipeline/data_health.py` (read-prev / append / cap-7 / write-back); extend `DataHealth` interface in `types.ts` with optional `history?: HistoryEntry[]`; build `DataHealthSparkline` component (recharts `<LineChart>` with `<Dot>` custom render for colour mapping); mount inside existing `DataHealthPanel` body
   **Cross-cutting constraints:**
   - The 7-element cap lives in `pipeline/data_health.py` (not the UI) so the cache file size stays bounded regardless of UI behaviour
   - `history` field is OPTIONAL on `DataHealth` — legacy compatibility
