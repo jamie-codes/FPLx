@@ -14,7 +14,9 @@ import {
   type VisibilityState,
 } from '@tanstack/react-table'
 import { usePlayers } from '@/lib/hooks/usePlayers'
-import { useAccuracy } from '@/lib/hooks/useAccuracy'
+import { useAccuracy, useNewsFlagEnabled } from '@/lib/hooks/useAccuracy'
+import { computeNewsSeverity, type NewsSeverity } from '@/lib/newsSeverity'
+import { formatRelativeTime } from '@/lib/formatRelativeTime'
 import { computeAllGemScores } from '@/lib/gem-score'
 import type { PositionCode, ScoredPlayer } from '@/lib/types'
 import { createColumns } from './columns'
@@ -88,6 +90,40 @@ function RejectionPanelInline({
   )
 }
 
+// Phase 88 SCRAPER-01: row-expand news section helper (D-06).
+const ROW_EXPAND_SEVERITY_CLASS: Record<NewsSeverity, string> = {
+  red:   'text-red-600 dark:text-red-400',
+  amber: 'text-amber-600 dark:text-amber-400',
+  zinc:  'text-zinc-500 dark:text-zinc-400',
+  none:  '',
+}
+const ROW_EXPAND_SEVERITY_ICON: Record<NewsSeverity, string> = { red: '⚠', amber: '⚠', zinc: 'ℹ', none: '' }
+
+function RowExpandNewsSection({
+  news,
+  news_added,
+  chance_of_playing_next_round,
+  enabled,
+}: {
+  news: string | undefined
+  news_added: string | undefined
+  chance_of_playing_next_round: number | null | undefined
+  enabled: boolean
+}) {
+  if (!enabled) return null
+  if (!news || news.trim().length === 0) return null
+  const severity = computeNewsSeverity(chance_of_playing_next_round, news)
+  if (severity === 'none') return null
+  const relTime = news_added ? formatRelativeTime(news_added) : null
+  return (
+    <div className={`mt-2 ${ROW_EXPAND_SEVERITY_CLASS[severity]} text-xs`} data-testid="row-expand-news">
+      <span aria-hidden="true">{ROW_EXPAND_SEVERITY_ICON[severity]} </span>
+      {news}
+      {relTime && <span className="ml-1 text-zinc-400 dark:text-zinc-500">({relTime})</span>}
+    </div>
+  )
+}
+
 interface GemTableProps {
   preset?: ViewPreset
   onPresetChange?: (p: ViewPreset) => void
@@ -101,6 +137,7 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
   // can render "GW{N} Pts". Accuracy hook is cached at 6h staleTime — essentially free here.
   const { data: accuracyData } = useAccuracy()
   const lastGwActualGwN: number | null = accuracyData?.gws_covered?.[0] ?? null
+  const newsFlagEnabled = useNewsFlagEnabled()
 
   const scoredPlayers = useMemo(() => computeAllGemScores(data ?? []), [data])
 
@@ -108,7 +145,7 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
     onCompare?.(player)
   }, [onCompare])
 
-  const columns = useMemo(() => createColumns(handleCompare, lastGwActualGwN), [handleCompare, lastGwActualGwN])
+  const columns = useMemo(() => createColumns(handleCompare, lastGwActualGwN, newsFlagEnabled), [handleCompare, lastGwActualGwN, newsFlagEnabled])
 
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'gem_score', desc: true },
@@ -312,6 +349,12 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                             posCodeLabel={posCodeLabel}
                             xPts1gw={row.original.xPts_1gw ?? 0}
                           />
+                          <RowExpandNewsSection
+                            news={row.original.news}
+                            news_added={row.original.news_added}
+                            chance_of_playing_next_round={row.original.chance_of_playing_next_round}
+                            enabled={newsFlagEnabled}
+                          />
                         </td>
                       </tr>
                       {/* NEW desktop expand row — rejection panel ONLY (D-02 + Pitfall 5: hidden sm:table-row) */}
@@ -322,6 +365,12 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                             xPtsRank={rejection.xPtsRank}
                             posCodeLabel={posCodeLabel}
                             xPts1gw={row.original.xPts_1gw ?? 0}
+                          />
+                          <RowExpandNewsSection
+                            news={row.original.news}
+                            news_added={row.original.news_added}
+                            chance_of_playing_next_round={row.original.chance_of_playing_next_round}
+                            enabled={newsFlagEnabled}
                           />
                         </td>
                       </tr>

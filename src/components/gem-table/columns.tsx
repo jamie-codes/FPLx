@@ -175,7 +175,11 @@ export function XPtsCell({
   )
 }
 
-export function createColumns(onCompare: (player: ScoredPlayer) => void, gwN: number | null = null) {
+export function createColumns(
+  onCompare: (player: ScoredPlayer) => void,
+  gwN: number | null = null,
+  newsFlagEnabled: boolean = false,
+) {
   return [
     col.accessor('web_name', {
       header: 'Player',
@@ -271,7 +275,10 @@ export function createColumns(onCompare: (player: ScoredPlayer) => void, gwN: nu
         n: { label: 'N', cls: 'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300' },
       }
       const c = cfg[s] ?? { label: s.toUpperCase(), cls: 'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300' }
-      return <span className={`inline-block text-xs font-normal rounded px-2 py-1 ${c.cls}`}>{c.label}</span>
+      // Phase 88 SCRAPER-01: title= when news non-empty AND gate enabled (D-05)
+      const news = (info.row.original as ScoredPlayer).news
+      const titleAttr = (newsFlagEnabled && news && news.trim().length > 0) ? news : undefined
+      return <span className={`inline-block text-xs font-normal rounded px-2 py-1 ${c.cls}`} title={titleAttr}>{c.label}</span>
     },
   }),
   col.display({

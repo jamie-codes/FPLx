@@ -8,6 +8,7 @@
 import type { OCSRow, OCSRowKind } from '@/lib/opportunity-cost'
 import type { OptimiserHorizon } from '@/lib/types'
 import { RotationRiskBadge } from '@/components/shared/RotationRiskBadge'
+import { NewsBanner } from '@/components/news/NewsBanner'
 
 interface OpportunityCostTableProps {
   rows: OCSRow[]
@@ -98,6 +99,12 @@ function PlayerMoveCell({ row }: { row: OCSRow }) {
           <span className="text-zinc-500 dark:text-zinc-400 text-xs">Buy</span>
           <span className="font-medium">{t.buy.web_name}</span>
           <RotationRiskBadge rotationRisk={t.buy.rotation_risk ?? false} />
+          {/* Phase 88 SCRAPER-01: news banner for buy candidate (D-07) */}
+          <NewsBanner
+            news={t.buy.news ?? ''}
+            news_added={t.buy.news_added}
+            chance_of_playing_next_round={t.buy.chance_of_playing_next_round}
+          />
         </div>
       ))}
     </div>
