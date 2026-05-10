@@ -30,8 +30,9 @@ const SEVERITY_ICON: Record<NewsSeverity, string> = {
 
 export function NewsBanner({ news, chance_of_playing_next_round }: NewsBannerProps) {
   const enabled = useNewsFlagEnabled()
+  if (!enabled || !news || news.trim().length === 0) return null
   const severity = computeNewsSeverity(chance_of_playing_next_round, news)
-  if (!enabled || severity === 'none') return null
+  if (severity === 'none') return null
   return (
     <div className={`text-xs ${SEVERITY_CLASS[severity]}`} data-testid="news-banner">
       <span aria-hidden="true">{SEVERITY_ICON[severity]} </span>

@@ -8,6 +8,3 @@ export interface NewsBannerProps {
   chance_of_playing_next_round?: number | null
 }
 
-export interface NewsBadgeProps {
-  news: string
-}
