@@ -333,4 +333,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-09 — v1.15 Pipeline Intelligence started. DH-01/02/03 (Data Health Dashboard) and SPQ-01/02 (set-piece delivery pipeline) are the two active requirements, carried from v1.14.*
+*Last updated: 2026-05-10 — Phase 92 complete. DH-04 (Cron History Sparkline) validated: `_append_history`/`_compute_overall_status` in pipeline, `HistoryEntry` type + `DataHealthSparkline` recharts component in AccuracyTab. v1.16 milestone 5/9 phases complete.*
