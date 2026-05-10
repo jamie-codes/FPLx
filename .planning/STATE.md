@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: Modelling & Trust
-status: planning
-stopped_at: Phase 90 complete — ready for Phase 91
+status: Ready to execute
+stopped_at: Phase 91 planned — 4 plans in 3 waves
 last_updated: "2026-05-10T13:00:00.000Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 9
   completed_phases: 3
-  total_plans: 10
+  total_plans: 11
   completed_plans: 7
-  percent: 70
+  percent: 100
 ---
 
 # Project State
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-05-09 — v1.16 milestone started)
 ## Current Position
 
 Phase: 91
-Plan: Not yet planned
-Status: Ready to discuss/plan
+Plan: 4 plans (091-01 through 091-04)
+Status: Ready to execute
 Last activity: 2026-05-10
 
 ## Performance Metrics
@@ -101,6 +101,6 @@ Items carried from v1.9:
 
 ## Session Continuity
 
-Last session: 2026-05-10T11:04:41.332Z
-Stopped at: Phase 90 context gathered
-Resume file: .planning/phases/90-monte-carlo-simulation-pipeline/90-CONTEXT.md
+Last session: 2026-05-10T12:43:44.663Z
+Stopped at: Phase 91 UI-SPEC approved
+Resume file: .planning/phases/91-calibration-charts/91-UI-SPEC.md
