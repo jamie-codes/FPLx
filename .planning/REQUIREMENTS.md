@@ -11,7 +11,7 @@
 ### Modelling & Trust
 
 - [ ] **MC-01** Per-player Monte Carlo simulation over 5 GWs — samples `xPts_1gw` distributions (Poisson/Bernoulli parameters from existing pipeline), runs ≥1000 iterations, writes `xPts_5gw_p10/p50/p90` and `rank_trajectory` per player to `merged_players.json`; gated by `mc_enabled` flag in `accuracy_backtest.json`
-- [ ] **CAL-01** AccuracyTab calibration chart — plots predicted xPts decile vs actual points per decile over the last 5 GWs; uses existing recharts; shows per-position breakdown; complements the existing accuracy backtest table
+- [x] **CAL-01** AccuracyTab calibration chart — plots predicted xPts decile vs actual points per decile over the last 5 GWs; uses existing recharts; shows per-position breakdown; complements the existing accuracy backtest table
 
 ### Sensitivity & Explainability
 

@@ -937,7 +937,7 @@ Plans:
 - [x] **Phase 88: FPL News Flags UI** — surface `news` / `news_added` / `chance_of_playing_next_round` as banner/badge in TransferPanel and status indicator in GemTable; gated by `news_flag_enabled` display config (SCRAPER-01) (completed 2026-05-10)
 - [x] **Phase 89: Event-Aware Pipeline Scheduling** — `pipeline/refresh_gate.py` deadline-guard, dense Fri/Sat/Sun cron entries in `.github/workflows/pipeline.yml`, `concurrency: cancel-in-progress` guard (REFRESH-01) (completed 2026-05-10)
 - [x] **Phase 90: Monte Carlo Simulation Pipeline** — per-player 5-GW MC over existing Poisson/Bernoulli params, ≥1000 iterations, writes `xPts_5gw_p10/p50/p90` and `rank_trajectory` to `merged_players.json`; `mc_enabled` gate in `accuracy_backtest.json` (MC-01) (completed 2026-05-10)
-- [ ] **Phase 91: Calibration Charts** — AccuracyTab predicted-xPts-decile vs actuals over last 5 GWs with per-position breakdown; recharts (already installed) (CAL-01)
+- [x] **Phase 91: Calibration Charts** — AccuracyTab predicted-xPts-decile vs actuals over last 5 GWs with per-position breakdown; recharts (already installed) (CAL-01) (completed 2026-05-10)
 - [ ] **Phase 92: Cron History Sparkline** — extend `data_health.json` with rolling `history` (last 7 runs); render `DataHealthSparkline` recharts `<LineChart>` inside existing `DataHealthPanel`; zero new API routes/hooks (DH-04)
 - [ ] **Phase 93: Sensitivity Analysis Enhancements** — extend Phase 64 fragility engine with 5 perturbations (start_prob -0.15, mins_60 -0.10, fixture +1 tier, cost +0.5m, news flip to "doubt"); ROBUST / FRAGILE (1 reverses) / KNIFE EDGE (2+ reverse); GemTable + TransferPanel (SENS-01)
 - [ ] **Phase 94: Rejection Explainer Enhancements** — extend Phase 65 explainer with deterministic gate-cascade (≥6 predicates); search field entry point in TransferPanel ("Why isn't X recommended?") + head-to-head mode in GemTable expand ("Why is X ranked above Y?") (WHY-01)
@@ -1025,12 +1025,12 @@ Plans:
   5. The calibration block is OPTIONAL on the `AccuracyBacktest` interface so legacy `accuracy_backtest.json` caches predating this phase do not break the AccuracyTab render path — Pitfall 6 pattern from Phase 63
 **Plans**: 4 plans (3 waves)
   **Wave 0**
-  - [ ] 091-01-PLAN.md — RED: `pipeline/tests/test_accuracy_calibration.py` (6 cases: decile bucketing math, by-position structure, sparse-filter, cold-start absence, 5-GW window, sample_n integrity); React `AccuracyTab.test.tsx` extension with calibration fixture and 5 RED cases
+  - [x] 091-01-PLAN.md — RED: `pipeline/tests/test_accuracy_calibration.py` (6 cases: decile bucketing math, by-position structure, sparse-filter, cold-start absence, 5-GW window, sample_n integrity); React `AccuracyTab.test.tsx` extension with calibration fixture and 5 RED cases
   **Wave 1** *(parallel — file-disjoint)*
-  - [ ] 091-02-PLAN.md — `pipeline/accuracy.py`: `_compute_calibration_data` decile bucketing helper + `compute_accuracy_backtest` return-dict extension + `_empty_backtest` cold-start fallback with empty calibration block
-  - [ ] 091-03-PLAN.md — TypeScript types: `CalibrationBucket`, `CalibrationData`, `AccuracyBacktest.calibration?` optional field in `src/lib/types.ts`
+  - [x] 091-02-PLAN.md — `pipeline/accuracy.py`: `_compute_calibration_data` decile bucketing helper + `compute_accuracy_backtest` return-dict extension + `_empty_backtest` cold-start fallback with empty calibration block
+  - [x] 091-03-PLAN.md — TypeScript types: `CalibrationBucket`, `CalibrationData`, `AccuracyBacktest.calibration?` optional field in `src/lib/types.ts`
   **Wave 2** *(blocked on Wave 1 completion)*
-  - [ ] 091-04-PLAN.md — `CalibrationSection` component in AccuracyTab (recharts `ComposedChart` with `XAxis type="number"`, `ReferenceLine y=x` diagonal, `PositionTabSelector`, sparse-filter at component edge); manual UAT in light + dark mode
+  - [x] 091-04-PLAN.md — `CalibrationSection` component in AccuracyTab (recharts `ComposedChart` with `XAxis type="number"`, `ReferenceLine y=x` diagonal, `PositionTabSelector`, sparse-filter at component edge); manual UAT in light + dark mode
 **Cross-cutting constraints:**
   - `XAxis` MUST have `type="number"` for the 0-1 numeric domain to be respected (Pitfall 4 from Phase 63 calibration work — same pitfall applies)
   - Sparse-bucket filter `b.sample_n >= 5` lives at the component edge, not in the pipeline — pipeline writes everything; UI decides what to render
@@ -1222,7 +1222,7 @@ Plans:
 | 88 | v1.16 | 2/2 | Complete    | 2026-05-10 |
 | 89 | v1.16 | 2/2 | Complete    | 2026-05-10 |
 | 90 | v1.16 | 0/3 | Not started | - |
-| 91 | v1.16 | 0/4 | Not started | - |
+| 91 | v1.16 | 4/4 | Complete    | 2026-05-10 |
 | 92 | v1.16 | 0/2 | Not started | - |
 | 93 | v1.16 | 0/4 | Not started | - |
 | 94 | v1.16 | 0/4 | Not started | - |
