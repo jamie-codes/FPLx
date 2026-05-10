@@ -269,6 +269,33 @@ function CalibrationTooltip({ active, payload }: TooltipContentProps) {
   )
 }
 
+function XptsTooltip({ active, payload }: TooltipContentProps) {
+  if (!active || !payload?.length) return null
+  const p = payload[0].payload as CalibrationBucket
+  // Pitfall 3: legacy-cache buckets lack the new fields — guard before use.
+  if (p.predicted_mean == null || p.actual_mean == null) return null
+  const bucketLow = Math.round((p.bucket_mid - 0.05) * 100)
+  const bucketHigh = Math.round((p.bucket_mid + 0.05) * 100)
+  const deviation = p.actual_mean - p.predicted_mean
+  return (
+    <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs shadow-sm">
+      <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
+        Decile {bucketLow}%–{bucketHigh}%
+      </p>
+      <p className="text-zinc-700 dark:text-zinc-300">
+        Predicted: {p.predicted_mean.toFixed(2)} pts
+      </p>
+      <p className="text-zinc-700 dark:text-zinc-300">
+        Actual: {p.actual_mean.toFixed(2)} pts
+      </p>
+      <p className="text-zinc-700 dark:text-zinc-300">
+        Deviation: {deviation.toFixed(2)} pts
+      </p>
+      <p className="text-zinc-500 dark:text-zinc-400 mt-1">n = {p.sample_n}</p>
+    </div>
+  )
+}
+
 function CalibrationSection({ data }: { data: AccuracyBacktest }) {
   const [position, setPosition] = useState<CalibrationPosition>('all')
 
@@ -276,6 +303,22 @@ function CalibrationSection({ data }: { data: AccuracyBacktest }) {
     const all = data.calibration?.by_position?.[position] ?? []
     return all.filter((b) => b.sample_n >= 5)  // Pitfall 5: omit sparse, do NOT zero
   }, [data.calibration, position])
+
+  // Phase 91 CAL-01: separate filter for the xPts chart (Pitfall 5: mean-aware predicate
+  // drops legacy-cache buckets that lack the new optional fields).
+  const xptsData = useMemo<CalibrationBucket[]>(() => {
+    const all = data.calibration?.by_position?.[position] ?? []
+    return all.filter(
+      (b) => b.sample_n >= 5 && b.predicted_mean != null && b.actual_mean != null,
+    )
+  }, [data.calibration, position])
+
+  // Phase 91 CAL-01: dynamic ReferenceLine endpoint. Pitfall 4: empty array -> default to 1
+  // to avoid Math.max(...[]) returning -Infinity and corrupting the auto-domain.
+  const maxPredictedMean = useMemo(() => {
+    if (xptsData.length === 0) return 1
+    return Math.max(...xptsData.map((b) => b.predicted_mean ?? 0))
+  }, [xptsData])
 
   return (
     <div>
@@ -352,6 +395,92 @@ function CalibrationSection({ data }: { data: AccuracyBacktest }) {
             </p>
           </div>
         )}
+      </div>
+
+      {/* Phase 91 CAL-01: xPts-mean calibration chart (UI-SPEC §Chart Specification) */}
+      <div className="mt-12">
+        <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
+          Predicted vs Actual xPts
+        </h3>
+        <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2">
+          Predicted xPts decile mean vs actual points mean. A well-calibrated model traces
+          the diagonal — points above mean over-prediction, points below mean under-prediction.
+        </p>
+        <div className="flex gap-4 text-xs text-zinc-600 dark:text-zinc-400 mb-2">
+          <span className="flex items-center gap-1">
+            <span
+              aria-hidden="true"
+              style={{ display: 'inline-block', width: 12, height: 2, background: 'currentColor' }}
+            />
+            Actual mean pts
+          </span>
+          <span className="flex items-center gap-1">
+            <span
+              aria-hidden="true"
+              style={{
+                display: 'inline-block',
+                width: 12,
+                height: 0,
+                borderTop: '1px dashed rgba(161,161,170,0.7)',
+              }}
+            />
+            Perfect calibration (y=x)
+          </span>
+        </div>
+        <div
+          data-testid="calibration-xpts-chart"
+          className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-2 py-3 relative"
+        >
+          <ResponsiveContainer width="100%" height={288}>
+            <ComposedChart data={xptsData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(161,161,170,0.3)" />
+              <XAxis
+                type="number"
+                dataKey="predicted_mean"
+                tickFormatter={(v: number) => v.toFixed(1)}
+                tick={{ fontSize: 12, fill: 'currentColor' }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                type="number"
+                tickFormatter={(v: number) => v.toFixed(1)}
+                tick={{ fontSize: 12, fill: 'currentColor' }}
+                axisLine={false}
+                tickLine={false}
+                width={40}
+              />
+              <Tooltip content={XptsTooltip} />
+              <ReferenceLine
+                segment={[
+                  { x: 0, y: 0 },
+                  { x: maxPredictedMean, y: maxPredictedMean },
+                ]}
+                stroke="rgba(161,161,170,0.5)"
+                strokeDasharray="4 4"
+                strokeWidth={1}
+                ifOverflow="extendDomain"
+              />
+              <Line
+                type="monotone"
+                dataKey="actual_mean"
+                stroke="currentColor"
+                strokeWidth={2}
+                dot={{ r: 3, fill: 'currentColor' }}
+                activeDot={{ r: 5 }}
+                connectNulls={false}
+                isAnimationActive={false}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+          {xptsData.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Insufficient sample (n&lt;5) for {positionLabel(position)} this window.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
