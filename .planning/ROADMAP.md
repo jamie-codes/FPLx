@@ -935,7 +935,7 @@ Plans:
 ## v1.16 Modelling & Trust (Phases 88-96)
 
 - [x] **Phase 88: FPL News Flags UI** — surface `news` / `news_added` / `chance_of_playing_next_round` as banner/badge in TransferPanel and status indicator in GemTable; gated by `news_flag_enabled` display config (SCRAPER-01) (completed 2026-05-10)
-- [ ] **Phase 89: Event-Aware Pipeline Scheduling** — `pipeline/refresh_gate.py` deadline-guard, dense Fri/Sat/Sun cron entries in `.github/workflows/pipeline.yml`, `concurrency: cancel-in-progress` guard (REFRESH-01)
+- [x] **Phase 89: Event-Aware Pipeline Scheduling** — `pipeline/refresh_gate.py` deadline-guard, dense Fri/Sat/Sun cron entries in `.github/workflows/pipeline.yml`, `concurrency: cancel-in-progress` guard (REFRESH-01) (completed 2026-05-10)
 - [ ] **Phase 90: Monte Carlo Simulation Pipeline** — per-player 5-GW MC over existing Poisson/Bernoulli params, ≥1000 iterations, writes `xPts_5gw_p10/p50/p90` and `rank_trajectory` to `merged_players.json`; `mc_enabled` gate in `accuracy_backtest.json` (MC-01)
 - [ ] **Phase 91: Calibration Charts** — AccuracyTab predicted-xPts-decile vs actuals over last 5 GWs with per-position breakdown; recharts (already installed) (CAL-01)
 - [ ] **Phase 92: Cron History Sparkline** — extend `data_health.json` with rolling `history` (last 7 runs); render `DataHealthSparkline` recharts `<LineChart>` inside existing `DataHealthPanel`; zero new API routes/hooks (DH-04)
@@ -980,7 +980,7 @@ Plans:
   **Wave 0**
   - [x] 089-01-PLAN.md — RED: `pipeline/tests/test_refresh_gate.py` (6 cases: before-window / in-window / after-window / failure-skip / DGW double-deadline / cold-bootstrap)
   **Wave 1** *(blocked on Wave 0 completion)*
-  - [ ] 089-02-PLAN.md — Implement `pipeline/refresh_gate.py` (90-min window math, configurable via env var `PIPELINE_DEADLINE_WINDOW_MINUTES=90`); update `.github/workflows/pipeline.yml` with dense Fri/Sat/Sun cron entries, refresh_gate guard step, and `concurrency` block; manual UAT: trigger workflow_dispatch outside window confirms skip, inside window confirms proceed
+  - [x] 089-02-PLAN.md — Implement `pipeline/refresh_gate.py` (90-min window math, configurable via env var `PIPELINE_DEADLINE_WINDOW_MINUTES=90`); update `.github/workflows/pipeline.yml` with dense Fri/Sat/Sun cron entries, refresh_gate guard step, and `concurrency` block; manual UAT: trigger workflow_dispatch outside window confirms skip, inside window confirms proceed
   **Cross-cutting constraints:**
   - `refresh_gate.py` MUST NOT import from `pipeline/run.py` — it is a thin standalone deadline-math utility so a syntax error in `run.py` cannot break gating
   - Bootstrap fetch in `refresh_gate.py` reuses the existing FPL proxy retry/timeout helper (mirroring `pipeline/merge.py`) — no duplicated HTTP logic
@@ -1220,7 +1220,7 @@ Plans:
 | 86 | v1.15 | - | Merged into Phase 82 | 2026-05-08 |
 | 87 | v1.15 | - | Merged into Phase 84 | 2026-05-09 |
 | 88 | v1.16 | 2/2 | Complete    | 2026-05-10 |
-| 89 | v1.16 | 1/2 | In Progress|  |
+| 89 | v1.16 | 2/2 | Complete   | 2026-05-10 |
 | 90 | v1.16 | 0/3 | Not started | - |
 | 91 | v1.16 | 0/4 | Not started | - |
 | 92 | v1.16 | 0/2 | Not started | - |

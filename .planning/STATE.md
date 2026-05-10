@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: Modelling & Trust
-status: planning
-stopped_at: Phase 89 context gathered
-last_updated: "2026-05-10T09:02:05.209Z"
+status: executing
+stopped_at: Phase 89 Plan 02 complete — Task 3 checkpoint:human-verify
+last_updated: "2026-05-10T10:10:00.000Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 9
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  completed_phases: 2
+  total_plans: 4
+  completed_plans: 4
   percent: 100
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09 — v1.16 milestone started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 88 — fpl-news-flags-ui
+**Current focus:** Phase 89 — event-aware-pipeline-scheduling
 
 ## Current Position
 
-Phase: 89
-Plan: Not started
-Status: Ready to plan
+Phase: 89 (event-aware-pipeline-scheduling) — EXECUTING (Task 3 checkpoint)
+Plan: 2 of 2 — Tasks 1 & 2 complete; awaiting Task 3 human-verify
+Status: Checkpoint — awaiting UAT confirmation
 Last activity: 2026-05-10
 
 ## Performance Metrics
@@ -35,6 +35,7 @@ Last activity: 2026-05-10
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 77 | 02 | ~10 min | 2 | 5 |
+| 89 | 02 | ~15 min | 2 | 2 |
 
 **Previous milestone (v1.14) velocity:**
 
@@ -100,6 +101,6 @@ Items carried from v1.9:
 
 ## Session Continuity
 
-Last session: 2026-05-10T09:02:05.201Z
-Stopped at: Phase 89 context gathered
-Resume file: .planning/phases/89-event-aware-pipeline-scheduling/89-CONTEXT.md
+Last session: 2026-05-10T10:10:00.000Z
+Stopped at: Phase 89 Plan 02 Task 3 — checkpoint:human-verify (UAT pending)
+Resume file: .planning/phases/89-event-aware-pipeline-scheduling/089-02-PLAN.md
