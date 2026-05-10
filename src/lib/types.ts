@@ -430,6 +430,12 @@ export interface DataHealth {
   fpl_proxy_fallback_count: number
   xg_per90_null_count: number
   sanity_checks: SanityCheck[]
+  history?: HistoryEntry[]                  // Phase 92 DH-04 — optional; absent on legacy cache (pre-Phase-92)
+}
+
+export interface HistoryEntry {
+  timestamp: string                         // ISO-8601 UTC
+  overall_status: 'ok' | 'warning' | 'error'
 }
 
 // ============================================================================
