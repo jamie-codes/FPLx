@@ -936,7 +936,7 @@ Plans:
 
 - [x] **Phase 88: FPL News Flags UI** — surface `news` / `news_added` / `chance_of_playing_next_round` as banner/badge in TransferPanel and status indicator in GemTable; gated by `news_flag_enabled` display config (SCRAPER-01) (completed 2026-05-10)
 - [x] **Phase 89: Event-Aware Pipeline Scheduling** — `pipeline/refresh_gate.py` deadline-guard, dense Fri/Sat/Sun cron entries in `.github/workflows/pipeline.yml`, `concurrency: cancel-in-progress` guard (REFRESH-01) (completed 2026-05-10)
-- [ ] **Phase 90: Monte Carlo Simulation Pipeline** — per-player 5-GW MC over existing Poisson/Bernoulli params, ≥1000 iterations, writes `xPts_5gw_p10/p50/p90` and `rank_trajectory` to `merged_players.json`; `mc_enabled` gate in `accuracy_backtest.json` (MC-01)
+- [x] **Phase 90: Monte Carlo Simulation Pipeline** — per-player 5-GW MC over existing Poisson/Bernoulli params, ≥1000 iterations, writes `xPts_5gw_p10/p50/p90` and `rank_trajectory` to `merged_players.json`; `mc_enabled` gate in `accuracy_backtest.json` (MC-01) (completed 2026-05-10)
 - [ ] **Phase 91: Calibration Charts** — AccuracyTab predicted-xPts-decile vs actuals over last 5 GWs with per-position breakdown; recharts (already installed) (CAL-01)
 - [ ] **Phase 92: Cron History Sparkline** — extend `data_health.json` with rolling `history` (last 7 runs); render `DataHealthSparkline` recharts `<LineChart>` inside existing `DataHealthPanel`; zero new API routes/hooks (DH-04)
 - [ ] **Phase 93: Sensitivity Analysis Enhancements** — extend Phase 64 fragility engine with 5 perturbations (start_prob -0.15, mins_60 -0.10, fixture +1 tier, cost +0.5m, news flip to "doubt"); ROBUST / FRAGILE (1 reverses) / KNIFE EDGE (2+ reverse); GemTable + TransferPanel (SENS-01)
@@ -1001,10 +1001,10 @@ Plans:
   5. `simulate.py` MUST NOT import from `merge.py` (mirroring the v1.10 Phase 61 D-02 isolation rule from STATE.md) — Poisson/Bernoulli math is duplicated as a thin internal helper so a refactor of `merge.py` cannot silently break MC output
 **Plans**: 3 plans (2 waves)
   **Wave 0**
-  - [ ] 090-01-PLAN.md — RED: `pipeline/tests/test_simulate.py` (6 cases: percentile invariants, BGW zero-fill, DGW combine, iteration-count gate, seed determinism, mc_enabled OFF skip); MergedPlayer types extension with 4 optional MC fields in `src/lib/types.ts`
+  - [x] 090-01-PLAN.md — RED: `pipeline/tests/test_simulate.py` (6 cases: percentile invariants, BGW zero-fill, DGW combine, iteration-count gate, seed determinism, mc_enabled OFF skip); MergedPlayer types extension with 4 optional MC fields in `src/lib/types.ts`
   **Wave 1** *(parallel — file-disjoint)*
-  - [ ] 090-02-PLAN.md — `pipeline/simulate.py` (`compute_simulations`, `_simulate_player`, `_cs_prob_sim` reimplementing the 3-line Poisson formula inline per D-02 isolation); `run.py` integration after `merge.py`, before `data_health.py`; `numpy>=1.26.0` requirement (already pinned in v1.10 Phase 61 work — confirm)
-  - [ ] 090-03-PLAN.md — `accuracy.py` `mc_enabled` gate plumbing + cold-start fallback that writes `mc_enabled: false` on first run; pytest case for cold-start
+  - [x] 090-02-PLAN.md — `pipeline/simulate.py` (`compute_simulations`, `_simulate_player`, `_cs_prob_sim` reimplementing the 3-line Poisson formula inline per D-02 isolation); `run.py` integration after `merge.py`, before `data_health.py`; `numpy>=1.26.0` requirement (already pinned in v1.10 Phase 61 work — confirm)
+  - [x] 090-03-PLAN.md — `accuracy.py` `mc_enabled` gate plumbing + cold-start fallback that writes `mc_enabled: false` on first run; pytest case for cold-start
   **Cross-cutting constraints:**
   - All four MC fields MUST be optional on `MergedPlayer` (`?:`) so legacy cache reads do not break — Pitfall 6 from Phase 63 calibration phase
   - Plan 02 and Plan 03 are file-disjoint (`simulate.py` + `run.py` patch vs `accuracy.py`) and run Wave 1 in parallel
