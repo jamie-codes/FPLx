@@ -990,6 +990,9 @@ def merge_players(
             'direct_freekicks_text': element.get('direct_freekicks_text', ''),
             'corners_and_indirect_freekicks_text': element.get('corners_and_indirect_freekicks_text', ''),
             'news': element.get('news', ''),
+            # Phase 88 SCRAPER-01: news availability fields
+            'news_added': element.get('news_added', ''),
+            'chance_of_playing_next_round': element.get('chance_of_playing_next_round'),
             # Price trend (VAL-03)
             'cost_change_event': element.get('cost_change_event', 0),
             'cost_change_start': element.get('cost_change_start', 0),

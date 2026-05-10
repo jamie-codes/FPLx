@@ -401,6 +401,7 @@ def compute_accuracy_backtest(
             'xmins_v2_enabled': xmins_v2_enabled,                               # Phase 52 D-02: gate for _cs_prob mins_60_prob swap; preserved across runs once flipped
             'bonus_predictor_enabled': bonus_predictor_enabled,                  # Phase 53 BPS-01: gate for per-player bonus EV; preserved across runs once flipped
             'save_predictor_enabled': save_predictor_enabled,                    # Phase 83 GK-03: gate for GK Poisson-floor save_pts; preserved across runs once flipped
+            'news_flag_enabled': True,                                           # Phase 88 SCRAPER-01: always on; kill switch in UI gate
             'blend_alpha_used': BLEND_ALPHA,                                     # Phase 42 ACC-03
             'mid_tier_hit_rate': round(overall_mid_tier_hit, 4),                 # Phase 42 ACC-04
             'mid_tier_blended_hit_rate': round(overall_mid_tier_blended_hit, 4), # Phase 42 ACC-04
@@ -479,6 +480,7 @@ def _empty_backtest(cache_dir: str = '') -> dict:
             'xmins_v2_enabled': xmins_v2_enabled,    # Phase 52
             'bonus_predictor_enabled': bonus_predictor_enabled,  # Phase 53
             'save_predictor_enabled': save_predictor_enabled,    # Phase 83 GK-03
+            'news_flag_enabled': True,                            # Phase 88 SCRAPER-01: always on; kill switch in UI gate
             'blend_alpha_used': BLEND_ALPHA,          # Phase 42
             'mid_tier_hit_rate': 0.0,                 # Phase 42
             'mid_tier_blended_hit_rate': 0.0,         # Phase 42

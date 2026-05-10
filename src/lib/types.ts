@@ -24,6 +24,8 @@ export interface FPLElement {
   penalties_order: number | null            // Penalty taker order per PPS-01. 1 = primary taker, null = not a taker.
   corners_and_indirect_freekicks_order: number | null  // Corner taker order per PPS-01. 1 = primary taker, null = not a taker.
   news: string                              // injury/availability news text per PPS-04
+  news_added?: string                       // ISO timestamp when news was set (Phase 88 SCRAPER-01)
+  chance_of_playing_next_round?: number | null  // 25/50/75/100 or null (healthy) (Phase 88 SCRAPER-01)
   // Price trend fields (VAL-03)
   cost_change_event: number                 // tenths of GBP 1m, this GW (0 = no change)
   cost_change_start: number                 // tenths of GBP 1m, since season start
@@ -127,6 +129,8 @@ export interface MergedPlayer {
   direct_freekicks_text: string
   corners_and_indirect_freekicks_text: string
   news: string
+  news_added?: string                       // ISO timestamp when news was set (Phase 88 SCRAPER-01)
+  chance_of_playing_next_round?: number | null  // 25/50/75/100 or null (healthy) (Phase 88 SCRAPER-01)
   // Price trend fields (VAL-03)
   cost_change_event: number                 // tenths of GBP 1m, this GW (0 = no change)
   cost_change_start: number                 // tenths of GBP 1m, since season start
@@ -341,6 +345,7 @@ export interface AccuracySummary {
   xmins_v2_enabled?: boolean         // Phase 52 D-02 gate (preserved across runs)
   bonus_predictor_enabled?: boolean  // Phase 53 BPS-01 gate (preserved across runs)
   save_predictor_enabled?: boolean   // Phase 83 GK-01 gate (preserved across runs)
+  news_flag_enabled?: boolean        // Phase 88 SCRAPER-01 gate (default true; kill switch)
 }
 
 export interface AccuracyHaulter {
