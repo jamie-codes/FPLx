@@ -260,3 +260,56 @@ def test_mc_enabled_off_skip(monkeypatch, tmp_path):
         "run.py is missing mc_enabled gate read"
     # The conditional call MUST exist
     assert 'if mc_enabled:' in run_source, "run.py is missing `if mc_enabled:` guard"
+
+
+def test_accuracy_mc_enabled_cold_start(tmp_path):
+    """Phase 90 MC-01: _empty_backtest writes mc_enabled=false on first run; preserves true on subsequent (D-01)."""
+    import json as _json
+    from accuracy import _empty_backtest, _read_existing_mc_enabled_flag
+
+    # Cold start (no prior cache) — mc_enabled defaults to False
+    cold_dir = tmp_path / 'cold'
+    cold_dir.mkdir()
+    cold = _empty_backtest(str(cold_dir))
+    assert 'mc_enabled' in cold['summary'], "mc_enabled missing from _empty_backtest summary"
+    assert cold['summary']['mc_enabled'] is False, "mc_enabled should default to False on cold start"
+
+    # _read_existing_mc_enabled_flag returns False for missing file
+    assert _read_existing_mc_enabled_flag(str(cold_dir)) is False
+
+    # Warm start — write a prior cache with mc_enabled=true and assert preservation
+    warm_dir = tmp_path / 'warm'
+    warm_dir.mkdir()
+    prior_cache = {
+        'generated_at': '2026-05-10T00:00:00+00:00',
+        'gws_covered': [],
+        'summary': {
+            'xpts_hit_rate': 0.0,
+            'xpts_blended_hit_rate': 0.0,
+            'form_signal_enabled': False,
+            'xmins_v2_enabled': False,
+            'bonus_predictor_enabled': False,
+            'save_predictor_enabled': False,
+            'mc_enabled': True,                # the value we want preserved
+            'news_flag_enabled': True,
+            'blend_alpha_used': 0.4,
+            'mid_tier_hit_rate': 0.0,
+            'mid_tier_blended_hit_rate': 0.0,
+            'gws': [],
+        },
+        'haulters': [],
+        'players': [],
+        'versions': [],
+    }
+    (warm_dir / 'accuracy_backtest.json').write_text(_json.dumps(prior_cache))
+
+    warm = _empty_backtest(str(warm_dir))
+    assert warm['summary']['mc_enabled'] is True, "mc_enabled=true must be preserved across cold-start with prior cache"
+    assert _read_existing_mc_enabled_flag(str(warm_dir)) is True
+
+    # Version-record gate_flags must also contain mc_enabled (parity with main write path)
+    if warm.get('versions'):
+        last_version = warm['versions'][-1]
+        if 'gate_flags' in last_version:
+            assert 'mc_enabled' in last_version['gate_flags'], \
+                "mc_enabled missing from version-record gate_flags (parity bug)"

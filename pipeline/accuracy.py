@@ -88,6 +88,24 @@ def _read_existing_save_predictor_flag(cache_dir: str) -> bool:
         return False
 
 
+def _read_existing_mc_enabled_flag(cache_dir: str) -> bool:
+    """Phase 90 MC-01 / D-01: preserve mc_enabled across backtest runs.
+
+    Until accuracy.py runs a parallel shadow path for the 5-GW MC simulation
+    (deferred), the gate value is set once (manually flipped to True after a
+    successful end-to-end pipeline non-regression run) and preserved on subsequent
+    backtests. Default False on cold start (file missing/malformed). Mirrors
+    _read_existing_save_predictor_flag exactly.
+    """
+    try:
+        path = os.path.join(cache_dir, 'accuracy_backtest.json')
+        with open(path, 'r', encoding='utf-8') as f:
+            prev = json.load(f)
+        return bool(prev.get('summary', {}).get('mc_enabled', False))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return False
+
+
 def _read_existing_versions(cache_dir: str) -> list:
     """Phase 63 VER-01 / D-02 / D-03: preserve version history across backtest runs.
 
@@ -371,6 +389,7 @@ def compute_accuracy_backtest(
     xmins_v2_enabled = bool(prior_cache.get('summary', {}).get('xmins_v2_enabled', False))
     bonus_predictor_enabled = bool(prior_cache.get('summary', {}).get('bonus_predictor_enabled', False))  # Phase 53 BPS-01
     save_predictor_enabled = bool(prior_cache.get('summary', {}).get('save_predictor_enabled', False))  # Phase 83 GK-03
+    mc_enabled = bool(prior_cache.get('summary', {}).get('mc_enabled', False))  # Phase 90 MC-01
 
     # Phase 63 VER-01 / D-02 / D-03 / D-04: read prior versions, dedup-append new record.
     _existing = prior_cache.get('versions', [])
@@ -384,6 +403,7 @@ def compute_accuracy_backtest(
             'xmins_v2_enabled': xmins_v2_enabled,
             'bonus_predictor_enabled': bonus_predictor_enabled,
             'save_predictor_enabled': save_predictor_enabled,   # Phase 83 GK-03
+            'mc_enabled': mc_enabled,                            # Phase 90 MC-01
         },
     }
     # D-03 dedup: use set membership to catch interior matches, not just tail (CR-01).
@@ -401,6 +421,7 @@ def compute_accuracy_backtest(
             'xmins_v2_enabled': xmins_v2_enabled,                               # Phase 52 D-02: gate for _cs_prob mins_60_prob swap; preserved across runs once flipped
             'bonus_predictor_enabled': bonus_predictor_enabled,                  # Phase 53 BPS-01: gate for per-player bonus EV; preserved across runs once flipped
             'save_predictor_enabled': save_predictor_enabled,                    # Phase 83 GK-03: gate for GK Poisson-floor save_pts; preserved across runs once flipped
+            'mc_enabled': mc_enabled,                                            # Phase 90 MC-01 / D-01: gate for 5-GW MC simulation; preserved across runs once flipped
             'news_flag_enabled': True,                                           # Phase 88 SCRAPER-01: always on; kill switch in UI gate
             'blend_alpha_used': BLEND_ALPHA,                                     # Phase 42 ACC-03
             'mid_tier_hit_rate': round(overall_mid_tier_hit, 4),                 # Phase 42 ACC-04
@@ -453,6 +474,7 @@ def _empty_backtest(cache_dir: str = '') -> dict:
     xmins_v2_enabled = bool(prior_cache.get('summary', {}).get('xmins_v2_enabled', False))
     bonus_predictor_enabled = bool(prior_cache.get('summary', {}).get('bonus_predictor_enabled', False))
     save_predictor_enabled = bool(prior_cache.get('summary', {}).get('save_predictor_enabled', False))  # Phase 83 GK-03
+    mc_enabled = bool(prior_cache.get('summary', {}).get('mc_enabled', False))  # Phase 90 MC-01
 
     _existing = prior_cache.get('versions', [])
     existing_versions = _existing if isinstance(_existing, list) else []
@@ -467,6 +489,7 @@ def _empty_backtest(cache_dir: str = '') -> dict:
                 'xmins_v2_enabled': xmins_v2_enabled,
                 'bonus_predictor_enabled': bonus_predictor_enabled,
                 'save_predictor_enabled': save_predictor_enabled,   # Phase 83 GK-03
+                'mc_enabled': mc_enabled,                            # Phase 90 MC-01
             },
         }]
 
@@ -480,6 +503,7 @@ def _empty_backtest(cache_dir: str = '') -> dict:
             'xmins_v2_enabled': xmins_v2_enabled,    # Phase 52
             'bonus_predictor_enabled': bonus_predictor_enabled,  # Phase 53
             'save_predictor_enabled': save_predictor_enabled,    # Phase 83 GK-03
+            'mc_enabled': mc_enabled,                            # Phase 90 MC-01
             'news_flag_enabled': True,                            # Phase 88 SCRAPER-01: always on; kill switch in UI gate
             'blend_alpha_used': BLEND_ALPHA,          # Phase 42
             'mid_tier_hit_rate': 0.0,                 # Phase 42
