@@ -1072,7 +1072,7 @@ Plans:
   3. GemTable row-expand panel and TransferPanel candidate cards both render the tristate via a `FragilityBadge` (extending the existing `FragilityNote`) — KNIFE EDGE uses a stronger amber/red tone than FRAGILE; the badge lists the specific perturbations that reversed, so the user reads "no longer recommended if: harder fixture OR news flips to doubt" not just "fragile"
   4. The "news flip to 'doubt'" perturbation reuses the news-flag severity taxonomy from Phase 88 — no duplicated constants; a Vitest case asserts that simulating `chance_of_playing_next_round = 50` deterministically yields the "doubt" branch
   5. Fragility computation remains pure TypeScript over `MergedPlayer` fields — no new API call, no pipeline change; a Vitest case asserts the engine is callable from a node environment (mirroring the v1.10 Phase 64 `@vitest-environment node` pattern)
-**Plans**: 4 plans (2 waves)
+**Plans**: 4 plans (3 waves)
   **Wave 0**
   - [ ] 093-01-PLAN.md — RED: extend `src/lib/sensitivity.test.ts` with 5-perturbation cases (≥12 cases covering each perturbation in isolation, ROBUST when none reverse, FRAGILE when one, KNIFE EDGE when two and three, BGW guard, news-flag input shape)
   **Wave 1** *(parallel — file-disjoint)*
