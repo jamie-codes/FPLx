@@ -11,6 +11,7 @@ import type { LifecycleLabel } from '@/lib/lifecycle-label'
 import { computeExplanations } from '@/lib/explain'
 import { computeReplacementShortlist } from '@/lib/replacement-shortlist'
 import { ExplainPanel } from '@/components/squad/ExplainPanel'
+import { NewsBanner } from '@/components/news/NewsBanner'
 import { computeFragility, FRAGILITY_START_PROB, FRAGILITY_HARDER_FIXTURE } from '@/lib/sensitivity'
 import type { Verdict } from '@/lib/recommend'
 import type { CaptaincyCandidate } from '@/lib/captaincy-engine'
@@ -168,6 +169,12 @@ export function SquadView({ picks, allPlayers, entryHistory, labels, exactSellPr
                                 </button>
                               )}
                               <span>{player.web_name}</span>
+                              {/* Phase 88 SCRAPER-01: inline news banner for flagged owned players (D-08) */}
+                              <NewsBanner
+                                news={player.news ?? ''}
+                                news_added={player.news_added}
+                                chance_of_playing_next_round={player.chance_of_playing_next_round}
+                              />
                               {pick.is_captain && (
                                 <span className="ml-1 text-xs font-bold text-amber-600 dark:text-amber-400">(C)</span>
                               )}
