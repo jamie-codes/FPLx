@@ -20,7 +20,7 @@
 
 ### Pipeline
 
-- [ ] **SCRAPER-01** FPL news flags in UI — surface `news`, `news_added`, and `chance_of_playing_next_round` fields (already in pipeline/merge.py) as a news banner/badge in TransferPanel and a status indicator in GemTable; no new pipeline scraping; gated by `news_flag_enabled` display config
+- [x] **SCRAPER-01** FPL news flags in UI — surface `news`, `news_added`, and `chance_of_playing_next_round` fields (already in pipeline/merge.py) as a news banner/badge in TransferPanel and a status indicator in GemTable; no new pipeline scraping; gated by `news_flag_enabled` display config
 - [ ] **REFRESH-01** Event-aware pipeline scheduling — add deadline-guard script `pipeline/refresh_gate.py` that exits early unless within 90-min window of next GW deadline (reads `events[].deadline_time` from FPL bootstrap); add dense `schedule:` cron entries to `.github/workflows/pipeline.yml` for Fri/Sat/Sun GW windows; add `concurrency: cancel-in-progress` guard to prevent race with existing 4×/day cron
 - [ ] **DH-04** Cron history sparkline — extend `data_health.json` with a rolling `history` array (last 7 run entries: timestamp + overall_status); render as `DataHealthSparkline` using recharts `<LineChart>` inside existing `DataHealthPanel` in AccuracyTab; zero new API routes or hooks
 
