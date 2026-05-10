@@ -978,7 +978,7 @@ Plans:
   5. When the FPL bootstrap fetch fails (network, 5xx), `refresh_gate.py` exits with the "skip" status (NOT proceed) — never run pipeline on broken bootstrap data; pytest case asserts the failure-skip behaviour with a mocked HTTP error
 **Plans**: 2 plans (2 waves)
   **Wave 0**
-  - [ ] 089-01-PLAN.md — RED: `pipeline/tests/test_refresh_gate.py` (6 cases: before-window / in-window / after-window / failure-skip / DGW double-deadline / cold-bootstrap)
+  - [x] 089-01-PLAN.md — RED: `pipeline/tests/test_refresh_gate.py` (6 cases: before-window / in-window / after-window / failure-skip / DGW double-deadline / cold-bootstrap)
   **Wave 1** *(blocked on Wave 0 completion)*
   - [ ] 089-02-PLAN.md — Implement `pipeline/refresh_gate.py` (90-min window math, configurable via env var `PIPELINE_DEADLINE_WINDOW_MINUTES=90`); update `.github/workflows/pipeline.yml` with dense Fri/Sat/Sun cron entries, refresh_gate guard step, and `concurrency` block; manual UAT: trigger workflow_dispatch outside window confirms skip, inside window confirms proceed
   **Cross-cutting constraints:**
@@ -1220,7 +1220,7 @@ Plans:
 | 86 | v1.15 | - | Merged into Phase 82 | 2026-05-08 |
 | 87 | v1.15 | - | Merged into Phase 84 | 2026-05-09 |
 | 88 | v1.16 | 2/2 | Complete    | 2026-05-10 |
-| 89 | v1.16 | 0/2 | Not started | - |
+| 89 | v1.16 | 1/2 | In Progress|  |
 | 90 | v1.16 | 0/3 | Not started | - |
 | 91 | v1.16 | 0/4 | Not started | - |
 | 92 | v1.16 | 0/2 | Not started | - |
