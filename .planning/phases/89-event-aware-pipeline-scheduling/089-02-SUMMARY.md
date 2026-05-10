@@ -53,7 +53,7 @@ completed: 2026-05-10
 
 - **Duration:** ~15 min
 - **Completed:** 2026-05-10
-- **Tasks:** 2 (Task 3 is checkpoint:human-verify — awaiting UAT)
+- **Tasks:** 3 (Task 1 + 2 auto; Task 3 checkpoint:human-verify approved)
 - **Files modified:** 2
 
 ## Accomplishments
@@ -104,7 +104,7 @@ completed: 2026-05-10
 - [x] **SC-3** (Concurrency): `concurrency: { group: pipeline, cancel-in-progress: true }` at workflow level
 - [x] **SC-4** (Baseline preserved): `0 6,12,18,0 * * *` unchanged
 - [x] **SC-5** (Failure-skip): HTTP exception -> `run=false` confirmed by `test_failure_skip_main`
-- [ ] **Manual UAT** (Task 3 checkpoint): awaiting user verification in GitHub Actions UI
+- [x] **Manual UAT** (Task 3 checkpoint): user confirmed all four UAT outcomes — "Approved"
 
 ## Deviations from Plan
 
@@ -124,7 +124,16 @@ No new threat surface introduced beyond what is already documented in the plan's
 
 ## Manual UAT Outcome (Task 3)
 
-Awaiting — Task 3 is checkpoint:human-verify. See how-to-verify in 089-02-PLAN.md for the 5-step UAT procedure.
+User confirmed all four UAT outcomes after pushing the branch to GitHub:
+
+| UAT Check | Outcome |
+|-----------|---------|
+| workflow_dispatch run — gate step skipped, pipeline runs to completion | Confirmed |
+| schedule trigger outside window — gate writes run=false, pipeline step skipped | Confirmed |
+| inside window / PIPELINE_DEADLINE_WINDOW_MINUTES test — gate writes run=true, pipeline runs | Confirmed |
+| concurrency cancel-in-progress — older run cancelled in favour of newer run | Confirmed |
+
+User response: **"Approved"** — Phase 89 (REFRESH-01) is closed.
 
 ---
 
