@@ -934,7 +934,7 @@ Plans:
 
 ## v1.16 Modelling & Trust (Phases 88-96)
 
-- [ ] **Phase 88: FPL News Flags UI** — surface `news` / `news_added` / `chance_of_playing_next_round` as banner/badge in TransferPanel and status indicator in GemTable; gated by `news_flag_enabled` display config (SCRAPER-01)
+- [x] **Phase 88: FPL News Flags UI** — surface `news` / `news_added` / `chance_of_playing_next_round` as banner/badge in TransferPanel and status indicator in GemTable; gated by `news_flag_enabled` display config (SCRAPER-01) (completed 2026-05-10)
 - [ ] **Phase 89: Event-Aware Pipeline Scheduling** — `pipeline/refresh_gate.py` deadline-guard, dense Fri/Sat/Sun cron entries in `.github/workflows/pipeline.yml`, `concurrency: cancel-in-progress` guard (REFRESH-01)
 - [ ] **Phase 90: Monte Carlo Simulation Pipeline** — per-player 5-GW MC over existing Poisson/Bernoulli params, ≥1000 iterations, writes `xPts_5gw_p10/p50/p90` and `rank_trajectory` to `merged_players.json`; `mc_enabled` gate in `accuracy_backtest.json` (MC-01)
 - [ ] **Phase 91: Calibration Charts** — AccuracyTab predicted-xPts-decile vs actuals over last 5 GWs with per-position breakdown; recharts (already installed) (CAL-01)
@@ -958,7 +958,7 @@ Plans:
   **Wave 0**
   - [x] 088-01-PLAN.md — RED scaffolding: TransferPanel news-banner test cases (5), GemTable status-indicator test cases (4), `news_flag_enabled` gate read in `useNewsFlagEnabled` test (3); shared `NewsBadge` / `NewsBanner` component contracts in src/components/news/
   **Wave 1** *(blocked on Wave 0 completion)*
-  - [ ] 088-02-PLAN.md — Implement `NewsBadge` (GemTable Player-cell variant + row-expand variant) + `NewsBanner` (TransferPanel candidate-row variant) + `useNewsFlagEnabled` accessor over `useAccuracy`; wire into TransferPanel and GemTable; severity-tone helper; mobile-portrait truncation guard
+  - [x] 088-02-PLAN.md — Implement `NewsBadge` (GemTable Player-cell variant + row-expand variant) + `NewsBanner` (TransferPanel candidate-row variant) + `useNewsFlagEnabled` accessor over `useAccuracy`; wire into TransferPanel and GemTable; severity-tone helper; mobile-portrait truncation guard
   **Cross-cutting constraints:**
   - `news_flag_enabled` MUST gate every render path — the gate is read once per render via `useNewsFlagEnabled()` (single source of truth); never inline `accuracy.news_flag_enabled` inside leaf components
   - Severity-tone helper lives in `src/lib/newsSeverity.ts` and is unit-tested in isolation — UI components consume tone tokens, never raw `chance_of_playing_next_round` ints
@@ -1219,7 +1219,7 @@ Plans:
 | 85 | v1.14 | 2/2 | Complete    | 2026-05-09 |
 | 86 | v1.15 | - | Merged into Phase 82 | 2026-05-08 |
 | 87 | v1.15 | - | Merged into Phase 84 | 2026-05-09 |
-| 88 | v1.16 | 1/2 | In Progress|  |
+| 88 | v1.16 | 2/2 | Complete   | 2026-05-10 |
 | 89 | v1.16 | 0/2 | Not started | - |
 | 90 | v1.16 | 0/3 | Not started | - |
 | 91 | v1.16 | 0/4 | Not started | - |
