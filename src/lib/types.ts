@@ -353,6 +353,7 @@ export interface AccuracySummary {
   bonus_predictor_enabled?: boolean  // Phase 53 BPS-01 gate (preserved across runs)
   save_predictor_enabled?: boolean   // Phase 83 GK-01 gate (preserved across runs)
   news_flag_enabled?: boolean        // Phase 88 SCRAPER-01 gate (default true; kill switch)
+  mc_enabled?: boolean               // Phase 90 MC-01: 5-GW MC simulation gate (default false)
 }
 
 export interface AccuracyHaulter {
@@ -440,6 +441,7 @@ export interface VersionGateFlags {
   bonus_predictor_enabled: boolean
   form_signal_enabled: boolean
   save_predictor_enabled: boolean
+  mc_enabled: boolean          // Phase 90 MC-01: 5-GW MC simulation gate
 }
 
 export interface VersionRecord {
