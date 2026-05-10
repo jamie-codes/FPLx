@@ -88,6 +88,37 @@ def _check_sp_unmatched(count: int) -> dict:
     return {'id': 'sp_unmatched_ids', 'status': status, 'value': count, 'threshold': '<= 5'}
 
 
+def _append_history(prior_history: list, overall_status: str, generated_at: str) -> list:
+    """Append new status entry; cap FIFO at 7 items.
+
+    Args:
+        prior_history: Existing history list (may be empty on first run).
+        overall_status: Normalised status — must be 'ok', 'warning', or 'error'.
+                        Caller responsible for mapping 'warn' -> 'warning'.
+        generated_at:  ISO-8601 UTC timestamp string (reuse result['generated_at']).
+
+    Returns:
+        New list capped at 7 items, chronological order (oldest first).
+    """
+    entry = {'timestamp': generated_at, 'overall_status': overall_status}
+    return (prior_history + [entry])[-7:]
+
+
+def _compute_overall_status(sanity_checks: list) -> str:
+    """Derive normalised overall status for HistoryEntry from sanity checks.
+
+    Maps internal 'warn' -> 'warning' to match the HistoryEntry enum
+    ('ok' | 'warning' | 'error') exposed in src/lib/types.ts.
+    Precedence: 'error' > 'warn' > 'ok'.
+    """
+    statuses = {c['status'] for c in sanity_checks}
+    if 'error' in statuses:
+        return 'error'
+    if 'warn' in statuses:
+        return 'warning'
+    return 'ok'
+
+
 def compute_data_health(
     merged: list,
     timestamps: dict,
@@ -111,14 +142,18 @@ def compute_data_health(
         dict: The data_health result (also written to cache via save()).
     """
     # D-15/D-16: read prior data_health.json BEFORE overwriting to get prev_player_count.
+    # Phase 92 DH-04: also extract prior history for FIFO-cap rolling-7 history field.
     prior_path = os.path.join(cache_dir, 'data_health.json')
     prev_count = None  # None signals first-run (D-16)
+    prior_history: list = []  # empty on first run / corrupt prior file
     try:
         with open(prior_path, 'r', encoding='utf-8') as f:
             prev = json.load(f)
         prev_count = prev.get('total_player_count')
+        prior_history = prev.get('history', [])
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         prev_count = None
+        prior_history = []
 
     total = len(merged)
 
@@ -163,6 +198,14 @@ def compute_data_health(
         'xg_per90_null_count': xg_per90_null,
         'sanity_checks': sanity_checks,
     }
+
+    # Phase 92 DH-04: append rolling 7-entry status history (FIFO cap-7).
+    # _compute_overall_status normalises pipeline 'warn' -> HistoryEntry 'warning'.
+    result['history'] = _append_history(
+        prior_history,
+        _compute_overall_status(sanity_checks),
+        result['generated_at'],
+    )
 
     # Local import keeps module testable without USE_BLOB env var set.
     from upload import save  # noqa: PLC0415
