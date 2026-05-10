@@ -1,38 +1,51 @@
-"""Run Monte Carlo simulations per player per upcoming GW (Phase 61 MC-01).
+"""Run Monte Carlo simulations per player per upcoming GW (Phase 61 / Phase 90 MC-01).
 
 Mirrors pipeline/bonus.py shape: post-merge module called from pipeline/run.py
 between merge_players() and save('merged_players.json', merged). Reads no JSON
 files; receives the merged list and the xmins_v2_enabled gate flag as params.
 
-Algorithm (per active player, per fixture):
+Algorithm (per active player, per fixture, per GW group up to 5):
   - lam_g = xg_per90 * xmins/90      (Poisson goal lambda)
   - lam_a = xa_per90 * xmins/90      (Poisson assist lambda)
   - cs_prob via _cs_prob_sim         (Bernoulli CS probability)
   - bonus_det = BONUS_RATE[et] * xmins/90   (deterministic per iteration)
   - appear_det = start_prob * 2              (deterministic per iteration)
-  - total_pts = goals*GOAL_PTS[et] + assists*ASSIST_PTS + cs*CS_PTS[et]
+  - gw_pts = goals*GOAL_PTS[et] + assists*ASSIST_PTS + cs*CS_PTS[et]
               + bonus_det + appear_det
-  - DGW: sum total_pts across both fixtures per iteration (D-09)
-  - blank_prob = mean(total_pts <= 2), haul_prob = mean(total_pts >= 10)
-  - p10_pts = percentile(total_pts, 10), p90_pts = percentile(total_pts, 90)
+  - DGW: sum gw_pts across both fixtures sharing the same event_id (D-09).
+  - Cumulative across up to 5 GW groups: np.cumsum on column-stacked per-GW arrays.
 
-BGW guard (D-08): xmins <= 0 OR start_prob <= 0 -> blank_prob=1.0, others 0.0.
+Phase 61 fields (GW 1 only):
+  blank_prob = mean(gw1_pts <= 2), haul_prob = mean(gw1_pts >= 10)
+  p10_pts = percentile(gw1_pts, 10), p90_pts = percentile(gw1_pts, 90)
 
-D-05 invariant: p90_pts overwrites the analytical xPts_90th_1gw (sigma-derived)
-field written by merge.py at line 1122.
+Phase 90 fields (cumulative 5-GW):
+  xPts_5gw_p10/p50/p90 = percentiles of cumulative[:, -1] (5-GW total per iteration)
+  rank_trajectory = length-5 position-relative percentile rank [0,1] per GW horizon (D-03)
 
-D-02: _cs_prob is re-implemented inline as _cs_prob_sim — no import from merge.py.
-D-03: xmins_v2_enabled comes from run.py (line 190); when True, mins_60_prob is
-the cs_prob mins_factor; when False, fall back to xmins/60 ratio (matches merge.py).
-D-04: N_SIMS=10_000 fixed, NumPy vectorized via rng.poisson/binomial size=N_SIMS.
+BGW guard (D-08): xmins <= 0 OR start_prob <= 0 -> all MC fields zero.
+BGW gap (Pitfall 1): fewer than 5 fixture groups -> missing GWs padded with np.zeros(N_SIMS).
+
+D-05 invariant: p90_pts overwrites the analytical xPts_90th_1gw (sigma-derived) field
+written by merge.py at line 1122.
+
+D-02: N_SIMS = max(1000, int(os.environ.get('MC_ITERATIONS', 1000))) — env-var configurable
+      with hardcoded 1000-iteration floor; MC_SEED = int(os.environ.get('MC_SEED', 42))
+      seeded for reproducible CI runs.
+D-04: _cs_prob is re-implemented inline as _cs_prob_sim — no import from merge.py.
 """
 
+import os
+from collections import defaultdict
 from itertools import groupby
 
 import numpy as np
 
-# Phase 61 MC-01 — fixed simulation budget (D-04)
-N_SIMS = 10_000
+# Phase 90 MC-01 — env-var configurable simulation budget; minimum 1000 enforced (D-02)
+# Replaces the Phase 61 hardcoded N_SIMS = 10_000.
+N_SIMS = max(1000, int(os.environ.get('MC_ITERATIONS', 1000)))
+# Phase 90 MC-01 — seeded for reproducible CI runs (D-02)
+MC_SEED = int(os.environ.get('MC_SEED', 42))
 
 # Per-position scoring constants (mirror pipeline/merge.py constants verbatim)
 # Position code: 1=GK, 2=DEF, 3=MID, 4=FWD
@@ -54,18 +67,35 @@ def _cs_prob_sim(dd: float, xmins: float, mins_60_prob: float | None) -> float:
 
 
 def _simulate_player(p: dict, xmins_v2_enabled: bool, rng) -> dict:
-    """Run N_SIMS Monte Carlo iterations for a single player. Returns 4 stats dict.
+    """Run N_SIMS Monte Carlo iterations for a single player over up to 5 GWs.
 
-    BGW short-circuit (D-08): xmins <= 0 OR start_prob <= 0 -> 100% blank.
-    DGW handling (D-09): groupby event_id, take first GW's fixtures, sum per-iteration.
-    Returns rounded floats (3dp) matching existing xPts_* precision.
+    Phase 61: returns 4 GW-1-only fields (`blank_prob`, `haul_prob`, `p10_pts`, `p90_pts`).
+    Phase 90: ALSO returns 4 cumulative 5-GW fields:
+      - xPts_5gw_p10/p50/p90: percentiles of cumulative xPts over up to 5 GW groups.
+      - _p50_by_horizon: length-5 list of cumulative p50 at each GW horizon (1..5).
+        Stripped from the player dict in compute_simulations after rank_trajectory built.
+
+    BGW short-circuit (D-08): xmins <= 0 OR start_prob <= 0 -> 100% blank, all MC fields zero.
+    BGW gap (Pitfall 1): when fewer than 5 fixture groups exist, missing GWs contribute zero
+      (np.zeros(N_SIMS) padded to length 5 before cumulative sum).
+    DGW (D-09): groupby event_id; multiple fixtures sharing an event_id all sum into that GW's array.
+    D-04 isolation: no import from merge.py; _cs_prob_sim is inline.
     """
     xmins = p.get('xmins', 0.0) or 0.0
     start_prob = p.get('start_prob', 0.0) or 0.0
 
-    # BGW short-circuit (D-08)
+    # BGW short-circuit (D-08): all 8 fields zero
     if xmins <= 0 or start_prob <= 0:
-        return {'blank_prob': 1.0, 'haul_prob': 0.0, 'p10_pts': 0.0, 'p90_pts': 0.0}
+        return {
+            'blank_prob': 1.0,
+            'haul_prob': 0.0,
+            'p10_pts': 0.0,
+            'p90_pts': 0.0,
+            'xPts_5gw_p10': 0.0,
+            'xPts_5gw_p50': 0.0,
+            'xPts_5gw_p90': 0.0,
+            '_p50_by_horizon': [0.0, 0.0, 0.0, 0.0, 0.0],
+        }
 
     xg = p.get('xg_per90') or 0.0
     xa = p.get('xa_per90') or 0.0
@@ -75,62 +105,99 @@ def _simulate_player(p: dict, xmins_v2_enabled: bool, rng) -> dict:
     m60 = p.get('mins_60_prob') if xmins_v2_enabled else None
     fixtures = p.get('fixtures', []) or []
 
-    # First GW group only (D-09; matches merge.py _xpts_ngw groupby semantics)
-    first_gw = []
+    # Collect up to 5 GW groups from fixtures (BGW gaps produce fewer groups; pad later).
+    groups = []
     for _eid, group in groupby(fixtures, key=lambda f: f.get('event_id')):
-        first_gw = list(group)
-        break
+        groups.append(list(group))
+        if len(groups) >= 5:
+            break
 
-    if not first_gw:
-        return {'blank_prob': 1.0, 'haul_prob': 0.0, 'p10_pts': 0.0, 'p90_pts': 0.0}
+    # No fixtures at all: degrade to BGW shape
+    if not groups:
+        return {
+            'blank_prob': 1.0,
+            'haul_prob': 0.0,
+            'p10_pts': 0.0,
+            'p90_pts': 0.0,
+            'xPts_5gw_p10': 0.0,
+            'xPts_5gw_p50': 0.0,
+            'xPts_5gw_p90': 0.0,
+            '_p50_by_horizon': [0.0, 0.0, 0.0, 0.0, 0.0],
+        }
 
     lam_g = xg * (xmins / 90.0)
     lam_a = xa * (xmins / 90.0)
     bonus_det = BONUS_RATE[et] * (xmins / 90.0)   # deterministic per iteration (Pitfall 1)
     appear_det = start_prob * 2                    # deterministic per iteration (Pitfall 1)
 
-    total_pts = np.zeros(N_SIMS)
-    for fix in first_gw:
-        dd = fix.get('defensive_difficulty', 0.5)
-        cs_prob = _cs_prob_sim(dd, xmins, m60)
-        goals = rng.poisson(lam_g, size=N_SIMS)
-        assists = rng.poisson(lam_a, size=N_SIMS)
-        cs = rng.binomial(1, cs_prob, size=N_SIMS)
-        total_pts += (
-            goals * GOAL_PTS[et]
-            + assists * ASSIST_PTS
-            + cs * CS_PTS[et]
-            + bonus_det
-            + appear_det
-        )
+    # Per-GW points arrays — one np.array(N_SIMS) per GW, summed across all fixtures in that GW (DGW).
+    total_pts_by_gw = []
+    for gw_fixtures in groups:
+        gw_pts = np.zeros(N_SIMS)
+        for fix in gw_fixtures:
+            dd = fix.get('defensive_difficulty', 0.5)
+            cs_prob = _cs_prob_sim(dd, xmins, m60)
+            goals = rng.poisson(lam_g, size=N_SIMS)
+            assists = rng.poisson(lam_a, size=N_SIMS)
+            cs = rng.binomial(1, cs_prob, size=N_SIMS)
+            gw_pts += (
+                goals * GOAL_PTS[et]
+                + assists * ASSIST_PTS
+                + cs * CS_PTS[et]
+                + bonus_det
+                + appear_det
+            )
+        total_pts_by_gw.append(gw_pts)
+
+    # Pad BGW gaps with zeros up to length 5 (Pitfall 1)
+    while len(total_pts_by_gw) < 5:
+        total_pts_by_gw.append(np.zeros(N_SIMS))
+
+    # cumulative shape: (N_SIMS, 5) — column h = cumulative xPts through GW h+1
+    cumulative = np.cumsum(np.column_stack(total_pts_by_gw), axis=1)
+
+    # Phase 61 GW-1 fields preserved verbatim (computed from total_pts_by_gw[0]).
+    gw1_pts = total_pts_by_gw[0]
 
     return {
-        'blank_prob': round(float(np.mean(total_pts <= 2)), 3),
-        'haul_prob':  round(float(np.mean(total_pts >= 10)), 3),
-        'p10_pts':    round(float(np.percentile(total_pts, 10)), 3),
-        'p90_pts':    round(float(np.percentile(total_pts, 90)), 3),
+        # Phase 61 fields (GW 1 only — unchanged contract)
+        'blank_prob': round(float(np.mean(gw1_pts <= 2)), 3),
+        'haul_prob':  round(float(np.mean(gw1_pts >= 10)), 3),
+        'p10_pts':    round(float(np.percentile(gw1_pts, 10)), 3),
+        'p90_pts':    round(float(np.percentile(gw1_pts, 90)), 3),
+        # Phase 90 fields (cumulative 5-GW)
+        'xPts_5gw_p10': round(float(np.percentile(cumulative[:, -1], 10)), 3),
+        'xPts_5gw_p50': round(float(np.percentile(cumulative[:, -1], 50)), 3),
+        'xPts_5gw_p90': round(float(np.percentile(cumulative[:, -1], 90)), 3),
+        '_p50_by_horizon': [
+            round(float(np.percentile(cumulative[:, h], 50)), 3) for h in range(5)
+        ],
     }
 
 
 def compute_simulations(merged: list, xmins_v2_enabled: bool) -> list:
-    """Run Monte Carlo simulations over the merged player list (Phase 61 MC-01).
+    """Run Monte Carlo simulations over the merged player list (Phase 61 / Phase 90 MC-01).
 
     Args:
         merged: List of merged player dicts (output of merge.merge_players).
         xmins_v2_enabled: Gate flag (loaded by run.py from accuracy_backtest.json
-                          summary at line 190). When True, _cs_prob_sim uses
+                          summary at line 199). When True, _cs_prob_sim uses
                           mins_60_prob as the cs_prob mins_factor; when False,
                           falls back to xmins/60 ratio.
 
     Returns:
-        Enriched copy of `merged`. Each player dict gains four new fields:
-          - blank_prob: P(total_pts <= 2) across N_SIMS iterations
-          - haul_prob: P(total_pts >= 10) across N_SIMS iterations
-          - p10_pts: 10th percentile simulated points (floor)
-          - p90_pts: 90th percentile simulated points (ceiling)
-        And `xPts_90th_1gw` is overwritten with `p90_pts` (D-05 invariant).
+        Enriched copy of `merged`. Each player dict gains:
+          Phase 61 (GW 1):
+            - blank_prob, haul_prob, p10_pts, p90_pts (xPts_90th_1gw overwritten with p90_pts)
+          Phase 90 (5-GW cumulative):
+            - xPts_5gw_p10, xPts_5gw_p50, xPts_5gw_p90
+            - rank_trajectory: length-5 list of position-relative percentile ranks [0,1] (D-03)
+
+    D-02: rng seeded from module-level MC_SEED (default 42); same instance used for all players.
+    D-03: rank_trajectory[h] = percentile rank of player's cumulative p50 xPts at horizon h+1
+          within the same-position pool (element_type 1=GK / 2=DEF / 3=MID / 4=FWD).
     """
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(seed=MC_SEED)
     result = []
     active_count = 0
     for player in merged:
@@ -142,5 +209,29 @@ def compute_simulations(merged: list, xmins_v2_enabled: bool) -> list:
         if sim['blank_prob'] != 1.0:
             active_count += 1
         result.append(p)
-    print(f"MC simulations: {active_count} active players ({N_SIMS:,} sims each)")
+
+    # rank_trajectory: cross-player ranking within each position pool, at each of 5 horizons (D-03).
+    # Cannot be done inside _simulate_player — requires the full cohort. (Pitfall 6: degenerate pool of 1.)
+    for h in range(5):
+        pools = defaultdict(list)
+        for p in result:
+            pos = p.get('element_type', 3) or 3
+            if pos not in (1, 2, 3, 4):
+                pos = 3
+            val = p.get('_p50_by_horizon', [0.0] * 5)[h]
+            pools[pos].append((val, p))
+        for pos, pool in pools.items():
+            pool.sort(key=lambda pair: pair[0])
+            n = len(pool)
+            denom = max(n - 1, 1)
+            for rank_idx, (_val, p) in enumerate(pool):
+                if 'rank_trajectory' not in p:
+                    p['rank_trajectory'] = [0.0, 0.0, 0.0, 0.0, 0.0]
+                p['rank_trajectory'][h] = round(rank_idx / denom, 4)
+
+    # Strip scratch field before final return (Pitfall 2).
+    for p in result:
+        p.pop('_p50_by_horizon', None)
+
+    print(f"MC simulations: {active_count} active players ({N_SIMS:,} sims each, seed={MC_SEED})")
     return result
