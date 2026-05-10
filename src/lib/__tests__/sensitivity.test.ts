@@ -192,12 +192,12 @@ describe('computeFragility — Phase 64+93 SENS-01', () => {
     expect(result).toEqual({ tier: 'robust', reasons: [] })
   })
 
-  it('case 13: perturbation c — easy fixture perturbed to medium triggers reversal', () => {
+  it('case 13: perturbation c — medium fixture perturbed to hard triggers reversal', () => {
     const player = makePlayer({
       id: 13,
       element_type: 3,
       start_prob: 0.95,
-      fixtures: [easyFixture],
+      fixtures: [mediumFixture],
     })
     const result = computeFragility(player, false)
     expect(result).toEqual({ tier: 'fragile', reasons: [FRAGILITY_HARDER_FIXTURE] })
