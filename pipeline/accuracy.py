@@ -510,6 +510,9 @@ def _compute_calibration_data(per_gw_rows: dict) -> dict:
     # bucket_haul[pos_key][decile_idx] = haul count; bucket_total[pos_key][decile_idx] = total count
     bucket_haul: dict = defaultdict(lambda: defaultdict(int))
     bucket_total: dict = defaultdict(lambda: defaultdict(int))
+    # Phase 91 CAL-01 (D-07): xPts-mean accumulators — float sums for predicted_mean / actual_mean
+    bucket_sum_predicted: dict = defaultdict(lambda: defaultdict(float))
+    bucket_sum_actual: dict = defaultdict(lambda: defaultdict(float))
 
     for gw, rows in per_gw_rows.items():
         if not rows:
@@ -524,6 +527,9 @@ def _compute_calibration_data(per_gw_rows: dict) -> dict:
             for pk in ('all', pos_key):
                 bucket_haul[pk][decile] += is_haul
                 bucket_total[pk][decile] += 1
+                # Phase 91 CAL-01: accumulate xPts sums for mean computation
+                bucket_sum_predicted[pk][decile] += row['xpts_predicted']
+                bucket_sum_actual[pk][decile]    += row['actual_pts']
 
     # D-06: bucket midpoints for 10 deciles -> 0.05, 0.15, ..., 0.95
     bucket_mids = [round(d * 0.1 + 0.05, 2) for d in range(10)]
@@ -541,6 +547,10 @@ def _compute_calibration_data(per_gw_rows: dict) -> dict:
                 'predicted_rate': bucket_mids[d],  # Open Q1: decile midpoint as predicted rate
                 'actual_rate': round(haul / total, 4),
                 'sample_n': total,
+                # Phase 91 CAL-01 (D-07): xPts means; round to 2dp matches UI toFixed(2)
+                # and avoids IEEE-754 drift in test fixtures (Pitfall 7).
+                'predicted_mean': round(bucket_sum_predicted[pos_key][d] / total, 2),
+                'actual_mean':    round(bucket_sum_actual[pos_key][d]    / total, 2),
             })
         by_position[pos_key] = buckets
 
