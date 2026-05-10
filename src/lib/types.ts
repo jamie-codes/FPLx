@@ -188,6 +188,13 @@ export interface MergedPlayer {
   haul_prob?: number      // P(total_pts >= 10) across 10k simulations; 0.0 for BGW
   p10_pts?: number        // 10th percentile simulated points (floor); 0.0 for BGW
   p90_pts?: number        // 90th percentile simulated points (ceiling); overwrites xPts_90th_1gw
+  // Phase 90 MC-01: 5-GW cumulative uncertainty bands and position-relative rank trajectory.
+  // Written by pipeline/simulate.py when mc_enabled=true. Absent when mc_enabled=false (D-01).
+  // rank_trajectory[i] = percentile rank within same-position pool over GWs 1..i+1 (D-03).
+  xPts_5gw_p10?: number       // 10th percentile cumulative 5-GW xPts (floor)
+  xPts_5gw_p50?: number       // 50th percentile cumulative 5-GW xPts (≈ xPts_5gw deterministic, within 5%)
+  xPts_5gw_p90?: number       // 90th percentile cumulative 5-GW xPts (ceiling)
+  rank_trajectory?: number[]  // length-5 position-relative percentile rank [0,1] per GW horizon
   // ACC-05 (Phase 41 D-11): last GW actual points, joined into the player row by /api/players
   // from accuracy_backtest.json. Optional — null when player has no backtest entry; absent
   // before Phase 40 pipeline has run. NOT computed by pipeline/merge.py.

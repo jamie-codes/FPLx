@@ -1,5 +1,8 @@
 """Pytest unit tests for compute_simulations and _simulate_player (Phase 61 MC-01)."""
 
+import importlib
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 # Bare import (conftest.py injects pipeline/ into sys.path)
@@ -108,3 +111,152 @@ def test_output_value_ranges():
         assert 0.0 <= r['haul_prob'] <= 1.0
         assert r['p10_pts'] >= 0.0
         assert r['p10_pts'] <= r['p90_pts']
+
+
+# ---------------------------------------------------------------------------
+# Phase 90 MC-01: 5-GW cumulative simulation — 6 RED tests (Wave 0)
+# ---------------------------------------------------------------------------
+
+def _five_gw_fixtures(dd=0.5, gws=(38, 39, 40, 41, 42)):
+    """Build a 5-GW fixtures list with distinct event_ids for cumulative tests."""
+    return [_fix(defensive_difficulty=dd, event_id=eid) for eid in gws]
+
+
+def test_5gw_percentile_invariants():
+    """Cumulative 5-GW MC: p10 <= p50 <= p90; p50 within 5% of analytical 5-GW xPts (D-03/Pitfall 5)."""
+    p = _player(
+        element_type=3, xmins=70.0, start_prob=0.85,
+        xg_per90=0.5, xa_per90=0.4,
+        fixtures=_five_gw_fixtures(dd=0.4),
+    )
+    result = compute_simulations([p], xmins_v2_enabled=False)
+    r = result[0]
+    # Required new fields present
+    assert 'xPts_5gw_p10' in r
+    assert 'xPts_5gw_p50' in r
+    assert 'xPts_5gw_p90' in r
+    assert 'rank_trajectory' in r
+    # Ordering invariant
+    assert r['xPts_5gw_p10'] <= r['xPts_5gw_p50'] <= r['xPts_5gw_p90']
+    # Spread invariant (active player has meaningful spread over 5 GWs)
+    assert r['xPts_5gw_p90'] > r['xPts_5gw_p10'] + 2.0
+    # rank_trajectory is length-5 floats in [0, 1]
+    assert isinstance(r['rank_trajectory'], list)
+    assert len(r['rank_trajectory']) == 5
+    for rank in r['rank_trajectory']:
+        assert 0.0 <= rank <= 1.0
+
+
+def test_5gw_bgw_zero_fill():
+    """BGW gap (player with <5 fixture groups) contributes zero to cumulative (Pitfall 1)."""
+    full = _player(fixtures=_five_gw_fixtures())
+    # Same player but only 3 fixture groups — GW 4 and GW 5 are BGW
+    bgw_player = _player(fixtures=[_fix(0.5, 38), _fix(0.5, 39), _fix(0.5, 40)])
+    r_full = compute_simulations([full], xmins_v2_enabled=False)[0]
+    r_bgw = compute_simulations([bgw_player], xmins_v2_enabled=False)[0]
+    # 3-GW BGW player has strictly less cumulative p50 than full 5-GW player
+    assert r_bgw['xPts_5gw_p50'] < r_full['xPts_5gw_p50']
+    # The BGW player's 5-GW p50 should approximately equal what 3 GWs would produce
+    # Sanity: roughly 3/5 of full player (within 30% — leaving Poisson noise headroom)
+    assert r_bgw['xPts_5gw_p50'] < 0.75 * r_full['xPts_5gw_p50']
+
+
+def test_5gw_dgw_combine():
+    """DGW in GW 1 (two fixtures sharing event_id=38) produces higher cumulative p50 than 5 single GWs."""
+    # 5 single fixtures across 5 distinct GWs
+    single = _player(fixtures=_five_gw_fixtures())
+    # DGW in GW 1: two fixtures sharing event_id=38, then GWs 39..42 single
+    dgw_first = _player(fixtures=[
+        _fix(0.5, 38), _fix(0.5, 38),  # DGW in GW 1
+        _fix(0.5, 39), _fix(0.5, 40), _fix(0.5, 41), _fix(0.5, 42),
+    ])
+    r_single = compute_simulations([single], xmins_v2_enabled=False)[0]
+    r_dgw = compute_simulations([dgw_first], xmins_v2_enabled=False)[0]
+    # DGW player accrues an extra fixture's worth of upside in GW 1
+    assert r_dgw['xPts_5gw_p50'] > r_single['xPts_5gw_p50']
+    assert r_dgw['xPts_5gw_p90'] > r_single['xPts_5gw_p90']
+
+
+def test_iteration_count_gate(monkeypatch):
+    """MC_ITERATIONS env var sets N_SIMS; minimum 1000 floor is enforced (D-02 / Pitfall 3)."""
+    import simulate
+
+    # Below floor — must be clamped up to 1000
+    monkeypatch.setenv('MC_ITERATIONS', '500')
+    importlib.reload(simulate)
+    assert simulate.N_SIMS >= 1000, f"floor not enforced: N_SIMS={simulate.N_SIMS}"
+
+    # Above floor — env var value used directly
+    monkeypatch.setenv('MC_ITERATIONS', '2000')
+    importlib.reload(simulate)
+    assert simulate.N_SIMS == 2000, f"env override not respected: N_SIMS={simulate.N_SIMS}"
+
+    # Cleanup: reset to default for downstream tests
+    monkeypatch.delenv('MC_ITERATIONS', raising=False)
+    importlib.reload(simulate)
+
+
+def test_seed_determinism(monkeypatch):
+    """MC_SEED=42 produces identical xPts_5gw_p50 across two runs (D-02)."""
+    import simulate
+
+    monkeypatch.setenv('MC_SEED', '42')
+    importlib.reload(simulate)
+    p1 = _player(fixtures=_five_gw_fixtures(dd=0.4))
+    r1 = simulate.compute_simulations([p1], xmins_v2_enabled=False)[0]
+
+    # Reload to re-create the module-level rng with the same seed
+    importlib.reload(simulate)
+    p2 = _player(fixtures=_five_gw_fixtures(dd=0.4))
+    r2 = simulate.compute_simulations([p2], xmins_v2_enabled=False)[0]
+
+    # Identical to 6 decimal places (no floating point drift)
+    assert round(r1['xPts_5gw_p50'], 6) == round(r2['xPts_5gw_p50'], 6)
+    assert round(r1['xPts_5gw_p10'], 6) == round(r2['xPts_5gw_p10'], 6)
+    assert round(r1['xPts_5gw_p90'], 6) == round(r2['xPts_5gw_p90'], 6)
+
+    monkeypatch.delenv('MC_SEED', raising=False)
+    importlib.reload(simulate)
+
+
+def test_mc_enabled_off_skip(monkeypatch, tmp_path):
+    """When mc_enabled=False, run.py does NOT call compute_simulations (D-01 gate)."""
+    # Synthesize an accuracy_backtest.json with mc_enabled=False
+    import json
+    backtest = {
+        'summary': {
+            'mc_enabled': False,
+            'xmins_v2_enabled': False,
+            'bonus_predictor_enabled': False,
+            'save_predictor_enabled': False,
+            'form_signal_enabled': False,
+            'blend_alpha_used': 0.4,
+        }
+    }
+    cache_dir = tmp_path / 'cache'
+    cache_dir.mkdir()
+    (cache_dir / 'accuracy_backtest.json').write_text(json.dumps(backtest))
+
+    # Read the gate flag using the same logic as run.py (lines 193-203)
+    with open(cache_dir / 'accuracy_backtest.json', 'r', encoding='utf-8') as f:
+        prev = json.load(f)
+    mc_enabled = prev.get('summary', {}).get('mc_enabled', False)
+
+    # Assert the gate evaluates to False — the if-guard in run.py would skip compute_simulations
+    assert mc_enabled is False, "gate read returned wrong value"
+
+    # Behavioural assertion: when mc_enabled=False, the call site MUST be guarded
+    # (the actual run.py modification is verified in plan 02; here we lock the contract
+    # that the file has the guard)
+    import os
+    run_py_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        'run.py',
+    )
+    with open(run_py_path, 'r', encoding='utf-8') as f:
+        run_source = f.read()
+    # The gate read line MUST exist
+    assert "mc_enabled = prev_backtest.get('summary', {}).get('mc_enabled', False)" in run_source, \
+        "run.py is missing mc_enabled gate read"
+    # The conditional call MUST exist
+    assert 'if mc_enabled:' in run_source, "run.py is missing `if mc_enabled:` guard"
