@@ -52,7 +52,10 @@ def check_deadline_window(
     if now is None:
         now = datetime.now(timezone.utc)
     if window_minutes is None:
-        window_minutes = int(os.getenv('PIPELINE_DEADLINE_WINDOW_MINUTES', '90'))
+        try:
+            window_minutes = int(os.getenv('PIPELINE_DEADLINE_WINDOW_MINUTES', '90'))
+        except ValueError:
+            window_minutes = 90
 
     window = timedelta(minutes=window_minutes)
     future: list[datetime] = []
@@ -65,7 +68,7 @@ def check_deadline_window(
             # Pitfall 1: defensive tzinfo guard for naive ISO strings.
             if dt.tzinfo is None:
                 dt = dt.replace(tzinfo=timezone.utc)
-        except ValueError:
+        except (ValueError, AttributeError):
             continue
         if dt > now:
             future.append(dt)
@@ -82,13 +85,13 @@ def main() -> None:
     """Module entry point. Always exits 0 (Pitfall 2)."""
     try:
         bootstrap = get_bootstrap_static()
-        events = bootstrap.get('events', [])
+        events = bootstrap.get('events') or []
+        result = check_deadline_window(events)
     except Exception:
         # D-07: any failure of the bootstrap fetch -> skip (run=false), never proceed.
         _write_output(False)
         return
 
-    result = check_deadline_window(events)
     _write_output(result)
 
 

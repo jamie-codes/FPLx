@@ -3,8 +3,8 @@ name: Data Pipeline
 # Phase 89 (REFRESH-01): event-aware scheduling.
 # Cron entries below are documented for maintenance:
 #   1. Baseline 4x/day (UNCHANGED, D-05)        - keeps data fresh outside GW windows
-#   2. Sat/Sun dense (NEW, D-04)                - covers FPL 10:30-11:30 UTC weekend deadlines
-#   3. Fri dense (NEW, D-04)                    - covers Fri 17:30-19:30 UTC early-kick / Cup deadlines
+#   2. Sat/Sun dense (NEW, D-04)                - covers FPL 08:00-13:30 UTC weekend deadlines
+#   3. Fri dense (NEW, D-04)                    - covers Fri 16:00-20:30 UTC early-kick / Cup deadlines
 # Each scheduled trigger runs pipeline/refresh_gate.py first (D-01); the
 # pipeline body executes only when the gate writes run=true to $GITHUB_OUTPUT
 # OR the workflow was triggered manually via workflow_dispatch (D-02, D-03).
