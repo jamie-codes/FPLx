@@ -85,3 +85,37 @@ def test_idempotent_repeat_invocation(monkeypatch):
             assert options.get('allowOverwrite') is True, (
                 f'allowOverwrite must be True for idempotent re-run; got options={options!r}'
             )
+
+
+def test_run_py_invokes_write_captain_snapshot_after_predictions_block():
+    """Contract test: pipeline/run.py must call write_captain_snapshot(captain_picks, current_gw)
+    AFTER the existing predictions_snapshot Blob upload block, not before.
+
+    Reading run.py as text (rather than importing — top-level dotenv side effects
+    prevent import), so this is a syntax-shape contract test mirroring test_run.py.
+    """
+    import pathlib
+    run_py_path = pathlib.Path(__file__).resolve().parent.parent / 'run.py'
+    src = run_py_path.read_text(encoding='utf-8')
+
+    # Both markers must be present.
+    pred_marker = 'Predictions snapshot uploaded to Blob'
+    cap_call = 'write_captain_snapshot(captain_picks, current_gw)'
+    cap_import = 'from captain_snapshots import write_captain_snapshot'
+
+    assert pred_marker in src, 'predictions snapshot block must remain in run.py'
+    assert cap_call in src, f'run.py must call {cap_call}'
+    assert cap_import in src, f'run.py must import write_captain_snapshot'
+
+    # Ordering: the captain call must appear AFTER the predictions marker.
+    pred_idx = src.index(pred_marker)
+    cap_idx = src.index(cap_call)
+    assert cap_idx > pred_idx, (
+        'captain snapshot side-write must follow the predictions snapshot block; '
+        f'got predictions at offset {pred_idx}, captain at offset {cap_idx}'
+    )
+
+    # The existing captain_picks.json save (line 227) must still exist — additive only.
+    assert "save('captain_picks.json', captain_picks)" in src, (
+        'Phase 31 captain_picks.json save must remain — Phase 96 is additive'
+    )
