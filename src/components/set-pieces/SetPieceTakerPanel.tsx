@@ -131,6 +131,10 @@ export function SetPieceTakerPanel() {
           Penalty, direct free kick, and corner takers per Premier League team. Sourced from FPL bootstrap-static.
         </p>
       </div>
+      {/* Always visible — change alert belongs to the panel, not to a specific view */}
+      {data && data.teams.length > 0 && (
+        <SetPieceChangeAlert changeCount={data.change_count} />
+      )}
       <SetPieceViewToggle view={view} onViewChange={setView} />
 
       {isLoading && (
@@ -154,7 +158,6 @@ export function SetPieceTakerPanel() {
 
       {data && data.teams.length > 0 && (
         <>
-          {view === 'takers' && <SetPieceChangeAlert changeCount={data.change_count} />}
           {view === 'takers' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {data.teams.map((team) => (
