@@ -47,8 +47,13 @@ export function aggregateSetPieceLeague(changes: SetPieceChanges): LeagueTable {
     const corner = team.corner_taker.corner_danger_score ?? null
     const fk = team.fk_taker.fk_danger_score ?? null
     const composite = computeCompositeScore(corner, fk)
-    const sample_n =
-      (team.corner_taker.sp_sample_n ?? 0) + (team.fk_taker.sp_sample_n ?? 0)
+    const cornerSample = team.corner_taker.sp_sample_n ?? 0
+    const fkSample =
+      team.fk_taker.id !== null &&
+      team.fk_taker.id === team.corner_taker.id
+        ? 0  // same player — sp_sample_n already counted via corner_taker
+        : (team.fk_taker.sp_sample_n ?? 0)
+    const sample_n = cornerSample + fkSample
     const primary_taker_name = team.corner_taker.name || '—'
 
     const row: LeagueRow = {
