@@ -15,6 +15,7 @@ import { SquadView } from '@/components/squad/SquadView'
 // Phase 74 D-02: shared-component imports removed with legacy section
 import { computeVerdicts } from '@/lib/recommend'
 import { HighOwnershipCallout, type HighOwnershipEntry } from '@/components/transfers/HighOwnershipCallout'
+import { RejectionSearchCallout } from '@/components/transfers/RejectionSearchCallout'
 import { CaptaincyPanel } from '@/components/captaincy/CaptaincyPanel'
 import { AuthModal } from '@/components/transfers/AuthModal'
 import { computeAuthExpiryState } from '@/lib/auth-expiry'
@@ -337,6 +338,16 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
         <div className="rounded border border-red-300 bg-red-50 dark:bg-red-950 p-4 text-sm text-red-700 dark:text-red-300">
           {squadError instanceof Error ? squadError.message : String(squadError)}
         </div>
+      )}
+
+      {/* Phase 94 WHY-01-A: always-visible rejection search — renders pre-squad-load (D-07).
+          lifecycleLabels is the existing useMemo: returns new Map() when squad not loaded,
+          so lifecycle reasons silently do not fire (D-05). */}
+      {scoredPlayers.length > 0 && (
+        <RejectionSearchCallout
+          players={scoredPlayers}
+          lifecycleLabels={lifecycleLabels}
+        />
       )}
 
       {/* Squad and suggestions (only when data is loaded) */}
