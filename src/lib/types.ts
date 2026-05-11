@@ -656,51 +656,6 @@ export interface CaptainPicks {
   eo_adjusted: CaptainPick | null
 }
 
-// Phase 96 BACK-01: Captain decision backtester types.
-// Sources of truth:
-//   .planning/phases/96-captain-decision-backtester/96-CONTEXT.md §D-06, D-08, D-09, D-10
-//   .planning/phases/96-captain-decision-backtester/096-PATTERNS.md §src/lib/types.ts
-
-/**
- * Per-GW captain snapshot payload (captain_picks_gw{N}.json on Blob).
- * D-09: reuses the existing CaptainPicks schema verbatim.
- */
-export type CaptainPickSnapshot = CaptainPicks
-
-/**
- * One entry in the regret timeline — one per GW (D-10 allows pre-deployment rows
- * where hasSnapshot is false; SC-5 allows unauthenticated rows where userCaptainPts is null).
- */
-export interface RegretEntry {
-  gw: number
-  // User's actual captain (from FPL picks API — null when unauthenticated or 404)
-  userCaptainId: number | null
-  userCaptainName: string | null
-  userCaptainPts: number | null       // raw player points (regret formula doubles this)
-  // Model's ceiling pick (from captain_picks_gw{N}.json — null when no snapshot exists)
-  modelCeilingId: number | null
-  modelCeilingName: string | null
-  modelCeilingPts: number | null      // raw player points (regret formula doubles this)
-  // D-10: false = pre-deployment GW (no captain_picks_gw{N}.json in Blob)
-  hasSnapshot: boolean
-  // D-06: signed regret in captain points = ceiling_pts*2 − user_capt_pts*2
-  //   regret > 0 → model was better (user lost points)
-  //   regret < 0 → user beat the model
-  //   regret === 0 → tied
-  //   regret === null → at least one side unavailable
-  regret: number | null
-}
-
-/**
- * Full response shape from GET /api/decision-history?teamId={id}.
- * entries are ordered GW ascending and include pre-deployment rows (D-10).
- */
-export interface DecisionHistory {
-  teamId: number
-  gwsWithData: number           // count of GWs where regret is non-null
-  entries: RegretEntry[]
-}
-
 // Insights data (Phase 33 INS-01..INS-06 — pipeline writes pipeline/cache/insights.json)
 // Extended in Phase 79 (Plan 02): 10 new structured fields + signal_label emitted by pipeline.
 // The pipeline emits a flat array of Insight (no wrapper object).
