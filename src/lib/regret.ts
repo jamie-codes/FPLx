@@ -100,7 +100,11 @@ export function persistHistory(teamId: string, history: DecisionHistory): void {
     const trimmedEntries = history.entries.slice(-RING_BUFFER_SIZE)
     const trimmed: DecisionHistory = {
       teamId: history.teamId,
-      gwsWithData: history.gwsWithData,
+      // CR-02: recount gwsWithData from the trimmed entries, not from the API
+      // response. If the ring buffer sliced entries off the front, the original
+      // gwsWithData count is stale and any direct consumer of data.gwsWithData
+      // would see the wrong value.
+      gwsWithData: trimmedEntries.filter((e) => e.regret !== null).length,
       entries: trimmedEntries,
     }
     window.localStorage.setItem(ringBufferKey(teamId), JSON.stringify(trimmed))
