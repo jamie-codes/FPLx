@@ -333,4 +333,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-10 — Phase 92 complete. DH-04 (Cron History Sparkline) validated: `_append_history`/`_compute_overall_status` in pipeline, `HistoryEntry` type + `DataHealthSparkline` recharts component in AccuracyTab. v1.16 milestone 5/9 phases complete.*
+*Last updated: 2026-05-11 — Phase 93 complete. SENS-01 (Sensitivity Analysis Enhancements) validated: 5-perturbation tristate (`computeFragility` → robust/fragile/knife_edge), `FragilityBadge` component, wired into GemTable, OpportunityCostTable, CaptainPicksPanel. Code review CR-01 open: fixture-difficulty perturbation omits `easy` tier. v1.16 milestone 6/9 phases complete.*
