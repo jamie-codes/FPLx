@@ -941,7 +941,7 @@ Plans:
 - [x] **Phase 92: Cron History Sparkline** — extend `data_health.json` with rolling `history` (last 7 runs); render `DataHealthSparkline` recharts `<LineChart>` inside existing `DataHealthPanel`; zero new API routes/hooks (DH-04) (completed 2026-05-10)
 - [x] **Phase 93: Sensitivity Analysis Enhancements** *(complete 2026-05-10)* — extend Phase 64 fragility engine with 5 perturbations (start_prob -0.15, mins_60 -0.10, fixture +1 tier, cost +0.5m, news flip to "doubt"); ROBUST / FRAGILE (1 reverses) / KNIFE EDGE (2+ reverse); GemTable + TransferPanel (SENS-01)
 - [x] **Phase 94: Rejection Explainer Enhancements** — extend Phase 65 explainer with deterministic gate-cascade (≥6 predicates); search field entry point in TransferPanel ("Why isn't X recommended?") + head-to-head mode in GemTable expand ("Why is X ranked above Y?") (WHY-01) (completed 2026-05-11)
-- [ ] **Phase 95: Set-Piece Delivery League Table** — all 20 PL teams ranked by composite delivery-quality score, toggle within Set Pieces tab, separate insufficient-sample section; client-side aggregation in `src/lib/setPieceLeague.ts`; zero pipeline changes (SPQ-04)
+- [x] **Phase 95: Set-Piece Delivery League Table** — all 20 PL teams ranked by composite delivery-quality score, toggle within Set Pieces tab, separate insufficient-sample section; client-side aggregation in `src/lib/setPieceLeague.ts`; zero pipeline changes (SPQ-04) (completed 2026-05-11)
 - [ ] **Phase 96: Captain Decision Backtester** — pipeline saves `captain_picks_gw{N}.json` per run; `/api/decision-history` + `useDecisionHistory`; new "Back" sub-tab in Accuracy section; GW-by-GW captain regret vs snapshotted recommendation; authenticated FPL API for actual captain; localStorage ring buffer last 38 GWs (BACK-01)
 
 ### Phase 88: FPL News Flags UI
@@ -1227,5 +1227,5 @@ Plans:
 | 92 | v1.16 | 0/2 | Not started | - |
 | 93 | v1.16 | 0/4 | Not started | - |
 | 94 | v1.16 | 3/3 | Complete    | 2026-05-11 |
-| 95 | v1.16 | 0/2 | Not started | - |
+| 95 | v1.16 | 2/2 | Complete   | 2026-05-11 |
 | 96 | v1.16 | 0/4 | Not started | - |
