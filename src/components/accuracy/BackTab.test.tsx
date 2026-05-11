@@ -85,4 +85,12 @@ describe('BackTab — Phase 96 BACK-01', () => {
     const { container } = render(<BackTab teamId="12345" />)
     expect(container.textContent).toContain('No model snapshot')
   })
+
+  it('shows login-prompt empty state when teamId is null (WR-02)', () => {
+    mockedUseDecisionHistory.mockReturnValue({
+      data: undefined, isLoading: false, error: null,
+    } as ReturnType<typeof useDecisionHistory>)
+    const { container } = render(<BackTab teamId={null} />)
+    expect(container.textContent).toContain('Log in to see your actual captain picks')
+  })
 })
