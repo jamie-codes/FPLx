@@ -137,7 +137,14 @@ export function computeRejection(
   const isStrong =
     player.gem_score >= posAvg &&
     fragilityReasons.length === 0 &&
-    player.start_prob >= REJECTION_START_PROB_THRESHOLD
+    player.start_prob >= REJECTION_START_PROB_THRESHOLD &&
+    // Phase 94 D-01: poor form disqualifies positive framing
+    player.form_pts_per90 >= REJECTION_FORM_THRESHOLD &&
+    // Phase 94 D-02: falling price disqualifies positive framing
+    player.cost_change_event >= REJECTION_PRICE_FALLING &&
+    // Phase 94 D-04: sell/sell_soon lifecycle labels disqualify positive framing
+    lifecycleLabels.get(player.id) !== 'sell' &&
+    lifecycleLabels.get(player.id) !== 'sell_soon'
 
   if (isStrong) {
     // Positive framing — caller renders "No rejection signals" line using xPtsRank.
