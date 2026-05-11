@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: Modelling & Trust
-status: planning
-stopped_at: Phase 96 context gathered
-last_updated: "2026-05-11T13:36:41.364Z"
+status: planned
+stopped_at: Phase 96 planned (4 plans, 3 waves)
+last_updated: "2026-05-11T15:00:00.000Z"
 last_activity: 2026-05-11
 progress:
   total_phases: 9
   completed_phases: 8
-  total_plans: 22
+  total_plans: 26
   completed_plans: 22
-  percent: 100
+  percent: 85
 ---
 
 # Project State
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-05-11 — Phase 93 complete)
 ## Current Position
 
 Phase: 96
-Plan: Not started
-Status: Ready to plan
+Plan: Ready to execute (4 plans, 3 waves)
+Status: Ready to execute
 Last activity: 2026-05-11
 
 ## Performance Metrics
@@ -101,6 +101,6 @@ Items carried from v1.9:
 
 ## Session Continuity
 
-Last session: 2026-05-11T13:36:41.354Z
-Stopped at: Phase 96 context gathered
-Resume file: .planning/phases/96-captain-decision-backtester/96-CONTEXT.md
+Last session: 2026-05-11T15:00:00.000Z
+Stopped at: Phase 96 planned — 4 plans in 3 waves
+Resume file: .planning/phases/96-captain-decision-backtester/096-04-PLAN.md
