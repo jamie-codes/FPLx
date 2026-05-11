@@ -1,0 +1,87 @@
+"""Phase 96 BACK-01 Wave 1 RED — captain snapshot side-write contract tests.
+
+pipeline/captain_snapshots.py does not exist yet — these tests fail at import.
+Plan 02 will create it and turn these tests GREEN.
+
+Contract being tested (mirrors predictions_snapshot side-write at run.py lines 339-342):
+
+    if os.getenv('USE_BLOB', '').lower() == 'true':
+        from upload import upload_json
+        upload_json(f'captain_picks_gw{current_gw}.json', captain_picks)
+
+Sources of truth:
+  .planning/phases/96-captain-decision-backtester/96-CONTEXT.md §D-09
+  .planning/phases/96-captain-decision-backtester/096-PATTERNS.md §pipeline/run.py
+"""
+
+from unittest.mock import patch, MagicMock
+
+
+# Plan 02 must expose a callable named `write_captain_snapshot(captain_picks, current_gw)`
+# in pipeline/captain_snapshots.py. This is the SEAM the run.py side-write delegates to.
+from captain_snapshots import write_captain_snapshot  # type: ignore[import-not-found]  # noqa: E402
+
+
+SAMPLE_CAPTAIN_PICKS = {
+    'generated_at': '2026-05-11T12:00:00+00:00',
+    'gameweek': 42,
+    'ceiling': {
+        'id': 100,
+        'name': 'Haaland',
+        'team': 'MCI',
+        'position': 'FWD',
+        'now_cost': 145,
+        'xPts_1gw': 8.2,
+        'xPts_90th_1gw': 11.4,
+        'selected_by_percent': '55.0',
+    },
+    'eo_adjusted': None,
+}
+
+
+def test_uploads_to_blob_when_use_blob_true(monkeypatch):
+    """D-09: filename convention is captain_picks_gw{current_gw}.json."""
+    monkeypatch.setenv('USE_BLOB', 'true')
+    with patch('vercel_blob.put') as mock_put:
+        write_captain_snapshot(SAMPLE_CAPTAIN_PICKS, 42)
+        assert mock_put.called, 'vercel_blob.put must be invoked when USE_BLOB=true'
+        # First positional arg is the blob pathname
+        args, _kwargs = mock_put.call_args
+        assert args[0] == 'captain_picks_gw42.json', (
+            f'expected filename captain_picks_gw42.json, got {args[0]!r}'
+        )
+
+
+def test_no_upload_when_use_blob_unset(monkeypatch):
+    """USE_BLOB unset → side-write is a no-op (pipeline running locally)."""
+    monkeypatch.delenv('USE_BLOB', raising=False)
+    with patch('vercel_blob.put') as mock_put:
+        write_captain_snapshot(SAMPLE_CAPTAIN_PICKS, 42)
+        assert not mock_put.called, 'vercel_blob.put must NOT be called when USE_BLOB is unset'
+
+
+def test_no_upload_when_use_blob_false(monkeypatch):
+    """USE_BLOB=false → side-write is a no-op."""
+    monkeypatch.setenv('USE_BLOB', 'false')
+    with patch('vercel_blob.put') as mock_put:
+        write_captain_snapshot(SAMPLE_CAPTAIN_PICKS, 42)
+        assert not mock_put.called, 'vercel_blob.put must NOT be called when USE_BLOB=false'
+
+
+def test_idempotent_repeat_invocation(monkeypatch):
+    """Re-running the pipeline for the same GW must not raise; allowOverwrite=true is required."""
+    monkeypatch.setenv('USE_BLOB', 'true')
+    with patch('vercel_blob.put') as mock_put:
+        write_captain_snapshot(SAMPLE_CAPTAIN_PICKS, 42)
+        write_captain_snapshot(SAMPLE_CAPTAIN_PICKS, 42)
+        assert mock_put.call_count == 2
+        # Inspect the options dict (3rd positional) for allowOverwrite=True
+        for call in mock_put.call_args_list:
+            args = call.args
+            # vercel_blob.put(pathname, payload, options_dict) per pipeline/upload.py
+            assert len(args) >= 3, f'expected (pathname, payload, options), got {args!r}'
+            options = args[2]
+            assert isinstance(options, dict)
+            assert options.get('allowOverwrite') is True, (
+                f'allowOverwrite must be True for idempotent re-run; got options={options!r}'
+            )
