@@ -1,7 +1,8 @@
 ---
 phase: 94
 slug: rejection-explainer-enhancements
-status: draft
+status: approved
+reviewed_at: 2026-05-11
 shadcn_initialized: false
 preset: none
 created: 2026-05-11
@@ -45,11 +46,7 @@ Declared values (multiples of 4) — inherited from Phase 65 UI-SPEC unchanged:
 | 2xl | 48px | n/a | n/a this phase |
 | 3xl | 64px | n/a | n/a this phase |
 
-Explicit exceptions (carried from Phase 65):
-
-- `space-y-0.5` (2px) — reason list items in `<ul>` (matches existing `RejectionPanelInline` and `ExplainPanel.tsx` pattern)
-- `px-3` (12px) — expand row cell padding and callout container padding (matches existing `GemTable.tsx` expand row + `HighOwnershipCallout` `p-3`)
-- `py-1.5` — search input vertical padding (matches existing TransferPanel input pattern: `px-3 py-1.5`)
+No spacing exceptions. All values in Phase 94 use the standard set above.
 
 Source: `src/components/gem-table/GemTable.tsx` lines 306–388, `src/components/transfers/HighOwnershipCallout.tsx`, `src/components/transfers/TransferPanel.tsx` line 211.
 
@@ -93,6 +90,12 @@ Source: `src/app/globals.css`, `src/components/transfers/TransferPanel.tsx` line
 
 ---
 
+## Visuals
+
+Primary visual anchor: the "Why isn't a player recommended?" label in `font-medium` at the top of the search card.
+
+---
+
 ## Component Specifications
 
 ### WHY-01-A: TransferPanel — "Why isn't X recommended?" Search Field + Callout
@@ -114,14 +117,14 @@ Note: per CONTEXT.md D-08, the callout appears between the search field and the 
 
 **Search field container:**
 ```
-<div className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3">
+<div className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-4">
   <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
     Why isn't a player recommended?
   </label>
   <input
     type="text"
     placeholder="Search player name…"
-    className="border border-zinc-300 dark:border-zinc-600 rounded px-3 py-1.5 text-sm
+    className="border border-zinc-300 dark:border-zinc-600 rounded px-4 py-2 text-sm
                text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800
                focus:outline-none focus:ring-1 focus:ring-zinc-400 w-full"
   />
@@ -133,7 +136,7 @@ Note: per CONTEXT.md D-08, the callout appears between the search field and the 
 **Autocomplete dropdown:**
 - Renders only when query length >= 2 characters (debounce: 150ms — Claude's discretion)
 - Background: `bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded shadow-sm`
-- Each suggestion: `px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer`
+- Each suggestion: `px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer`
 - Match on `web_name` and full name; show `web_name` in list items
 - Maximum 6 suggestions visible (scroll if more)
 - Scope: all `scoredPlayers` passed as prop (full ~750 player list; no new fetch)
@@ -143,7 +146,7 @@ Note: per CONTEXT.md D-08, the callout appears between the search field and the 
 Renders between the search input and the OCS — reuses the `RejectionPanelInline` structure from Phase 65:
 
 ```
-<div className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 p-3 space-y-1">
+<div className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 p-4 space-y-1">
   <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
     ℹ️ Why isn't [web_name] recommended?
   </p>
@@ -153,7 +156,7 @@ Renders between the search input and the OCS — reuses the `RejectionPanelInlin
   </p>
   {/* reasons.length > 0 — rejection list */}
   <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Why not recommended:</p>
-  <ul className="space-y-0.5">
+  <ul className="space-y-1">
     <li className="text-xs text-zinc-600 dark:text-zinc-400">[reason line]</li>
   </ul>
 </div>
@@ -176,7 +179,7 @@ Dismiss button: `text-xs text-zinc-400 dark:text-zinc-500 cursor-pointer` matchi
   <input
     type="text"
     placeholder="Search player name…"
-    className="border border-zinc-300 dark:border-zinc-600 rounded px-2 py-1 text-xs
+    className="border border-zinc-300 dark:border-zinc-600 rounded px-4 py-2 text-xs
                text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800
                focus:outline-none focus:ring-1 focus:ring-zinc-400 w-full"
   />
@@ -306,7 +309,7 @@ Source: CONTEXT.md §Established Patterns; D-06.
 - Dismiss button: `aria-label="Dismiss explanation"` (× is not screen-reader safe without label)
 - Autocomplete dropdown: role `listbox` + `option` per ARIA combobox pattern, or `role="list"` + `role="listitem"` for simple list; builder chooses simpler pattern
 - All result text is plain text in `<p>` / `<li>` — screen-reader accessible without additional ARIA
-- Touch targets: search inputs exceed 44px height when combining `py-1.5` + `text-sm` line height; dismiss × button must be at minimum `24px × 24px` clickable area
+- Touch targets: search inputs exceed 44px height when combining `py-2` + `text-sm` line height; dismiss × button must be at minimum `24px × 24px` clickable area
 
 ---
 
