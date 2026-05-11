@@ -130,9 +130,11 @@ export async function GET(request: NextRequest) {
     const ceiling = snap?.ceiling ?? null
     const modelCeilingId = ceiling?.id ?? null
     const modelCeilingName = ceiling?.name ?? null
-    const modelCeilingPts = ceiling
-      ? Math.round((ceiling.xPts_1gw ?? 0) * 10) / 10
-      : null
+    // CR-01: xPts_1gw is a pre-GW prediction, not actual post-GW points.
+    // modelCeilingPts must be actual player points (raw, regret formula doubles it).
+    // Until the snapshot schema stores actual_pts, set to null so regret is null
+    // (SC-5 null semantics) rather than a misleading xPts-vs-actual comparison.
+    const modelCeilingPts: number | null = null
     const hasSnapshot = snap !== null && ceiling !== null
 
     // User side (from FPL picks — captain in the starting XI).
