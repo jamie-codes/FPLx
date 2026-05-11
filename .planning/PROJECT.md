@@ -4,6 +4,8 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
+v1.16 Phase 95 complete (2026-05-11) — SPQ-04: Set-piece delivery league table shipped. All 20 PL teams ranked by composite corner+FK danger score. `aggregateSetPieceLeague` pure aggregation library, `SetPieceLeagueTable` ranked table with Insufficient Data section, `SetPieceViewToggle` mobile-visible pill, toggle wired into `SetPieceTakerPanel`. 13 tests (TDD RED→GREEN).
+
 v1.15 started (2026-05-09) — Pipeline Intelligence: Data Health Dashboard (DH-01/02/03) and SPQ pipeline (SPQ-01/02), completing the two features deferred from v1.14.
 
 v1.14 partial (2026-05-09) — Phase 83 (GK save-point projections: Poisson-floor saves math, xPts 6th component, gate persistence, XPtsCell "Saves" row) and Phase 85 (SPQ UI: DeliveryQualityBadge Elite/Good/Weak tier in FK and Corner rows, sp_tier quartile logic in /api/set-pieces) shipped. Phases 82 (Data Health) and 84 (SPQ pipeline) deferred to v1.15.
