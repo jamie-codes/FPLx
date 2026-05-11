@@ -50,6 +50,17 @@ def test_uploads_to_blob_when_use_blob_true(monkeypatch):
         assert args[0] == 'captain_picks_gw42.json', (
             f'expected filename captain_picks_gw42.json, got {args[0]!r}'
         )
+        # WR-03: assert the payload contains the correct captain picks data.
+        # A future refactor that serialises the wrong dict would be caught here.
+        import json as _json
+        payload_bytes = args[1]
+        parsed = _json.loads(
+            payload_bytes.decode('utf-8') if isinstance(payload_bytes, bytes) else payload_bytes
+        )
+        assert parsed.get('gameweek') == 42, (
+            f'expected gameweek=42 in payload, got {parsed.get("gameweek")!r}'
+        )
+        assert 'ceiling' in parsed, 'payload must contain a "ceiling" key'
 
 
 def test_no_upload_when_use_blob_unset(monkeypatch):
