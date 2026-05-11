@@ -1,4 +1,5 @@
 import type { ScoredPlayer } from '@/lib/types'
+import type { LifecycleLabel } from '@/lib/lifecycle-label'
 import { computeFragility } from '@/lib/sensitivity'
 import { computePositionAverages } from '@/lib/recommend'
 
@@ -85,6 +86,10 @@ export function computeExplanations(player: ScoredPlayer): string[] {
 
 export const REJECTION_START_PROB_THRESHOLD = 0.70
 export const REJECTION_OWNERSHIP_THRESHOLD = 20.0
+// Phase 94 D-01: form-signal rejection threshold (matches FORM_NEGATIVE_THRESHOLD value but kept as a separate named constant per CONTEXT.md "separate-but-equal" intent).
+export const REJECTION_FORM_THRESHOLD = 3.0
+// Phase 94 D-02: price-trend rejection sentinel — cost_change_event < 0 means falling this GW.
+export const REJECTION_PRICE_FALLING = 0
 
 const POSITION_CODES: Record<number, string> = {
   1: 'GK',
@@ -115,6 +120,7 @@ export interface RejectionResult {
 export function computeRejection(
   player: ScoredPlayer,
   allPlayers: ScoredPlayer[],
+  lifecycleLabels: Map<number, LifecycleLabel>,  // Phase 94 D-05: 3rd required param; pass new Map() when squad context unavailable
 ): RejectionResult {
   // Step 1 (D-05): rank within position by xPts_1gw descending.
   const samePosition = allPlayers
@@ -151,8 +157,13 @@ export function computeRejection(
     reasons.push(`Rotation risk — start probability ${startPct}%`)
   }
 
-  // 3c. Fixture difficulty — hard fixtures only. Medium fixtures are handled by computeFragility
-  //     in step 3d ('harder fixture' reason), so restricting to hard here prevents double-reporting
+  // 3c. Form signal (Phase 94 D-01: after start_prob, before fixture).
+  if (player.form_pts_per90 < REJECTION_FORM_THRESHOLD) {
+    reasons.push(`Poor form — ${player.form_pts_per90.toFixed(1)} pts/90 last 5 GWs`)
+  }
+
+  // 3d. Fixture difficulty — hard fixtures only. Medium fixtures are handled by computeFragility
+  //     in step 3e ('harder fixture' reason), so restricting to hard here prevents double-reporting
   //     when difficulty_tier === 'medium' (WR-03).
   if (
     player.fixtures.length > 0 &&
@@ -161,16 +172,66 @@ export function computeRejection(
     reasons.push(`Difficult fixture (FDR hard)`)
   }
 
-  // 3d. Fragility flags (delegated — Don't Hand-Roll). Each fragility reason becomes
+  // 3e. Price trend (Phase 94 D-02: after fixture, before fragility).
+  if (player.cost_change_event < REJECTION_PRICE_FALLING) {
+    const tenths = player.cost_change_event  // e.g. -1 -> "-0.1m"
+    reasons.push(`Price falling this GW (${(tenths / 10).toFixed(1)}m)`)
+  }
+
+  // 3f. Fragility flags (delegated — Don't Hand-Roll). Each fragility reason becomes
   //     a "Fragile: no longer recommended if: <reason>" line.
   for (const r of fragilityReasons) {
     reasons.push(`Fragile: no longer recommended if: ${r}`)
   }
 
-  // 3e. Ownership context — ALWAYS last (parseFloat per Pitfall 2).
+  // 3g. Lifecycle label (Phase 94 D-04: after fragility, before ownership).
+  const lifecycle = lifecycleLabels.get(player.id)
+  if (lifecycle === 'sell') {
+    reasons.push(`Lifecycle: Sell — significantly below position average`)
+  } else if (lifecycle === 'sell_soon') {
+    reasons.push(`Lifecycle: Sell soon — approaching sell threshold`)
+  }
+
+  // 3h. Ownership context — ALWAYS last (parseFloat per Pitfall 2).
   const ownedRaw = parseFloat(player.selected_by_percent)
   const owned = !isNaN(ownedRaw) ? Math.round(ownedRaw) : 0
   reasons.push(`Owned by ${owned}% of managers`)
 
   return { reasons, xPtsRank }
+}
+
+/**
+ * Phase 94 WHY-01-B (SC-4): head-to-head comparison via COMPOSITION.
+ *
+ * Composes computeRejection(x) and computeRejection(y) and returns the rejection
+ * reason strings that Y has but X does not. Interpreted by callers as
+ * "X beats Y on these predicates" or equivalently "Y was penalised for these
+ * reasons that X was not."
+ *
+ * SC-4 mandate (ROADMAP §Phase 94): "the head-to-head explainer composes
+ * computeRejection(playerA) and computeRejection(playerB) outputs rather than
+ * duplicating predicate evaluation." This implementation MUST NOT duplicate any
+ * predicate logic from computeRejection — it strictly composes and diffs.
+ *
+ * Sources of truth:
+ *   - .planning/ROADMAP.md §Phase 94 SC-4
+ *   - .planning/phases/94-rejection-explainer-enhancements/94-CONTEXT.md §decisions D-11 D-12
+ *   - .planning/phases/94-rejection-explainer-enhancements/94-UI-SPEC.md §Copywriting Contract
+ *
+ * @param x  The "winning" player (the one whose row is expanded / the comparator's reference)
+ * @param y  The comparison player
+ * @param allPlayers  Population for xPts ranking inside computeRejection
+ * @param lifecycleLabels  Optional — pass empty Map when no squad context (D-05)
+ * @returns Y's rejection reasons that X does not share. Empty array when reason sets are identical (D-11 zero-predicate case).
+ */
+export function computeHeadToHead(
+  x: ScoredPlayer,
+  y: ScoredPlayer,
+  allPlayers: ScoredPlayer[],
+  lifecycleLabels?: Map<number, LifecycleLabel>,
+): string[] {
+  const labels = lifecycleLabels ?? new Map<number, LifecycleLabel>()
+  const xResult = computeRejection(x, allPlayers, labels)
+  const yResult = computeRejection(y, allPlayers, labels)
+  return yResult.reasons.filter(r => !xResult.reasons.includes(r))
 }
