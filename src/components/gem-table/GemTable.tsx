@@ -298,6 +298,10 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                 </tr>
                 {row.getIsExpanded() && (() => {
                   const rejection = computeRejection(row.original, scoredPlayers, new Map())
+                  // WR-02 fix: extract fragility once and reuse for both mobile and desktop rows,
+                  // eliminating duplicate computeFragility calls (computeRejection already calls it
+                  // internally; this avoids a second call per expanded row).
+                  const fragility = computeFragility(row.original, false)
                   const posCodeLabel = POSITION_CODES_LABEL[row.original.element_type] ?? '??'
                   return (
                     <>
@@ -359,10 +363,7 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                             enabled={newsFlagEnabled}
                           />
                           {/* Phase 93 SENS-01 (D-10): FragilityBadge after RowExpandNewsSection — viewing surface, isTransfer=false */}
-                          {(() => {
-                            const { tier, reasons } = computeFragility(row.original, false)
-                            return tier !== 'robust' ? <FragilityBadge tier={tier} reasons={reasons} /> : null
-                          })()}
+                          {fragility.tier !== 'robust' ? <FragilityBadge tier={fragility.tier} reasons={fragility.reasons} /> : null}
                           {/* Phase 94 WHY-01-B: head-to-head comparison search (D-10). State resets on row collapse.
                               Renders Y's rejection reasons that X does not share, per Plan 01 computeHeadToHead composition (SC-4). */}
                           <ComparisonSearch rowPlayer={row.original} allPlayers={scoredPlayers} />
@@ -384,10 +385,7 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                             enabled={newsFlagEnabled}
                           />
                           {/* Phase 93 SENS-01 (D-10): FragilityBadge after RowExpandNewsSection — viewing surface, isTransfer=false */}
-                          {(() => {
-                            const { tier, reasons } = computeFragility(row.original, false)
-                            return tier !== 'robust' ? <FragilityBadge tier={tier} reasons={reasons} /> : null
-                          })()}
+                          {fragility.tier !== 'robust' ? <FragilityBadge tier={fragility.tier} reasons={fragility.reasons} /> : null}
                           {/* Phase 94 WHY-01-B: head-to-head comparison search (D-10). State resets on row collapse.
                               Renders Y's rejection reasons that X does not share, per Plan 01 computeHeadToHead composition (SC-4). */}
                           <ComparisonSearch rowPlayer={row.original} allPlayers={scoredPlayers} />
