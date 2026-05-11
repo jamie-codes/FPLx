@@ -234,6 +234,13 @@ export function computeRejection(
  * @param allPlayers  Population for xPts ranking inside computeRejection
  * @param lifecycleLabels  Optional — pass empty Map when no squad context (D-05)
  * @returns Y's rejection reasons that X does not share. Empty array when reason sets are identical (D-11 zero-predicate case).
+ *
+ * Diff behaviour (WR-04): string-equality matching means identical reason strings cancel out.
+ * This is correct for tied predicates: if both X and Y share "Ranked #3 at MID by xPts" (same xPts
+ * rank), neither player "beats" the other on rank — so the string cancels out and the rank predicate
+ * is correctly absent from the diff. Ties produce no diff entry, not a false "X wins" signal.
+ * The edge case of two DIFFERENT predicates accidentally producing identical strings is rare given
+ * that most reason strings embed parameterised values (e.g. "2.5 pts/90", "65%").
  */
 export function computeHeadToHead(
   x: ScoredPlayer,
