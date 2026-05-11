@@ -57,18 +57,23 @@ export function PlayerSearchInput(props: PlayerSearchInputProps) {
         value={query}
         onChange={e => { setQuery(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
-        onBlur={() => { setTimeout(() => setOpen(false), 100) }}
+        onBlur={() => setOpen(false)}
         aria-label={ariaLabel}
         className={`w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-400 ${inputClassName ?? 'text-sm'}`}
         style={{ fontSize: '16px' }}
       />
       {open && suggestions.length > 0 && (
-        <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900 shadow-sm">
+        // onMouseDown preventDefault prevents the input from losing focus when clicking
+        // within the dropdown, eliminating the blur/click race without an arbitrary setTimeout.
+        <div
+          className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900 shadow-sm"
+          onMouseDown={e => e.preventDefault()}
+        >
           {suggestions.map(p => (
             <button
               type="button"
               key={p.id}
-              onMouseDown={() => { onSelect(p); setQuery(p.web_name); setOpen(false) }}
+              onClick={() => { onSelect(p); setQuery(p.web_name); setOpen(false) }}
               className="w-full text-left px-3 py-2 flex items-center justify-between gap-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
             >
               <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate">{p.web_name}</span>
