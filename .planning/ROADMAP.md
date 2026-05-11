@@ -940,7 +940,7 @@ Plans:
 - [x] **Phase 91: Calibration Charts** — AccuracyTab predicted-xPts-decile vs actuals over last 5 GWs with per-position breakdown; recharts (already installed) (CAL-01) (completed 2026-05-10)
 - [x] **Phase 92: Cron History Sparkline** — extend `data_health.json` with rolling `history` (last 7 runs); render `DataHealthSparkline` recharts `<LineChart>` inside existing `DataHealthPanel`; zero new API routes/hooks (DH-04) (completed 2026-05-10)
 - [x] **Phase 93: Sensitivity Analysis Enhancements** *(complete 2026-05-10)* — extend Phase 64 fragility engine with 5 perturbations (start_prob -0.15, mins_60 -0.10, fixture +1 tier, cost +0.5m, news flip to "doubt"); ROBUST / FRAGILE (1 reverses) / KNIFE EDGE (2+ reverse); GemTable + TransferPanel (SENS-01)
-- [ ] **Phase 94: Rejection Explainer Enhancements** — extend Phase 65 explainer with deterministic gate-cascade (≥6 predicates); search field entry point in TransferPanel ("Why isn't X recommended?") + head-to-head mode in GemTable expand ("Why is X ranked above Y?") (WHY-01)
+- [x] **Phase 94: Rejection Explainer Enhancements** — extend Phase 65 explainer with deterministic gate-cascade (≥6 predicates); search field entry point in TransferPanel ("Why isn't X recommended?") + head-to-head mode in GemTable expand ("Why is X ranked above Y?") (WHY-01) (completed 2026-05-11)
 - [ ] **Phase 95: Set-Piece Delivery League Table** — all 20 PL teams ranked by composite delivery-quality score, toggle within Set Pieces tab, separate insufficient-sample section; client-side aggregation in `src/lib/setPieceLeague.ts`; zero pipeline changes (SPQ-04)
 - [ ] **Phase 96: Captain Decision Backtester** — pipeline saves `captain_picks_gw{N}.json` per run; `/api/decision-history` + `useDecisionHistory`; new "Back" sub-tab in Accuracy section; GW-by-GW captain regret vs snapshotted recommendation; authenticated FPL API for actual captain; localStorage ring buffer last 38 GWs (BACK-01)
 
@@ -1098,19 +1098,20 @@ Plans:
   3. The deterministic gate-cascade evaluates ≥6 predicates in a fixed order so the same input always produces the same explanation — covered by a Vitest case asserting two consecutive calls with identical inputs return character-equal output strings
   4. Both new entry points reuse the existing `computeRejection` engine (no parallel rejection logic) — a Vitest case asserts the head-to-head explainer composes `computeRejection(playerA)` and `computeRejection(playerB)` outputs rather than duplicating predicate evaluation
   5. Both new surfaces degrade gracefully when squad data is unavailable (unauthenticated user) — the search field still works for any player without ownership-of-squad context, and the head-to-head still works for any two players without squad context; the WHY-02 high-ownership callout from Phase 65 is unchanged
-**Plans**: 4 plans (3 waves)
-  **Wave 0**
-  - [ ] 094-01-PLAN.md — RED: `src/lib/explain.test.ts` extended with head-to-head test cases (8 cases: predicate-order determinism, identical-input idempotence, head-to-head composition, no-squad-context graceful, ≥6 predicates surfaced, name-autocomplete shape contract); `WhyNotSearchField.test.tsx` (4 RED cases); `HeadToHeadCallout.test.tsx` (5 RED cases)
-  **Wave 1** *(parallel — file-disjoint)*
-  - [ ] 094-02-PLAN.md — Engine extension: `computeHeadToHead(playerA, playerB)` in `src/lib/explain.ts` composing `computeRejection` outputs and emitting an ordered comparison string; predicate ordering constant extracted for stability; reasons-fragment vocabulary preserved from Phase 65
-  - [ ] 094-03-PLAN.md — `WhyNotSearchField.tsx` (TransferPanel section header injection; autocomplete over `usePlayers()` data; selected-player callout reusing `ExplainPanel.rejectionReasons` shape) + `HeadToHeadCallout.tsx` (GemTable row-expand "Compare with…" button + secondary-player picker); RTL tests
-  **Wave 2** *(blocked on Wave 1 completion)*
-  - [ ] 094-04-PLAN.md — Wire-up: TransferPanel search-field placement above candidate list (Row 0 injection); GemTable row-expand "Compare with…" button injection alongside existing rejection panel; manual UAT covering both entry points and at least one head-to-head between an owned and unowned player
+**Plans**: 3 plans (3 waves)
+  **Wave 1**
+  - [x] 94-01-PLAN.md — TDD engine extension: extend `computeRejection` in `src/lib/explain.ts` to 8 predicates (form D-01, price D-02, lifecycle D-04 added) + add 3rd required param `lifecycleLabels: Map<number, LifecycleLabel>` (D-05) + add new pure helper `computeHeadToHead(x, y, lifecycleLabels?)` (D-11/D-12 winning-only deltas); rewrite all 14 existing tests to pass `new Map()` as 3rd arg + add 8 new tests covering new predicates, 8-predicate determinism (SC-3), and h2h zero-predicate case; update GemTable.tsx call site at line ~299 to pass `new Map()` (D-05 — no squad context in GemTable)
+  **Wave 2** *(blocked on Wave 1)*
+  - [x] 94-02-PLAN.md — WHY-01-A entry point: build shared `PlayerSearchInput` component (`src/components/shared/PlayerSearchInput.tsx` — debounced autocomplete, dropdown, iOS-zoom guard) + `RejectionSearchCallout` (`src/components/transfers/RejectionSearchCallout.tsx` — search field + computeRejection callout) + mount in TransferPanel ABOVE the squadData guard so the search is always visible (D-07/D-08); manual UAT checkpoint
+  **Wave 3** *(blocked on Wave 2 — needs PlayerSearchInput)*
+  - [x] 94-03-PLAN.md — WHY-01-B entry point: build `ComparisonSearch` (`src/components/gem-table/ComparisonSearch.tsx` — row-scoped state, computeHeadToHead narrative output, self-exclusion from autocomplete) + mount in BOTH desktop and mobile expand-row IIFEs of GemTable.tsx after the FragilityBadge (D-10); manual UAT checkpoint
   **Cross-cutting constraints:**
-  - `computeRejection` MUST remain unchanged — Phase 65 callsites continue to work; new functionality is additive via `computeHeadToHead`
-  - Predicate evaluation order is fixed and named (e.g. `PREDICATE_ORDER = ['rank', 'rotation', 'fixture', 'form', 'price', 'lifecycle']`) so the explainer output is deterministic across runs
-  - Search field uses `usePlayers()` data — the existing single source of truth (query key `['players']`) — no new fetch
-  - Both new surfaces honour the WHY-02 callout from Phase 65 — no overlap, no duplicate text for the same player
+  - `computeRejection` signature changes by design — gains required 3rd param `lifecycleLabels: Map<number, LifecycleLabel>` per D-05; all call sites (GemTable line ~299 and the two new components) updated atomically in Wave 1 to prevent transient broken builds (RESEARCH §Pitfall 1)
+  - 8-predicate cascade order is fixed: rank → start_prob → form → fixture → price → fragility → lifecycle → ownership (D-06); SC-3 determinism test in rejection.test.ts asserts the full 8-position order via `findIndex` chain
+  - Both new surfaces use `scoredPlayers` from `usePlayers()` — the existing single source of truth — no new fetch (D-09)
+  - WHY-02 (HighOwnershipCallout) from Phase 65 is unchanged and remains inside the squadData guard; the new RejectionSearchCallout renders OUTSIDE the squadData guard so it works pre-squad-load
+  - GemTable's ComparisonSearch intentionally does NOT pass lifecycleLabels — there is no clubFormMap/squadData in GemTable, so lifecycle deltas are silent in the head-to-head (acceptable per RESEARCH §Open Q2)
+  - Shared `PlayerSearchInput` is consumed by both new entry points (avoids duplicating the debounce + filter + dropdown logic) — Plan 03 depends on Plan 02 because Plan 02 creates this file
 **Phase notes**: This is an enhancement of the v1.10 Phase 65 rejection explainer, NOT a replacement. WHY-02 (>20% ownership callout) and WHY-03 (squad-row rejection per-player) from Phase 65 are unchanged. The two new entry points are intentionally additive — the existing GemTable row-expand explanation surface stays in place; the new "Compare with…" button is a sibling action, not a replacement. The ≥6 predicate floor is a quality bar — the engine MUST surface at least six distinct gate predicates (not six instances of the same one) so the explanation feels comprehensive rather than narrow. Independent of Phase 93 — they share the "explain" domain but neither depends on the other.
 **UI hint**: yes
 
@@ -1225,6 +1226,6 @@ Plans:
 | 91 | v1.16 | 4/4 | Complete    | 2026-05-10 |
 | 92 | v1.16 | 0/2 | Not started | - |
 | 93 | v1.16 | 0/4 | Not started | - |
-| 94 | v1.16 | 0/4 | Not started | - |
+| 94 | v1.16 | 3/3 | Complete    | 2026-05-11 |
 | 95 | v1.16 | 0/2 | Not started | - |
 | 96 | v1.16 | 0/4 | Not started | - |
