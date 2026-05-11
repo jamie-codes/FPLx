@@ -58,7 +58,7 @@ completed: 2026-05-11
 - **Duration:** ~15 min
 - **Started:** 2026-05-11T08:45:00Z
 - **Completed:** 2026-05-11T08:50:30Z
-- **Tasks:** 2 (plus checkpoint Task 3 — awaiting UAT)
+- **Tasks:** 3 (Tasks 1-2 auto, Task 3 manual UAT checkpoint — APPROVED)
 - **Files modified:** 3
 
 ## Accomplishments
@@ -72,7 +72,7 @@ completed: 2026-05-11
 
 1. **Task 1: PlayerSearchInput** - `7a5ccca` (feat)
 2. **Task 2: RejectionSearchCallout + TransferPanel mount** - `93cf4fb` (feat)
-3. **Task 3: Manual UAT checkpoint** — AWAITING USER VERIFICATION
+3. **Task 3: Manual UAT checkpoint** — APPROVED (all 7 steps passed)
 
 ## Files Created/Modified
 
@@ -117,19 +117,20 @@ Pre-existing test failures (16 tests in MobileNav.test.tsx, captain-picks.test.t
 
 ## Manual UAT Outcome
 
-AWAITING — Task 3 is a `checkpoint:human-verify` gate. User must:
-1. Visit Transfers tab without squad — verify ℹ️ search card visible above all other content
-2. Type "sal" — verify dropdown with ≤6 matches (web_name + team)
-3. Select player — verify callout with rejection reasons or positive framing
-4. Click × — verify callout clears, search remains
-5. Load squad — verify lifecycle reasons appear for sell/sell_soon players
-6. Confirm OCS table below never disappears
+APPROVED — User confirmed all 7 verification steps passed:
+1. Transfers tab without squad — ℹ️ search card visible above all other content
+2. Typed "sal" — dropdown showed up to 6 matches (web_name + team short name)
+3. Selected player — callout displayed rejection reasons or positive framing
+4. Clicked × — callout cleared, search field remained
+5. Loaded squad — lifecycle reasons appeared for sell/sell_soon players
+6. OCS table below never disappeared or moved during any state change
+7. Confirmed OCS always visible regardless of callout selection state
 
 ## Next Phase Readiness
 
 - `PlayerSearchInput` at `@/components/shared/PlayerSearchInput` is ready for Plan 03 (ComparisonSearch in GemTable row-expand)
 - `PlayerSearchInputProps` interface documented above for Plan 03 consumption
-- WHY-01-A entry point complete pending UAT approval
+- WHY-01-A entry point complete — UAT approved
 
 ## Known Stubs
 
