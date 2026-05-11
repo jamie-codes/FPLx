@@ -3,32 +3,32 @@ gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: Modelling & Trust
 status: executing
-stopped_at: Phase 93 complete
-last_updated: "2026-05-10T21:40:00.000Z"
-last_activity: 2026-05-10 -- Phase 93 execution complete
+stopped_at: Phase 95 planned — 2 plans ready (095-01 Wave 0 RED, 095-02 Wave 1 implementation)
+last_updated: "2026-05-11T11:13:59.498Z"
+last_activity: 2026-05-11 -- Phase 95 execution started
 progress:
   total_phases: 9
-  completed_phases: 5
-  total_plans: 17
-  completed_plans: 13
-  percent: 76
+  completed_phases: 7
+  total_plans: 22
+  completed_plans: 20
+  percent: 91
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-09 — v1.16 milestone started)
+See: .planning/PROJECT.md (updated 2026-05-11 — Phase 93 complete)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 93 — sensitivity-analysis-enhancements
+**Current focus:** Phase 95 — set-piece-delivery-league-table
 
 ## Current Position
 
-Phase: 93
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-10 -- Phase 93 planning complete
+Phase: 95 (set-piece-delivery-league-table) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 95
+Last activity: 2026-05-11 -- Phase 95 execution started
 
 ## Performance Metrics
 
@@ -101,6 +101,6 @@ Items carried from v1.9:
 
 ## Session Continuity
 
-Last session: 2026-05-10T17:53:07.609Z
-Stopped at: Phase 93 UI-SPEC approved
-Resume file: .planning/phases/93-sensitivity-analysis-enhancements/93-UI-SPEC.md
+Last session: 2026-05-11T10:00:00.000Z
+Stopped at: Phase 95 planned — 2 plans ready (095-01 Wave 0 RED, 095-02 Wave 1 implementation)
+Resume file: .planning/phases/95-set-piece-delivery-league-table/095-02-PLAN.md

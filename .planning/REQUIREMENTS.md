@@ -16,7 +16,7 @@
 ### Sensitivity & Explainability
 
 - [ ] **SENS-01** Per-player fragility badge — 5 perturbations (start_prob −0.15, mins_60 −0.10, fixture +1 tier, cost +0.5m, news flip to "doubt"); ROBUST (nothing reverses ranking) / FRAGILE (1 perturbation reverses) / KNIFE EDGE (2+ reverse); rendered in GemTable and TransferPanel; pure TypeScript, no pipeline changes
-- [ ] **WHY-01** Rejection explainer — deterministic gate-cascade (≥6 predicates: ownership %, fixture tier, form signal, start_prob, price trend, lifecycle label) explains why the engine ranked a player low; two entry points: search field in TransferPanel ("Why isn't X recommended?") and head-to-head in GemTable expand ("Why is X ranked above Y?")
+- [x] **WHY-01** Rejection explainer — deterministic gate-cascade (≥6 predicates: ownership %, fixture tier, form signal, start_prob, price trend, lifecycle label) explains why the engine ranked a player low; two entry points: search field in TransferPanel ("Why isn't X recommended?") and head-to-head in GemTable expand ("Why is X ranked above Y?")
 
 ### Pipeline
 
