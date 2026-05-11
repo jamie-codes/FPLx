@@ -341,6 +341,11 @@ def run(dry_run: bool = False):
             upload_json(f'predictions_snapshot_gw{current_gw}.json', snapshot_data)
             print(f"Predictions snapshot uploaded to Blob: predictions_snapshot_gw{current_gw}.json")
 
+        # Phase 96 BACK-01: per-GW captain snapshot side-write — decision evidence
+        # that cannot drift retrospectively. captain_picks is in scope from line 213.
+        from captain_snapshots import write_captain_snapshot
+        write_captain_snapshot(captain_picks, current_gw)
+
         # Phase 67 NLP-01/NLP-02 — LLM prose summary (Claude call; guardrail-protected).
         # Pitfall 8: a Claude failure must NOT poison the rest of the pipeline.
         print("Generating weekly prose summary...")
