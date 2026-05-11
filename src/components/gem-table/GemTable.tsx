@@ -296,7 +296,7 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                   ))}
                 </tr>
                 {row.getIsExpanded() && (() => {
-                  const rejection = computeRejection(row.original, scoredPlayers)
+                  const rejection = computeRejection(row.original, scoredPlayers, new Map())
                   const posCodeLabel = POSITION_CODES_LABEL[row.original.element_type] ?? '??'
                   return (
                     <>
