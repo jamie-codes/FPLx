@@ -27,6 +27,7 @@ import { LandscapeTip } from '@/components/set-pieces/LandscapeTip'
 import { computeRejection } from '@/lib/explain'
 import { computeFragility } from '@/lib/sensitivity'
 import { FragilityBadge } from '@/components/shared/FragilityBadge'
+import { ComparisonSearch } from '@/components/gem-table/ComparisonSearch'
 
 // Phase 65 WHY-01: position-code label for adaptive-framing rejection-panel rendering.
 const POSITION_CODES_LABEL: Record<number, string> = {
@@ -362,6 +363,9 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                             const { tier, reasons } = computeFragility(row.original, false)
                             return tier !== 'robust' ? <FragilityBadge tier={tier} reasons={reasons} /> : null
                           })()}
+                          {/* Phase 94 WHY-01-B: head-to-head comparison search (D-10). State resets on row collapse.
+                              Renders Y's rejection reasons that X does not share, per Plan 01 computeHeadToHead composition (SC-4). */}
+                          <ComparisonSearch rowPlayer={row.original} allPlayers={scoredPlayers} />
                         </td>
                       </tr>
                       {/* NEW desktop expand row — rejection panel ONLY (D-02 + Pitfall 5: hidden sm:table-row) */}
@@ -384,6 +388,9 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                             const { tier, reasons } = computeFragility(row.original, false)
                             return tier !== 'robust' ? <FragilityBadge tier={tier} reasons={reasons} /> : null
                           })()}
+                          {/* Phase 94 WHY-01-B: head-to-head comparison search (D-10). State resets on row collapse.
+                              Renders Y's rejection reasons that X does not share, per Plan 01 computeHeadToHead composition (SC-4). */}
+                          <ComparisonSearch rowPlayer={row.original} allPlayers={scoredPlayers} />
                         </td>
                       </tr>
                     </>
