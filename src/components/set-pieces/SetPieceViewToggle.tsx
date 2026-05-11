@@ -22,6 +22,7 @@ export function SetPieceViewToggle({ view, onViewChange }: SetPieceViewTogglePro
       {(['takers', 'league'] as const).map((v) => (
         <button
           key={v}
+          type="button"
           onClick={() => onViewChange(v)}
           aria-pressed={view === v}
           className={`px-3 py-2 sm:py-1 text-sm font-medium transition-all cursor-pointer active:scale-95 min-h-[44px] sm:min-h-0 ${
