@@ -28,7 +28,9 @@ export function computeRegret(
   userCaptPts: number | null,
 ): number | null {
   if (ceilingPts === null || userCaptPts === null) return null
-  return ceilingPts * 2 - userCaptPts * 2
+  // WR-01: round to 1dp to eliminate binary float representation noise
+  // (e.g. 8.2*2 - 6.0*2 = 4.399999999999999 without rounding).
+  return Math.round((ceilingPts * 2 - userCaptPts * 2) * 10) / 10
 }
 
 /** Aggregate season totals derived from a RegretEntry list. Null regret entries are skipped. */
