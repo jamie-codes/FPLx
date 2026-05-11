@@ -272,7 +272,7 @@ export default function Home() {
         )}
         {activeSection !== 'squad' && activeSubTab === 'set-pieces' && <SetPieceTakerPanel />}
         {activeSection !== 'squad' && activeSubTab === 'insights' && <InsightsTab />}
-        {activeSection !== 'squad' && activeSubTab === 'accuracy' && <AccuracyTab />}
+        {activeSection !== 'squad' && activeSubTab === 'accuracy' && <AccuracyTab teamId={submittedId} />}
         {activeSection !== 'squad' && activeSubTab === 'price-changes' && <PriceChangePanel />}
         {activeSection !== 'squad' && activeSubTab === 'fixture-heat-map' && <FixtureHeatMap submittedId={submittedId} />}
         {activeSection !== 'squad' && activeSubTab === 'value-gems' && <ValueGemsTable />}

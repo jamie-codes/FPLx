@@ -27,6 +27,9 @@ import {
 } from 'recharts'
 import type { TooltipContentProps } from 'recharts'
 
+// Phase 96 BACK-01 — captain regret sub-tab.
+import { BackTab } from './BackTab'
+
 // Tier thresholds + colour classes — reused verbatim from InsightsTab (TIER_CLASSES locked by 33-UI-SPEC).
 const TIER_CLASSES = {
   HIGH:   'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
@@ -34,6 +37,46 @@ const TIER_CLASSES = {
   LOW:    'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
 } as const
 type Tier = keyof typeof TIER_CLASSES
+
+// Phase 96 BACK-01 — sub-tab nav inside AccuracyTab (D-01, D-02, D-03, D-04).
+type AccuracySubTab = 'summary' | 'calibration' | 'back'
+const ACCURACY_SUB_TABS: ReadonlyArray<{ value: AccuracySubTab; label: string }> = [
+  { value: 'summary', label: 'Summary' },
+  { value: 'calibration', label: 'Calibration' },
+  { value: 'back', label: 'Back' },
+]
+
+function AccuracySubTabNav({
+  value,
+  onChange,
+}: {
+  value: AccuracySubTab
+  onChange: (v: AccuracySubTab) => void
+}) {
+  return (
+    <div
+      role="group"
+      aria-label="Accuracy section"
+      className="flex rounded overflow-hidden border border-zinc-300 dark:border-zinc-600"
+    >
+      {ACCURACY_SUB_TABS.map(({ value: v, label }) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => onChange(v)}
+          aria-pressed={value === v}
+          className={`px-3 py-2 sm:py-1 text-sm font-medium transition-all cursor-pointer active:scale-95 min-h-[44px] sm:min-h-0 ${
+            value === v
+              ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
+              : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+}
 
 function getHitRateTier(rate: number): Tier {
   if (rate >= 0.50) return 'HIGH'
@@ -992,8 +1035,10 @@ function DataHealthPanel() {
   )
 }
 
-export function AccuracyTab() {
+export function AccuracyTab({ teamId = null }: { teamId?: string | null }) {
   const { data, isLoading, error } = useAccuracy()
+  // Phase 96 BACK-01 — D-04: tab state lives in component-local useState; resets to 'summary' on re-mount.
+  const [subTab, setSubTab] = useState<AccuracySubTab>('summary')
 
   // DH-02 D-10/D-11: panel always renders, regardless of useAccuracy state.
   const panel = <DataHealthPanel />
@@ -1002,6 +1047,7 @@ export function AccuracyTab() {
     return (
       <section className="mt-6 space-y-8" aria-label="Projection accuracy">
         {panel}
+        <AccuracySubTabNav value={subTab} onChange={setSubTab} />
         <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">
           Loading accuracy data…
         </p>
@@ -1013,6 +1059,7 @@ export function AccuracyTab() {
     return (
       <section className="mt-6 space-y-8" aria-label="Projection accuracy">
         {panel}
+        <AccuracySubTabNav value={subTab} onChange={setSubTab} />
         <p className="text-sm text-red-600 dark:text-red-400 py-4">
           Failed to load accuracy data. Run the pipeline and refresh.
         </p>
@@ -1024,6 +1071,7 @@ export function AccuracyTab() {
     return (
       <section className="mt-6 space-y-8" aria-label="Projection accuracy">
         {panel}
+        <AccuracySubTabNav value={subTab} onChange={setSubTab} />
         <h2 className="text-lg font-semibold">No accuracy data yet</h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Run the pipeline to generate backtest data.
@@ -1035,11 +1083,21 @@ export function AccuracyTab() {
   return (
     <section className="mt-6 space-y-8" aria-label="Projection accuracy">
       {panel}
-      {data.versions && data.versions.length >= 1 && <VersionHistoryTable data={data} />}
-      {data.calibration && <CalibrationSection data={data} />}
-      <GwSummaryTable data={data} />
-      <HaulterList data={data} />
-      <PlayerDeltaTable data={data} />
+      <AccuracySubTabNav value={subTab} onChange={setSubTab} />
+      {subTab === 'summary' && (
+        <>
+          <GwSummaryTable data={data} />
+          <HaulterList data={data} />
+          <PlayerDeltaTable data={data} />
+        </>
+      )}
+      {subTab === 'calibration' && (
+        <>
+          {data.versions && data.versions.length >= 1 && <VersionHistoryTable data={data} />}
+          {data.calibration && <CalibrationSection data={data} />}
+        </>
+      )}
+      {subTab === 'back' && <BackTab teamId={teamId} />}
     </section>
   )
 }

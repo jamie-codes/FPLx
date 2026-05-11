@@ -292,7 +292,9 @@ describe('Phase 63: VersionHistoryTable + CalibrationSection', () => {
 
   it('VER-02: VersionHistoryTable renders heading and one row per version when data.versions present', () => {
     mockedUseAccuracy.mockReturnValue({ data: fixtureWithVersionsAndCalibration, isLoading: false, error: null } as never)
-    const { getByText } = render(<AccuracyTab />)
+    const { getByText, container } = render(<AccuracyTab />)
+    // Phase 96: content moved to Calibration sub-tab — click it first.
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(2)') as HTMLElement)
     const heading = getByText('Model Version History')
     expect(heading).toBeTruthy()
     const table = heading.parentElement?.querySelector('table')
@@ -307,7 +309,9 @@ describe('Phase 63: VersionHistoryTable + CalibrationSection', () => {
 
   it('VER-02: first version row delta is em-dash; second row delta is +4.0 percentage points', () => {
     mockedUseAccuracy.mockReturnValue({ data: fixtureWithVersionsAndCalibration, isLoading: false, error: null } as never)
-    const { getByText } = render(<AccuracyTab />)
+    const { getByText, container } = render(<AccuracyTab />)
+    // Phase 96: content moved to Calibration sub-tab — click it first.
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(2)') as HTMLElement)
     const heading = getByText('Model Version History')
     const tbody = heading.parentElement?.querySelector('tbody')
     expect(tbody).toBeTruthy()
@@ -321,6 +325,8 @@ describe('Phase 63: VersionHistoryTable + CalibrationSection', () => {
   it('CAL-01: CalibrationSection renders heading, X-axis label, and chart container when data.calibration present', () => {
     mockedUseAccuracy.mockReturnValue({ data: fixtureWithVersionsAndCalibration, isLoading: false, error: null } as never)
     const { getAllByText, container } = render(<AccuracyTab />)
+    // Phase 96: content moved to Calibration sub-tab — click it first.
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(2)') as HTMLElement)
     // getByText('Calibration Reliability') is unique — use directly
     expect(container.querySelector('[data-testid="calibration-chart"]')).toBeTruthy()
     // "Actual haul rate" only appears in the haul-rate chart legend
@@ -334,6 +340,8 @@ describe('Phase 63: VersionHistoryTable + CalibrationSection', () => {
   it('CAL-02: PositionTabSelector renders 5 pills (All/GK/DEF/MID/FWD) with All active by default', () => {
     mockedUseAccuracy.mockReturnValue({ data: fixtureWithVersionsAndCalibration, isLoading: false, error: null } as never)
     const { container } = render(<AccuracyTab />)
+    // Phase 96: content moved to Calibration sub-tab — click it first.
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(2)') as HTMLElement)
     const tablist = container.querySelector('[role="tablist"][aria-label="Calibration position filter"]')
     expect(tablist).toBeTruthy()
     const tabs = tablist!.querySelectorAll('[role="tab"]')
@@ -353,6 +361,8 @@ describe('Phase 63: VersionHistoryTable + CalibrationSection', () => {
   it('CAL-01: Insufficient-sample overlay renders when active position has zero usable buckets', () => {
     mockedUseAccuracy.mockReturnValue({ data: fixtureWithVersionsAndCalibration, isLoading: false, error: null } as never)
     const { container, getAllByText } = render(<AccuracyTab />)
+    // Phase 96: content moved to Calibration sub-tab — click it first.
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(2)') as HTMLElement)
     // Switch to GK pill — fixture has by_position['1'] === [] (zero buckets)
     const tablist = container.querySelector('[role="tablist"][aria-label="Calibration position filter"]')
     const gkTab = tablist!.querySelectorAll('[role="tab"]')[1] as HTMLButtonElement
@@ -383,12 +393,16 @@ describe('Phase 91 CAL-01: xPts-mean calibration chart', () => {
   it('Phase 91 CAL-01: xPts chart container renders when calibration has predicted_mean fields', () => {
     mockedUseAccuracy.mockReturnValue({ data: fixtureWithXptsMeans, isLoading: false, error: null } as never)
     const { container } = render(<AccuracyTab />)
+    // Phase 96: content moved to Calibration sub-tab — click it first.
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(2)') as HTMLElement)
     expect(container.querySelector('[data-testid="calibration-xpts-chart"]')).toBeTruthy()
   })
 
   it('Phase 91 CAL-01: xPts chart filters legacy buckets missing predicted_mean (Pitfall 5)', () => {
     mockedUseAccuracy.mockReturnValue({ data: fixtureWithXptsMeans, isLoading: false, error: null } as never)
     const { container, queryAllByText } = render(<AccuracyTab />)
+    // Phase 96: content moved to Calibration sub-tab — click it first.
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(2)') as HTMLElement)
     const xptsChart = container.querySelector('[data-testid="calibration-xpts-chart"]') as HTMLElement
     expect(xptsChart).toBeTruthy()
     // jsdom does not render recharts SVG circle dots (layout-dependent elements require a real browser).
@@ -410,13 +424,17 @@ describe('Phase 91 CAL-01: xPts-mean calibration chart', () => {
 
   it('Phase 91 CAL-01: xPts chart heading reads "Predicted vs Actual xPts"', () => {
     mockedUseAccuracy.mockReturnValue({ data: fixtureWithXptsMeans, isLoading: false, error: null } as never)
-    const { getByText } = render(<AccuracyTab />)
+    const { getByText, container } = render(<AccuracyTab />)
+    // Phase 96: content moved to Calibration sub-tab — click it first.
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(2)') as HTMLElement)
     expect(getByText('Predicted vs Actual xPts')).toBeTruthy()
   })
 
   it('Phase 91 CAL-01: single PositionTabSelector drives both haul-rate and xPts charts (D-02)', () => {
     mockedUseAccuracy.mockReturnValue({ data: fixtureWithXptsMeans, isLoading: false, error: null } as never)
     const { container } = render(<AccuracyTab />)
+    // Phase 96: content moved to Calibration sub-tab — click it first.
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(2)') as HTMLElement)
 
     // EXACTLY ONE tablist (selector is shared, not duplicated)
     const tablists = container.querySelectorAll('[role="tablist"][aria-label="Calibration position filter"]')
@@ -435,6 +453,8 @@ describe('Phase 91 CAL-01: xPts-mean calibration chart', () => {
   it('Phase 91 CAL-01: xPts chart shows empty-state overlay when active position has no usable buckets', () => {
     mockedUseAccuracy.mockReturnValue({ data: fixtureWithXptsMeans, isLoading: false, error: null } as never)
     const { container, getAllByText } = render(<AccuracyTab />)
+    // Phase 96: content moved to Calibration sub-tab — click it first.
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(2)') as HTMLElement)
 
     // Switch to GK (empty bucket list for '1')
     const tablist = container.querySelector('[role="tablist"][aria-label="Calibration position filter"]')!
