@@ -1,12 +1,15 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useSetPieces } from '@/lib/hooks/useSetPieces'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import type { SetPieceTaker, SetPieceTeam } from '@/lib/types'
 import { SetPieceChangeAlert } from './SetPieceChangeAlert'
 import { RotationRiskBadge } from '@/components/shared/RotationRiskBadge'
 import { useTeamBadge } from '@/lib/hooks/useTeamBadge'
+import { SetPieceViewToggle } from './SetPieceViewToggle'
+import type { SetPieceView } from './SetPieceViewToggle'
+import { SetPieceLeagueTable } from './SetPieceLeagueTable'
 
 // SPQ-03 (Phase 85 D-05): tier colour map for delivery-quality badges. Defined locally \u2014
 // NOT shared with TIER_CLASSES in AccuracyTab (different tier names and colour assignments).
@@ -105,6 +108,7 @@ function SetPieceTakerCard({
 export function SetPieceTakerPanel() {
   const { data, isLoading, error } = useSetPieces()
   const { data: playersData } = usePlayers()
+  const [view, setView] = useState<SetPieceView>('takers')
 
   // Phase 80 GWI-01 (D-04, D-16): derive team-level rotation risk by aggregating
   // any-player-on-this-team-flagged. Players with rotation_risk=true imply the
@@ -127,6 +131,7 @@ export function SetPieceTakerPanel() {
           Penalty, direct free kick, and corner takers per Premier League team. Sourced from FPL bootstrap-static.
         </p>
       </div>
+      <SetPieceViewToggle view={view} onViewChange={setView} />
 
       {isLoading && (
         <p className="text-zinc-500 dark:text-zinc-400 text-center py-8">Loading set-piece data...</p>
@@ -149,16 +154,20 @@ export function SetPieceTakerPanel() {
 
       {data && data.teams.length > 0 && (
         <>
-          <SetPieceChangeAlert changeCount={data.change_count} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {data.teams.map((team) => (
-              <SetPieceTakerCard
-                key={team.team_id}
-                team={team}
-                rotationRisk={rotationRiskByTeam[team.team_id] ?? false}
-              />
-            ))}
-          </div>
+          {view === 'takers' && <SetPieceChangeAlert changeCount={data.change_count} />}
+          {view === 'takers' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {data.teams.map((team) => (
+                <SetPieceTakerCard
+                  key={team.team_id}
+                  team={team}
+                  rotationRisk={rotationRiskByTeam[team.team_id] ?? false}
+                />
+              ))}
+            </div>
+          ) : (
+            <SetPieceLeagueTable changes={data} />
+          )}
         </>
       )}
     </section>
