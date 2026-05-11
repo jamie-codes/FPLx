@@ -199,10 +199,14 @@ export function computeRejection(
     reasons.push(`Lifecycle: Sell soon — approaching sell threshold`)
   }
 
-  // 3h. Ownership context — ALWAYS last (parseFloat per Pitfall 2).
+  // 3h. Ownership context — only when ownership is notable context (matches REJECTION_OWNERSHIP_THRESHOLD).
+  //     Low ownership (≤ threshold) signals a differential / obscure pick; very high (> 50%) signals
+  //     a near-universal pick. Mid-range ownership is not a useful rejection signal.
   const ownedRaw = parseFloat(player.selected_by_percent)
   const owned = !isNaN(ownedRaw) ? Math.round(ownedRaw) : 0
-  reasons.push(`Owned by ${owned}% of managers`)
+  if (owned <= REJECTION_OWNERSHIP_THRESHOLD || owned > 50) {
+    reasons.push(`Owned by ${owned}% of managers`)
+  }
 
   return { reasons, xPtsRank }
 }

@@ -311,7 +311,7 @@ describe('computeRejection — Phase 65 WHY-01', () => {
       start_prob: 0.5,   // < 0.70 → start_prob reason + fragility (start_prob < 70%)
       fixtures: [hardFixture],  // hard → "Difficult fixture (FDR hard)" from step 3c
       gem_score: 0.2,
-      selected_by_percent: '25.0',
+      selected_by_percent: '5.0',  // 5 <= REJECTION_OWNERSHIP_THRESHOLD (20) → ownership fires
     })
     // sameposBetter: 1 → rank 2; also makes posAvg > 0.2 so isStrong = false
     const population = makePopulation(target, { sameposBetter: 1 })
@@ -415,7 +415,7 @@ describe('computeRejection — Phase 94 new predicates', () => {
       fixtures: [hardFixture],
       cost_change_event: -1,
       gem_score: 0.2,
-      selected_by_percent: '25.0',
+      selected_by_percent: '5.0',  // 5 <= REJECTION_OWNERSHIP_THRESHOLD (20) → ownership fires
     })
     const population = makePopulation(target, { sameposBetter: 1 })
     const labels = new Map<number, LifecycleLabel>([[220, 'sell']])
