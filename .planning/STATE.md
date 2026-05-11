@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: Modelling & Trust
-status: executing
+status: ready_to_plan
 stopped_at: Phase 95 planned — 2 plans ready (095-01 Wave 0 RED, 095-02 Wave 1 implementation)
 last_updated: "2026-05-11T11:13:59.498Z"
 last_activity: 2026-05-11 -- Phase 95 execution started
 progress:
   total_phases: 9
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 22
   completed_plans: 20
-  percent: 91
+  percent: 89
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-11 — Phase 93 complete)
 
 ## Current Position
 
-Phase: 95 (set-piece-delivery-league-table) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 95
-Last activity: 2026-05-11 -- Phase 95 execution started
+Phase: 96
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-05-11
 
 ## Performance Metrics
 

@@ -1227,5 +1227,5 @@ Plans:
 | 92 | v1.16 | 0/2 | Not started | - |
 | 93 | v1.16 | 0/4 | Not started | - |
 | 94 | v1.16 | 3/3 | Complete    | 2026-05-11 |
-| 95 | v1.16 | 2/2 | Complete   | 2026-05-11 |
+| 95 | v1.16 | 2/2 | Complete    | 2026-05-11 |
 | 96 | v1.16 | 0/4 | Not started | - |

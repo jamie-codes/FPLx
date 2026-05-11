@@ -27,7 +27,7 @@
 ### Analysis
 
 - [ ] **BACK-01** Captain decision backtester — pipeline saves `captain_picks_gw{N}.json` to Vercel Blob after each run (mirroring existing `predictions_snapshot_gw{N}.json` pattern); `/api/decision-history` + `useDecisionHistory` hook reads snapshots; new "Back" sub-tab in Accuracy section shows GW-by-GW captain regret score (user's pick vs snapshotted top recommendation at decision time — NOT retrospective max); authenticated FPL API `/entry/{id}/event/{gw}/picks/` used to backfill actual captain per GW; localStorage ring buffer stores last 38 GWs
-- [ ] **SPQ-04** Set-piece delivery league table — all 20 PL teams ranked by composite delivery quality score (aggregated from `sp_quality.json`); rendered as a toggle within the existing Set Pieces tab; teams with insufficient sample shown in a separate section; zero pipeline changes; client-side aggregation in `src/lib/setPieceLeague.ts`
+- [x] **SPQ-04** Set-piece delivery league table — all 20 PL teams ranked by composite delivery quality score (aggregated from `sp_quality.json`); rendered as a toggle within the existing Set Pieces tab; teams with insufficient sample shown in a separate section; zero pipeline changes; client-side aggregation in `src/lib/setPieceLeague.ts`
 
 ---
 
