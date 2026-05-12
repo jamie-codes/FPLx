@@ -492,6 +492,72 @@ describe('Phase 74: Combos always emitted (D-06)', () => {
   })
 })
 
+describe('Phase 101 GWT-01: targetGw parameter', () => {
+  it('routes scoring through computeGwXpts when targetGw is set', () => {
+    const { picks, players } = makeValidSquad()
+    // Make player 1 (GK) a "sell" candidate. Add a "buy" candidate with same position
+    // (GK / element_type=1) that has STRONG GW33 fixture but weak xPts_1gw.
+    const buyGw33 = makePlayer({
+      id: 100, element_type: 1, team: 9,
+      xPts_1gw: 1.0,   // weak baseline
+      xg_per90: 0, xa_per90: 0,   // GK — no goal/assist EV
+      xmins: 90, start_prob: 1.0,
+      fixtures: [
+        { opponent_team: 'NEW', is_home: true, event_id: 33,
+          difficulty_score: 0.2, difficulty_tier: 'easy', defensive_difficulty: 0.1 }
+      ] as any,
+    })
+    // Baseline (no targetGw): horizon=1 ranks by xPts_1gw, player 100 is weak → not top.
+    const baselinePool = suggestTransfers({
+      currentPicks: picks, players: [...players, buyGw33],
+      horizon: 1, ftCount: 1, bank: 1000,
+    })
+    // GWT mode (targetGw=33): computeGwXpts gives player 100 a strong CS-driven score.
+    const gwtPool = suggestTransfers({
+      currentPicks: picks, players: [...players, buyGw33],
+      horizon: 1, ftCount: 1, bank: 1000, targetGw: 33,
+    })
+    // Find any single-transfer suggestion buying player 100 in GWT mode
+    const gwtBuy100 = gwtPool.find(s => s.kind === 'single' && (s as any).buy?.id === 100)
+    expect(gwtBuy100).toBeDefined()
+    // In baseline, player 100 has xPts_1gw=1.0 (weaker than default 5.0), so it never beats sells
+    const baselineBuy100 = baselinePool.find(s => s.kind === 'single' && (s as any).buy?.id === 100)
+    expect(baselineBuy100).toBeUndefined()
+  })
+
+  it('uses denominator=1 for xPtsGainPerGw when targetGw is set', () => {
+    const { picks, players } = makeValidSquad()
+    const buy = makePlayer({
+      id: 100, element_type: 1, team: 9,
+      xg_per90: 0, xa_per90: 0, xmins: 90, start_prob: 1.0,
+      fixtures: [
+        { opponent_team: 'NEW', is_home: true, event_id: 33,
+          difficulty_score: 0.2, difficulty_tier: 'easy', defensive_difficulty: 0.1 }
+      ] as any,
+    })
+    const result = suggestTransfers({
+      currentPicks: picks, players: [...players, buy],
+      horizon: 5, ftCount: 1, bank: 1000, targetGw: 33,
+    })
+    const single = result.find(s => s.kind === 'single' && (s as any).buy?.id === 100 && s.cost === 0)
+    if (single) {
+      // denominator=1, so xPtsGainPerGw === xPtsGain (not xPtsGain/5)
+      expect(single.xPtsGainPerGw).toBeCloseTo(single.xPtsGain, 5)
+    }
+  })
+
+  it('does not regress baseline behaviour when targetGw is omitted', () => {
+    const { picks, players } = makeValidSquad()
+    const withoutGwt = suggestTransfers({
+      currentPicks: picks, players, horizon: 1, ftCount: 1, bank: 0,
+    })
+    const withGwtUndefined = suggestTransfers({
+      currentPicks: picks, players, horizon: 1, ftCount: 1, bank: 0, targetGw: undefined,
+    })
+    expect(withGwtUndefined).toEqual(withoutGwt)
+  })
+})
+
 describe('Phase 74: Bank constraint (TFX-05)', () => {
   it('respects bank parameter in tenths — over-budget buy not returned as top suggestion', () => {
     // bank = 0 tenths (£0m). Buy candidate now_cost=60 (£6m). Squad player sell value = now_cost=50.
