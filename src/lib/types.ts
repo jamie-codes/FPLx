@@ -886,4 +886,8 @@ export interface GwReview {
   average_score: number            // FPL average - from gw_review_gw{N}.json (D-08); labelled "FPL average", NOT "top-10k"
   best_bench_player_name: string   // Phase 98 D-09 / PGW-01: web_name of highest-scoring bench pick (position > 11); '—' when bench is empty
   best_bench_player_pts: number    // Phase 98 D-09 / PGW-01: that pick's total_points; 0 when bench is empty
+  // Phase 99 PGW-03: benchmark comparison + template player misses
+  benchmark_score: number            // dream-team total pts; falls back to average_score when endpoint fails
+  benchmark_label: string            // 'Dream team' | 'FPL average' (degraded fallback)
+  missed_players: { name: string; pts: number }[]  // ≤3 dream-team players not in squad; [] when none
 }

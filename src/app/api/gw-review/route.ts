@@ -24,6 +24,18 @@ interface FPLPicksResponse {
 
 interface FPLBootstrapElement { id: number; web_name: string }
 
+// Phase 99 PGW-03 — FPL dream-team API response shape
+interface FPLDreamTeamPick {
+  element: number
+  points: number
+  position: number
+}
+
+interface FPLDreamTeamResponse {
+  top_player: { id: number; points: number }
+  team: FPLDreamTeamPick[]
+}
+
 interface BlobBase { gw: number | null; average_score?: number }
 
 /**
@@ -135,7 +147,28 @@ export async function GET(request: NextRequest) {
     return Response.json({ error: 'FPL bootstrap unreachable' }, { status: 502 })
   }
 
-  // Step 4: Compute team-specific metrics (D-05, D-06, D-07)
+  // Step 4 (Phase 99 PGW-03): Fetch FPL dream-team for benchmark comparison
+  // Standalone try/catch so failure degrades gracefully — does NOT abort the route.
+  // Pitfall 1 (RESEARCH.md): never use Promise.all here; would convert dream-team
+  // failures into 502s on the entire route.
+  let dreamTeamPicks: FPLDreamTeamPick[] = []
+  let useDreamTeamBenchmark = false
+  try {
+    const dtRes = await fetch(`${FPL_BASE}/dream-team/${gw}/`, {
+      headers: { 'User-Agent': 'fplx/1.17 (+https://fplx.app)' },
+    })
+    if (dtRes.ok) {
+      const dtJson = (await dtRes.json()) as FPLDreamTeamResponse
+      if (Array.isArray(dtJson?.team) && dtJson.team.length > 0) {
+        dreamTeamPicks = dtJson.team
+        useDreamTeamBenchmark = true
+      }
+    }
+  } catch {
+    // Degraded — useDreamTeamBenchmark stays false, fallback below
+  }
+
+  // Step 5: Compute team-specific metrics (D-05, D-06, D-07)
   const starters = picks.filter((p) => p.position <= 11)
   if (starters.length === 0) {
     return Response.json({ error: 'No starting XI found in picks' }, { status: 502 })
@@ -163,6 +196,28 @@ export async function GET(request: NextRequest) {
     optimalCaptain.total_points * 2 - yourCaptain.total_points * yourCaptain.multiplier
   const captainDelta = Math.max(0, captainDeltaRaw)
 
+  // Phase 99 PGW-03: benchmark score + missed players
+  const userElementIds = new Set(picks.map((p) => p.element)) // all 15 picks (starters + bench)
+  let benchmarkScore: number
+  let benchmarkLabel: string
+  let missedPlayers: { name: string; pts: number }[]
+  if (useDreamTeamBenchmark) {
+    benchmarkScore = dreamTeamPicks.reduce((sum, p) => sum + p.points, 0)
+    benchmarkLabel = 'Dream team'
+    missedPlayers = dreamTeamPicks
+      .filter((p) => !userElementIds.has(p.element))
+      .sort((a, b) => b.points - a.points)
+      .slice(0, 3)
+      .map((p) => ({
+        name: elementMap.get(p.element) ?? `Player ${p.element}`,
+        pts: p.points,
+      }))
+  } else {
+    benchmarkScore = averageScore
+    benchmarkLabel = 'FPL average'
+    missedPlayers = []
+  }
+
   const review: GwReview = {
     gw,
     your_score: entryHistory.points,
@@ -178,6 +233,10 @@ export async function GET(request: NextRequest) {
       ? (elementMap.get(bestBench.element) ?? `Player ${bestBench.element}`)
       : '—',
     best_bench_player_pts: bestBench?.total_points ?? 0,
+    // Phase 99 PGW-03 — new fields
+    benchmark_score: benchmarkScore,
+    benchmark_label: benchmarkLabel,
+    missed_players: missedPlayers,
   }
 
   return Response.json(review, {

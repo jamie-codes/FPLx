@@ -22,7 +22,12 @@ interface Pick {
   total_points: number
 }
 
-function mockUpstream(picks: Pick[], elements: Array<{ id: number; web_name: string }>) {
+function mockUpstream(
+  picks: Pick[],
+  elements: Array<{ id: number; web_name: string }>,
+  dreamTeam: { top_player: { id: number; points: number }; team: Array<{ element: number; points: number; position: number }> } | null = { top_player: { id: 999, points: 0 }, team: [] },
+  dreamTeamOk: boolean = true,
+) {
   const fetchMock = vi.fn(async (url: string) => {
     if (url.includes('/picks/')) {
       return new Response(JSON.stringify({
@@ -32,6 +37,10 @@ function mockUpstream(picks: Pick[], elements: Array<{ id: number; web_name: str
     }
     if (url.includes('/bootstrap-static/')) {
       return new Response(JSON.stringify({ elements }), { status: 200 })
+    }
+    if (url.includes('/dream-team/')) {
+      if (!dreamTeamOk) return new Response('', { status: 503 })
+      return new Response(JSON.stringify(dreamTeam), { status: 200 })
     }
     throw new Error(`Unexpected fetch URL: ${url}`)
   })
@@ -49,6 +58,15 @@ function starter(element: number, total_points: number, opts: Partial<Pick> = {}
 
 function bench(element: number, total_points: number): Pick {
   return { element, position: 12, multiplier: 0, is_captain: false, is_vice_captain: false, total_points }
+}
+
+function dreamTeamPayload(
+  picks: Array<{ element: number; points: number; position: number }>
+): { top_player: { id: number; points: number }; team: typeof picks } {
+  return {
+    top_player: { id: picks[0]?.element ?? 999, points: picks[0]?.points ?? 0 },
+    team: picks,
+  }
 }
 
 // Build a minimal 11-starter array with positions 1–11
@@ -176,5 +194,141 @@ describe('Phase 98 PGW-01: /api/gw-review bench computation', () => {
     expect(body.bench_pts_left).toBe(8)
     expect(body.average_score).toBe(55)
     expect(body.gw).toBe(34)
+  })
+})
+
+describe('Phase 99 PGW-03: /api/gw-review benchmark + missed players', () => {
+  it('returns benchmark_label="Dream team" and benchmark_score=sum(team[*].points) when dream-team fetch succeeds', async () => {
+    const starters = makeStarters()
+    const benchPicks = [bench(101, 2), bench(102, 9), bench(103, 5), bench(104, 1)]
+    const allPicks = [...starters, ...benchPicks]
+    const elements = [
+      ...starters.map(s => ({ id: s.element, web_name: `Player${s.element}` })),
+      { id: 101, web_name: 'Pickford' },
+      { id: 102, web_name: 'Watkins' },
+      { id: 103, web_name: 'Andersen' },
+      { id: 104, web_name: 'Estupinan' },
+      { id: 501, web_name: 'Saka' },
+      { id: 502, web_name: 'Palmer' },
+    ]
+    // Dream team: 11 entries; 2 NOT in user picks (501 + 502) → expected missed
+    const dt = dreamTeamPayload([
+      { element: 1, points: 10, position: 1 },   // owned (captain)
+      { element: 2, points: 9,  position: 2 },   // owned
+      { element: 3, points: 8,  position: 3 },   // owned
+      { element: 4, points: 7,  position: 4 },   // owned
+      { element: 5, points: 6,  position: 5 },   // owned
+      { element: 6, points: 6,  position: 6 },   // owned
+      { element: 7, points: 5,  position: 7 },   // owned
+      { element: 8, points: 5,  position: 8 },   // owned
+      { element: 501, points: 12, position: 9 }, // MISSED
+      { element: 502, points: 11, position: 10 },// MISSED
+      { element: 102, points: 9, position: 11 }, // owned via bench (101..104 are bench picks)
+    ])
+    mockUpstream(allPicks, elements, dt, true)
+    const response = await GET(makeRequest())
+    expect(response.status).toBe(200)
+    const body = await response.json() as { benchmark_label: string; benchmark_score: number; missed_players: { name: string; pts: number }[] }
+    expect(body.benchmark_label).toBe('Dream team')
+    expect(body.benchmark_score).toBe(10 + 9 + 8 + 7 + 6 + 6 + 5 + 5 + 12 + 11 + 9)
+    // Missed sorted desc by pts: Saka (12) then Palmer (11)
+    expect(body.missed_players).toEqual([
+      { name: 'Saka', pts: 12 },
+      { name: 'Palmer', pts: 11 },
+    ])
+  })
+
+  it('returns benchmark_label="FPL average" and missed_players=[] when dream-team fetch fails (503)', async () => {
+    const starters = makeStarters()
+    const benchPicks = [bench(101, 2), bench(102, 9), bench(103, 5), bench(104, 1)]
+    const allPicks = [...starters, ...benchPicks]
+    const elements = [
+      ...starters.map(s => ({ id: s.element, web_name: `Player${s.element}` })),
+      { id: 101, web_name: 'Pickford' },
+      { id: 102, web_name: 'Watkins' },
+      { id: 103, web_name: 'Andersen' },
+      { id: 104, web_name: 'Estupinan' },
+    ]
+    // dreamTeamOk = false → mock returns 503 → route falls back to average_score
+    mockUpstream(allPicks, elements, null, false)
+    const response = await GET(makeRequest())
+    expect(response.status).toBe(200)
+    const body = await response.json() as { benchmark_label: string; benchmark_score: number; missed_players: unknown[] }
+    expect(body.benchmark_label).toBe('FPL average')
+    expect(body.benchmark_score).toBe(55) // average_score from mocked fs/promises blob
+    expect(body.missed_players).toEqual([])
+  })
+
+  it('missed_players contains only dream-team elements not in user squad, sorted desc by pts, capped at 3', async () => {
+    const starters = makeStarters() // user owns elements 1..11
+    const allPicks = [...starters] // no bench
+    const elements = [
+      ...starters.map(s => ({ id: s.element, web_name: `Player${s.element}` })),
+      { id: 901, web_name: 'A' },
+      { id: 902, web_name: 'B' },
+      { id: 903, web_name: 'C' },
+      { id: 904, web_name: 'D' },
+      { id: 905, web_name: 'E' },
+    ]
+    // 5 dream-team players NOT in user picks: 901..905 with pts 15,14,13,12,11
+    // Plus 6 dream-team players that ARE in user picks (elements 1..6)
+    const dt = dreamTeamPayload([
+      { element: 901, points: 15, position: 1 },
+      { element: 902, points: 14, position: 2 },
+      { element: 903, points: 13, position: 3 },
+      { element: 904, points: 12, position: 4 },
+      { element: 905, points: 11, position: 5 },
+      { element: 1, points: 5, position: 6 },
+      { element: 2, points: 4, position: 7 },
+      { element: 3, points: 4, position: 8 },
+      { element: 4, points: 3, position: 9 },
+      { element: 5, points: 3, position: 10 },
+      { element: 6, points: 2, position: 11 },
+    ])
+    mockUpstream(allPicks, elements, dt, true)
+    const response = await GET(makeRequest())
+    expect(response.status).toBe(200)
+    const body = await response.json() as { missed_players: { name: string; pts: number }[] }
+    expect(body.missed_players).toHaveLength(3)
+    expect(body.missed_players).toEqual([
+      { name: 'A', pts: 15 },
+      { name: 'B', pts: 14 },
+      { name: 'C', pts: 13 },
+    ])
+  })
+
+  it('missed_players excludes bench players that the user owns (cross-ref all 15 picks)', async () => {
+    const starters = makeStarters() // owns 1..11
+    const benchPicks = [bench(401, 3), bench(402, 2), bench(403, 1), bench(404, 0)]
+    const allPicks = [...starters, ...benchPicks]
+    const elements = [
+      ...starters.map(s => ({ id: s.element, web_name: `Player${s.element}` })),
+      { id: 401, web_name: 'BenchA' },
+      { id: 402, web_name: 'BenchB' },
+      { id: 403, web_name: 'BenchC' },
+      { id: 404, web_name: 'BenchD' },
+      { id: 999, web_name: 'NotOwned' },
+    ]
+    // Dream team includes bench element 401 — must NOT appear in missed_players
+    const dt = dreamTeamPayload([
+      { element: 999, points: 20, position: 1 }, // missed
+      { element: 401, points: 15, position: 2 }, // owned via bench → NOT missed
+      { element: 1, points: 10, position: 3 },
+      { element: 2, points: 9, position: 4 },
+      { element: 3, points: 8, position: 5 },
+      { element: 4, points: 7, position: 6 },
+      { element: 5, points: 6, position: 7 },
+      { element: 6, points: 5, position: 8 },
+      { element: 7, points: 4, position: 9 },
+      { element: 8, points: 3, position: 10 },
+      { element: 9, points: 2, position: 11 },
+    ])
+    mockUpstream(allPicks, elements, dt, true)
+    const response = await GET(makeRequest())
+    expect(response.status).toBe(200)
+    const body = await response.json() as { missed_players: { name: string; pts: number }[] }
+    // Only element 999 ('NotOwned') is genuinely missed; 401 is on the bench
+    expect(body.missed_players).toEqual([{ name: 'NotOwned', pts: 20 }])
+    expect(body.missed_players.find(p => p.name === 'BenchA')).toBeUndefined()
   })
 })
