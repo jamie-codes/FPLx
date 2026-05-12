@@ -105,7 +105,10 @@ export function GwToggle({ value, onChange, disabled }: Props) {
           <button
             key={gw}
             onClick={() => onChange(gw)}
+            disabled={disabled}
             aria-pressed={value === gw}
+            aria-disabled={disabled}
+            tabIndex={disabled ? -1 : undefined}
             className={`px-3 py-2.5 sm:py-1 text-sm font-medium transition-all cursor-pointer active:scale-95 min-h-[44px] ${
               value === gw
                 ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
