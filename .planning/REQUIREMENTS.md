@@ -28,11 +28,11 @@
 
 ### Transfer Intelligence
 
-- [ ] **GWT-01**: User can select a target GW in TransferPanel and see transfer recommendations re-ranked by xPts for that specific GW's fixtures only (not the current horizon average)
+- [x] **GWT-01**: User can select a target GW in TransferPanel and see transfer recommendations re-ranked by xPts for that specific GW's fixtures only (not the current horizon average)
 
 ### UX Polish
 
-- [ ] **UX-01**: Horizon toggle labels renamed from "1 GW / 3 GW / 5 GW" to "Next 1 GW / Next 3 GWs / Next 5 GWs" in `GwToggle.tsx` and all column headers that reference the horizon
+- [x] **UX-01**: Horizon toggle labels renamed from "1 GW / 3 GW / 5 GW" to "Next 1 GW / Next 3 GWs / Next 5 GWs" in `GwToggle.tsx` and all column headers that reference the horizon
 
 ---
 
