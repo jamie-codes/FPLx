@@ -1175,7 +1175,7 @@ Plans:
 
 ## v1.17 End-of-Season Intelligence (Phases 97-101)
 
-- [ ] **Phase 97: Fixture Heat Map** — 20 teams x next 8 GWs colour-coded grid (green/amber/red by attacking_difficulty), DGW double-cell, BGW blank, toggle within Club Form tab; hover reveals opponent + H/A (HEAT-01, HEAT-02)
+- [x] **Phase 97: Fixture Heat Map** — 20 teams x next 8 GWs colour-coded grid (green/amber/red by attacking_difficulty), DGW double-cell, BGW blank, toggle within Club Form tab; hover reveals opponent + H/A (HEAT-01, HEAT-02) (completed 2026-05-12)
 - [ ] **Phase 98: Post-GW Review Core** — bench points left, captain vs optimal captain in squad, auto-surface card after deadline passes; authenticated FPL picks for actual captain fill (PGW-01, PGW-02, PGW-04)
 - [ ] **Phase 99: Top-10k Comparison** — GW score vs top-10k average, template players the user did not own; sourced from FPL bootstrap events[].average_entry_score + top-10k league endpoint (PGW-03)
 - [ ] **Phase 100: Decision History Analytics** — season captain hit rate from BackTab data; chip ROI vs season average; hit break-even tracking from authenticated transfer history (HIST-01, HIST-02, HIST-03)
@@ -1192,9 +1192,9 @@ Plans:
   4. The full 20x8 grid is accessible on desktop without horizontal scrolling; on mobile it is scroll-bounded with sticky team-name column
 **Plans**: 2 plans (2 waves)
   **Wave 1**
-  - [ ] 97-01-PLAN.md — TDD: src/components/club-form/ClubFormViewToggle.tsx + ClubFormTab.tsx + ClubFormTab.test.tsx (pill toggle Form|Heat Map, useState owner, 6 test cases for default view / toggle switches / aria-pressed / submittedId forwarding)
+  - [x] 97-01-PLAN.md — TDD: src/components/club-form/ClubFormViewToggle.tsx + ClubFormTab.tsx + ClubFormTab.test.tsx (pill toggle Form|Heat Map, useState owner, 6 test cases for default view / toggle switches / aria-pressed / submittedId forwarding)
   **Wave 2** *(blocked on Plan 01 completion — Plan 02 imports ClubFormTab)*
-  - [ ] 97-02-PLAN.md — src/app/page.tsx nav refactor (D-01 remove fixture-heat-map sub-tab, D-02 move club-form to Analyse after Set Pieces, D-03 keep label "Club Form"/"Form", D-07 replace multi-component club-form block with <ClubFormTab submittedId={submittedId} />, remove FixtureHeatMap import) + src/app/page.test.tsx updates (relocate Plan→Club Form test target, MobileNav Form pill assertion to Analyse, replace Phase 66 Heat Map test with two Phase 97 tests for new Analyse order + Club Form toggle render)
+  - [x] 97-02-PLAN.md — src/app/page.tsx nav refactor (D-01 remove fixture-heat-map sub-tab, D-02 move club-form to Analyse after Set Pieces, D-03 keep label "Club Form"/"Form", D-07 replace multi-component club-form block with <ClubFormTab submittedId={submittedId} />, remove FixtureHeatMap import) + src/app/page.test.tsx updates (relocate Plan→Club Form test target, MobileNav Form pill assertion to Analyse, replace Phase 66 Heat Map test with two Phase 97 tests for new Analyse order + Club Form toggle render)
   **Cross-cutting constraints:**
   - Plan 01 is self-contained (creates 3 NEW files; no existing-file modification) — fully parallel-safe with any other Wave 1 work
   - Plan 02 depends on Plan 01 (imports ClubFormTab); the page.test.tsx mock + nav assertions MUST land in the same plan/commit as the page.tsx structural change to avoid breaking the existing test suite mid-wave (lesson carried from Phase 66 Plan 03 pattern)
@@ -1310,7 +1310,7 @@ Plans:
 | 94 | v1.16 | 3/3 | Complete    | 2026-05-11 |
 | 95 | v1.16 | 2/2 | Complete    | 2026-05-11 |
 | 96 | v1.16 | 4/4 | Complete    | 2026-05-11 |
-| 97 | v1.17 | 0 | Not started | - |
+| 97 | v1.17 | 2/2 | Complete    | 2026-05-12 |
 | 98 | v1.17 | 0 | Not started | - |
 | 99 | v1.17 | 0 | Not started | - |
 | 100 | v1.17 | 0 | Not started | - |

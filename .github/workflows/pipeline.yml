@@ -47,11 +47,12 @@ jobs:
 
       - name: Check deadline gate
         id: gate
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' && github.event.schedule != '0 6,12,18,0 * * *'
         run: python pipeline/refresh_gate.py
 
       - name: Run pipeline
         if: |
           github.event_name == 'workflow_dispatch' ||
+          (github.event_name == 'schedule' && github.event.schedule == '0 6,12,18,0 * * *') ||
           steps.gate.outputs.run == 'true'
         run: python pipeline/run.py
