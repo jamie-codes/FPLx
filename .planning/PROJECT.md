@@ -4,6 +4,8 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
+v1.16 Phase 96 complete (2026-05-11) — BACK-01: Captain decision backtester shipped. Pipeline writes `captain_picks_gw{N}.json` to Vercel Blob as a durable snapshot trail. `/api/decision-history` joins snapshots with FPL picks to compute per-GW regret. `useDecisionHistory` hook caches to localStorage (38-entry ring buffer, cache-first). `BackTab` recharts BarChart (red/green bars, y=0 ReferenceLine) + season summary header + per-GW detail table. AccuracyTab restructured with Summary | Calibration | Back pill nav. 22 tests TDD RED→GREEN.
+
 v1.16 Phase 95 complete (2026-05-11) — SPQ-04: Set-piece delivery league table shipped. All 20 PL teams ranked by composite corner+FK danger score. `aggregateSetPieceLeague` pure aggregation library, `SetPieceLeagueTable` ranked table with Insufficient Data section, `SetPieceViewToggle` mobile-visible pill, toggle wired into `SetPieceTakerPanel`. 13 tests (TDD RED→GREEN).
 
 v1.15 started (2026-05-09) — Pipeline Intelligence: Data Health Dashboard (DH-01/02/03) and SPQ pipeline (SPQ-01/02), completing the two features deferred from v1.14.
@@ -24,7 +26,18 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
-## Current Milestone: v1.16 Modelling & Trust
+## Current Milestone: v1.17 End-of-Season Intelligence
+
+**Goal:** Surface actionable end-of-season intelligence — fixture heat map, post-GW review, personal decision analytics, GW-targeted transfer advice, and UX polish.
+
+**Target features:**
+- HEAT-01: Fixture heat map — all 20 teams × next 8 GWs, colour-coded by difficulty, DGW/BGW highlighted
+- PGW-01: Post-GW review — bench pts left, captain vs optimal, comparison vs template/top-10k team
+- HIST-01: Personal decision history — captain hit rate, transfer ROI, chip ROI, hit break-even success rate
+- GWT-01: GW-targeted transfer recommendations — pick a future GW, see ranked buy candidates for that GW's fixtures/xPts
+- UX-01: xPts temporal labels — "Next 1 GW / Next 3 GWs / Next 5 GWs" across GwToggle and column headers
+
+## Previous Milestone: v1.16 Modelling & Trust (Complete 2026-05-11)
 
 **Goal:** Deepen forecast transparency and pipeline reliability — Monte Carlo uncertainty bands, calibration evidence, sensitivity flags, rejection reasons, automatic pipeline scheduling, lineup intelligence, a decision history backtester, and a set-piece delivery league table.
 
@@ -335,4 +348,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-11 — Phase 93 complete. SENS-01 (Sensitivity Analysis Enhancements) validated: 5-perturbation tristate (`computeFragility` → robust/fragile/knife_edge), `FragilityBadge` component, wired into GemTable, OpportunityCostTable, CaptainPicksPanel. Code review CR-01 open: fixture-difficulty perturbation omits `easy` tier. v1.16 milestone 6/9 phases complete.*
+*Last updated: 2026-05-11 — v1.16 complete (Phases 88–96, all 9 shipped). v1.17 End-of-Season Intelligence started.*

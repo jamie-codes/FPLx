@@ -18,6 +18,7 @@
 - **v1.14 Analytics Depth** — Phases 82-85 (started 2026-05-08)
 - **v1.15 Pipeline Intelligence** — Phases 86-87 (started 2026-05-09)
 - **v1.16 Modelling & Trust** — Phases 88-96 (started 2026-05-09)
+- **v1.17 End-of-Season Intelligence** — Phases 97-101 (started 2026-05-11)
 
 ## Phases
 
@@ -940,9 +941,14 @@ Plans:
 - [x] **Phase 91: Calibration Charts** — AccuracyTab predicted-xPts-decile vs actuals over last 5 GWs with per-position breakdown; recharts (already installed) (CAL-01) (completed 2026-05-10)
 - [x] **Phase 92: Cron History Sparkline** — extend `data_health.json` with rolling `history` (last 7 runs); render `DataHealthSparkline` recharts `<LineChart>` inside existing `DataHealthPanel`; zero new API routes/hooks (DH-04) (completed 2026-05-10)
 - [x] **Phase 93: Sensitivity Analysis Enhancements** *(complete 2026-05-10)* — extend Phase 64 fragility engine with 5 perturbations (start_prob -0.15, mins_60 -0.10, fixture +1 tier, cost +0.5m, news flip to "doubt"); ROBUST / FRAGILE (1 reverses) / KNIFE EDGE (2+ reverse); GemTable + TransferPanel (SENS-01)
-- [x] **Phase 94: Rejection Explainer Enhancements** — extend Phase 65 explainer with deterministic gate-cascade (≥6 predicates); search field entry point in TransferPanel ("Why isn't X recommended?") + head-to-head mode in GemTable expand ("Why is X ranked above Y?") (WHY-01) (completed 2026-05-11)
-- [x] **Phase 95: Set-Piece Delivery League Table** — all 20 PL teams ranked by composite delivery-quality score, toggle within Set Pieces tab, separate insufficient-sample section; client-side aggregation in `src/lib/setPieceLeague.ts`; zero pipeline changes (SPQ-04) (completed 2026-05-11)
-- [ ] **Phase 96: Captain Decision Backtester** — pipeline saves `captain_picks_gw{N}.json` per run; `/api/decision-history` + `useDecisionHistory`; new "Back" sub-tab in Accuracy section; GW-by-GW captain regret vs snapshotted recommendation; authenticated FPL API for actual captain; localStorage ring buffer last 38 GWs (BACK-01)
+- [x] **Phase 94: Rejection Explainer Enhancements** — extend Phase 65 explainer with deterministic gate-cascade (≥6 predicates); search field entry point in TransferPanel ("Why isn't X recommended?") + head-to-head mode in GemTable expand ("Why is X ranked above Y?") (WHY-01)
+ (completed 2026-05-11)
+- [x] **Phase 95: Set-Piece Delivery League Table** — all 20 PL teams ranked by composite delivery-quality score, toggle within Set Pieces tab, separate insufficient-sample section; client-side aggregation in `src/lib/setPieceLeague.ts`; zero pipeline changes (SPQ-04)
+ (completed 2026-05-11)
+- [x] **Phase 96: Captain Decision Backtester** — pipeline saves `captain_picks_gw{N}.json` per run; `/api/decision-history` + `useDecisionHistory`; new "Back" sub-tab in Accuracy section; GW-by-GW captain regret vs snapshotted recommendation; authenticated FPL API for actual captain; localStorage ring buffer last 38 GWs (BACK-01)
+ (completed 2026-05-11)
+
+
 
 ### Phase 88: FPL News Flags UI
 **Goal**: Users see official FPL news (injuries, suspensions, chance-of-playing) directly in TransferPanel and GemTable — never click into a player to discover they are flagged — without any new pipeline scraping
@@ -1150,12 +1156,12 @@ Plans:
   5. When the authenticated FPL API call fails (cookie expired) the screen degrades gracefully — model snapshots still render with "actual captain unavailable — log in to see regret score" placeholder per row; never errors, never blocks the rest of the AccuracyTab
 **Plans**: 4 plans (3 waves)
   **Wave 0**
-  - [ ] 096-01-PLAN.md — RED scaffolding: `pipeline/tests/test_captain_snapshots.py` (4 cases: snapshot write, idempotent repeat, blob path convention, cold-start GW-1 absence); `src/lib/regret.test.ts` (8 cases: regret formula, missing-actual graceful, ring-buffer FIFO 38, top-3 snapshot shape, deterministic order, BGW handling, captain swap mid-window, localStorage key by team ID); `BackTab.test.tsx` (5 RED cases); types in `src/lib/types.ts` (`CaptainPickSnapshot`, `RegretEntry`, `DecisionHistory`)
+  - [x] 096-01-PLAN.md — RED scaffolding: `pipeline/tests/test_captain_snapshots.py` (4 cases: snapshot write, idempotent repeat, blob path convention, cold-start GW-1 absence); `src/lib/regret.test.ts` (8 cases: regret formula, missing-actual graceful, ring-buffer FIFO 38, top-3 snapshot shape, deterministic order, BGW handling, captain swap mid-window, localStorage key by team ID); `BackTab.test.tsx` (5 RED cases); types in `src/lib/types.ts` (`CaptainPickSnapshot`, `RegretEntry`, `DecisionHistory`)
   **Wave 1** *(parallel — file-disjoint)*
-  - [ ] 096-02-PLAN.md — Pipeline path: `pipeline/captain_snapshots.py` (writes `captain_picks_gw{N}.json` to Blob with timestamp + top-3 array); `run.py` integration after `merge.py` and the existing `captain_picks.json` write (so this phase is a side-write, not a replacement)
-  - [ ] 096-03-PLAN.md — Regret engine + hook: `src/lib/regret.ts` (`computeRegret`, `mergeWithLocalCache`, `RING_BUFFER_SIZE = 38`); `useDecisionHistory.ts` hook composing snapshot fetch + authenticated picks fetch; `/api/decision-history` route proxying snapshot reads
+  - [x] 096-02-PLAN.md — Pipeline path: `pipeline/captain_snapshots.py` (writes `captain_picks_gw{N}.json` to Blob with timestamp + top-3 array); `run.py` integration after `merge.py` and the existing `captain_picks.json` write (so this phase is a side-write, not a replacement)
+  - [x] 096-03-PLAN.md — Regret engine + hook: `src/lib/regret.ts` (`computeRegret`, `mergeWithLocalCache`, `RING_BUFFER_SIZE = 38`); `useDecisionHistory.ts` hook composing snapshot fetch + authenticated picks fetch; `/api/decision-history` route proxying snapshot reads
   **Wave 2** *(blocked on Wave 1 completion)*
-  - [ ] 096-04-PLAN.md — `BackTab` sub-tab component (timeline list + per-GW regret rows + cookie-expired graceful degradation message); page.tsx wiring under the Accuracy section sub-tab nav (so AccuracyTab grows from "Summary / Calibration" to "Summary / Calibration / Back"); manual UAT covering an authenticated multi-GW history
+  - [x] 096-04-PLAN.md — `BackTab` sub-tab component (timeline list + per-GW regret rows + cookie-expired graceful degradation message); page.tsx wiring under the Accuracy section sub-tab nav (so AccuracyTab grows from "Summary / Calibration" to "Summary / Calibration / Back"); manual UAT covering an authenticated multi-GW history
 **Cross-cutting constraints:**
   - The model snapshot is captured at decision time (per-pipeline-run write) so retrospective max-pts is NEVER what the regret is computed against — Pitfall: comparing user-pick to retrospective-max paints every override as a loss, which is unfair and uninformative
   - localStorage ring buffer key is `decisionHistory:teamId:{id}` so swapping team IDs (researching another manager's history) does not corrupt the user's own cache
@@ -1165,6 +1171,81 @@ Plans:
 **Phase notes**: This is the most complex phase in v1.16 — pipeline write + new API route + new hook + new sub-tab + localStorage caching. Sequenced near the end of the milestone so simpler wins ship first. Authenticated FPL API picks endpoint is already used by `useMyTeam` so cookie management is already solved. Ring buffer size 38 = full PL season; cumulative storage at ~10KB per GW × 38 ≈ 400KB which fits comfortably in localStorage (per REQUIREMENTS.md "Out of Scope" note: IndexedDB is overkill). BACK-02 (transfer regret backtester) is explicitly deferred to v1.17 because it requires a Python port of `suggestTransfers()` — out of scope here. The regret formula `(model_pts − user_pts) × 2` accounts for the captain points-doubling rule.
 **UI hint**: yes
 
+
+
+## v1.17 End-of-Season Intelligence (Phases 97-101)
+
+- [ ] **Phase 97: Fixture Heat Map** — 20 teams x next 8 GWs colour-coded grid (green/amber/red by attacking_difficulty), DGW double-cell, BGW blank, toggle within Club Form tab; hover reveals opponent + H/A (HEAT-01, HEAT-02)
+- [ ] **Phase 98: Post-GW Review Core** — bench points left, captain vs optimal captain in squad, auto-surface card after deadline passes; authenticated FPL picks for actual captain fill (PGW-01, PGW-02, PGW-04)
+- [ ] **Phase 99: Top-10k Comparison** — GW score vs top-10k average, template players the user did not own; sourced from FPL bootstrap events[].average_entry_score + top-10k league endpoint (PGW-03)
+- [ ] **Phase 100: Decision History Analytics** — season captain hit rate from BackTab data; chip ROI vs season average; hit break-even tracking from authenticated transfer history (HIST-01, HIST-02, HIST-03)
+- [ ] **Phase 101: GW-Targeted Transfers & UX Polish** — TransferPanel GW selector re-ranks candidates by that GW's fixture xPts only; GwToggle label rename to "Next 1 GW / Next 3 GWs / Next 5 GWs" (GWT-01, UX-01)
+
+### Phase 97: Fixture Heat Map
+**Goal**: Users can scan all 20 teams' upcoming fixture difficulty across 8 GWs at a glance -- a single colour-coded grid replaces tab-by-tab fixture inspection and makes end-of-season transfer targeting trivially fast
+**Depends on**: Phase 96 (v1.16 complete); reuses existing attacking_difficulty per-fixture values already in useClubForm() output; no pipeline change required
+**Requirements**: HEAT-01, HEAT-02
+**Success Criteria** (what must be TRUE):
+  1. User can toggle the Club Form tab to a heat map view showing all 20 PL teams as rows and the next 8 GWs as columns, with each cell colour-coded green (easy) / amber (medium) / red (hard) using existing attacking_difficulty thresholds
+  2. DGW cells are visually distinguished -- shown as a split cell or carrying a "DGW" badge -- so the manager immediately recognises a double-fixture opportunity; BGW teams display a blank/empty cell for that GW
+  3. Hovering any cell reveals the specific opponent name and H/A designation so the colour can be cross-checked against the matchup
+  4. The full 20x8 grid is accessible on desktop without horizontal scrolling; on mobile it is scroll-bounded with sticky team-name column
+**Plans**: 2 plans (2 waves)
+  **Wave 1**
+  - [ ] 97-01-PLAN.md — TDD: src/components/club-form/ClubFormViewToggle.tsx + ClubFormTab.tsx + ClubFormTab.test.tsx (pill toggle Form|Heat Map, useState owner, 6 test cases for default view / toggle switches / aria-pressed / submittedId forwarding)
+  **Wave 2** *(blocked on Plan 01 completion — Plan 02 imports ClubFormTab)*
+  - [ ] 97-02-PLAN.md — src/app/page.tsx nav refactor (D-01 remove fixture-heat-map sub-tab, D-02 move club-form to Analyse after Set Pieces, D-03 keep label "Club Form"/"Form", D-07 replace multi-component club-form block with <ClubFormTab submittedId={submittedId} />, remove FixtureHeatMap import) + src/app/page.test.tsx updates (relocate Plan→Club Form test target, MobileNav Form pill assertion to Analyse, replace Phase 66 Heat Map test with two Phase 97 tests for new Analyse order + Club Form toggle render)
+  **Cross-cutting constraints:**
+  - Plan 01 is self-contained (creates 3 NEW files; no existing-file modification) — fully parallel-safe with any other Wave 1 work
+  - Plan 02 depends on Plan 01 (imports ClubFormTab); the page.test.tsx mock + nav assertions MUST land in the same plan/commit as the page.tsx structural change to avoid breaking the existing test suite mid-wave (lesson carried from Phase 66 Plan 03 pattern)
+**UI hint**: yes
+
+### Phase 98: Post-GW Review Core
+**Goal**: After each gameweek settles, users can see how many points they left on the bench, how their captain performed vs the optimal captain in their own squad, and have the review card auto-surface on next visit -- turning each completed GW into a learning moment without manual navigation
+**Depends on**: Phase 96 (BackTab + useDecisionHistory hook already exist; authenticated FPL picks endpoint already used); extends existing Squad Review sub-tab pattern from Phase 73
+**Requirements**: PGW-01, PGW-02, PGW-04
+**Success Criteria** (what must be TRUE):
+  1. User can see a post-GW bench summary showing the highest-scoring bench player's points and the total points left on the bench for the most recently settled GW
+  2. User can see captain comparison for the settled GW -- their actual captain (player name + points scored x multiplier) vs the highest-scoring player in their squad that GW (player name + points), with the points delta labelled
+  3. When the user visits the app after a GW deadline has passed (determined by FPL bootstrap events[].deadline_time), the post-GW review card auto-surfaces without requiring the user to navigate to the Review sub-tab
+  4. When no settled GW data is available or squad is not loaded, the review card degrades gracefully with an explanatory prompt rather than an error
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 99: Top-10k Comparison
+**Goal**: Users can see how their GW score compares to the top-10k average and which template players they did not own that gameweek -- contextualising their result against serious FPL managers and surfacing ownership blind spots
+**Depends on**: Phase 98 (Post-GW Review Core -- this phase extends the review card with top-10k data); FPL bootstrap events[].average_entry_score is already available; top-10k average requires FPL league standings API endpoint consideration
+**Requirements**: PGW-03
+**Success Criteria** (what must be TRUE):
+  1. User can see their GW score compared to the top-10k average for that gameweek, with a clear delta (e.g. "+3 vs top-10k average" or "-8 vs top-10k average")
+  2. User can see which template players (high-ownership in the top-10k) they did not own that GW, named specifically -- surfacing the differential decisions that most likely explain the gap
+  3. When top-10k data is unavailable (API access limitation or GW not yet in top-10k data), the comparison degrades to showing vs overall FPL average from bootstrap events[].average_entry_score, with a clear label indicating which benchmark is shown
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 100: Decision History Analytics
+**Goal**: Users can see a season-level summary of their decision quality -- captain hit rate, chip ROI, hit break-even tracking -- turning the raw BackTab GW-by-GW regret data into actionable season-level conclusions about their process
+**Depends on**: Phase 96 (BACK-01 -- useDecisionHistory hook + BackTab already exist; captain hit rate derives from this data); Phase 98 (post-GW actuals available for chip ROI calculation); authenticated FPL transfer history for HIST-03
+**Requirements**: HIST-01, HIST-02, HIST-03
+**Success Criteria** (what must be TRUE):
+  1. User can see their season captain hit rate -- the percentage of GWs where their captain outscored the field (computed from existing useDecisionHistory / BackTab data, no new pipeline work) -- displayed as a headline metric in the Accuracy section
+  2. User can see chip ROI -- the actual points scored in GWs where they used BB, TC, or FH compared to their season average GW score -- making the chip value immediately legible (e.g. "Bench Boost GW29: +14 vs your 52-point average")
+  3. User can see hit break-even tracking -- for each -4pt transfer hit taken during the season, whether the player bought outscored the player sold by 4+ points within the expected window -- sourced from authenticated FPL transfer history
+  4. When the user is not authenticated, HIST-02 and HIST-03 show a prompt to log in rather than an error; HIST-01 (captain hit rate from BackTab) always renders regardless of auth state
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 101: GW-Targeted Transfers & UX Polish
+**Goal**: Users can select a specific future GW in TransferPanel and see buy candidates re-ranked by that GW's xPts only -- not the current horizon average -- enabling targeted end-of-season planning; and the GwToggle labels are renamed for clarity throughout the app
+**Depends on**: Phase 96 (v1.16 complete); operates over existing MergedPlayer data and suggestTransfers() engine; no pipeline change required for either feature
+**Requirements**: GWT-01, UX-01
+**Success Criteria** (what must be TRUE):
+  1. User can select a target GW (e.g. GW36) in TransferPanel and see transfer candidates re-ranked by their projected xPts for that specific GW's fixtures only -- not the 1/3/5 GW horizon average that currently drives ranking
+  2. When a target GW is selected, the panel clearly labels which GW is being scored (e.g. "Ranked by GW36 xPts") so the user understands the ranking context has changed
+  3. GwToggle labels across the app read "Next 1 GW", "Next 3 GWs", "Next 5 GWs" (replacing "1 GW / 3 GW / 5 GW") in both GwToggle.tsx and all column headers that reference the horizon
+  4. UX-01 label rename does not affect any data logic -- it is a pure display string change verified by Vitest snapshot or text-content assertions
+**Plans**: TBD
+**UI hint**: yes
 
 ---
 
@@ -1228,4 +1309,9 @@ Plans:
 | 93 | v1.16 | 0/4 | Not started | - |
 | 94 | v1.16 | 3/3 | Complete    | 2026-05-11 |
 | 95 | v1.16 | 2/2 | Complete    | 2026-05-11 |
-| 96 | v1.16 | 0/4 | Not started | - |
+| 96 | v1.16 | 4/4 | Complete    | 2026-05-11 |
+| 97 | v1.17 | 0 | Not started | - |
+| 98 | v1.17 | 0 | Not started | - |
+| 99 | v1.17 | 0 | Not started | - |
+| 100 | v1.17 | 0 | Not started | - |
+| 101 | v1.17 | 0 | Not started | - |
