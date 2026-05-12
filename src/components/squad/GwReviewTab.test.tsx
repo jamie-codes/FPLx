@@ -24,6 +24,13 @@ const sampleReview: GwReview = {
   average_score: 55,
   best_bench_player_name: 'Watkins',  // Phase 98 PGW-01
   best_bench_player_pts: 9,           // Phase 98 PGW-01
+  // Phase 99 PGW-03 — new required fields:
+  benchmark_score: 54,
+  benchmark_label: 'Dream team',
+  missed_players: [
+    { name: 'Saka', pts: 12 },
+    { name: 'Palmer', pts: 10 },
+  ],
 }
 
 function mockSuccess(data: GwReview = sampleReview) {
@@ -67,14 +74,14 @@ describe('Phase 73: GwReviewTab', () => {
     expect(container.textContent).toContain('72')   // your_score
     expect(container.textContent).toContain('8')    // bench_pts_left
     expect(container.textContent).toContain('+6')   // captain_delta with + prefix
-    expect(container.textContent).toContain('55')   // average_score
+    expect(container.textContent).toContain('54')   // benchmark_score (PGW-03 replaces the 4th card)
     // Detail rows
     expect(container.textContent).toContain('Haaland') // top scorer name + optimal captain
     expect(container.textContent).toContain('Salah')   // captain name
     // Stat labels
     expect(container.textContent).toContain('GW Score')
     expect(container.textContent).toContain('Bench pts left')
-    expect(container.textContent).toContain('FPL average')
+    expect(container.textContent).toContain('Dream team')  // PGW-03: 4th card now shows benchmark label
     expect(container.textContent).toContain('Captain delta')
   })
 
@@ -139,5 +146,112 @@ describe('Phase 73: GwReviewTab', () => {
   it('"Best bench" row is absent in no-squad empty state (PGW-01)', () => {
     const { container } = render(<GwReviewTab teamId="" settledGws={[33, 34, 35]} />)
     expect(container.textContent).not.toContain('Best bench')
+  })
+})
+
+describe('Phase 99 PGW-03: GwReviewTab benchmark card + Missed row', () => {
+  beforeEach(() => {
+    mockUseGwReview.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: false,
+      error: null,
+    })
+  })
+
+  function withReview(overrides: Partial<GwReview> = {}) {
+    mockUseGwReview.mockReturnValue({
+      data: { ...sampleReview, ...overrides },
+      isLoading: false,
+      isError: false,
+      error: null,
+    })
+  }
+
+  it('renders benchmark StatCard with label and value from review.benchmark_label/benchmark_score', () => {
+    withReview({ benchmark_label: 'Dream team', benchmark_score: 54 })
+    const { container } = render(<GwReviewTab teamId="12345" settledGws={[33, 34, 35]} />)
+    const card = container.querySelector('[data-testid="gw-review-benchmark-card"]')
+    expect(card).not.toBeNull()
+    expect(card!.textContent).toContain('Dream team')
+    expect(card!.textContent).toContain('54')
+  })
+
+  it('renders delta sub-label "+N vs you" when your_score > benchmark_score', () => {
+    withReview({ your_score: 72, benchmark_score: 60, benchmark_label: 'Dream team' })
+    const { container } = render(<GwReviewTab teamId="12345" settledGws={[33, 34, 35]} />)
+    const card = container.querySelector('[data-testid="gw-review-benchmark-card"]')
+    expect(card!.textContent).toMatch(/\+12 vs you/)
+  })
+
+  it('renders delta sub-label "−N vs you" (U+2212) when your_score < benchmark_score', () => {
+    withReview({ your_score: 50, benchmark_score: 65, benchmark_label: 'Dream team' })
+    const { container } = render(<GwReviewTab teamId="12345" settledGws={[33, 34, 35]} />)
+    const card = container.querySelector('[data-testid="gw-review-benchmark-card"]')
+    // U+2212 MINUS SIGN, not U+002D HYPHEN-MINUS
+    expect(card!.textContent).toMatch(/−15 vs you/)
+    // Confirm it is NOT the ASCII hyphen variant
+    expect(card!.textContent).not.toMatch(/^-15 vs you$/)
+  })
+
+  it('renders delta sub-label "on par" when your_score === benchmark_score', () => {
+    withReview({ your_score: 60, benchmark_score: 60, benchmark_label: 'Dream team' })
+    const { container } = render(<GwReviewTab teamId="12345" settledGws={[33, 34, 35]} />)
+    const card = container.querySelector('[data-testid="gw-review-benchmark-card"]')
+    expect(card!.textContent).toContain('on par')
+  })
+
+  it('does NOT render delta sub-label when benchmark_label === "FPL average" (degraded fallback)', () => {
+    withReview({
+      your_score: 72,
+      benchmark_score: 55,
+      benchmark_label: 'FPL average',
+      missed_players: [],
+    })
+    const { container } = render(<GwReviewTab teamId="12345" settledGws={[33, 34, 35]} />)
+    const card = container.querySelector('[data-testid="gw-review-benchmark-card"]')
+    expect(card!.textContent).toContain('FPL average')
+    expect(card!.textContent).toContain(String(55))  // benchmark_score value shown
+    // Delta sub-label must be absent
+    expect(card!.textContent).not.toContain('vs you')
+    expect(card!.textContent).not.toContain('on par')
+  })
+
+  it('renders Missed row when missed_players.length > 0', () => {
+    withReview({
+      missed_players: [
+        { name: 'Saka', pts: 12 },
+        { name: 'Palmer', pts: 10 },
+      ],
+    })
+    const { container } = render(<GwReviewTab teamId="12345" settledGws={[33, 34, 35]} />)
+    const row = container.querySelector('[data-testid="gw-review-missed-row"]')
+    expect(row).not.toBeNull()
+    expect(row!.textContent).toContain('Missed')
+    expect(row!.textContent).toContain('Saka (12)')
+    expect(row!.textContent).toContain('Palmer (10)')
+  })
+
+  it('Missed row is absent from DOM when missed_players.length === 0', () => {
+    withReview({ missed_players: [] })
+    const { container } = render(<GwReviewTab teamId="12345" settledGws={[33, 34, 35]} />)
+    expect(container.querySelector('[data-testid="gw-review-missed-row"]')).toBeNull()
+    // The literal label "Missed" must also be absent (so the row isn't merely hidden)
+    const dataBranch = container.querySelector('[data-testid="gw-review-tab"]')
+    expect(dataBranch!.textContent).not.toContain('Missed')
+  })
+
+  it('Missed row formats players as "Name (pts)" joined by ", " (3 misses)', () => {
+    withReview({
+      missed_players: [
+        { name: 'Saka', pts: 14 },
+        { name: 'Palmer', pts: 12 },
+        { name: 'Foden', pts: 10 },
+      ],
+    })
+    const { container } = render(<GwReviewTab teamId="12345" settledGws={[33, 34, 35]} />)
+    const row = container.querySelector('[data-testid="gw-review-missed-row"]')
+    const valueSpan = row!.querySelector('span:nth-of-type(2)')
+    expect(valueSpan!.textContent).toBe('Saka (14), Palmer (12), Foden (10)')
   })
 })
