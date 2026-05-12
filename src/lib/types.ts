@@ -46,6 +46,7 @@ export interface FPLEvent {
   is_next: boolean
   finished: boolean
   deadline_time: string  // ISO 8601 — Phase 58 D-05
+  data_checked: boolean  // Phase 98 D-06: gate for settled GW detection (finished && data_checked)
 }
 
 // Full bootstrap-static response (validated)
