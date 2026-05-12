@@ -240,9 +240,9 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
               id="freeTransfers"
               type="number"
               min={1}
-              max={5}
+              max={2}
               value={freeTransfers}
-              onChange={e => setFreeTransfers(Math.max(1, Math.min(5, Number(e.target.value))))}
+              onChange={e => setFreeTransfers(Math.max(1, Math.min(2, Number(e.target.value))))}
               className="border border-zinc-300 dark:border-zinc-600 rounded px-3 py-1.5 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-full sm:w-20"
             />
           </div>
