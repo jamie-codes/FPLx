@@ -1209,7 +1209,11 @@ Plans:
   2. User can see captain comparison for the settled GW -- their actual captain (player name + points scored x multiplier) vs the highest-scoring player in their squad that GW (player name + points), with the points delta labelled
   3. When the user visits the app after a GW deadline has passed (determined by FPL bootstrap events[].deadline_time), the post-GW review card auto-surfaces without requiring the user to navigate to the Review sub-tab
   4. When no settled GW data is available or squad is not loaded, the review card degrades gracefully with an explanatory prompt rather than an error
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 98-01-PLAN.md — Extend FPLEventSchema with data_checked and GwReview with best_bench_player fields (foundation for both downstream plans)
+- [ ] 98-02-PLAN.md — PGW-01: bench summary in /api/gw-review route + Best bench row in GwReviewTab (with new route.test.ts)
+- [ ] 98-03-PLAN.md — PGW-02 live data + PGW-04 auto-surface: useSettledGws hook + page.tsx wiring + auto-surface useEffect
 **UI hint**: yes
 
 ### Phase 99: Top-10k Comparison
