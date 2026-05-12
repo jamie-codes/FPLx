@@ -17,7 +17,7 @@
 
 - [ ] **PGW-01**: User can see a post-GW bench summary — highest-scoring bench player's points highlighted, showing how many points were left on the bench that GW
 - [ ] **PGW-02**: User can see captain comparison — actual captain points vs the highest-scoring player in their squad that GW
-- [ ] **PGW-03**: User can see their GW score compared to the top-10k average, including which template players they didn't own
+- [x] **PGW-03**: User can see their GW score compared to the top-10k average, including which template players they didn't own
 - [ ] **PGW-04**: Post-GW review card auto-surfaces when the user visits the app after a GW deadline has passed (uses FPL bootstrap `events[].deadline_time`)
 
 ### Decision History

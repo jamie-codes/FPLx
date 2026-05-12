@@ -1325,6 +1325,6 @@ Plans:
 | 96 | v1.16 | 4/4 | Complete    | 2026-05-11 |
 | 97 | v1.17 | 2/2 | Complete    | 2026-05-12 |
 | 98 | v1.17 | 1/3 | In Progress|  |
-| 99 | v1.17 | 2/2 | Complete   | 2026-05-12 |
+| 99 | v1.17 | 2/2 | Complete    | 2026-05-12 |
 | 100 | v1.17 | 0 | Not started | - |
 | 101 | v1.17 | 0 | Not started | - |
