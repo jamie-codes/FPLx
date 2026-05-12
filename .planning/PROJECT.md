@@ -4,6 +4,8 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
+v1.17 Phase 101 complete (2026-05-12) — GWT-01 + UX-01: GW-targeted transfer scoring engine + UI. `computeGwXpts` TypeScript port of Python `_xpts_per_gw` (DGW sums, BGW=0, correct CS direction). `suggestTransfers` extended with optional `targetGw` routing all 4 scoring sites through `scorePlayer`; denominator=1 for per-GW view. Target GW `<select>` dropdown in TransferPanel OCS header with `availableGws` memo, `disabled={!!targetGw}` GwToggle pills, column-header switch, and "Ranked by GW{N} xPts" sub-label. UX-01: GwToggle labels renamed "Next 1 GW / Next 3 GWs / Next 5 GWs". 88 tests GREEN.
+
 v1.17 Phase 99 complete (2026-05-12) — PGW-03: Dream-team benchmark card in GW Review. `/api/gw-review` fetches `dream-team/{gw}/` in a standalone try/catch; GwReview type extended with `benchmark_score`, `benchmark_label`, `missed_players`; 4th StatCard slot now shows dream-team score with sentiment delta (+N/−N vs you); conditional Missed row lists up to 3 unowned dream-team players. Graceful degradation to FPL average on upstream failure. 21 tests (7 route + 14 component) all GREEN.
 
 v1.17 Phase 97 complete (2026-05-12) — HEAT-01: Fixture Heat Map toggle wired. `ClubFormViewToggle` pill (Form/Heat Map) + `ClubFormTab` wrapper with TDD RED→GREEN (6 tests). `fixture-heat-map` sub-tab removed from page navigation; `club-form` moved from Plan to Analyse. 44 tests passing.
