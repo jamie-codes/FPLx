@@ -111,7 +111,7 @@ describe('FixtureEaseRankingPanel', () => {
     const def = screen.getByRole('button', { name: 'DEF' })
     expect(att.getAttribute('aria-pressed')).toBe('true')
     expect(def.getAttribute('aria-pressed')).toBe('false')
-    const threeGw = screen.getByRole('button', { name: '3 GW' })
+    const threeGw = screen.getByRole('button', { name: 'Next 3 GWs' })
     expect(threeGw.getAttribute('aria-pressed')).toBe('true')
   })
 
@@ -192,7 +192,7 @@ describe('FixtureEaseRankingPanel', () => {
     render(<FixtureEaseRankingPanel />)
     let rows = screen.getAllByTestId(/^ease-row-/)
     expect(rows[0].getAttribute('data-testid')).toBe('ease-row-ARS')
-    fireEvent.click(screen.getByRole('button', { name: '5 GW' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Next 5 GWs' }))
     rows = screen.getAllByTestId(/^ease-row-/)
     expect(rows[0].getAttribute('data-testid')).toBe('ease-row-CHE')
   })

@@ -205,8 +205,8 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
 
-      // Click the 5GW toggle button (GwToggle renders "5 GW" — note the space)
-      const fiveGwBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent?.trim() === '5 GW')
+      // Click the 5GW toggle button (Phase 101 UX-01: GwToggle now renders "Next 5 GWs")
+      const fiveGwBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent?.trim() === 'Next 5 GWs')
       expect(fiveGwBtn).toBeTruthy()
 
       const tableText = () => container.querySelector('[data-testid="comparison-table"]')?.textContent ?? ''
