@@ -12,8 +12,11 @@ const CS_PTS: Record<number, number>     = { 1: 6, 2: 6, 3: 1, 4: 0 }
 const BONUS_RATE: Record<number, number> = { 1: 0.30, 2: 0.40, 3: 0.60, 4: 0.70 }
 
 /** CS probability for a single fixture.
- *  [VERIFIED: pipeline/merge.py _cs_prob(), lines 123-147]
- *  High defensiveDifficulty = strong attacker = LOW CS probability. */
+ * NOTE: xmins is the player-level aggregate (probability-weighted across horizon).
+ * Used as a per-fixture proxy — FixtureEntry does not carry per-fixture xmins.
+ * For DGW players this may overstate CS probability on the second fixture.
+ * [VERIFIED: pipeline/merge.py _cs_prob() lines 123-147 — per-fixture mins arg]
+ * High defensiveDifficulty = strong attacker = LOW CS probability. */
 function csProb(defensiveDifficulty: number, xmins: number): number {
   const raw = Math.max(0.10, Math.min(0.65, 0.40 - defensiveDifficulty * 0.30))
   const minsFactor = Math.min(1.0, xmins / 60.0)
