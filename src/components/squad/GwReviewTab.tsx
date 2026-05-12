@@ -189,6 +189,13 @@ export function GwReviewTab({ teamId, settledGws }: GwReviewTabProps) {
           </span>
         )}
       </div>
+
+      <div className="rounded border border-zinc-200 dark:border-zinc-700 px-3 py-2 flex items-baseline gap-2">
+        <span className="text-xs text-zinc-500 dark:text-zinc-400">Best bench</span>
+        <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+          {review.best_bench_player_name} — {review.best_bench_player_pts}pts
+        </span>
+      </div>
     </section>
   )
 }

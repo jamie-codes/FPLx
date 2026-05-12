@@ -150,6 +150,12 @@ export async function GET(request: NextRequest) {
   // Top scorer: same as optimal captain by definition (highest total_points among starters)
   const topScorer = optimalCaptain
 
+  // Phase 98 PGW-01 / D-09: best bench player = highest total_points among picks with position > 11
+  const benchPicks = picks.filter((p) => p.position > 11)
+  const bestBench = benchPicks.length > 0
+    ? benchPicks.reduce((best, p) => (p.total_points > best.total_points ? p : best), benchPicks[0])
+    : null
+
   // D-06: captain delta uses pick.multiplier (Pitfall 3 — handles Triple Captain where multiplier=3)
   // Clamp to 0 if your captain WAS the optimal captain (or if Triple Captain on optimal makes
   // the formula go negative — defence in depth)
@@ -167,9 +173,11 @@ export async function GET(request: NextRequest) {
     top_scorer_name: elementMap.get(topScorer.element) ?? `Player ${topScorer.element}`,
     top_scorer_pts: topScorer.total_points,
     average_score: averageScore,
-    // Phase 98 D-09 / PGW-01: TODO — computed in Plan 02; stub until then
-    best_bench_player_name: '—',
-    best_bench_player_pts: 0,
+    // Phase 98 PGW-01 / D-09: empty-bench fallback ('—' / 0) keeps the field non-optional in GwReview
+    best_bench_player_name: bestBench
+      ? (elementMap.get(bestBench.element) ?? `Player ${bestBench.element}`)
+      : '—',
+    best_bench_player_pts: bestBench?.total_points ?? 0,
   }
 
   return Response.json(review, {
