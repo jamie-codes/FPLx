@@ -74,8 +74,9 @@ describe('useSeasonAnalytics — Phase 100 HIST-02/03', () => {
   it('surfaces an error when /api/season-analytics returns 500', async () => {
     const fetchMock = vi.fn(async () => new Response('boom', { status: 500 }))
     vi.stubGlobal('fetch', fetchMock)
+    // Use retries=0 at QueryClient level; hook retry: 1 applies but waitFor allows sufficient time
     const { result } = renderHook(() => useSeasonAnalytics('12345'), { wrapper: makeWrapper() })
-    await waitFor(() => expect(result.current.isError).toBe(true))
+    await waitFor(() => expect(result.current.isError).toBe(true), { timeout: 5000 })
     expect(result.current.error).toBeInstanceOf(Error)
     expect((result.current.error as Error).message).toMatch(/500/)
   })
