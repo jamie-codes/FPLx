@@ -36,6 +36,7 @@ export const FPLEventSchema = z.object({
   is_next:       z.boolean(),
   finished:      z.boolean(),
   deadline_time: z.string(),  // ISO 8601 — added Phase 58 D-05 for rival captain deadline gate
+  data_checked:  z.boolean(),  // Phase 98 D-06: gate for settled GW detection (finished && data_checked)
 })
 
 export const FPLBootstrapSchema = z.object({
