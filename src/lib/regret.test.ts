@@ -44,9 +44,10 @@ describe('computeRegret — D-06 signed captain regret formula', () => {
 })
 
 describe('computeSeasonSummary — aggregates RegretEntry array', () => {
-  it('returns zeros for an empty array', () => {
+  it('returns zeros for an empty array (captainHitRate is null per D-02)', () => {
     expect(computeSeasonSummary([])).toEqual({
       totalRegret: 0, gwsWithData: 0, modelBetter: 0, userWon: 0, tied: 0,
+      captainHitRate: null, captainHits: 0,
     })
   })
 
@@ -63,6 +64,42 @@ describe('computeSeasonSummary — aggregates RegretEntry array', () => {
       modelBetter: 1,
       userWon: 1,
       tied: 1,
+      // D-02: hits = userWon + tied = 1 + 1 = 2; hitRate = 2/3
+      captainHitRate: 2 / 3,
+      captainHits: 2,
     })
+  })
+
+  it('captainHitRate is null when gwsWithData === 0 (all entries have null regret)', () => {
+    const entries: RegretEntry[] = [entry(1, null), entry(2, null), entry(3, null)]
+    const summary = computeSeasonSummary(entries)
+    expect(summary.gwsWithData).toBe(0)
+    expect(summary.captainHitRate).toBeNull()
+    expect(summary.captainHits).toBe(0)
+  })
+
+  it('captainHitRate equals (userWon + tied) / gwsWithData when gwsWithData > 0 (D-02)', () => {
+    // 4 GWs of data: 1 model-better, 2 user-won, 1 tied → hits = 3, total = 4 → rate = 0.75
+    const entries: RegretEntry[] = [
+      entry(1, 4),    // model better — NOT a hit
+      entry(2, -3),   // user won — HIT
+      entry(3, -1),   // user won — HIT
+      entry(4, 0),    // tied — HIT (D-02: regret <= 0)
+    ]
+    const summary = computeSeasonSummary(entries)
+    expect(summary.gwsWithData).toBe(4)
+    expect(summary.userWon).toBe(2)
+    expect(summary.tied).toBe(1)
+    expect(summary.captainHits).toBe(3)        // userWon + tied
+    expect(summary.captainHitRate).toBe(0.75)  // 3/4
+  })
+
+  it('tied GWs (regret === 0) count as hits per D-02 (regret <= 0)', () => {
+    // All entries are tied → every GW is a hit → hitRate = 1.0
+    const entries: RegretEntry[] = [entry(1, 0), entry(2, 0), entry(3, 0)]
+    const summary = computeSeasonSummary(entries)
+    expect(summary.tied).toBe(3)
+    expect(summary.captainHits).toBe(3)
+    expect(summary.captainHitRate).toBe(1)
   })
 })
