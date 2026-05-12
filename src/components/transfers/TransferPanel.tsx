@@ -60,13 +60,17 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
   )
 
   // Phase 101 GWT-01: distinct event_id values across all players' fixtures, sorted ascending.
+  // WR-01: filter to future GWs only (event_id > currentGw) to avoid past GWs in dropdown.
   const availableGws: number[] = useMemo(() => {
+    const currentGw = squadData?.entry_history.event ?? 0
     const ids = new Set<number>()
     for (const p of scoredPlayers) {
-      for (const f of p.fixtures) ids.add(f.event_id)
+      for (const f of p.fixtures) {
+        if (f.event_id > currentGw) ids.add(f.event_id)
+      }
     }
     return Array.from(ids).sort((a, b) => a - b)
-  }, [scoredPlayers])
+  }, [scoredPlayers, squadData])
 
   // Phase 74 D-02: legacy transfer-suggestion memo removed
 
