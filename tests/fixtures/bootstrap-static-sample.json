@@ -67,6 +67,6 @@
     { "id": 4, "name": "Brentford", "short_name": "BRE", "code": 94 }
   ],
   "events": [
-    { "id": 20, "is_current": true, "is_next": false, "finished": false, "deadline_time": "2026-05-05T17:30:00Z" }
+    { "id": 20, "is_current": true, "is_next": false, "finished": false, "deadline_time": "2026-05-05T17:30:00Z", "data_checked": false }
   ]
 }
