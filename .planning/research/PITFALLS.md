@@ -1,160 +1,338 @@
-# Domain Pitfalls — v1.16 Modelling & Trust
+# Pitfalls Research
 
-**Domain:** FPL Analyst — adding **SCRAPER-01** (FPL official news feed scraper), **REFRESH-01** (event-based GitHub Actions triggers), **DH-04** (cron history sparkline), **BACK-01** (decision history backtester), **SPQ-04** (set-piece league table), **WHY-01** (rejection explainer), and **SENS-01** (sensitivity analysis) to the existing Next.js 16 / React 19 / Python pipeline application.
+**Domain:** FPL Analyst v1.18 — Adding Monte Carlo simulation, calibration charts, sensitivity flags, rejection explainers, and LLM prose to an existing Next.js 16 / React 19 / Python analytics app (~28k LOC).
+**Researched:** 2026-05-12
+**Confidence:** HIGH — based on direct inspection of `pipeline/simulate.py`, `pipeline/accuracy.py`, `src/lib/sensitivity.ts`, `src/lib/explain.ts`, `src/app/api/prose-summary/route.ts`, and `src/lib/prose-guardrail.ts`. All pitfalls grounded in existing code, not hypothetical.
 
-**Researched:** 2026-05-09
-
-**Source confidence:** HIGH on existing FPL bootstrap-static fields (`news`, `status`, `chance_of_playing_next_round`, `chance_of_playing_this_round`) verified live in `pipeline/cache/fpl_bootstrap.json`; HIGH on existing GitHub Actions cron (verified at `.github/workflows/pipeline.yml`, runs 4x daily at 6/12/18/00 UTC); HIGH on `data_health.json` and `sp_quality.json` already shipped in v1.14/v1.15 (Phase 82, 84); HIGH on Phase 64 `computeFragility()` and Phase 65 `computeRejection()` already shipped (verified in `src/lib/sensitivity.ts` and `src/lib/explain.ts`); HIGH on existing `localStorage` patterns at 15 call sites including `fplx_manual_plan` and `fpl_team_id` keys; HIGH on Vercel Blob `USE_BLOB` toggle pattern across all existing `/api/*` routes.
-
-This document catalogues mistakes that will cause v1.16 features to ship broken, silently corrupt the existing pipeline, or violate documented invariants. Each pitfall is mapped to the phase that should guard against it. Phase 64 (SENS-01) and Phase 65 (WHY-01) have already shipped — pitfalls below cover regression risks and remaining surface area, NOT greenfield concerns for those features.
-
----
-
-## Pitfall Table
-
-### SCRAPER-01: FPL Official News Feed Scraper
-
-| Pitfall | Risk Level | Prevention Strategy | Which Phase |
-|---|---|---|---|
-| **The data already exists in bootstrap — don't scrape what's free.** `bootstrap-static.elements[].news` is already pulled by the pipeline (verified at `pipeline/merge.py:992`) and includes injury text like "Knee injury - 25% chance of playing". `chance_of_playing_next_round` and `chance_of_playing_this_round` are also present. Scraping `https://fantasy.premierleague.com/news/` adds zero info beyond what the JSON API exposes — and risks a Cloudflare ban that kills the WHOLE pipeline (which depends on the same domain). | CRITICAL | Re-scope SCRAPER-01: surface the existing `news` + `chance_of_playing_*` fields more prominently in TransferPanel and GemTable rather than scraping HTML. If the user genuinely wants the news *feed* (commentary articles, not player flags), scope it as "fetch `https://fantasy.premierleague.com/api/event/{id}/live/` and parse explainer text" — official JSON endpoint, no scraping. Document the decision in CONTEXT.md and resist scope creep into HTML scraping. | SCRAPER-01 |
-| **Scraping shares Cloudflare with the FPL JSON API — bot ban kills bootstrap fetch.** If SCRAPER-01 does scrape HTML and triggers Cloudflare bot detection on `fantasy.premierleague.com`, the **same origin** serves `/api/bootstrap-static/`. The cron pipeline that fetches bootstrap will also be banned. The Understat client already has bot-protection logging (`understat_client.py:107`) — this is a real failure mode. | CRITICAL | If HTML scraping is unavoidable: (1) use a separate User-Agent string identifying the scraper; (2) add jittered backoff (≥ 2s between requests, exponential on 429/403); (3) wrap fetch in `try/except` so a scraper failure does NOT abort the rest of `run.py` (mirror the prose-summary non-fatal pattern at `run.py:351`); (4) fall back to bootstrap `news` field on any non-200 response. Test: simulate 403 from the news endpoint and assert `merged_players.json` still writes successfully. | SCRAPER-01 |
-| **Fragile HTML — class names change with no warning.** FPL ships unannounced UI rewrites (e.g. the 2024 rewrite changed all selectors). A regex or DOM-selector against `<div class="player-news-card">` breaks silently — pipeline keeps writing `news_scraped: []` and the UI shows "No news" for everyone. | HIGH | Build a structural detector: after parsing, assert `len(parsed_news) > 0` for at least one currently-injured player (cross-reference `bootstrap.elements` where `chance_of_playing_next_round in {0, 25, 50, 75}`). If zero matches, log "Selector drift suspected" and emit a sanity check failure into `data_health.json`. Don't silently overwrite the previous good cache — preserve last-known-good with a stale flag (mirror `last_updated.json` stale pattern). | SCRAPER-01 |
-| **Rate-limit / `robots.txt` violations.** `fantasy.premierleague.com/robots.txt` may explicitly disallow `/news/` or set a Crawl-delay. Aggressive polling (e.g. every cron run = 4×/day) on top of bootstrap fetch raises baseline traffic from this IP. | HIGH | Check `robots.txt` BEFORE first run (`requests.get('https://fantasy.premierleague.com/robots.txt')` — visible in any browser). If `/news/` is disallowed: do not scrape at all, fall back to the API news field. If allowed: cap to once-per-cron (every 6h), respect any `Crawl-delay` directive. Log compliance state in `data_health.json` so future contributors see the constraint. | SCRAPER-01 |
-| **News text de-duplication — same injury reported across runs.** `news` from bootstrap is a single string; the scraper may produce a list of articles. Without de-duplication keyed on player + news_added_timestamp, the UI shows the same "Knee injury - returning Mon" 4 times across runs. | MEDIUM | Use the existing `news_added` field already in `bootstrap.elements[]` (ISO timestamp, verified) as the dedup key. Drop entries where `news_added` is unchanged from the last cache. Test: run pipeline twice with no input change and assert second run produces zero new news entries. | SCRAPER-01 |
-| **Injury news leaks user PII / sensitive content into Vercel Blob cache.** The official feed sometimes embeds tweet quotes, manager interview snippets, or third-party tracking pixels. If the scraper writes raw HTML to Blob, those pixels fire on user view. | MEDIUM | Sanitise all scraped text: strip `<script>`, `<img>`, and `<iframe>`; use `bleach` (already in Python ecosystem; or add `html.parser` strip-tags) before writing to JSON. Escape on the React side too (React auto-escapes string children — fine — but never use `dangerouslySetInnerHTML`). Test: feed a fixture with `<script>` and assert it's stripped. | SCRAPER-01 |
-| **TransferPanel + GemTable already display `news` — don't double-render.** Both components already read `MergedPlayer.news` (line 26 in `types.ts`). If SCRAPER-01 adds a NEW field like `scraped_news_html`, downstream renderers may show both stale-bootstrap `news` AND fresh `scraped_news_html` simultaneously. | MEDIUM | Single source of truth: have the pipeline merge scraped + bootstrap news into the existing `news` field with a precedence rule (scraped wins if newer than bootstrap `news_added`). Do NOT introduce a parallel field. Test: assert `MergedPlayer.news` is the only news-bearing field after pipeline runs. | SCRAPER-01 |
-
-### REFRESH-01: Event-Based GitHub Actions Triggers
-
-| Pitfall | Risk Level | Prevention Strategy | Which Phase |
-|---|---|---|---|
-| **GW-deadline-detection off-by-one (timezone).** FPL `event.deadline_time` is ISO 8601 UTC (verified in `fpl-adapter.ts:38`). GitHub Actions cron runs in UTC. But the FPL site displays deadlines in UK local (BST/GMT) — a GW31 deadline of "Sat 11:30 BST" is `10:30 UTC` in summer, `11:30 UTC` in winter. A naive trigger that fires "1h before deadline" computed in BST will fire at the wrong UTC time during DST transitions (last Sunday in March / October). | HIGH | Always compute deadline math in UTC (`Date.parse(deadline_time)` returns ms-since-epoch, TZ-safe). Never use `toLocaleString` or implicit local-TZ math. Add a unit test using a deadline string spanning the BST→GMT transition (e.g. 2026-10-25 02:00 UTC) and assert "1h-before" is computed correctly. Reference `useRivals.ts:65` (`Date.parse(currentEvent.deadline_time)`) — already follows this pattern; mirror it. | REFRESH-01 |
-| **Double-trigger — cron and event-trigger both fire.** Existing `pipeline.yml` already runs 4×/day at fixed UTC times. If REFRESH-01 adds `repository_dispatch` or a deadline-triggered workflow, both can fire within minutes (e.g. 6am cron + "1h before 7am deadline" trigger). Two pipeline runs in parallel race for the Vercel Blob upload — last writer wins, but partial writes can corrupt cache files mid-run. | HIGH | Add a workflow-level concurrency guard: `concurrency: { group: pipeline, cancel-in-progress: false }` (GitHub Actions native). Second run queues, waits for first to finish. Also: when REFRESH-01 schedules an event-driven run, add a "skip if cron ran < 30min ago" precondition by checking `last_updated.json` age via a curl-and-parse step. Test: trigger workflow_dispatch twice in quick succession and verify one queues. | REFRESH-01 |
-| **GitHub Actions API rate limits — workflow_dispatch quota.** Anonymous repo-dispatch is rate-limited; PAT-authenticated dispatch is 5,000 req/h per token. If the trigger source is a serverless function checking deadlines every minute and dispatching, a buggy loop burns the quota in 17 min. | MEDIUM | Don't poll-and-dispatch from a serverless function. Use GitHub's native cron schedule (already in `pipeline.yml`) with multiple `cron:` entries — one per known deadline window. Compute the schedule at deploy time from the season fixture list, write 38 `cron:` entries (one per GW), regenerate when fixtures shift. Test: validate the generated YAML against `https://crontab.guru` parser. | REFRESH-01 |
-| **Deadline shifts mid-week — fixture rescheduling.** When a PL fixture moves (e.g. broadcast change), `event.deadline_time` updates in the FPL API, but the cron schedule already encoded in `pipeline.yml` is now wrong. The trigger fires at the OLD deadline. | MEDIUM | Don't try to be too clever with scheduled triggers. Instead: keep the existing 4×/day cron (already covers most cases) and add ONE event trigger 30min before the *next event's deadline* computed dynamically inside the workflow (`run.py` reads `bootstrap.events`, finds next deadline, schedules a follow-up via `gh workflow run` if more than 8h away from the next regular cron). Test: simulate a fixture reschedule and assert the next pipeline run still happens within 30min of the new deadline. | REFRESH-01 |
-| **FPL API returns stale data immediately after deadline.** Right at deadline, `bootstrap-static` cache on FPL's CDN may be 5–15min stale (lineups, last-minute injuries not yet reflected). A pipeline run triggered at "deadline + 1min" reads pre-deadline data and writes it to Blob — then no scheduled run for another 6h, so users see stale "lineups" for hours. | MEDIUM | For event-triggered runs around deadline: re-fetch bootstrap with a small delay (15min after deadline + retry on `cache-control: max-age` mismatch). Use `If-Modified-Since` if FPL honours it (test: `curl -I` and check headers). Document the latency in the UI (the existing `LastUpdated` "Updated X ago" already covers this — reuse it). | REFRESH-01 |
-| **GitHub Actions secrets leak in trigger logs.** REFRESH-01 may pass deadline metadata as workflow_dispatch inputs. If those inputs include any computed token (e.g. an HMAC of the deadline + a secret), logs leak the token. | LOW | Never pass secrets as workflow inputs. Use `secrets.*` references only inside `env:` blocks (existing pattern at `pipeline.yml:13-15`). If REFRESH-01 needs an HMAC: compute it inside the workflow from `secrets.*`, not in the dispatch payload. | REFRESH-01 |
-| **Concurrency guard interaction with manual `workflow_dispatch`.** A user who hits "Run workflow" in the GH UI while a deadline-trigger run is in flight: the dispatch enqueues. If both runs target the same Vercel Blob, the second run silently overwrites the first run's output. Mostly harmless (both runs produce equivalent output) but the timestamp delta confuses the existing DH-01 staleness check. | LOW | The `concurrency` key (already noted above) handles this. Document that REFRESH-01 + `workflow_dispatch` share the same group. Test: trigger both and assert only one ends up in the Blob output. | REFRESH-01 |
-
-### DH-04: Cron History Sparkline
-
-| Pitfall | Risk Level | Prevention Strategy | Which Phase |
-|---|---|---|---|
-| **No DB — history must persist across Vercel Blob writes without state.** Each pipeline run overwrites `data_health.json` (verified — single snapshot pattern from Phase 82). To show a 7-run sparkline, the writer must read the previous `data_health.json`, append the new run summary, trim to last 7, and write back. Race conditions if two runs overlap (REFRESH-01 introduces this risk). | HIGH | Store history as a separate file `pipeline/cache/cron_history.json` with append-then-trim semantics. Read previous file before writing; on read failure (cold start), initialize as `[]`. Use Vercel Blob's atomic write semantics — avoid read-modify-write races by combining with the REFRESH-01 concurrency guard. Test: simulate two pipeline runs writing in parallel and assert no entries are lost. | DH-04 |
-| **Sparkline data structure becomes unbounded — Blob size growth.** A naive "append every run" with no trim grows linearly. At 4×/day = 1,460 runs/year × ~200 bytes = 300KB/year — small, but if any run includes the full sanity-check breakdown (each check ~150 bytes × 5 checks = 750 bytes per run), it climbs to 1MB/year and Vercel Blob list-and-fetch latency degrades. | MEDIUM | Hard cap at last 30 runs (10 days at 4×/day cadence is plenty for a 7-run sparkline). Store only `{ run_at, status, duration_sec, error_summary?: string }` per entry — NOT the full data_health snapshot. Document the schema in `cron_history.json` writer. Test: write 35 entries and assert file contains 30. | DH-04 |
-| **"Status" enum drift — sparkline colour breaks.** If `data_health.json.status` is currently `'green' | 'amber' | 'red'` and a future change adds `'unknown'`, the sparkline that switch-cases on three values silently falls through to a default (often invisible/transparent). | MEDIUM | Use a Tailwind class map with an explicit fallback colour for unknown statuses (`zinc-300`). Add a TypeScript exhaustiveness check (`assertNever`) on the discriminator. Vitest test: render sparkline with each status and assert a non-transparent colour class is applied. | DH-04 |
-| **Sparkline misleads on partial-day data.** First 7 runs after a feature deploy show "100% success" because no failures happened yet. User mistakes recency for reliability. Conversely: a single transient 4-min outage (e.g. GitHub Actions runner unavailable) shows as "1 of 7 failed = 14% downtime" which is alarmist. | LOW | Show absolute counts not percentages ("6 OK, 1 failed"). Tooltip on each bar shows the run timestamp + error message (when failed). For < 7 runs, show empty placeholder bars (grey) so the user understands the sparkline is incomplete. Mirror the "Insufficient data" pattern from existing CalibrationSection. | DH-04 |
-| **6h staleTime on `useDataHealth` already overridden** — DH-04 inherits this. Phase 82 already set `staleTime: 0, refetchInterval: 60_000` on `useDataHealth`. The sparkline component must NOT add its own slower refetch (e.g. via a separate `useQuery(['cron-history'], ...)` with `staleTime: 6h`). | LOW | Either embed the sparkline data inside the existing `useDataHealth` payload (single hook), OR use the same staleTime/refetchInterval for `useCronHistory`. Don't introduce a hook with stricter caching. Document in the hook's JSDoc. | DH-04 |
-
-### BACK-01: Decision History Backtester
-
-| Pitfall | Risk Level | Prevention Strategy | Which Phase |
-|---|---|---|---|
-| **localStorage 5–10MB quota — silent failure when full.** Browsers cap localStorage at 5MB (Safari) to 10MB (Chrome) per origin. Recording every captain pick + transfer + chip decision per GW for a season fills the quota fast: 38 GWs × ~3KB per decision snapshot (squad + chosen + alt + scoring delta) = ~115KB. Add user's existing `fplx_manual_plan` (variable, can be 50–200KB), `fpl_team_id`, theme, etc. — at multi-season aggregation, quota errors. Setter throws `QuotaExceededError`; React state continues without persistence. | HIGH | Wrap every `localStorage.setItem` in try/catch and degrade gracefully (toast notification "History full — clearing oldest entries" + auto-trim). Implement a ring buffer: keep last 38 GWs (one season), drop older. Use `JSON.stringify` size pre-check before write. Add a "Clear history" button in the UI. Test: mock localStorage with a 100KB limit and assert auto-trim kicks in. Reference `MEMORY.md` autonomous-session note — this codebase already has 15 localStorage call sites; pile-up is a real risk. | BACK-01 |
-| **GW boundary bug — "decision made" vs "decision applied" timing.** A user views the captaincy panel BEFORE the GW31 deadline. They consider Salah but ultimately captain Haaland. The decision-history record must capture (a) the candidates available at decision time, (b) the *user's* pick, (c) what *actually happened* (after the GW finishes — `event_history.points` available 2h after final whistle). If the recorder fires too early, it records 0 actual points; too late, it misses the user's intent. | HIGH | Two-phase record: Phase A (at user action / before deadline): write `{ gw, intent: 'captain', player_id, candidates, deadline_time }`. Phase B (after GW finishes): a daily reconciler reads `bootstrap.events[].finished` and merges in `actual_points` from `element-summary`. Never write actuals at decision time. Use the existing `useGwReview` hook pattern (mirrors Phase 56 GW Review) for the after-the-fact reconciliation. Test: simulate a decision recorded mid-GW and assert `actual_points` is null until reconciliation runs. | BACK-01 |
-| **"Optimal" hindsight bias — comparing user's pick to post-hoc optimal is unfair.** A backtester that ranks the user's captain choice against "the player who scored the most points in retrospect" makes every user look bad — even captaining Haaland 38 times will lose to "captain whoever scored highest each week". This is a known anti-pattern in fantasy sports backtesting. | CRITICAL | Compare against **what the user could have known at decision time**: the top-3 ceiling captains from `captain_picks.json` snapshot at decision time (already shipped). Define "regret" as `actual_points_of_top_ranked_alternative - actual_points_of_user_choice`, NOT vs the league-wide max. Document this in the UI tooltip. Provide an alternative "what-if optimal in hindsight" view but label it clearly as "Hindsight: not actionable". Test: assert regret is computed against the top-3 model picks from the saved snapshot, not against `max(all_players.actual_points)`. | BACK-01 |
-| **Snapshot drift — pipeline data evolves between decision and review.** When the user records a decision at GW31, `merged_players.json` reflects the model state at that moment. By GW36 review, `merged_players.json` is regenerated 5 times — but the *score* the user can attribute to the decision must use the model snapshot from GW31, not GW36 (where Salah's xPts has been retrospectively updated). | HIGH | Snapshot only the minimum data needed at decision time (player IDs + their xPts/captaincy rank at that moment). Don't try to reload the full historical model. Store snapshots as `decision_history[{gw, taken: {player_id, source_xpts, source_rank}, alternatives: [{player_id, source_xpts}], deadline_time}]`. Reconcile against `actual_points` from `element-summary` (those are immutable historical facts). Test: assert `source_xpts` snapshotted at decision time is preserved across pipeline re-runs. | BACK-01 |
-| **Local-only history — no cross-device, no sharing.** A user signs in on their phone after using desktop all season. localStorage doesn't sync. They see no history. Reasonable expectation that fails. | MEDIUM | Document this prominently in the UI (one-line note: "History is stored locally on this device"). Optionally: add a one-click "Export JSON" / "Import JSON" pair so the user can manually move history between devices. Don't try to sync via Vercel Blob — it's single-user single-tenant by design (PROJECT.md decision). | BACK-01 |
-| **Time travel test pollution — `Date.now()` in tests.** The two-phase record/reconcile flow needs date math. Existing tests in this codebase use `vi.useFakeTimers()` (verified in `formatRelativeTime.test.ts`). New code that uses `Date.now()` instead of an injected `now` parameter will produce flaky tests at month boundaries. | LOW | Pure functions take `nowMs: number` as parameter (mirrors `formatRelativeTime(iso, nowMs?)` pattern). React hooks call `Date.now()` once per render and pass down. Test: 10 test runs with frozen time produce identical results. | BACK-01 |
-| **Decision history schema versioning.** The `decision_history` JSON in localStorage is a long-lived artifact. v2 of the backtester adds a new field (e.g. `chip_used`); old entries don't have it. Reading old entries with `decision.chip_used.toUpperCase()` crashes. | LOW | Embed `version: 1` in every record. On read, run a migration function (`migrate(record): RecordV2`) that adds defaults for missing fields. Test: load v1 fixture in v2 reader and assert no crash. Document the migration pattern for future additions. | BACK-01 |
-
-### SPQ-04: Set-Piece League Table (all 20 teams)
-
-| Pitfall | Risk Level | Prevention Strategy | Which Phase |
-|---|---|---|---|
-| **`sp_quality.json` has null fields when teams have low sample counts** — Phase 84 already enforces `n >= 5` for corners and `n >= 3` for FKs (verified in REQUIREMENTS.md SPQ-02). Building a league table that sorts by `delivery_quality_rank` will silently drop teams with null ranks to the bottom (or top, depending on sort direction). | HIGH | Render unranked teams in a separate "Insufficient sample" section below the ranked table, NOT mixed in. Show their sample size (`sp_sample_n`) so the user understands why. Mirror the existing CalibrationSection "n >= 5" pattern from Phase 82. Test: include a team with `delivery_quality_rank: null` in fixture and assert it appears in the unranked section, not at position 21. | SPQ-04 |
-| **Empirical-Bayes shrinkage k=20 hides true outliers.** Phase 84 chose k=20 (~half a season). Mid-season (GW20–25), every taker's score is heavily shrunk to position-mean — the league table looks bunched and uninteresting. Late season (GW36+), shrinkage releases and rankings shift dramatically. The user sees the ranking shift week-to-week and loses trust. | MEDIUM | Display the sample count as a column in the league table (already in data). Add a tooltip on the rank: "Score shrunk toward league mean (k=20); confidence increases with more samples". Consider a "Confidence" pill (low/medium/high based on sample_n) per row. Don't change k — it's a documented Phase 84 decision. Reference: `featureslookup feature-backlog.md`. | SPQ-04 |
-| **Teams without a primary corner taker shouldn't appear at all.** Some PL teams rotate corner takers heavily (no single player has `corners_and_indirect_freekicks_order == 1`). If SPQ-04 iterates `sp_quality.json` keyed by player_id and pivots to teams via `merged_players[].team`, a team with zero primary takers shows as "—" or worse, a phantom row. | MEDIUM | Iterate teams (all 20) as rows, then look up the primary taker per team. If no primary taker found, show "Rotated" in the player column with a neutral grey badge — distinct from "Insufficient sample" (which means primary exists but data is sparse). Test: a team with no `corners_and_indirect_freekicks_order==1` player produces a "Rotated" row. | SPQ-04 |
-| **League-wide sort instability — adjacent ranks differ by 0.001 xG.** With shrinkage applied, two teams may sit at `delivery_quality_rank` 0.0834 vs 0.0835. The displayed rank (1, 2, 3, ...) flips week-to-week from rounding noise. Users perceive instability as bug. | MEDIUM | Round display values to 2 decimals (the underlying data is ~xG-per-shot, 0.05–0.20 range). Use a tier-based ordering in addition to numeric rank: Elite (top 6) / Good (mid 8) / Weak (bottom 6) — already shipped in SPQ-03 — and sort by tier first, score second. Visual: tier pills first, numeric rank as secondary. Mirror existing `TIER_CLASSES` pattern. | SPQ-04 |
-| **DGW skew — teams playing twice this GW dominate aggregation.** Per `MEMORY.md`, GW33 and GW36 are likely DGWs. If SPQ-04 displays "set-piece threat THIS GW" instead of season-long, a DGW team shows 2× the volume of a single-GW team — making them look "more dangerous" by sheer volume rather than per-set-piece quality. | MEDIUM | Keep the metric as season-long average xG-per-shot (per-shot, NOT per-90 or per-GW). Don't add a "this GW" filter. If a per-GW projection is wanted in future, it must use shots-per-GW × xG-per-shot — but season-aggregate is the v1.16 spec. Test: a DGW team in fixtures still ranks by per-shot xG, not by total volume. | SPQ-04 |
-| **Visual conflict with existing `SetPieceTakerPanel`.** Phase 26 already shows penalty/FK/corner takers per team in cards. SPQ-04 adds a sortable league-wide table. If both render on the same `/set-pieces` page, users get a confusing two-tier view. | LOW | Decide layout in CONTEXT.md: either replace the per-team cards with the league table (simpler), or add the table as a "League View" toggle alongside the existing card view (preserves Phase 26 work). Recommended: add a tabs switcher within Set Pieces tab — "Per Team" (existing) | "League Table" (new). Don't break the existing UI. | SPQ-04 |
-
-### WHY-01: Rejection Explainer (already shipped Phase 65 — regression risks)
-
-| Pitfall | Risk Level | Prevention Strategy | Which Phase |
-|---|---|---|---|
-| **Confusing users with negative framing on strong players.** Phase 65 already implements adaptive framing (`D-04`: strong players get "No rejection signals", weak players get reasons). Regression risk: a future change to the threshold (`gem_score >= positionAverage.gem_score AND no fragility AND start_prob >= 0.70`) could either flip a borderline player into negative framing (user sees "Why not Salah?" with a list of nits) or hide rejection reasons for clearly-poor picks. | MEDIUM | Lock the adaptive-framing threshold via a Vitest snapshot test on a fixture with 5 player profiles spanning the spectrum (clear-buy / borderline-buy / mid / borderline-reject / clear-reject). Any change to the threshold breaks the snapshot, forcing explicit review. Reference 065-RESEARCH.md D-04. | WHY-01 (regression) |
-| **Rejection reasons cite stale data after pipeline refresh.** The expand row reads `ScoredPlayer` from React Query cache (6h staleTime). If pipeline runs and updates xPts, the rejection text ("Below xPts threshold for position") may say "rank 14" when fresh data has the player at "rank 8". User confusion. | LOW | Ensure WHY-01 reads from the same in-memory `scoredPlayers` array used by the GemTable rows — they're already in sync. Don't introduce a parallel hook for rejection. Test: change xPts in fixture and assert rejection text updates within the same render. | WHY-01 (regression) |
-| **Captain rejection — "named top candidate" can change mid-render.** Phase 65 D-09: "Captain rejection included — names top candidate explicitly if player is not #1". If `captaincyCandidates` is recomputed (e.g. after a manual squad change), the named candidate flips from Salah to Haaland mid-interaction — user perceives this as a glitch. | LOW | Memoise `captaincyCandidates` at the SquadView level (verified pattern in Phase 65). Pass as a stable prop to ExplainPanel. Test: re-render with same input and assert text is identical. | WHY-01 (regression) |
-| **WHY-02 callout — "absent high-ownership player" set-difference bug.** Phase 65 D-13 caps at top 3 by `selected_by_percent`. If two suggested transfers BUY two of the top-3 high-ownership players, the callout shrinks to 1 entry — but the heading "Why aren't these players appearing?" still reads as plural. | LOW | Render the heading conditional on count: "this player" (singular) / "these players" (plural). If count is 0, hide the entire callout. Test: assert heading text matches count for 0/1/2/3 entries. | WHY-01 (regression) |
-
-### SENS-01: Sensitivity Analysis (already shipped Phase 64 — regression + tuning risks)
-
-| Pitfall | Risk Level | Prevention Strategy | Which Phase |
-|---|---|---|---|
-| **Threshold tuning — `start_prob < 0.70` and `xPtsGain < 4.0` are arbitrary.** Phase 64 D-07 / D-10 lock these values. They're defensible defaults, but as the season progresses and chips are used, the *meaning* of these thresholds shifts. Late-season, every player's `start_prob` drops as rotation increases — every transfer becomes "fragile" and the warning loses signal. | HIGH | Schedule a calibration check post-season: backtest fragile-flagged transfers vs non-flagged for actual outcome variance. If fragile-flagged transfers don't actually have higher variance, the threshold is wrong. Don't ship a UI knob for the user — keep it model-internal, but document the defaults in DECISIONS.md so future tuning is traceable. Add to `data_health.json` sanity checks: "fragile_transfer_pct" should sit in 15-40% range; if it spikes to 80%, alert. | SENS-01 (tuning) |
-| **False positives on mid-season fixture swings.** D-04: fragile if `buy.fixtures[0].difficulty_tier === 'medium'`. The "medium" tier is computed from rolling-game `defensive_difficulty` (verified in `merge.py:782`). When a team's form swings (e.g. Spurs' defensive xGA spikes after a key injury), every transfer in becomes "fragile on fixture" for 2-3 weeks until the rolling window updates. | MEDIUM | Track "fragile-on-fixture" trigger rate in `data_health.json`. If > 50% of suggested transfers trip this in a single GW, log a warning ("Fixture difficulty model may be over-reacting"). Consider widening the rolling window from 3-game to 5-game during volatile periods. Don't auto-tune — surface as a sanity check. | SENS-01 (tuning) |
-| **Hit-cost fragility doesn't account for chip context.** D-09/D-10: hit-fragility applies to transfer candidates only when `xPtsGain < 4.0`. But during Wildcard week, ALL transfers are free — `xPtsGain < 4` is irrelevant. Showing "fragile if taken as a hit" for a Wildcard transfer is misleading. | MEDIUM | Pass active chip context (from `useChipHistory` or planner state) into `computeFragility`. Skip the hit check entirely when `chip in {wildcard, free_hit}`. Test: assert no hit-fragility flag appears for transfers within an active wildcard plan. Reference `065-RESEARCH.md` for chip-aware patterns. | SENS-01 (tuning) |
-| **Fragility warning fatigue — every transfer flagged.** Combined with WHY-01 rejection panel and existing severity badges (Phase 47-51), a single transfer card can show: severity badge + fragility warning + rejection reasons + opportunity cost row. Visual noise. | LOW | Audit the combined visual density on a transfer card with all warnings active. If > 3 amber/red signals per card, deprioritise lower-confidence ones (e.g. fragility-on-fixture only when no other amber signal is shown). Manual UAT pass before each release. | SENS-01 (UX) |
-
-### Cross-Cutting Pitfalls (affect multiple v1.16 features)
-
-| Pitfall | Risk Level | Prevention Strategy | Which Phase |
-|---|---|---|---|
-| **`MergedPlayer` schema drift continues — v1.16 will add 5+ optional fields.** SCRAPER-01 may add `news_scraped_at?`, BACK-01 doesn't touch MergedPlayer (localStorage), SPQ-04 reuses Phase 84 fields, but SCRAPER-01 + WHY-01 / SENS-01 may add derived flags. Each `?` defers shape verification at runtime. The v1.14 PITFALLS.md flagged this; it remains true. | MEDIUM | Continue the post-milestone tech-debt sweep pattern (mirrors Phase 35). For new fields in v1.16: add a Vitest schema test that loads `pipeline/cache/merged_players.json` and asserts every documented field is present. After v1.16 ships, schedule the `?` → required flip as a sweep phase. | All v1.16 |
-| **Pipeline run ordering — REFRESH-01 + DH-04 + SCRAPER-01 all touch `run.py`.** Existing v1.14 PITFALLS notes the 22-step `run.py` order. v1.16 adds: SCRAPER-01 (after bootstrap fetch, before merge), REFRESH-01 (post-pipeline, schedules next run), DH-04 (read history, append, write — last step). Wrong order means stale data flows into derived files. | HIGH | Document the canonical order in a single `run.py` comment block. New steps:<br>`fetch bootstrap → fetch fixtures → fetch news (SCRAPER-01) → merge_players (consumes scraped news) → ... existing 22 steps ... → data_health → cron_history (DH-04) → save last_updated → schedule_next_trigger (REFRESH-01)`. Add a smoke test that runs the full pipeline and asserts each output file's mtime is later than its inputs'. | All v1.16 |
-| **`USE_BLOB` toggle — every new API route must follow the pattern.** v1.16 may add `/api/cron-history` (DH-04), `/api/sp-league-table` (SPQ-04), `/api/decision-history` (BACK-01 — though localStorage-first). Skipping the USE_BLOB toggle means production reads from local filesystem (which doesn't exist in Vercel runtime) → 500 errors. | HIGH | New routes must mirror `src/app/api/data-health/route.ts` (USE_BLOB toggle). BACK-01 is localStorage-only — does NOT need an API route at all (single-user, no server-side persistence). Test: deploy preview branch with USE_BLOB=true and verify each new route returns 200; locally with USE_BLOB=false expect file read. | All v1.16 |
-| **`data_health.json` payload size — sparkline data + sanity checks + cron history could exceed safe limits.** Each new feature adds metrics. A bloated `data_health.json` (> 100KB) makes the 60-second poll (Phase 82) bandwidth-heavy on mobile. | MEDIUM | Split: keep `data_health.json` as the live snapshot; new `cron_history.json` as the history file (DH-04 reads both). Don't lump everything into one file. Hard cap on `data_health.json` at 50KB; size-check at write time and log a warning. | DH-04 |
-| **TanStack Query cache invalidation across new hooks.** v1.16 adds at least 3 hooks (`useCronHistory`, `useSpLeagueTable`, `useDecisionHistory`). Each must declare a stable `queryKey` and reasonable staleTime. Naive `staleTime: 0` everywhere causes refetch storms. | LOW | Mirror existing pattern: 6h for slow-moving server data (sp league table), 60s for live operational data (cron history), session-scoped for client-only state (decision history — useState + localStorage, no React Query). Document each hook's chosen value in JSDoc. | All v1.16 |
+**Critical context from codebase inspection:**
+- MC is already implemented in `pipeline/simulate.py` at `N_SIMS=1000` (configurable via `MC_ITERATIONS` env), gated behind `mc_enabled` in `accuracy_backtest.json`. The 10k target is aspirational — the code currently defaults to 1,000.
+- 832 total merged players; ~480 hit the BGW short-circuit (no active fixtures); ~352 actually run through MC per pipeline execution.
+- Calibration is already computed in `pipeline/accuracy.py::_compute_calibration_data` using 10-decile bucketing with `sample_n < 5` sparse filter.
+- Sensitivity (`computeFragility`) already shipped in Phase 64/93 (`src/lib/sensitivity.ts`). WHY-01 rejection explainer already shipped in Phase 65/94 (`src/lib/explain.ts`). NLP-01 prose summary already shipped in Phase 67 (`pipeline/prose_summary.py`, `/api/prose-summary`).
+- `maxDuration = 30` is already set on the prose-summary route; no other API routes have this guard.
 
 ---
 
-## Phase-Specific Warning Summary
+## Critical Pitfalls
 
-| Phase | Top 3 invariants to test before merge |
-|---|---|
-| **SCRAPER-01** | (1) Pipeline emits valid `merged_players.json` even when news scrape returns 403; (2) `bootstrap.elements[].news` is preserved as fallback when scrape is empty; (3) Selector-drift detector triggers when zero injured players are found in scraped output. |
-| **REFRESH-01** | (1) Two simultaneous workflow runs serialize via `concurrency:` (queue, don't race); (2) Deadline math computed in UTC survives BST→GMT transition fixture; (3) `gh workflow run` quota is preserved across 38 GW deadline schedules. |
-| **DH-04** | (1) Sparkline shows absolute counts not percentages; (2) `cron_history.json` trims to last 30 entries on every write; (3) Status enum exhaustiveness check catches drift. |
-| **BACK-01** | (1) `localStorage.setItem` wrapped in try/catch with auto-trim on QuotaExceededError; (2) Two-phase record (intent at decision time, actuals after GW finishes) — no actuals written at decision time; (3) Regret computed against snapshotted top-3 model picks, NEVER post-hoc max(actual_points). |
-| **SPQ-04** | (1) Teams with `delivery_quality_rank: null` render in separate "Insufficient sample" section, not at position 21; (2) Tier ordering precedes numeric rank; (3) Sample-count column always visible, tooltip explains shrinkage. |
-| **WHY-01** | (1) Adaptive-framing threshold locked via Vitest snapshot; (2) Captain rejection text stable across re-render; (3) WHY-02 heading singular/plural matches count. |
-| **SENS-01** | (1) Hit-fragility skipped during active wildcard/free hit; (2) Fragile-transfer-pct sanity check in `data_health.json`; (3) Threshold defaults documented in DECISIONS.md for future tuning. |
+### Pitfall 1: MC at 10k sims in the Python pipeline is fine — but in-browser JS is not
 
----
+**What goes wrong:**
+Developers see that `simulate.py` runs server-side and assume MC is only ever a pipeline concern. Then NLP-02 per-player insights or a future "what-if" UI needs to re-run MC in the browser (e.g., to show real-time sensitivity to user-edited start_prob). 10k sims × 352 active players = 3.52M Poisson/Bernoulli draws run synchronously on the main thread freezes the tab for 2-5 seconds on modern hardware.
 
-## Cross-Cutting Pitfall: localStorage Pile-Up
+Even at the current 1,000-sim default: 1,000 × 352 = 352k draws. In pure TypeScript (no WASM, no typed arrays), each draw involves `Math.random()` + branch logic. Profile shows ~150-400ms on M2 MacBook, which exceeds the 50ms "long task" threshold and triggers Chrome's input-blocking penalty.
 
-15 existing localStorage call sites (verified) + BACK-01 adds another high-volume key. Cumulative quota risk:
+**Why it happens:**
+The existing TypeScript codebase has `src/lib/rank-sim.ts` which runs a sigma-propagation approximation rather than a full MC. Developers may be tempted to port `simulate.py` directly to TypeScript to enable "live what-if" without understanding the scale difference between a closure approximation (~0.1ms) and 1,000 full simulations (~400ms).
 
-| Key | Owner | Estimated size | Growth pattern |
-|---|---|---|---|
-| `fpl_team_id` | Auth | <50 bytes | Static |
-| `fplx_manual_plan` | Phase 59 | 50–200 KB | Per-edit |
-| `fpl_theme` | Phase 22 | <50 bytes | Static |
-| `fpl_horizon_*` | Phase 64+ | <100 bytes each | Static |
-| `fpl_decision_history` (NEW) | BACK-01 | 1–5 KB per GW × 38 GW = 40–190 KB | Append per GW |
+**How to avoid:**
+- Keep MC exclusively in the pipeline (Python). The pipeline already runs this correctly.
+- For in-browser what-if: use the existing `rank-sim.ts` sigma-approximation (it is fast and already tested). Do not re-implement full MC in TypeScript.
+- If future features genuinely need in-browser MC (e.g. Sensitivity Flags showing a live distribution shift), limit to 200-500 sims per player with a Web Worker. Never on the main thread.
+- The `N_SIMS=1000` floor in `simulate.py` is appropriate for pipeline use. The v1.18 PROJECT.md target of "10k sims" can be achieved in the pipeline by setting `MC_ITERATIONS=10000` in the GitHub Actions environment. At 352 active players × 10k sims = 3.52M NumPy draws — this takes ~2-4 seconds in Python, acceptable for a daily pipeline run.
 
-Total worst case: ~400 KB — well under Chrome's 10MB but tight on Safari's 5MB if the user has other apps in the same origin. **Action:** add a single `localStorage` health check on app load (mirror `data_health` pattern client-side) that warns if total origin usage > 50% of quota.
+**Warning signs:**
+- Any file in `src/lib/` importing `Math.random()` in a loop over the full player list is the anti-pattern
+- A React component that calls a function containing `for(let i=0; i<sims; i++)` inside `useMemo`
+
+**Phase to address:**
+MC-01 pipeline enhancement (bumping `MC_ITERATIONS`). Any UI phase for MC result display must use pre-computed pipeline fields (`blank_prob`, `haul_prob`, `p10_pts`, `p90_pts`, `xPts_5gw_p10/p50/p90`) — never re-run MC in the browser.
 
 ---
 
-## Cross-Cutting Pitfall: FPL Deadline Timing Edge Cases
+### Pitfall 2: Calibration diagram with fewer than 5 finished GWs shows "model is wrong" when it isn't
 
-REFRESH-01 + BACK-01 + WHY-01 (already shipped) all read `event.deadline_time`. Common edge cases:
+**What goes wrong:**
+The existing `_compute_calibration_data` uses a `sample_n < 5` sparse-bucket filter (D-07 in Phase 63). With only 3-4 finished GWs in the backtest window (`BACKTEST_GWS = 5`), the top and bottom deciles have tiny populations — GKs and defenders in the top decile may have 3-4 observations total. At those sample sizes, a single outlier haulter (Salah 20-pointer) or a single non-haulter (Haaland blanked) shifts `actual_rate` by 20-30 percentage points. The diagram looks wildly miscalibrated when the model is actually performing within noise.
 
-1. **DST transitions (BST↔GMT)** — last Sunday of March (BST start) and October (GMT start). FPL deadlines often fall on Saturday 11:30; the next-day Sunday transition can confuse "hours until deadline" math. **Mitigation:** always compute in UTC via `Date.parse()`.
-2. **Mid-week deadline shifts** — broadcast reschedules. The deadline for a Tuesday game can move to Wednesday with 48h notice. **Mitigation:** treat `deadline_time` as authoritative on every read, never cache.
-3. **DGW deadlines** — the deadline for the FIRST fixture of the DGW is the FPL deadline (verified). Players on the SECOND fixture of a DGW can have lineup uncertainty until match day. **Mitigation:** `xmins` already handles this via existing rotation flags; BACK-01 should record the *deadline time*, not "first match kickoff".
-4. **Christmas / blank gameweek** — `event.finished` may take longer than usual; reconciliation must not run until `finished == true`. **Mitigation:** BACK-01 reconciler polls `bootstrap.events[gw].finished` before reading actuals; do not assume "GW is over because deadline + 48h passed".
+More specifically: the calibration diagram bins by xPts rank-decile across ALL positions in the "all" view. With BACKTEST_GWS=5 and ~400 players per GW who played ≥10 minutes, each decile has ~200 observations total — adequate. But position-specific views (e.g. GKs alone) have ~80 total across 5 GWs, and each decile has only ~8 observations. The existing `sample_n < 5` filter is not sufficient for position-specific reliability — you need ~30 per bucket for the observed rate to be stable.
+
+**Why it happens:**
+The `sample_n < 5` guard was set for the "all positions" view. Position-specific views (tabs: GK, DEF, MID, FWD) were added in Phase 91 without recalibrating the minimum bucket size for the smaller pools.
+
+**How to avoid:**
+- For position-specific calibration tabs (GK, DEF, MID, FWD), increase the sparse-bucket filter from `sample_n < 5` to `sample_n < 15` for GK/DEF (small position pools), and `sample_n < 8` for MID/FWD (larger pools).
+- Display a `⚠ Insufficient data (n={total})` banner on any position-specific tab where the total pool across ALL buckets is fewer than 5 × BACKTEST_GWS (e.g. GKs: 4 teams × 2 GKs × 5 GWs ≈ 40, which is marginal).
+- Never render error bars on calibration buckets without showing `n`. The existing `sample_n` field is already in the bucket shape — surface it.
+- On cold start (fewer than 3 GWs in backtest), show "Calibration requires at least 3 completed gameweeks" and hide the chart entirely rather than showing a misleading 2-point diagram.
+
+**Warning signs:**
+- Calibration chart with only 2-3 data points displayed (not enough to identify a trend)
+- `actual_rate` swings > 0.3 between adjacent decile buckets in the same position
+- `sample_n` column hidden from the chart tooltip
+
+**Phase to address:**
+CAL-01 chart rendering phase. Update sparse-bucket constants by position before shipping the chart.
+
+---
+
+### Pitfall 3: Sensitivity flags spam — every recommendation becomes "fragile" late in season
+
+**What goes wrong:**
+`computeFragility` has 5 perturbations; perturbation (a) fires when `start_prob - 0.15 < 0.70`, meaning any player with `start_prob < 0.85` triggers it. In GW30+, fixture congestion, cup fixtures, and Pep-roulette mean 40-60% of "available" players have `start_prob` between 0.70 and 0.84. The result: every second transfer recommendation shows a fragility flag, users learn to ignore them, and the signal dies.
+
+This was documented in the existing v1.16 PITFALLS.md (SENS-01, "threshold tuning") but the follow-up — actually tracking the trigger rate — was deferred to a post-season calibration check that hasn't happened yet.
+
+**Why it happens:**
+The threshold `START_PROB_FLOOR = 0.70` in `sensitivity.ts` was set for mid-season average conditions (~GW20). Late-season, the distribution of `start_prob` shifts left; the threshold becomes less discriminating.
+
+**How to avoid:**
+- Track `fragile_transfer_pct` in `data_health.json` (flagged in v1.16 PITFALLS but not yet implemented). If it exceeds 45% of active transfer candidates in a single GW, log a warning.
+- For v1.18 SENS-01 UI surface: show the fragility tier visually (robust / fragile / knife_edge) without alarm-level UX for "fragile" — reserve `knife_edge` for red warnings. "Fragile" should be an amber informational hint, not a stop-sign.
+- Do NOT add new perturbations to v1.18 without a backtest of false-positive rate across the already-shipped Phase 93 extension.
+- The existing 5-perturbation set is sufficient for v1.18. More perturbations = more flags = faster user desensitisation.
+
+**Warning signs:**
+- `fragile_transfer_pct` > 45% across any single GW's transfer candidates
+- `knife_edge` tier on >10% of top-10 transfer recommendations simultaneously
+- User feedback that "everything is fragile"
+
+**Phase to address:**
+SENS-01 UI phase — establish tier-based visual hierarchy (robust/fragile/knife_edge) before surfacing flags in new UI contexts.
+
+---
+
+### Pitfall 4: WHY-01 rejection reasons must cite the actual model threshold, not invented ones
+
+**What goes wrong:**
+The existing `computeRejection` in `src/lib/explain.ts` is a pure function over real `MergedPlayer` data, computing reasons from `REJECTION_START_PROB_THRESHOLD = 0.70`, `REJECTION_OWNERSHIP_THRESHOLD = 20.0`, etc. The risk in v1.18 is NLP-02: a per-player LLM prose insight that paraphrases the rejection. If the LLM is given only "Player X was rejected" and asked to explain why, it may invent plausible-sounding reasons ("weak fixture against City's back four") that have nothing to do with the actual threshold that fired.
+
+This is NOT hypothetical. The existing guardrail in `prose-guardrail.ts` only checks that no non-allowed player names appear in the prose. It does NOT check that stated reasons match the actual rejection flags.
+
+**Why it happens:**
+Developers build NLP-02 by passing player name + "why they weren't recommended" to Claude and treating the output as authoritative. The LLM is reasoning from context window, not from the actual `computeRejection` output.
+
+**How to avoid:**
+- NLP-02 context assembly for rejection insights MUST include the structured rejection output: the exact `reasons` array from `computeRejection` (e.g. `["rank #14 in MID by xPts", "start_prob < 70%"]`). Pass this as a structured XML or JSON block in the user prompt, analogous to how `prose_summary.py` passes `<captains>` and `<gems>`.
+- The system prompt MUST instruct: "Paraphrase only the reasons listed in `<rejection_reasons>`. Do not add reasons not in the list."
+- The rejection guardrail must be extended: after prose generation, check that each reason in the `reasons[]` array has a semantic match in the prose (approximate match, not exact). If the prose contains words like "injury" but no injury-related reason was in `reasons[]`, reject and retry.
+- WHY-01 in the GemTable row-expand already shows the structured `reasons[]` directly without LLM. The LLM layer in NLP-02 is additive. If the guardrail fails both attempts, fall back to displaying the structured `reasons[]` without prose — this is preferable to displaying invented reasons.
+
+**Warning signs:**
+- NLP-02 prose mentions "injury" for a player with `status: 'a'` and `chance_of_playing_next_round: undefined`
+- NLP-02 prose mentions specific opponent teams not in the fixture list
+- NLP-02 prose gives a different rank number than the actual `xPtsRank` from `computeRejection`
+
+**Phase to address:**
+NLP-02 phase. Extend the prompt structure and guardrail before any NLP-02 prose is shown in the UI.
+
+---
+
+### Pitfall 5: LLM hallucinating player stats when context assembly is incomplete
+
+**What goes wrong:**
+The existing `prose_summary.py` architecture is carefully minimal: it passes only player names and teams — no statistics. The system prompt explicitly instructs "Refer to players qualitatively — do not include statistics, projected points, or numeric values." This is intentional to prevent hallucination of wrong numbers.
+
+NLP-02 per-player insights will be tempted to pass xPts, form score, and other numbers into context so the LLM can use them. The risk: Claude receives `xPts_1gw: 6.2` and writes "projected for 6.2 points this week". If the pipeline then updates (daily refresh changes xPts to 5.8) and the cached NLP prose isn't invalidated, the UI shows a confident wrong number. Worse: Claude may generate plausible numbers that aren't in the context at all ("likely to score around 7-8 points based on form").
+
+**Why it happens:**
+Passing numbers into LLM context is tempting because it makes the prose feel more specific. But the LLM doesn't know which numbers are stale, which are estimates, and which are actuals — it treats them all as facts.
+
+**How to avoid:**
+- Extend the existing qualitative-only constraint to NLP-02: "Do not include numeric values, percentages, or statistics." Pass structural context (rank tier: "top 5", "mid-table", "bottom quarter") rather than exact numbers.
+- If numeric context is genuinely needed (e.g. to explain a fragility reason), pass ranges not point estimates: "expected points: medium (6-8 range)" not "xPts_1gw: 6.2".
+- NLP-02 prose must be invalidated when the pipeline refreshes. Key the React Query cache for NLP-02 on `players.last_updated` (already available from `useLastUpdated`) so stale prose is never shown alongside fresh stats.
+- The player name guardrail already prevents hallucinating non-existent players. Extend it: before displaying NLP-02 prose, verify it does NOT contain any string matching `\d+\.?\d* points` (a numeric claim about points).
+
+**Warning signs:**
+- NLP-02 prose shows a specific points number not provided in the prompt context
+- NLP-02 prose is more than 12 hours old while `last_updated` is recent
+- NLP-02 prose mentions a fixture (e.g. "vs Arsenal") that isn't in the player's next 2 fixtures
+
+**Phase to address:**
+NLP-02 context assembly and cache invalidation design, before any prose is rendered.
+
+---
+
+### Pitfall 6: Streaming response handling — timeout and partial-render risk
+
+**What goes wrong:**
+The existing `/api/prose-summary` route uses `client.messages.create` (non-streaming) with `maxDuration = 30`. This works for the NLP-01 weekly summary (512 tokens, haiku responds in 2-4s). NLP-02 per-player insights may be triggered multiple times per page (15+ GemTable row-expands). Each non-streaming call holds a serverless function open for 2-4s. On Vercel Hobby plan (10s default), this is fine for one call. But if a React component triggers multiple concurrent NLP-02 calls (e.g. user rapidly expands 3 rows), 3 × 4s = 12s > 10s timeout.
+
+Additionally, streaming responses in Next.js App Router require `return new Response(stream)` with `TransferEncoding: chunked` — NOT `Response.json()`. Developers who start with the existing `Response.json()` pattern and attempt to add streaming will see partial responses or dropped connections.
+
+**Why it happens:**
+The existing codebase only has one LLM call path (NLP-01 weekly summary, requested once per session). NLP-02 introduces a multi-call pattern. The `maxDuration = 30` set for NLP-01 is correct for one call; it does not protect against concurrent calls.
+
+**How to avoid:**
+- For NLP-02: use a single POST that accepts an array of player IDs (batched, not one-per-request). The API generates all insights in one call with a structured output format, then returns the batch. This is 1 API call with ~800-1200 tokens output instead of N calls × 100 tokens.
+- Cache NLP-02 responses in `localStorage` keyed by `(player_id, pipeline_run_date)` — reuse across sessions until the next pipeline refresh. Do not call the API on every row expand.
+- Do NOT attempt streaming for NLP-02. Non-streaming (the existing pattern) is simpler and produces better user experience for short prose (users see the complete paragraph appear, not word-by-word trickle). Reserve streaming for long-form content (>500 tokens).
+- If streaming is genuinely needed for a future feature: use the Vercel AI SDK (`ai` package) which handles the `ReadableStream` + `TransferEncoding` plumbing correctly. Do not implement streaming manually with `new ReadableStream()` in Next.js App Router — the chunked encoding semantics are subtle.
+- Keep `maxDuration = 30` as the floor. NLP-02 batch API calls may take 5-8s; 30s is adequate with 2 retry attempts.
+
+**Warning signs:**
+- More than 2 concurrent `fetch('/api/prose-summary')` calls from the same page render
+- NLP-02 result missing from UI after row expand (silently timed out)
+- React component showing "loading..." indefinitely for NLP-02
+
+**Phase to address:**
+NLP-02 API route design (batch structure, caching strategy) before implementing the UI row-expand trigger.
+
+---
+
+### Pitfall 7: API cost explosion for NLP-02 per-player insights at scale
+
+**What goes wrong:**
+Claude Haiku 4.5 costs $1.00/M input tokens + $5.00/M output tokens (verified, May 2026). A per-player insight generated on-demand for every GemTable row-expand is a cost trap:
+
+- Scenario 1: User opens 20 row-expands per session × 38 GWs = 760 API calls/season
+- Each NLP-02 call: ~500 tokens system + ~300 tokens user prompt + ~100 tokens output = ~900 tokens/call
+- 760 calls × 900 tokens = 684K tokens/season × ($1/M input + $5/M output) ≈ $0.68/season at 90%/10% input/output split ≈ $0.10-0.20/season
+
+That sounds small — but this is a personal tool where the developer pays. The risk is not the normal use case, it's pathological use:
+- User leaves the GemTable with ALL rows expanded (e.g. debugging)
+- A React effect triggers NLP-02 on every re-render of an expanded row
+- A TanStack Query hook with `staleTime: 0` re-fetches NLP-02 on every tab switch
+
+The real risk is a bug where NLP-02 fires on mount for all visible rows simultaneously — the GemTable shows ~50 visible rows. 50 × 900 tokens = 45K tokens per page load. At 4 sessions/day × 180 days = 720 sessions/season = 32.4M tokens = $16-32/season from a single bug.
+
+**Why it happens:**
+Developers assume TanStack Query's deduplication prevents redundant calls, but it only deduplicates the same query key. 50 rows with 50 different player IDs = 50 unique query keys = 50 simultaneous calls.
+
+**How to avoid:**
+- NLP-02 must be demand-triggered: only generate when the user explicitly expands a row AND the expand stays open for > 1 second (debounce, prevents accidental triggers).
+- Cache NLP-02 results in `localStorage` with a pipeline-date key. The prose does not need to change until the pipeline refreshes (~daily). `staleTime: 24 * 60 * 60 * 1000` (24h) minimum.
+- Rate-limit the API route: reject concurrent requests for the same session. Use a simple in-memory Set of in-flight player IDs with a 5-second TTL. Return 429 if the same player ID is requested while a call is in flight.
+- Implement a server-side call counter via `ANTHROPIC_API_KEY` usage monitoring (Anthropic provides usage API). Add a budget guard: if monthly token usage > threshold, return a static fallback message ("AI insights temporarily unavailable") without calling the API.
+- Consider pre-generating NLP-02 insights for the top-20 players by xPts in the pipeline (alongside `prose_summary.py`), then falling back to on-demand for lower-ranked players. 20 players × 900 tokens = 18K tokens/pipeline run = negligible cost.
+
+**Warning signs:**
+- `useEffect(() => { fetchNLP2(player.id) }, [])` in a row-expand component with no debounce
+- TanStack Query hook for NLP-02 with `staleTime: 0` or no staleTime
+- NLP-02 triggered for every player visible in the viewport on mount
+
+**Phase to address:**
+NLP-02 route and hook design. Caching and demand-trigger pattern must be in the design spec before implementation.
+
+---
+
+## Technical Debt Patterns
+
+Shortcuts that seem reasonable but create long-term problems.
+
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| Keeping `N_SIMS=1000` instead of bumping to `MC_ITERATIONS=10000` | Faster pipeline (2s vs 8s) | Noisier percentile estimates (p10/p90 ±15% at 1k vs ±5% at 10k) | Acceptable during development; set 10k in production env before shipping MC outputs to UI |
+| Not extending the prose guardrail to cover rejection reasons | Faster NLP-02 implementation | LLM may invent reasons; cannot be detected post-hoc | Never — the guardrail is the only protection against hallucinated rejection explanations |
+| Using `sample_n < 5` for all positions in calibration | Reuses existing code | Misleading calibration for GKs (pool of ~8/decile) | Never — fix position-specific thresholds before shipping CAL-01 to new UI contexts |
+| Triggering NLP-02 on every row expand | Simpler state management | Cost explosion on adversarial use (all rows open) | Never without `localStorage` cache and 24h staleTime |
+| Running MC in TypeScript for live what-if UI | Responsive UI without API calls | Main thread freeze at realistic sim counts | Acceptable only below 200 sims AND on a Web Worker |
+
+---
+
+## Integration Gotchas
+
+Common mistakes when connecting to external services.
+
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| Anthropic SDK (NLP-02 batch) | Calling `client.messages.create` inside a `map()` — creates N concurrent requests | Collect all player IDs, build a single prompt with XML-structured player list, one `messages.create` call returns all insights |
+| Anthropic SDK (streaming) | Using `client.messages.stream` with `Response.json()` — crashes with "body already used" | Use `return new Response(stream.toReadableStream())` if streaming, or avoid streaming entirely for short prose |
+| Vercel Hobby plan | Omitting `maxDuration` on any route that calls the Anthropic API | Every new API route calling Claude needs `export const maxDuration = 30` — without it, the default 10s timeout will cause sporadic 504s on first attempt |
+| `prose-guardrail.ts` vs `prose_summary.py` | Adding a new guardrail check only in TypeScript but not in Python | Both implementations MUST stay byte-equivalent. The Python version runs at pipeline-write time; the TypeScript version runs at UI-display time. Divergence allows hallucinated pipeline prose to appear without client-side check catching it |
+| Anthropic Batch API | Using synchronous `messages.create` for 20+ player insights | Anthropic's async Batch API is 50% cheaper for non-time-sensitive use. For pre-generated pipeline insights (top-20 players), use `client.beta.messages.batches.create` — results arrive async, acceptable for daily pipeline runs |
+
+---
+
+## Performance Traps
+
+Patterns that work at small scale but fail as usage grows.
+
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|----------------|
+| MC re-run in browser | GemTable "What-if" feature freezes on player with fixtures | Use pre-computed `p10_pts/p90_pts` from pipeline; never run MC in React | At first call with > 200 sims × any active player |
+| NLP-02 on all visible rows | 50 concurrent Anthropic calls on GemTable load | Demand-trigger with debounce; `localStorage` 24h cache | First full-page load with all rows expanded |
+| Calibration recomputed on every pipeline run from full history | Pipeline adds 30s for late-season full-backtest scan | Keep `_compute_calibration_data` scoped to `BACKTEST_GWS=5` (already correct) | After GW38 with 5+ years of data if the BACKTEST_GWS constant is removed |
+| Sensitivity flag shown for every player in GemTable | User fatigue; "fragile" badge loses meaning | Show sensitivity flags only on actively displayed recommendations (TransferPanel top-5, CaptainPicksPanel) — not as a GemTable column | When `fragile_transfer_pct` > 45% |
+| Calibration `sample_n` check at bucket level vs position level | GK calibration tab shows "8 per bucket" which looks fine but is actually from 2 GWs of data | Guard at the position-pool level (total observations for that position in the backtest window) before rendering any chart | Early season (GW1-4) for GK position |
+
+---
+
+## Security Mistakes
+
+Domain-specific security issues beyond general web security.
+
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| Passing raw FPL player stats (xPts, rank, ownership%) into the LLM system prompt without sanitisation | Prompt injection: a player's `news` field might contain text that shifts the LLM's persona (e.g. a contrived "Ignore previous instructions" news string, however unlikely from FPL's API) | Wrap all external data in XML tags with explicit role assignment (`<player_data>`, `<news>`). Claude's architecture is robust to basic injection but the defence-in-depth is worth implementing. |
+| Logging Anthropic API key to console in error handler | Key exposure in Vercel function logs (searchable) | Existing pattern in `prose_summary.py` uses `os.environ.get('ANTHROPIC_API_KEY')` but does NOT log the key — maintain this. Never `print(api_key)` or `console.log(process.env.ANTHROPIC_API_KEY)`. |
+| Storing NLP-02 prose in `localStorage` including structured rejection reasons | Rejection reasons expose model internals (threshold values, rank position) to local storage inspection — low risk for personal tool | Acceptable for single-user tool. Document that `localStorage` stores computed model outputs, not raw FPL session tokens. |
+
+---
+
+## UX Pitfalls
+
+Common user experience mistakes in this domain.
+
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-----------------|
+| Showing calibration chart during first 3 GWs of season | Misleading "model is broken" visual from sparse data | Gate the CalibrationSection behind a minimum-data guard: `total_observations_for_position < 50` → show "Insufficient data — requires ~3 completed gameweeks" |
+| Fragility "knife_edge" warning on every transfer recommendation after GW30 | Warning fatigue — users ignore all SENS-01 signals | Tier the visual weight: robust=no badge, fragile=small amber dot, knife_edge=amber pill. Reserve full-width warning cards for knife_edge only |
+| NLP-02 per-player prose auto-loading for every expanded row | Page scroll through GemTable triggers 15+ API calls | Explicit "Get AI insight" button inside the row-expand; one-click per player, cached across session |
+| WHY-01 rejection panel showing 5 reasons for a player who is actually borderline-good | User confused: player looks fine, but 5 reasons listed | The existing adaptive framing (positive vs negative mode) handles this. Don't add new rejection predicates that lower the "strong" threshold — Phase 94 already extended the predicate set enough |
+| Calibration "all positions" tab showing strong diagonal as "model works" while GK tab is flat | User trusts model for GKs when data is insufficient for that view | Default to the "all" tab but add per-position tabs only when that position's sample count is adequate. Show sample count in tab header: "MID (n=200)" |
+
+---
+
+## "Looks Done But Isn't" Checklist
+
+Things that appear complete but are missing critical pieces.
+
+- [ ] **MC-01 (10k sims):** `simulate.py` currently defaults to `N_SIMS=1000`. The pipeline env var `MC_ITERATIONS=10000` must be set in GitHub Actions secrets — verify the workflow env block includes this before claiming "10k sims" in the UI. Check: `grep MC_ITERATIONS .github/workflows/pipeline.yml`.
+- [ ] **CAL-01 (position-specific charts):** The `sample_n < 5` sparse filter exists but is set for the "all" aggregate view. Position-specific GK/DEF views need `sample_n < 15` or a position-pool total guard before the chart is trusted. Check: inspect `_compute_calibration_data` thresholds against GK pool size (~8/decile at 5 GWs).
+- [ ] **SENS-01 (fragile % monitoring):** The v1.16 PITFALLS.md flagged adding `fragile_transfer_pct` to `data_health.json`. This has NOT been implemented. Check: `grep -r "fragile_transfer_pct" pipeline/` should return a match before this is considered done.
+- [ ] **WHY-01 (NLP-02 reason grounding):** The existing prose guardrail only checks player names. The rejection-reason grounding check (prose matches actual `reasons[]` array) does not exist yet. Check: look for `reasons` array in the `buildUserPrompt` function of the NLP-02 route before claiming the guardrail covers rejection explanations.
+- [ ] **NLP-02 (cache invalidation):** `localStorage` cache for NLP-02 prose must be keyed on `pipeline_run_date` (from `last_updated.json`), not just `player_id`. Check: cache key includes a date/timestamp component that changes on pipeline refresh.
+- [ ] **NLP-01/NLP-02 (`maxDuration`):** The existing `maxDuration = 30` is only on the `/api/prose-summary` route. Any new route that calls the Anthropic API (e.g. `/api/player-insight` for NLP-02) needs its own `export const maxDuration = 30`. Check: `grep -r "maxDuration" src/app/api/` shows a value for every route that makes outbound LLM calls.
+- [ ] **Calibration (cold start shape):** `_compute_calibration_data` returns `{'by_position': {'all': [], '1': [], ...}}` as the cold-start fallback. The UI must render "Insufficient data" for empty arrays, not an empty chart axis. Check: CalibrationChart component handles `buckets.length === 0` with an explicit message, not a blank canvas.
+
+---
+
+## Recovery Strategies
+
+When pitfalls occur despite prevention, how to recover.
+
+| Pitfall | Recovery Cost | Recovery Steps |
+|---------|---------------|----------------|
+| MC in TypeScript freezing UI | MEDIUM | Remove the TypeScript MC and replace with a call to pre-computed `p10_pts/p90_pts` fields; use `rank-sim.ts` sigma-approximation for any live what-if; 1-2 days work |
+| LLM inventing rejection reasons | HIGH | Immediately disable NLP-02 prose for WHY-01 (set a feature flag); fall back to showing raw `reasons[]` array (already implemented in Phase 65 UI); rebuild prompt context with structured `<rejection_reasons>` XML block; re-enable |
+| API cost spike from NLP-02 | MEDIUM | Add `MC_ITERATIONS=0` equivalent: a `NLP2_ENABLED=false` env var that makes the route return a static fallback message; purge `localStorage` NLP-02 cache; audit all call sites for missing debounce/staleTime |
+| Calibration showing misleading results | LOW | The chart is read-only — misleading data causes confusion but no data corruption. Add the position-pool guard to `_compute_calibration_data` and redeploy; next pipeline run regenerates calibration data |
+| Sensitivity flag fatigue | LOW | Change the `fragile` tier's visual representation from a warning badge to a soft indicator; no algorithmic change needed; 1 component edit |
+
+---
+
+## Pitfall-to-Phase Mapping
+
+How roadmap phases should address these pitfalls.
+
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| MC in browser / main thread | MC-01 pipeline enhancement | Confirm no `Math.random()` loop over player list in TypeScript; UI uses pre-computed fields from `merged_players.json` |
+| Calibration sparse data at position level | CAL-01 chart component | `sample_n` guard per-position is ≥15 for GK/DEF; chart shows "Insufficient data" banner when position pool < 50 observations |
+| Sensitivity flag spam | SENS-01 UI phase | `fragile_transfer_pct` sanity check exists in `data_health.json`; visual hierarchy: robust=no badge, fragile=dot, knife_edge=pill |
+| WHY-01 invented rejection reasons | NLP-02 prompt design | `buildUserPrompt` for NLP-02 includes structured `<rejection_reasons>` XML block; guardrail checks reason coverage |
+| LLM hallucinating player stats | NLP-02 context assembly | System prompt includes "Do not include statistics or numeric values"; no xPts/form numbers in user prompt |
+| Streaming / timeout | NLP-02 API route design | `export const maxDuration = 30` present on every new LLM route; batch API call pattern used (not per-player calls) |
+| API cost explosion | NLP-02 caching design | `localStorage` cache with 24h staleTime; demand-trigger with debounce; rate-limit guard in API route |
 
 ---
 
 ## Sources
 
-- `pipeline/merge.py` — `news` field (line 992), pipeline run order (already documented in v1.14 PITFALLS)
-- `pipeline/cache/fpl_bootstrap.json` — verified `news`, `news_added`, `chance_of_playing_next_round`, `chance_of_playing_this_round` fields present per element
-- `.github/workflows/pipeline.yml` — existing 4×/day cron, USE_BLOB env, BLOB_READ_WRITE_TOKEN secret
-- `src/lib/types.ts` — PlayerStatus enum (`a/d/i/s/u/n`), `MergedPlayer.news` (line 26, 129)
-- `src/lib/fpl-adapter.ts` — `deadline_time` Zod schema (line 38)
-- `src/lib/hooks/useRivals.ts` — `Date.parse(currentEvent.deadline_time)` UTC pattern (line 65)
-- `src/components/planner/ManualPlanTab.tsx` — `fplx_manual_plan` localStorage key (line 4), team-id storage (line 260)
-- `.planning/phases/064-sensitivity-analysis/064-RESEARCH.md` — Phase 64 SENS-01 already shipped, decisions D-01 through D-12 locked
-- `.planning/phases/065-rejection-explainer/065-RESEARCH.md` — Phase 65 WHY-01/02/03 already shipped, adaptive-framing rule
-- `.planning/REQUIREMENTS.md` — DH-01/02/03 (Phase 82), SPQ-01/02 (Phase 84), SPQ-03 (Phase 85) shipped; v1.16 features deferred from v1.15 (lines 39-46)
-- `.planning/research/FEATURES.md` — v1.14 feature landscape including DQ-01 sparkline differentiator (line 186)
-- `.planning/research/STACK.md` — v1.14 stack delta (no new deps); applies to v1.16 (no new deps expected for any feature)
-- `MEMORY.md` — DGW in GW33/GW36 (informs deadline pitfalls and SPQ-04 DGW skew); FPL auth login 502 bug (informs SCRAPER-01 fragility — same domain)
-- FPL `bootstrap-static` — `events[].deadline_time` (UTC ISO 8601), `events[].finished` (bool), `elements[].news_added` (ISO timestamp) — verified live at `https://fantasy.premierleague.com/api/bootstrap-static/`
-- Vercel Blob limits — single-blob writes are atomic; concurrent writes = last-writer-wins (no built-in versioning)
-- GitHub Actions — `concurrency:` keyword for workflow serialization; `workflow_dispatch` rate limits (5,000/h authenticated)
+- `pipeline/simulate.py` — direct inspection; 832 total players, ~352 active (BGW short-circuit verified at ~480 `blank_prob: 1.0` entries in `pipeline/cache/merged_players.json`); `N_SIMS=1000` default with `MC_ITERATIONS` env var; `mc_enabled` gate in `accuracy_backtest.json`
+- `pipeline/accuracy.py` — `_compute_calibration_data`, `BACKTEST_GWS=5`, `sample_n < 5` sparse filter (line 542); `MIN_MINUTES=10` exclusion
+- `src/lib/sensitivity.ts` — `START_PROB_FLOOR=0.70`, `COST_HIT_XPTS_THRESHOLD=5.0`, 5-perturbation set; Phase 93 extension; `FragilityTier = 'robust' | 'fragile' | 'knife_edge'`
+- `src/lib/explain.ts` — `REJECTION_START_PROB_THRESHOLD=0.70`, `computeRejection` adaptive framing, Phase 94 lifecycle predicate extensions
+- `src/app/api/prose-summary/route.ts` — `maxDuration=30`, `claude-haiku-4-5`, non-streaming pattern, per-session batch structure
+- `src/lib/prose-guardrail.ts` — player-name-only guardrail; does NOT cover numeric stat claims or rejection reason coverage
+- `pipeline/prose_summary.py` — qualitative-only prompt engineering (no statistics in output); 2-attempt retry with strict-mode escalation; `None` fallback on both guardrail failures
+- `.planning/research/PITFALLS.md` (v1.16) — SENS-01 threshold tuning and fragile_transfer_pct monitoring identified but not yet implemented
+- Anthropic Claude Haiku 4.5 pricing: $1.00/M input, $5.00/M output (verified May 2026 via platform.claude.com/docs)
+- Vercel Hobby plan: 10s default function timeout, 60s maximum; `maxDuration` export required to extend
+- `src/lib/rank-sim.ts` — sigma-approximation for cumulative XI trajectory; this is the correct browser-side alternative to full MC
+
+---
+*Pitfalls research for: FPL Analyst v1.18 — Forecast Transparency & AI Intelligence*
+*Researched: 2026-05-12*

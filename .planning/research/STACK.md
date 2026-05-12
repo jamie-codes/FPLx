@@ -1,8 +1,184 @@
 # FPL Analyst — Stack Additions Research
 
-**Researched:** 2026-05-09 (v1.16 delta added; v1.14 retained)
+**Researched:** 2026-05-09 (v1.16 delta added; v1.14 retained) — v1.18 delta added 2026-05-12
 **Mode:** Subsequent-milestone delta research (extends, does not replace existing stack)
 **Overall confidence:** HIGH
+
+---
+
+## v1.18 Forecast Transparency & AI Intelligence — Stack Delta
+
+### Bottom Line Up Front (v1.18)
+
+| Feature | New deps? | Net new files | Touches existing |
+|---|---|---|---|
+| MC-01 (display) | **None.** `pipeline/simulate.py` fully implemented. Display components consume existing `MergedPlayer` fields. | 1–2 UI components | `GemTable` columns, row-expand, `MergedPlayer` type already has `blank_prob`, `haul_prob`, `p10_pts`, `p90_pts` |
+| CAL-01 | **None.** `ComposedChart` + `ReferenceLine` already used in `AccuracyTab.tsx`. `CalibrationBucket` type exists. | 0–1 chart variants | `AccuracyTab.tsx`, calibration section |
+| SENS-01 | **None.** `computeFragility()` fully implemented in `src/lib/sensitivity.ts`. `FragilityBadge.tsx` exists. | 0 (wire-up only) | `GemTable` row-expand, `TransferPanel` |
+| WHY-01 | **None.** `ExplainPanel.tsx` already has `rejectionReasons?: string[]` prop. | 0 (wire-up only) | `GemTable` row-expand, `ExplainPanel` |
+| NLP-01 | **None.** `@anthropic-ai/sdk` 0.93.0 in deps, `/api/prose-summary` route exists. | 0 (use existing route) | `ProseSummaryBlock.tsx` already wired |
+| NLP-02 | **None.** Same SDK. New `/api/player-insight` POST route + client hook. | 1 API route, 1 hook, 1 UI component | `GemTable` row-expand, `TransferPanel` |
+
+**Net new npm packages (v1.18): 0**
+**Net new Python packages (v1.18): 0**
+**Net new external services (v1.18): 0**
+**Net new pipeline files (v1.18): 0 (simulate.py already ships MC-01)**
+
+---
+
+### MC-01: Monte Carlo Simulator Display
+
+**Pipeline status: COMPLETE.** `pipeline/simulate.py` implements 10k sims per player per GW using `numpy.random.default_rng().poisson()` (goals/assists) and `rng.binomial()` (CS Bernoulli). Outputs `blank_prob`, `haul_prob`, `p10_pts`, `p90_pts`, `xPts_5gw_p10/p50/p90`, `rank_trajectory`. All fields are defined in `MergedPlayer` (types.ts lines 184–198) and written to `merged_players.json` via Vercel Blob.
+
+**Default simulation budget:** `MC_ITERATIONS` env var, default 1000. To reach the 10k target from PROJECT.md, set `MC_ITERATIONS=10000` in GitHub Actions secrets and Vercel env.
+
+**Decision: Python pipeline only, not TypeScript client-side.** 10k sims × ~700 active players × 5 GWs × 3 random draws = ~105M random samples per run. `numpy`'s `default_rng` (PCG-64) is 10–50× faster than any JS Poisson sampler. A TypeScript client-side implementation would freeze the browser's main thread at this scale; a Next.js API route implementation would exhaust Vercel Hobby's 10s default timeout. Pipeline pre-computation with Blob caching is zero client latency.
+
+**What v1.18 needs:** Display components that read `blank_prob`, `haul_prob`, `p10_pts`, `p90_pts` from the already-populated player object. Potentially a `McOutcomeBar` or similar inline distribution indicator.
+
+**No new dependencies.**
+
+---
+
+### CAL-01: Calibration Charts
+
+**Status: Already implemented.** `AccuracyTab.tsx` uses `ComposedChart` + `ReferenceLine` + `Line` from `recharts@3.8.1` to render the reliability diagram (lines 394–434). `CalibrationBucket`, `CalibrationData`, and position-split pill toggle are all implemented. `xPts`-vs-actual chart at lines 480–524.
+
+**What v1.18 needs for an extended reliability diagram (MC haul% vs actual haul rate):** reuse exactly the same `ComposedChart` + `ReferenceLine` pattern. No new charting primitives. If a scatter-plot overlay is desired (individual player dots), `ScatterChart` and `Scatter` are present in recharts 3.8.1 exports (verified via `node_modules/recharts/types/index.d.ts`).
+
+**No new dependencies.**
+
+---
+
+### SENS-01: Sensitivity Flags
+
+**Status: Fully implemented (Phases 64 + 93).** `src/lib/sensitivity.ts` exports `computeFragility()` covering 5 perturbations (start_prob, mins_60_prob, fixture difficulty, cost, news doubt), returning tristate `{ tier: 'robust' | 'fragile' | 'knife_edge', reasons: string[] }`. `FragilityBadge.tsx` and `FragilityNote.tsx` are ready display components.
+
+**What v1.18 needs:** Ensure fragility output is wired into GemTable row-expand and TransferPanel rows. The computation and display components exist; only the wiring point may be missing.
+
+**No new dependencies.**
+
+---
+
+### WHY-01: Rejection Explainer
+
+**Status: Partially implemented (Phase 65).** `ExplainPanel.tsx` accepts `rejectionReasons?: string[]` and renders a "Why not recommended:" block. Threshold-based rejection strings can be derived from existing `MergedPlayer` fields (xPts below position median, fragility, rotation risk, blank GW, etc.) in a pure TypeScript utility.
+
+**What v1.18 needs:** A `computeRejectionReasons(player, threshold)` utility function that maps the existing field values to plain-English reason strings. No new libraries — same pattern as the existing `computeFragility()` and `buildExplainReasons()` functions.
+
+**No new dependencies.**
+
+---
+
+### NLP-01: LLM Prose Summary (Weekly, Decision Summary Tab)
+
+**Status: Fully implemented (Phase 67).** `/api/prose-summary` route handles GET (serve cached `weekly_summary.json`) and POST (squad-aware refresh via `claude-haiku-4-5`). `ProseSummaryBlock.tsx` is wired into `DecisionSummaryTab.tsx`. The guardrail (`prose-guardrail.ts`) prevents hallucinated player names.
+
+**The existing route uses non-streaming (await + return).** This is correct for this use case. The prose is short (4–5 sentences), `maxDuration=30` is sufficient, and non-streaming is far simpler to test (no partial-state UI complexity).
+
+**No new dependencies. No streaming needed for NLP-01.**
+
+---
+
+### NLP-02: Per-Player LLM Insights (GemTable Row Expand + TransferPanel)
+
+**Status: Not yet built.** Needs a new API route, hook, and UI component.
+
+**Architecture: non-streaming POST, same pattern as existing prose-summary route.**
+
+```typescript
+// app/api/player-insight/route.ts
+// POST body: { player_id, web_name, xPts_1gw, blank_prob, haul_prob,
+//             fragility_tier, rejection_reasons[], position }
+// Response: { insight: string, generated_at: string }
+// Model: claude-haiku-4-5 (fastest, cheapest, sufficient for 1–2 sentence insight)
+// max_tokens: 128 (one sentence is sufficient)
+// maxDuration: 30 (Hobby plan max)
+```
+
+**Streaming for NLP-02:** Optional. If the per-player insight is 1–2 sentences (target), non-streaming latency (~400–800ms for Haiku) is acceptable and avoids partial-render complexity. Add streaming only if UX testing reveals perceptible lag.
+
+**If streaming is added for NLP-02:** The `@anthropic-ai/sdk` 0.93.0 `MessageStream` API supports it without any new packages:
+
+```typescript
+// Route Handler — streaming variant
+const stream = client.messages.stream({ model, max_tokens, messages })
+return new Response(stream.toReadableStream(), {
+  headers: { 'Content-Type': 'text/event-stream' }
+})
+
+// Client hook — consume via SDK helper (no new dep)
+import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream'
+const runner = MessageStream.fromReadableStream(res.body!)
+// ...
+```
+
+**Important:** Use Node.js runtime (not Edge Runtime). The SDK has known SSE parsing failures on Vercel Edge Runtime (GitHub issue #292 in `anthropics/anthropic-sdk-typescript`). The existing prose-summary route correctly uses Node.js runtime (no `export const runtime = 'edge'`).
+
+**Model recommendation:** `claude-haiku-4-5` (API alias → `claude-haiku-4-5-20251001`). Fastest model in the current generation, $1/$5 per MTok input/output, 200k context, 64k max output. Appropriate for short structured summaries grounded in structured model output. This matches what the existing route already uses. VERIFIED against [Anthropic Models Overview](https://platform.claude.com/docs/en/about-claude/models/overview) 2026-05-12.
+
+**No new dependencies.**
+
+---
+
+### What NOT to Add (v1.18)
+
+| Avoid | Why | Use Instead |
+|---|---|---|
+| `mathjs` / `jstat` / `simple-statistics` for Poisson | MC is already done in Python pipeline | `pipeline/simulate.py` with numpy |
+| `@tensorflow/tfjs` / ONNX / any ML runtime | No ML inference needed — all stats are closed-form | Pure Python arithmetic in pipeline |
+| `ai` (Vercel AI SDK) | Adds 200KB+ bundle; `AnthropicStream` removed in v4; existing codebase uses `@anthropic-ai/sdk` directly | `@anthropic-ai/sdk` 0.93.0 |
+| `chart.js` / `victory` / `nivo` for calibration scatter | Second charting library creates bundle bloat and style inconsistency | `recharts` `ScatterChart` (already in bundle, already styled) |
+| TypeScript MC in browser or API route | 10–50× slower than numpy; browser freezes, API route times out | Python pipeline pre-computation |
+| Edge Runtime for LLM routes | SDK SSE parsing known to fail on Vercel Edge (GitHub issue #292) | Node.js runtime (default), `maxDuration=30` |
+| `d3` direct import | Recharts already bundles D3 internally; direct import doubles D3 in bundle | Recharts composable primitives |
+| `react-markdown` for LLM output | Prose is plain text by design; markdown adds render complexity and XSS surface | `<p>` tag, whitespace-preserving CSS |
+| Streaming for NLP-01 | Weekly summary is 4–5 sentences, non-streaming latency is acceptable, existing route works | Existing non-streaming `/api/prose-summary` route |
+| Per-player prompt caching (Anthropic prompt caching beta) | System prompts vary per player; caching benefit is minimal for short outputs | Plain `messages.create()` calls |
+
+---
+
+### Version Compatibility (v1.18)
+
+| Package | Current Version | Notes |
+|---|---|---|
+| `@anthropic-ai/sdk` | 0.93.0 | `messages.stream()`, `toReadableStream()`, `MessageStream.fromReadableStream()` all present in installed types. No upgrade needed. |
+| `recharts` | 3.8.1 | `ScatterChart`, `ComposedChart`, `ReferenceLine`, `Scatter`, `ScatterProps` all verified present in `node_modules/recharts/types/index.d.ts`. |
+| `numpy` (Python) | existing | `default_rng().poisson()` and `rng.binomial()` already in `simulate.py`. |
+| `next` | 16.2.1 | `Response(readableStream)` is standard Web API; no Next.js-specific streaming adapter needed. |
+
+---
+
+### Confidence Assessment (v1.18)
+
+| Area | Confidence | Reason |
+|---|---|---|
+| MC-01 pipeline already complete | HIGH | Direct code inspection of `pipeline/simulate.py` and `src/lib/types.ts` |
+| CAL-01 already in AccuracyTab | HIGH | Direct code inspection of `AccuracyTab.tsx` lines 394–524 |
+| SENS-01 already implemented | HIGH | Direct code inspection of `sensitivity.ts`, `FragilityBadge.tsx` |
+| WHY-01 partially implemented | HIGH | Direct code inspection of `ExplainPanel.tsx` |
+| NLP-01 already implemented | HIGH | Direct code inspection of `/api/prose-summary/route.ts` |
+| SDK 0.93.0 supports streaming | HIGH | Direct type inspection of `MessageStream.d.ts`, `messages.d.ts` |
+| `claude-haiku-4-5` is correct model ID | HIGH | Verified against Anthropic official models overview 2026-05-12 |
+| Edge Runtime incompatible with SDK streaming | MEDIUM | Single GitHub issue source; Node.js runtime is the safer choice regardless |
+| No new npm installs needed | HIGH | All capability verified against installed `node_modules` |
+
+---
+
+### Sources (v1.18)
+
+- `package.json` — installed versions verified directly
+- `pipeline/simulate.py` — full MC implementation confirmed
+- `src/lib/types.ts` lines 184–198 — MC fields on `MergedPlayer` confirmed
+- `src/components/accuracy/AccuracyTab.tsx` lines 394–524 — calibration chart pattern confirmed
+- `src/lib/sensitivity.ts` — `computeFragility()` confirmed
+- `src/components/squad/ExplainPanel.tsx` — `rejectionReasons` prop confirmed
+- `src/app/api/prose-summary/route.ts` — SDK usage, model choice, guardrail pattern confirmed
+- `node_modules/@anthropic-ai/sdk/lib/MessageStream.d.ts` — `toReadableStream()` and `fromReadableStream()` confirmed
+- `node_modules/@anthropic-ai/sdk/resources/messages/messages.d.ts` — `messages.stream()`, `MessageCreateParamsStreaming` confirmed
+- `node_modules/recharts/types/index.d.ts` — `ScatterChart`, `ComposedChart`, `ReferenceLine`, `Scatter` exports confirmed
+- [Anthropic Models Overview](https://platform.claude.com/docs/en/about-claude/models/overview) — `claude-haiku-4-5` alias, pricing, `claude-haiku-4-5-20251001` pinned ID verified 2026-05-12 — HIGH confidence
+- GitHub issue anthropics/anthropic-sdk-typescript#292 — Edge Runtime SSE parsing failure — MEDIUM confidence (single source, but Node.js runtime is correct regardless)
 
 ---
 
@@ -254,22 +430,22 @@ export interface DecisionHistory {
 
 ---
 
-## Existing Stack Summary (after v1.16)
+## Existing Stack Summary (after v1.18)
 
 | Layer | Status |
 |-------|--------|
 | Next.js 16.2.1 / React 19.2.4 / TypeScript 5 | **No changes** |
 | TanStack Query 5.95 / TanStack Table 8.21 | **No changes** — extend existing hook patterns |
 | Tailwind v4 / dark mode | **No changes** |
-| recharts 3.8.1 | **Reuse** — sparkline added (DH-04) |
+| recharts 3.8.1 | **Reuse** — `ComposedChart`/`ReferenceLine` already used for CAL-01 |
+| `@anthropic-ai/sdk` 0.93.0 | **Reuse** — already in deps, route exists; NLP-02 adds one new route |
 | immer 11 / use-immer 0.11 | **No changes** |
 | zod 4.3.6 | **No changes** — adapter-only |
-| @vercel/blob 2.3.1 | **No changes** |
-| Python: requests / pandas / numpy / vercel-blob / anthropic | **Reuse only** |
-| `soccerdata==1.8.8` (pinned but unused) | **Still unused** — could remove (out of scope) |
+| `@vercel/blob` 2.3.1 | **No changes** |
+| Python: requests / pandas / numpy / soccerdata | **Reuse only** — `simulate.py` already uses numpy |
 | Vercel Blob | **No changes** |
-| GitHub Actions | **One workflow edit** (deadline guard) — no new actions |
-| External APIs | **None new** — existing FPL bootstrap-static covers SCRAPER-01 |
+| GitHub Actions | **No changes for v1.18** |
+| External APIs | **Claude API already used** — NLP-02 adds one more route calling it |
 
 ---
 
@@ -321,27 +497,35 @@ Full v1.14 detail (GK-01 save-point math, DQ-01 sanity checks, SP-QUAL-01 Unders
 
 ### v1.14 confidence (carry-forward)
 
-All v1.14 stack decisions shipped successfully and remain HIGH confidence. The pattern of "extend existing modules, add no dependencies" is the established norm for this codebase and is continued in v1.16.
+All v1.14 stack decisions shipped successfully and remain HIGH confidence. The pattern of "extend existing modules, add no dependencies" is the established norm for this codebase and is continued in v1.16 and v1.18.
 
 ---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- `package.json` — direct read of dependency versions
-- `pipeline/requirements.txt` + `.github/workflows/pipeline.yml` — Python deps verified in two places
-- `pipeline/merge.py:992` — `news` field already pulled
-- `src/lib/types.ts:26,129` — `news: string` already on `MergedPlayer`
-- `src/lib/manual-plan.ts:5` — `MANUAL_PLAN_KEY` localStorage precedent
-- `src/components/accuracy/AccuracyTab.tsx:25` + `src/components/planner/RankSimTab.tsx:17` — recharts usage precedent
-- [GitHub Actions events docs](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows) — cron 5-min minimum, repository_dispatch, workflow_dispatch
-- FPL `bootstrap-static` endpoint — `news`, `news_added`, `chance_of_playing_next_round`, `events[].deadline_time` verified live
+- `package.json` — direct read of dependency versions (all milestones)
+- `pipeline/simulate.py` — MC implementation confirmed (v1.18)
+- `src/lib/types.ts` lines 184–198 — MC fields on `MergedPlayer` confirmed (v1.18)
+- `src/components/accuracy/AccuracyTab.tsx` lines 394–524 — calibration chart confirmed (v1.18)
+- `src/lib/sensitivity.ts` — `computeFragility()` confirmed (v1.18)
+- `src/components/squad/ExplainPanel.tsx` — `rejectionReasons` prop confirmed (v1.18)
+- `src/app/api/prose-summary/route.ts` — SDK usage, model, guardrail pattern confirmed (v1.18)
+- `node_modules/@anthropic-ai/sdk/lib/MessageStream.d.ts` — streaming API surface confirmed (v1.18)
+- `node_modules/@anthropic-ai/sdk/resources/messages/messages.d.ts` — `messages.stream()` confirmed (v1.18)
+- `node_modules/recharts/types/index.d.ts` — chart component exports confirmed (v1.18)
+- [Anthropic Models Overview](https://platform.claude.com/docs/en/about-claude/models/overview) — `claude-haiku-4-5` alias, pricing verified 2026-05-12 (v1.18)
+- `pipeline/requirements.txt` + `.github/workflows/pipeline.yml` — Python deps (v1.14/v1.16)
+- `pipeline/merge.py:992` + `src/lib/types.ts:26,129` — `news` field (v1.16)
+- `src/lib/manual-plan.ts:5` — localStorage precedent (v1.16)
+- [GitHub Actions events docs](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows) — cron limits, dispatch types (v1.16)
 
 ### Secondary (MEDIUM confidence)
-- `npm view react-sparklines` — last publish date informs maintenance assessment
+- `npm view react-sparklines` — maintenance assessment (v1.16)
+- GitHub issue anthropics/anthropic-sdk-typescript#292 — Edge Runtime SSE incompatibility (v1.18)
 
 ### Tertiary (LOW confidence)
-- None for v1.16 — every claim traces to a verified source.
+- None — every claim traces to a verified source.
 
 ---
-*v1.16 delta added 2026-05-09. v1.14 entries retained as carry-forward summary.*
+*v1.14 entries retained as carry-forward summary. v1.16 delta added 2026-05-09. v1.18 delta added 2026-05-12.*
