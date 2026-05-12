@@ -1177,7 +1177,7 @@ Plans:
 
 - [x] **Phase 97: Fixture Heat Map** — 20 teams x next 8 GWs colour-coded grid (green/amber/red by attacking_difficulty), DGW double-cell, BGW blank, toggle within Club Form tab; hover reveals opponent + H/A (HEAT-01, HEAT-02) (completed 2026-05-12)
 - [x] **Phase 98: Post-GW Review Core** — bench points left, captain vs optimal captain in squad, auto-surface card after deadline passes; authenticated FPL picks for actual captain fill (PGW-01, PGW-02, PGW-04) (completed 2026-05-12)
-- [ ] **Phase 99: Top-10k Comparison** — GW score vs top-10k average, template players the user did not own; sourced from FPL bootstrap events[].average_entry_score + top-10k league endpoint (PGW-03)
+- [x] **Phase 99: Top-10k Comparison** — GW score vs top-10k average, template players the user did not own; sourced from FPL bootstrap events[].average_entry_score + top-10k league endpoint (PGW-03) (completed 2026-05-12)
 - [ ] **Phase 100: Decision History Analytics** — season captain hit rate from BackTab data; chip ROI vs season average; hit break-even tracking from authenticated transfer history (HIST-01, HIST-02, HIST-03)
 - [ ] **Phase 101: GW-Targeted Transfers & UX Polish** — TransferPanel GW selector re-ranks candidates by that GW's fixture xPts only; GwToggle label rename to "Next 1 GW / Next 3 GWs / Next 5 GWs" (GWT-01, UX-01)
 
@@ -1233,7 +1233,7 @@ Plans:
 - [x] 99-01-PLAN.md — Extend GwReview type with benchmark_score/benchmark_label/missed_players; extend /api/gw-review route.ts with parallel dream-team fetch + benchmark/missed computation; extend route.test.ts with /dream-team/ mock branch + 4 PGW-03 tests (RED → GREEN within plan)
 
 **Wave 2** *(blocked on Wave 1 completion — Plan 02 reads new GwReview fields)*
-- [ ] 99-02-PLAN.md — GwReviewTab: extend StatCard with delta+testid props; replace 4th StatCard with benchmark card (sentiment-coloured delta, U+2212 minus sign, FPL-average degraded fallback omits delta); insert conditional Missed info row below Best bench; extend sampleReview + add 8 PGW-03 component tests (UI-SPEC test-visible contracts)
+- [x] 99-02-PLAN.md — GwReviewTab: extend StatCard with delta+testid props; replace 4th StatCard with benchmark card (sentiment-coloured delta, U+2212 minus sign, FPL-average degraded fallback omits delta); insert conditional Missed info row below Best bench; extend sampleReview + add 8 PGW-03 component tests (UI-SPEC test-visible contracts)
 **UI hint**: yes
 
 ### Phase 100: Decision History Analytics
@@ -1325,6 +1325,6 @@ Plans:
 | 96 | v1.16 | 4/4 | Complete    | 2026-05-11 |
 | 97 | v1.17 | 2/2 | Complete    | 2026-05-12 |
 | 98 | v1.17 | 1/3 | In Progress|  |
-| 99 | v1.17 | 1/2 | In Progress|  |
+| 99 | v1.17 | 2/2 | Complete   | 2026-05-12 |
 | 100 | v1.17 | 0 | Not started | - |
 | 101 | v1.17 | 0 | Not started | - |
