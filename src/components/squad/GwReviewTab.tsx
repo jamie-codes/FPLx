@@ -15,14 +15,24 @@ interface StatCardProps {
   label: string
   value: string                  // pre-formatted (with prefix +/- if applicable)
   sentimentClass?: string        // e.g. 'text-green-600 dark:text-green-400'
+  delta?: string                 // Phase 99 PGW-03: optional sub-label rendered below value
+  testid?: string                // Phase 99 PGW-03: optional data-testid forwarded to root div
 }
 
-function StatCard({ label, value, sentimentClass }: StatCardProps) {
+function StatCard({ label, value, sentimentClass, delta, testid }: StatCardProps) {
   const valueClass = sentimentClass ?? 'text-zinc-900 dark:text-zinc-100'
   return (
-    <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3">
+    <div
+      className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3"
+      data-testid={testid}
+    >
       <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">{label}</p>
       <p className={`text-xl font-semibold ${valueClass}`}>{value}</p>
+      {delta && (
+        <p className={`text-xs mt-0.5 ${sentimentClass ?? 'text-zinc-500 dark:text-zinc-400'}`}>
+          {delta}
+        </p>
+      )}
     </div>
   )
 }
@@ -157,6 +167,21 @@ export function GwReviewTab({ teamId, settledGws }: GwReviewTabProps) {
     ? 'text-green-600 dark:text-green-400'
     : 'text-zinc-700 dark:text-zinc-300'
 
+  // Phase 99 PGW-03: benchmark card delta + sentiment
+  const benchmarkDiff = review.your_score - review.benchmark_score
+  let benchmarkDeltaLabel: string
+  let benchmarkSentimentClass: string
+  if (benchmarkDiff > 0) {
+    benchmarkDeltaLabel = `+${benchmarkDiff} vs you`
+    benchmarkSentimentClass = 'text-green-600 dark:text-green-400'
+  } else if (benchmarkDiff === 0) {
+    benchmarkDeltaLabel = 'on par'
+    benchmarkSentimentClass = 'text-green-600 dark:text-green-400'
+  } else {
+    benchmarkDeltaLabel = `−${Math.abs(benchmarkDiff)} vs you` // U+2212 minus sign (NOT hyphen-minus)
+    benchmarkSentimentClass = 'text-amber-700 dark:text-amber-300'
+  }
+
   return (
     <section className="mt-6 space-y-3" data-testid="gw-review-tab">
       {header}
@@ -168,7 +193,13 @@ export function GwReviewTab({ teamId, settledGws }: GwReviewTabProps) {
         <StatCard label="GW Score" value={String(review.your_score)} sentimentClass={scoreClass} />
         <StatCard label="Bench pts left" value={String(review.bench_pts_left)} />
         <StatCard label={deltaLabel} value={deltaValue} sentimentClass={deltaClass} />
-        <StatCard label="FPL average" value={String(review.average_score)} />
+        <StatCard
+              label={review.benchmark_label}
+              value={String(review.benchmark_score)}
+              sentimentClass={benchmarkSentimentClass}
+              delta={review.benchmark_label === 'FPL average' ? undefined : benchmarkDeltaLabel}
+              testid="gw-review-benchmark-card"
+            />
       </div>
 
       <div className="rounded border border-zinc-200 dark:border-zinc-700 px-3 py-2 flex items-baseline gap-2">
@@ -196,6 +227,18 @@ export function GwReviewTab({ teamId, settledGws }: GwReviewTabProps) {
           {review.best_bench_player_name} — {review.best_bench_player_pts}pts
         </span>
       </div>
+
+      {review.missed_players.length > 0 && (
+        <div
+          className="rounded border border-zinc-200 dark:border-zinc-700 px-3 py-2 flex items-baseline gap-2"
+          data-testid="gw-review-missed-row"
+        >
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">Missed</span>
+          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            {review.missed_players.map((p) => `${p.name} (${p.pts})`).join(', ')}
+          </span>
+        </div>
+      )}
     </section>
   )
 }
