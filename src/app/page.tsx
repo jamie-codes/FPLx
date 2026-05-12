@@ -11,9 +11,7 @@ import type { ScoredPlayer } from '@/lib/types'
 import { PlayerComparisonModal } from '@/components/gem-table/PlayerComparisonModal'
 import { DefConTables } from '@/components/defcon/DefConTables'
 import { TransferPanel } from '@/components/transfers/TransferPanel'
-import { ClubFormTable } from '@/components/club-form/ClubFormTable'
-import { FixtureEaseRankingPanel } from '@/components/club-form/FixtureEaseRankingPanel'
-import { FixtureSwingDetector } from '@/components/club-form/FixtureSwingDetector'
+import { ClubFormTab } from '@/components/club-form/ClubFormTab'
 import { LastUpdated } from '@/components/LastUpdated'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { ValueGemsTable } from '@/components/value-gems/ValueGemsTable'
@@ -27,7 +25,6 @@ import { CaptainPicksPanel } from '@/components/captaincy/CaptainPicksPanel'
 import { InsightsTab } from '@/components/insights/InsightsTab'
 import { AccuracyTab } from '@/components/accuracy/AccuracyTab'
 import { PriceChangePanel } from '@/components/price-changes/PriceChangePanel'
-import { FixtureHeatMap } from '@/components/club-form/FixtureHeatMap'
 import { RivalsTab } from '@/components/rivals/RivalsTab'
 import { OptimiserPanel } from '@/components/optimiser/OptimiserPanel'
 import { LineupTab } from '@/components/squad/LineupTab'
@@ -63,20 +60,20 @@ class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: 
 }
 
 export type Section = 'analyse' | 'plan' | 'squad'
-export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals' | 'fixture-heat-map' | 'lineup' | 'review' | 'rank-sim'
+export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals' | 'lineup' | 'review' | 'rank-sim'
 
 export const SECTIONS = [
   {
     id: 'analyse' as Section,
     label: 'Analyse',
     subTabs: [
-      { id: 'gems' as SubTab,       label: 'Gem Ratings',     mobileLabel: 'Gems'     },
-      { id: 'insights' as SubTab,   label: 'Insights',        mobileLabel: 'Insights' },
-      { id: 'defcon' as SubTab,     label: 'DefCon Analysis', mobileLabel: 'DefCon'   },
-      { id: 'set-pieces' as SubTab, label: 'Set Pieces',      mobileLabel: 'SP'       },
+      { id: 'gems' as SubTab,          label: 'Gem Ratings',     mobileLabel: 'Gems'     },
+      { id: 'insights' as SubTab,      label: 'Insights',        mobileLabel: 'Insights' },
+      { id: 'defcon' as SubTab,        label: 'DefCon Analysis', mobileLabel: 'DefCon'   },
+      { id: 'set-pieces' as SubTab,    label: 'Set Pieces',      mobileLabel: 'SP'       },
+      { id: 'club-form' as SubTab,     label: 'Club Form',       mobileLabel: 'Form'     },
       { id: 'accuracy' as SubTab,      label: 'Accuracy',        mobileLabel: 'Acc'      },
       { id: 'price-changes' as SubTab, label: 'Price Changes',   mobileLabel: 'Prices'   },
-      { id: 'fixture-heat-map' as SubTab, label: 'Heat Map',     mobileLabel: 'Heat Map' },
     ],
     defaultSubTab: 'gems' as SubTab,
   },
@@ -88,7 +85,6 @@ export const SECTIONS = [
       { id: 'manual-plan' as SubTab, label: 'Manual Plan', mobileLabel: 'Manual'  },
       { id: 'route-tree' as SubTab,  label: 'Route Tree',  mobileLabel: 'Routes'  },
       { id: 'rank-sim' as SubTab,    label: 'Rank Sim',    mobileLabel: 'Rank Sim' },  // Phase 62 MC-03
-      { id: 'club-form' as SubTab,   label: 'Club Form',   mobileLabel: 'Form'    },
       { id: 'value-gems' as SubTab, label: 'Value Gems', mobileLabel: 'Values'  },
       { id: 'rivals' as SubTab,     label: 'Rivals',     mobileLabel: 'Rivals'  },
     ],
@@ -264,17 +260,12 @@ export default function Home() {
         )}
         {activeSection !== 'squad' && activeSubTab === 'defcon' && <DefConTables />}
         {activeSection !== 'squad' && activeSubTab === 'club-form' && (
-          <>
-            <FixtureEaseRankingPanel />
-            <FixtureSwingDetector />
-            <ClubFormTable />
-          </>
+          <ClubFormTab submittedId={submittedId} />
         )}
         {activeSection !== 'squad' && activeSubTab === 'set-pieces' && <SetPieceTakerPanel />}
         {activeSection !== 'squad' && activeSubTab === 'insights' && <InsightsTab />}
         {activeSection !== 'squad' && activeSubTab === 'accuracy' && <AccuracyTab teamId={submittedId} />}
         {activeSection !== 'squad' && activeSubTab === 'price-changes' && <PriceChangePanel />}
-        {activeSection !== 'squad' && activeSubTab === 'fixture-heat-map' && <FixtureHeatMap submittedId={submittedId} />}
         {activeSection !== 'squad' && activeSubTab === 'value-gems' && <ValueGemsTable />}
         {activeSection === 'plan' && activeSubTab === 'rivals' && (
           <RivalsTab submittedId={submittedId} />
