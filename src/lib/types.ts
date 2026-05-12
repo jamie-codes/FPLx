@@ -702,6 +702,48 @@ export interface DecisionHistory {
   entries: RegretEntry[]
 }
 
+/**
+ * Phase 100 HIST-02: one chip ROI entry. BB / TC / FH only — Wildcard excluded (D-04).
+ * Comparison metric: gwPoints − seasonAvgPoints (D-05).
+ */
+export interface ChipRoiEntry {
+  chipName: 'bboost' | '3xc' | 'freehit'
+  event: number             // gameweek the chip was played
+  gwPoints: number          // actual GW score in the chip GW
+  seasonAvgPoints: number   // manager's season average GW score (D-05)
+  delta: number             // gwPoints − seasonAvgPoints (positive = chip paid off)
+}
+
+/**
+ * Phase 100 HIST-03: one hit transfer break-even record.
+ * Break-even (D-07): cumulative points from `event` GW inclusive through GW 38;
+ * a hit broke even if `elementInPts > elementOutPts + 4`. Hit GWs identified by
+ * `event_transfers_cost > 0` cross-referenced with `/entry/{id}/transfers/` (D-08).
+ * Per-player `/element-summary/{id}/` failures fold to null fields (partial-failure
+ * pattern from decision-history route).
+ */
+export interface HitTrackingEntry {
+  event: number                  // gameweek the hit was taken
+  elementIn: number              // FPL element ID of player bought
+  elementOut: number             // FPL element ID of player sold
+  elementInName: string | null   // bootstrap web_name; null if element-summary fetch failed
+  elementOutName: string | null
+  elementInPts: number | null    // cumulative pts from event GW onwards; null on fetch failure
+  elementOutPts: number | null
+  netPts: number | null          // elementInPts − elementOutPts − 4; null if either side null
+  brokeEven: boolean | null      // netPts > 0; null if netPts is null
+}
+
+/**
+ * Phase 100: full response shape from GET /api/season-analytics?teamId={id}.
+ * chipRoi ordered by `event` ascending; hitTracking ordered by `event` ascending
+ * (multi-hit GWs render one entry per transfer pair — see UI-SPEC §HIST-03).
+ */
+export interface SeasonAnalytics {
+  chipRoi: ChipRoiEntry[]
+  hitTracking: HitTrackingEntry[]
+}
+
 // Insights data (Phase 33 INS-01..INS-06 — pipeline writes pipeline/cache/insights.json)
 // Extended in Phase 79 (Plan 02): 10 new structured fields + signal_label emitted by pipeline.
 // The pipeline emits a flat array of Insight (no wrapper object).

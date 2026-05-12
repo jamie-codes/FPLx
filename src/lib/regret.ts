@@ -40,9 +40,14 @@ export interface SeasonSummary {
   modelBetter: number
   userWon: number
   tied: number
+  // Phase 100 HIST-01: D-02 captain hit rate. A "hit" is a GW where regret <= 0
+  // (user captain met or beat the model ceiling). captainHits = userWon + tied.
+  // captainHitRate is null when gwsWithData === 0 (no GWs with both sides available).
+  captainHitRate: number | null
+  captainHits: number
 }
 
-/** Reduce RegretEntry array to season-level summary stats (D-07). */
+/** Reduce RegretEntry array to season-level summary stats (D-07 + Phase 100 HIST-01 D-02). */
 export function computeSeasonSummary(entries: RegretEntry[]): SeasonSummary {
   let totalRegret = 0
   let gwsWithData = 0
@@ -57,7 +62,11 @@ export function computeSeasonSummary(entries: RegretEntry[]): SeasonSummary {
     else if (e.regret < 0) userWon += 1
     else tied += 1
   }
-  return { totalRegret, gwsWithData, modelBetter, userWon, tied }
+  // Phase 100 HIST-01 (D-02): hits = userWon + tied (regret <= 0 GWs).
+  // Null when gwsWithData === 0 — no data available for HIST-01 display.
+  const captainHits = userWon + tied
+  const captainHitRate = gwsWithData > 0 ? captainHits / gwsWithData : null
+  return { totalRegret, gwsWithData, modelBetter, userWon, tied, captainHitRate, captainHits }
 }
 
 // ---------------------------------------------------------------------------
