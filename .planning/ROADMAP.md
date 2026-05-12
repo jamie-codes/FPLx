@@ -1267,7 +1267,11 @@ Plans:
   2. When a target GW is selected, the panel clearly labels which GW is being scored (e.g. "Ranked by GW36 xPts") so the user understands the ranking context has changed
   3. GwToggle labels across the app read "Next 1 GW", "Next 3 GWs", "Next 5 GWs" (replacing "1 GW / 3 GW / 5 GW") in both GwToggle.tsx and all column headers that reference the horizon
   4. UX-01 label rename does not affect any data logic -- it is a pure display string change verified by Vitest snapshot or text-content assertions
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 101-01-PLAN.md — GWT-01 engine: computeGwXpts pure helper (TS port of Python _xpts_per_gw) + suggestTransfers optional targetGw param routing through scorePlayer at all four sites with denominator=1
+- [ ] 101-02-PLAN.md — GWT-01 UI: TransferPanel targetGw state + Target GW <select> dropdown + availableGws memo + GwToggle disabled wrapper + OpportunityCostTable conditional column header + sub-label
+- [ ] 101-03-PLAN.md — UX-01: GwToggle button labels {gw} GW → Next {gw} GW{s} + OptimiserPanel.test.tsx line 209 assertion update
 **UI hint**: yes
 
 ---
