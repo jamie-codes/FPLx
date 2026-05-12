@@ -11,7 +11,7 @@
 //      bank + sum(sellPrice ?? now_cost of outs) >= sum(now_cost of ins).
 //   5. Compute xPtsGain = sum(in.xPts[horizon]) - sum(out.xPts[horizon]); keep > 0.
 //   6. cost = (transfersUsed > ftCount) ? 4 : 0. (For combos: 1 hit when ftCount=1.)
-//   7. xPtsGainPerGw = xPtsGain / horizon.
+//   7. xPtsGainPerGw = xPtsGain / denominator (horizon when no targetGw; 1 when targetGw set).
 //   8. breakEvenGws = cost > 0 && xPtsGainPerGw > 0
 //                       ? Math.max(1, Math.ceil(4 / xPtsGainPerGw))
 //                       : null.
@@ -27,6 +27,7 @@
 import type { MergedPlayer, OptimiserHorizon, TransferSuggestion } from './types'
 import type { SquadPick } from './squad-adapter'
 import { HORIZON_FIELD } from './optimise-lineup'
+import { computeGwXpts } from './gw-xpts'
 
 // FPL position codes (matches MergedPlayer.element_type)
 const GK = 1
@@ -45,6 +46,7 @@ export interface SuggestTransfersParams {
   ftCount: 1 | 2
   bank: number
   sellPrices?: Map<number, number>
+  targetGw?: number   // Phase 101 GWT-01: when set, bypasses HORIZON_FIELD; uses computeGwXpts
 }
 
 /** Score a player by the active horizon's xPts field (?? 0 fallback). */
@@ -81,11 +83,15 @@ function breakEven(cost: 0 | 4 | 8, xPtsGainPerGw: number): number | null {
 }
 
 export function suggestTransfers(params: SuggestTransfersParams): TransferSuggestion[] {
-  const { currentPicks, players, horizon, ftCount, bank, sellPrices } = params
+  const { currentPicks, players, horizon, ftCount, bank, sellPrices, targetGw } = params
 
   if (currentPicks.length === 0 || players.length === 0) return []
 
   const field = HORIZON_FIELD[horizon]
+  // Phase 101 GWT-01: route scoring through computeGwXpts when targetGw is set.
+  const scorePlayer = (p: MergedPlayer): number =>
+    targetGw !== undefined ? computeGwXpts(p, targetGw) : horizonScore(p, field)
+  const denominator = targetGw !== undefined ? 1 : horizon
   const playerById = new Map<number, MergedPlayer>(players.map(p => [p.id, p]))
   const ownedIds = new Set<number>(currentPicks.map(p => p.element))
 
@@ -110,7 +116,7 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
   for (const pos of POSITIONS) {
     const candidates = players
       .filter(p => p.element_type === pos && !ownedIds.has(p.id) && !cappedTeams.has(p.team))
-      .sort((a, b) => horizonScore(b, field) - horizonScore(a, field))
+      .sort((a, b) => scorePlayer(b) - scorePlayer(a))
       .slice(0, TOP_N_PER_POSITION)
     inPoolByPosition.set(pos, candidates)
   }
@@ -130,16 +136,16 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
   const singles: TransferSuggestion[] = []
   for (const sell of currentPlayers) {
     const pool = inPoolByPosition.get(sell.element_type) ?? []
-    const sellHorizonPts = horizonScore(sell, field)
+    const sellScore = scorePlayer(sell)
     for (const buy of pool) {
-      const xPtsGain = horizonScore(buy, field) - sellHorizonPts
+      const xPtsGain = scorePlayer(buy) - sellScore
       if (xPtsGain <= 0) continue
 
       // Budget check (D-10): bank + sellValue(sell) >= now_cost(buy)
       const sellValue = sellValueFor(sell.id, sellPrices, playerById)
       if (bank + sellValue < buy.now_cost) continue
 
-      const xPtsGainPerGw = xPtsGain / horizon
+      const xPtsGainPerGw = xPtsGain / denominator
 
       // FREE variant — always emitted when ftCount allows at least 1 free transfer (which is always).
       singles.push({
@@ -181,22 +187,22 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
   for (let i = 0; i < currentPlayers.length; i++) {
     const sell1 = currentPlayers[i]
     const pool1 = inPoolByPosition.get(sell1.element_type) ?? []
-    const sell1Pts = horizonScore(sell1, field)
+    const sell1Pts = scorePlayer(sell1)
     const sell1Value = sellValueFor(sell1.id, sellPrices, playerById)
 
     for (let j = i + 1; j < currentPlayers.length; j++) {
       const sell2 = currentPlayers[j]
       if (sell2.id === sell1.id) continue          // TFX-02: sell-side dedup (never sell same player twice)
       const pool2 = inPoolByPosition.get(sell2.element_type) ?? []
-      const sell2Pts = horizonScore(sell2, field)
+      const sell2Pts = scorePlayer(sell2)
       const sell2Value = sellValueFor(sell2.id, sellPrices, playerById)
 
       for (const buy1 of pool1) {
-        const gain1 = horizonScore(buy1, field) - sell1Pts
+        const gain1 = scorePlayer(buy1) - sell1Pts
         if (gain1 <= 0) continue  // each leg must individually improve the squad (CR-02)
         for (const buy2 of pool2) {
           if (buy2.id === buy1.id) continue   // buy-side dedup: can't buy the same player twice
-          const gain2 = horizonScore(buy2, field) - sell2Pts
+          const gain2 = scorePlayer(buy2) - sell2Pts
           if (gain2 <= 0) continue  // each leg must individually improve the squad (CR-02)
           const xPtsGain = gain1 + gain2
           if (xPtsGain <= 0) continue
@@ -204,7 +210,7 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
           // Budget check across both transfers
           if (bank + sell1Value + sell2Value < buy1.now_cost + buy2.now_cost) continue
 
-          const xPtsGainPerGw = xPtsGain / horizon
+          const xPtsGainPerGw = xPtsGain / denominator
           // cost:0 when ftCount=2 (both transfers covered by free transfers)
           // cost:4 when ftCount=1 (second transfer is a −4pt hit)
           const cost: 0 | 4 = ftCount === 2 ? 0 : 4
