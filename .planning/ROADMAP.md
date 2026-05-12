@@ -1179,7 +1179,7 @@ Plans:
 - [x] **Phase 98: Post-GW Review Core** — bench points left, captain vs optimal captain in squad, auto-surface card after deadline passes; authenticated FPL picks for actual captain fill (PGW-01, PGW-02, PGW-04) (completed 2026-05-12)
 - [x] **Phase 99: Top-10k Comparison** — GW score vs top-10k average, template players the user did not own; sourced from FPL bootstrap events[].average_entry_score + top-10k league endpoint (PGW-03) (completed 2026-05-12)
 - [x] **Phase 100: Decision History Analytics** — season captain hit rate from BackTab data; chip ROI vs season average; hit break-even tracking from authenticated transfer history (HIST-01, HIST-02, HIST-03) (completed 2026-05-12)
-- [ ] **Phase 101: GW-Targeted Transfers & UX Polish** — TransferPanel GW selector re-ranks candidates by that GW's fixture xPts only; GwToggle label rename to "Next 1 GW / Next 3 GWs / Next 5 GWs" (GWT-01, UX-01)
+- [x] **Phase 101: GW-Targeted Transfers & UX Polish** — TransferPanel GW selector re-ranks candidates by that GW's fixture xPts only; GwToggle label rename to "Next 1 GW / Next 3 GWs / Next 5 GWs" (GWT-01, UX-01) (completed 2026-05-12)
 
 ### Phase 97: Fixture Heat Map
 **Goal**: Users can scan all 20 teams' upcoming fixture difficulty across 8 GWs at a glance -- a single colour-coded grid replaces tab-by-tab fixture inspection and makes end-of-season transfer targeting trivially fast
@@ -1274,7 +1274,7 @@ Plans:
 - [x] 101-03-PLAN.md — UX-01: GwToggle button labels {gw} GW → Next {gw} GW{s} + OptimiserPanel.test.tsx line 209 assertion update
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 101-02-PLAN.md — GWT-01 UI: TransferPanel targetGw state + Target GW <select> dropdown + availableGws memo + GwToggle disabled wrapper + OpportunityCostTable conditional column header + sub-label
+- [x] 101-02-PLAN.md — GWT-01 UI: TransferPanel targetGw state + Target GW <select> dropdown + availableGws memo + GwToggle disabled wrapper + OpportunityCostTable conditional column header + sub-label
 **UI hint**: yes
 
 ---
@@ -1344,4 +1344,4 @@ Plans:
 | 98 | v1.17 | 1/3 | In Progress|  |
 | 99 | v1.17 | 2/2 | Complete    | 2026-05-12 |
 | 100 | v1.17 | 4/4 | Complete    | 2026-05-12 |
-| 101 | v1.17 | 2/3 | In Progress|  |
+| 101 | v1.17 | 3/3 | Complete   | 2026-05-12 |
