@@ -15,6 +15,7 @@ import { FragilityBadge } from '@/components/shared/FragilityBadge'
 interface OpportunityCostTableProps {
   rows: OCSRow[]
   horizon: OptimiserHorizon
+  targetGw?: number   // Phase 101 GWT-01: when set, column header switches to "xPts Gain (GW{N})"
 }
 
 interface BadgeConfig {
@@ -120,7 +121,7 @@ function PlayerMoveCell({ row }: { row: OCSRow }) {
   )
 }
 
-export function OpportunityCostTable({ rows, horizon }: OpportunityCostTableProps) {
+export function OpportunityCostTable({ rows, horizon, targetGw }: OpportunityCostTableProps) {
   const onlyRoll = rows.length === 1 && rows[0]?.kind === 'roll'
 
   return (
@@ -130,7 +131,11 @@ export function OpportunityCostTable({ rows, horizon }: OpportunityCostTableProp
           <tr className="text-xs text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-700">
             <th className="text-left py-2 pl-2 font-semibold w-[20%]">Option</th>
             <th className="text-left py-2 font-semibold w-[35%]">Player Move</th>
-            <th className="text-right py-2 font-semibold w-[20%]">xPts Gain ({horizon} GW{horizon === 1 ? '' : 's'})</th>
+            <th className="text-right py-2 font-semibold w-[20%]">
+              {targetGw !== undefined
+                ? `xPts Gain (GW${targetGw})`
+                : `xPts Gain (Next ${horizon} GW${horizon === 1 ? '' : 's'})`}
+            </th>
             <th className="text-right py-2 font-semibold w-[15%] hidden sm:table-cell">Break-even</th>
             <th className="text-right py-2 pr-2 font-semibold w-[10%]">Label</th>
           </tr>
