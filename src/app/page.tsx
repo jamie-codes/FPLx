@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, Component } from 'react'
+import { useState, useCallback, Component, useEffect } from 'react'
 import type { ReactNode, ErrorInfo } from 'react'
 import { HorizonSelector } from '@/components/planner/HorizonSelector'
 import { loadManualPlan } from '@/lib/manual-plan'
@@ -30,14 +30,7 @@ import { OptimiserPanel } from '@/components/optimiser/OptimiserPanel'
 import { LineupTab } from '@/components/squad/LineupTab'
 import { GwReviewTab } from '@/components/squad/GwReviewTab'
 import { DecisionSummaryTab } from '@/components/squad/DecisionSummaryTab'
-
-// Phase 73 PGW-01: hardcoded last-3 settled GWs. The pipeline writes
-// gw_review_gw{N}.json for the actual last 3 finished GWs (D-10 sliding window).
-// The matching API route returns 404/503 if a requested gw is not present —
-// GwReviewTab handles those states gracefully. A future enhancement may derive
-// this list from a new `useSettledGws` hook reading bootstrap.events; out of
-// scope for Phase 73 (deferred per RESEARCH.md Open Question 2).
-const SETTLED_GWS_PLACEHOLDER: number[] = [33, 34, 35]
+import { useSettledGws } from '@/lib/hooks/useSettledGws'
 
 class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -114,6 +107,27 @@ export default function Home() {
   const [gemPreset, setGemPreset] = useState<ViewPreset>('default')
   const [comparePlayer, setComparePlayer] = useState<ScoredPlayer | null>(null)
   const [compareOpen, setCompareOpen] = useState(false)
+
+  // Phase 98 PGW-02 live data + PGW-04 auto-surface input.
+  // Default [] keeps the GwPillToggle's "no settled GWs" branch quiet during load/error.
+  const { data: settledGws = [] } = useSettledGws()
+
+  // Phase 98 PGW-04: auto-surface Squad > Review when a new GW has settled and the
+  // user has not yet seen it. One-time per GW (D-03); flag is written synchronously
+  // at the moment of navigation (D-04); localStorage key format documented in D-05.
+  useEffect(() => {
+    if (settledGws.length === 0) return
+    const latestGw = settledGws[settledGws.length - 1]
+    const key = `pgw-reviewed:GW${latestGw}`
+    try {
+      if (localStorage.getItem(key) !== null) return
+      setActiveSection('squad')
+      setSectionMemory((prev) => ({ ...prev, squad: 'review' }))
+      localStorage.setItem(key, '1')
+    } catch {
+      // localStorage unavailable (SSR / private browsing) — skip silently
+    }
+  }, [settledGws])
 
   // Phase 43 D-11: teamId / submittedId lifted from TransferPanel so both Transfers
   // and Optimiser sub-tabs share the squad fetch via TanStack Query cache.
@@ -253,7 +267,7 @@ export default function Home() {
           <LineupTab teamId={submittedId ?? ''} />
         )}
         {activeSection === 'squad' && activeSubTab === 'review' && (
-          <GwReviewTab teamId={submittedId ?? ''} settledGws={SETTLED_GWS_PLACEHOLDER} />
+          <GwReviewTab teamId={submittedId ?? ''} settledGws={settledGws} />
         )}
         {activeSection !== 'squad' && activeSubTab === 'gems' && (
           <GemTable preset={gemPreset} onPresetChange={setGemPreset} onCompare={handleCompare} />

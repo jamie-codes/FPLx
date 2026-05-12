@@ -1,6 +1,6 @@
 // Phase 36: page.tsx state — D-05 section memory, D-06 default landing, D-04 mobile pill labels
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, fireEvent } from '@testing-library/react'
 
 vi.mock('@/components/gem-table/GemTable', () => ({
@@ -57,8 +57,23 @@ vi.mock('@/components/planner/RouteTreeTab', () => ({
 vi.mock('@/components/planner/RankSimTab', () => ({
   RankSimTab: (_props: { submittedId: string | null; horizon: number }) => <div data-testid="rank-sim-tab-mock">RankSimTab</div>,
 }))
+vi.mock('@/lib/hooks/useSettledGws', () => ({
+  useSettledGws: () => ({ data: [33, 34, 35] }),
+}))
+vi.mock('@/components/squad/GwReviewTab', () => ({
+  GwReviewTab: (props: { teamId: string; settledGws: number[] }) => (
+    <div data-testid="gw-review-tab-mock" data-settled={JSON.stringify(props.settledGws)} />
+  ),
+}))
 
 import Home from '@/app/page'
+
+// Global beforeEach: mark GW35 as already seen so the PGW-04 auto-surface
+// useEffect does not redirect away from the default Analyse > Gems landing
+// in existing tests. Phase 98 auto-surface tests clear and manage this key themselves.
+beforeEach(() => {
+  window.localStorage.setItem('pgw-reviewed:GW35', '1')
+})
 
 describe('Phase 36: page.tsx state', () => {
   it('default landing is Analyse section with Gem Ratings sub-tab active (D-06)', () => {
@@ -309,6 +324,32 @@ describe('Phase 36: page.tsx state', () => {
     // Other Plan tabs are NOT rendered
     expect(container.querySelector('[data-testid="route-tree-tab"]')).toBeNull()
     expect(container.querySelector('[data-testid="planner"]')).toBeNull()
+  })
+})
+
+describe('Phase 98: page.tsx auto-surface (PGW-04)', () => {
+  beforeEach(() => {
+    window.localStorage.clear()
+  })
+
+  it('auto-surfaces Squad > Review on first visit after a settled GW (PGW-04 D-01..D-05)', async () => {
+    window.localStorage.removeItem('pgw-reviewed:GW35')
+    const { container } = render(<Home />)
+    // useEffect fires synchronously after mount; the Squad > Review sub-tab is now active.
+    // Assert the mocked GwReviewTab is rendered with the live settledGws prop.
+    const reviewTab = container.querySelector('[data-testid="gw-review-tab-mock"]')
+    expect(reviewTab).not.toBeNull()
+    expect(reviewTab?.getAttribute('data-settled')).toBe('[33,34,35]')
+    // Localstorage seen-flag was written (D-04: synchronous, at moment of navigation)
+    expect(window.localStorage.getItem('pgw-reviewed:GW35')).toBe('1')
+  })
+
+  it('does NOT auto-surface when the latest settled GW has already been seen (PGW-04 D-03)', () => {
+    window.localStorage.setItem('pgw-reviewed:GW35', '1')
+    const { container } = render(<Home />)
+    // Default landing remains Analyse > Gems — no override
+    expect(container.querySelector('[data-testid="gem-table"]')).not.toBeNull()
+    expect(container.querySelector('[data-testid="gw-review-tab-mock"]')).toBeNull()
   })
 })
 
