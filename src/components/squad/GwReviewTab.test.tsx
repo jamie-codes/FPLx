@@ -22,6 +22,8 @@ const sampleReview: GwReview = {
   top_scorer_name: 'Haaland',
   top_scorer_pts: 14,
   average_score: 55,
+  best_bench_player_name: 'Wissa',  // Phase 98 D-09: bench player fields (Plan 02 adds real test coverage)
+  best_bench_player_pts: 6,
 }
 
 function mockSuccess(data: GwReview = sampleReview) {

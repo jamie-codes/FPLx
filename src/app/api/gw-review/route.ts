@@ -167,6 +167,9 @@ export async function GET(request: NextRequest) {
     top_scorer_name: elementMap.get(topScorer.element) ?? `Player ${topScorer.element}`,
     top_scorer_pts: topScorer.total_points,
     average_score: averageScore,
+    // Phase 98 D-09 / PGW-01: TODO — computed in Plan 02; stub until then
+    best_bench_player_name: '—',
+    best_bench_player_pts: 0,
   }
 
   return Response.json(review, {

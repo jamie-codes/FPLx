@@ -872,6 +872,7 @@ export interface ProseRefreshPayload {
 }
 
 // Phase 73 PGW-01 / PGW-02: Post-GW Review (D-05..D-08 in 073-CONTEXT.md)
+// Phase 98 PGW-01: best bench player surfaced as info row (D-08, D-09 in 098-CONTEXT.md)
 // Returned by GET /api/gw-review?teamId=&gw= ; consumed by useGwReview + GwReviewTab.
 export interface GwReview {
   gw: number                       // Settled gameweek number (matches the ?gw= query param)
@@ -883,4 +884,6 @@ export interface GwReview {
   top_scorer_name: string          // web_name of pick with highest total_points among starting XI (position <= 11)
   top_scorer_pts: number           // that pick's total_points
   average_score: number            // FPL average - from gw_review_gw{N}.json (D-08); labelled "FPL average", NOT "top-10k"
+  best_bench_player_name: string   // Phase 98 D-09 / PGW-01: web_name of highest-scoring bench pick (position > 11); '—' when bench is empty
+  best_bench_player_pts: number    // Phase 98 D-09 / PGW-01: that pick's total_points; 0 when bench is empty
 }
