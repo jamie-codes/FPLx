@@ -4,6 +4,10 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
+v1.17 Phase 99 complete (2026-05-12) — PGW-03: Dream-team benchmark card in GW Review. `/api/gw-review` fetches `dream-team/{gw}/` in a standalone try/catch; GwReview type extended with `benchmark_score`, `benchmark_label`, `missed_players`; 4th StatCard slot now shows dream-team score with sentiment delta (+N/−N vs you); conditional Missed row lists up to 3 unowned dream-team players. Graceful degradation to FPL average on upstream failure. 21 tests (7 route + 14 component) all GREEN.
+
+v1.17 Phase 97 complete (2026-05-12) — HEAT-01: Fixture Heat Map toggle wired. `ClubFormViewToggle` pill (Form/Heat Map) + `ClubFormTab` wrapper with TDD RED→GREEN (6 tests). `fixture-heat-map` sub-tab removed from page navigation; `club-form` moved from Plan to Analyse. 44 tests passing.
+
 v1.16 Phase 96 complete (2026-05-11) — BACK-01: Captain decision backtester shipped. Pipeline writes `captain_picks_gw{N}.json` to Vercel Blob as a durable snapshot trail. `/api/decision-history` joins snapshots with FPL picks to compute per-GW regret. `useDecisionHistory` hook caches to localStorage (38-entry ring buffer, cache-first). `BackTab` recharts BarChart (red/green bars, y=0 ReferenceLine) + season summary header + per-GW detail table. AccuracyTab restructured with Summary | Calibration | Back pill nav. 22 tests TDD RED→GREEN.
 
 v1.16 Phase 95 complete (2026-05-11) — SPQ-04: Set-piece delivery league table shipped. All 20 PL teams ranked by composite corner+FK danger score. `aggregateSetPieceLeague` pure aggregation library, `SetPieceLeagueTable` ranked table with Insufficient Data section, `SetPieceViewToggle` mobile-visible pill, toggle wired into `SetPieceTakerPanel`. 13 tests (TDD RED→GREEN).
