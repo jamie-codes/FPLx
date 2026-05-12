@@ -1,34 +1,36 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.16
-milestone_name: Modelling & Trust
-status: planned
-stopped_at: Phase 96 planned (4 plans, 3 waves)
-last_updated: "2026-05-11T15:00:00.000Z"
-last_activity: 2026-05-11
+milestone: v1.17
+milestone_name: End-of-Season Intelligence
+status: planning
+stopped_at: Phase 98 context gathered
+last_updated: "2026-05-12T06:43:14.085Z"
+last_activity: 2026-05-12
 progress:
-  total_phases: 9
-  completed_phases: 8
-  total_plans: 26
-  completed_plans: 22
-  percent: 85
+  total_phases: 5
+  completed_phases: 1
+  total_plans: 2
+  completed_plans: 2
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-11 — Phase 93 complete)
+See: .planning/PROJECT.md (updated 2026-05-11 — Phase 96 complete)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 95 — set-piece-delivery-league-table
+**Current focus:** Phase 97 — fixture-heat-map
 
 ## Current Position
 
-Phase: 96
-Plan: Ready to execute (4 plans, 3 waves)
-Status: Ready to execute
-Last activity: 2026-05-11
+Phase: 98
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-05-12
+
+Progress: [░░░░░░░░░░] 0/5 phases complete
 
 ## Performance Metrics
 
@@ -37,15 +39,15 @@ Last activity: 2026-05-11
 | 77 | 02 | ~10 min | 2 | 5 |
 | 89 | 02 | ~15 min | 2 | 2 |
 
+**Previous milestone (v1.16) velocity:**
+
+- 9 phases (88–96), all complete
+- Shipped 2026-05-11 (2 days)
+
 **Previous milestone (v1.14) velocity:**
 
 - 4 phases (82–85), all complete
 - Shipped 2026-05-09 (2 days)
-
-**Previous milestone (v1.13) velocity:**
-
-- 4 phases (78–81), all complete
-- Shipped 2026-05-08
 
 **Previous milestone (v1.9) velocity:**
 
@@ -57,36 +59,26 @@ Last activity: 2026-05-11
 
 ### Decisions
 
-- [v1.16-roadmap] Phase 88 (SCRAPER-01) sequenced first — pure frontend display over fields already in pipeline; unblocks Phase 93's "news flip to 'doubt'" perturbation
-- [v1.16-roadmap] Phase 89 (REFRESH-01) is pure DevOps / GitHub Actions — `pipeline/refresh_gate.py` deadline-guard + dense Fri/Sat/Sun cron + `concurrency: cancel-in-progress`; no TypeScript changes
-- [v1.16-roadmap] Phase 90 (MC-01) is v1.16 scope = pipeline + merged_players.json extension only (4 fields); rank simulator UI / captain integration deliberately deferred (would be MC-03/MC-04 later); ≥1000 iterations floor (10x lower than v1.10 Phase 61's 10,000) because we only write percentiles
-- [v1.16-roadmap] Phase 90 isolation rule: `simulate.py` MUST NOT import from `merge.py` (mirrors v1.10 Phase 61 D-02) — Poisson math duplicated as internal helper
-- [v1.16-roadmap] Phase 91 (CAL-01) is independent of Phase 90 — uses existing accuracy backtest data, not MC percentiles; recharts already installed since Phase 63
-- [v1.16-roadmap] Phase 92 (DH-04) extends Phase 82's data_health.json with rolling 7-element history array; zero new API routes / hooks per REQUIREMENTS.md
-- [v1.16-roadmap] Phase 93 (SENS-01) extends v1.10 Phase 64 binary fragility to tristate (ROBUST/FRAGILE/KNIFE EDGE) with 5 perturbations; existing `computeFragility` API preserved, signature unchanged
-- [v1.16-roadmap] Phase 93 depends on Phase 88 — without SCRAPER-01 news taxonomy, the fifth perturbation has no input to manipulate
-- [v1.16-roadmap] Phase 94 (WHY-01) extends v1.10 Phase 65 explainer with two new entry points (TransferPanel search field + GemTable head-to-head); existing `computeRejection` API preserved
-- [v1.16-roadmap] Phase 94 predicate-order determinism is a quality bar — `PREDICATE_ORDER` constant array makes explainer output character-deterministic across runs
-- [v1.16-roadmap] Phase 95 (SPQ-04) is pure client-side aggregation in `src/lib/setPieceLeague.ts` over existing `sp_quality.json`; zero pipeline changes; reuses `useTeamBadge()` from v1.13 Phase 81 for crests
-- [v1.16-roadmap] Phase 96 (BACK-01) is the most complex phase in v1.16 — pipeline write + new API route + new hook + new sub-tab + localStorage caching; sequenced last so simpler wins ship first
-- [v1.16-roadmap] Phase 96 regret formula: `(model_pts − user_pts) × 2` accounts for captain points-doubling rule; comparison is to snapshotted recommendation at decision time, NOT retrospective max
-- [v1.16-roadmap] Phase 96 ring buffer key `decisionHistory:teamId:{id}` so swapping team IDs doesn't corrupt user's own cache; 38 GWs × ~10KB ≈ 400KB fits localStorage
-- [v1.16-roadmap] BACK-02 (transfer regret backtester) explicitly deferred to v1.17 — needs Python port of `suggestTransfers()` first
+- [v1.17-roadmap] Phase 97 (HEAT-01/02) is pure client-side over existing attacking_difficulty data from useClubForm(); no pipeline change; toggle added within Club Form tab; mirrors Phase 66 heat map (v1.11) but scoped to 8 GWs and Club Form toggle rather than dedicated sub-tab
+- [v1.17-roadmap] Phase 98 (PGW-01/02/04) extends existing BackTab / useDecisionHistory hook (already in production from Phase 96); auto-surface on PGW-04 uses FPL bootstrap events[].deadline_time comparison; bench summary requires authenticated FPL picks endpoint already in use
+- [v1.17-roadmap] Phase 99 (PGW-03) separated from Phase 98 because top-10k data source needs investigation — FPL does not expose a direct top-10k API; options include classic league standings for league-314 (overall), or deriving from bootstrap average_entry_score as fallback; this needs research before planning
+- [v1.17-roadmap] Phase 100 (HIST-01/02/03) all in Decision History context: HIST-01 is pure computation over existing BackTab data (no new pipeline); HIST-02 needs chip GW identification from FPL entry history (picks API already authenticated); HIST-03 needs authenticated FPL transfers endpoint (/entry/{id}/transfers/)
+- [v1.17-roadmap] Phase 101 (GWT-01 + UX-01) bundled: GWT-01 is a TransferPanel enhancement (GW selector + per-GW xPts re-rank using existing upcoming_fixtures data); UX-01 is a string rename only; both are client-side only, no pipeline change
+- [v1.17-roadmap] UX-01 bundled into Phase 101 (not its own phase) per instructions — it is a one-line string change and does not warrant a standalone phase
+- [v1.17-roadmap] BACK-02 (transfer regret backtester) carried forward from v1.16 — still deferred, requires Python port of suggestTransfers()
 
 ### Pending Todos
 
-- WR-02 (decision-severity.ts): captain returns MEDIUM (not LOW) when `candidates.length < 2` — cleanup agent scheduled (trig_01MnRB5hD37qiQqQYGNTCJhs, fires 2026-05-02T06:17Z)
+- WR-02 (decision-severity.ts): captain returns MEDIUM (not LOW) when candidates.length < 2 — cleanup agent scheduled (trig_01MnRB5hD37qiQqQYGNTCJhs, fires 2026-05-02T06:17Z)
 - WR-01 (DecisionSummaryTab.tsx): duplicate transition classes on Load Squad button — cleanup agent scheduled
 - WR-03/04 (MobileNav.test.tsx): 4→5 pills description wrong, Acc pill untested — cleanup agent scheduled
-- Phase 48 hover card: non-functional in production until pipeline re-run produces `appearance_pts` in merged_players.json cache
+- Phase 48 hover card: non-functional in production until pipeline re-run produces appearance_pts in merged_players.json cache
 
 ### Blockers/Concerns
 
-None.
+- PGW-03 (top-10k comparison) data source needs research before planning Phase 99 — FPL does not have a direct documented top-10k endpoint; research required to determine feasibility and fallback strategy
 
 ## Deferred Items
-
-Items carried from v1.9:
 
 | ID | Description | Phase | Target |
 |----|-------------|-------|--------|
@@ -97,10 +89,10 @@ Items carried from v1.9:
 | WR-01 | DecisionSummaryTab Load Squad button duplicate transition classes | pre-v1.9 | backlog |
 | WR-03/04 | MobileNav.test.tsx 4→5 pills description wrong, Acc pill untested | pre-v1.9 | backlog |
 | TEST-57 | captain-picks.test.ts 5 pre-existing failures from Phase 57 CaptainPicksPanel rewrite | 57 | backlog |
-| BACK-02 | Transfer regret backtester (Python port of suggestTransfers required) | — | v1.17 |
+| BACK-02 | Transfer regret backtester (Python port of suggestTransfers required) | — | v1.18+ |
 
 ## Session Continuity
 
-Last session: 2026-05-11T15:00:00.000Z
-Stopped at: Phase 96 planned — 4 plans in 3 waves
-Resume file: .planning/phases/96-captain-decision-backtester/096-04-PLAN.md
+Last session: 2026-05-12T06:43:14.077Z
+Stopped at: Phase 98 context gathered
+Resume file: .planning/phases/98-post-gw-review-core/98-CONTEXT.md
