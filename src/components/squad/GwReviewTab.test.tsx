@@ -22,8 +22,8 @@ const sampleReview: GwReview = {
   top_scorer_name: 'Haaland',
   top_scorer_pts: 14,
   average_score: 55,
-  best_bench_player_name: 'Wissa',  // Phase 98 D-09: bench player fields (Plan 02 adds real test coverage)
-  best_bench_player_pts: 6,
+  best_bench_player_name: 'Watkins',  // Phase 98 PGW-01
+  best_bench_player_pts: 9,           // Phase 98 PGW-01
 }
 
 function mockSuccess(data: GwReview = sampleReview) {
@@ -126,5 +126,18 @@ describe('Phase 73: GwReviewTab', () => {
     const gw35After = buttonsAfter.find(b => b.textContent === 'GW35')
     expect(gw33After?.getAttribute('aria-pressed')).toBe('true')
     expect(gw35After?.getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('renders "Best bench" info row with name and points when data present (PGW-01)', () => {
+    mockSuccess()
+    const { container } = render(<GwReviewTab teamId="12345" settledGws={[33, 34, 35]} />)
+    expect(container.textContent).toContain('Best bench')
+    expect(container.textContent).toContain('Watkins')
+    expect(container.textContent).toContain('9pts')
+  })
+
+  it('"Best bench" row is absent in no-squad empty state (PGW-01)', () => {
+    const { container } = render(<GwReviewTab teamId="" settledGws={[33, 34, 35]} />)
+    expect(container.textContent).not.toContain('Best bench')
   })
 })
