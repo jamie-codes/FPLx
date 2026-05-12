@@ -32,35 +32,29 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
-## Current Milestone: v1.17 End-of-Season Intelligence
+## Current Milestone: v1.18 Forecast Transparency & AI Intelligence
+
+**Goal:** Surface model confidence and reasoning — Monte Carlo outcome distributions, calibration evidence, sensitivity flags, and rejection explainers — and introduce Claude API prose summaries with per-player insights.
+
+**Target features:**
+- MC-01: Monte Carlo Simulator — 10k sims per player per GW, haul/blank %, P10/P90 distributions for TC and differential decisions
+- CAL-01: Calibration Charts — reliability diagram by position (predicted haul % vs actual), surfaces in AccuracyTab
+- SENS-01: Sensitivity Flags — fragility signals on recommendations (robust vs falls-apart-if-start-prob-drops)
+- WHY-01: Rejection Explainer — plain-English reason why a player is below threshold, in GemTable row expand and TransferPanel
+- NLP-01: LLM prose summary — Claude API weekly recommendation paragraph on Decision Summary tab, grounded in structured model output
+- NLP-02: Per-player LLM insights — brief Claude API per-player explanation in GemTable row expand and TransferPanel
+
+## Previous Milestone: v1.17 End-of-Season Intelligence (Complete 2026-05-12)
 
 **Goal:** Surface actionable end-of-season intelligence — fixture heat map, post-GW review, personal decision analytics, GW-targeted transfer advice, and UX polish.
 
 **Target features:**
 - HEAT-01: Fixture heat map — all 20 teams × next 8 GWs, colour-coded by difficulty, DGW/BGW highlighted
-- PGW-01: Post-GW review — bench pts left, captain vs optimal, comparison vs template/top-10k team
-- HIST-01: Personal decision history — captain hit rate, transfer ROI, chip ROI, hit break-even success rate
-- GWT-01: GW-targeted transfer recommendations — pick a future GW, see ranked buy candidates for that GW's fixtures/xPts
-- UX-01: xPts temporal labels — "Next 1 GW / Next 3 GWs / Next 5 GWs" across GwToggle and column headers
-
-## Previous Milestone: v1.16 Modelling & Trust (Complete 2026-05-11)
-
-**Goal:** Deepen forecast transparency and pipeline reliability — Monte Carlo uncertainty bands, calibration evidence, sensitivity flags, rejection reasons, automatic pipeline scheduling, lineup intelligence, a decision history backtester, and a set-piece delivery league table.
-
-**Target features:**
-- MC-01: Monte Carlo Simulator — per-player 5-GW point distributions, rank trajectory under uncertainty
-- CAL-01: Calibration Charts — xPts forecast accuracy vs actuals by GW and position
-- SENS-01: Sensitivity Analysis — fragility flags for players who collapse on start_prob or fixture drop
-- WHY-01: Rejection Explainer — plain-English reasons why the engine passed on a player
-- SCRAPER-01: FPL news scraper — injury/suspension flags in TransferPanel and GemTable
-- REFRESH-01: Event-based GitHub Actions triggers — deadline-aware automatic pipeline runs
-- DH-04: Cron history sparkline — last 7 pipeline run statuses in Data Health panel
-- BACK-01: Decision history backtester — GW-by-GW captain/transfer ROI vs optimal, regret score
-- SPQ-04: Set-piece league table — all 20 teams ranked by delivery quality in Set Pieces tab
-
-## Planned (Deprioritised): v1.10 Modelling & Trust
-
-Phases 61-65 fully defined in ROADMAP.md. Deprioritised mid-season (chips used, modelling features better suited to off-season build). Features: MC-01 Monte Carlo Simulator, CAL-01 Calibration Charts, VER-01 Model Versioning, SENS-01 Sensitivity Analysis, WHY-01 Rejection Explainer.
+- PGW-01/02/04: Post-GW review — bench pts left, captain vs optimal, auto-surface after deadline
+- PGW-03: Dream-team benchmark card in GW Review
+- HIST-01/02/03: Personal decision history — captain hit rate, transfer ROI, chip ROI
+- GWT-01: GW-targeted transfer recommendations — per-GW xPts re-rank with target GW selector
+- UX-01: xPts temporal labels — "Next 1 GW / Next 3 GWs / Next 5 GWs"
 
 ## Core Value
 
@@ -265,6 +259,15 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 - ✓ TRT-01/02/03/04/05/06/07: Transfer Route Tree — pure-TS greedy multi-branch engine, RouteTreeTab summary + expand, recommended highlight, bridge to Manual Plan, horizon recompute — v1.9
 - ✓ D-07: Section-level horizon lift — planHorizon state in page.tsx, shared HorizonSelector above Plan sub-tab nav, horizon prop threaded to PlannerTab + ManualPlanTab + RouteTreeTab — v1.9
 
+### Active (v1.18)
+
+- [ ] MC-01: Monte Carlo Simulator — 10k sims per player per GW, haul/blank %, P10/P90 outcome distributions
+- [ ] CAL-01: Calibration Charts — reliability diagram by position, surfaces in AccuracyTab
+- [ ] SENS-01: Sensitivity Flags — fragility signals on transfer/captain recommendations
+- [ ] WHY-01: Rejection Explainer — plain-English reason why a player is below threshold
+- [ ] NLP-01: LLM prose summary — Claude API weekly recommendation paragraph on Decision Summary tab
+- [ ] NLP-02: Per-player LLM insights — Claude API per-player explanation in GemTable row expand and TransferPanel
+
 ### Out of Scope
 
 - Live in-match updates — data refreshes daily, not during gameweeks
@@ -354,4 +357,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-11 — v1.16 complete (Phases 88–96, all 9 shipped). v1.17 End-of-Season Intelligence started.*
+*Last updated: 2026-05-12 — v1.17 complete (Phases 97–101, all 5 shipped). v1.18 Forecast Transparency & AI Intelligence started.*

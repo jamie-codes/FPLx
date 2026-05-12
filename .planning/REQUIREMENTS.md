@@ -15,10 +15,10 @@
 
 ### Post-GW Review
 
-- [ ] **PGW-01**: User can see a post-GW bench summary — highest-scoring bench player's points highlighted, showing how many points were left on the bench that GW
-- [ ] **PGW-02**: User can see captain comparison — actual captain points vs the highest-scoring player in their squad that GW
+- [x] **PGW-01**: User can see a post-GW bench summary — highest-scoring bench player's points highlighted, showing how many points were left on the bench that GW
+- [x] **PGW-02**: User can see captain comparison — actual captain points vs the highest-scoring player in their squad that GW
 - [x] **PGW-03**: User can see their GW score compared to the top-10k average, including which template players they didn't own
-- [ ] **PGW-04**: Post-GW review card auto-surfaces when the user visits the app after a GW deadline has passed (uses FPL bootstrap `events[].deadline_time`)
+- [x] **PGW-04**: Post-GW review card auto-surfaces when the user visits the app after a GW deadline has passed (uses FPL bootstrap `events[].deadline_time`)
 
 ### Decision History
 
@@ -62,12 +62,12 @@
 
 | REQ-ID | Phase | Plan | Status |
 |--------|-------|------|--------|
-| HEAT-01 | Phase 97 | 97-01, 97-02 | planned |
-| HEAT-02 | Phase 97 | 97-01, 97-02 | planned |
+| HEAT-01 | Phase 97 | 97-01, 97-02 | complete |
+| HEAT-02 | Phase 97 | 97-01, 97-02 | complete |
 | PGW-01 | Phase 98 | — | pending |
 | PGW-02 | Phase 98 | — | pending |
 | PGW-04 | Phase 98 | — | pending |
-| PGW-03 | Phase 99 | 99-01, 99-02 | planned |
+| PGW-03 | Phase 99 | 99-01, 99-02 | complete |
 | HIST-01 | Phase 100 | — | pending |
 | HIST-02 | Phase 100 | — | pending |
 | HIST-03 | Phase 100 | — | pending |

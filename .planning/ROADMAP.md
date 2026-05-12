@@ -18,7 +18,7 @@
 - **v1.14 Analytics Depth** — Phases 82-85 (started 2026-05-08)
 - **v1.15 Pipeline Intelligence** — Phases 86-87 (started 2026-05-09)
 - **v1.16 Modelling & Trust** — Phases 88-96 (started 2026-05-09)
-- **v1.17 End-of-Season Intelligence** — Phases 97-101 (started 2026-05-11)
+- ✅ **v1.17 End-of-Season Intelligence** — Phases 97-101 (shipped 2026-05-12)
 
 ## Phases
 
@@ -1173,13 +1173,18 @@ Plans:
 
 
 
-## v1.17 End-of-Season Intelligence (Phases 97-101)
+<details>
+<summary>v1.17 End-of-Season Intelligence (Phases 97-101) - SHIPPED 2026-05-12</summary>
 
-- [x] **Phase 97: Fixture Heat Map** — 20 teams x next 8 GWs colour-coded grid (green/amber/red by attacking_difficulty), DGW double-cell, BGW blank, toggle within Club Form tab; hover reveals opponent + H/A (HEAT-01, HEAT-02) (completed 2026-05-12)
-- [x] **Phase 98: Post-GW Review Core** — bench points left, captain vs optimal captain in squad, auto-surface card after deadline passes; authenticated FPL picks for actual captain fill (PGW-01, PGW-02, PGW-04) (completed 2026-05-12)
-- [x] **Phase 99: Top-10k Comparison** — GW score vs top-10k average, template players the user did not own; sourced from FPL bootstrap events[].average_entry_score + top-10k league endpoint (PGW-03) (completed 2026-05-12)
-- [x] **Phase 100: Decision History Analytics** — season captain hit rate from BackTab data; chip ROI vs season average; hit break-even tracking from authenticated transfer history (HIST-01, HIST-02, HIST-03) (completed 2026-05-12)
-- [x] **Phase 101: GW-Targeted Transfers & UX Polish** — TransferPanel GW selector re-ranks candidates by that GW's fixture xPts only; GwToggle label rename to "Next 1 GW / Next 3 GWs / Next 5 GWs" (GWT-01, UX-01) (completed 2026-05-12)
+- [x] Phase 97: Fixture Heat Map (2/2 plans) - completed 2026-05-12
+- [x] Phase 98: Post-GW Review Core (3/3 plans) - completed 2026-05-12
+- [x] Phase 99: Top-10k Comparison (2/2 plans) - completed 2026-05-12
+- [x] Phase 100: Decision History Analytics (4/4 plans) - completed 2026-05-12
+- [x] Phase 101: GW-Targeted Transfers & UX Polish (3/3 plans) - completed 2026-05-12
+
+See .planning/milestones/v1.17-ROADMAP.md for full phase details.
+
+</details>
 
 ### Phase 97: Fixture Heat Map
 **Goal**: Users can scan all 20 teams' upcoming fixture difficulty across 8 GWs at a glance -- a single colour-coded grid replaces tab-by-tab fixture inspection and makes end-of-season transfer targeting trivially fast
@@ -1341,7 +1346,7 @@ Plans:
 | 95 | v1.16 | 2/2 | Complete    | 2026-05-11 |
 | 96 | v1.16 | 4/4 | Complete    | 2026-05-11 |
 | 97 | v1.17 | 2/2 | Complete    | 2026-05-12 |
-| 98 | v1.17 | 1/3 | In Progress|  |
+| 98 | v1.17 | 3/3 | Complete    | 2026-05-12 |
 | 99 | v1.17 | 2/2 | Complete    | 2026-05-12 |
 | 100 | v1.17 | 4/4 | Complete    | 2026-05-12 |
 | 101 | v1.17 | 3/3 | Complete    | 2026-05-12 |
