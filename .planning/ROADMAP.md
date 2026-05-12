@@ -1269,9 +1269,12 @@ Plans:
   4. UX-01 label rename does not affect any data logic -- it is a pure display string change verified by Vitest snapshot or text-content assertions
 **Plans**: 3 plans
 Plans:
-- [ ] 101-01-PLAN.md — GWT-01 engine: computeGwXpts pure helper (TS port of Python _xpts_per_gw) + suggestTransfers optional targetGw param routing through scorePlayer at all four sites with denominator=1
+**Wave 1**
+- [x] 101-01-PLAN.md — GWT-01 engine: computeGwXpts pure helper (TS port of Python _xpts_per_gw) + suggestTransfers optional targetGw param routing through scorePlayer at all four sites with denominator=1
+- [x] 101-03-PLAN.md — UX-01: GwToggle button labels {gw} GW → Next {gw} GW{s} + OptimiserPanel.test.tsx line 209 assertion update
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 101-02-PLAN.md — GWT-01 UI: TransferPanel targetGw state + Target GW <select> dropdown + availableGws memo + GwToggle disabled wrapper + OpportunityCostTable conditional column header + sub-label
-- [ ] 101-03-PLAN.md — UX-01: GwToggle button labels {gw} GW → Next {gw} GW{s} + OptimiserPanel.test.tsx line 209 assertion update
 **UI hint**: yes
 
 ---
@@ -1341,4 +1344,4 @@ Plans:
 | 98 | v1.17 | 1/3 | In Progress|  |
 | 99 | v1.17 | 2/2 | Complete    | 2026-05-12 |
 | 100 | v1.17 | 4/4 | Complete    | 2026-05-12 |
-| 101 | v1.17 | 0 | Not started | - |
+| 101 | v1.17 | 2/3 | In Progress|  |
