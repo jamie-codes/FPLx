@@ -41,6 +41,8 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
   const [freeTransfers, setFreeTransfers] = useState<number>(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [ocsHorizon, setOcsHorizon] = useState<OptimiserHorizon>(1)
+  // Phase 101 GWT-01: target GW for per-GW xPts re-ranking. null = horizon mode.
+  const [targetGw, setTargetGw] = useState<number | null>(null)
   // Phase 74 D-08: manual ft-count state removed — derivedFtCount used directly
   const [manualBank, setManualBank] = useState<number>(0)
 
@@ -56,6 +58,15 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
     () => computeAllGemScores(playersData ?? []),
     [playersData],
   )
+
+  // Phase 101 GWT-01: distinct event_id values across all players' fixtures, sorted ascending.
+  const availableGws: number[] = useMemo(() => {
+    const ids = new Set<number>()
+    for (const p of scoredPlayers) {
+      for (const f of p.fixtures) ids.add(f.event_id)
+    }
+    return Array.from(ids).sort((a, b) => a - b)
+  }, [scoredPlayers])
 
   // Phase 74 D-02: legacy transfer-suggestion memo removed
 
@@ -113,8 +124,9 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
       ftCount: derivedFtCount,
       bank: Math.round(manualBank * 10),
       sellPrices: exactSellPrices,
+      targetGw: targetGw ?? undefined,
     })
-  }, [squadData, scoredPlayers, ocsHorizon, derivedFtCount, manualBank, exactSellPrices])
+  }, [squadData, scoredPlayers, ocsHorizon, derivedFtCount, manualBank, exactSellPrices, targetGw])
 
   const ocsRows: OCSRow[] = useMemo(
     () => computeOpportunityCostRows(ocsSuggestions, derivedFtCount, Math.round(manualBank * 10)),
@@ -385,7 +397,19 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
               </h2>
               <div className="flex flex-wrap items-center gap-3">
                 {/* Phase 74 D-03: OCS header toggle removed — engine uses derivedFtCount directly */}
-                <GwToggle value={ocsHorizon} onChange={setOcsHorizon} />
+                <GwToggle value={ocsHorizon} onChange={setOcsHorizon} disabled={!!targetGw} />
+                {/* Phase 101 GWT-01: Target GW dropdown (D-01, D-02, D-03) */}
+                <select
+                  aria-label="Target gameweek"
+                  value={targetGw ?? ''}
+                  onChange={e => setTargetGw(e.target.value ? Number(e.target.value) : null)}
+                  className="border border-zinc-300 dark:border-zinc-600 rounded text-sm text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-400 px-2 py-1"
+                >
+                  <option value="">Target GW</option>
+                  {availableGws.map(gw => (
+                    <option key={gw} value={gw}>GW{gw}</option>
+                  ))}
+                </select>
               </div>
             </div>
             {isAuthenticated && myTeamData && (
@@ -393,7 +417,13 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
                 Detected from your FPL team — override if needed.
               </p>
             )}
-            <OpportunityCostTable rows={ocsRows} horizon={ocsHorizon} />
+            {/* Phase 101 GWT-01: ranked-by sub-label when GWT mode active (D-05 + UI-SPEC §GWT Active Mode Sub-Label) */}
+            {targetGw !== null && (
+              <p className="text-xs text-zinc-400 dark:text-zinc-500 italic">
+                Ranked by GW{targetGw} xPts
+              </p>
+            )}
+            <OpportunityCostTable rows={ocsRows} horizon={ocsHorizon} targetGw={targetGw ?? undefined} />
           </div>
 
           {/* Phase 74 D-02: legacy section removed */}
