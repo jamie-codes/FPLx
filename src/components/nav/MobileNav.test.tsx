@@ -37,15 +37,18 @@ describe('Phase 36: MobileNav component', () => {
     expect(squadBtn?.getAttribute('aria-current')).not.toBe('page')
   })
 
-  it('Analyse active: renders 4 pills with mobile labels Gems/Insights/DefCon/SP in order (NAV-02)', () => {
+  it('Analyse active: renders 7 pills with mobile labels Gems/Insights/DefCon/SP/Form/Acc/Prices in order (NAV-02, Phase97 D-02)', () => {
     const { container } = render(<MobileNav {...makeProps({ activeSection: 'analyse' as Section, activeSubTab: 'gems' as SubTab })} />)
     const allButtons = Array.from(container.querySelectorAll('button'))
-    const pillButtons = allButtons.filter(b => ['Gems', 'Insights', 'DefCon', 'SP'].includes(b.textContent ?? ''))
-    expect(pillButtons).toHaveLength(4)
+    const pillButtons = allButtons.filter(b => ['Gems', 'Insights', 'DefCon', 'SP', 'Form', 'Acc', 'Prices'].includes(b.textContent ?? ''))
+    expect(pillButtons).toHaveLength(7)
     expect(pillButtons[0].textContent).toBe('Gems')
     expect(pillButtons[1].textContent).toBe('Insights')
     expect(pillButtons[2].textContent).toBe('DefCon')
     expect(pillButtons[3].textContent).toBe('SP')
+    expect(pillButtons[4].textContent).toBe('Form')
+    expect(pillButtons[5].textContent).toBe('Acc')
+    expect(pillButtons[6].textContent).toBe('Prices')
   })
 
   it('active sub-tab pill has aria-current="page", inactive pills do not (NAV-02)', () => {
@@ -57,14 +60,17 @@ describe('Phase 36: MobileNav component', () => {
     expect(gemsBtn?.getAttribute('aria-current')).not.toBe('page')
   })
 
-  it('Plan active: renders 3 pills with mobile labels Planner/Form/Values in order (NAV-03)', () => {
+  it('Plan active: renders 3 pills with mobile labels Planner/Values/Rivals in order; Form pill absent (NAV-03, Phase97 D-02)', () => {
     const { container } = render(<MobileNav {...makeProps({ activeSection: 'plan' as Section, activeSubTab: 'planner' as SubTab })} />)
     const allButtons = Array.from(container.querySelectorAll('button'))
-    const pillButtons = allButtons.filter(b => ['Planner', 'Form', 'Values'].includes(b.textContent ?? ''))
+    const pillButtons = allButtons.filter(b => ['Planner', 'Values', 'Rivals'].includes(b.textContent ?? ''))
     expect(pillButtons).toHaveLength(3)
     expect(pillButtons[0].textContent).toBe('Planner')
-    expect(pillButtons[1].textContent).toBe('Form')
-    expect(pillButtons[2].textContent).toBe('Values')
+    expect(pillButtons[1].textContent).toBe('Values')
+    expect(pillButtons[2].textContent).toBe('Rivals')
+    // Form pill should NOT be in Plan — it moved to Analyse (D-02)
+    const formBtn = allButtons.find(b => b.textContent === 'Form')
+    expect(formBtn).toBeUndefined()
   })
 
   it('Squad active: pill row shows 5 pills Decision, Transfers, Optimiser, Lineup, Review; total 8 buttons in DOM (NAV-04 / NAV-01, updated Phase73)', () => {
@@ -89,13 +95,16 @@ describe('Phase 36: MobileNav component', () => {
     expect(pillButtons[4].getAttribute('aria-current')).not.toBe('page')
   })
 
-  it('Phase 62: Plan active includes Rank Sim pill (MC-03)', () => {
+  it('Phase 62: Plan active includes Rank Sim pill; Phase 97 D-02: Form pill absent from Plan (MC-03, HEAT-01)', () => {
     const { container } = render(<MobileNav {...makeProps({ activeSection: 'plan' as Section, activeSubTab: 'planner' as SubTab })} />)
     const allButtons = Array.from(container.querySelectorAll('button'))
-    // Plan section has 7 sub-tabs: Planner, Manual, Routes, Rank Sim, Form, Values, Rivals
-    const planPills = allButtons.filter(b => ['Planner', 'Manual', 'Routes', 'Rank Sim', 'Form', 'Values', 'Rivals'].includes(b.textContent ?? ''))
-    expect(planPills).toHaveLength(7) // was 6 — Phase 62 added 'Rank Sim'
+    // Plan section now has 6 sub-tabs (Club Form moved to Analyse in Phase 97 D-02): Planner, Manual, Routes, Rank Sim, Values, Rivals
+    const planPills = allButtons.filter(b => ['Planner', 'Manual', 'Routes', 'Rank Sim', 'Values', 'Rivals'].includes(b.textContent ?? ''))
+    expect(planPills).toHaveLength(6)
     expect(planPills.map(p => p.textContent)).toContain('Rank Sim')
+    // Form is no longer in Plan
+    const formBtn = allButtons.find(b => b.textContent === 'Form')
+    expect(formBtn).toBeUndefined()
   })
 
   it('clicking section buttons calls onSectionChange with correct id (NAV-05)', () => {

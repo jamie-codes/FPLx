@@ -20,6 +20,11 @@ vi.mock('@/components/squad/DecisionSummaryTab', () => ({ DecisionSummaryTab: (_
 vi.mock('@/components/club-form/ClubFormTable', () => ({ ClubFormTable: () => <div data-testid="club-form-table" /> }))
 vi.mock('@/components/club-form/FixtureEaseRankingPanel', () => ({ FixtureEaseRankingPanel: () => <div data-testid="fixture-ease" /> }))
 vi.mock('@/components/club-form/FixtureSwingDetector', () => ({ FixtureSwingDetector: () => <div data-testid="fixture-swing" /> }))
+vi.mock('@/components/club-form/ClubFormTab', () => ({
+  ClubFormTab: (props: { submittedId?: string | null }) => (
+    <div data-testid="club-form-tab" data-submitted-id={props.submittedId ?? ''} />
+  ),
+}))
 vi.mock('@/components/LastUpdated', () => ({ LastUpdated: () => <div data-testid="last-updated" /> }))
 vi.mock('@/components/theme/ThemeToggle', () => ({ ThemeToggle: () => <div data-testid="theme-toggle" /> }))
 vi.mock('@/components/value-gems/ValueGemsTable', () => ({ ValueGemsTable: () => <div data-testid="value-gems" /> }))
@@ -98,21 +103,19 @@ describe('Phase 36: page.tsx state', () => {
     const activePlanBtn = planSubTabs?.querySelector('button[aria-current="page"]')
     expect(activePlanBtn?.textContent).toBe('Planner')
     expect(container.querySelector('[data-testid="planner"]')).not.toBeNull()
-    // Switch to Club Form sub-tab
-    const clubFormBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Club Form')
-    fireEvent.click(clubFormBtn!)
-    expect(container.querySelector('[data-testid="fixture-ease"]')).not.toBeNull()
-    expect(container.querySelector('[data-testid="club-form-table"]')).not.toBeNull()
-    // Switch to Squad (lands on Decision — D-10) then back to Plan — Club Form must be restored
+    // Switch to Value Gems sub-tab (Club Form moved to Analyse in Phase 97)
+    const valueGemsBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Value Gems')
+    fireEvent.click(valueGemsBtn!)
+    expect(container.querySelector('[data-testid="value-gems"]')).not.toBeNull()
+    // Switch to Squad (lands on Decision — D-10) then back to Plan — Value Gems must be restored
     const squadBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Squad')
     fireEvent.click(squadBtn!)
     const planBtn2 = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Plan')
     fireEvent.click(planBtn2!)
     const planSubTabs2 = container.querySelector('nav[aria-label="Plan sub-tabs"]')
     const activeBtn = planSubTabs2?.querySelector('button[aria-current="page"]')
-    expect(activeBtn?.textContent).toBe('Club Form')
-    expect(container.querySelector('[data-testid="fixture-ease"]')).not.toBeNull()
-    expect(container.querySelector('[data-testid="club-form-table"]')).not.toBeNull()
+    expect(activeBtn?.textContent).toBe('Value Gems')
+    expect(container.querySelector('[data-testid="value-gems"]')).not.toBeNull()
   })
 
   it('MobileNav uses abbreviated mobile labels not desktop sub-tab labels (D-04)', () => {
@@ -126,13 +129,14 @@ describe('Phase 36: page.tsx state', () => {
     expect(nav?.textContent).not.toContain('DefCon Analysis')
     expect(nav?.textContent).toContain('SP')
     expect(nav?.textContent).not.toContain('Set Pieces')
+    // Phase 97 D-02: Club Form moved to Analyse with mobileLabel 'Form'
+    expect(nav?.textContent).toContain('Form')
+    expect(nav?.textContent).not.toContain('Club Form')
     // Switch to Plan section — plan pills use abbreviated mobileLabels
     const planBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Plan')
     fireEvent.click(planBtn!)
     // When Plan is active, Gems pill must be absent (Analyse-only pill)
     expect(nav?.textContent).not.toContain('Gems')
-    expect(nav?.textContent).toContain('Form')
-    expect(nav?.textContent).not.toContain('Club Form')
     // 'Manual Plan' uses the 'Manual' mobile abbreviation per D-01
     expect(nav?.textContent).toContain('Manual')
     expect(nav?.textContent).not.toContain('Manual Plan')
@@ -185,8 +189,8 @@ describe('Phase 36: page.tsx state', () => {
     const planSubTabs = container.querySelector('nav[aria-label="Plan sub-tabs"]')
     expect(planSubTabs).not.toBeNull()
     const subTabBtns = Array.from(planSubTabs!.querySelectorAll('button')).map(b => b.textContent)
-    // Order locked by D-01 + D-05/D-06: Manual Plan after Planner, Route Tree after Manual Plan, Rank Sim after Route Tree (Phase 62 MC-03)
-    expect(subTabBtns).toEqual(['Planner', 'Manual Plan', 'Route Tree', 'Rank Sim', 'Club Form', 'Value Gems', 'Rivals'])
+    // Order locked by D-01 + D-05/D-06: Manual Plan after Planner, Route Tree after Manual Plan, Rank Sim after Route Tree (Phase 62 MC-03), Club Form moved to Analyse (Phase 97 D-02)
+    expect(subTabBtns).toEqual(['Planner', 'Manual Plan', 'Route Tree', 'Rank Sim', 'Value Gems', 'Rivals'])
   })
 
   it('inserts Route Tree sub-tab after Manual Plan in Plan section nav (D-05/D-06)', () => {
@@ -202,9 +206,9 @@ describe('Phase 36: page.tsx state', () => {
     expect(container.querySelector('[data-testid="route-tree-tab"]')).not.toBeNull()
     // aria-current is Route Tree
     expect(container.querySelector('nav[aria-label="Plan sub-tabs"] button[aria-current="page"]')?.textContent).toBe('Route Tree')
-    // Sub-tab order: Planner | Manual Plan | Route Tree | Rank Sim | Club Form | Value Gems | Rivals (Phase 62 MC-03)
+    // Sub-tab order: Planner | Manual Plan | Route Tree | Rank Sim | Value Gems | Rivals (Phase 62 MC-03; Club Form moved to Analyse in Phase 97 D-02)
     const subTabBtns = Array.from(container.querySelectorAll('nav[aria-label="Plan sub-tabs"] button')).map(b => b.textContent)
-    expect(subTabBtns).toEqual(['Planner', 'Manual Plan', 'Route Tree', 'Rank Sim', 'Club Form', 'Value Gems', 'Rivals'])
+    expect(subTabBtns).toEqual(['Planner', 'Manual Plan', 'Route Tree', 'Rank Sim', 'Value Gems', 'Rivals'])
   })
 
   it('clicking "Manual Plan" sub-tab mounts ManualPlanTab and hides PlannerTab (MTP-01, D-02)', () => {
@@ -222,34 +226,40 @@ describe('Phase 36: page.tsx state', () => {
     expect(container.querySelector('[data-testid="planner"]')).toBeNull()
   })
 
-  it('Phase 66: clicking "Heat Map" sub-tab mounts FixtureHeatMap and shows aria-current="page" (HEAT-01, D-06, D-07)', () => {
+  it('Phase 97 HEAT-01: Analyse sub-tab order moves Club Form after Set Pieces and removes standalone Heat Map (D-01, D-02)', () => {
     const { container } = render(<Home />)
-    // Default landing is Analyse / Gems — confirm Heat Map sub-tab exists in the Analyse nav
     const analyseSubTabs = container.querySelector('nav[aria-label="Analyse sub-tabs"]')
     expect(analyseSubTabs).not.toBeNull()
     const subTabBtns = Array.from(analyseSubTabs!.querySelectorAll('button')).map(b => b.textContent)
-    // Locked order per D-06: Gem Ratings | Insights | DefCon Analysis | Set Pieces | Accuracy | Price Changes | Heat Map
+    // D-02: new Analyse order; D-01: no standalone Heat Map sub-tab
     expect(subTabBtns).toEqual([
       'Gem Ratings',
       'Insights',
       'DefCon Analysis',
       'Set Pieces',
+      'Club Form',
       'Accuracy',
       'Price Changes',
-      'Heat Map',
     ])
-    // Click Heat Map
-    const heatMapBtn = Array.from(analyseSubTabs!.querySelectorAll('button')).find(b => b.textContent === 'Heat Map')
-    expect(heatMapBtn).toBeDefined()
-    fireEvent.click(heatMapBtn!)
-    // FixtureHeatMap mounted; PriceChangePanel and Gems hidden
-    expect(container.querySelector('[data-testid="fixture-heat-map"]')).not.toBeNull()
-    expect(container.querySelector('[data-testid="price-change-panel"]')).toBeNull()
-    expect(container.querySelector('[data-testid="gem-table"]')).toBeNull()
-    // aria-current is now Heat Map
+  })
+
+  it('Phase 97 HEAT-01: clicking Analyse → Club Form mounts ClubFormTab with submittedId prop forwarded (D-07)', () => {
+    const { container } = render(<Home />)
+    const analyseSubTabs = container.querySelector('nav[aria-label="Analyse sub-tabs"]')!
+    const clubFormBtn = Array.from(analyseSubTabs.querySelectorAll('button')).find(b => b.textContent === 'Club Form')
+    expect(clubFormBtn).toBeDefined()
+    fireEvent.click(clubFormBtn!)
+    // ClubFormTab mounted
+    const tab = container.querySelector('[data-testid="club-form-tab"]')
+    expect(tab).not.toBeNull()
+    // submittedId prop is forwarded (initial value is null since no team loaded — data attribute will be empty string)
+    expect(tab?.getAttribute('data-submitted-id')).toBe('')
+    // Standalone FixtureHeatMap render block is gone
+    expect(container.querySelector('[data-testid="fixture-heat-map"]')).toBeNull()
+    // aria-current is Club Form
     expect(
       container.querySelector('nav[aria-label="Analyse sub-tabs"] button[aria-current="page"]')?.textContent
-    ).toBe('Heat Map')
+    ).toBe('Club Form')
   })
 
   it('D-07: section-level HorizonSelector shares horizon across all Plan sub-tabs', () => {
