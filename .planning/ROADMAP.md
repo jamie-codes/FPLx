@@ -1245,7 +1245,17 @@ Plans:
   2. User can see chip ROI -- the actual points scored in GWs where they used BB, TC, or FH compared to their season average GW score -- making the chip value immediately legible (e.g. "Bench Boost GW29: +14 vs your 52-point average")
   3. User can see hit break-even tracking -- for each -4pt transfer hit taken during the season, whether the player bought outscored the player sold by 4+ points within the expected window -- sourced from authenticated FPL transfer history
   4. When the user is not authenticated, HIST-02 and HIST-03 show a prompt to log in rather than an error; HIST-01 (captain hit rate from BackTab) always renders regardless of auth state
-**Plans**: TBD
+**Plans**: 4 plans (3 waves)
+Plans:
+**Wave 1**
+- [x] 100-01-PLAN.md — Foundation: extend types.ts with ChipRoiEntry / HitTrackingEntry / SeasonAnalytics; extend SeasonSummary + computeSeasonSummary with captainHitRate + captainHits (D-02); RED→GREEN in regret.test.ts
+
+**Wave 2** *(blocked on Wave 1 — both plans import types/helpers from 100-01)*
+- [ ] 100-02-PLAN.md — Create /api/season-analytics route: parallel /history/ + /transfers/ + per-player /element-summary/ fetch with partial-failure fold; D-04 Wildcard exclusion; D-05 season average; D-07 break-even (round >= event inclusive); 8 RED→GREEN tests
+- [ ] 100-03-PLAN.md — Create useSeasonAnalytics TanStack v5 hook (6h staleTime per D-11, no localStorage per A1); 4 RED→GREEN jsdom tests
+
+**Wave 3** *(blocked on Waves 1+2 — consumes hook + extended SeasonSummary)*
+- [ ] 100-04-PLAN.md — Extend BackTab: SeasonSummaryHeader gets HIST-01 inline stat; new ChipRoiSection + HitTrackingSection components below per-GW table; auth-guard + loading + error states wired to useSeasonAnalytics; 9 RED→GREEN component tests
 **UI hint**: yes
 
 ### Phase 101: GW-Targeted Transfers & UX Polish
@@ -1326,5 +1336,5 @@ Plans:
 | 97 | v1.17 | 2/2 | Complete    | 2026-05-12 |
 | 98 | v1.17 | 1/3 | In Progress|  |
 | 99 | v1.17 | 2/2 | Complete    | 2026-05-12 |
-| 100 | v1.17 | 0 | Not started | - |
+| 100 | v1.17 | 1/4 | In Progress|  |
 | 101 | v1.17 | 0 | Not started | - |
