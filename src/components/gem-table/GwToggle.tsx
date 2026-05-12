@@ -112,7 +112,7 @@ export function GwToggle({ value, onChange, disabled }: Props) {
                 : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
             }`}
           >
-            {gw} GW
+            Next {gw} GW{gw === 1 ? '' : 's'}
           </button>
         ))}
       </div>
