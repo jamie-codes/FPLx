@@ -22,9 +22,9 @@
 
 ### Decision History
 
-- [ ] **HIST-01**: User can see a season-level captain hit rate — percentage of GWs where their captain outscored the field (computed from existing `useDecisionHistory` / BackTab data, no new pipeline work)
-- [ ] **HIST-02**: User can see chip ROI — actual points in BB/TC/FH gameweeks vs the user's season average GW score
-- [ ] **HIST-03**: User can see hit break-even tracking — for each -4pt transfer hit taken, whether the points gained broke even within the expected window (uses authenticated FPL transfer history)
+- [x] **HIST-01**: User can see a season-level captain hit rate — percentage of GWs where their captain outscored the field (computed from existing `useDecisionHistory` / BackTab data, no new pipeline work)
+- [x] **HIST-02**: User can see chip ROI — actual points in BB/TC/FH gameweeks vs the user's season average GW score
+- [x] **HIST-03**: User can see hit break-even tracking — for each -4pt transfer hit taken, whether the points gained broke even within the expected window (uses authenticated FPL transfer history)
 
 ### Transfer Intelligence
 

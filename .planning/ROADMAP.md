@@ -1178,7 +1178,7 @@ Plans:
 - [x] **Phase 97: Fixture Heat Map** — 20 teams x next 8 GWs colour-coded grid (green/amber/red by attacking_difficulty), DGW double-cell, BGW blank, toggle within Club Form tab; hover reveals opponent + H/A (HEAT-01, HEAT-02) (completed 2026-05-12)
 - [x] **Phase 98: Post-GW Review Core** — bench points left, captain vs optimal captain in squad, auto-surface card after deadline passes; authenticated FPL picks for actual captain fill (PGW-01, PGW-02, PGW-04) (completed 2026-05-12)
 - [x] **Phase 99: Top-10k Comparison** — GW score vs top-10k average, template players the user did not own; sourced from FPL bootstrap events[].average_entry_score + top-10k league endpoint (PGW-03) (completed 2026-05-12)
-- [ ] **Phase 100: Decision History Analytics** — season captain hit rate from BackTab data; chip ROI vs season average; hit break-even tracking from authenticated transfer history (HIST-01, HIST-02, HIST-03)
+- [x] **Phase 100: Decision History Analytics** — season captain hit rate from BackTab data; chip ROI vs season average; hit break-even tracking from authenticated transfer history (HIST-01, HIST-02, HIST-03) (completed 2026-05-12)
 - [ ] **Phase 101: GW-Targeted Transfers & UX Polish** — TransferPanel GW selector re-ranks candidates by that GW's fixture xPts only; GwToggle label rename to "Next 1 GW / Next 3 GWs / Next 5 GWs" (GWT-01, UX-01)
 
 ### Phase 97: Fixture Heat Map
@@ -1251,11 +1251,11 @@ Plans:
 - [x] 100-01-PLAN.md — Foundation: extend types.ts with ChipRoiEntry / HitTrackingEntry / SeasonAnalytics; extend SeasonSummary + computeSeasonSummary with captainHitRate + captainHits (D-02); RED→GREEN in regret.test.ts
 
 **Wave 2** *(blocked on Wave 1 — both plans import types/helpers from 100-01)*
-- [ ] 100-02-PLAN.md — Create /api/season-analytics route: parallel /history/ + /transfers/ + per-player /element-summary/ fetch with partial-failure fold; D-04 Wildcard exclusion; D-05 season average; D-07 break-even (round >= event inclusive); 8 RED→GREEN tests
-- [ ] 100-03-PLAN.md — Create useSeasonAnalytics TanStack v5 hook (6h staleTime per D-11, no localStorage per A1); 4 RED→GREEN jsdom tests
+- [x] 100-02-PLAN.md — Create /api/season-analytics route: parallel /history/ + /transfers/ + per-player /element-summary/ fetch with partial-failure fold; D-04 Wildcard exclusion; D-05 season average; D-07 break-even (round >= event inclusive); 8 RED→GREEN tests
+- [x] 100-03-PLAN.md — Create useSeasonAnalytics TanStack v5 hook (6h staleTime per D-11, no localStorage per A1); 4 RED→GREEN jsdom tests
 
 **Wave 3** *(blocked on Waves 1+2 — consumes hook + extended SeasonSummary)*
-- [ ] 100-04-PLAN.md — Extend BackTab: SeasonSummaryHeader gets HIST-01 inline stat; new ChipRoiSection + HitTrackingSection components below per-GW table; auth-guard + loading + error states wired to useSeasonAnalytics; 9 RED→GREEN component tests
+- [x] 100-04-PLAN.md — Extend BackTab: SeasonSummaryHeader gets HIST-01 inline stat; new ChipRoiSection + HitTrackingSection components below per-GW table; auth-guard + loading + error states wired to useSeasonAnalytics; 9 RED→GREEN component tests
 **UI hint**: yes
 
 ### Phase 101: GW-Targeted Transfers & UX Polish
@@ -1336,5 +1336,5 @@ Plans:
 | 97 | v1.17 | 2/2 | Complete    | 2026-05-12 |
 | 98 | v1.17 | 1/3 | In Progress|  |
 | 99 | v1.17 | 2/2 | Complete    | 2026-05-12 |
-| 100 | v1.17 | 1/4 | In Progress|  |
+| 100 | v1.17 | 4/4 | Complete    | 2026-05-12 |
 | 101 | v1.17 | 0 | Not started | - |
