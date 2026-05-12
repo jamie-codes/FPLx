@@ -141,12 +141,12 @@ export function OpportunityCostTable({ rows, horizon, targetGw }: OpportunityCos
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, i) => {
+          {rows.map((row) => {
             const badge = badgeFor(row)
             const isDisabled = !row.isAffordable
             return (
               <tr
-                key={`${row.kind}-${i}`}
+                key={row.kind}
                 aria-disabled={isDisabled || undefined}
                 className={`border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50${isDisabled ? ' opacity-50' : ''}`}
                 data-testid={`ocs-row-${row.kind}`}
