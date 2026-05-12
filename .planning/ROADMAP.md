@@ -1227,7 +1227,13 @@ Plans:
   1. User can see their GW score compared to the top-10k average for that gameweek, with a clear delta (e.g. "+3 vs top-10k average" or "-8 vs top-10k average")
   2. User can see which template players (high-ownership in the top-10k) they did not own that GW, named specifically -- surfacing the differential decisions that most likely explain the gap
   3. When top-10k data is unavailable (API access limitation or GW not yet in top-10k data), the comparison degrades to showing vs overall FPL average from bootstrap events[].average_entry_score, with a clear label indicating which benchmark is shown
-**Plans**: TBD
+**Plans**: 2 plans (2 waves)
+Plans:
+**Wave 1**
+- [ ] 99-01-PLAN.md — Extend GwReview type with benchmark_score/benchmark_label/missed_players; extend /api/gw-review route.ts with parallel dream-team fetch + benchmark/missed computation; extend route.test.ts with /dream-team/ mock branch + 4 PGW-03 tests (RED → GREEN within plan)
+
+**Wave 2** *(blocked on Wave 1 completion — Plan 02 reads new GwReview fields)*
+- [ ] 99-02-PLAN.md — GwReviewTab: extend StatCard with delta+testid props; replace 4th StatCard with benchmark card (sentiment-coloured delta, U+2212 minus sign, FPL-average degraded fallback omits delta); insert conditional Missed info row below Best bench; extend sampleReview + add 8 PGW-03 component tests (UI-SPEC test-visible contracts)
 **UI hint**: yes
 
 ### Phase 100: Decision History Analytics

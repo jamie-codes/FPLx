@@ -10,8 +10,8 @@
 
 ### Visualisation
 
-- [ ] **HEAT-01**: User can view all 20 PL teams' next 8 GWs as a colour-coded grid (green/amber/red by `attacking_difficulty`), with DGW highlighted as a double-cell and BGW shown as blank, accessible as a toggle within the Club Form tab
-- [ ] **HEAT-02**: User can hover any heat-map cell to see the specific opponent name and H/A designation
+- [x] **HEAT-01**: User can view all 20 PL teams' next 8 GWs as a colour-coded grid (green/amber/red by `attacking_difficulty`), with DGW highlighted as a double-cell and BGW shown as blank, accessible as a toggle within the Club Form tab
+- [x] **HEAT-02**: User can hover any heat-map cell to see the specific opponent name and H/A designation
 
 ### Post-GW Review
 
@@ -67,7 +67,7 @@
 | PGW-01 | Phase 98 | — | pending |
 | PGW-02 | Phase 98 | — | pending |
 | PGW-04 | Phase 98 | — | pending |
-| PGW-03 | Phase 99 | — | pending |
+| PGW-03 | Phase 99 | 99-01, 99-02 | planned |
 | HIST-01 | Phase 100 | — | pending |
 | HIST-02 | Phase 100 | — | pending |
 | HIST-03 | Phase 100 | — | pending |
