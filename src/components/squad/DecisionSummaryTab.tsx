@@ -7,6 +7,7 @@ import { useClubForm } from '@/lib/hooks/useClubForm'
 import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
 import { useChipHistory, type ChipHistoryEntry } from '@/lib/hooks/useChipHistory'
+import { useAccuracy } from '@/lib/hooks/useAccuracy'
 import { computeAllGemScores } from '@/lib/gem-score'
 import { computeCaptaincyCandidates, type CaptaincyCandidate } from '@/lib/captaincy-engine'
 import { computeLifecycleLabels, type LifecycleLabel } from '@/lib/lifecycle-label'
@@ -28,6 +29,7 @@ import { LifecycleLabelBadge } from '@/components/shared/LifecycleLabelBadge'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
 import { CHIP_LABELS } from '@/components/planner/plan-helpers'
 import { ProseSummaryBlock } from './ProseSummaryBlock'
+import { CalibrationHealthIndicator } from './CalibrationHealthIndicator'
 
 // ---- Private helpers ----
 
@@ -175,6 +177,10 @@ export function DecisionSummaryTab({
 
   const isValidTeamId = !!submittedId && /^\d+$/.test(submittedId)
   const { data: chipHistory } = useChipHistory(isValidTeamId ? submittedId : null)
+
+  // Phase 103 CAL-02: pull calibration data for the health indicator below the 4-card grid.
+  // useAccuracy is already in the query cache (AccuracyTab uses it); zero additional fetch.
+  const { data: accuracyData } = useAccuracy()
 
   // Derivations
   const scoredPlayers = useMemo(() => computeAllGemScores(playersData ?? []), [playersData])
@@ -672,6 +678,10 @@ export function DecisionSummaryTab({
           <NoSquadPlaceholder />
         )}
       </div>
+
+      {/* Phase 103 CAL-02: one-line calibration health summary. Renders nothing when
+          accuracy data is loading, calibration is absent, or aggregate buckets are empty. */}
+      {accuracyData && <CalibrationHealthIndicator data={accuracyData} />}
 
       {/* Phase 67 NLP-02 — LLM prose summary with squad-aware Refresh (Plan 03) */}
       <ProseSummaryBlock payload={proseRefreshPayload} />
