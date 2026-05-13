@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.18
 milestone_name: Forecast Transparency & AI Intelligence
-status: planning
-stopped_at: Phase 105 context gathered
-last_updated: "2026-05-13T16:33:51.043Z"
-last_activity: 2026-05-13
+status: executing
+stopped_at: Phase 105 UI-SPEC approved
+last_updated: "2026-05-13T21:28:55.687Z"
+last_activity: 2026-05-13 -- Phase 105 execution started
 progress:
   total_phases: 53
   completed_phases: 26
-  total_plans: 79
+  total_plans: 82
   completed_plans: 134
   percent: 100
 ---
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-12 — v1.17 complete, v1.18 started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.18 Forecast Transparency & AI Intelligence — Phases 102-105 roadmapped 2026-05-13
+**Current focus:** Phase 105 — nlp-02-per-player-llm-insight-route-hook-ui
 
 ## Current Position
 
-Phase: 105
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-05-13
+Phase: 105 (nlp-02-per-player-llm-insight-route-hook-ui) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 105
+Last activity: 2026-05-13 -- Phase 105 execution started
 
 ## Performance Metrics
 
@@ -104,7 +104,7 @@ Last activity: 2026-05-13
 
 ## Session Continuity
 
-Last session: 2026-05-13T16:33:51.030Z
-Stopped at: Phase 105 context gathered
-Resume file: .planning/phases/105-nlp-02-per-player-llm-insight-route-hook-ui/105-CONTEXT.md
+Last session: 2026-05-13T17:11:10.444Z
+Stopped at: Phase 105 UI-SPEC approved
+Resume file: .planning/phases/105-nlp-02-per-player-llm-insight-route-hook-ui/105-UI-SPEC.md
 Next command: `/gsd-execute-phase 102`

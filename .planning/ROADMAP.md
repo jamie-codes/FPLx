@@ -1343,7 +1343,10 @@ Plans:
   3. The two-attempt name-whitelist guardrail rejects any response that names players outside the structured context; on guardrail failure for both attempts the UI falls back deterministically to the structured `reasons[]` array (never displays a hallucinated answer)
   4. The Route Handler `/api/player-insight` handles 401 / 429 / 5xx / missing-key / 422-guardrail errors with layered user-facing messages and never streams (non-streaming `messages.create` only — Edge runtime is explicitly forbidden because `@anthropic-ai/sdk` SSE parsing fails on Edge)
   5. `ANTHROPIC_API_KEY` is present in the deployment environment before merge and an Anthropic Console monthly spending cap is configured as defence-in-depth against runaway costs
-**Plans**: TBD
+**Plans**: 3 plans
+  - [x] 105-01-PLAN.md — Wave 0 test scaffolding (RED phase: route, hook, component, OCT additions, GemTable test stubs)
+  - [ ] 105-02-PLAN.md — Wave 1 core infrastructure (PlayerInsight types, /api/player-insight route, usePlayerInsight hook, PlayerInsightSection component)
+  - [ ] 105-03-PLAN.md — Wave 2 integration (TransferPanel→OCT→PlayerMoveCell gw threading, GemTable expand-row insertion, full-suite phase gate, manual UAT checkpoint)
 **Phase notes**: This is the only phase with genuinely new infrastructure (new POST Route Handler, new `usePlayerInsight` mutation hook, Blob cache namespace `player_insights/`, Anthropic Console spending cap) and the only phase where a single bug can spend money — sequenced last so all upstream context (MC fields from 102, rejection reasons + fragility tier from 104) is validated before the LLM is in the loop. **Runtime: Node.js only — never Edge** (`@anthropic-ai/sdk` SSE parsing fails on Edge per anthropics/anthropic-sdk-typescript#292; `maxDuration = 30`). **Trigger: on-demand only — never `useEffect`** (50 visible GemTable rows × 900 tokens × 4 sessions/day × 180 days approx. USD 16–32/season from a single bug). **`ANTHROPIC_API_KEY` must be in deployment env before merge** (server-side only, never `NEXT_PUBLIC_*`). **Set an Anthropic Console monthly spending cap before shipping** as defence-in-depth. Use `claude-haiku-4-5-20251001` (USD 1 / USD 5 per MTok), `useMutation` not `useQuery` (no auto-refetch), `mutationKey: ['playerInsight', playerId, gw]` for in-flight dedup. Inject structured XML context built from real `computeRejection` + `computeFragility` output; system prompt forbids numeric values (qualitative only); two-attempt name-whitelist guardrail with deterministic fallback to raw `reasons[]` on failure. Prompt caching (`cache_control: ephemeral`) is deferred — system prompt is ~80 tokens, far below the 1024-token cache minimum. Phase 5 spike: confirm Vercel Blob `put` with `addRandomSuffix: false` overwrite semantics in the deployed runtime before relying on it for the cache key.
 **UI hint**: yes
 
@@ -1418,4 +1421,4 @@ Plans:
 | 102 | v1.18 | 0/3 | Not started | - |
 | 103 | v1.18 | 2/2 | Complete    | 2026-05-13 |
 | 104 | v1.18 | 1/1 | Complete    | 2026-05-13 |
-| 105 | v1.18 | 0 | Not started | - |
+| 105 | v1.18 | 1/3 | In Progress|  |
