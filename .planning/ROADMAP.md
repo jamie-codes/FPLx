@@ -19,6 +19,7 @@
 - **v1.15 Pipeline Intelligence** — Phases 86-87 (started 2026-05-09)
 - **v1.16 Modelling & Trust** — Phases 88-96 (started 2026-05-09)
 - ✅ **v1.17 End-of-Season Intelligence** — Phases 97-101 (shipped 2026-05-12)
+- **v1.18 Forecast Transparency & AI Intelligence** — Phases 102-105 (started 2026-05-13)
 
 ## Phases
 
@@ -1282,6 +1283,58 @@ Plans:
 - [x] 101-02-PLAN.md — GWT-01 UI: TransferPanel targetGw state + Target GW <select> dropdown + availableGws memo + GwToggle disabled wrapper + OpportunityCostTable conditional column header + sub-label
 **UI hint**: yes
 
+### Phase 102: MC Gate Activation & MCDistributionBar Display
+**Goal**: Users can see haul %, blank %, and P10/P90 outcome distributions for any player in the xPts hover card and on the captain picks card — flipping the `mc_enabled` gate so the already-shipped 10k-sim engine surfaces in production for Triple Captain and differential decisions
+**Depends on**: Phase 101 (v1.17 complete); reuses existing `pipeline/simulate.py` 10k-sim engine; MC fields (`blank_prob`, `haul_prob`, `p10_pts`, `p90_pts`) already present in `merged_players.json` but gated off by `mc_enabled: false`
+**Requirements**: MC-01, MC-02
+**Success Criteria** (what must be TRUE):
+  1. User can hover any player's xPts cell and see haul %, blank %, P10 pts, and P90 pts displayed via a new `MCDistributionBar` component (rendered only when `haul_prob !== undefined` so legacy / gate-off data degrades silently)
+  2. User can see a P10/P90 pts range on each captain picks card row, supporting Triple Captain ceiling vs differential captaincy floor comparison at a glance
+  3. The `mc_enabled` gate in `accuracy_backtest.json.summary` is `true` in production and `MC_ITERATIONS=10000` / `MC_SEED=42` are set in the GitHub Actions env block so MC fields populate deterministically on every daily pipeline run
+  4. GitHub Actions workflow hygiene is corrected: `anthropic` Python pin aligned from 0.40.0 to 0.98.1, explicit `numpy==2.2.3` added to the install line (no longer transitive via pandas)
+**Plans**: TBD
+**Phase notes**: The `mc_enabled` flip is a single state change but unblocks every downstream MC consumer — including the NLP-02 prompt context Phase 105 depends on, so this must ship first. Confirm the flip mechanism during planning: `pipeline/run.py` line 203 reads the gate from the previous `accuracy_backtest.json`, so it is either a one-time direct Blob edit OR a pipeline patch that sets the flag from inside the run (validate cleaner path before opening the PR). Pitfall to avoid: do NOT port `simulate.py` MC into browser TypeScript — 700 players × 10k sims × `Math.random()` loops freeze the main thread for 2–5 seconds; the pipeline is authoritative and the browser reads pre-computed scalars only. Use Tailwind flex row (no Recharts at row scale) for `MCDistributionBar`.
+**UI hint**: yes
+
+### Phase 103: Calibration Sparse-Bucket Fix & Health Indicator
+**Goal**: Users can trust the per-position calibration tabs — sparse-data noise no longer makes the GK/DEF tab look broken when the model is fine — and the Decision Summary tab surfaces a one-line calibration health summary so the manager has at-a-glance evidence that today's recommendations are well-calibrated
+**Depends on**: Phase 101 (v1.17 complete); independent of Phase 102 (calibration uses analytical xPts decile-rank proxy, not MC); reuses existing `pipeline/accuracy.py` `_compute_calibration_data` and existing `useAccuracy` hook
+**Requirements**: CAL-01, CAL-02
+**Success Criteria** (what must be TRUE):
+  1. User can open the AccuracyTab GK or DEF position tab and no longer see a misleading miscalibration chart at small sample sizes — sparse-bucket threshold is raised to `sample_n < 15` for GK/DEF and `sample_n < 8` for MID/FWD, and the chart is hidden entirely with an "Insufficient data" banner when the position-pool total is below 50 observations
+  2. User can see a one-sentence calibration health summary on the Decision Summary tab (e.g. "Calibration: good — predicted vs actual within 3pp across 4 deciles") derived from existing `useAccuracy` data without any new fetch or pipeline work
+  3. When fewer than 3 completed GWs are available (early-season cold start), the per-position calibration chart and the Decision Summary health indicator both degrade gracefully to a "Calibration evidence will appear after 3+ completed GWs" prompt rather than rendering noisy charts
+**Plans**: TBD
+**Phase notes**: Purely additive and independent of Phase 102 — safe parallelisation candidate but sequenced second so MC gate ships first for downstream momentum. The threshold change in `pipeline/accuracy.py` is a 1-line edit; position-pool guard is a 1-line conditional; health indicator is ~30 LOC of additive React reading an existing hook. Pitfall to avoid: small-bin instability is statistically documented (PMC 7923594) — a single haulting GK shifts `actual_rate` by 12+ percentage points at `sample_n` near 8. The all-positions aggregate (~200 obs/decile) is fine at the existing `< 5` filter; only the per-position breakdown needs the tighter threshold. Do not introduce a second charting library — reuse existing recharts `ComposedChart`.
+**UI hint**: yes
+
+### Phase 104: TransferPanel Sensitivity & Rejection Explainer Wire-Up
+**Goal**: Users can see fragility indicators on every transfer buy candidate and expand any sell-side row to see the top-2 plain-English reasons that candidate fell below threshold — completing the symmetry across recommendation surfaces so TransferPanel matches the trust signals already present in GemTable and CaptainPicksPanel
+**Depends on**: Phase 101 (v1.17 complete); reuses existing `computeFragility` in `src/lib/sensitivity.ts`, existing `computeRejection` in `src/lib/explain.ts`, existing `FragilityBadge` component; both engines are unit-tested and already wired into other call sites
+**Requirements**: SENS-01, WHY-01
+**Success Criteria** (what must be TRUE):
+  1. User can see a fragility indicator on each transfer buy candidate in TransferPanel — robust candidates are silent (no badge), fragile candidates show a small amber dot, and knife-edge candidates show an amber pill — computed by `computeFragility` with `isTransfer: true` and `xPtsGain` context
+  2. User can expand any transfer sell candidate in TransferPanel and see the top-2 plain-English reasons that player fell below the recommendation threshold (e.g. "xPts 4.2 < threshold 4.7", "fragility: knife-edge on start_prob"), computed by the existing `computeRejection` engine
+  3. The fragility badge and rejection reasons render only on rows inside the active recommendation set (top transfers, top sell candidates) — never on every row — so the visual signal does not die from spam after GW30 when many candidates legitimately become fragile
+  4. When `computeLifecycleLabel` is required for rejection context, it is either threaded from `page.tsx` via existing `allPlayers` scope or computed locally at the TransferPanel boundary as a safe fallback — never breaks if the prop is unavailable
+**Plans**: TBD
+**Phase notes**: Both engines ship and are unit-tested — this is mechanical addition of call sites, not new logic. Combining SENS-01 and WHY-01 into one phase because both touch `TransferPanel.tsx` with identical risk surface (call-site addition over a unit-tested engine) and produces consistent structured output that Phase 105 LLM prompts depend on for grounding. Pitfall to avoid: do NOT render fragility on rows outside the recommendation set — `start_prob` < 0.85 triggers fragility for 40–60% of late-season candidates and the signal dies if shown everywhere. Track `fragile_transfer_pct` in `data_health.json` and warn if it exceeds 45% (defer the monitoring wire-up to v1.19 if it stretches scope here). Tier-based visual weight (robust=silent, fragile=dot, knife_edge=pill) is non-negotiable.
+**UI hint**: yes
+
+### Phase 105: NLP-02 Per-Player LLM Insight Route, Hook & UI
+**Goal**: Users can request an on-demand Claude-generated explanation for any player from GemTable row expand or TransferPanel via an explicit "Get AI insight" button — grounded in structured player data (MC fields, rejection reasons, fragility tier) with a name-whitelist guardrail and a two-tier cache, so the model can never invent statistics or auto-fire on row mount
+**Depends on**: Phase 102 (MC fields non-null in production so `haul_prob` / `p10_pts` / `p90_pts` are available as prompt context), Phase 104 (rejection reasons and fragility tier wired into TransferPanel as visible UI signals so LLM grounding matches what the user sees)
+**Requirements**: NLP-02
+**Success Criteria** (what must be TRUE):
+  1. User can click an explicit "Get AI insight" button on any GemTable row expand or TransferPanel candidate and see a brief Claude-generated qualitative explanation grounded in that player's structured data (MC fields, top-2 rejection reasons, fragility tier, lifecycle label) — never auto-generated on row mount, never fired from `useEffect`
+  2. The generated insight is cached for that `(player_id, pipeline_run_date)` pair in localStorage and durably in Vercel Blob (`player_insights/gw{N}/element_{id}.json`, `addRandomSuffix: false`) so the same insight returns instantly on subsequent clicks within the same pipeline cycle, with zero additional Claude API spend
+  3. The two-attempt name-whitelist guardrail rejects any response that names players outside the structured context; on guardrail failure for both attempts the UI falls back deterministically to the structured `reasons[]` array (never displays a hallucinated answer)
+  4. The Route Handler `/api/player-insight` handles 401 / 429 / 5xx / missing-key / 422-guardrail errors with layered user-facing messages and never streams (non-streaming `messages.create` only — Edge runtime is explicitly forbidden because `@anthropic-ai/sdk` SSE parsing fails on Edge)
+  5. `ANTHROPIC_API_KEY` is present in the deployment environment before merge and an Anthropic Console monthly spending cap is configured as defence-in-depth against runaway costs
+**Plans**: TBD
+**Phase notes**: This is the only phase with genuinely new infrastructure (new POST Route Handler, new `usePlayerInsight` mutation hook, Blob cache namespace `player_insights/`, Anthropic Console spending cap) and the only phase where a single bug can spend money — sequenced last so all upstream context (MC fields from 102, rejection reasons + fragility tier from 104) is validated before the LLM is in the loop. **Runtime: Node.js only — never Edge** (`@anthropic-ai/sdk` SSE parsing fails on Edge per anthropics/anthropic-sdk-typescript#292; `maxDuration = 30`). **Trigger: on-demand only — never `useEffect`** (50 visible GemTable rows × 900 tokens × 4 sessions/day × 180 days approx. USD 16–32/season from a single bug). **`ANTHROPIC_API_KEY` must be in deployment env before merge** (server-side only, never `NEXT_PUBLIC_*`). **Set an Anthropic Console monthly spending cap before shipping** as defence-in-depth. Use `claude-haiku-4-5-20251001` (USD 1 / USD 5 per MTok), `useMutation` not `useQuery` (no auto-refetch), `mutationKey: ['playerInsight', playerId, gw]` for in-flight dedup. Inject structured XML context built from real `computeRejection` + `computeFragility` output; system prompt forbids numeric values (qualitative only); two-attempt name-whitelist guardrail with deterministic fallback to raw `reasons[]` on failure. Prompt caching (`cache_control: ephemeral`) is deferred — system prompt is ~80 tokens, far below the 1024-token cache minimum. Phase 5 spike: confirm Vercel Blob `put` with `addRandomSuffix: false` overwrite semantics in the deployed runtime before relying on it for the cache key.
+**UI hint**: yes
+
 ---
 
 ## Progress
@@ -1350,3 +1403,7 @@ Plans:
 | 99 | v1.17 | 2/2 | Complete    | 2026-05-12 |
 | 100 | v1.17 | 4/4 | Complete    | 2026-05-12 |
 | 101 | v1.17 | 3/3 | Complete    | 2026-05-12 |
+| 102 | v1.18 | 0 | Not started | - |
+| 103 | v1.18 | 0 | Not started | - |
+| 104 | v1.18 | 0 | Not started | - |
+| 105 | v1.18 | 0 | Not started | - |
