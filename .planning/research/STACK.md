@@ -1,531 +1,388 @@
-# FPL Analyst — Stack Additions Research
+# Technology Stack — v1.18 Forecast Transparency & AI Intelligence
 
-**Researched:** 2026-05-09 (v1.16 delta added; v1.14 retained) — v1.18 delta added 2026-05-12
-**Mode:** Subsequent-milestone delta research (extends, does not replace existing stack)
-**Overall confidence:** HIGH
+**Project:** FPL Analyst v1.18
+**Researched:** 2026-05-13
+**Mode:** Subsequent-milestone delta — extends the validated v1.0–v1.17 stack
+**Overall confidence:** HIGH (direct verification against `package.json`, `pipeline/requirements.txt`, installed `node_modules`, `pipeline/simulate.py`, `pipeline/prose_summary.py`, `/api/prose-summary/route.ts`, and Anthropic Models Overview 2026-05-13)
 
 ---
 
-## v1.18 Forecast Transparency & AI Intelligence — Stack Delta
+## Bottom Line Up Front
 
-### Bottom Line Up Front (v1.18)
+**Net new npm packages: 0**
+**Net new Python packages: 0**
+**Net new external services: 0**
 
-| Feature | New deps? | Net new files | Touches existing |
+Every capability v1.18 requires is already installed and exercised in the codebase. The Monte Carlo engine ships in `pipeline/simulate.py`, the Anthropic SDK is wired both server-side (`/api/prose-summary/route.ts`) and pipeline-side (`pipeline/prose_summary.py`), Recharts already renders the reliability diagram in `AccuracyTab.tsx`, and the MC fields (`blank_prob`, `haul_prob`, `p10_pts`, `p90_pts`) are present in the current `merged_players.json` cache.
+
+v1.18 is an activation + wire-up milestone. The work is gate flips, new call sites, one new Route Handler (`/api/player-insight`), one new hook, one new UI trigger — not new dependencies.
+
+| Feature | New deps? | New files | Touches existing |
 |---|---|---|---|
-| MC-01 (display) | **None.** `pipeline/simulate.py` fully implemented. Display components consume existing `MergedPlayer` fields. | 1–2 UI components | `GemTable` columns, row-expand, `MergedPlayer` type already has `blank_prob`, `haul_prob`, `p10_pts`, `p90_pts` |
-| CAL-01 | **None.** `ComposedChart` + `ReferenceLine` already used in `AccuracyTab.tsx`. `CalibrationBucket` type exists. | 0–1 chart variants | `AccuracyTab.tsx`, calibration section |
-| SENS-01 | **None.** `computeFragility()` fully implemented in `src/lib/sensitivity.ts`. `FragilityBadge.tsx` exists. | 0 (wire-up only) | `GemTable` row-expand, `TransferPanel` |
-| WHY-01 | **None.** `ExplainPanel.tsx` already has `rejectionReasons?: string[]` prop. | 0 (wire-up only) | `GemTable` row-expand, `ExplainPanel` |
-| NLP-01 | **None.** `@anthropic-ai/sdk` 0.93.0 in deps, `/api/prose-summary` route exists. | 0 (use existing route) | `ProseSummaryBlock.tsx` already wired |
-| NLP-02 | **None.** Same SDK. New `/api/player-insight` POST route + client hook. | 1 API route, 1 hook, 1 UI component | `GemTable` row-expand, `TransferPanel` |
-
-**Net new npm packages (v1.18): 0**
-**Net new Python packages (v1.18): 0**
-**Net new external services (v1.18): 0**
-**Net new pipeline files (v1.18): 0 (simulate.py already ships MC-01)**
+| MC-01 display | None | 1 component (`MCDistributionBar.tsx`) | GemTable row-expand, MergedPlayer fields already present |
+| CAL-01 chart fix | None | 0 (threshold edit) | `pipeline/accuracy.py` sparse-bucket filter, `AccuracyTab.tsx` health indicator |
+| SENS-01 in TransferPanel | None | 0 | `TransferPanel.tsx` (engine in `sensitivity.ts` already shipped) |
+| WHY-01 in TransferPanel | None | 0 | `TransferPanel.tsx` (engine in `explain.ts` already shipped) |
+| NLP-01 (already shipped Phase 67) | None | 0 | Existing — no v1.18 work |
+| NLP-02 new route | None | 1 route + 1 hook + 1 component | New: `/api/player-insight`, `usePlayerInsight`, `PlayerInsightTrigger` |
 
 ---
 
-### MC-01: Monte Carlo Simulator Display
+## Recommended Stack (v1.18 carry-forward)
 
-**Pipeline status: COMPLETE.** `pipeline/simulate.py` implements 10k sims per player per GW using `numpy.random.default_rng().poisson()` (goals/assists) and `rng.binomial()` (CS Bernoulli). Outputs `blank_prob`, `haul_prob`, `p10_pts`, `p90_pts`, `xPts_5gw_p10/p50/p90`, `rank_trajectory`. All fields are defined in `MergedPlayer` (types.ts lines 184–198) and written to `merged_players.json` via Vercel Blob.
+### Core Framework (no changes)
 
-**Default simulation budget:** `MC_ITERATIONS` env var, default 1000. To reach the 10k target from PROJECT.md, set `MC_ITERATIONS=10000` in GitHub Actions secrets and Vercel env.
+| Technology | Version | Purpose | Why |
+|---|---|---|---|
+| Next.js | 16.2.1 | App Router, Route Handlers | Existing. `Response(ReadableStream)` is standard Web API — no Next-specific streaming adapter needed |
+| React | 19.2.4 | UI | Existing |
+| TypeScript | ^5 | Type system | Existing |
+| TanStack Query | ^5.95.2 | Server-state cache | Existing. NLP-02 uses `useMutation` (NOT `useQuery`) — avoids auto-refetch which would burn Claude tokens |
+| TanStack Table | ^8.21.3 | GemTable, DefconTable | Existing |
+| Tailwind CSS | v4 | Styling | Existing |
+| Vitest | ^4.1.2 | Unit tests | Existing |
+| Zod | ^4.3.6 | Route Handler body validation | Existing. NLP-02 `POST` body uses `z.object({...}).safeParse()` — same pattern as `/api/prose-summary/route.ts` |
+| @vercel/blob | ^2.3.1 | Pipeline output store | Existing |
 
-**Decision: Python pipeline only, not TypeScript client-side.** 10k sims × ~700 active players × 5 GWs × 3 random draws = ~105M random samples per run. `numpy`'s `default_rng` (PCG-64) is 10–50× faster than any JS Poisson sampler. A TypeScript client-side implementation would freeze the browser's main thread at this scale; a Next.js API route implementation would exhaust Vercel Hobby's 10s default timeout. Pipeline pre-computation with Blob caching is zero client latency.
+### LLM Integration (no changes — already installed)
 
-**What v1.18 needs:** Display components that read `blank_prob`, `haul_prob`, `p10_pts`, `p90_pts` from the already-populated player object. Potentially a `McOutcomeBar` or similar inline distribution indicator.
+| Technology | Installed Version | Purpose | Why |
+|---|---|---|---|
+| `@anthropic-ai/sdk` (Node) | **0.93.0** | NLP-01, NLP-02 Route Handlers | Verified at `node_modules/@anthropic-ai/sdk/package.json`. Supports `messages.create()`, `messages.stream()`, `cache_control` with TTL `'5m' \| '1h'`, `extended-cache-ttl-2025-04-11` beta header — all surface area v1.18 needs |
+| `anthropic` (Python) | **>=0.98.1** (requirements.txt) — **0.40.0 pinned in workflow** | NLP-01 pipeline `prose_summary.py` | Mismatch flagged below — requirements floor is recent, workflow installs an older pin. Either is sufficient for `messages.create()` non-streaming with `claude-haiku-4-5` |
+
+### Charts (no changes — already installed)
+
+| Technology | Installed Version | Purpose | Why |
+|---|---|---|---|
+| recharts | **3.8.1** | CAL-01 reliability diagram, MC distribution bar, BackTab | Already in active use: `BackTab.tsx`, `AccuracyTab.tsx` (`ComposedChart` + `ReferenceLine`), `RankSimTab.tsx`. `ScatterChart` and `Scatter` are also exported by 3.8.1 if a per-player overlay is desired |
+
+### Pipeline (no changes — already installed)
+
+| Technology | Installed Version | Purpose | Why |
+|---|---|---|---|
+| numpy | **2.2.3** (locally) — declared `>=1.26.0` in requirements.txt | MC-01 simulation (`rng.poisson`, `rng.binomial`, `np.cumsum`, `np.percentile`) | Already exercised in `pipeline/simulate.py`. PCG-64 default RNG is seeded for reproducible CI runs (`MC_SEED`) |
+| pandas | >=2.2.0 | Existing pipeline data ops | Existing |
+| requests | >=2.32.0 | FPL fetch | Existing |
+| soccerdata | 1.8.8 | Understat shots scraping | Existing |
+| Python | 3.11 (workflow) | Pipeline runtime | Existing — `default_rng()` API is Py 3.8+ |
+
+### Storage (no changes)
+
+| Technology | Purpose | Why |
+|---|---|---|
+| Vercel Blob | `merged_players.json`, `accuracy_backtest.json`, `weekly_summary.json` | Existing pipeline output channel — MC fields and gate already flow through it |
+| localStorage | NLP-02 per-player insight cache, decision history (v1.16), manual plan (v1.9) | Mirrors `MANUAL_PLAN_KEY` precedent in `manual-plan.ts`. NLP-02 cache key = `fplx_player_insight_{playerId}_{pipelineRunDate}` |
+
+---
+
+## Stack Additions Detail (v1.18)
+
+### MC-01 — Monte Carlo Simulator
+
+**Pipeline status: COMPLETE** — `pipeline/simulate.py` already runs `numpy.random.default_rng().poisson()` for goals/assists and `rng.binomial()` for clean-sheet Bernoulli draws. Outputs `blank_prob`, `haul_prob`, `p10_pts`, `p90_pts`, `xPts_5gw_p10/p50/p90`, `rank_trajectory`. All fields present in the local `pipeline/cache/merged_players.json` keys (verified 2026-05-13).
+
+**Iteration budget:** `N_SIMS = max(1000, int(os.environ.get('MC_ITERATIONS', 1000)))`. Default 1000, hardcoded floor 1000, env-overridable. To reach the 10k target stated in PROJECT.md feature notes, set `MC_ITERATIONS=10000` in **both** GitHub Actions workflow `env:` and Vercel project env (the `mc_enabled` gate is independent — see Gaps below).
+
+**Why numpy, not scipy:** scipy is **not** in `pipeline/requirements.txt` and is **not** installed in the GitHub Actions workflow (confirmed: `pipeline/saves.py:14` documents "scipy is NOT available in the runtime environment"). All MC arithmetic — Poisson, Binomial, percentile, cumsum — is in numpy's core. scipy would add ~40MB install footprint and ~15s cold-start in Actions for zero capability gain. Use closed-form `math.exp`/`math.factorial` for Poisson CDF math where vectorisation isn't needed (already the pattern in `pipeline/saves.py`).
+
+**Why numpy in the pipeline, not TypeScript in the browser:** ~700 active players × 10k sims × 5 GWs × 3 random draws per fixture ≈ 105M random samples per pipeline run. numpy's PCG-64 vectorised path is 10–50× faster than any JS Poisson sampler; a TypeScript implementation would freeze the browser main thread, and a Vercel Route Handler implementation would exhaust the Hobby plan's 10s default timeout (and 60s max). Pipeline pre-computation with Blob caching means zero client-side latency.
+
+**What v1.18 needs (display layer only):**
+- `MCDistributionBar.tsx` — reads existing MergedPlayer fields, renders blank% / haul% / P10 / P90 inline. Pure React + Tailwind, no Recharts needed for the bar (a `flex`-row of coloured cells is sufficient and avoids Recharts axis overhead at row scale)
+- `mc_enabled: true` flipped in `accuracy_backtest.json` summary — the pipeline writes MC fields only when this gate is true (`pipeline/run.py:193`), so the gate is the single switch unlocking all MC-dependent UI
+
+### CAL-01 — Calibration Charts
+
+**Status: Already rendered.** `AccuracyTab.tsx` lines 394–434 already use `ComposedChart` + `ReferenceLine` + `Line` from `recharts@3.8.1` for the reliability diagram. `CalibrationBucket`, `CalibrationData` types exist; position-split pill toggle is wired.
+
+**What v1.18 needs:**
+- Raise the sparse-bucket filter in `pipeline/accuracy.py::_compute_calibration_data` from `sample_n < 5` to **`sample_n < 15` for GK/DEF**, `sample_n < 8` for MID/FWD. Rationale: the existing `< 5` was sized for the all-positions aggregate (~50 obs/decile at BACKTEST_GWS=5); GK position-specific tabs see ~8 obs/decile, and a single haulting GK shifts the actual rate by 12+ percentage points — the chart looks miscalibrated when the model is fine.
+- Add a position-pool total guard rendering "Insufficient data" when total observations for the selected position pool < 50.
+- Optional calibration health sentence in `DecisionSummaryTab` reading from `useAccuracy()` — pure prop drilling, no new dep.
+
+**No new chart library.** `ScatterChart` + `Scatter` are already exported by recharts 3.8.1 if a per-player overlay is desired in a future phase; do not import `d3` directly (recharts already bundles D3 internally — direct import doubles D3 in bundle).
+
+### SENS-01 — Sensitivity Flags
+
+**Status: Engine COMPLETE.** `src/lib/sensitivity.ts::computeFragility()` is fully implemented and tested (`sensitivity.test.ts`), exporting a tristate `{ tier: 'robust' | 'fragile' | 'knife_edge', reasons: string[] }` over 5 perturbations (start_prob, mins_60_prob, fixture difficulty, cost, news doubt). `FragilityBadge.tsx` exists. Currently called from `GemTable.tsx` and `CaptainPicksPanel.tsx`.
+
+**What v1.18 needs:**
+- Add the call site in `TransferPanel.tsx` for buy candidates: `computeFragility(buy, /*isBuyContext*/ true, xPtsGain)`.
+- Standardise the visual tier hierarchy across surfaces: `robust = no badge`, `fragile = amber dot`, `knife_edge = amber pill`. This prevents late-season flag spam when fixture congestion pushes 40–60% of candidates below `start_prob < 0.85`.
+
+**No new dependencies. No new files.**
+
+### WHY-01 — Rejection Explainer
+
+**Status: Engine COMPLETE.** `src/lib/explain.ts::computeRejection()` ships an 8-predicate cascade returning ranked `reasons[]`. `ExplainPanel.tsx` already accepts `rejectionReasons?: string[]`. Tests live at `__tests__/rejection.test.ts`.
+
+**What v1.18 needs:**
+- Add the call site in `TransferPanel.tsx` for sell-side rows (top-2 reasons inline).
+- A small `RejectionReasonsList` presentational component (formatting only — no new logic).
+- If `TransferPanel` doesn't already have `allPlayers` in scope, compute `lifecycleLabel` locally via `computeLifecycleLabel` to avoid prop drilling.
+
+**Why this matters for NLP-02:** The `reasons[]` array is the structured context that NLP-02's prompt injects into Claude. Building this call site **before** NLP-02 lets the per-player prompt assemble its `<rejection_reasons>` XML block from real engine output, not hallucinated training-data reasoning. This is the single biggest defense against the LLM inventing rejection reasons (PITFALLS.md Pitfall 2).
 
 **No new dependencies.**
 
----
+### NLP-01 — Weekly LLM Prose Summary
 
-### CAL-01: Calibration Charts
+**Status: Fully shipped Phase 67.** Both halves are live:
+- `pipeline/prose_summary.py` calls `client.messages.create(model='claude-haiku-4-5', max_tokens=512, ...)` from Python with two-attempt strict-mode guardrail retry. Writes `weekly_summary.json` to Vercel Blob.
+- `/api/prose-summary/route.ts` exposes a GET (serve cached summary) and POST (squad-aware refresh) using the same model, `maxDuration = 30`, non-streaming, with `prose-guardrail.ts` name-whitelist enforcement.
 
-**Status: Already implemented.** `AccuracyTab.tsx` uses `ComposedChart` + `ReferenceLine` + `Line` from `recharts@3.8.1` to render the reliability diagram (lines 394–434). `CalibrationBucket`, `CalibrationData`, and position-split pill toggle are all implemented. `xPts`-vs-actual chart at lines 480–524.
+**No v1.18 work on NLP-01.** Verify only.
 
-**What v1.18 needs for an extended reliability diagram (MC haul% vs actual haul rate):** reuse exactly the same `ComposedChart` + `ReferenceLine` pattern. No new charting primitives. If a scatter-plot overlay is desired (individual player dots), `ScatterChart` and `Scatter` are present in recharts 3.8.1 exports (verified via `node_modules/recharts/types/index.d.ts`).
+### NLP-02 — Per-Player LLM Insights (THE ONE GENUINELY NEW BUILD)
 
-**No new dependencies.**
+**Status: Not yet built.** Single new Route Handler, single new hook, single new UI component.
 
----
-
-### SENS-01: Sensitivity Flags
-
-**Status: Fully implemented (Phases 64 + 93).** `src/lib/sensitivity.ts` exports `computeFragility()` covering 5 perturbations (start_prob, mins_60_prob, fixture difficulty, cost, news doubt), returning tristate `{ tier: 'robust' | 'fragile' | 'knife_edge', reasons: string[] }`. `FragilityBadge.tsx` and `FragilityNote.tsx` are ready display components.
-
-**What v1.18 needs:** Ensure fragility output is wired into GemTable row-expand and TransferPanel rows. The computation and display components exist; only the wiring point may be missing.
-
-**No new dependencies.**
-
----
-
-### WHY-01: Rejection Explainer
-
-**Status: Partially implemented (Phase 65).** `ExplainPanel.tsx` accepts `rejectionReasons?: string[]` and renders a "Why not recommended:" block. Threshold-based rejection strings can be derived from existing `MergedPlayer` fields (xPts below position median, fragility, rotation risk, blank GW, etc.) in a pure TypeScript utility.
-
-**What v1.18 needs:** A `computeRejectionReasons(player, threshold)` utility function that maps the existing field values to plain-English reason strings. No new libraries — same pattern as the existing `computeFragility()` and `buildExplainReasons()` functions.
-
-**No new dependencies.**
-
----
-
-### NLP-01: LLM Prose Summary (Weekly, Decision Summary Tab)
-
-**Status: Fully implemented (Phase 67).** `/api/prose-summary` route handles GET (serve cached `weekly_summary.json`) and POST (squad-aware refresh via `claude-haiku-4-5`). `ProseSummaryBlock.tsx` is wired into `DecisionSummaryTab.tsx`. The guardrail (`prose-guardrail.ts`) prevents hallucinated player names.
-
-**The existing route uses non-streaming (await + return).** This is correct for this use case. The prose is short (4–5 sentences), `maxDuration=30` is sufficient, and non-streaming is far simpler to test (no partial-state UI complexity).
-
-**No new dependencies. No streaming needed for NLP-01.**
-
----
-
-### NLP-02: Per-Player LLM Insights (GemTable Row Expand + TransferPanel)
-
-**Status: Not yet built.** Needs a new API route, hook, and UI component.
-
-**Architecture: non-streaming POST, same pattern as existing prose-summary route.**
+**Architecture — non-streaming POST, mirrors `/api/prose-summary` POST exactly:**
 
 ```typescript
-// app/api/player-insight/route.ts
-// POST body: { player_id, web_name, xPts_1gw, blank_prob, haul_prob,
-//             fragility_tier, rejection_reasons[], position }
-// Response: { insight: string, generated_at: string }
-// Model: claude-haiku-4-5 (fastest, cheapest, sufficient for 1–2 sentence insight)
-// max_tokens: 128 (one sentence is sufficient)
-// maxDuration: 30 (Hobby plan max)
-```
+// src/app/api/player-insight/route.ts
+export const maxDuration = 30                       // Hobby plan max is 60s; 30 is generous for Haiku
+// NO `export const runtime = 'edge'` — Node.js runtime only (see Anti-Additions)
 
-**Streaming for NLP-02:** Optional. If the per-player insight is 1–2 sentences (target), non-streaming latency (~400–800ms for Haiku) is acceptable and avoids partial-render complexity. Add streaming only if UX testing reveals perceptible lag.
-
-**If streaming is added for NLP-02:** The `@anthropic-ai/sdk` 0.93.0 `MessageStream` API supports it without any new packages:
-
-```typescript
-// Route Handler — streaming variant
-const stream = client.messages.stream({ model, max_tokens, messages })
-return new Response(stream.toReadableStream(), {
-  headers: { 'Content-Type': 'text/event-stream' }
+const PostBodySchema = z.object({
+  player_id: z.number().int().positive(),
+  pipeline_run_date: z.string().min(10),            // cache key invalidates on new pipeline run
+  player: z.object({
+    web_name: z.string().min(1).max(64),
+    team: z.string().min(2).max(8),
+    position: z.enum(['GK','DEF','MID','FWD']),
+    xPts_1gw: z.number().nullable(),
+    blank_prob: z.number().min(0).max(1).nullable(),
+    haul_prob: z.number().min(0).max(1).nullable(),
+    fragility_tier: z.enum(['robust','fragile','knife_edge']).nullable(),
+    rejection_reasons: z.array(z.string().min(1).max(160)).max(8).default([]),
+  }),
 })
 
-// Client hook — consume via SDK helper (no new dep)
-import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream'
-const runner = MessageStream.fromReadableStream(res.body!)
-// ...
-```
-
-**Important:** Use Node.js runtime (not Edge Runtime). The SDK has known SSE parsing failures on Vercel Edge Runtime (GitHub issue #292 in `anthropics/anthropic-sdk-typescript`). The existing prose-summary route correctly uses Node.js runtime (no `export const runtime = 'edge'`).
-
-**Model recommendation:** `claude-haiku-4-5` (API alias → `claude-haiku-4-5-20251001`). Fastest model in the current generation, $1/$5 per MTok input/output, 200k context, 64k max output. Appropriate for short structured summaries grounded in structured model output. This matches what the existing route already uses. VERIFIED against [Anthropic Models Overview](https://platform.claude.com/docs/en/about-claude/models/overview) 2026-05-12.
-
-**No new dependencies.**
-
----
-
-### What NOT to Add (v1.18)
-
-| Avoid | Why | Use Instead |
-|---|---|---|
-| `mathjs` / `jstat` / `simple-statistics` for Poisson | MC is already done in Python pipeline | `pipeline/simulate.py` with numpy |
-| `@tensorflow/tfjs` / ONNX / any ML runtime | No ML inference needed — all stats are closed-form | Pure Python arithmetic in pipeline |
-| `ai` (Vercel AI SDK) | Adds 200KB+ bundle; `AnthropicStream` removed in v4; existing codebase uses `@anthropic-ai/sdk` directly | `@anthropic-ai/sdk` 0.93.0 |
-| `chart.js` / `victory` / `nivo` for calibration scatter | Second charting library creates bundle bloat and style inconsistency | `recharts` `ScatterChart` (already in bundle, already styled) |
-| TypeScript MC in browser or API route | 10–50× slower than numpy; browser freezes, API route times out | Python pipeline pre-computation |
-| Edge Runtime for LLM routes | SDK SSE parsing known to fail on Vercel Edge (GitHub issue #292) | Node.js runtime (default), `maxDuration=30` |
-| `d3` direct import | Recharts already bundles D3 internally; direct import doubles D3 in bundle | Recharts composable primitives |
-| `react-markdown` for LLM output | Prose is plain text by design; markdown adds render complexity and XSS surface | `<p>` tag, whitespace-preserving CSS |
-| Streaming for NLP-01 | Weekly summary is 4–5 sentences, non-streaming latency is acceptable, existing route works | Existing non-streaming `/api/prose-summary` route |
-| Per-player prompt caching (Anthropic prompt caching beta) | System prompts vary per player; caching benefit is minimal for short outputs | Plain `messages.create()` calls |
-
----
-
-### Version Compatibility (v1.18)
-
-| Package | Current Version | Notes |
-|---|---|---|
-| `@anthropic-ai/sdk` | 0.93.0 | `messages.stream()`, `toReadableStream()`, `MessageStream.fromReadableStream()` all present in installed types. No upgrade needed. |
-| `recharts` | 3.8.1 | `ScatterChart`, `ComposedChart`, `ReferenceLine`, `Scatter`, `ScatterProps` all verified present in `node_modules/recharts/types/index.d.ts`. |
-| `numpy` (Python) | existing | `default_rng().poisson()` and `rng.binomial()` already in `simulate.py`. |
-| `next` | 16.2.1 | `Response(readableStream)` is standard Web API; no Next.js-specific streaming adapter needed. |
-
----
-
-### Confidence Assessment (v1.18)
-
-| Area | Confidence | Reason |
-|---|---|---|
-| MC-01 pipeline already complete | HIGH | Direct code inspection of `pipeline/simulate.py` and `src/lib/types.ts` |
-| CAL-01 already in AccuracyTab | HIGH | Direct code inspection of `AccuracyTab.tsx` lines 394–524 |
-| SENS-01 already implemented | HIGH | Direct code inspection of `sensitivity.ts`, `FragilityBadge.tsx` |
-| WHY-01 partially implemented | HIGH | Direct code inspection of `ExplainPanel.tsx` |
-| NLP-01 already implemented | HIGH | Direct code inspection of `/api/prose-summary/route.ts` |
-| SDK 0.93.0 supports streaming | HIGH | Direct type inspection of `MessageStream.d.ts`, `messages.d.ts` |
-| `claude-haiku-4-5` is correct model ID | HIGH | Verified against Anthropic official models overview 2026-05-12 |
-| Edge Runtime incompatible with SDK streaming | MEDIUM | Single GitHub issue source; Node.js runtime is the safer choice regardless |
-| No new npm installs needed | HIGH | All capability verified against installed `node_modules` |
-
----
-
-### Sources (v1.18)
-
-- `package.json` — installed versions verified directly
-- `pipeline/simulate.py` — full MC implementation confirmed
-- `src/lib/types.ts` lines 184–198 — MC fields on `MergedPlayer` confirmed
-- `src/components/accuracy/AccuracyTab.tsx` lines 394–524 — calibration chart pattern confirmed
-- `src/lib/sensitivity.ts` — `computeFragility()` confirmed
-- `src/components/squad/ExplainPanel.tsx` — `rejectionReasons` prop confirmed
-- `src/app/api/prose-summary/route.ts` — SDK usage, model choice, guardrail pattern confirmed
-- `node_modules/@anthropic-ai/sdk/lib/MessageStream.d.ts` — `toReadableStream()` and `fromReadableStream()` confirmed
-- `node_modules/@anthropic-ai/sdk/resources/messages/messages.d.ts` — `messages.stream()`, `MessageCreateParamsStreaming` confirmed
-- `node_modules/recharts/types/index.d.ts` — `ScatterChart`, `ComposedChart`, `ReferenceLine`, `Scatter` exports confirmed
-- [Anthropic Models Overview](https://platform.claude.com/docs/en/about-claude/models/overview) — `claude-haiku-4-5` alias, pricing, `claude-haiku-4-5-20251001` pinned ID verified 2026-05-12 — HIGH confidence
-- GitHub issue anthropics/anthropic-sdk-typescript#292 — Edge Runtime SSE parsing failure — MEDIUM confidence (single source, but Node.js runtime is correct regardless)
-
----
-
-## v1.16 Modelling & Trust — Stack Delta
-
-### Bottom Line Up Front (v1.16)
-
-| Feature | New deps? | Net new files | Touches existing |
-|---------|-----------|---------------|-------------------|
-| SCRAPER-01 | **None.** No scraping needed — `bootstrap-static.elements[].news` already in pipeline (`merge.py:992`). MergedPlayer already carries `news: string` (`types.ts:26,129`). | 0 (UI surfacing only) | `TransferPanel.tsx`, `GemTable` columns, `StatusBadge` reuse |
-| REFRESH-01 | **None.** GitHub Actions cron + workflow conditionals. No new actions. | 1 workflow edit (`.github/workflows/pipeline.yml`) | existing `pipeline.yml`, `pipeline/run.py` |
-| DH-04 | **None.** `recharts@3.8.1` already in deps and used by `AccuracyTab.tsx` and `RankSimTab.tsx`. Sparkline = `<LineChart>` with hidden axes; no `react-sparklines` needed. | 1 component (`CronHistorySparkline.tsx`) | `DataHealthSection.tsx`, `data_health.json` writer |
-| BACK-01 | **None.** `localStorage` is sufficient (mirrors `manual-plan.ts` `MANUAL_PLAN_KEY` pattern). No `idb-keyval` required at this scale. | 1 storage module (`src/lib/decision-history.ts`), 1 component (`BacktesterTab.tsx`) | `RankSimTab.tsx` patterns |
-| SPQ-04 | **None.** Pure UI over existing `sp_quality.json`. | 1 component (`SetPieceLeagueTable.tsx`) | `set-pieces` tab page |
-
-**Net new npm packages (v1.16):** 0
-**Net new Python packages (v1.16):** 0
-**Net new external services (v1.16):** 0
-**Net new GitHub Actions:** 0
-**Net new cache files (v1.16):** 0 (DH-04 reads from extended `data_health.json`; SCRAPER-01 reads existing `merged_players.json`)
-
----
-
-### SCRAPER-01: FPL Official News Feed
-
-**Critical finding [VERIFIED: WebFetch 2026-05-09]:** FPL `bootstrap-static.elements[].news` is the official injury/availability news source. It is **already pulled into the pipeline** at `pipeline/merge.py:992` (`'news': element.get('news', '')`) and **already on the `MergedPlayer` type** at `src/lib/types.ts:26,129`. There is **no need to scrape** — FPL's own bootstrap endpoint is the canonical source that every scraper would re-derive from anyway.
-
-The brief misleadingly framed this as "scraping". The work is **UI surfacing + flag derivation**, not Python scraping infrastructure.
-
-#### Stack changes
-
-**Python:** None.
-- The existing `news` field is a free-text string (e.g. `"Ankle injury - Unknown return date"`).
-- FPL also exposes `news_added` (ISO 8601 timestamp), `chance_of_playing_next_round` (0/25/50/75/100/null), and `status` (`a`/`d`/`i`/`s`/`u`/`n`) — all currently in bootstrap, none currently persisted to `MergedPlayer` except `status` and `news`.
-- **Add to merge:** `news_added: str | None` and `chance_of_playing_next_round: int | None` from `element.get(...)`. One-line additions next to line 992.
-
-**TypeScript:** None new.
-- Extend `MergedPlayer` with `news_added?: string | null`, `chance_of_playing_next_round?: number | null`.
-- `StatusBadge` already exists (`src/components/squad/SquadView.tsx:36`) — reuse it in `TransferPanel` and `GemTable`.
-
-#### What NOT to add
-
-- **`beautifulsoup4`** [ASSUMED rejection] — FPL's bootstrap-static endpoint already provides structured news. Adding a HTML scraper is a step backwards.
-- **`lxml`** — same reason; no HTML to parse.
-- **A new GitHub Actions workflow for news** — news refresh is part of the existing pipeline cron; the bootstrap fetch already happens 4× daily.
-- **A separate `news_feed.json` cache** — news is already inside `merged_players.json`. Adding a parallel cache duplicates state.
-- **A separate `/api/news` route** — news ships with `/api/players` payload.
-- **An LLM summariser for news** — `news` strings are short and pre-formatted by FPL editors; LLM rewrite adds latency and cost for negligible gain.
-
-#### Acceptance criteria mapping
-
-| Behaviour | Implementation |
-|-----------|----------------|
-| Show injury/suspension flag in TransferPanel | Reuse `<StatusBadge status={p.status} news={p.news} />` in transfer rows |
-| Show flag in GemTable | New tiny `NewsBadge` cell or reuse `StatusBadge`; column hidden by default in Default preset, shown in Analysis preset |
-| Indicate freshness | Render `news_added` via existing `formatRelativeTime()` (Phase 38 utility) |
-| Filter out players with `chance_of_playing_next_round <= 25` from buy suggestions | One-line predicate in `suggestTransfers()` (already filters by `status` — extend) |
-
----
-
-### REFRESH-01: Event-Based GitHub Actions Pipeline Triggers
-
-**Critical findings [VERIFIED: WebFetch GitHub Actions docs 2026-05-09]:**
-1. **GitHub Actions cron minimum granularity is 5 minutes.** Cannot schedule sub-5-minute runs.
-2. **Cron cannot evaluate conditions before triggering.** Workflow runs unconditionally; date-aware logic must be **inside the workflow** (early-exit step) or done as a **dispatcher matrix**.
-3. **`workflow_dispatch`** allows manual + API-triggered runs. Already enabled in `pipeline.yml:6`.
-4. **`repository_dispatch`** allows external webhooks to trigger workflows with custom `event_type` and `client_payload` — useful if a separate cron service detects FPL deadline changes.
-
-#### Recommended pattern
-
-Keep the existing `cron: '0 6,12,18,0 * * *'` (4× daily UTC). **Add deadline-aware logic via:**
-
-| Strategy | When | How |
-|----------|------|-----|
-| **Pre-flight skip step** | Off-deadline days | First step in `run-pipeline` job: read `bootstrap-static.events[].deadline_time` (ISO 8601, verified present), compute hours-to-deadline, exit job 0 if >48h *AND* last cache <24h old |
-| **Dense schedule near deadline** | Deadline ±6h | Add a second cron entry running every 30 min (`*/30 * * * *`) that runs only if a deadline is within 6h (early-exit otherwise) |
-| **Manual override** | Always | `workflow_dispatch` with optional `force_refresh: bool` input |
-| **External webhook** *(optional)* | If/when a sentinel detects price changes | `repository_dispatch` with `event_type: fpl-price-change`; **deferred** unless user opts in |
-
-#### Stack changes
-
-**No new actions.** All capability uses built-ins:
-- `actions/checkout@v4` — already in workflow
-- `actions/setup-python@v5` — already in workflow
-- Job conditionals via `if:` expressions and bash `exit 0`
-
-**One workflow edit** (`.github/workflows/pipeline.yml`):
-- Add `inputs:` block under `workflow_dispatch:` for `force_refresh`
-- Add a "deadline guard" first step that fetches bootstrap-static, parses `events[]`, sets `should_run` GITHUB_OUTPUT
-- Add `if: steps.guard.outputs.should_run == 'true'` to subsequent steps
-
-**Optional Python helper:** `pipeline/deadline_guard.py` (~30 LOC) — pure stdlib, called from workflow step. Exits 0 with stdout `RUN` or `SKIP`.
-
-#### What NOT to add
-
-- **`@vercel/cron`** — already rejected v1.14; GitHub Actions is the established pattern (validated v1.2 DAT-01).
-- **A separate "scheduler" repo** — overkill for personal tool.
-- **External cron services (cron-job.org, EasyCron)** — adds external dependency; `repository_dispatch` from a tiny existing service would be the cleaner alternative if ever needed, and **even that is deferred**.
-- **GitHub-hosted larger runner** — pipeline runs in <2 min on `ubuntu-latest`; no need.
-- **Caching FPL bootstrap across runs** — bootstrap is the source of truth; caching it defeats the purpose of refresh.
-- **A "smart cron" library in Python** — date math is one `datetime.fromisoformat()` + subtract; no `croniter` / `apscheduler` warranted.
-
-#### FPL deadline source [VERIFIED]
-
-`bootstrap-static.events[]` contains:
-- `deadline_time`: ISO 8601 (e.g. `"2025-08-15T17:30:00Z"`)
-- `deadline_time_epoch`: Unix seconds
-- `is_current: bool`, `is_next: bool`, `finished: bool`
-
-Use `is_next: true` event's `deadline_time` for "hours until next deadline" calculation.
-
----
-
-### DH-04: Cron History Sparkline
-
-#### Stack changes
-
-**TypeScript:** None new.
-- `recharts@3.8.1` already in `package.json` and used by `AccuracyTab.tsx` and `RankSimTab.tsx`.
-- Sparkline pattern: `<LineChart>` with `<XAxis hide />`, `<YAxis hide />`, `<CartesianGrid hide />`, height ~24px, single `<Line stroke=... dot=false>`.
-- Tooltip with timestamp + status on hover (reuse existing `<Tooltip>` from recharts).
-
-**Python:** Extend `pipeline/data_health.py` to append a rolling history entry per run.
-
-#### Data model addition
-
-```ts
-// src/lib/types.ts — extend DataHealth (already exists from v1.14 DQ-01)
-export interface DataHealthRunEntry {
-  timestamp: string         // ISO 8601
-  status: 'ok' | 'warn' | 'error'
-  duration_seconds?: number
-  error_message?: string | null
-}
-
-export interface DataHealth {
-  // ... existing v1.14 fields ...
-  cron_history?: DataHealthRunEntry[]   // NEW v1.16 — last 7 entries, ordered oldest→newest
+export async function POST(request: Request) {
+  // 1) parse + validate (z.safeParse)
+  // 2) load player_corpus from merged_players.json (web_names) for guardrail
+  // 3) build XML-tagged user prompt injecting fragility + rejection_reasons
+  // 4) client.messages.create({
+  //      model: 'claude-haiku-4-5',
+  //      max_tokens: 160,                              // ~2-3 sentences sufficient
+  //      system: '...qualitative only, no numbers...', // matches NLP-01 system style
+  //      messages: [{ role: 'user', content: userMsg }],
+  //    })
+  // 5) two-attempt guardrail retry (strict mode on attempt 2) — reuse passesGuardrail
+  // 6) 422 on guardrail failure; 502 on upstream API error; 503 on missing ANTHROPIC_API_KEY
 }
 ```
 
-#### Pipeline change
+**Model:** `claude-haiku-4-5` (alias → `claude-haiku-4-5-20251001`, pinned snapshot per Anthropic naming policy 2026-05-13). **$1 / input MTok, $5 / output MTok.** Fastest model in the current generation, 200k context, 64k max output — far more than NLP-02 needs.
 
-`pipeline/data_health.py`: read previous `data_health.json`, prepend current run, truncate to last 7 entries. Atomic write (write temp + rename). ~15 LOC addition.
+**Latency profile (Haiku, ~150 input tokens + 160 output tokens):** typically 400–800ms total. Single chunk — non-streaming is correct.
 
-#### What NOT to add
+**Why non-streaming:** Per-player insight is 2–3 sentences ≈ 100–150 output tokens. With Haiku these arrive as a single SSE chunk within 600ms; partial-render UI complexity is pure cost for no perceived speedup. The existing `/api/prose-summary` POST is non-streaming for the same reason.
 
-- **`react-sparklines`** [VERIFIED: npm view] (last published 4 years ago; unmaintained). Use existing `recharts` — saves ~30KB and avoids dep duplication.
-- **`d3` direct** — recharts wraps d3 already.
-- **Pure CSS sparkline** — feasible (inline SVG `<polyline>`) but loses tooltip/hover ergonomics; with recharts already loaded, the marginal cost is zero.
-- **A separate `cron_history.json` cache file** — extending `data_health.json` keeps API surface flat (one fetch).
-- **Server-sent events / websockets** — pipeline runs every 6h; on-page-load fetch is sufficient.
-- **Animation library (`framer-motion`)** — recharts has built-in `isAnimationActive`.
+**Why `useMutation`, not `useQuery`:** NLP-02 is demand-triggered (user clicks "Get AI insight"). `useQuery` would auto-refetch on window focus / mount, multiplying Claude calls and cost. `useMutation` runs only on `.mutate()` and pairs with a localStorage cache keyed on `(player_id, pipeline_run_date)` for 24h-ish reuse.
+
+**Why localStorage cache (mandatory):** Without it, a single useEffect bug expanding all 50 visible GemTable rows = 50 Claude calls per page load. At ~200 input + 120 output tokens × $1/$5 per MTok ≈ $0.0008 per insight; 50 calls × 5 page loads/day × 7 days = **~$1.40/week** worst case. Add localStorage keyed on `pipeline_run_date` and the cost drops to a few cents per week (one call per player per refresh). Project precedent: `MANUAL_PLAN_KEY` in `manual-plan.ts:5`.
+
+**Prompt caching (`cache_control: { type: 'ephemeral', ttl: '5m' }`):** Verified present in `@anthropic-ai/sdk@0.93.0` via Context7 (system prompt blocks and tool definitions accept it). **NOT recommended for NLP-02 v1.18.** The system prompt is ~80 tokens, well below the 1024-token minimum for cache hits to be billed. The user prompt varies per player. Cache write surcharge (1.25× base rate at 5m, 2× at 1h) would exceed any benefit. Defer prompt caching until: (a) system prompt grows past 1024 tokens, OR (b) batch pre-generation pattern is adopted where the same system prompt fires for 50+ players in a 5-minute window. Both are deferred to v1.19+.
+
+**No streaming, no prompt caching, no Edge Runtime — and zero new dependencies.**
+
+### Existing Pipeline Module Dependencies (carry-forward — no changes)
+
+| Module | Purpose | Notes |
+|---|---|---|
+| `pipeline/simulate.py` | MC-01 | Already ships. Needs `MC_ITERATIONS=10000` env + `mc_enabled=true` gate flip |
+| `pipeline/accuracy.py` | CAL-01 calibration buckets, `accuracy_backtest.json` | Needs sparse-bucket filter raised for GK/DEF |
+| `pipeline/prose_summary.py` | NLP-01 weekly summary | Already shipping `weekly_summary.json` |
+| `pipeline/merge.py` | Single source of truth for `MergedPlayer` shape | Existing |
+| `pipeline/refresh_gate.py` | Event-aware scheduling (v1.16 REFRESH-01) | Existing |
+| `pipeline/data_health.py` | Cron history, freshness banner (v1.16 DH-04) | Existing |
+| `pipeline/captain_snapshots.py` | BACK-01 captain backtester (v1.16) | Existing |
 
 ---
 
-### BACK-01: Decision History Backtester
+## Alternatives Considered (and rejected)
 
-#### Storage decision
+| Category | Recommended | Alternative | Why Not |
+|---|---|---|---|
+| Random sampling library | numpy `default_rng()` | scipy.stats | scipy is **not** in pipeline runtime (confirmed `pipeline/saves.py:14`); numpy already exposes Poisson/Binomial vectorised. Adding scipy = +40MB install, +15s cold-start in Actions, zero capability gain |
+| LLM SDK | `@anthropic-ai/sdk` 0.93.0 | Vercel AI SDK (`ai` package) | Adds ~200KB to client bundle; `AnthropicStream` helper removed in `ai` v4; the existing codebase already calls `@anthropic-ai/sdk` directly in 3 places — adding `ai` doubles the integration surface |
+| LLM SDK | `@anthropic-ai/sdk` 0.93.0 | LangChain.js / LlamaIndex | Both add dozens of transitive deps for chains/agents this app doesn't use. v1.18 is one-shot `messages.create()` calls — no chains, no tool use, no RAG |
+| Calibration chart | `recharts@3.8.1` `ComposedChart` | `chart.js`, `victory`, `nivo` | Existing recharts already renders the reliability diagram in `AccuracyTab.tsx`. Second charting lib = bundle bloat + style inconsistency |
+| MC inline distribution | Tailwind flexbox + coloured `<div>`s | recharts BarChart per row | At GemTable row scale, Recharts axis/legend overhead dominates the actual data; pure CSS bar is faster to render and matches existing badge patterns |
+| MC computation | Python pipeline + Vercel Blob cache | Browser TypeScript MC, or Next.js Route Handler MC | TS Poisson sampler 10–50× slower than numpy; browser freezes at 105M samples; Hobby Route Handler timeout is 10s default / 60s max — would not complete |
+| Per-player insight delivery | Demand-triggered `useMutation` + localStorage | Server-side batch pre-generation in pipeline | Pre-generation = 700 players × $0.0008 × 4 refreshes/day = **~$2.24/day** = ~$70/month. On-demand with cache = a few cents per week. Defer pre-generation to v1.19 only if on-demand latency proves unacceptable |
+| Per-player insight response | Non-streaming `messages.create` | Streaming `messages.stream` | Haiku 100-token response arrives as a single chunk in ~600ms. Streaming adds partial-render UI complexity, AbortController plumbing, and the GitHub issue #292 Edge-Runtime trap with no perceived speedup |
+| Per-player insight runtime | Node.js (default) | Vercel Edge Runtime | `@anthropic-ai/sdk` has known SSE parsing failures on Edge (issue anthropics/anthropic-sdk-typescript#292). Existing `/api/prose-summary` is correctly Node-only — match the precedent |
+| Prompt caching | Plain `messages.create` (no `cache_control`) | `cache_control: { type: 'ephemeral' }` on system prompt | NLP-02 system prompt is ~80 tokens, far below the 1024-token cache minimum. Write surcharge (1.25× at 5m) > savings. Re-evaluate when system prompt exceeds 1KB or batch patterns adopted |
+| Per-player insight cache | localStorage keyed on `(player_id, pipeline_run_date)` | IndexedDB (`idb-keyval`) | ~700 players × ~300 bytes = ~210KB << 5MB localStorage quota; matches project precedent (`manual-plan.ts:5`) |
+| Per-player insight rendering | Plain `<p>` whitespace-preserving | `react-markdown` | LLM output is plain text by design (qualitative paragraph). Markdown rendering adds XSS surface + bundle for no formatting benefit |
 
-**Use `localStorage`.** Mirrors the existing `MANUAL_PLAN_KEY` pattern in `src/lib/manual-plan.ts:5`.
+---
 
-| Factor | localStorage | IndexedDB |
-|--------|-------------|-----------|
-| Quota | ~5–10 MB per origin | ~50% of disk |
-| API | Synchronous, simple | Async, callback/promise |
-| Data shape | JSON.stringify | Native objects |
-| Project precedent | ✓ Used (manual-plan, fpl_team_id, theme) | ✗ Not used |
-| BACK-01 size estimate | ~38 GWs × ~500 bytes ≈ 19 KB | over-engineered |
+## Installation
 
-**Decision: localStorage.** A full season of decision history is well under 50 KB even with verbose entries.
+**No npm install commands required.** All TypeScript dependencies are already in `package.json`.
 
-#### Stack changes
+**No pip install commands required** for v1.18 features. However, two pipeline-side hygiene fixes are recommended (NOT new dependencies):
 
-**TypeScript:** None new.
-- `idb-keyval@6.2.2` and `idb@8.0.3` are **available but explicitly not added** — overkill for this dataset.
-- Reuse `loadFromStorage` / `saveToStorage` patterns from `src/lib/manual-plan.ts`.
+```yaml
+# .github/workflows/pipeline.yml — recommended edits
 
-#### Data model
+# 1) Make numpy install explicit (currently pulled in transitively via pandas)
+# 2) Align anthropic pin with requirements.txt floor (>=0.98.1)
+# 3) Add MC_ITERATIONS env so 10k is the production budget
 
-```ts
-// src/lib/decision-history.ts (NEW)
-export const DECISION_HISTORY_KEY = 'fplx_decision_history'
+- name: Install dependencies
+  run: |
+    pip install requests==2.32.3 pandas==2.2.3 numpy==2.2.3 \
+                vercel-blob==0.4.2 python-dotenv==1.0.1 anthropic==0.98.1
 
-export interface DecisionRecord {
-  version: 1
-  gw: number
-  capturedAt: string                      // ISO timestamp at capture
-  captain: { id: number; xPts: number; actual?: number | null }
-  viceCaptain: { id: number; xPts: number; actual?: number | null }
-  transfers: Array<{ outId: number; inId: number; outXpts: number; inXpts: number }>
-  chip: 'wildcard' | 'free_hit' | 'bench_boost' | 'triple_captain' | null
-  hits: number                            // count of -4 hits taken
-  squad: number[]                         // 15 player IDs at GW deadline
-}
-
-export interface DecisionHistory {
-  version: 1
-  teamId: number                          // namespaces history by FPL team
-  records: DecisionRecord[]               // ordered by gw asc
-}
+env:
+  USE_BLOB: 'true'
+  BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  MC_ITERATIONS: '10000'   # Phase 90 MC-01 production budget (default in simulate.py is 1000)
+  MC_SEED: '42'            # Phase 90 — reproducible CI runs
 ```
 
-#### Capture & enrichment flow
+**Vercel project env vars (no SDK changes):**
 
-1. **Capture (manual or auto):** When user clicks "Save this week's decision" on Decision Summary, snapshot current squad + chosen captain + planned transfers into `localStorage`.
-2. **Enrichment (post-GW):** When pipeline data updates and a captured GW is now `finished: true`, run client-side `enrichDecisionHistory()` to fill `actual` xPts from latest `merged_players.json` (uses `last_gw_actual_pts` field added v1.5).
-3. **Backtester view:** New `BacktesterTab` under Squad section — table of GW × captain delta vs optimal × transfer regret × cumulative regret score.
-
-#### What NOT to add
-
-- **`idb-keyval`** / **`idb`** / **`localforage`** — see table above; localStorage is sufficient and matches project precedent.
-- **`zustand`** / **`jotai`** — state management for one tab is overkill; reuse `useState` + storage helpers like `manual-plan.ts`.
-- **`zod` schema for the storage payload** — versioned object (`version: 1`) with try/catch fallback to empty matches existing `loadManualPlan()` pattern; Zod is reserved for FPL API drift, not our own JSON.
-- **Server-side storage / DB** — violates "No database for v1" decision (PROJECT.md key decisions table).
-- **Cloud sync (Vercel KV, Supabase)** — single-user personal tool; localStorage per-browser is acceptable. Future cross-device sync is a deferred idea.
-- **Date library (`date-fns`, `dayjs`)** — `formatRelativeTime` already exists in `src/lib/formatRelativeTime.ts` (Phase 38).
+```
+ANTHROPIC_API_KEY=sk-ant-...   # already set; reused for NLP-02 route
+```
 
 ---
 
-### SPQ-04: Set-Piece League Table
+## What NOT to Add (Anti-Additions)
 
-**No stack changes.** The `sp_quality.json` cache file shipped in v1.14 already contains all 20 teams' delivery quality scores. SPQ-04 is a pure-UI render: a sortable TanStack Table (already in deps as `@tanstack/react-table@8.21.3`) inside the existing Set Pieces tab.
+These are the tempting-but-wrong additions for v1.18. Each is rejected for a specific reason.
 
-#### What NOT to add
-
-- **No new pipeline module** — `pipeline/set_piece_quality.py` already writes the data.
-- **No new API route** — extend `/api/set-pieces` if needed, or fetch `sp_quality.json` via existing fetch path.
-- **No new chart library** — table is the right primitive.
-
----
-
-## Cross-Cutting v1.16 — What NOT to Add
-
-| Tempting addition | Why reject |
-|-------------------|------------|
-| `beautifulsoup4` for SCRAPER-01 | FPL bootstrap-static already provides `news` field — no scraping needed |
-| `lxml` | Same |
-| `react-sparklines` for DH-04 | `recharts` already in deps; sparkline is `<LineChart>` with hidden axes |
-| `idb-keyval` for BACK-01 | localStorage handles ~19 KB easily; matches project precedent |
-| `croniter` / `apscheduler` for REFRESH-01 | Date math is trivial Python stdlib |
-| External cron service | GitHub Actions cron + workflow_dispatch covers all needs |
-| `@vercel/cron` | Rejected v1.14; GitHub Actions is the established cron substrate |
-| LLM news rewrite | `news` strings are FPL-curated and concise |
-| `framer-motion` for sparkline animation | recharts has `isAnimationActive` |
-| `date-fns` / `dayjs` | `formatRelativeTime` already shipped Phase 38 |
-| New `/api/news` route | News ships in `/api/players` |
-| Separate `cron_history.json` | Extend `data_health.json` |
-
----
-
-## Existing Stack Summary (after v1.18)
-
-| Layer | Status |
-|-------|--------|
-| Next.js 16.2.1 / React 19.2.4 / TypeScript 5 | **No changes** |
-| TanStack Query 5.95 / TanStack Table 8.21 | **No changes** — extend existing hook patterns |
-| Tailwind v4 / dark mode | **No changes** |
-| recharts 3.8.1 | **Reuse** — `ComposedChart`/`ReferenceLine` already used for CAL-01 |
-| `@anthropic-ai/sdk` 0.93.0 | **Reuse** — already in deps, route exists; NLP-02 adds one new route |
-| immer 11 / use-immer 0.11 | **No changes** |
-| zod 4.3.6 | **No changes** — adapter-only |
-| `@vercel/blob` 2.3.1 | **No changes** |
-| Python: requests / pandas / numpy / soccerdata | **Reuse only** — `simulate.py` already uses numpy |
-| Vercel Blob | **No changes** |
-| GitHub Actions | **No changes for v1.18** |
-| External APIs | **Claude API already used** — NLP-02 adds one more route calling it |
+| Tempting addition | Why reject | Use instead |
+|---|---|---|
+| **scipy** for MC simulation | Not installed in pipeline runtime; numpy `default_rng` already exposes Poisson/Binomial vectorised; adds +40MB install + ~15s Actions cold-start | `numpy.random.default_rng()` — already in `simulate.py` |
+| **`mathjs` / `jstat` / `simple-statistics`** in browser for MC | MC is already pre-computed in the pipeline; client-side recomputation is wasteful and slow | Read `blank_prob` / `haul_prob` / `p10_pts` / `p90_pts` from MergedPlayer |
+| **`@tensorflow/tfjs` / ONNX / any ML runtime** | No ML inference is happening — every v1.18 stat is closed-form Poisson/Bernoulli arithmetic | Pure numpy in pipeline |
+| **Vercel AI SDK (`ai` package)** | ~200KB bundle bloat; `AnthropicStream` helper removed in v4; the codebase already calls `@anthropic-ai/sdk` directly in 3 places | `@anthropic-ai/sdk` 0.93.0 directly |
+| **LangChain.js / LlamaIndex** | v1.18 is one-shot `messages.create()` — no chains, no tools, no RAG, no agent loops; adds dozens of transitive deps | `@anthropic-ai/sdk` directly |
+| **Streaming for NLP-01** | Already shipped non-streaming (Phase 67); 4–5 sentence output is fast enough | Existing `/api/prose-summary` GET |
+| **Streaming for NLP-02** | 2–3 sentence response from Haiku arrives in ~600ms as one chunk; partial-render UI cost > zero perceived speedup | Non-streaming `messages.create` |
+| **Vercel Edge Runtime for any LLM route** | `@anthropic-ai/sdk` SSE parsing fails on Edge (anthropics/anthropic-sdk-typescript#292); existing prose-summary route is correctly Node-only | Node.js runtime (default), `maxDuration = 30` |
+| **Prompt caching (`cache_control: ephemeral`) for NLP-02** | System prompt is ~80 tokens, below the 1024-token cache minimum; write surcharge (1.25× at 5m) outweighs savings | Plain `messages.create({ model, max_tokens, system, messages })` |
+| **`chart.js` / `victory` / `nivo`** for calibration chart | recharts already renders the diagram in AccuracyTab; second lib = bundle bloat + style drift | recharts `ComposedChart` + `ReferenceLine` |
+| **Direct `d3` import** | recharts already bundles D3 internally — direct import doubles D3 in bundle | recharts composable primitives |
+| **`react-markdown` for LLM output** | LLM prose is qualitative plain text by design; markdown adds XSS surface for no formatting gain | `<p style={{ whiteSpace: 'pre-wrap' }}>` |
+| **`react-sparklines` for rank trajectory** | Last published 4+ years ago (unmaintained); recharts already handles sparklines with `<LineChart>` + hidden axes | Recharts (defer rank_trajectory UI to v1.19) |
+| **`zustand` / `jotai`** for NLP-02 cache state | One mutation hook per row doesn't need global state; `useMutation` + localStorage helpers match `manual-plan.ts` precedent | `useMutation` + tiny `loadInsight`/`saveInsight` helpers |
+| **`idb-keyval` / `localforage`** for NLP-02 cache | ~210KB total << 5MB localStorage quota; sync API matches existing `manual-plan.ts` pattern | `localStorage.getItem`/`setItem` |
+| **`date-fns` / `dayjs`** | `formatRelativeTime` already shipped Phase 38 | `src/lib/formatRelativeTime.ts` |
+| **TypeScript Monte Carlo simulator in `src/lib/`** | 700 × 10k × 5 = 35M+ samples per run would freeze the main thread; numpy is 10–50× faster anyway | Python pipeline `simulate.py` |
+| **Pre-generate all 700 player insights in pipeline** | 700 × $0.0008 × 4 refreshes/day ≈ $70/month; on-demand with localStorage cache is a few cents/week | Demand-triggered `useMutation` |
+| **`@vercel/cron`** | Rejected v1.14/v1.16; GitHub Actions cron is the established substrate | Existing `.github/workflows/pipeline.yml` |
+| **A second `prompt-cache.json` cache file** | Adds Blob write race; system prompt is tiny, no value | (don't add) |
+| **A new `/api/mc-distribution` route for MC fields** | MC fields already ship in `/api/players` payload | Read from existing `usePlayers()` hook |
+| **`pino` / `winston` server-side logging** | Vercel function logs are already streamed; `console.error` suffices for low-volume LLM routes | `console.error('NLP-02:', err)` |
 
 ---
 
-## Confidence Assessment (v1.16)
+## Integration Points with Existing Stack
 
-| Area | Confidence | Reason |
-|------|------------|--------|
-| SCRAPER-01: `news` field already in bootstrap | HIGH [VERIFIED: WebFetch + grep merge.py:992 + types.ts:26,129] | Verified directly in code and live API |
-| SCRAPER-01: `chance_of_playing_next_round` available | HIGH [VERIFIED: WebFetch] | Standard FPL bootstrap field |
-| REFRESH-01: GitHub Actions cron min 5 min | HIGH [VERIFIED: GitHub docs] | Documented limit |
-| REFRESH-01: cron cannot pre-evaluate | HIGH [VERIFIED: GitHub docs] | Confirmed in docs |
-| REFRESH-01: `events[].deadline_time` shape | HIGH [VERIFIED: WebFetch] | ISO 8601 + epoch both present |
-| DH-04: recharts already in deps | HIGH [VERIFIED: package.json:23 + AccuracyTab.tsx:25] | Direct file inspection |
-| DH-04: react-sparklines unmaintained | MEDIUM [ASSUMED] | Last publish 4y ago per npm; minor risk if revived |
-| BACK-01: localStorage sufficient size | HIGH | 19 KB << 5 MB quota; trivial math |
-| BACK-01: project precedent for localStorage | HIGH [VERIFIED: manual-plan.ts:5] | Direct file inspection |
-| SPQ-04: sp_quality.json already shipped v1.14 | HIGH | Pipeline file `pipeline/set_piece_quality.py` exists |
-| Cross-cutting: no new deps needed | HIGH | All five features fit existing libraries; verified package.json + requirements.txt |
+### NLP-02 Route Handler — file-by-file impact
 
-## Assumptions Log (v1.16)
+| File | Status | Change |
+|---|---|---|
+| `src/app/api/player-insight/route.ts` | **NEW** | ~120 LOC, mirrors `/api/prose-summary/route.ts` POST |
+| `src/lib/hooks/usePlayerInsight.ts` | **NEW** | TanStack Query `useMutation` + localStorage cache helpers |
+| `src/components/gem-table/PlayerInsightTrigger.tsx` | **NEW** | "Get AI insight" button + result display, demand-triggered |
+| `src/lib/prose-guardrail.ts` | Reuse | Same name-whitelist function; consider extending coverage to `rejection_reasons` strings |
+| `src/lib/types.ts` | Touch | Add `PlayerInsight` type and `PlayerInsightRequestBody` type |
+| `src/components/gem-table/GemTable.tsx` | Touch | Mount `<PlayerInsightTrigger>` in row-expand panel |
+| `src/components/squad/TransferPanel.tsx` | Touch | Mount `<PlayerInsightTrigger>` inline per row |
 
-| # | Claim | Section | Risk if Wrong |
-|---|-------|---------|---------------|
-| A1 | `react-sparklines` is unmaintained | DH-04 | Low — recharts is the right call regardless |
-| A2 | Brief's "scraper" framing is misleading and `news` field suffices | SCRAPER-01 | Medium — if the user actually wants Twitter/press conf scraping, scope expands; needs confirmation in /gsd-discuss-phase |
-| A3 | localStorage 5 MB quota is enough for season-long decision history | BACK-01 | Very low — 19 KB estimate is conservative |
-| A4 | `repository_dispatch` for external triggers is deferred (not required for v1.16) | REFRESH-01 | Low — built-in cron + workflow_dispatch covers stated requirement |
-| A5 | Adding a deadline-aware second cron entry won't conflict with existing 4×/day cron | REFRESH-01 | Low — cron entries are independent jobs |
+### MC-01 / SENS-01 / WHY-01 — file-by-file impact
 
-## Open Questions (v1.16)
-
-1. **SCRAPER-01 scope**: Does "FPL official news feed scraper" mean the bootstrap `news` field (recommended), or does the user want press-conference / external news? **Recommendation: confirm in /gsd-discuss-phase before planning. Bootstrap field is 95% of the value at 0% of the cost.**
-2. **REFRESH-01 trigger granularity**: Is 5-minute cron resolution acceptable, or does the user want truly event-driven (price change → repo dispatch)? **Recommendation: ship deadline-aware schedule first; defer external dispatch.**
-3. **BACK-01 capture trigger**: Auto-capture on each `last_updated` change, or manual "Save this week" button? **Recommendation: manual button to keep agency explicit.**
+| File | Status | Change |
+|---|---|---|
+| `pipeline/simulate.py` | Existing | No code change; `MC_ITERATIONS=10000` env in workflow |
+| `pipeline/run.py` | Existing | No code change; `mc_enabled: true` flip in `accuracy_backtest.json` summary |
+| `pipeline/accuracy.py::_compute_calibration_data` | Touch | Raise sparse-bucket filter for GK/DEF |
+| `src/components/gem-table/MCDistributionBar.tsx` | **NEW** | Renders blank% / haul% / P10 / P90 |
+| `src/components/squad/TransferPanel.tsx` | Touch | Add `computeFragility(buy, true, xPtsGain)` + `computeRejection` call sites |
 
 ---
 
-## v1.14 Stack Additions (RETAINED — already shipped)
+## Version Compatibility Matrix
 
-### Bottom Line Up Front (v1.14)
+| Package | Installed | Required for v1.18 | Notes |
+|---|---|---|---|
+| `@anthropic-ai/sdk` | 0.93.0 | 0.93.0 (no upgrade) | `messages.create()`, `cache_control: ephemeral`, `extended-cache-ttl-2025-04-11` beta header — all present |
+| `anthropic` (Python) | requirements.txt `>=0.98.1` | `>=0.40.0` (NLP-01 uses non-streaming `messages.create`) | **Workflow pins 0.40.0 — recommend aligning to 0.98.1** for consistency with requirements.txt |
+| `recharts` | 3.8.1 | 3.x | `ComposedChart`, `ReferenceLine`, `Line`, `Scatter`, `ScatterChart` all exported (verified `node_modules/recharts/types/index.d.ts`) |
+| `numpy` | 2.2.3 (local) / >=1.26.0 (req) | >=1.26 | `default_rng()` PCG-64, `poisson`, `binomial`, `cumsum`, `percentile` — all in core since 1.17 |
+| `next` | 16.2.1 | 16.x | `Response(ReadableStream)`, `maxDuration` export, Route Handlers — all supported |
+| `react` | 19.2.4 | 19.x | useEffect cleanup, useId, useMutation host — no version-specific concerns |
+| `@tanstack/react-query` | 5.95.2 | 5.x | `useMutation` API stable since v5.0 |
+| `zod` | 4.3.6 | 4.x | Strip-by-default, `.safeParse()` — already used in `/api/prose-summary` POST |
+| `@vercel/blob` | 2.3.1 | 2.x | `list()` + `fetch(url)` pattern — already used in prose-summary route |
 
-| Feature | New deps? | Net new files | Touches existing |
-|---------|-----------|---------------|-------------------|
-| GK-01   | **None.** | 0 (math lives in `merge.py` / `pipeline/saves.py`) | `merge.py`, `XPtsCell` (`columns.tsx`), `MergedPlayer` type |
-| DQ-01   | **None.** | 1 pipeline writer (`pipeline/data_health.py`), 1 API route, 1 hook, 1 component | `run.py`, `AccuracyTab.tsx`, `last_updated.json` writer |
-| SP-QUAL-01 | **None.** Reuse existing `requests` + regex pattern in `understat_client.py` | 1 pipeline module (`pipeline/set_piece_quality.py`), 1 cache file, 1 API route, 1 hook | `SetPieceTakerPanel.tsx`, `run.py` |
+**Verified models (Anthropic Models Overview 2026-05-13):**
 
-Full v1.14 detail (GK-01 save-point math, DQ-01 sanity checks, SP-QUAL-01 Understat shots scraping) preserved verbatim in git history (`git show HEAD~30:.planning/research/STACK.md` for original entries). Summary above is sufficient as carry-forward context for v1.16 planning.
+| Alias | Pinned ID | Price (input / output per MTok) | Use |
+|---|---|---|---|
+| `claude-haiku-4-5` | `claude-haiku-4-5-20251001` | $1 / $5 | **Use for NLP-01 (already) and NLP-02 (new)** — fastest, cheapest, 200k context, 64k max output |
+| `claude-sonnet-4-6` | `claude-sonnet-4-6` (dateless pinned) | $3 / $15 | Not needed for v1.18; consider only if Haiku outputs prove insufficient |
+| `claude-opus-4-7` | `claude-opus-4-7` (dateless pinned) | $5 / $25 | Not needed for v1.18 |
 
-### v1.14 confidence (carry-forward)
+Deprecated (do not use, retiring 2026-06-15): `claude-sonnet-4-20250514`, `claude-opus-4-20250514`.
 
-All v1.14 stack decisions shipped successfully and remain HIGH confidence. The pattern of "extend existing modules, add no dependencies" is the established norm for this codebase and is continued in v1.16 and v1.18.
+---
+
+## Gaps & Risks (deferred to phase planning)
+
+1. **`anthropic` Python SDK version mismatch.** `pipeline/requirements.txt` declares `>=0.98.1`, but `.github/workflows/pipeline.yml:46` pins `anthropic==0.40.0`. Both work for the non-streaming `messages.create` call in `prose_summary.py`, but the drift should be reconciled in Phase 1 hygiene work — align workflow to `anthropic==0.98.1` to match the requirements floor.
+
+2. **`numpy` not explicitly installed in pipeline workflow.** It's pulled in transitively by pandas, but a future pandas upgrade or a `--no-deps` install path could break MC silently. Recommend adding `numpy==2.2.3` to the explicit install line.
+
+3. **`MC_ITERATIONS` not set in workflow env.** Default in `simulate.py` is 1000 (with 1000 floor); to reach the 10k target stated in PROJECT.md MC-01 feature, set `MC_ITERATIONS=10000` in workflow `env:` block. Runtime cost: ~6× slower MC step; verify total pipeline wallclock stays under the GitHub Actions free-tier budget (~2 min today).
+
+4. **`mc_enabled` gate flip mechanism.** The pipeline reads the gate from the previous `accuracy_backtest.json` (`run.py:203`). Flipping it requires either a one-time direct Blob edit OR a pipeline patch that sets `mc_enabled: true` and unlocks the gate from inside the run. Confirm at Phase 1 planning.
+
+5. **Sparse-bucket thresholds for CAL-01.** Exact values: raise from `sample_n < 5` to `sample_n < 15` for GK/DEF, `sample_n < 8` for MID/FWD. Rationale in PITFALLS.md.
+
+6. **`TransferPanel` `allPlayers` availability.** WHY-01 wiring needs the full player pool for `computeLifecycleLabel`. Whether `TransferPanel.tsx` already has it in scope vs needs threading is a Phase 4 detail — safe fallback is local `computeLifecycleLabel` recomputation.
+
+7. **Prompt caching trigger threshold.** Defer until system prompt exceeds 1024 tokens OR a batch pre-generation pattern is adopted. Capability is installed; the cost math doesn't pay off at current scale.
 
 ---
 
 ## Sources
 
-### Primary (HIGH confidence)
-- `package.json` — direct read of dependency versions (all milestones)
-- `pipeline/simulate.py` — MC implementation confirmed (v1.18)
-- `src/lib/types.ts` lines 184–198 — MC fields on `MergedPlayer` confirmed (v1.18)
-- `src/components/accuracy/AccuracyTab.tsx` lines 394–524 — calibration chart confirmed (v1.18)
-- `src/lib/sensitivity.ts` — `computeFragility()` confirmed (v1.18)
-- `src/components/squad/ExplainPanel.tsx` — `rejectionReasons` prop confirmed (v1.18)
-- `src/app/api/prose-summary/route.ts` — SDK usage, model, guardrail pattern confirmed (v1.18)
-- `node_modules/@anthropic-ai/sdk/lib/MessageStream.d.ts` — streaming API surface confirmed (v1.18)
-- `node_modules/@anthropic-ai/sdk/resources/messages/messages.d.ts` — `messages.stream()` confirmed (v1.18)
-- `node_modules/recharts/types/index.d.ts` — chart component exports confirmed (v1.18)
-- [Anthropic Models Overview](https://platform.claude.com/docs/en/about-claude/models/overview) — `claude-haiku-4-5` alias, pricing verified 2026-05-12 (v1.18)
-- `pipeline/requirements.txt` + `.github/workflows/pipeline.yml` — Python deps (v1.14/v1.16)
-- `pipeline/merge.py:992` + `src/lib/types.ts:26,129` — `news` field (v1.16)
-- `src/lib/manual-plan.ts:5` — localStorage precedent (v1.16)
-- [GitHub Actions events docs](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows) — cron limits, dispatch types (v1.16)
+### Primary (HIGH confidence — direct verification)
+- `C:\Users\jamie\fplx\package.json` — installed dep versions (Next 16.2.1, React 19.2.4, recharts 3.8.1, `@anthropic-ai/sdk` 0.93.0, TanStack Query 5.95.2, Zod 4.3.6)
+- `C:\Users\jamie\fplx\node_modules\@anthropic-ai\sdk\package.json` — confirms `0.93.0`
+- `C:\Users\jamie\fplx\node_modules\recharts\package.json` — confirms `3.8.1`
+- `C:\Users\jamie\fplx\pipeline\requirements.txt` — `numpy>=1.26.0`, `anthropic>=0.98.1`
+- `C:\Users\jamie\fplx\.github\workflows\pipeline.yml:46` — workflow pin `anthropic==0.40.0` (mismatch with requirements floor)
+- `C:\Users\jamie\fplx\pipeline\simulate.py` — full MC implementation; `N_SIMS = max(1000, MC_ITERATIONS env)`, `MC_SEED` env, `numpy.random.default_rng()`
+- `C:\Users\jamie\fplx\pipeline\saves.py:14` — documented "scipy is NOT available in the runtime environment"
+- `C:\Users\jamie\fplx\pipeline\prose_summary.py` — Python Claude call pattern, two-attempt guardrail, `claude-haiku-4-5`
+- `C:\Users\jamie\fplx\src\app\api\prose-summary\route.ts` — Node runtime, `maxDuration = 30`, non-streaming POST, Zod body validation, guardrail retry pattern (mirror target for NLP-02)
+- `C:\Users\jamie\fplx\src\lib\sensitivity.ts` — `computeFragility()` tristate engine
+- `C:\Users\jamie\fplx\src\lib\explain.ts` — `computeRejection()` 8-predicate cascade
+- `C:\Users\jamie\fplx\pipeline\cache\merged_players.json` — MC fields (`blank_prob`, `haul_prob`, `p10_pts`, `p90_pts`) verified present 2026-05-13
+- `C:\Users\jamie\fplx\pipeline\run.py:193-223` — `mc_enabled` gate mechanism
+- Context7 `/anthropics/anthropic-sdk-typescript` (2026-05-13) — `CacheControlEphemeral` interface, `'extended-cache-ttl-2025-04-11'` beta header, `BetaCacheControlEphemeral`, prompt-cache pre-warming via `max_tokens: 0`
+- [Anthropic Models Overview](https://platform.claude.com/docs/en/about-claude/models/overview) — verified 2026-05-13: `claude-haiku-4-5` → `claude-haiku-4-5-20251001`, $1/$5 per MTok, 200k ctx; deprecation list (`claude-sonnet-4-20250514`, `claude-opus-4-20250514` retiring 2026-06-15)
 
 ### Secondary (MEDIUM confidence)
-- `npm view react-sparklines` — maintenance assessment (v1.16)
-- GitHub issue anthropics/anthropic-sdk-typescript#292 — Edge Runtime SSE incompatibility (v1.18)
+- GitHub issue anthropics/anthropic-sdk-typescript#292 — Edge Runtime SSE parsing failure (single source; Node.js runtime is the safer default regardless)
+- v1.16 STACK.md decision log — `react-sparklines` unmaintained, localStorage > IndexedDB at this scale
 
 ### Tertiary (LOW confidence)
-- None — every claim traces to a verified source.
+- None — every recommendation traces to HIGH or MEDIUM verified sources.
 
 ---
-*v1.14 entries retained as carry-forward summary. v1.16 delta added 2026-05-09. v1.18 delta added 2026-05-12.*
+
+*Researched 2026-05-13. v1.18 stack delta is purely activation + wire-up — zero new dependencies, one new route handler, three new component files. Pipeline-side hygiene: align `anthropic` pin, make `numpy` explicit, set `MC_ITERATIONS=10000`.*
