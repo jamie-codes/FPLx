@@ -501,6 +501,7 @@ def _compute_calibration_data(per_gw_rows: dict) -> dict:
     per decile, by position (1=GK, 2=DEF, 3=MID, 4=FWD) and aggregated across all positions.
 
     D-07: filter buckets with sample_n < 5 (they appear as gaps in the chart, not zeros).
+    Phase 103 D-01/D-03 tightens per-position thresholds (15 for GK/DEF, 8 for MID/FWD) and adds a < 50 position-pool guard.
     Open Question 1 resolution: predicted_rate == bucket_mid (decile midpoint as fraction).
 
     Returns:
@@ -536,10 +537,23 @@ def _compute_calibration_data(per_gw_rows: dict) -> dict:
 
     by_position: dict = {}
     for pos_key in ('all', '1', '2', '3', '4'):
+        # Phase 103 CAL-01 / D-03: position-pool guard. Hide the chart entirely (empty
+        # array) when an individual position has < 50 total observations. 'all' aggregate
+        # (~200 obs/decile) is exempt; only per-position tabs need this gate.
+        if pos_key != 'all' and sum(bucket_total[pos_key].values()) < 50:
+            by_position[pos_key] = []
+            continue
         buckets: list = []
         for d in range(10):
             total = bucket_total[pos_key][d]
-            if total < 5:  # D-07: sparse-bucket filter (Pitfall 5: omit, do not zero)
+            # Phase 103 CAL-01 / D-01: position-aware sparse-bucket filter.
+            # PMC 7923594: a single haulting GK shifts actual_rate by 12pp at sample_n~8.
+            # GK/DEF need >=15 obs; MID/FWD need >=8; 'all' aggregate keeps the old >=5 gate.
+            if pos_key in ('1', '2') and total < 15:
+                continue
+            if pos_key in ('3', '4') and total < 8:
+                continue
+            if pos_key == 'all' and total < 5:
                 continue
             haul = bucket_haul[pos_key][d]
             buckets.append({
