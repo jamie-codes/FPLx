@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // Phase 101 GWT-01 + UX-01: column header tests for OpportunityCostTable
 // Phase 104 WHY-01: sell-side rejection reasons tests
-// Phase 105 NLP-02: gw prop threading + PlayerInsightSection presence stubs
+// Phase 105 NLP-02: gw prop threading + PlayerInsightSection presence
 import { describe, it, expect, vi } from 'vitest'
 import { render } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -11,14 +11,21 @@ import type { OCSRow } from '@/lib/opportunity-cost'
 import type { ScoredPlayer } from '@/lib/types'
 import type { LifecycleLabel } from '@/lib/lifecycle-label'
 
-// Wave 0: usePlayerInsight module does not exist yet.
-// vi.mock is registered here so that when Wave 1 creates the module, the mock activates.
-// The factory provides the mock implementation for all tests in this file.
-// No static import is added in Wave 0 — module resolution would fail during transform.
+// Phase 105 NLP-02: mock usePlayerInsight hook and PlayerInsightSection component.
+// Both are mocked so this test file renders cleanly and we can assert on call args and DOM presence.
 vi.mock('@/lib/hooks/usePlayerInsight', () => ({
   usePlayerInsight: vi.fn().mockReturnValue({ mutate: vi.fn(), isPending: false, isError: false, error: null }),
   readCachedInsight: vi.fn().mockReturnValue(null),
 }))
+
+vi.mock('@/components/shared/PlayerInsightSection', () => ({
+  PlayerInsightSection: vi.fn(() =>
+    createElement('div', { 'data-testid': 'player-insight-section' }, 'mock-section'),
+  ),
+}))
+
+import { usePlayerInsight } from '@/lib/hooks/usePlayerInsight'
+import { PlayerInsightSection } from '@/components/shared/PlayerInsightSection'
 
 function withQueryClient(ui: React.ReactElement) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
@@ -112,7 +119,7 @@ function makeComboFreeRow(sell1: ScoredPlayer, buy1: ScoredPlayer, sell2: Scored
 describe('OpportunityCostTable column header', () => {
   it('renders "xPts Gain (Next 1 GW)" in horizon mode with horizon=1 (singular)', () => {
     const { container } = render(
-      <OpportunityCostTable rows={[makeRollRow()]} horizon={1} allPlayers={[]} lifecycleLabels={new Map()} />
+      <OpportunityCostTable rows={[makeRollRow()]} horizon={1} gw={0} allPlayers={[]} lifecycleLabels={new Map()} />
     )
     const th = container.querySelector('thead th:nth-child(3)')
     expect(th?.textContent).toContain('Next 1 GW')
@@ -121,7 +128,7 @@ describe('OpportunityCostTable column header', () => {
 
   it('renders "xPts Gain (Next 3 GWs)" in horizon mode with horizon=3 (plural)', () => {
     const { container } = render(
-      <OpportunityCostTable rows={[makeRollRow()]} horizon={3} allPlayers={[]} lifecycleLabels={new Map()} />
+      <OpportunityCostTable rows={[makeRollRow()]} horizon={3} gw={0} allPlayers={[]} lifecycleLabels={new Map()} />
     )
     const th = container.querySelector('thead th:nth-child(3)')
     expect(th?.textContent).toContain('Next 3 GWs')
@@ -129,7 +136,7 @@ describe('OpportunityCostTable column header', () => {
 
   it('renders "xPts Gain (Next 5 GWs)" in horizon mode with horizon=5 (plural)', () => {
     const { container } = render(
-      <OpportunityCostTable rows={[makeRollRow()]} horizon={5} allPlayers={[]} lifecycleLabels={new Map()} />
+      <OpportunityCostTable rows={[makeRollRow()]} horizon={5} gw={0} allPlayers={[]} lifecycleLabels={new Map()} />
     )
     const th = container.querySelector('thead th:nth-child(3)')
     expect(th?.textContent).toContain('Next 5 GWs')
@@ -137,7 +144,7 @@ describe('OpportunityCostTable column header', () => {
 
   it('renders "xPts Gain (GW33)" in GWT mode with targetGw=33', () => {
     const { container } = render(
-      <OpportunityCostTable rows={[makeRollRow()]} horizon={1} targetGw={33} allPlayers={[]} lifecycleLabels={new Map()} />
+      <OpportunityCostTable rows={[makeRollRow()]} horizon={1} targetGw={33} gw={33} allPlayers={[]} lifecycleLabels={new Map()} />
     )
     const th = container.querySelector('thead th:nth-child(3)')
     expect(th?.textContent).toContain('xPts Gain (GW33)')
@@ -146,7 +153,7 @@ describe('OpportunityCostTable column header', () => {
 
   it('renders "xPts Gain (GW36)" in GWT mode with targetGw=36', () => {
     const { container } = render(
-      <OpportunityCostTable rows={[makeRollRow()]} horizon={5} targetGw={36} allPlayers={[]} lifecycleLabels={new Map()} />
+      <OpportunityCostTable rows={[makeRollRow()]} horizon={5} targetGw={36} gw={36} allPlayers={[]} lifecycleLabels={new Map()} />
     )
     const th = container.querySelector('thead th:nth-child(3)')
     expect(th?.textContent).toContain('xPts Gain (GW36)')
@@ -154,7 +161,7 @@ describe('OpportunityCostTable column header', () => {
 
   it('falls back to horizon when targetGw is undefined', () => {
     const { container } = render(
-      <OpportunityCostTable rows={[makeRollRow()]} horizon={3} targetGw={undefined} allPlayers={[]} lifecycleLabels={new Map()} />
+      <OpportunityCostTable rows={[makeRollRow()]} horizon={3} targetGw={undefined} gw={0} allPlayers={[]} lifecycleLabels={new Map()} />
     )
     const th = container.querySelector('thead th:nth-child(3)')
     expect(th?.textContent).toContain('Next 3 GWs')
@@ -170,6 +177,7 @@ describe('OpportunityCostTable WHY-01 sell rejection reasons', () => {
       <OpportunityCostTable
         rows={[makeSingleFreeRow(strongSell, buy)]}
         horizon={1}
+        gw={0}
         allPlayers={allPlayers}
         lifecycleLabels={new Map()}
       />
@@ -187,6 +195,7 @@ describe('OpportunityCostTable WHY-01 sell rejection reasons', () => {
       <OpportunityCostTable
         rows={[makeSingleFreeRow(weakSell, buy)]}
         horizon={1}
+        gw={0}
         allPlayers={[weakSell, buy]}
         lifecycleLabels={new Map()}
       />
@@ -214,6 +223,7 @@ describe('OpportunityCostTable WHY-01 sell rejection reasons', () => {
       <OpportunityCostTable
         rows={[makeSingleFreeRow(heavySell, buy)]}
         horizon={1}
+        gw={0}
         allPlayers={[heavySell, buy]}
         lifecycleLabels={lifecycleLabels}
       />
@@ -238,6 +248,7 @@ describe('OpportunityCostTable WHY-01 sell rejection reasons', () => {
       <OpportunityCostTable
         rows={[makeComboFreeRow(sell1, buy1, sell2, buy2)]}
         horizon={1}
+        gw={0}
         allPlayers={[sell1, sell2, buy1, buy2]}
         lifecycleLabels={new Map()}
       />
@@ -250,11 +261,49 @@ describe('OpportunityCostTable WHY-01 sell rejection reasons', () => {
 })
 
 describe('Phase 105 NLP-02 integration', () => {
-  // Wave 0 stubs — these tests will be implemented in Wave 1 once:
-  // 1. usePlayerInsight module exists at src/lib/hooks/usePlayerInsight.ts
-  // 2. PlayerInsightSection component exists at src/components/shared/PlayerInsightSection.tsx
-  // 3. OpportunityCostTable accepts a `gw` prop and passes it to PlayerMoveCell
-  it.todo('gw prop is threaded to PlayerMoveCell — usePlayerInsight called with (playerId, 35)')
-  it.todo('PlayerInsightSection absent on roll rows')
-  it.todo('PlayerInsightSection present on buy-candidate rows')
+  it('gw prop is threaded to PlayerMoveCell — PlayerInsightSection rendered with gw=35 and buy player id=200', () => {
+    vi.mocked(PlayerInsightSection).mockClear()
+    const buy = makeScoredPlayer({ id: 200, web_name: 'AnyBuy' })
+    const sell = makeScoredPlayer({ id: 100, web_name: 'AnySell' })
+    withQueryClient(
+      <OpportunityCostTable
+        rows={[makeSingleFreeRow(sell, buy)]}
+        horizon={1}
+        gw={35}
+        allPlayers={[sell, buy]}
+        lifecycleLabels={new Map()}
+      />
+    )
+    const calls = vi.mocked(PlayerInsightSection).mock.calls
+    const matchingCall = calls.find(call => (call[0] as { gw: number }).gw === 35)
+    expect(matchingCall).toBeDefined()
+  })
+
+  it('PlayerInsightSection absent on roll rows', () => {
+    const { container } = withQueryClient(
+      <OpportunityCostTable
+        rows={[makeRollRow()]}
+        horizon={1}
+        gw={35}
+        allPlayers={[]}
+        lifecycleLabels={new Map()}
+      />
+    )
+    expect(container.querySelector('[data-testid="player-insight-section"]')).toBeNull()
+  })
+
+  it('PlayerInsightSection present on buy-candidate rows', () => {
+    const buy = makeScoredPlayer({ id: 200, web_name: 'AnyBuy' })
+    const sell = makeScoredPlayer({ id: 100, web_name: 'AnySell' })
+    const { container } = withQueryClient(
+      <OpportunityCostTable
+        rows={[makeSingleFreeRow(sell, buy)]}
+        horizon={1}
+        gw={35}
+        allPlayers={[sell, buy]}
+        lifecycleLabels={new Map()}
+      />
+    )
+    expect(container.querySelector('[data-testid="player-insight-section"]')).not.toBeNull()
+  })
 })

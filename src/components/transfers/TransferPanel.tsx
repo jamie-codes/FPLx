@@ -431,6 +431,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
               rows={ocsRows}
               horizon={ocsHorizon}
               targetGw={targetGw ?? undefined}
+              gw={nextGw}
               allPlayers={scoredPlayers}
               lifecycleLabels={lifecycleLabels}
             />
