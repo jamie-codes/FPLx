@@ -318,3 +318,73 @@ describe('Phase 62: MC-04 captain enrichment', () => {
     expect(queryAllByTestId('mc-label-badge').length).toBe(0)
   })
 })
+
+// Phase 102 MC-02: CandidateRow inline P10/P90 range after pts (C).
+describe('Phase 102 MC-02: CandidateRow P10/P90 inline range', () => {
+  it('renders " · {p10}–{p90}" span after pts (C) when both p10_pts and p90_pts are defined', () => {
+    vi.mocked(usePlayers).mockReturnValue({ data: withMC(buildPlayers()), isLoading: false, error: null } as never)
+    const { container } = render(<CaptainPicksPanel />)
+    // withMC mcData[0] sets p10_pts=3.0, p90_pts=14.0 for the first player (id:101 Salah)
+    // Look for any element whose text content includes " · 3.0–14.0"
+    const range = Array.from(container.querySelectorAll('span')).find(
+      s => /·\s*3\.0\s*–\s*14\.0/.test(s.textContent ?? '')
+    )
+    expect(range).toBeDefined()
+  })
+
+  it('range span has classes text-xs text-zinc-400 dark:text-zinc-500 tabular-nums', () => {
+    vi.mocked(usePlayers).mockReturnValue({ data: withMC(buildPlayers()), isLoading: false, error: null } as never)
+    const { container } = render(<CaptainPicksPanel />)
+    const range = Array.from(container.querySelectorAll('span')).find(
+      s => /·\s*\d/.test(s.textContent ?? '') && /–/.test(s.textContent ?? '')
+    )
+    expect(range).toBeDefined()
+    const cls = range?.className ?? ''
+    expect(cls).toContain('text-xs')
+    expect(cls).toContain('text-zinc-400')
+    expect(cls).toContain('dark:text-zinc-500')
+    expect(cls).toContain('tabular-nums')
+  })
+
+  it('P10/P90 values are RAW (not doubled) — withMC p10=3.0 p90=14.0 renders " · 3.0–14.0" not " · 6.0–28.0"', () => {
+    vi.mocked(usePlayers).mockReturnValue({ data: withMC(buildPlayers()), isLoading: false, error: null } as never)
+    const { container } = render(<CaptainPicksPanel />)
+    // Doubled values should NOT appear anywhere in a range span
+    const doubledRange = Array.from(container.querySelectorAll('span')).find(
+      s => /·\s*6\.0\s*–\s*28\.0/.test(s.textContent ?? '')
+    )
+    expect(doubledRange).toBeUndefined()
+  })
+
+  it('does NOT render range span when p10_pts is absent (gate-off path)', () => {
+    // buildPlayers() returns players with NO MC fields
+    vi.mocked(usePlayers).mockReturnValue({ data: buildPlayers(), isLoading: false, error: null } as never)
+    const { container } = render(<CaptainPicksPanel />)
+    const range = Array.from(container.querySelectorAll('span')).find(
+      s => /·\s*\d.*–.*\d/.test(s.textContent ?? '')
+    )
+    expect(range).toBeUndefined()
+    // pts (C) span MUST still render (gate-off should not hide the captain card)
+    expect(container.textContent).toMatch(/pts \(C\)/)
+  })
+
+  it('does NOT render range span when only p90_pts is defined (p10_pts undefined)', () => {
+    const players = buildPlayers().map(p => ({ ...p, p90_pts: 14.0 })) as MergedPlayer[]
+    vi.mocked(usePlayers).mockReturnValue({ data: players, isLoading: false, error: null } as never)
+    const { container } = render(<CaptainPicksPanel />)
+    const range = Array.from(container.querySelectorAll('span')).find(
+      s => /·\s*\d.*–.*\d/.test(s.textContent ?? '')
+    )
+    expect(range).toBeUndefined()
+  })
+
+  it('renders range when p10_pts=0 and p90_pts=0 (BGW edge case — uses !== undefined, not falsy)', () => {
+    const players = buildPlayers().map((p, i) => i === 0 ? ({ ...p, p10_pts: 0, p90_pts: 0 } as MergedPlayer) : p)
+    vi.mocked(usePlayers).mockReturnValue({ data: players, isLoading: false, error: null } as never)
+    const { container } = render(<CaptainPicksPanel />)
+    const zeroRange = Array.from(container.querySelectorAll('span')).find(
+      s => /·\s*0\.0\s*–\s*0\.0/.test(s.textContent ?? '')
+    )
+    expect(zeroRange).toBeDefined()
+  })
+})

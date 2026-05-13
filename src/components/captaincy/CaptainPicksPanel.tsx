@@ -149,6 +149,11 @@ function CandidateRow({
       <span className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
         {((candidate.xPts_1gw ?? 0) * 2).toFixed(1)} pts (C)
       </span>
+      {candidate.p10_pts !== undefined && candidate.p90_pts !== undefined && (
+        <span className="text-xs text-zinc-400 dark:text-zinc-500 tabular-nums">
+          {' · '}{candidate.p10_pts.toFixed(1)}{'–'}{candidate.p90_pts.toFixed(1)}
+        </span>
+      )}
       {/* Fragility badge (Phase 93 SENS-01) — tristate; captain path skips cost perturbation (D-04) */}
       {(() => {
         const { tier, reasons } = computeFragility(candidate, false)
