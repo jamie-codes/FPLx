@@ -1295,9 +1295,9 @@ Plans:
 **Plans:** 3 plans
 
 **Wave 1** *(all parallel — zero file overlap)*
-- [ ] 102-01-PLAN.md — Flip mc_enabled gate to MC_ENABLED=True constant in pipeline/run.py + GitHub Actions hygiene (anthropic==0.98.1, numpy==2.2.3, MC_ITERATIONS=10000, MC_SEED=42)
-- [ ] 102-02-PLAN.md — Create MCDistributionBar component (src/components/mc/) and wire into XPtsCell hover card, replacing inline Blank%/Haul%/Floor/Ceiling rows
-- [ ] 102-03-PLAN.md — Add inline P10/P90 base-points range to CaptainPicksPanel CandidateRow after pts (C)
+- [x] 102-01-PLAN.md — Flip mc_enabled gate to MC_ENABLED=True constant in pipeline/run.py + GitHub Actions hygiene (anthropic==0.98.1, numpy==2.2.3, MC_ITERATIONS=10000, MC_SEED=42)
+- [x] 102-02-PLAN.md — Create MCDistributionBar component (src/components/mc/) and wire into XPtsCell hover card, replacing inline Blank%/Haul%/Floor/Ceiling rows
+- [x] 102-03-PLAN.md — Add inline P10/P90 base-points range to CaptainPicksPanel CandidateRow after pts (C)
 **Phase notes**: The `mc_enabled` flip is a single state change but unblocks every downstream MC consumer — including the NLP-02 prompt context Phase 105 depends on, so this must ship first. Confirm the flip mechanism during planning: `pipeline/run.py` line 203 reads the gate from the previous `accuracy_backtest.json`, so it is either a one-time direct Blob edit OR a pipeline patch that sets the flag from inside the run (validate cleaner path before opening the PR). Pitfall to avoid: do NOT port `simulate.py` MC into browser TypeScript — 700 players × 10k sims × `Math.random()` loops freeze the main thread for 2–5 seconds; the pipeline is authoritative and the browser reads pre-computed scalars only. Use Tailwind flex row (no Recharts at row scale) for `MCDistributionBar`.
 **UI hint**: yes
 
