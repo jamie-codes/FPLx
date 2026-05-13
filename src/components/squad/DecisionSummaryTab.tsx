@@ -578,7 +578,12 @@ export function DecisionSummaryTab({
                 ? `Using ${derivedFtCount} free transfer${derivedFtCount > 1 ? 's' : ''} · detected from your team`
                 : 'Using 1 free transfer (default)'}
             </p>
-            <OpportunityCostTable rows={ocsRows} horizon={1} />
+            <OpportunityCostTable
+              rows={ocsRows}
+              horizon={1}
+              allPlayers={scoredPlayers}
+              lifecycleLabels={lifecycleLabels}
+            />
           </div>
         ) : (
           <NoSquadPlaceholder />
