@@ -132,11 +132,10 @@ describe('Phase 41 ACC-05: last_gw_actual_pts column', () => {
   })
 })
 
-// Phase 61 MC-02 — XPtsCell hover-card MC row rendering (Blank%, Haul%, Floor, Ceiling)
-// RED until 061-03 extends XPtsCell with blankProb/haulProb/p10Pts/p90Pts props.
-describe('XPtsCell — Phase 61 MC-02 hover card MC rows', () => {
-  it('renders MC rows when blankProb/haulProb/p10Pts/p90Pts present and window===1', () => {
-    render(
+// Phase 102 MC-01: XPtsCell hover card now uses MCDistributionBar (replaces Phase 61 Blank%/Haul%/Floor/Ceiling text rows).
+describe('XPtsCell — Phase 102 MC-01 hover card MCDistributionBar', () => {
+  it('renders MCDistributionBar when blankProb/haulProb/p10Pts/p90Pts present and window===1', () => {
+    const { container } = render(
       <XPtsCell
         value={5.5}
         ceiling={false}
@@ -148,20 +147,42 @@ describe('XPtsCell — Phase 61 MC-02 hover card MC rows', () => {
         p90Pts={11.8}
       />
     )
-    // Labels (D-12: short labels `Blank%` / `Haul%` / `Floor` / `Ceiling`)
-    expect(screen.getByText('Blank%')).toBeTruthy()
-    expect(screen.getByText('Haul%')).toBeTruthy()
-    expect(screen.getByText('Floor')).toBeTruthy()
-    expect(screen.getByText('Ceiling')).toBeTruthy()
-    // Values (D-14: integer percent for blank/haul; 1 decimal for floor/ceiling)
-    expect(screen.getByText('23%')).toBeTruthy()
-    expect(screen.getByText('41%')).toBeTruthy()
+    // P10 / P90 labels rendered by MCDistributionBar
     expect(screen.getByText('3.2')).toBeTruthy()
     expect(screen.getByText('11.8')).toBeTruthy()
+    // aria-label on the track
+    const track = container.querySelector('[role="img"][aria-label="MC range: 3.2 to 11.8 pts"]')
+    expect(track).not.toBeNull()
+    // Haul% amber row (haulProb=0.41 >= 0.40)
+    expect(screen.getByText(/Haul 41%/)).toBeTruthy()
+    // Removed labels MUST NOT render any more
+    expect(screen.queryByText('Blank%')).toBeNull()
+    expect(screen.queryByText('Haul%')).toBeNull()
+    expect(screen.queryByText('Floor')).toBeNull()
+    expect(screen.queryByText('Ceiling')).toBeNull()
   })
 
-  it('omits MC rows when window===3 (multi-GW window suppresses breakdown card entirely)', () => {
+  it('does not render Haul% row when haulProb < 0.40', () => {
     render(
+      <XPtsCell
+        value={5.5}
+        ceiling={false}
+        components={FULL_COMPONENTS}
+        window={1}
+        blankProb={0.23}
+        haulProb={0.30}
+        p10Pts={3.2}
+        p90Pts={11.8}
+      />
+    )
+    // Bar still renders (P10/P90 labels visible) but no Haul row
+    expect(screen.getByText('3.2')).toBeTruthy()
+    expect(screen.getByText('11.8')).toBeTruthy()
+    expect(screen.queryByText(/Haul/)).toBeNull()
+  })
+
+  it('omits MCDistributionBar when window===3 (multi-GW window suppresses MC)', () => {
+    const { container } = render(
       <XPtsCell
         value={15.0}
         ceiling={false}
@@ -173,14 +194,12 @@ describe('XPtsCell — Phase 61 MC-02 hover card MC rows', () => {
         p90Pts={20.0}
       />
     )
-    expect(screen.queryByText('Blank%')).toBeNull()
-    expect(screen.queryByText('Haul%')).toBeNull()
-    expect(screen.queryByText('Floor')).toBeNull()
-    expect(screen.queryByText('Ceiling')).toBeNull()
+    expect(container.querySelector('[role="img"]')).toBeNull()
+    expect(screen.queryByText(/Haul/)).toBeNull()
   })
 
-  it('omits MC rows when window===5', () => {
-    render(
+  it('omits MCDistributionBar when window===5', () => {
+    const { container } = render(
       <XPtsCell
         value={25.0}
         ceiling={false}
@@ -192,10 +211,24 @@ describe('XPtsCell — Phase 61 MC-02 hover card MC rows', () => {
         p90Pts={30.0}
       />
     )
-    expect(screen.queryByText('Blank%')).toBeNull()
-    expect(screen.queryByText('Haul%')).toBeNull()
-    expect(screen.queryByText('Floor')).toBeNull()
-    expect(screen.queryByText('Ceiling')).toBeNull()
+    expect(container.querySelector('[role="img"]')).toBeNull()
+    expect(screen.queryByText(/Haul/)).toBeNull()
+  })
+
+  it('omits MCDistributionBar when any of the 4 MC props is undefined (gate-off degradation)', () => {
+    const { container } = render(
+      <XPtsCell
+        value={5.5}
+        ceiling={false}
+        components={FULL_COMPONENTS}
+        window={1}
+        blankProb={0.23}
+        haulProb={undefined}
+        p10Pts={3.2}
+        p90Pts={11.8}
+      />
+    )
+    expect(container.querySelector('[role="img"]')).toBeNull()
   })
 })
 
