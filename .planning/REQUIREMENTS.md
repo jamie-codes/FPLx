@@ -15,13 +15,13 @@
 
 ### Calibration
 
-- [ ] **CAL-01**: GK/DEF calibration position tab no longer shows misleading miscalibration signals caused by sparse data — sparse-bucket threshold raised from `sample_n < 5` to `sample_n < 15` for GK/DEF and `sample_n < 8` for MID/FWD in `pipeline/accuracy.py`; chart hidden entirely if position pool total < 50 observations
-- [ ] **CAL-02**: User can see a one-sentence calibration health summary on the Decision Summary tab, derived from existing `useAccuracy` data (no new fetch or pipeline work)
+- [x] **CAL-01**: GK/DEF calibration position tab no longer shows misleading miscalibration signals caused by sparse data — sparse-bucket threshold raised from `sample_n < 5` to `sample_n < 15` for GK/DEF and `sample_n < 8` for MID/FWD in `pipeline/accuracy.py`; chart hidden entirely if position pool total < 50 observations
+- [x] **CAL-02**: User can see a one-sentence calibration health summary on the Decision Summary tab, derived from existing `useAccuracy` data (no new fetch or pipeline work)
 
 ### Sensitivity & Rejection Explainer
 
-- [ ] **SENS-01**: User can see a fragility indicator on each transfer buy candidate in TransferPanel — robust = silent (no badge), fragile = small amber dot, knife_edge = amber pill — computed by `computeFragility` with `isTransfer: true` context
-- [ ] **WHY-01**: User can expand a transfer sell candidate in TransferPanel to see the top-2 plain-English reasons why that player fell below the recommendation threshold (e.g. "xPts 4.2 < threshold 4.7"), computed by the existing `computeRejection` engine
+- [x] **SENS-01**: User can see a fragility indicator on each transfer buy candidate in TransferPanel — robust = silent (no badge), fragile = small amber dot, knife_edge = amber pill — computed by `computeFragility` with `isTransfer: true` context
+- [x] **WHY-01**: User can expand a transfer sell candidate in TransferPanel to see the top-2 plain-English reasons why that player fell below the recommendation threshold (e.g. "xPts 4.2 < threshold 4.7"), computed by the existing `computeRejection` engine
 
 ### Per-Player LLM Insights
 
