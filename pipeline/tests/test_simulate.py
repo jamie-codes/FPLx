@@ -255,9 +255,11 @@ def test_mc_enabled_off_skip(monkeypatch, tmp_path):
     )
     with open(run_py_path, 'r', encoding='utf-8') as f:
         run_source = f.read()
-    # The gate read line MUST exist
-    assert "mc_enabled = prev_backtest.get('summary', {}).get('mc_enabled', False)" in run_source, \
-        "run.py is missing mc_enabled gate read"
+    # The constant gate MUST exist
+    assert "MC_ENABLED = True" in run_source, \
+        "run.py is missing MC_ENABLED = True constant (Phase 102 D-05)"
+    assert "mc_enabled = MC_ENABLED" in run_source, \
+        "run.py is missing 'mc_enabled = MC_ENABLED' assignment (Phase 102 D-05)"
     # The conditional call MUST exist
     assert 'if mc_enabled:' in run_source, "run.py is missing `if mc_enabled:` guard"
 
