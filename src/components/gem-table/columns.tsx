@@ -9,6 +9,7 @@ import { VarianceBadge } from '@/components/gem-table/VarianceBadge'
 import { RegressionSignalBadge } from '@/components/gem-table/RegressionSignalBadge'
 import { DifferentialBadge } from '@/components/gem-table/DifferentialBadge'
 import { TeamBadge } from '@/components/shared/TeamBadge'
+import { MCDistributionBar } from '@/components/mc/MCDistributionBar'
 
 const col = createColumnHelper<ScoredPlayer>()
 
@@ -140,26 +141,12 @@ export function XPtsCell({
         <hr className="my-1 border-zinc-200 dark:border-zinc-600" />
         {showMC && (
           <>
-            <div className="flex justify-between">
-              <span className="text-zinc-500 dark:text-zinc-400">Blank%</span>
-              <span className="font-mono">{(blankProb! * 100).toFixed(0)}%</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-zinc-500 dark:text-zinc-400">Haul%</span>
-              <span className={
-                haulProb! >= 0.40
-                  ? 'font-mono text-amber-600 dark:text-amber-400'
-                  : 'font-mono'
-              }>{(haulProb! * 100).toFixed(0)}%</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-zinc-500 dark:text-zinc-400">Floor</span>
-              <span className="font-mono">{p10Pts!.toFixed(1)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-zinc-500 dark:text-zinc-400">Ceiling</span>
-              <span className="font-mono">{p90Pts!.toFixed(1)}</span>
-            </div>
+            <MCDistributionBar
+              blankProb={blankProb!}
+              haulProb={haulProb!}
+              p10Pts={p10Pts!}
+              p90Pts={p90Pts!}
+            />
             <hr className="my-1 border-zinc-200 dark:border-zinc-600" />
           </>
         )}
