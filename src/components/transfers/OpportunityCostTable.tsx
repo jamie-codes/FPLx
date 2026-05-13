@@ -6,16 +6,21 @@
 // Visual contract locked by .planning/phases/050-transfer-opportunity-cost-simulator/050-UI-SPEC.md.
 
 import type { OCSRow, OCSRowKind } from '@/lib/opportunity-cost'
-import type { OptimiserHorizon } from '@/lib/types'
+import type { OptimiserHorizon, ScoredPlayer } from '@/lib/types'
+import type { LifecycleLabel } from '@/lib/lifecycle-label'
 import { RotationRiskBadge } from '@/components/shared/RotationRiskBadge'
 import { NewsBanner } from '@/components/news/NewsBanner'
 import { computeFragility } from '@/lib/sensitivity'
 import { FragilityBadge } from '@/components/shared/FragilityBadge'
+import { computeRejection } from '@/lib/explain'
 
 interface OpportunityCostTableProps {
   rows: OCSRow[]
   horizon: OptimiserHorizon
   targetGw?: number   // Phase 101 GWT-01: when set, column header switches to "xPts Gain (GW{N})"
+  // Phase 104 WHY-01 (D-08): sell-side rejection reasons computed per-leg in PlayerMoveCell.
+  allPlayers: ScoredPlayer[]
+  lifecycleLabels: Map<number, LifecycleLabel>
 }
 
 interface BadgeConfig {
@@ -88,7 +93,15 @@ function formatBreakEven(row: OCSRow): string {
   return `${row.breakEvenGws} GWs`
 }
 
-function PlayerMoveCell({ row }: { row: OCSRow }) {
+function PlayerMoveCell({
+  row,
+  allPlayers,
+  lifecycleLabels,
+}: {
+  row: OCSRow
+  allPlayers: ScoredPlayer[]
+  lifecycleLabels: Map<number, LifecycleLabel>
+}) {
   if (row.kind === 'roll' || !row.transfers || row.transfers.length === 0) {
     return <span className="text-zinc-400 dark:text-zinc-500">—</span>
   }
@@ -97,6 +110,10 @@ function PlayerMoveCell({ row }: { row: OCSRow }) {
       {row.transfers.map((t, i) => {
         // Phase 93 SENS-01 (D-11): per-leg fragility for the BUY candidate (transfer path).
         const { tier, reasons } = computeFragility(t.buy, true, row.xPtsGainNet)
+        // Phase 104 WHY-01 (D-04, D-05, D-07): per-leg rejection reasons for the SELL candidate.
+        // computeRejection degrades gracefully when lifecycleLabels is new Map() (D-09).
+        const { reasons: sellReasons } = computeRejection(t.sell as unknown as ScoredPlayer, allPlayers, lifecycleLabels)
+        const sellReasonsCapped = sellReasons.slice(0, 4)
         return (
           <div key={i}>
             <div className="flex flex-wrap items-center gap-x-2 text-sm text-zinc-900 dark:text-zinc-100">
@@ -113,6 +130,16 @@ function PlayerMoveCell({ row }: { row: OCSRow }) {
                 chance_of_playing_next_round={t.buy.chance_of_playing_next_round}
               />
             </div>
+            {/* Phase 104 WHY-01 (D-02, D-03, D-05): always-visible inline sell-side rejection reasons. */}
+            {sellReasonsCapped.length > 0 && (
+              <div className="space-y-1 mt-1" data-testid="sell-rejection-reasons">
+                {sellReasonsCapped.map((reason, ri) => (
+                  <p key={ri} className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {reason}
+                  </p>
+                ))}
+              </div>
+            )}
             {tier !== 'robust' && <FragilityBadge tier={tier} reasons={reasons} />}
           </div>
         )
@@ -121,7 +148,7 @@ function PlayerMoveCell({ row }: { row: OCSRow }) {
   )
 }
 
-export function OpportunityCostTable({ rows, horizon, targetGw }: OpportunityCostTableProps) {
+export function OpportunityCostTable({ rows, horizon, targetGw, allPlayers, lifecycleLabels }: OpportunityCostTableProps) {
   const onlyRoll = rows.length === 1 && rows[0]?.kind === 'roll'
 
   return (
@@ -155,7 +182,7 @@ export function OpportunityCostTable({ rows, horizon, targetGw }: OpportunityCos
                   {row.label}
                 </td>
                 <td className="py-2 align-top">
-                  <PlayerMoveCell row={row} />
+                  <PlayerMoveCell row={row} allPlayers={allPlayers} lifecycleLabels={lifecycleLabels} />
                 </td>
                 <td className="py-2 text-right align-top text-zinc-900 dark:text-zinc-100">
                   <div className={isDisabled ? 'line-through text-zinc-400 dark:text-zinc-600' : ''}>

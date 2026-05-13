@@ -45,7 +45,7 @@ function makeScoredPlayer(overrides: Partial<ScoredPlayer> = {}): ScoredPlayer {
     selected_by_percent: '25.0',
     cost_change_event: 0,
     rotation_risk: false,
-    fixtures: [{ event_id: 33, difficulty_tier: 'easy', is_home: true, opponent_team: 2 }],
+    fixtures: [{ event_id: 33, difficulty_tier: 'easy', is_home: true, opponent_team: 'MCI' }],
     xg_per90: 0.4,
     xa_per90: 0.2,
     news: '',
@@ -197,7 +197,7 @@ describe('OpportunityCostTable WHY-01 sell rejection reasons', () => {
       start_prob: 0.3,           // rotation risk (< 0.70)
       form_pts_per90: 1.0,       // poor form (< 3.0)
       cost_change_event: -2,     // price falling (< 0)
-      fixtures: [{ event_id: 33, difficulty_tier: 'hard', is_home: false, opponent_team: 5 }],
+      fixtures: [{ event_id: 33, difficulty_tier: 'hard', is_home: false, opponent_team: 'ARS' }],
       selected_by_percent: '4.0', // low ownership (≤ 20%)
     })
     const buy = makeScoredPlayer({ id: 202, web_name: 'AnyBuy' })
