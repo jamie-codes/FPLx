@@ -427,7 +427,13 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
                 Ranked by GW{targetGw} xPts
               </p>
             )}
-            <OpportunityCostTable rows={ocsRows} horizon={ocsHorizon} targetGw={targetGw ?? undefined} />
+            <OpportunityCostTable
+              rows={ocsRows}
+              horizon={ocsHorizon}
+              targetGw={targetGw ?? undefined}
+              allPlayers={scoredPlayers}
+              lifecycleLabels={lifecycleLabels}
+            />
           </div>
 
           {/* Phase 74 D-02: legacy section removed */}
