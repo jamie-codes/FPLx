@@ -913,6 +913,32 @@ export interface ProseRefreshPayload {
   risks: ReadonlyArray<{ name: string; label: string }>
 }
 
+// Phase 105 NLP-02 — Per-player LLM insight types
+// PlayerInsightRequest: POST body sent to /api/player-insight
+export interface PlayerInsightRequest {
+  gw: number
+  player: {
+    id: number
+    web_name: string
+    element_type: PositionCode
+    haul_prob?: number   // MC field — present when mc_enabled=true in pipeline
+    blank_prob?: number  // MC field — present when mc_enabled=true in pipeline
+    p10_pts?: number     // MC field — present when mc_enabled=true in pipeline
+    p90_pts?: number     // MC field — present when mc_enabled=true in pipeline
+  }
+  rejection_reasons: string[]
+  fragility: { tier: 'robust' | 'fragile' | 'knife_edge'; reasons: string[] }
+  lifecycle_label?: string  // optional — absent when lifecycle not computed
+}
+
+// PlayerInsightResponse: JSON body returned by POST /api/player-insight on success
+export interface PlayerInsightResponse {
+  prose: string
+  player_id: number
+  gw: number
+  generated_at: string  // ISO 8601 UTC
+}
+
 // Phase 73 PGW-01 / PGW-02: Post-GW Review (D-05..D-08 in 073-CONTEXT.md)
 // Phase 98 PGW-01: best bench player surfaced as info row (D-08, D-09 in 098-CONTEXT.md)
 // Returned by GET /api/gw-review?teamId=&gw= ; consumed by useGwReview + GwReviewTab.
