@@ -31,6 +31,8 @@ jobs:
       USE_BLOB: 'true'
       BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      MC_ITERATIONS: 10000
+      MC_SEED: 42
 
     steps:
       - name: Checkout repository
@@ -43,7 +45,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests==2.32.3 pandas==2.2.3 vercel-blob==0.4.2 python-dotenv==1.0.1 anthropic==0.40.0
+          pip install requests==2.32.3 pandas==2.2.3 vercel-blob==0.4.2 python-dotenv==1.0.1 anthropic==0.98.1 numpy==2.2.3
 
       - name: Check deadline gate
         id: gate
