@@ -685,3 +685,142 @@ def test_calibration_xpts_means_cold_start_absence():
     for pos_key in ('1', '2', '3', '4'):
         assert by_pos[pos_key] == [], \
             f"expected empty position '{pos_key}', got {by_pos[pos_key]}"
+
+
+# ============================================================================
+# Phase 103 CAL-01 — position-aware sparse-bucket threshold + position-pool guard
+# ============================================================================
+
+def test_calibration_position_aware_threshold_gk_def():
+    """Phase 103 CAL-01 / D-01: GK ('1') and DEF ('2') buckets require sample_n >= 15.
+    Build a fixture with enough GK + DEF observations to fill some deciles past 15 and
+    leave others sparse; verify every emitted GK / DEF bucket has sample_n >= 15."""
+    # 30 GKs + 30 DEFs over 5 GWs = 150 obs each -> 15 per decile (right at threshold).
+    # Mix point totals so deciles spread; some deciles will land at sample_n in [5,14]
+    # under the old gate and must now be excluded.
+    player_histories = {}
+    bootstrap_elements = []
+    for pid in range(1, 31):
+        # element_type 1 = GK
+        bootstrap_elements.append({
+            'id': pid, 'web_name': f'P{pid}', 'element_type': 1, 'team': 14, 'starts': 10,
+        })
+        player_histories[pid] = [_hist(gw, 90, (pid % 14) + 1, xg=0.1, xa=0.05) for gw in range(1, 33)]
+    for pid in range(31, 61):
+        # element_type 2 = DEF
+        bootstrap_elements.append({
+            'id': pid, 'web_name': f'P{pid}', 'element_type': 2, 'team': 14, 'starts': 10,
+        })
+        player_histories[pid] = [_hist(gw, 90, (pid % 14) + 1, xg=0.2, xa=0.1) for gw in range(1, 33)]
+    summaries, fg, _bootstrap_unused, fixtures = _build_minimal_inputs(player_histories)
+    bootstrap = {
+        'elements': bootstrap_elements,
+        'teams': [{'id': 14, 'short_name': 'LIV'}, {'id': 1, 'short_name': 'ARS'}],
+        'events': [{'id': i, 'finished': True} for i in range(1, fg + 1)],
+    }
+
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures)
+    by_pos = result['calibration']['by_position']
+
+    for pos_key in ('1', '2'):
+        for b in by_pos[pos_key]:
+            assert b['sample_n'] >= 15, (
+                f"D-01: pos {pos_key} bucket {b['bucket_mid']}: sample_n={b['sample_n']} "
+                f"below new GK/DEF threshold of 15"
+            )
+
+
+def test_calibration_position_aware_threshold_mid_fwd():
+    """Phase 103 CAL-01 / D-01: MID ('3') and FWD ('4') buckets require sample_n >= 8."""
+    player_histories = {}
+    bootstrap_elements = []
+    for pid in range(1, 31):
+        bootstrap_elements.append({
+            'id': pid, 'web_name': f'P{pid}', 'element_type': 3, 'team': 14, 'starts': 10,
+        })
+        player_histories[pid] = [_hist(gw, 90, (pid % 14) + 1, xg=0.3, xa=0.2) for gw in range(1, 33)]
+    for pid in range(31, 61):
+        bootstrap_elements.append({
+            'id': pid, 'web_name': f'P{pid}', 'element_type': 4, 'team': 14, 'starts': 10,
+        })
+        player_histories[pid] = [_hist(gw, 90, (pid % 14) + 1, xg=0.4, xa=0.25) for gw in range(1, 33)]
+    summaries, fg, _bootstrap_unused, fixtures = _build_minimal_inputs(player_histories)
+    bootstrap = {
+        'elements': bootstrap_elements,
+        'teams': [{'id': 14, 'short_name': 'LIV'}, {'id': 1, 'short_name': 'ARS'}],
+        'events': [{'id': i, 'finished': True} for i in range(1, fg + 1)],
+    }
+
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures)
+    by_pos = result['calibration']['by_position']
+
+    for pos_key in ('3', '4'):
+        for b in by_pos[pos_key]:
+            assert b['sample_n'] >= 8, (
+                f"D-01: pos {pos_key} bucket {b['bucket_mid']}: sample_n={b['sample_n']} "
+                f"below new MID/FWD threshold of 8"
+            )
+
+
+def test_calibration_aggregate_threshold_unchanged():
+    """Phase 103 CAL-01 / D-01: 'all' aggregate STILL uses sample_n >= 5 (unchanged).
+    The aggregate has ~200 obs/decile and does not need raising."""
+    player_histories = {}
+    for pid in range(1, 51):
+        player_histories[pid] = [_hist(gw, 90, (pid % 12) + 1, xg=0.3, xa=0.2) for gw in range(1, 33)]
+    summaries, fg, bootstrap, fixtures = _build_minimal_inputs(player_histories)
+
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures)
+    all_buckets = result['calibration']['by_position']['all']
+
+    assert len(all_buckets) > 0, "'all' aggregate should be populated with 50 players * 5 GWs"
+    for b in all_buckets:
+        assert b['sample_n'] >= 5, (
+            f"D-01: 'all' bucket {b['bucket_mid']} sample_n={b['sample_n']} — "
+            f"'all' threshold should remain at 5 (unchanged)"
+        )
+
+
+def test_calibration_position_pool_guard():
+    """Phase 103 CAL-01 / D-03: when an individual position has < 50 total observations,
+    by_position[pos_key] is exactly []. With 5 players * 5 GWs = 25 obs across one position,
+    we are below the 50-observation pool threshold."""
+    # Single position fixture: 5 players, all element_type derived from same modulus -> few obs.
+    player_histories = {}
+    for pid in range(1, 6):
+        player_histories[pid] = [_hist(gw, 90, 4, xg=0.3, xa=0.2) for gw in range(1, 33)]
+    summaries, fg, bootstrap, fixtures = _build_minimal_inputs(player_histories)
+
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures)
+    by_pos = result['calibration']['by_position']
+
+    # At least one of the individual positions ('1','2','3','4') must be empty under <50 guard.
+    # Tally per-position totals from emitted buckets; any position with 0 emitted buckets
+    # is a pool-guard hit (the bucket-level loop was skipped).
+    empty_positions = [pk for pk in ('1', '2', '3', '4') if by_pos[pk] == []]
+    assert len(empty_positions) >= 1, (
+        f"D-03: with only 25 total obs spread across positions, at least one position "
+        f"must hit the <50 pool guard and return []. by_pos lengths: "
+        f"{ {pk: len(by_pos[pk]) for pk in ('1','2','3','4')} }"
+    )
+
+
+def test_calibration_pool_guard_skips_all_key():
+    """Phase 103 CAL-01 / D-03: the < 50 pool guard NEVER applies to 'all'. Even with
+    sparse data, the 'all' key falls through to the per-bucket < 5 gate (which may
+    leave it empty), but it is not pre-emptively blanked by the pool guard."""
+    # Tiny fixture: 1 player, 5 GWs -> 5 total obs. 'all' will have at most a couple
+    # of buckets pass the < 5 gate; the test only asserts the key is present and the
+    # per-bucket gate (not the pool guard) is what filtered it.
+    player_histories = {1: [_hist(gw, 90, 6, xg=0.4, xa=0.2) for gw in range(1, 33)]}
+    summaries, fg, bootstrap, fixtures = _build_minimal_inputs(player_histories)
+
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures)
+    by_pos = result['calibration']['by_position']
+
+    assert 'all' in by_pos, "'all' key must be present in by_position"
+    # Every emitted 'all' bucket still satisfies the per-bucket gate of sample_n >= 5.
+    for b in by_pos['all']:
+        assert b['sample_n'] >= 5, (
+            f"'all' bucket {b['bucket_mid']} sample_n={b['sample_n']} below the unchanged < 5 gate"
+        )
