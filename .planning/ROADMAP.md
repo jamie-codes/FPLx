@@ -1312,8 +1312,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 103-01-PLAN.md — Position-aware sparse-bucket threshold + position-pool guard in pipeline/accuracy.py (Python — CAL-01)
-- [ ] 103-02-PLAN.md — AccuracyTab CalibrationSection cleanup + CalibrationHealthIndicator component + DecisionSummaryTab integration (TypeScript — CAL-01, CAL-02)
+- [x] 103-01-PLAN.md — Position-aware sparse-bucket threshold + position-pool guard in pipeline/accuracy.py (Python — CAL-01)
+- [x] 103-02-PLAN.md — AccuracyTab CalibrationSection cleanup + CalibrationHealthIndicator component + DecisionSummaryTab integration (TypeScript — CAL-01, CAL-02)
 **Phase notes**: Purely additive and independent of Phase 102 — safe parallelisation candidate but sequenced second so MC gate ships first for downstream momentum. The threshold change in `pipeline/accuracy.py` is a 1-line edit; position-pool guard is a 1-line conditional; health indicator is ~30 LOC of additive React reading an existing hook. Pitfall to avoid: small-bin instability is statistically documented (PMC 7923594) — a single haulting GK shifts `actual_rate` by 12+ percentage points at `sample_n` near 8. The all-positions aggregate (~200 obs/decile) is fine at the existing `< 5` filter; only the per-position breakdown needs the tighter threshold. Do not introduce a second charting library — reuse existing recharts `ComposedChart`.
 **UI hint**: yes
 
@@ -1413,6 +1413,6 @@ Plans:
 | 100 | v1.17 | 4/4 | Complete    | 2026-05-12 |
 | 101 | v1.17 | 3/3 | Complete    | 2026-05-12 |
 | 102 | v1.18 | 0/3 | Not started | - |
-| 103 | v1.18 | 0 | Not started | - |
+| 103 | v1.18 | 2/2 | Complete    | 2026-05-13 |
 | 104 | v1.18 | 0 | Not started | - |
 | 105 | v1.18 | 0 | Not started | - |

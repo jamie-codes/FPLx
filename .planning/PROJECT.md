@@ -4,6 +4,8 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
+v1.18 Phase 103 complete (2026-05-13) — CAL-01 + CAL-02: position-aware sparse-bucket thresholds (GK/DEF ≥15, MID/FWD ≥8, all ≥5) + pool guard (hide chart if <50 total obs) in `pipeline/accuracy.py`. New `CalibrationHealthIndicator` component (good/fair/poor tiers, cold-start state, absent-guard) wired into `DecisionSummaryTab` between 4-card grid and ProseSummaryBlock. TS-side `sample_n >= 5` double-filter removed — Python is now single gate. 34 accuracy tests + 9 TDD component tests GREEN. Human UAT pending.
+
 v1.18 Phase 102 complete (2026-05-13) — MC-01 + MC-02: MC gate flipped to `MC_ENABLED = True` in `pipeline/run.py` (10k-sim engine now active on every daily run). New `MCDistributionBar` component (teal fill track, P10/P90 labels, conditional amber Haul% ≥40%) wired into XPtsCell hover card replacing inline text rows. CaptainPicksPanel CandidateRow now shows inline `· P10–P90` range (raw undoubled, muted zinc-400, silent gate-off). GitHub Actions hygiene: anthropic pin 0.98.1, numpy==2.2.3, MC_ITERATIONS/MC_SEED env vars. Human UAT pending next pipeline run. Build clean; 58 mc+columns tests + 26 captaincy tests GREEN.
 
 v1.17 Phase 101 complete (2026-05-12) — GWT-01 + UX-01: GW-targeted transfer scoring engine + UI. `computeGwXpts` TypeScript port of Python `_xpts_per_gw` (DGW sums, BGW=0, correct CS direction). `suggestTransfers` extended with optional `targetGw` routing all 4 scoring sites through `scorePlayer`; denominator=1 for per-GW view. Target GW `<select>` dropdown in TransferPanel OCS header with `availableGws` memo, `disabled={!!targetGw}` GwToggle pills, column-header switch, and "Ranked by GW{N} xPts" sub-label. UX-01: GwToggle labels renamed "Next 1 GW / Next 3 GWs / Next 5 GWs". 88 tests GREEN.
@@ -359,4 +361,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-12 — v1.17 complete (Phases 97–101, all 5 shipped). v1.18 Forecast Transparency & AI Intelligence started.*
+*Last updated: 2026-05-13 — v1.18 in progress. Phase 103 complete: calibration sparse-bucket fix + CalibrationHealthIndicator.*
