@@ -345,16 +345,20 @@ function CalibrationSection({ data }: { data: AccuracyBacktest }) {
   const [position, setPosition] = useState<CalibrationPosition>('all')
 
   const chartData = useMemo<CalibrationBucket[]>(() => {
-    const all = data.calibration?.by_position?.[position] ?? []
-    return all.filter((b) => b.sample_n >= 5)  // Pitfall 5: omit sparse, do NOT zero
+    // Phase 103 CAL-01 / D-02: Python is the single sparse-bucket gate. Whatever
+    // pipeline/accuracy.py writes is what we render — no double-filtering here.
+    return data.calibration?.by_position?.[position] ?? []
   }, [data.calibration, position])
 
   // Phase 91 CAL-01: separate filter for the xPts chart (Pitfall 5: mean-aware predicate
   // drops legacy-cache buckets that lack the new optional fields).
   const xptsData = useMemo<CalibrationBucket[]>(() => {
+    // Phase 103 CAL-01 / D-02: Python is the single sparse-bucket gate. The remaining
+    // predicate keeps legacy-cache (pre-Phase-91) buckets out — they lack the optional
+    // predicted_mean / actual_mean fields and would corrupt the xPts chart domain.
     const all = data.calibration?.by_position?.[position] ?? []
     return all.filter(
-      (b) => b.sample_n >= 5 && b.predicted_mean != null && b.actual_mean != null,
+      (b) => b.predicted_mean != null && b.actual_mean != null,
     )
   }, [data.calibration, position])
 
@@ -433,13 +437,19 @@ function CalibrationSection({ data }: { data: AccuracyBacktest }) {
             />
           </ComposedChart>
         </ResponsiveContainer>
-        {chartData.length === 0 && (
+        {data.gws_covered.length < 3 ? (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Insufficient sample (n&lt;5) for {positionLabel(position)} this window.
+              Calibration evidence will appear after 3+ completed GWs.
             </p>
           </div>
-        )}
+        ) : chartData.length === 0 ? (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Insufficient data for {positionLabel(position)} at this sample size.
+            </p>
+          </div>
+        ) : null}
       </div>
 
       {/* Phase 91 CAL-01: xPts-mean calibration chart (UI-SPEC §Chart Specification) */}
