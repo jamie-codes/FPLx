@@ -1292,7 +1292,12 @@ Plans:
   2. User can see a P10/P90 pts range on each captain picks card row, supporting Triple Captain ceiling vs differential captaincy floor comparison at a glance
   3. The `mc_enabled` gate in `accuracy_backtest.json.summary` is `true` in production and `MC_ITERATIONS=10000` / `MC_SEED=42` are set in the GitHub Actions env block so MC fields populate deterministically on every daily pipeline run
   4. GitHub Actions workflow hygiene is corrected: `anthropic` Python pin aligned from 0.40.0 to 0.98.1, explicit `numpy==2.2.3` added to the install line (no longer transitive via pandas)
-**Plans**: TBD
+**Plans:** 3 plans
+
+**Wave 1** *(all parallel — zero file overlap)*
+- [ ] 102-01-PLAN.md — Flip mc_enabled gate to MC_ENABLED=True constant in pipeline/run.py + GitHub Actions hygiene (anthropic==0.98.1, numpy==2.2.3, MC_ITERATIONS=10000, MC_SEED=42)
+- [ ] 102-02-PLAN.md — Create MCDistributionBar component (src/components/mc/) and wire into XPtsCell hover card, replacing inline Blank%/Haul%/Floor/Ceiling rows
+- [ ] 102-03-PLAN.md — Add inline P10/P90 base-points range to CaptainPicksPanel CandidateRow after pts (C)
 **Phase notes**: The `mc_enabled` flip is a single state change but unblocks every downstream MC consumer — including the NLP-02 prompt context Phase 105 depends on, so this must ship first. Confirm the flip mechanism during planning: `pipeline/run.py` line 203 reads the gate from the previous `accuracy_backtest.json`, so it is either a one-time direct Blob edit OR a pipeline patch that sets the flag from inside the run (validate cleaner path before opening the PR). Pitfall to avoid: do NOT port `simulate.py` MC into browser TypeScript — 700 players × 10k sims × `Math.random()` loops freeze the main thread for 2–5 seconds; the pipeline is authoritative and the browser reads pre-computed scalars only. Use Tailwind flex row (no Recharts at row scale) for `MCDistributionBar`.
 **UI hint**: yes
 
@@ -1403,7 +1408,7 @@ Plans:
 | 99 | v1.17 | 2/2 | Complete    | 2026-05-12 |
 | 100 | v1.17 | 4/4 | Complete    | 2026-05-12 |
 | 101 | v1.17 | 3/3 | Complete    | 2026-05-12 |
-| 102 | v1.18 | 0 | Not started | - |
+| 102 | v1.18 | 0/3 | Not started | - |
 | 103 | v1.18 | 0 | Not started | - |
 | 104 | v1.18 | 0 | Not started | - |
 | 105 | v1.18 | 0 | Not started | - |
