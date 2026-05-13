@@ -1326,10 +1326,10 @@ Plans:
   2. User can expand any transfer sell candidate in TransferPanel and see the top-2 plain-English reasons that player fell below the recommendation threshold (e.g. "xPts 4.2 < threshold 4.7", "fragility: knife-edge on start_prob"), computed by the existing `computeRejection` engine
   3. The fragility badge and rejection reasons render only on rows inside the active recommendation set (top transfers, top sell candidates) — never on every row — so the visual signal does not die from spam after GW30 when many candidates legitimately become fragile
   4. When `computeLifecycleLabel` is required for rejection context, it is either threaded from `page.tsx` via existing `allPlayers` scope or computed locally at the TransferPanel boundary as a safe fallback — never breaks if the prop is unavailable
-**Plans:** 1 plan (1 wave)
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 104-01-PLAN.md — Wire computeRejection into PlayerMoveCell sell side; thread scoredPlayers + lifecycleLabels from TransferPanel into OpportunityCostTable; update tests (WHY-01; SENS-01 already shipped via FragilityBadge in Phase 93 — no new code)
+- [x] 104-01-PLAN.md — Wire computeRejection into PlayerMoveCell sell side; thread scoredPlayers + lifecycleLabels from TransferPanel into OpportunityCostTable; update tests (WHY-01; SENS-01 already shipped via FragilityBadge in Phase 93 — no new code)
 **Phase notes**: Both engines ship and are unit-tested — this is mechanical addition of call sites, not new logic. Combining SENS-01 and WHY-01 into one phase because both touch `TransferPanel.tsx` with identical risk surface (call-site addition over a unit-tested engine) and produces consistent structured output that Phase 105 LLM prompts depend on for grounding. Pitfall to avoid: do NOT render fragility on rows outside the recommendation set — `start_prob` < 0.85 triggers fragility for 40–60% of late-season candidates and the signal dies if shown everywhere. Track `fragile_transfer_pct` in `data_health.json` and warn if it exceeds 45% (defer the monitoring wire-up to v1.19 if it stretches scope here). Tier-based visual weight (robust=silent, fragile=dot, knife_edge=pill) is non-negotiable.
 **UI hint**: yes
 
@@ -1417,5 +1417,5 @@ Plans:
 | 101 | v1.17 | 3/3 | Complete    | 2026-05-12 |
 | 102 | v1.18 | 0/3 | Not started | - |
 | 103 | v1.18 | 2/2 | Complete    | 2026-05-13 |
-| 104 | v1.18 | 0 | Not started | - |
+| 104 | v1.18 | 1/1 | Complete   | 2026-05-13 |
 | 105 | v1.18 | 0 | Not started | - |
