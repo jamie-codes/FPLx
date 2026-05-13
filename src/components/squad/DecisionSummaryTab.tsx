@@ -581,6 +581,7 @@ export function DecisionSummaryTab({
             <OpportunityCostTable
               rows={ocsRows}
               horizon={1}
+              gw={nextGw ?? 0}
               allPlayers={scoredPlayers}
               lifecycleLabels={lifecycleLabels}
             />

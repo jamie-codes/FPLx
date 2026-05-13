@@ -28,6 +28,7 @@ import { computeRejection } from '@/lib/explain'
 import { computeFragility } from '@/lib/sensitivity'
 import { FragilityBadge } from '@/components/shared/FragilityBadge'
 import { ComparisonSearch } from '@/components/gem-table/ComparisonSearch'
+import { PlayerInsightSection } from '@/components/shared/PlayerInsightSection'
 
 // Phase 65 WHY-01: position-code label for adaptive-framing rejection-panel rendering.
 const POSITION_CODES_LABEL: Record<number, string> = {
@@ -140,6 +141,12 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
   // can render "GW{N} Pts". Accuracy hook is cached at 6h staleTime — essentially free here.
   const { data: accuracyData } = useAccuracy()
   const lastGwActualGwN: number | null = accuracyData?.gws_covered?.[0] ?? null
+  // Phase 105 NLP-02 (Pitfall 4): GemTable has no squad context for `gw`.
+  // Source is the most-recent settled GW + 1 — same convention as Phase 101's
+  // last_gw_actual_pts column header derivation. Off-by-one risk on Sunday
+  // between deadline and pipeline rerun is accepted (one extra LLM spend at
+  // most; no data corruption).
+  const insightGw = (lastGwActualGwN ?? 0) + 1
   const newsFlagEnabled = useNewsFlagEnabled()
 
   const scoredPlayers = useMemo(() => computeAllGemScores(data ?? []), [data])
@@ -367,6 +374,13 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                           {/* Phase 94 WHY-01-B: head-to-head comparison search (D-10). State resets on row collapse.
                               Renders Y's rejection reasons that X does not share, per Plan 01 computeHeadToHead composition (SC-4). */}
                           <ComparisonSearch rowPlayer={row.original} allPlayers={scoredPlayers} />
+                          {/* Phase 105 NLP-02 (D-04): AI insight section appended LAST in mobile expand row */}
+                          <PlayerInsightSection
+                            player={row.original}
+                            gw={insightGw}
+                            rejectionReasons={rejection.reasons}
+                            fragility={{ tier: fragility.tier, reasons: fragility.reasons }}
+                          />
                         </td>
                       </tr>
                       {/* NEW desktop expand row — rejection panel ONLY (D-02 + Pitfall 5: hidden sm:table-row) */}
@@ -389,6 +403,13 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                           {/* Phase 94 WHY-01-B: head-to-head comparison search (D-10). State resets on row collapse.
                               Renders Y's rejection reasons that X does not share, per Plan 01 computeHeadToHead composition (SC-4). */}
                           <ComparisonSearch rowPlayer={row.original} allPlayers={scoredPlayers} />
+                          {/* Phase 105 NLP-02 (D-04): AI insight section appended LAST in desktop expand row */}
+                          <PlayerInsightSection
+                            player={row.original}
+                            gw={insightGw}
+                            rejectionReasons={rejection.reasons}
+                            fragility={{ tier: fragility.tier, reasons: fragility.reasons }}
+                          />
                         </td>
                       </tr>
                     </>

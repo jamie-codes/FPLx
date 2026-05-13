@@ -13,11 +13,13 @@ import { NewsBanner } from '@/components/news/NewsBanner'
 import { computeFragility } from '@/lib/sensitivity'
 import { FragilityBadge } from '@/components/shared/FragilityBadge'
 import { computeRejection } from '@/lib/explain'
+import { PlayerInsightSection } from '@/components/shared/PlayerInsightSection'
 
 interface OpportunityCostTableProps {
   rows: OCSRow[]
   horizon: OptimiserHorizon
   targetGw?: number   // Phase 101 GWT-01: when set, column header switches to "xPts Gain (GW{N})"
+  gw: number          // Phase 105 NLP-02: required for PlayerInsightSection cache key
   // Phase 104 WHY-01 (D-08): sell-side rejection reasons computed per-leg in PlayerMoveCell.
   allPlayers: ScoredPlayer[]
   lifecycleLabels: Map<number, LifecycleLabel>
@@ -95,10 +97,12 @@ function formatBreakEven(row: OCSRow): string {
 
 function PlayerMoveCell({
   row,
+  gw,
   allPlayers,
   lifecycleLabels,
 }: {
   row: OCSRow
+  gw: number
   allPlayers: ScoredPlayer[]
   lifecycleLabels: Map<number, LifecycleLabel>
 }) {
@@ -141,6 +145,13 @@ function PlayerMoveCell({
               </div>
             )}
             {tier !== 'robust' && <FragilityBadge tier={tier} reasons={reasons} />}
+            {/* Phase 105 NLP-02 (D-05): AI insight section, appended below FragilityBadge for buy candidate */}
+            <PlayerInsightSection
+              player={t.buy as unknown as ScoredPlayer}
+              gw={gw}
+              rejectionReasons={sellReasonsCapped}
+              fragility={{ tier, reasons }}
+            />
           </div>
         )
       })}
@@ -148,7 +159,7 @@ function PlayerMoveCell({
   )
 }
 
-export function OpportunityCostTable({ rows, horizon, targetGw, allPlayers, lifecycleLabels }: OpportunityCostTableProps) {
+export function OpportunityCostTable({ rows, horizon, targetGw, gw, allPlayers, lifecycleLabels }: OpportunityCostTableProps) {
   const onlyRoll = rows.length === 1 && rows[0]?.kind === 'roll'
 
   return (
@@ -182,7 +193,7 @@ export function OpportunityCostTable({ rows, horizon, targetGw, allPlayers, life
                   {row.label}
                 </td>
                 <td className="py-2 align-top">
-                  <PlayerMoveCell row={row} allPlayers={allPlayers} lifecycleLabels={lifecycleLabels} />
+                  <PlayerMoveCell row={row} gw={gw} allPlayers={allPlayers} lifecycleLabels={lifecycleLabels} />
                 </td>
                 <td className="py-2 text-right align-top text-zinc-900 dark:text-zinc-100">
                   <div className={isDisabled ? 'line-through text-zinc-400 dark:text-zinc-600' : ''}>
