@@ -110,6 +110,19 @@ None — no external service configuration required.
 - DecisionSummaryTab now shows a live calibration health row — once the pipeline runs with the updated accuracy.py (Plan 01), the health row will populate automatically
 - Phase 104 (SENS-01 + WHY-01) can proceed independently
 
+## Self-Check: PASSED
+
+- FOUND: src/components/accuracy/AccuracyTab.tsx
+- FOUND: src/components/squad/CalibrationHealthIndicator.tsx
+- FOUND: src/components/squad/CalibrationHealthIndicator.test.tsx
+- FOUND: src/components/squad/DecisionSummaryTab.tsx
+- FOUND: .planning/phases/103-calibration-sparse-bucket-fix-health-indicator/103-02-SUMMARY.md
+- FOUND commit: 57686b0 (Task 1)
+- FOUND commit: dac69bf (Task 2 RED)
+- FOUND commit: c3eb099 (Task 2 GREEN)
+- FOUND commit: 9a9798b (Task 3)
+- FOUND commit: 490d0e3 (SUMMARY metadata)
+
 ---
 *Phase: 103-calibration-sparse-bucket-fix-health-indicator*
 *Completed: 2026-05-13*
