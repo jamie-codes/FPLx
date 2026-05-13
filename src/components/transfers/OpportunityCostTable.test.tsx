@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 // Phase 101 GWT-01 + UX-01: column header tests for OpportunityCostTable
 // Phase 104 WHY-01: sell-side rejection reasons tests
-import { describe, it, expect } from 'vitest'
+// Phase 105 NLP-02: gw prop threading + PlayerInsightSection presence stubs
+import { describe, it, expect, vi } from 'vitest'
 import { render } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createElement } from 'react'
@@ -9,6 +10,15 @@ import { OpportunityCostTable } from './OpportunityCostTable'
 import type { OCSRow } from '@/lib/opportunity-cost'
 import type { ScoredPlayer } from '@/lib/types'
 import type { LifecycleLabel } from '@/lib/lifecycle-label'
+
+// Wave 0: usePlayerInsight module does not exist yet.
+// vi.mock is registered here so that when Wave 1 creates the module, the mock activates.
+// The factory provides the mock implementation for all tests in this file.
+// No static import is added in Wave 0 — module resolution would fail during transform.
+vi.mock('@/lib/hooks/usePlayerInsight', () => ({
+  usePlayerInsight: vi.fn().mockReturnValue({ mutate: vi.fn(), isPending: false, isError: false, error: null }),
+  readCachedInsight: vi.fn().mockReturnValue(null),
+}))
 
 function withQueryClient(ui: React.ReactElement) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
@@ -190,15 +200,13 @@ describe('OpportunityCostTable WHY-01 sell rejection reasons', () => {
   })
 
   it('caps sell-rejection-reasons at 4 even when computeRejection returns more reasons', () => {
-    // Construct a sell with many rejection signals: rotation risk + poor form + hard fixture +
-    // price falling + lifecycle 'sell' + low ownership => rank + rotation + form + hard + price + lifecycle + ownership = 7 reasons
     const heavySell = makeScoredPlayer({
       id: 102, web_name: 'HeavySell',
-      start_prob: 0.3,           // rotation risk (< 0.70)
-      form_pts_per90: 1.0,       // poor form (< 3.0)
-      cost_change_event: -2,     // price falling (< 0)
+      start_prob: 0.3,
+      form_pts_per90: 1.0,
+      cost_change_event: -2,
       fixtures: [{ event_id: 33, difficulty_tier: 'hard', is_home: false, opponent_team: 'ARS', difficulty_score: 0.9 }],
-      selected_by_percent: '4.0', // low ownership (≤ 20%)
+      selected_by_percent: '4.0',
     })
     const buy = makeScoredPlayer({ id: 202, web_name: 'AnyBuy' })
     const lifecycleLabels = new Map<number, LifecycleLabel>([[102, 'sell']])
@@ -216,12 +224,10 @@ describe('OpportunityCostTable WHY-01 sell rejection reasons', () => {
   })
 
   it('renders per-leg independent sell-rejection-reasons on a combo-free row', () => {
-    // Sell 1: rotation risk signal (start_prob 0.4)
     const sell1 = makeScoredPlayer({
       id: 103, web_name: 'RotationSell',
       start_prob: 0.4,
     })
-    // Sell 2: poor form signal (form 1.5)
     const sell2 = makeScoredPlayer({
       id: 104, web_name: 'FormSell',
       form_pts_per90: 1.5,
@@ -241,4 +247,14 @@ describe('OpportunityCostTable WHY-01 sell rejection reasons', () => {
     expect(blocks[0]!.textContent).toMatch(/Rotation risk — start probability/)
     expect(blocks[1]!.textContent).toMatch(/Poor form —/)
   })
+})
+
+describe('Phase 105 NLP-02 integration', () => {
+  // Wave 0 stubs — these tests will be implemented in Wave 1 once:
+  // 1. usePlayerInsight module exists at src/lib/hooks/usePlayerInsight.ts
+  // 2. PlayerInsightSection component exists at src/components/shared/PlayerInsightSection.tsx
+  // 3. OpportunityCostTable accepts a `gw` prop and passes it to PlayerMoveCell
+  it.todo('gw prop is threaded to PlayerMoveCell — usePlayerInsight called with (playerId, 35)')
+  it.todo('PlayerInsightSection absent on roll rows')
+  it.todo('PlayerInsightSection present on buy-candidate rows')
 })
