@@ -1309,7 +1309,11 @@ Plans:
   1. User can open the AccuracyTab GK or DEF position tab and no longer see a misleading miscalibration chart at small sample sizes — sparse-bucket threshold is raised to `sample_n < 15` for GK/DEF and `sample_n < 8` for MID/FWD, and the chart is hidden entirely with an "Insufficient data" banner when the position-pool total is below 50 observations
   2. User can see a one-sentence calibration health summary on the Decision Summary tab (e.g. "Calibration: good — predicted vs actual within 3pp across 4 deciles") derived from existing `useAccuracy` data without any new fetch or pipeline work
   3. When fewer than 3 completed GWs are available (early-season cold start), the per-position calibration chart and the Decision Summary health indicator both degrade gracefully to a "Calibration evidence will appear after 3+ completed GWs" prompt rather than rendering noisy charts
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 103-01-PLAN.md — Position-aware sparse-bucket threshold + position-pool guard in pipeline/accuracy.py (Python — CAL-01)
+- [ ] 103-02-PLAN.md — AccuracyTab CalibrationSection cleanup + CalibrationHealthIndicator component + DecisionSummaryTab integration (TypeScript — CAL-01, CAL-02)
 **Phase notes**: Purely additive and independent of Phase 102 — safe parallelisation candidate but sequenced second so MC gate ships first for downstream momentum. The threshold change in `pipeline/accuracy.py` is a 1-line edit; position-pool guard is a 1-line conditional; health indicator is ~30 LOC of additive React reading an existing hook. Pitfall to avoid: small-bin instability is statistically documented (PMC 7923594) — a single haulting GK shifts `actual_rate` by 12+ percentage points at `sample_n` near 8. The all-positions aggregate (~200 obs/decile) is fine at the existing `< 5` filter; only the per-position breakdown needs the tighter threshold. Do not introduce a second charting library — reuse existing recharts `ComposedChart`.
 **UI hint**: yes
 

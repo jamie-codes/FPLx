@@ -1,7 +1,8 @@
 ---
 phase: 103
 slug: calibration-sparse-bucket-fix-health-indicator
-status: draft
+status: approved
+reviewed_at: 2026-05-13
 shadcn_initialized: false
 preset: none
 created: 2026-05-13
