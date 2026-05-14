@@ -177,21 +177,24 @@ describe('Phase 99 PGW-03: GwReviewTab benchmark card + Missed row', () => {
     expect(card!.textContent).toContain('54')
   })
 
-  it('renders delta sub-label "+N vs you" when your_score > benchmark_score', () => {
+  it('renders delta sub-label "−N vs you" (U+2212) and green class when your_score > benchmark_score (user won)', () => {
+    // After FIX-05: benchmarkDiff = benchmark_score - your_score = 60 - 72 = -12 → green, "−12 vs you"
     withReview({ your_score: 72, benchmark_score: 60, benchmark_label: 'Dream team' })
     const { container } = render(<GwReviewTab teamId="12345" settledGws={[33, 34, 35]} />)
     const card = container.querySelector('[data-testid="gw-review-benchmark-card"]')
-    expect(card!.textContent).toMatch(/\+12 vs you/)
+    // U+2212 MINUS SIGN, not U+002D HYPHEN-MINUS — user beat dream team → green, negative label
+    expect(card!.textContent).toMatch(/−12 vs you/)
+    // Must NOT show amber (dream team wins) sentiment text
+    expect(card!.textContent).not.toMatch(/\+12 vs you/)
   })
 
-  it('renders delta sub-label "−N vs you" (U+2212) when your_score < benchmark_score', () => {
+  it('renders delta sub-label "+N vs you" and amber class when your_score < benchmark_score (dream team won)', () => {
+    // After FIX-05: benchmarkDiff = benchmark_score - your_score = 65 - 50 = +15 → amber, "+15 vs you"
     withReview({ your_score: 50, benchmark_score: 65, benchmark_label: 'Dream team' })
     const { container } = render(<GwReviewTab teamId="12345" settledGws={[33, 34, 35]} />)
     const card = container.querySelector('[data-testid="gw-review-benchmark-card"]')
-    // U+2212 MINUS SIGN, not U+002D HYPHEN-MINUS
-    expect(card!.textContent).toMatch(/−15 vs you/)
-    // Confirm it is NOT the ASCII hyphen variant
-    expect(card!.textContent).not.toMatch(/^-15 vs you$/)
+    // Dream team won → amber, positive label
+    expect(card!.textContent).toMatch(/\+15 vs you/)
   })
 
   it('renders delta sub-label "on par" when your_score === benchmark_score', () => {
@@ -253,5 +256,63 @@ describe('Phase 99 PGW-03: GwReviewTab benchmark card + Missed row', () => {
     const row = container.querySelector('[data-testid="gw-review-missed-row"]')
     const valueSpan = row!.querySelector('span:nth-of-type(2)')
     expect(valueSpan!.textContent).toBe('Saka (14), Palmer (12), Foden (10)')
+  })
+})
+
+describe('Phase 110 FIX-05: benchmarkDiff sign correction', () => {
+  // These tests assert the CORRECT sign convention (D-06, D-07, D-08 from 110-CONTEXT.md).
+  // They are written as TDD RED tests — they FAIL against the broken component at line 171
+  // (which uses your_score - benchmark_score) and pass once the sign is flipped.
+
+  function withReview(overrides: Partial<GwReview> = {}) {
+    mockUseGwReview.mockReturnValue({
+      data: { ...sampleReview, ...overrides },
+      isLoading: false,
+      isError: false,
+      error: null,
+    })
+  }
+
+  it('shows "+50 vs you" and amber sentiment when dream team score (122) > user score (72)', () => {
+    // D-06: benchmarkDiff = benchmark_score - your_score = 122 - 72 = +50
+    // D-07: benchmarkDiff > 0 → amber (dream team beat user)
+    // D-08: label = "+50 vs you"
+    withReview({ your_score: 72, benchmark_score: 122, benchmark_label: 'Dream team' })
+    const { container } = render(<GwReviewTab teamId="12345" settledGws={[33, 34, 35]} />)
+    const card = container.querySelector('[data-testid="gw-review-benchmark-card"]')
+    expect(card).not.toBeNull()
+    expect(card!.textContent).toContain('+50 vs you')
+    // Amber sentiment class — check the delta sub-label element has amber class
+    const deltaEl = card!.querySelector('p:last-child')
+    expect(deltaEl?.className).toContain('text-amber-700')
+  })
+
+  it('shows "−15 vs you" (U+2212) and green sentiment when user score (95) > dream team score (80)', () => {
+    // D-06: benchmarkDiff = benchmark_score - your_score = 80 - 95 = -15
+    // D-07: benchmarkDiff < 0 → green (user beat dream team)
+    // D-08: label = "−15 vs you" (U+2212 minus, not hyphen-minus)
+    withReview({ your_score: 95, benchmark_score: 80, benchmark_label: 'Dream team' })
+    const { container } = render(<GwReviewTab teamId="12345" settledGws={[33, 34, 35]} />)
+    const card = container.querySelector('[data-testid="gw-review-benchmark-card"]')
+    expect(card).not.toBeNull()
+    // U+2212 MINUS SIGN (not ASCII hyphen-minus U+002D)
+    expect(card!.textContent).toContain('−15 vs you')
+    // Green sentiment class
+    const deltaEl = card!.querySelector('p:last-child')
+    expect(deltaEl?.className).toContain('text-green-600')
+  })
+
+  it('shows "on par" and green sentiment when user score (88) equals dream team score (88)', () => {
+    // D-06: benchmarkDiff = 88 - 88 = 0
+    // D-07: benchmarkDiff === 0 → green
+    // D-08: label = "on par"
+    withReview({ your_score: 88, benchmark_score: 88, benchmark_label: 'Dream team' })
+    const { container } = render(<GwReviewTab teamId="12345" settledGws={[33, 34, 35]} />)
+    const card = container.querySelector('[data-testid="gw-review-benchmark-card"]')
+    expect(card).not.toBeNull()
+    expect(card!.textContent).toContain('on par')
+    // Green sentiment class
+    const deltaEl = card!.querySelector('p:last-child')
+    expect(deltaEl?.className).toContain('text-green-600')
   })
 })

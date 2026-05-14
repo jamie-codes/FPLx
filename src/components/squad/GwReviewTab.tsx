@@ -168,18 +168,19 @@ export function GwReviewTab({ teamId, settledGws }: GwReviewTabProps) {
     : 'text-zinc-700 dark:text-zinc-300'
 
   // Phase 99 PGW-03: benchmark card delta + sentiment
-  const benchmarkDiff = review.your_score - review.benchmark_score
+  // FIX-05 (Phase 110): flip sign — dream team beats user → positive diff → amber
+  const benchmarkDiff = review.benchmark_score - review.your_score
   let benchmarkDeltaLabel: string
   let benchmarkSentimentClass: string
   if (benchmarkDiff > 0) {
     benchmarkDeltaLabel = `+${benchmarkDiff} vs you`
-    benchmarkSentimentClass = 'text-green-600 dark:text-green-400'
+    benchmarkSentimentClass = 'text-amber-700 dark:text-amber-300'
   } else if (benchmarkDiff === 0) {
     benchmarkDeltaLabel = 'on par'
     benchmarkSentimentClass = 'text-green-600 dark:text-green-400'
   } else {
     benchmarkDeltaLabel = `−${Math.abs(benchmarkDiff)} vs you` // U+2212 minus sign (NOT hyphen-minus)
-    benchmarkSentimentClass = 'text-amber-700 dark:text-amber-300'
+    benchmarkSentimentClass = 'text-green-600 dark:text-green-400'
   }
 
   return (
