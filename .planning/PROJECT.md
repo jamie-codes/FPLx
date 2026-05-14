@@ -4,6 +4,8 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
+v1.19 Phase 106 complete (2026-05-14) — WR-01/02/03/04: Load Squad button now has single `transition-all` (no duplicate transition utilities); `computeDecisionSeverity` returns `LOW` for `candidates.length < 2`; NAV-05 click test extended to all 7 analyse pills (`club-form`, `accuracy`, `price-changes`); WR-03 acknowledged as no-op (Phase 97 D-02 already resolved). 4 tasks, 4 commits, all 25 pre-existing failures unchanged.
+
 v1.18 Phase 105 complete (2026-05-13) — NLP-02: per-player LLM insight route, hook, and UI wired. `POST /api/player-insight` (Node.js, maxDuration=30, two-attempt guardrail, Vercel Blob cache with allowOverwrite:true). `usePlayerInsight` TanStack mutation hook with two-tier localStorage + Blob cache (`playerInsight:{id}:gw{N}` key). `PlayerInsightSection` component with 5 states (idle/loading/error/guardrail-failed/insight). Wired into GemTable mobile+desktop expand rows and TransferPanel → OpportunityCostTable → PlayerMoveCell (buy-candidate rows only). `gw` prop threaded through full prop chain. 43/43 TDD tests GREEN (RED→GREEN cycle across 3 waves). Human UAT approved (Vercel env + Anthropic cap confirmed).
 
 v1.18 Phase 104 complete (2026-05-13) — SENS-01 (already shipped Phase 93) + WHY-01: `computeRejection` wired onto sell side of every OCS row in TransferPanel and DecisionSummaryTab. `OpportunityCostTable` gains two required props (`allPlayers`, `lifecycleLabels`); `PlayerMoveCell` calls `computeRejection(t.sell, ...)` per transfer leg and renders up to 4 zinc-500 reason lines inline below the sell name (always-visible, no toggle). Strong sells render nothing. Both production consumers thread their existing `scoredPlayers`/`lifecycleLabels` memos. 10 tests GREEN (6 updated + 4 new TDD). Human UAT pending.
@@ -380,4 +382,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-14 — v1.19 AI Quality & Insight Delivery started. NLP-BATCH, MC-CAL, PROMPT-CACHE, and WR cleanup targeted.*
+*Last updated: 2026-05-14 — v1.19 Phase 106 complete. Phase 107 (NLP-02 Prompt Caching) is next.*
