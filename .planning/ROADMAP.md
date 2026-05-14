@@ -187,7 +187,7 @@ See `.planning/milestones/v1.18-ROADMAP.md` for full phase details.
 - [x] **Phase 106: Code Quality Cleanup** — WR backlog clearance: DecisionSummaryTab duplicate transition classes; decision-severity captain LOW/MEDIUM fix; MobileNav test description + Acc pill test (complete 2026-05-14)
 - [x] **Phase 107: NLP-02 Prompt Caching** — `cache_control: ephemeral` on system prompt block; cache_creation/cache_read token logging in Vercel (complete 2026-05-14)
 - [ ] **Phase 108: Batch AI Insight Pre-Generation** — Pipeline pre-generates top-20 insights to Vercel Blob; `INSIGHT_BATCH_ENABLED` gate; UI reads cached Blob transparently
-- [ ] **Phase 109: MC-Enabled Calibration** — Calibration pipeline uses MC `haul_prob` as `predicted_rate`; CalibrationHealthIndicator surfaces MC-vs-analytical mode label
+- [x] **Phase 109: MC-Enabled Calibration** — Calibration pipeline uses MC `haul_prob` as `predicted_rate`; CalibrationHealthIndicator surfaces MC-vs-analytical mode label (complete 2026-05-14)
 
 ## Phase Details
 
@@ -1424,7 +1424,13 @@ Plans:
   1. Calibration backtest in `pipeline/accuracy.py` uses MC `haul_prob` (P(pts ≥ 10) from 10k sims, per-player per-GW) as the `predicted_rate` for each decile bin, replacing the analytical xPts decile-rank proxy — gated by the existing `mc_enabled` flag in `accuracy_backtest.json.summary` so a future gate flip cleanly reverts to the analytical path without code change
   2. User can open the Decision Summary tab and see the CalibrationHealthIndicator render a distinguishing label (e.g. "Calibration: good — MC-grounded" vs "Calibration: good — analytical fallback") so it is observable from the UI which calibration mode is in use; no new fetch, no new endpoint — derived from existing `useAccuracy` payload via a new `calibration_mode: 'mc' | 'analytical'` field on the summary
   3. When `mc_enabled` is true but MC fields are partially missing (e.g. a player without `haul_prob` due to a pipeline gap), the calibration computation falls back to the analytical proxy for that player only and the summary still reports `calibration_mode: 'mc'` if ≥80% of the population has MC fields — graceful degradation, never NaN, never an empty chart
-**Plans**: TBD
+**Plans**: 2 plans (1 wave — parallel)
+  **Wave 1**
+  - [x] 109-01-PLAN.md — Python pipeline: `_compute_calibration_data` MC path + `compute_accuracy_backtest` calibration_mode + run.py haul_lookup wire-up (TDD) (complete 2026-05-14)
+  - [x] 109-02-PLAN.md — TypeScript: AccuracySummary type + CalibrationHealthIndicator MC/Analytical badge + D-11 `predicted_rate` bug fix (TDD) (complete 2026-05-14)
+  **Cross-cutting constraints:**
+  - Plans 01 and 02 share zero `files_modified` (Python pipeline vs TypeScript component) — can run in parallel within Wave 1
+  - Plan 02 ships with null-render fallback for legacy cache (no `calibration_mode` field); the field becomes populated after the first daily pipeline run that includes Plan 01
 **UI hint**: yes
 **Phase notes**: Two-file change at heart — `pipeline/accuracy.py` (`_compute_calibration_data` switches from analytical decile rank to MC `haul_prob` percentile when `mc_enabled and haul_prob is not None`; emits `calibration_mode` on the summary) and `CalibrationHealthIndicator.tsx` (renders the mode label). MC-CAL was deferred from v1.18 (see STATE.md Pre-existing deferred items) and unblocks now that MC-01 has shipped and `haul_prob` is populated in production. Pitfall to avoid: do NOT compute MC haul rate as raw count ≥ 10 across the population — use per-player `haul_prob` (already in `merged_players.json`) averaged within each decile bin, which is what the analytical proxy approximates and what makes the MC and analytical paths directly comparable. The ≥80% population coverage rule for declaring `calibration_mode: 'mc'` is from the existing position-pool guard pattern in Phase 103 — keep the threshold consistent.
 
@@ -1502,4 +1508,4 @@ Plans:
 | 106 | v1.19 | 4/4 | Complete    | 2026-05-14 |
 | 107 | v1.19 | 1/1 | Complete    | 2026-05-14 |
 | 108 | v1.19 | 3/3 | Complete    | 2026-05-14 |
-| 109 | v1.19 | 0 | Not started | - |
+| 109 | v1.19 | 2/2 | Complete    | 2026-05-14 |
