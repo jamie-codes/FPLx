@@ -41,10 +41,15 @@ export interface ComputeDecisionSeverityArgs {
 export function computeDecisionSeverity(
   args: ComputeDecisionSeverityArgs,
 ): DecisionSeverity {
-  // Captain: HIGH when #1 >= 2 * #2 (and top2 > 0 to avoid division-by-zero / single-candidate degenerate case).
+  // Captain: LOW when fewer than 2 candidates (no real choice); HIGH when #1 >= 2 * #2 (with top2 > 0 guard); else MEDIUM.
   const top1 = args.candidates[0]?.projected_captain_pts ?? 0
   const top2 = args.candidates[1]?.projected_captain_pts ?? 0
-  const captain: SeverityLevel = top2 > 0 && top1 >= 2 * top2 ? 'HIGH' : 'MEDIUM'
+  const captain: SeverityLevel =
+    args.candidates.length < 2
+      ? 'LOW'
+      : top2 > 0 && top1 >= 2 * top2
+        ? 'HIGH'
+        : 'MEDIUM'
 
   // Transfer & Risk: shared rule — worst label visible across the squad.
   const hasUrgent = args.riskLabels.some(l => l === 'sell' || l === 'minutes_trap')

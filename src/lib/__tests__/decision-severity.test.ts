@@ -54,16 +54,16 @@ describe('computeDecisionSeverity — captain', () => {
     expect(result.captain).toBe('MEDIUM')
   })
 
-  it('Test 4: candidates=[] (empty) → captain=MEDIUM (top2===0 short-circuit, never HIGH)', () => {
+  it('Test 4: candidates=[] (empty / no-data) → captain=LOW (no real choice to highlight)', () => {
     const result = computeDecisionSeverity(makeArgs({ candidates: [] }))
-    expect(result.captain).toBe('MEDIUM')
+    expect(result.captain).toBe('LOW')
   })
 
-  it('Test 5: candidates with single entry → captain=MEDIUM (top2===0)', () => {
+  it('Test 5: candidates with single entry (no second-best to compare) → captain=LOW', () => {
     const result = computeDecisionSeverity(makeArgs({
       candidates: [makeCandidate(20)],
     }))
-    expect(result.captain).toBe('MEDIUM')
+    expect(result.captain).toBe('LOW')
   })
 
   it('Test 6: top1=20, top2=0 (artificial — defensive against zero division) → captain=MEDIUM', () => {
