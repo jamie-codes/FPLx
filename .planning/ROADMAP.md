@@ -198,7 +198,7 @@ See `.planning/milestones/v1.19-ROADMAP.md` for full phase details.
 <details open>
 <summary>v1.20 Fixes & Decision Quality (Phases 110-113) — STARTED 2026-05-14</summary>
 
-- [ ] **Phase 110: GW Review & History Fixes** — fix top scorer points display (FIX-03), best bench points (FIX-04), dream team delta sign (FIX-05), decision history captain delta (FIX-06)
+- [x] **Phase 110: GW Review & History Fixes** — fix top scorer points display (FIX-03), best bench points (FIX-04), dream team delta sign (FIX-05), decision history captain delta (FIX-06) _(2026-05-14)_
 - [ ] **Phase 111: Fixture Heatmap & Planner Cross-Position Fixes** — heatmap BGW false-positive when current GW already played (FIX-01); transfer planner position-lock guard (FIX-02)
 - [ ] **Phase 112: Optimiser On-Demand & Transfer Suggestion Cap** — Optimiser empty-state + button (OPT-01); transfer suggestions capped at top 3 per position slot (TFR-02)
 - [ ] **Phase 113: Transfer Regret Backtester** — per-GW engine recommendation vs actual transfer, hindsight xPts delta (BACK-02)
@@ -1462,9 +1462,9 @@ Plans:
   4. User can open the Back / Decision History view and see the captain delta column populated with the actual points difference per gameweek instead of dashes for every row
 **Plans**: 3 plans (1 wave)
   **Wave 1** *(all parallel — zero file overlap)*
-  - [ ] 110-01-PLAN.md — FIX-05 dream team delta sign + sentiment fix (GwReviewTab.tsx)
-  - [ ] 110-02-PLAN.md — FIX-03/04 event/{gw}/live/ liveMap for top scorer + best bench points (gw-review/route.ts)
-  - [ ] 110-03-PLAN.md — FIX-06 element-summary deduped fan-out for modelCeilingPts (decision-history/route.ts; new test file)
+  - [x] 110-01-PLAN.md — FIX-05 dream team delta sign + sentiment fix (GwReviewTab.tsx)
+  - [x] 110-02-PLAN.md — FIX-03/04 event/{gw}/live/ liveMap for top scorer + best bench points (gw-review/route.ts)
+  - [x] 110-03-PLAN.md — FIX-06 element-summary deduped fan-out for modelCeilingPts (decision-history/route.ts; new test file)
 **UI hint**: yes
 **Phase notes**: Four independent data-accuracy fixes that all live in the GW Review / Decision History surfaces (`/api/gw-review`, `/api/decision-history`, `GwReviewTab`, `BackTab`). Grouped together so a single TDD pass can lock down all four with one round of UAT against last-settled-GW data. Pitfall to avoid: the four bugs may share a root cause (e.g. a single mis-typed field name in `gw_review_gw{N}.json` or a sign convention drift between pipeline writer and UI reader) — investigate cross-bug correlations during research before assuming four isolated patches.
 
