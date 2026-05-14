@@ -215,11 +215,17 @@ export async function GET(request: NextRequest) {
       )
     : null
 
-  // D-06: captain delta uses pick.multiplier (Pitfall 3 — handles Triple Captain where multiplier=3)
-  // Clamp to 0 if your captain WAS the optimal captain (or if Triple Captain on optimal makes
-  // the formula go negative — defence in depth)
+  // D-06: captain delta uses pick.multiplier (Pitfall 3 — handles Triple Captain where multiplier=3).
+  // CR-01 (Phase 110 gap closure): both total_points operands now read from liveMap with
+  // `?? total_points` fallback. pick.total_points is 0 for settled GWs (same root cause as
+  // FIX-03/04); without the liveMap lookup, captain_delta would always be 0 when user
+  // captain != optimal captain. The `?? total_points` fallback (not `?? 0`) preserves SC-5
+  // behaviour when the live endpoint is unavailable.
+  // Clamp to 0 if your captain WAS the optimal captain (or if Triple Captain on optimal
+  // makes the formula go negative — defence in depth).
   const captainDeltaRaw =
-    optimalCaptain.total_points * 2 - yourCaptain.total_points * yourCaptain.multiplier
+    (liveMap.get(optimalCaptain.element) ?? optimalCaptain.total_points) * 2 -
+    (liveMap.get(yourCaptain.element) ?? yourCaptain.total_points) * yourCaptain.multiplier
   const captainDelta = Math.max(0, captainDeltaRaw)
 
   // Phase 99 PGW-03: benchmark score + missed players
