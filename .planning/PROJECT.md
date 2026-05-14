@@ -4,6 +4,8 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
+v1.19 Phase 107 complete (2026-05-14) — CACHE-01 + CACHE-02: `system` parameter on both `client.messages.create` calls in `/api/player-insight` changed from `string` to `TextBlockParam[]` with `cache_control: { type: 'ephemeral' as const }`. Cache metrics logged after every successful Claude call (`[player-insight] cache` log line with `attempt`, `cache_creation_input_tokens`, `cache_read_input_tokens`). TDD RED→GREEN cycle: 12/12 tests pass. Caching is structural no-op at ~80 tokens — activates when prompt crosses Anthropic's 1024-token minimum (Phase 108 or organic prompt growth).
+
 v1.19 Phase 106 complete (2026-05-14) — WR-01/02/03/04: Load Squad button now has single `transition-all` (no duplicate transition utilities); `computeDecisionSeverity` returns `LOW` for `candidates.length < 2`; NAV-05 click test extended to all 7 analyse pills (`club-form`, `accuracy`, `price-changes`); WR-03 acknowledged as no-op (Phase 97 D-02 already resolved). 4 tasks, 4 commits, all 25 pre-existing failures unchanged.
 
 v1.18 Phase 105 complete (2026-05-13) — NLP-02: per-player LLM insight route, hook, and UI wired. `POST /api/player-insight` (Node.js, maxDuration=30, two-attempt guardrail, Vercel Blob cache with allowOverwrite:true). `usePlayerInsight` TanStack mutation hook with two-tier localStorage + Blob cache (`playerInsight:{id}:gw{N}` key). `PlayerInsightSection` component with 5 states (idle/loading/error/guardrail-failed/insight). Wired into GemTable mobile+desktop expand rows and TransferPanel → OpportunityCostTable → PlayerMoveCell (buy-candidate rows only). `gw` prop threaded through full prop chain. 43/43 TDD tests GREEN (RED→GREEN cycle across 3 waves). Human UAT approved (Vercel env + Anthropic cap confirmed).
@@ -382,4 +384,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-14 — v1.19 Phase 106 complete. Phase 107 (NLP-02 Prompt Caching) is next.*
+*Last updated: 2026-05-14 — v1.19 Phase 107 complete. Phase 108 (Batch AI Insight Pre-Generation) is next.*
