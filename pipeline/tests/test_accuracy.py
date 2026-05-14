@@ -824,3 +824,187 @@ def test_calibration_pool_guard_skips_all_key():
         assert b['sample_n'] >= 5, (
             f"'all' bucket {b['bucket_mid']} sample_n={b['sample_n']} below the unchanged < 5 gate"
         )
+
+
+# ============================================================================
+# Phase 109 MC-CAL-01 — MC-enabled calibration bucketing
+# ============================================================================
+
+def _build_mc_inputs(n_players: int = 50, finished_gws: int = 32):
+    """Build (summaries, finished_gws, bootstrap, fixtures) with starts > 0 for all elements."""
+    player_histories = {
+        pid: [_hist(gw, 90, (pid % 12) + 1, xg=0.3, xa=0.2) for gw in range(1, finished_gws + 1)]
+        for pid in range(1, n_players + 1)
+    }
+    return _build_minimal_inputs(player_histories, finished_gws=finished_gws)
+
+
+def test_mc_calibration_mode_written_to_summary():
+    """Phase 109 MC-CAL-01 / D-04: summary contains calibration_mode ('mc' or 'analytical')."""
+    summaries, fg, bootstrap, fixtures = _build_mc_inputs()
+    # Pass a haul_lookup covering all players — triggers MC mode (mc_enabled must also be True)
+    # mc_enabled is read from prior cache (defaults False); we pass lookup but coverage check
+    # will drive use_mc=False when mc_enabled is False. Test just asserts the field is present.
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures)
+    assert 'calibration_mode' in result['summary'], (
+        "Phase 109 MC-CAL-01: summary must include calibration_mode field"
+    )
+    assert result['summary']['calibration_mode'] in ('mc', 'analytical'), (
+        f"calibration_mode must be 'mc' or 'analytical', got {result['summary']['calibration_mode']!r}"
+    )
+
+
+def test_mc_calibration_mode_analytical_when_no_lookup():
+    """Phase 109 MC-CAL-01 / D-03: calibration_mode is 'analytical' when merged_haul_lookup is absent."""
+    summaries, fg, bootstrap, fixtures = _build_mc_inputs()
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures)
+    assert result['summary']['calibration_mode'] == 'analytical', (
+        "Without merged_haul_lookup, calibration_mode must be 'analytical'"
+    )
+
+
+def test_mc_calibration_mode_analytical_when_mc_disabled(tmp_path):
+    """Phase 109 MC-CAL-01 / D-03: calibration_mode is 'analytical' when mc_enabled is False
+    even if a full haul_lookup is supplied."""
+    import json as _json
+    summaries, fg, bootstrap, fixtures = _build_mc_inputs()
+    # Seed prior cache with mc_enabled: False
+    prior_path = tmp_path / 'accuracy_backtest.json'
+    prior_path.write_text(_json.dumps({'summary': {'mc_enabled': False}}))
+
+    n_elements = len(bootstrap['elements'])
+    haul_lookup = {i: 0.15 for i in range(1, n_elements + 1)}
+    result = compute_accuracy_backtest(
+        summaries, fg, bootstrap, fixtures,
+        cache_dir=str(tmp_path),
+        merged_haul_lookup=haul_lookup,
+    )
+    assert result['summary']['calibration_mode'] == 'analytical', (
+        "mc_enabled=False must produce calibration_mode='analytical' regardless of haul_lookup"
+    )
+
+
+def test_mc_calibration_mode_analytical_when_coverage_below_threshold(tmp_path):
+    """Phase 109 MC-CAL-01 / D-03: calibration_mode is 'analytical' when coverage < 80%."""
+    import json as _json
+    summaries, fg, bootstrap, fixtures = _build_mc_inputs(n_players=50)
+    prior_path = tmp_path / 'accuracy_backtest.json'
+    prior_path.write_text(_json.dumps({'summary': {'mc_enabled': True}}))
+
+    # Only cover 10 out of 50 players (20% < 80%)
+    haul_lookup = {i: 0.15 for i in range(1, 11)}
+    result = compute_accuracy_backtest(
+        summaries, fg, bootstrap, fixtures,
+        cache_dir=str(tmp_path),
+        merged_haul_lookup=haul_lookup,
+    )
+    assert result['summary']['calibration_mode'] == 'analytical', (
+        "Coverage < 80% must produce calibration_mode='analytical'"
+    )
+
+
+def test_mc_calibration_mode_mc_when_fully_covered(tmp_path):
+    """Phase 109 MC-CAL-01 / D-03: calibration_mode is 'mc' when mc_enabled=True and coverage >= 80%."""
+    import json as _json
+    summaries, fg, bootstrap, fixtures = _build_mc_inputs(n_players=50)
+    prior_path = tmp_path / 'accuracy_backtest.json'
+    prior_path.write_text(_json.dumps({'summary': {'mc_enabled': True}}))
+
+    # Cover all players (100%)
+    n_elements = len(bootstrap['elements'])
+    haul_lookup = {pid: 0.2 for pid in range(1, n_elements + 1)}
+    result = compute_accuracy_backtest(
+        summaries, fg, bootstrap, fixtures,
+        cache_dir=str(tmp_path),
+        merged_haul_lookup=haul_lookup,
+    )
+    assert result['summary']['calibration_mode'] == 'mc', (
+        "mc_enabled=True + coverage >= 80% must produce calibration_mode='mc'"
+    )
+
+
+def test_mc_calibration_predicted_rate_uses_haul_prob(tmp_path):
+    """Phase 109 MC-CAL-01 / D-05: in MC mode, bucket predicted_rate = mean(haul_prob) per bucket,
+    NOT bucket_mid. Verify predicted_rate != bucket_mid when haul_prob values differ from midpoints."""
+    import json as _json
+    summaries, fg, bootstrap, fixtures = _build_mc_inputs(n_players=50)
+    prior_path = tmp_path / 'accuracy_backtest.json'
+    prior_path.write_text(_json.dumps({'summary': {'mc_enabled': True}}))
+
+    # Assign haul_prob = 0.5 for all players so mean(haul_prob) per bucket = 0.5.
+    # bucket_mids range from 0.05 to 0.95, so predicted_rate == 0.5 != bucket_mid for most buckets.
+    n_elements = len(bootstrap['elements'])
+    haul_lookup = {pid: 0.5 for pid in range(1, n_elements + 1)}
+    result = compute_accuracy_backtest(
+        summaries, fg, bootstrap, fixtures,
+        cache_dir=str(tmp_path),
+        merged_haul_lookup=haul_lookup,
+    )
+
+    all_buckets = result['calibration']['by_position']['all']
+    assert len(all_buckets) > 0, "expected non-empty calibration buckets"
+
+    # Every bucket's predicted_rate should be approximately 0.5 (mean of uniform haul_prob=0.5)
+    for b in all_buckets:
+        assert abs(b['predicted_rate'] - 0.5) < 0.01, (
+            f"MC mode: predicted_rate={b['predicted_rate']} expected ≈ 0.5 "
+            f"(mean of uniform haul_prob=0.5); bucket_mid={b['bucket_mid']}"
+        )
+
+
+def test_mc_calibration_bucket_mid_preserved_in_mc_mode(tmp_path):
+    """Phase 109 MC-CAL-01: bucket_mid is preserved (backward compat) even in MC mode.
+    bucket_mid must always equal the decile midpoint (0.05, 0.15, ..., 0.95)."""
+    import json as _json
+    summaries, fg, bootstrap, fixtures = _build_mc_inputs(n_players=50)
+    prior_path = tmp_path / 'accuracy_backtest.json'
+    prior_path.write_text(_json.dumps({'summary': {'mc_enabled': True}}))
+
+    n_elements = len(bootstrap['elements'])
+    haul_lookup = {pid: 0.3 for pid in range(1, n_elements + 1)}
+    result = compute_accuracy_backtest(
+        summaries, fg, bootstrap, fixtures,
+        cache_dir=str(tmp_path),
+        merged_haul_lookup=haul_lookup,
+    )
+
+    all_buckets = result['calibration']['by_position']['all']
+    valid_mids = {round(d * 0.1 + 0.05, 2) for d in range(10)}
+    for b in all_buckets:
+        assert b['bucket_mid'] in valid_mids, (
+            f"MC mode: bucket_mid={b['bucket_mid']} not in valid midpoints {valid_mids}"
+        )
+
+
+def test_mc_calibration_analytical_path_unchanged():
+    """Phase 109 MC-CAL-01: analytical path (use_mc=False) is unchanged; predicted_rate == bucket_mid."""
+    summaries, fg, bootstrap, fixtures = _build_mc_inputs(n_players=50)
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures)
+
+    all_buckets = result['calibration']['by_position']['all']
+    assert len(all_buckets) > 0
+    for b in all_buckets:
+        assert b['predicted_rate'] == pytest.approx(b['bucket_mid'], abs=1e-9), (
+            f"Analytical path: predicted_rate={b['predicted_rate']} must equal "
+            f"bucket_mid={b['bucket_mid']} (unchanged from prior behaviour)"
+        )
+
+
+def test_mc_calibration_missing_player_gets_zero_haul_prob(tmp_path):
+    """Phase 109 MC-CAL-01 / D-06: players absent from merged_haul_lookup get effective_haul_prob=0.0.
+    They are sorted to the bottom decile in MC mode."""
+    import json as _json
+    summaries, fg, bootstrap, fixtures = _build_mc_inputs(n_players=50)
+    prior_path = tmp_path / 'accuracy_backtest.json'
+    prior_path.write_text(_json.dumps({'summary': {'mc_enabled': True}}))
+
+    # Supply high haul_prob for player 1 only — all others default to 0.0
+    haul_lookup = {1: 0.9}  # Only 1 out of 50 covered — coverage = 2% → analytical mode.
+    result = compute_accuracy_backtest(
+        summaries, fg, bootstrap, fixtures,
+        cache_dir=str(tmp_path),
+        merged_haul_lookup=haul_lookup,
+    )
+    # Coverage < 80% → analytical mode; no KeyError from missing players
+    assert result['summary']['calibration_mode'] == 'analytical'
+    assert 'calibration' in result

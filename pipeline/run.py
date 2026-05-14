@@ -322,7 +322,11 @@ def run(dry_run: bool = False):
 
         # Phase 40 / ACC-01: Accuracy backtest + predictions snapshot
         print("Computing accuracy backtest...")
-        backtest_data = compute_accuracy_backtest(summaries, finished_gws, bootstrap, fixtures, cache_dir=cache_dir)
+        # Phase 109 MC-CAL-01 / D-01: build haul_prob lookup from current merged list.
+        # merged already has haul_prob populated (MC_ENABLED=True since Phase 102).
+        haul_lookup = {p['id']: p['haul_prob'] for p in merged if p.get('haul_prob') is not None}
+        print(f"MC haul_prob coverage: {len(haul_lookup)}/{len(merged)} players ({100*len(haul_lookup)//max(len(merged),1)}%)")
+        backtest_data = compute_accuracy_backtest(summaries, finished_gws, bootstrap, fixtures, cache_dir=cache_dir, merged_haul_lookup=haul_lookup)
         save('accuracy_backtest.json', backtest_data)
         timestamps['accuracy_backtest.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
         print(f"Accuracy backtest: {len(backtest_data.get('gws_covered', []))} GWs covered, "
