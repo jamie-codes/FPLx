@@ -185,7 +185,7 @@ See `.planning/milestones/v1.18-ROADMAP.md` for full phase details.
 ### v1.19 AI Quality & Insight Delivery — New Phases (106-109)
 
 - [x] **Phase 106: Code Quality Cleanup** — WR backlog clearance: DecisionSummaryTab duplicate transition classes; decision-severity captain LOW/MEDIUM fix; MobileNav test description + Acc pill test (complete 2026-05-14)
-- [ ] **Phase 107: NLP-02 Prompt Caching** — `cache_control: ephemeral` on system prompt block; cache_creation/cache_read token logging in Vercel
+- [x] **Phase 107: NLP-02 Prompt Caching** — `cache_control: ephemeral` on system prompt block; cache_creation/cache_read token logging in Vercel (complete 2026-05-14)
 - [ ] **Phase 108: Batch AI Insight Pre-Generation** — Pipeline pre-generates top-20 insights to Vercel Blob; `INSIGHT_BATCH_ENABLED` gate; UI reads cached Blob transparently
 - [ ] **Phase 109: MC-Enabled Calibration** — Calibration pipeline uses MC `haul_prob` as `predicted_rate`; CalibrationHealthIndicator surfaces MC-vs-analytical mode label
 
@@ -1493,7 +1493,7 @@ Plans:
 | 103 | v1.18 | 2/2 | Complete    | 2026-05-13 |
 | 104 | v1.18 | 1/1 | Complete    | 2026-05-13 |
 | 105 | v1.18 | 3/3 | Complete    | 2026-05-13 |
-| 106 | v1.19 | 0 | Not started | - |
-| 107 | v1.19 | 0 | Not started | - |
+| 106 | v1.19 | 4/4 | Complete    | 2026-05-14 |
+| 107 | v1.19 | 1/1 | Complete    | 2026-05-14 |
 | 108 | v1.19 | 0 | Not started | - |
 | 109 | v1.19 | 0 | Not started | - |

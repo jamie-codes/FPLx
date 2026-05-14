@@ -18,8 +18,8 @@
 
 ### NLP-02 Prompt Caching
 
-- [ ] **CACHE-01**: `/api/player-insight` adds `cache_control: {"type": "ephemeral"}` to the system prompt message block in the Anthropic API call
-- [ ] **CACHE-02**: API response `usage.cache_creation_input_tokens` and `cache_read_input_tokens` are logged server-side so cache hit rate is observable in Vercel logs
+- [x] **CACHE-01**: `/api/player-insight` adds `cache_control: {"type": "ephemeral"}` to the system prompt message block in the Anthropic API call — Validated in Phase 107
+- [x] **CACHE-02**: API response `usage.cache_creation_input_tokens` and `cache_read_input_tokens` are logged server-side so cache hit rate is observable in Vercel logs — Validated in Phase 107
 
 ### Code Quality Cleanup
 
@@ -54,12 +54,12 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WR-01 | Phase 106 | Pending |
-| WR-02 | Phase 106 | Pending |
-| WR-03 | Phase 106 | Pending |
-| WR-04 | Phase 106 | Pending |
-| CACHE-01 | Phase 107 | Pending |
-| CACHE-02 | Phase 107 | Pending |
+| WR-01 | Phase 106 | Complete |
+| WR-02 | Phase 106 | Complete |
+| WR-03 | Phase 106 | Complete |
+| WR-04 | Phase 106 | Complete |
+| CACHE-01 | Phase 107 | Complete |
+| CACHE-02 | Phase 107 | Complete |
 | NLP-BATCH-01 | Phase 108 | Pending |
 | NLP-BATCH-02 | Phase 108 | Pending |
 | NLP-BATCH-03 | Phase 108 | Pending |
