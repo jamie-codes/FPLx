@@ -30,6 +30,11 @@ function mockUpstream(
   live: { elements: Array<{ id: number; stats: { total_points: number } }> } | null = null,
   liveOk: boolean = true,
 ) {
+  // When no explicit live data is provided, synthesise it from pick.total_points
+  // so baseline tests (which predate FIX-03/04) continue to see deterministic data.
+  const effectiveLive = live ?? {
+    elements: picks.map((p) => ({ id: p.element, stats: { total_points: p.total_points } })),
+  }
   const fetchMock = vi.fn(async (url: string) => {
     if (url.includes('/picks/')) {
       return new Response(JSON.stringify({
@@ -46,7 +51,7 @@ function mockUpstream(
     }
     if (url.includes('/live/')) {
       if (!liveOk) return new Response('', { status: 503 })
-      return new Response(JSON.stringify(live ?? { elements: [] }), { status: 200 })
+      return new Response(JSON.stringify(effectiveLive), { status: 200 })
     }
     throw new Error(`Unexpected fetch URL: ${url}`)
   })
