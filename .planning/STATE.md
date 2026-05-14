@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.18
 milestone_name: Forecast Transparency & AI Intelligence
-status: milestone_complete
-stopped_at: Phase 105 UI-SPEC approved
-last_updated: "2026-05-13T21:28:55.687Z"
-last_activity: 2026-05-13 -- Phase 105 execution started
+status: archived
+stopped_at: v1.18 milestone archived
+last_updated: "2026-05-14T00:00:00.000Z"
+last_activity: 2026-05-14 -- v1.18 milestone closed
 progress:
   total_phases: 53
   completed_phases: 27
@@ -18,17 +18,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-12 — v1.17 complete, v1.18 started)
+See: .planning/PROJECT.md (updated 2026-05-14 — v1.18 complete)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 105 — nlp-02-per-player-llm-insight-route-hook-ui
+**Current focus:** Planning v1.19 — run `/gsd-new-milestone`
 
 ## Current Position
 
-Phase: 105
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-05-13
+Phase: 105 (complete)
+Plan: All complete
+Status: v1.18 archived — ready for v1.19
+Last activity: 2026-05-14
 
 ## Performance Metrics
 
@@ -126,7 +126,6 @@ Known deferred items at close: 47 (see above)
 
 ## Session Continuity
 
-Last session: 2026-05-13T17:11:10.444Z
-Stopped at: Phase 105 UI-SPEC approved
-Resume file: .planning/phases/105-nlp-02-per-player-llm-insight-route-hook-ui/105-UI-SPEC.md
-Next command: `/gsd-execute-phase 102`
+Last session: 2026-05-14
+Stopped at: v1.18 milestone archived
+Next command: `/clear` then `/gsd-new-milestone`

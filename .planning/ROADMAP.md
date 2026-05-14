@@ -19,7 +19,7 @@
 - **v1.15 Pipeline Intelligence** — Phases 86-87 (started 2026-05-09)
 - **v1.16 Modelling & Trust** — Phases 88-96 (started 2026-05-09)
 - ✅ **v1.17 End-of-Season Intelligence** — Phases 97-101 (shipped 2026-05-12)
-- **v1.18 Forecast Transparency & AI Intelligence** — Phases 102-105 (started 2026-05-13)
+- ✅ **v1.18 Forecast Transparency & AI Intelligence** — Phases 102-105 (shipped 2026-05-14)
 
 ## Phases
 
@@ -168,6 +168,18 @@ See `.planning/milestones/v1.9-ROADMAP.md` for full phase details.
 - [x] **Phase 75: Fixture Heat Map v2** — opponent labels per cell, owned-team filtering and row highlighting, user-selectable horizon (8/12/16 GWs), ATT/DEF difficulty toggle *(complete 2026-05-07)*
 - [x] **Phase 76: Analytics Enhancements** — routes_to_points pipeline score + GemTable column, Accuracy GW row drill-down, LineupTab manual captain/VC override *(complete 2026-05-07)*
 - [x] **Phase 77: Pitch Visuals & Mobile Polish** — LineupTab kit art with placeholder fallback, Decision tab captain card overflow fix, full mobile layout audit on 390–430px viewport *(complete 2026-05-07)*
+
+<details>
+<summary>✅ v1.18 Forecast Transparency & AI Intelligence (Phases 102-105) — SHIPPED 2026-05-14</summary>
+
+See `.planning/milestones/v1.18-ROADMAP.md` for full phase details.
+
+- [x] Phase 102: MC Gate Activation & MCDistributionBar Display — MC_ENABLED=True; MCDistributionBar in XPtsCell; P10/P90 on CaptainPicksPanel *(complete 2026-05-13)*
+- [x] Phase 103: Calibration Sparse-Bucket Fix & Health Indicator — position-aware thresholds; CalibrationHealthIndicator on Decision Summary *(complete 2026-05-13)*
+- [x] Phase 104: TransferPanel Sensitivity & Rejection Explainer Wire-Up — computeRejection on sell-side OCS rows; fragility badges on buy candidates *(complete 2026-05-13)*
+- [x] Phase 105: NLP-02 Per-Player LLM Insight Route, Hook & UI — /api/player-insight (Node.js); usePlayerInsight mutation hook; PlayerInsightSection; two-tier cache; 43/43 tests *(complete 2026-05-13)*
+
+</details>
 
 ## Phase Details
 
@@ -1283,7 +1295,7 @@ Plans:
 - [x] 101-02-PLAN.md — GWT-01 UI: TransferPanel targetGw state + Target GW <select> dropdown + availableGws memo + GwToggle disabled wrapper + OpportunityCostTable conditional column header + sub-label
 **UI hint**: yes
 
-### Phase 102: MC Gate Activation & MCDistributionBar Display
+### Phase 102: MC Gate Activation & MCDistributionBar Display _(v1.18 — see `.planning/milestones/v1.18-ROADMAP.md`)_
 **Goal**: Users can see haul %, blank %, and P10/P90 outcome distributions for any player in the xPts hover card and on the captain picks card — flipping the `mc_enabled` gate so the already-shipped 10k-sim engine surfaces in production for Triple Captain and differential decisions
 **Depends on**: Phase 101 (v1.17 complete); reuses existing `pipeline/simulate.py` 10k-sim engine; MC fields (`blank_prob`, `haul_prob`, `p10_pts`, `p90_pts`) already present in `merged_players.json` but gated off by `mc_enabled: false`
 **Requirements**: MC-01, MC-02
@@ -1418,7 +1430,7 @@ Plans:
 | 99 | v1.17 | 2/2 | Complete    | 2026-05-12 |
 | 100 | v1.17 | 4/4 | Complete    | 2026-05-12 |
 | 101 | v1.17 | 3/3 | Complete    | 2026-05-12 |
-| 102 | v1.18 | 0/3 | Not started | - |
+| 102 | v1.18 | 3/3 | Complete    | 2026-05-13 |
 | 103 | v1.18 | 2/2 | Complete    | 2026-05-13 |
 | 104 | v1.18 | 1/1 | Complete    | 2026-05-13 |
 | 105 | v1.18 | 3/3 | Complete    | 2026-05-13 |

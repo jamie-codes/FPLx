@@ -296,6 +296,41 @@
 
 ---
 
+## Milestone: v1.18 — Forecast Transparency & AI Intelligence
+
+**Shipped:** 2026-05-14
+**Phases:** 4 (102-105) | **Plans:** 9 | **Commits:** 79
+**Timeline:** 1 day (2026-05-13 → 2026-05-14)
+**Files changed:** 69 files, +10,321 / −1,123 lines
+
+### What Was Built
+- MC gate activation: 10k-sim MC fields live in production; MCDistributionBar in XPtsCell hover card; P10/P90 on captain picks (MC-01, MC-02)
+- Calibration health: position-aware sparse-bucket thresholds; CalibrationHealthIndicator on Decision Summary (CAL-01, CAL-02)
+- Transfer trust signals: computeRejection on sell-side OCS rows; fragility badges on buy candidates (WHY-01, SENS-01)
+- NLP-02: per-player LLM insight via Claude Haiku — on-demand, two-tier cache, name-whitelist guardrail (NLP-02)
+
+### What Worked
+- All 5 major features had complete logic pre-shipped; v1.18 was entirely wiring + gating — execution was fast and predictable
+- TDD wave structure (Wave 0 RED → Wave 1 → Wave 2) for Phase 105 gave clean RED→GREEN cycle with no regressions
+- Sequencing rationale (MC first to unblock downstream, LLM last as cost-risk phase) held up exactly as planned
+
+### What Was Inefficient
+- REQUIREMENTS.md MC-01/MC-02 checkboxes not updated after Phase 102 executed — required manual fix at close
+- ROADMAP.md Progress table for Phase 102 showed "0/3 Not started" at close — stale from before execution
+
+### Key Lessons
+- For LLM integration: on-demand trigger + two-tier cache + spending cap = sustainable cost model; `useMutation` not `useQuery` is the right primitive
+- Named constants for permanent gate flips (`MC_ENABLED = True`) are cleaner than sticky-read overrides
+- Python as the single authority for data quality gates (calibration thresholds) avoids TS/Python double-filtering confusion
+- Cost-explosion risk from `useEffect` on expensive operations is non-obvious; document the invariant at the call site
+
+### Cost Observations
+- Model mix: Sonnet for planning/execution agents
+- Sessions: ~1 day of execution
+- Notable: Phase 105 (LLM integration) was sequenced last specifically because it's the only phase where a bug can spend money — this was the right call
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution

@@ -2,7 +2,7 @@
 
 **Milestone:** v1.18 Forecast Transparency & AI Intelligence
 **Started:** 2026-05-13
-**Status:** Active
+**Status:** Complete — shipped 2026-05-14
 
 ---
 
@@ -10,8 +10,8 @@
 
 ### Monte Carlo Display
 
-- [ ] **MC-01**: User can see haul %, blank %, P10 pts, and P90 pts for any player in the xPts hover card via an `MCDistributionBar` component — requires `mc_enabled` gate activation in `accuracy_backtest.json`, `MC_ITERATIONS=10000` and `MC_SEED=42` in GitHub Actions env block, and workflow hygiene fixes (align `anthropic` Python pin to 0.98.1, add explicit numpy 2.2.3)
-- [ ] **MC-02**: User can see P10/P90 pts range on the captain picks card to support Triple Captain and differential captaincy decisions
+- [x] **MC-01**: User can see haul %, blank %, P10 pts, and P90 pts for any player in the xPts hover card via an `MCDistributionBar` component — requires `mc_enabled` gate activation in `accuracy_backtest.json`, `MC_ITERATIONS=10000` and `MC_SEED=42` in GitHub Actions env block, and workflow hygiene fixes (align `anthropic` Python pin to 0.98.1, add explicit numpy 2.2.3)
+- [x] **MC-02**: User can see P10/P90 pts range on the captain picks card to support Triple Captain and differential captaincy decisions
 
 ### Calibration
 
@@ -63,10 +63,10 @@
 
 | REQ-ID | Phase | Plan | Status |
 |--------|-------|------|--------|
-| MC-01 | Phase 102 | — | pending |
-| MC-02 | Phase 102 | — | pending |
-| CAL-01 | Phase 103 | — | pending |
-| CAL-02 | Phase 103 | — | pending |
-| SENS-01 | Phase 104 | — | pending |
-| WHY-01 | Phase 104 | — | pending |
-| NLP-02 | Phase 105 | — | pending |
+| MC-01 | Phase 102 | 102-01/02/03 | ✅ Complete |
+| MC-02 | Phase 102 | 102-03 | ✅ Complete |
+| CAL-01 | Phase 103 | 103-01/02 | ✅ Complete |
+| CAL-02 | Phase 103 | 103-02 | ✅ Complete |
+| SENS-01 | Phase 104 | 104-01 | ✅ Complete |
+| WHY-01 | Phase 104 | 104-01 | ✅ Complete |
+| NLP-02 | Phase 105 | 105-01/02/03 | ✅ Complete |

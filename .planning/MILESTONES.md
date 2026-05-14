@@ -1,5 +1,21 @@
 # Milestones
 
+## v1.18 Forecast Transparency & AI Intelligence (Shipped: 2026-05-14)
+
+**Phases completed:** 4 phases (102-105), 9 plans
+**Timeline:** 2026-05-13 → 2026-05-14 (1 day)
+**Files changed:** 69 files, +10,321 / −1,123 lines
+**Known deferred items at close:** 47 (see STATE.md Deferred Items)
+
+**Key accomplishments:**
+
+1. MC Gate Activation (Phase 102): `MC_ENABLED = True` constant in `pipeline/run.py` — 10k-sim MC fields (haul_prob, blank_prob, p10_pts, p90_pts) now live on every daily run; `MCDistributionBar` in XPtsCell hover card; P10/P90 range on `CaptainPicksPanel` rows; GitHub Actions hygiene (anthropic 0.98.1, numpy 2.2.3, MC_ITERATIONS/MC_SEED) — MC-01, MC-02
+2. Calibration Health (Phase 103): Position-aware sparse-bucket thresholds (GK/DEF ≥15, MID/FWD ≥8, pool guard <50 obs); Python single gate replacing TS double-filter; `CalibrationHealthIndicator` (good/fair/poor, cold-start, absent) on Decision Summary between 4-card grid and ProseSummaryBlock — CAL-01, CAL-02
+3. Transfer Trust Signals (Phase 104): `computeRejection` wired onto sell side of every OCS row (up to 4 reason lines, always-visible); `scoredPlayers` + `lifecycleLabels` threaded through `TransferPanel` → `OpportunityCostTable` → `PlayerMoveCell`; fragility badges already present from Phase 93 — WHY-01, SENS-01
+4. Per-Player LLM Insights (Phase 105): `POST /api/player-insight` (Node.js, maxDuration=30, two-attempt name-whitelist guardrail); `usePlayerInsight` TanStack mutation hook; `PlayerInsightSection` 5-state component; two-tier cache (localStorage + Vercel Blob `player_insights/gw{N}/element_{id}.json`); wired into GemTable expand rows and TransferPanel buy-candidate cells; 43/43 TDD tests GREEN; human UAT approved (Vercel env + Anthropic cap confirmed) — NLP-02
+
+---
+
 ## v1.15 Pipeline Intelligence (Shipped: 2026-05-09)
 
 **Phases completed:** 2 phantom phases (86, 87) — delivered early via v1.14 Phases 82 and 84; no additional implementation required

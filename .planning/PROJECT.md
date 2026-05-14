@@ -40,17 +40,15 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
-## Current Milestone: v1.18 Forecast Transparency & AI Intelligence
+## Current Milestone: v1.19 (TBD)
 
-**Goal:** Surface model confidence and reasoning — Monte Carlo outcome distributions, calibration evidence, sensitivity flags, and rejection explainers — and introduce Claude API prose summaries with per-player insights.
+**Goal:** Not yet defined. Start with `/gsd-new-milestone`.
 
-**Target features:**
-- MC-01: Monte Carlo Simulator — 10k sims per player per GW, haul/blank %, P10/P90 distributions for TC and differential decisions
-- CAL-01: Calibration Charts — reliability diagram by position (predicted haul % vs actual), surfaces in AccuracyTab
-- SENS-01: Sensitivity Flags — fragility signals on recommendations (robust vs falls-apart-if-start-prob-drops)
-- WHY-01: Rejection Explainer — plain-English reason why a player is below threshold, in GemTable row expand and TransferPanel
-- NLP-01: LLM prose summary — Claude API weekly recommendation paragraph on Decision Summary tab, grounded in structured model output
-- NLP-02: Per-player LLM insights — brief Claude API per-player explanation in GemTable row expand and TransferPanel
+## Previous Milestone: v1.18 Forecast Transparency & AI Intelligence (Complete 2026-05-14)
+
+**Goal:** Surface model confidence and reasoning — Monte Carlo outcome distributions, calibration evidence, sensitivity flags, and rejection explainers — and introduce Claude API per-player prose insights.
+
+**Delivered:** MC gate (10k-sim MC fields live), MCDistributionBar, P10/P90 on captain picks, CalibrationHealthIndicator, fragility badges + rejection reasons on TransferPanel, NLP-02 per-player LLM insight with two-tier cache and name-whitelist guardrail.
 
 ## Previous Milestone: v1.17 End-of-Season Intelligence (Complete 2026-05-12)
 
@@ -267,14 +265,19 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 - ✓ TRT-01/02/03/04/05/06/07: Transfer Route Tree — pure-TS greedy multi-branch engine, RouteTreeTab summary + expand, recommended highlight, bridge to Manual Plan, horizon recompute — v1.9
 - ✓ D-07: Section-level horizon lift — planHorizon state in page.tsx, shared HorizonSelector above Plan sub-tab nav, horizon prop threaded to PlannerTab + ManualPlanTab + RouteTreeTab — v1.9
 
-### Active (v1.18)
+### Validated (v1.18)
 
-- [ ] MC-01: Monte Carlo Simulator — 10k sims per player per GW, haul/blank %, P10/P90 outcome distributions
-- [ ] CAL-01: Calibration Charts — reliability diagram by position, surfaces in AccuracyTab
-- [ ] SENS-01: Sensitivity Flags — fragility signals on transfer/captain recommendations
-- [ ] WHY-01: Rejection Explainer — plain-English reason why a player is below threshold
-- [ ] NLP-01: LLM prose summary — Claude API weekly recommendation paragraph on Decision Summary tab
-- [ ] NLP-02: Per-player LLM insights — Claude API per-player explanation in GemTable row expand and TransferPanel
+- ✓ MC-01: Monte Carlo gate activation — `MC_ENABLED = True` in `pipeline/run.py`; `MCDistributionBar` (haul%, P10/P90) in XPtsCell hover card — v1.18
+- ✓ MC-02: P10/P90 range on CaptainPicksPanel CandidateRow (raw undoubled, zinc-400, gate-off silent) — v1.18
+- ✓ CAL-01: Calibration sparse-bucket fix — position-aware thresholds (GK/DEF ≥15, MID/FWD ≥8, pool guard <50 obs); Python single gate; TS double-filter removed — v1.18
+- ✓ CAL-02: `CalibrationHealthIndicator` (good/fair/poor, cold-start, absent-guard) on Decision Summary tab — v1.18
+- ✓ SENS-01: FragilityBadge on TransferPanel buy candidates (robust=silent, fragile=dot, knife_edge=pill) — v1.18
+- ✓ WHY-01: `computeRejection` on sell side of every OCS row — up to 4 reason lines always-visible below sell name — v1.18
+- ✓ NLP-02: Per-player LLM insight (`claude-haiku-4-5-20251001`, on-demand, two-tier cache, name-whitelist guardrail) in GemTable expand + TransferPanel buy rows — v1.18
+
+### Active (v1.19)
+
+_(No requirements defined yet — start with `/gsd-new-milestone`)_
 
 ### Out of Scope
 
@@ -334,23 +337,29 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 | Test fixtures require valid single-GK formations (4-3-3, 5-3-2) | `optimiseLineup` is deterministic only with valid formations; 2-GK-in-XI fixtures aren't | ✓ Good — prevents flaky test failures |
 | D-07: `planHorizon` lifted to `page.tsx`, single section-level HorizonSelector | Three Plan sub-tabs sharing horizon state via local selectors caused sync bugs; single source of truth eliminates drift | ✓ Good — all sub-tabs (PlannerTab/ManualPlanTab/RouteTreeTab) receive horizon prop; D-07 sync effect in ManualPlanTab mirrors prop → localStorage |
 | TRT bridge chip `null` constant (D-09) | ChipToggle in RouteTreeTab deferred (RESEARCH.md A3); bridge always writes `chip: null` per step | ✓ Good — engine-level TRT-06 satisfied; UI ChipToggle deferred to v1.12 |
+| `MC_ENABLED = True` as named constant in `run.py` (v1.18) | Named constant inside try block overrides sticky-read pattern for permanent gate flips — consistent with other gate defaults at lines 188–193 | ✓ Good — no downstream accuracy.py changes needed; sticky-read self-sustains after first write |
+| NLP-02 on-demand trigger only, never `useEffect` (v1.18) | Cost explosion risk: 50 rows × 900 tokens × 4 sessions × 180 days ≈ USD 16–32/season from one bug | ✓ Good — `useMutation` + explicit button; two-tier cache eliminates repeat spend |
+| NLP-02 Node.js runtime, never Edge (v1.18) | `@anthropic-ai/sdk` SSE parsing fails on Edge per anthropics/anthropic-sdk-typescript#292 | ✓ Good — `maxDuration = 30`, non-streaming `messages.create` only |
+| Name-whitelist guardrail with structured fallback (v1.18) | LLM hallucination prevention — two-attempt guardrail; fallback to `reasons[]` array on both failures | ✓ Good — deterministic, never shows hallucinated content |
+| Python single sparse-bucket gate for calibration (v1.18) | TS double-filter caused false confidence when Python had already filtered; single authority in pipeline | ✓ Good — AccuracyTab TS filters removed entirely |
 
 ---
 
 ## Context
 
-**Tech stack:** Next.js 16, React 19, TypeScript, TanStack Table v8, TanStack Query, Tailwind CSS v4, Vitest, immer/use-immer, Python (requests, pandas, soccerdata), Vercel Blob
+**Tech stack:** Next.js 16, React 19, TypeScript, TanStack Table v8, TanStack Query, Tailwind CSS v4, Vitest, immer/use-immer, Python (requests, pandas, soccerdata, anthropic), Vercel Blob, Anthropic Claude API
 
-**Codebase:** ~28,000 LOC (~23,000 TypeScript + ~5,000 Python), ~440+ files
+**Codebase:** ~30,000 LOC (~24,500 TypeScript + ~5,500 Python), ~460+ files
 
-**What's running (v1.9):**
+**What's running (v1.18):**
 - `/` — Gem Ratings tab (default), DefCon tab, Squad tab (Decision | Transfers | Optimiser sub-tabs, Decision is default), Club Form tab, Value Gems tab, Set Pieces tab, Insights tab, Accuracy tab
-- `/api/players` — merged FPL+Understat dataset from Vercel Blob (includes cs_prob_1gw, xPts_components_1gw with appearance_pts)
-- `/api/accuracy` — accuracy backtest data including form signal gate
-- Decision Summary — fully client-side; composes all v1.7 engines into 4-card severity-badged view
-- Squad Optimiser — fully client-side; `optimiseLineup()`, `suggestTransfers()`, `buildOptimalSquad()` all pure TypeScript
-- Transfer OCS — `computeOpportunityCostRows()` over `suggestTransfers()` output; Roll/1-FT/2-FT/Hit with break-even
-- `pipeline/run.py` — daily refresh via GitHub Actions cron; writes cs_prob_1gw and appearance_pts to merged_players.json
+- `/api/players` — merged FPL+Understat dataset from Vercel Blob (includes cs_prob_1gw, xPts_components_1gw, MC fields: blank_prob/haul_prob/p10_pts/p90_pts)
+- `/api/accuracy` — accuracy backtest data including form signal gate, calibration data, mc_enabled flag
+- `/api/player-insight` — on-demand Claude Haiku insight per player (Node.js, two-attempt guardrail, Vercel Blob cache)
+- Decision Summary — composes all v1.7 engines + CalibrationHealthIndicator + ProseSummaryBlock + OpportunityCostTable with WHY-01 reasons
+- GemTable expand rows — show PlayerInsightSection after ComparisonSearch (on demand)
+- TransferPanel OCS — OpportunityCostTable with fragility badges (buy), rejection reasons (sell), PlayerInsightSection (buy candidates)
+- `pipeline/run.py` — daily refresh via GitHub Actions cron; MC_ENABLED=True; 10k sims per player per GW
 
 ---
 
@@ -365,4 +374,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-13 — v1.18 in progress. Phase 103 complete: calibration sparse-bucket fix + CalibrationHealthIndicator.*
+*Last updated: 2026-05-14 after v1.18 milestone — Forecast Transparency & AI Intelligence complete. MC gate active, NLP-02 per-player insights wired, calibration health indicator live.*
