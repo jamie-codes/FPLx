@@ -164,6 +164,29 @@ export async function POST(request: Request) {
       { status: 503 },
     )
   }
+  // NLP-BATCH-03: Blob read-before-generate. Check for a pre-generated insight before
+  // calling Anthropic. Returns cached JSON directly on hit (~50–150ms, zero Claude spend).
+  // Any error falls through to generation — a Blob read failure NEVER fails the user request.
+  if (isUseBlob()) {
+    const cacheKey = `player_insights/gw${body.gw}/element_${body.player.id}.json`
+    try {
+      const { blobs } = await list({ prefix: cacheKey, limit: 1 })
+      if (blobs.length > 0) {
+        const cachedRes = await fetch(blobs[0].url)
+        if (cachedRes.ok) {
+          const cached = await cachedRes.json()
+          console.log('[player-insight] blob-cache hit', { player_id: body.player.id, gw: body.gw })
+          return Response.json(cached, { status: 200 })
+        }
+        console.log('[player-insight] blob-cache miss', { player_id: body.player.id, gw: body.gw, reason: 'fetch_not_ok' })
+      } else {
+        console.log('[player-insight] blob-cache miss', { player_id: body.player.id, gw: body.gw, reason: 'no_entry' })
+      }
+    } catch (err) {
+      console.log('[player-insight] blob-cache error — falling through to generation', { player_id: body.player.id, gw: body.gw, error: String(err) })
+    }
+  }
+
   const allowed = [body.player.web_name]
   const client = new Anthropic({ apiKey })
   const xmlContext = buildXmlContext(body)

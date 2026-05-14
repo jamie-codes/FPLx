@@ -240,4 +240,101 @@ describe('POST /api/player-insight', () => {
     expect(src).not.toMatch(/runtime\s*=\s*['"]edge['"]/)
     expect(src).toMatch(/export\s+const\s+maxDuration\s*=\s*30/)
   })
+
+  it('200 with cached prose when Blob entry exists (cache hit, no Anthropic call)', async () => {
+    process.env.USE_BLOB = 'true'
+    // First list call: corpus read (from beforeEach default)
+    // Second list call: cache read — returns a matching blob entry
+    ;(list as unknown as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({ blobs: [{ url: 'http://blob/merged_players.json' }] })
+      .mockResolvedValueOnce({ blobs: [{ url: 'http://blob/cache/element_100.json', pathname: 'player_insights/gw35/element_100.json' }] })
+    // First fetch call: corpus URL (from beforeEach default)
+    // Second fetch call: cache URL — returns the pre-generated insight
+    const cachedBody = { prose: 'Cached Salah insight from batch.', player_id: 100, gw: 35, generated_at: '2026-05-14T10:00:00.000Z' }
+    ;(global.fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({ ok: true, text: () => Promise.resolve(JSON.stringify([{ web_name: 'Salah' }])) } as unknown as Response)
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(cachedBody) } as unknown as Response)
+    const { POST } = await import('./route')
+    const res = await POST(makeReq(validBody))
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body).toEqual(cachedBody)
+    // The Anthropic constructor must NOT have been called (zero Claude spend on cache hit)
+    expect(Anthropic as unknown as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(0)
+    // Cache read was requested for the correct prefix
+    expect(list).toHaveBeenCalledWith(expect.objectContaining({ prefix: 'player_insights/gw35/element_100.json' }))
+  })
+
+  it('falls through to Anthropic generation when Blob cache misses', async () => {
+    process.env.USE_BLOB = 'true'
+    // First list call: corpus read; Second list call: cache lookup returns empty (cache miss)
+    ;(list as unknown as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({ blobs: [{ url: 'http://blob/merged_players.json' }] })
+      .mockResolvedValueOnce({ blobs: [] })
+    // Corpus fetch succeeds normally
+    ;(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve(JSON.stringify([{ web_name: 'Salah' }])),
+    } as unknown as Response)
+    // Anthropic SDK returns a valid guardrail-passing response
+    const create = vi.fn().mockResolvedValue({
+      content: [{ type: 'text', text: 'Salah looks strong this week.' }],
+      usage: { input_tokens: 50, output_tokens: 80, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
+    })
+    ;(Anthropic as unknown as ReturnType<typeof vi.fn>).mockImplementation(function () {
+      return { messages: { create } }
+    })
+    const { POST } = await import('./route')
+    const res = await POST(makeReq(validBody))
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.prose).toBe('Salah looks strong this week.')
+    // Anthropic constructor was called (fell through to generation)
+    expect(Anthropic as unknown as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(1)
+  })
+
+  it('does NOT attempt Blob cache read when USE_BLOB=false', async () => {
+    process.env.USE_BLOB = 'false'
+    // Anthropic returns a valid response
+    const create = vi.fn().mockResolvedValue({
+      content: [{ type: 'text', text: 'Salah looks strong this week.' }],
+      usage: { input_tokens: 50, output_tokens: 80, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
+    })
+    ;(Anthropic as unknown as ReturnType<typeof vi.fn>).mockImplementation(function () {
+      return { messages: { create } }
+    })
+    const { POST } = await import('./route')
+    const res = await POST(makeReq(validBody))
+    expect(res.status).toBe(200)
+    // list must be called ZERO times (corpus read also skipped in USE_BLOB=false mode)
+    expect(list).toHaveBeenCalledTimes(0)
+  })
+
+  it('falls through to Anthropic generation when cache Blob fetch throws', async () => {
+    process.env.USE_BLOB = 'true'
+    // First list call: corpus read; Second list call: cache lookup returns a blob
+    ;(list as unknown as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({ blobs: [{ url: 'http://blob/merged_players.json' }] })
+      .mockResolvedValueOnce({ blobs: [{ url: 'http://blob/cache/broken.json' }] })
+    // First fetch: corpus succeeds; Second fetch: cache URL throws (network error)
+    ;(global.fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({ ok: true, text: () => Promise.resolve(JSON.stringify([{ web_name: 'Salah' }])) } as unknown as Response)
+      .mockRejectedValueOnce(new Error('network error'))
+    // Anthropic SDK returns a valid guardrail-passing response
+    const create = vi.fn().mockResolvedValue({
+      content: [{ type: 'text', text: 'Salah looks strong this week.' }],
+      usage: { input_tokens: 50, output_tokens: 80, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
+    })
+    ;(Anthropic as unknown as ReturnType<typeof vi.fn>).mockImplementation(function () {
+      return { messages: { create } }
+    })
+    const { POST } = await import('./route')
+    const res = await POST(makeReq(validBody))
+    // Must return 200 (no exception escaped POST)
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.prose).toBe('Salah looks strong this week.')
+    // Anthropic constructor was called (fell through after cache error)
+    expect(Anthropic as unknown as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(1)
+  })
 })
