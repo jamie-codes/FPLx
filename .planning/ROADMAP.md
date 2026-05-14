@@ -1412,7 +1412,7 @@ Plans:
   **Wave 2** *(blocked on Wave 1 completion)*
   - [x] 108-02-PLAN.md — Insert INSIGHT_BATCH_ENABLED-gated batch step in pipeline/run.py after prose_summary except block; top-20 selection by xPts_1gw (status=a, selected_by_percent tie-break); non-fatal try/except; 6 new integration tests [NLP-BATCH-02, NLP-BATCH-03]
   **Wave 3** *(gap closure — blocked on Wave 2; closes NLP-BATCH-03 verification gap)*
-  - [ ] 108-03-PLAN.md — Add Blob read-before-generate cache path to /api/player-insight/route.ts so pre-generated insights served by Plan 01 batch are returned to users (~50ms) instead of re-generated; 4 new vitest tests for cache hit/miss/USE_BLOB-false/read-error fallback [NLP-BATCH-03]
+  - [x] 108-03-PLAN.md — Add Blob read-before-generate cache path to /api/player-insight/route.ts so pre-generated insights served by Plan 01 batch are returned to users (~50ms) instead of re-generated; 4 new vitest tests for cache hit/miss/USE_BLOB-false/read-error fallback [NLP-BATCH-03]
 **UI hint**: no
 **Phase notes**: Pipeline-side feature only — no UI changes required because the existing two-tier cache (Phase 105) reads Blob transparently. The batch step lives in `pipeline/run.py` after `merged_players.json` is finalised and runs strictly behind `INSIGHT_BATCH_ENABLED` to keep cost controllable independently of the daily refresh. Pitfall to avoid: do NOT pre-generate insights for all 700 players — top-20 only (20 × ~900 tokens × ~30 cents per MTok ≈ free at cache-read rate after the first call, but bypassing the cap is the kind of bug that bills USD 100/month silently). Top-20 selection rule: rank by `xPts_1gw` after status filter (`status == 'a'`); ties broken by `selected_by_percent` desc; cap is a hard 20 even if 21st-ranked player ties. Anthropic Console monthly spending cap from Phase 105 remains the defence-in-depth ceiling. Sequenced after Phase 107 so caching is live before batch generation amplifies the call volume.
 
@@ -1501,5 +1501,5 @@ Plans:
 | 105 | v1.18 | 3/3 | Complete    | 2026-05-13 |
 | 106 | v1.19 | 4/4 | Complete    | 2026-05-14 |
 | 107 | v1.19 | 1/1 | Complete    | 2026-05-14 |
-| 108 | v1.19 | 2/2 | Complete   | 2026-05-14 |
+| 108 | v1.19 | 3/3 | Complete   | 2026-05-14 |
 | 109 | v1.19 | 0 | Not started | - |
