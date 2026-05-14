@@ -9,6 +9,15 @@ function makeBucket(bucket_mid: number, actual_rate: number, sample_n = 25): Cal
   return { bucket_mid, predicted_rate: bucket_mid, actual_rate, sample_n }
 }
 
+function makeMcBucket(predicted_rate: number, actual_rate: number, sample_n = 25, bucket_mid_override?: number): CalibrationBucket {
+  return {
+    bucket_mid: bucket_mid_override !== undefined ? bucket_mid_override : predicted_rate - 0.02,
+    predicted_rate,
+    actual_rate,
+    sample_n,
+  }
+}
+
 function makeData(overrides: Partial<AccuracyBacktest> = {}): AccuracyBacktest {
   return {
     generated_at: '2026-05-13T00:00:00Z',
@@ -127,5 +136,61 @@ describe('CalibrationHealthIndicator', () => {
     const data = makeData()
     const { getByRole } = render(<CalibrationHealthIndicator data={data} />)
     expect(getByRole('status')).toBeTruthy()
+  })
+
+  it('renders MC badge in teal when calibration_mode is mc', () => {
+    const data = makeData({ summary: { calibration_mode: 'mc' } as never })
+    const { getByLabelText, getByText } = render(<CalibrationHealthIndicator data={data} />)
+    const badge = getByLabelText('Calibration mode: MC')
+    expect(badge).toBeTruthy()
+    expect(getByText('MC')).toBeTruthy()
+    expect(badge.className).toContain('text-teal-700')
+    expect(badge.className).toContain('bg-teal-100')
+  })
+
+  it('renders Analytical badge in zinc when calibration_mode is analytical', () => {
+    const data = makeData({ summary: { calibration_mode: 'analytical' } as never })
+    const { getByLabelText, getByText } = render(<CalibrationHealthIndicator data={data} />)
+    const badge = getByLabelText('Calibration mode: Analytical')
+    expect(badge).toBeTruthy()
+    expect(getByText('Analytical')).toBeTruthy()
+    expect(badge.className).toContain('text-zinc-600')
+    expect(badge.className).toContain('bg-zinc-100')
+  })
+
+  it('mode badge absent when calibration_mode is undefined (legacy cache)', () => {
+    const data = makeData({ summary: {} as never })
+    const { queryByLabelText, getByText } = render(<CalibrationHealthIndicator data={data} />)
+    expect(queryByLabelText(/Calibration mode:/)).toBeNull()
+    // Row still renders with tier badge and sentence
+    expect(getByText('good')).toBeTruthy()
+  })
+
+  it('mode badge not rendered in cold-start branch', () => {
+    const data = makeData({
+      gws_covered: [32, 31],
+      summary: { calibration_mode: 'mc' } as never,
+    })
+    const { queryByLabelText, getByText } = render(<CalibrationHealthIndicator data={data} />)
+    expect(queryByLabelText(/Calibration mode:/)).toBeNull()
+    expect(getByText('Calibration evidence will appear after 3+ completed GWs.')).toBeTruthy()
+  })
+
+  it('maxDeviation uses predicted_rate not bucket_mid (D-11 bug fix)', () => {
+    // bucket where predicted_rate=0.20, actual_rate=0.21, bucket_mid=0.05
+    // deviation off predicted_rate = |0.21 - 0.20| = 0.01 → tier='good'
+    // deviation off bucket_mid = |0.21 - 0.05| = 0.16 → tier='poor'
+    const data = makeData({
+      calibration: {
+        by_position: {
+          all: [makeMcBucket(0.20, 0.21, 25, 0.05)],
+          '1': [], '2': [], '3': [], '4': [],
+        },
+      },
+      summary: { calibration_mode: 'mc' } as never,
+    })
+    const { getByText } = render(<CalibrationHealthIndicator data={data} />)
+    // Only passes if maxDeviation uses predicted_rate (0.01 → 'good')
+    expect(getByText('good')).toBeTruthy()
   })
 })

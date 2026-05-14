@@ -355,6 +355,7 @@ export interface AccuracySummary {
   save_predictor_enabled?: boolean   // Phase 83 GK-01 gate (preserved across runs)
   news_flag_enabled?: boolean        // Phase 88 SCRAPER-01 gate (default true; kill switch)
   mc_enabled?: boolean               // Phase 90 MC-01: 5-GW MC simulation gate (default false)
+  calibration_mode?: 'mc' | 'analytical'  // Phase 109 MC-CAL-01: written by pipeline; reads as 'mc' when MC_ENABLED AND coverage >= 80%
 }
 
 export interface AccuracyHaulter {
@@ -460,7 +461,7 @@ export interface VersionRecord {
 
 export interface CalibrationBucket {
   bucket_mid: number       // 0.05..0.95 (decile midpoint)
-  predicted_rate: number   // equals bucket_mid (decile midpoint as fraction)
+  predicted_rate: number   // analytical: equals bucket_mid; MC mode (Phase 109): mean(haul_prob) per bucket
   actual_rate: number      // observed haul rate (actual_pts >= 10) for this bucket
   sample_n: number         // observation count; only buckets with n >= 5 are included
   // Phase 91 CAL-01 (D-06): optional for legacy-cache compat — Phase 63 caches lack these fields.
