@@ -27,6 +27,8 @@ function mockUpstream(
   elements: Array<{ id: number; web_name: string }>,
   dreamTeam: { top_player: { id: number; points: number }; team: Array<{ element: number; points: number; position: number }> } | null = { top_player: { id: 999, points: 0 }, team: [] },
   dreamTeamOk: boolean = true,
+  live: { elements: Array<{ id: number; stats: { total_points: number } }> } | null = null,
+  liveOk: boolean = true,
 ) {
   const fetchMock = vi.fn(async (url: string) => {
     if (url.includes('/picks/')) {
@@ -41,6 +43,10 @@ function mockUpstream(
     if (url.includes('/dream-team/')) {
       if (!dreamTeamOk) return new Response('', { status: 503 })
       return new Response(JSON.stringify(dreamTeam), { status: 200 })
+    }
+    if (url.includes('/live/')) {
+      if (!liveOk) return new Response('', { status: 503 })
+      return new Response(JSON.stringify(live ?? { elements: [] }), { status: 200 })
     }
     throw new Error(`Unexpected fetch URL: ${url}`)
   })
@@ -330,5 +336,106 @@ describe('Phase 99 PGW-03: /api/gw-review benchmark + missed players', () => {
     // Only element 999 ('NotOwned') is genuinely missed; 401 is on the bench
     expect(body.missed_players).toEqual([{ name: 'NotOwned', pts: 20 }])
     expect(body.missed_players.find(p => p.name === 'BenchA')).toBeUndefined()
+  })
+})
+
+describe('Phase 110 FIX-03/04: /api/gw-review live endpoint for settled GW points', () => {
+  // Test 1 (FIX-03 RED): top_scorer_pts must come from event/{gw}/live/ not pick.total_points
+  it('top_scorer_pts equals live total_points for the top starter (FIX-03)', async () => {
+    const starters = makeStarters()
+    // starters[0] is element=1 captain; pick.total_points=5 but live returns 14
+    // starters[1..10] have pick.total_points=2 and live returns 4
+    const benchPicks = [bench(101, 0), bench(102, 0), bench(103, 0), bench(104, 0)]
+    const allPicks = [...starters, ...benchPicks]
+    const elements = [
+      ...starters.map(s => ({ id: s.element, web_name: `Player${s.element}` })),
+      { id: 101, web_name: 'Bench1' },
+      { id: 102, web_name: 'Bench2' },
+      { id: 103, web_name: 'Bench3' },
+      { id: 104, web_name: 'Bench4' },
+    ]
+    // Live data: element=1 has 14 pts (highest), others have 4
+    const liveData = {
+      elements: [
+        { id: 1, stats: { total_points: 14 } },
+        ...Array.from({ length: 10 }, (_, i) => ({ id: i + 2, stats: { total_points: 4 } })),
+        { id: 101, stats: { total_points: 2 } },
+        { id: 102, stats: { total_points: 1 } },
+        { id: 103, stats: { total_points: 0 } },
+        { id: 104, stats: { total_points: 0 } },
+      ],
+    }
+    mockUpstream(allPicks, elements, null, false, liveData, true)
+    const response = await GET(makeRequest())
+    expect(response.status).toBe(200)
+    const body = await response.json() as {
+      top_scorer_pts: number
+      top_scorer_name: string
+    }
+    // FIX-03: must be 14 (live), not 5 (pick.total_points)
+    expect(body.top_scorer_pts).toBe(14)
+    expect(body.top_scorer_name).toBe('Player1')
+  })
+
+  // Test 2 (FIX-04 RED): best_bench_player_pts must come from event/{gw}/live/ not pick.total_points
+  it('best_bench_player_pts equals live total_points for the best bench player (FIX-04)', async () => {
+    const starters = makeStarters()
+    // bench picks all have pick.total_points=0 (settled GW behaviour)
+    const benchPicks = [bench(101, 0), bench(102, 0), bench(103, 0), bench(104, 0)]
+    const allPicks = [...starters, ...benchPicks]
+    const elements = [
+      ...starters.map(s => ({ id: s.element, web_name: `Player${s.element}` })),
+      { id: 101, web_name: 'Pickford' },
+      { id: 102, web_name: 'Watkins' },
+      { id: 103, web_name: 'Andersen' },
+      { id: 104, web_name: 'Estupinan' },
+    ]
+    // Live data: bench element=102 (Watkins) has highest bench pts at 9
+    const liveData = {
+      elements: [
+        ...starters.map(s => ({ id: s.element, stats: { total_points: 5 } })),
+        { id: 101, stats: { total_points: 2 } },
+        { id: 102, stats: { total_points: 9 } },
+        { id: 103, stats: { total_points: 5 } },
+        { id: 104, stats: { total_points: 1 } },
+      ],
+    }
+    mockUpstream(allPicks, elements, null, false, liveData, true)
+    const response = await GET(makeRequest())
+    expect(response.status).toBe(200)
+    const body = await response.json() as {
+      best_bench_player_pts: number
+      best_bench_player_name: string
+    }
+    // FIX-04: must be 9 (live), not 0 (pick.total_points)
+    expect(body.best_bench_player_pts).toBe(9)
+    expect(body.best_bench_player_name).toBe('Watkins')
+  })
+
+  // Test 3 (FIX-03/04 SC-5 RED): /live/ returning 503 must degrade to 0, never 502
+  it('degrades gracefully to 0 when event/live/ returns 503 — route still returns HTTP 200 (SC-5)', async () => {
+    const starters = makeStarters()
+    const benchPicks = [bench(101, 0), bench(102, 0), bench(103, 0), bench(104, 0)]
+    const allPicks = [...starters, ...benchPicks]
+    const elements = [
+      ...starters.map(s => ({ id: s.element, web_name: `Player${s.element}` })),
+      { id: 101, web_name: 'Bench1' },
+      { id: 102, web_name: 'Bench2' },
+      { id: 103, web_name: 'Bench3' },
+      { id: 104, web_name: 'Bench4' },
+    ]
+    // liveOk=false → mock returns 503 → liveMap stays empty → pts fall back to 0
+    mockUpstream(allPicks, elements, null, false, null, false)
+    const response = await GET(makeRequest())
+    // SC-5: route must still return 200 (not 502), other fields populated normally
+    expect(response.status).toBe(200)
+    const body = await response.json() as {
+      top_scorer_pts: number
+      best_bench_player_pts: number
+      your_score: number
+    }
+    expect(body.top_scorer_pts).toBe(0)
+    expect(body.best_bench_player_pts).toBe(0)
+    expect(body.your_score).toBe(72)
   })
 })
