@@ -146,7 +146,7 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
   // last_gw_actual_pts column header derivation. Off-by-one risk on Sunday
   // between deadline and pipeline rerun is accepted (one extra LLM spend at
   // most; no data corruption).
-  const insightGw = (lastGwActualGwN ?? 0) + 1
+  const insightGw = lastGwActualGwN !== null ? lastGwActualGwN + 1 : null
   const newsFlagEnabled = useNewsFlagEnabled()
 
   const scoredPlayers = useMemo(() => computeAllGemScores(data ?? []), [data])
@@ -375,12 +375,14 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                               Renders Y's rejection reasons that X does not share, per Plan 01 computeHeadToHead composition (SC-4). */}
                           <ComparisonSearch rowPlayer={row.original} allPlayers={scoredPlayers} />
                           {/* Phase 105 NLP-02 (D-04): AI insight section appended LAST in mobile expand row */}
-                          <PlayerInsightSection
-                            player={row.original}
-                            gw={insightGw}
-                            rejectionReasons={rejection.reasons}
-                            fragility={{ tier: fragility.tier, reasons: fragility.reasons }}
-                          />
+                          {insightGw !== null && (
+                            <PlayerInsightSection
+                              player={row.original}
+                              gw={insightGw}
+                              rejectionReasons={rejection.reasons}
+                              fragility={{ tier: fragility.tier, reasons: fragility.reasons }}
+                            />
+                          )}
                         </td>
                       </tr>
                       {/* NEW desktop expand row — rejection panel ONLY (D-02 + Pitfall 5: hidden sm:table-row) */}
@@ -404,12 +406,14 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                               Renders Y's rejection reasons that X does not share, per Plan 01 computeHeadToHead composition (SC-4). */}
                           <ComparisonSearch rowPlayer={row.original} allPlayers={scoredPlayers} />
                           {/* Phase 105 NLP-02 (D-04): AI insight section appended LAST in desktop expand row */}
-                          <PlayerInsightSection
-                            player={row.original}
-                            gw={insightGw}
-                            rejectionReasons={rejection.reasons}
-                            fragility={{ tier: fragility.tier, reasons: fragility.reasons }}
-                          />
+                          {insightGw !== null && (
+                            <PlayerInsightSection
+                              player={row.original}
+                              gw={insightGw}
+                              rejectionReasons={rejection.reasons}
+                              fragility={{ tier: fragility.tier, reasons: fragility.reasons }}
+                            />
+                          )}
                         </td>
                       </tr>
                     </>
