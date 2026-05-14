@@ -147,10 +147,11 @@ function PlayerMoveCell({
             {tier !== 'robust' && <FragilityBadge tier={tier} reasons={reasons} />}
             {/* Phase 105 NLP-02 (D-05): AI insight section, appended below FragilityBadge for buy candidate */}
             <PlayerInsightSection
-              player={t.buy as unknown as ScoredPlayer}
+              player={t.buy}
               gw={gw}
               rejectionReasons={sellReasonsCapped}
               fragility={{ tier, reasons }}
+              lifecycleLabel={lifecycleLabels.get(t.buy.id) as string | undefined}
             />
           </div>
         )

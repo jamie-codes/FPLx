@@ -9,15 +9,16 @@
 
 import { useState } from 'react'
 import { usePlayerInsight, readCachedInsight } from '@/lib/hooks/usePlayerInsight'
-import type { ScoredPlayer } from '@/lib/types'
+import type { MergedPlayer } from '@/lib/types'
 import type { FragilityTier } from '@/lib/sensitivity'
 import type { PlayerInsightResponse } from '@/lib/types'
 
 export interface PlayerInsightSectionProps {
-  player: ScoredPlayer
+  player: Pick<MergedPlayer, 'id' | 'web_name' | 'element_type' | 'haul_prob' | 'blank_prob' | 'p10_pts' | 'p90_pts'>
   gw: number
   rejectionReasons: string[]
   fragility: { tier: FragilityTier; reasons: string[] }
+  lifecycleLabel?: string
 }
 
 /**
@@ -33,6 +34,7 @@ export function PlayerInsightSection({
   gw,
   rejectionReasons,
   fragility,
+  lifecycleLabel,
 }: PlayerInsightSectionProps) {
   // Cache-hit initialiser: check localStorage on mount (synchronous — safe for SSR since
   // localStorage access only runs client-side after hydration).
@@ -63,6 +65,7 @@ export function PlayerInsightSection({
         },
         rejection_reasons: rejectionReasons,
         fragility,
+        lifecycle_label: lifecycleLabel,
       },
       {
         onSuccess: (data) => {
