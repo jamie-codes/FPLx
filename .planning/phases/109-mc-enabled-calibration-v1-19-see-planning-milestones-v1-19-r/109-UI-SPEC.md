@@ -1,10 +1,11 @@
 ---
 phase: 109
 slug: mc-enabled-calibration
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-05-14
+reviewed_at: 2026-05-14
 ---
 
 # Phase 109 — UI Design Contract
@@ -39,16 +40,16 @@ Declared values (must be multiples of 4):
 | Token | Value | Usage |
 |-------|-------|-------|
 | xs | 4px (`gap-1`, `px-1`) | Not used by mode badge |
-| sm | 8px (`gap-2`, `px-2`) | Mode badge horizontal padding (`px-2`) |
+| sm | 8px (`gap-2`, `px-2`) | Mode badge horizontal padding (`px-2`) — introduced by Phase 109 |
 | md | 16px (`p-4`) | Health indicator row horizontal padding (`px-4`) — unchanged from Phase 103 |
 | lg | 24px | Not used |
 | xl | 32px | Not used |
 | 2xl | 48px | Not used |
 | 3xl | 64px | Not used |
 
-Exceptions:
-- Mode badge keeps Phase 103's existing `py-0.5` (2px vertical) padding to visually match the adjacent tier badge. The 2px exception is inherited from the Phase 103 tier-badge spec — not a new exception introduced by this phase.
-- Row's outer `gap-3` (12px) between children is preserved — the new mode badge sits inside the same flex row as a sibling of the tier badge with the same `gap-3` rhythm.
+Notes:
+- `py-0.5` (2px vertical padding) on the mode badge is **not introduced by Phase 109**. It is a Phase 103 carry-through: the tier badge already uses `py-0.5`, and the mode badge reuses this class verbatim from that pattern. Phase 109 does not introduce or re-specify this spacing value.
+- `gap-3` (12px) between flex row children is **not introduced by Phase 109**. It is a Phase 103 carry-through on the component's existing flex row. The mode badge sits inside the same row as an additional sibling; no new gap value is declared. Phase 103 owns this value.
 
 Source: Phase 103 UI-SPEC §Spacing Scale, `CalibrationHealthIndicator.tsx` lines 65–74.
 
@@ -181,7 +182,7 @@ Children inside the existing `<div role="status" className="flex items-center ga
 3. **Mode badge span** — NEW, conditional on `calibrationMode` being defined
 4. Status sentence span — unchanged
 
-The existing `gap-3` (12px) provides consistent spacing between all four children. No new wrapper or sub-flex required.
+The existing `gap-3` (12px, Phase 103) provides consistent spacing between all four children. No new wrapper or sub-flex required.
 
 **Placement in `DecisionSummaryTab.tsx`:** unchanged — the component is still rendered between the 4-card grid and `<ProseSummaryBlock>` (currently `DecisionSummaryTab.tsx:690`). No prop signature changes; `data` already carries `summary.calibration_mode`.
 
