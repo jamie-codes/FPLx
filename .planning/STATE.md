@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.20
 milestone_name: Fixes & Decision Quality
-status: verifying
+status: ready_to_plan
 stopped_at: Phase 110 execution complete — verifying goal achievement
 last_updated: "2026-05-14T21:50:00.000Z"
 last_activity: 2026-05-14 — Phase 110 Wave 1 complete (3/3 plans, 0 new regressions)
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
   completed_plans: 0
 ---
@@ -24,9 +24,9 @@ See: .planning/PROJECT.md (updated 2026-05-14 — v1.19 complete, v1.20 roadmap 
 
 ## Current Position
 
-Phase: 110 — GW Review & History Fixes (planned, ready to execute)
-Plan: 3 plans · Wave 1 (all parallel) — 110-01, 110-02, 110-03
-Status: Ready to execute
+Phase: 111
+Plan: Not started
+Status: Ready to plan
 
 **v1.20 Phase Plan:**
 
@@ -35,7 +35,7 @@ Status: Ready to execute
 - Phase 112: Optimiser On-Demand & Transfer Suggestion Cap — OPT-01, TFR-02
 - Phase 113: Transfer Regret Backtester — BACK-02
 
-Last activity: 2026-05-14 — v1.20 roadmap created, 9/9 requirements mapped
+Last activity: 2026-05-14
 
 ## Performance Metrics
 
