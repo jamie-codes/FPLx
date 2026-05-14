@@ -1,34 +1,41 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.18
-milestone_name: Forecast Transparency & AI Intelligence
-status: archived
-stopped_at: v1.18 milestone archived
-last_updated: "2026-05-14T00:00:00.000Z"
-last_activity: 2026-05-14 -- v1.18 milestone closed
+milestone: v1.19
+milestone_name: AI Quality & Insight Delivery
+status: Phase 106 planned; ready for `/gsd-execute-phase 106`
+stopped_at: Phase 106 planning complete
+last_updated: "2026-05-14T08:30:00.000Z"
+last_activity: "2026-05-14 — Phase 106 planned (1 plan, 1 wave)"
 progress:
-  total_phases: 53
-  completed_phases: 27
-  total_plans: 82
-  completed_plans: 134
-  percent: 51
+  total_phases: 8
+  completed_phases: 4
+  total_plans: 14
+  completed_plans: 24
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-14 — v1.18 complete)
+See: .planning/PROJECT.md (updated 2026-05-14 — v1.18 complete, v1.19 started)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Planning v1.19 — run `/gsd-new-milestone`
+**Current focus:** v1.19 AI Quality & Insight Delivery — Phase 106 (Code Quality Cleanup) is next
 
 ## Current Position
 
-Phase: 105 (complete)
-Plan: All complete
-Status: v1.18 archived — ready for v1.19
-Last activity: 2026-05-14
+Phase: 106 — Code Quality Cleanup
+Plan: 106-01 (Wave 1, 4 tasks)
+Status: Planned — ready for `/gsd-execute-phase 106`
+Last activity: 2026-05-14 — Phase 106 planned (1 plan: WR-01/02/03/04)
+
+### v1.19 Phase Sequence
+
+- [ ] Phase 106: Code Quality Cleanup — WR-01, WR-02, WR-03, WR-04
+- [ ] Phase 107: NLP-02 Prompt Caching — CACHE-01, CACHE-02
+- [ ] Phase 108: Batch AI Insight Pre-Generation — NLP-BATCH-01, NLP-BATCH-02, NLP-BATCH-03
+- [ ] Phase 109: MC-Enabled Calibration — MC-CAL-01, MC-CAL-02
 
 ## Performance Metrics
 
@@ -36,6 +43,12 @@ Last activity: 2026-05-14
 |-------|------|----------|-------|-------|
 | 77 | 02 | ~10 min | 2 | 5 |
 | 89 | 02 | ~15 min | 2 | 2 |
+
+**Previous milestone (v1.18) velocity:**
+
+- 4 phases (102–105), all complete
+- Shipped 2026-05-14 (1 day)
+- 69 files changed, +10,321 / −1,123 lines
 
 **Previous milestone (v1.17) velocity:**
 
@@ -52,40 +65,50 @@ Last activity: 2026-05-14
 - 4 phases (82–85), all complete
 - Shipped 2026-05-09 (2 days)
 
-**Previous milestone (v1.9) velocity:**
-
-- 5 phases, 13 plans
-- 2 days (2026-05-03 → 2026-05-04)
-- 121 files changed, +27,865 / −1,388 lines
-
 ## Accumulated Context
 
 ### Decisions
 
-- [v1.18-roadmap] Phase 102 (MC-01 + MC-02) sequenced first because the `mc_enabled` gate flip is a single state change that unblocks every downstream MC consumer — including the NLP-02 prompt context Phase 105 depends on. simulate.py already runs; MC fields already in merged_players.json; only the gate is off in production.
-- [v1.18-roadmap] Phase 103 (CAL-01 + CAL-02) is independent of MC (calibration uses analytical xPts decile-rank proxy, not MC) and purely additive — safe parallelisation candidate but sequenced second so MC gate ships first for downstream momentum. CAL-01 sparse-bucket threshold raised to `sample_n < 15` for GK/DEF, `sample_n < 8` for MID/FWD; position-pool guard hides chart entirely below 50 obs.
-- [v1.18-roadmap] Phases SENS-01 and WHY-01 combined into Phase 104 because both touch TransferPanel.tsx with identical risk surface (call-site addition over unit-tested engines). Both `computeFragility` and `computeRejection` are unit-tested and already wired into other call sites; Phase 104 is mechanical addition not new logic.
-- [v1.18-roadmap] Phase 105 (NLP-02) sequenced last because it has non-trivial new infrastructure (new POST Route Handler, new `usePlayerInsight` mutation hook, Blob cache namespace, Anthropic Console spending cap) and is the only phase where a single bug can spend money. Sequencing last means MC fields from 102 + rejection reasons/fragility tier from 104 are validated before the LLM is in the loop.
-- [v1.18-roadmap] Zero net-new dependencies — `@anthropic-ai/sdk@0.93.0`, numpy 2.2.3, recharts 3.8.1, TanStack Query, Zod, Vercel Blob all already installed and exercised. Three workflow hygiene fixes only: align `anthropic` Python pin to 0.98.1, add explicit numpy 2.2.3 to install line, set `MC_ITERATIONS=10000` and `MC_SEED=42` in GitHub Actions env.
-- [v1.18-roadmap] NLP-02 runtime: Node.js only — never Edge (`@anthropic-ai/sdk` SSE parsing fails on Edge per anthropics/anthropic-sdk-typescript#292). Non-streaming `messages.create` against `claude-haiku-4-5-20251001`. `useMutation` not `useQuery`. Trigger on demand only — never `useEffect` (cost-explosion pitfall: 50 rows × 900 tokens × 4 sessions × 180 days ≈ USD 16–32/season from one bug).
-- [v1.18-roadmap] NLP-02 cache key includes `pipeline_run_date` so stale prose can never appear alongside fresh stats. Two-tier cache: localStorage + Vercel Blob (`player_insights/gw{N}/element_{id}.json`, `addRandomSuffix: false`).
-- [v1.18-roadmap] NLP-01 (LLM prose summary on Decision Summary) already shipped in v1.12 via ProseSummaryBlock + `/api/prose-summary`; no work required this milestone. Listed in REQUIREMENTS.md "Already Shipped" section.
+- [v1.19-roadmap] 4 phases (106-109): WR cleanup first, then CACHE before NLP-BATCH so the prompt cache is live when the daily batch job amplifies call volume, MC-CAL last because it is independent of the AI-insight track and reuses the v1.18 calibration surface.
+- [v1.19-roadmap] Phase 106 (WR-01/02/03/04) sequenced first as a warm-up: four small, mechanical, isolated cleanups (≤10 LOC each) — clears the v1.16 carry-forward backlog and keeps the higher-value AI work in clean later phases.
+- [v1.19-roadmap] Phase 107 (CACHE-01 + CACHE-02) sequenced before Phase 108 so the daily batch pre-generation job (Phase 108) inherits cache-read pricing on every call after the first within the 5-minute window — keeps NLP-BATCH cost predictable from day one.
+- [v1.19-roadmap] Phase 107 pitfall flagged at planning time: Anthropic prompt caching requires the prompt prefix to be byte-identical and ≥1024 tokens. Phase 105 system prompt is ~80 tokens (per Phase 105 phase notes), so caching may be a no-op until the prompt is padded. Confirm prompt token count during `/gsd-plan-phase 107` before assuming the cost saving lands.
+- [v1.19-roadmap] Phase 108 (NLP-BATCH-01/02/03) limits batch coverage to top-20 players by `xPts_1gw` after status filter (`status == 'a'`); ties broken by `selected_by_percent` desc; hard cap is 20. Gated by `INSIGHT_BATCH_ENABLED` env var so cost is controllable independently of the daily pipeline. Anthropic Console monthly spending cap from Phase 105 remains the defence-in-depth ceiling.
+- [v1.19-roadmap] Phase 108 produces zero UI work — existing two-tier cache from Phase 105 reads Blob transparently. NLP-BATCH-03 is satisfied by the existing read path; no React/TS changes required.
+- [v1.19-roadmap] Phase 109 (MC-CAL-01 + MC-CAL-02) is independent of the AI-insight track and reuses the v1.18 calibration surface (`pipeline/accuracy.py` + `CalibrationHealthIndicator`). Unblocked by Phase 102 making `MC_ENABLED=True` live so `haul_prob` is populated for every player.
+- [v1.19-roadmap] Phase 109 graceful-degradation rule: when ≥80% of the population has MC fields, `calibration_mode` is `'mc'`; missing-MC players fall back to the analytical proxy per-player. Threshold reuses the Phase 103 position-pool guard pattern for consistency.
 
 ### Pending Todos
 
-- Phase 102 spike: confirm `mc_enabled` gate flip mechanism — `pipeline/run.py` line 203 reads gate from previous `accuracy_backtest.json`, so flip is either a one-time direct Blob edit OR a pipeline patch that sets the flag from inside the run. Validate cleaner path before opening PR.
-- Phase 105 spike: confirm Vercel Blob `put` with `addRandomSuffix: false` overwrite semantics in deployed runtime before relying on it for the cache key.
-- Phase 105 prerequisite: `ANTHROPIC_API_KEY` must be present in deployment env before merge; configure Anthropic Console monthly spending cap as defence-in-depth.
-- WR-02 (decision-severity.ts): captain returns MEDIUM (not LOW) when candidates.length < 2 — cleanup agent scheduled (carry-forward from v1.16)
-- WR-01 (DecisionSummaryTab.tsx): duplicate transition classes on Load Squad button — cleanup agent scheduled (carry-forward from v1.16)
-- WR-03/04 (MobileNav.test.tsx): 4→5 pills description wrong, Acc pill untested — cleanup agent scheduled (carry-forward from v1.16)
-- Phase 48 hover card: non-functional in production until pipeline re-run produces appearance_pts in merged_players.json cache (carry-forward)
+- Phase 107 spike: confirm `/api/player-insight` system-prompt token count exceeds the 1024-token Anthropic cache minimum before assuming `cache_control: ephemeral` produces cost savings; pad with stable structural framing if not.
+- Phase 108 spike: confirm Vercel Blob `put` with `addRandomSuffix: false` overwrite semantics in deployed Python runtime (anthropic python sdk + vercel_blob package) — same question as Phase 105 spike but from the pipeline side.
+- Phase 108 prerequisite: `INSIGHT_BATCH_ENABLED` env var must be defaulted to `false` in production until the first successful batch run is verified — defence-in-depth against unintended cost.
+- Phase 109 verification: after first daily pipeline run with Phase 109 merged, confirm `calibration_mode` field appears in `accuracy_backtest.json.summary` and `CalibrationHealthIndicator` renders the mode label distinctly.
 
 ### Blockers/Concerns
 
-- None active for v1.18 entry. Phase 102 mc_enabled flip mechanism is the only design unknown and resolves at planning time (research flag from SUMMARY.md).
+- None active for v1.19 entry. All four phases depend only on v1.18 surfaces which are now live in production.
 
 ## Deferred Items
+
+### Pre-existing deferred items (carried into v1.19 planning)
+
+| ID | Description | Phase | Target |
+|----|-------------|-------|--------|
+| BACK-02 | Transfer regret backtester (Python port of suggestTransfers required) | — | v1.20+ |
+| RANK-SPARK | `rank_trajectory` sparkline in GemTable (data exists in MergedPlayer) | — | v1.20+ (visual design decision needed) |
+| TRT-06 | ChipToggle UI in RouteTreeTab — chipMode hardcoded null | 60 | v1.20+ |
+| TRT-02 | "Hits" column label cosmetic mismatch (shows totalTransfers, not totalHits) | 60 | v1.20+ |
+| VERIFY-60 | Phase 60 VERIFICATION.md not created — UAT recorded in STATE.md only | 60 | backlog |
+| TEST-57 | captain-picks.test.ts 5 pre-existing failures from Phase 57 CaptainPicksPanel rewrite | 57 | backlog |
+| Phase 48 hover card | non-functional in production until pipeline re-run produces appearance_pts in merged_players.json cache | 48 | backlog |
+
+### Resolved during v1.19 planning
+
+- WR-01, WR-02, WR-03, WR-04 — moved out of "carry-forward backlog" into Phase 106 (no longer deferred)
+- NLP-BATCH (full backlog item) — split into NLP-BATCH-01/02/03 and assigned to Phase 108 (no longer deferred)
+- MC-CAL (full backlog item) — split into MC-CAL-01/02 and assigned to Phase 109 (no longer deferred)
+- PROMPT-CACHE (full backlog item) — split into CACHE-01/02 and assigned to Phase 107 (no longer deferred)
 
 ### Acknowledged at v1.18 milestone close (2026-05-14)
 
@@ -107,25 +130,8 @@ Items acknowledged and deferred at milestone close on 2026-05-14:
 
 Known deferred items at close: 47 (see above)
 
-### Pre-existing deferred items
-
-| ID | Description | Phase | Target |
-|----|-------------|-------|--------|
-| BACK-02 | Transfer regret backtester (Python port of suggestTransfers required) | — | v1.19+ |
-| MC-CAL | MC-enabled calibration (actual MC P(haul) percentiles as predicted_rate) | — | v1.19+ (requires MC-01 shipped) |
-| PROMPT-CACHE | `cache_control: ephemeral` on NLP-02 system prompt | 105 | v1.19+ (defer until prompt > 1024 tokens) |
-| NLP-BATCH | Pipeline pre-generation of top-20 player insights | 105 | v1.19+ (defer until on-demand latency proves unacceptable) |
-| RANK-SPARK | `rank_trajectory` sparkline in GemTable (data exists in MergedPlayer) | — | v1.19+ (visual design decision needed) |
-| TRT-06 | ChipToggle UI in RouteTreeTab — chipMode hardcoded null | 60 | v1.12 |
-| TRT-02 | "Hits" column label cosmetic mismatch (shows totalTransfers, not totalHits) | 60 | v1.12 |
-| VERIFY-60 | Phase 60 VERIFICATION.md not created — UAT recorded in STATE.md only | 60 | backlog |
-| WR-02 | decision-severity.ts captain MEDIUM when candidates < 2 (should be LOW) | pre-v1.9 | backlog |
-| WR-01 | DecisionSummaryTab Load Squad button duplicate transition classes | pre-v1.9 | backlog |
-| WR-03/04 | MobileNav.test.tsx 4→5 pills description wrong, Acc pill untested | pre-v1.9 | backlog |
-| TEST-57 | captain-picks.test.ts 5 pre-existing failures from Phase 57 CaptainPicksPanel rewrite | 57 | backlog |
-
 ## Session Continuity
 
-Last session: 2026-05-14
-Stopped at: v1.18 milestone archived
-Next command: `/clear` then `/gsd-new-milestone`
+Last session: 2026-05-14T07:45:28.752Z
+Stopped at: Phase 106 context gathered
+Next command: `/gsd-plan-phase 106` (or `/gsd-next` to auto-route to Phase 106)

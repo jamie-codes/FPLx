@@ -40,9 +40,15 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
-## Current Milestone: v1.19 (TBD)
+## Current Milestone: v1.19 AI Quality & Insight Delivery
 
-**Goal:** Not yet defined. Start with `/gsd-new-milestone`.
+**Goal:** Deepen the AI intelligence layer — batch-pre-generate player insights to eliminate latency, wire MC output into calibration, and cut NLP-02 API cost via prompt caching — plus clear the WR backlog.
+
+**Target features:**
+- NLP-BATCH: nightly pipeline pre-generates top-20 player insights (GitHub Actions job, Vercel Blob write, UI reads cached blobs first)
+- MC-CAL: replace analytical calibration proxy with actual MC P(haul) percentiles as predicted_rate (MC gate now live)
+- PROMPT-CACHE: add `cache_control: ephemeral` on NLP-02 system prompt (cost reduction once prompt > 1024 tokens)
+- WR-01/02/03/04: clear pre-existing code/test quality backlog items
 
 ## Previous Milestone: v1.18 Forecast Transparency & AI Intelligence (Complete 2026-05-14)
 
@@ -277,7 +283,7 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 
 ### Active (v1.19)
 
-_(No requirements defined yet — start with `/gsd-new-milestone`)_
+_(Requirements being defined — see REQUIREMENTS.md)_
 
 ### Out of Scope
 
@@ -374,4 +380,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-14 after v1.18 milestone — Forecast Transparency & AI Intelligence complete. MC gate active, NLP-02 per-player insights wired, calibration health indicator live.*
+*Last updated: 2026-05-14 — v1.19 AI Quality & Insight Delivery started. NLP-BATCH, MC-CAL, PROMPT-CACHE, and WR cleanup targeted.*

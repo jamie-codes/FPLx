@@ -20,6 +20,7 @@
 - **v1.16 Modelling & Trust** — Phases 88-96 (started 2026-05-09)
 - ✅ **v1.17 End-of-Season Intelligence** — Phases 97-101 (shipped 2026-05-12)
 - ✅ **v1.18 Forecast Transparency & AI Intelligence** — Phases 102-105 (shipped 2026-05-14)
+- **v1.19 AI Quality & Insight Delivery** — Phases 106-109 (started 2026-05-14)
 
 ## Phases
 
@@ -180,6 +181,13 @@ See `.planning/milestones/v1.18-ROADMAP.md` for full phase details.
 - [x] Phase 105: NLP-02 Per-Player LLM Insight Route, Hook & UI — /api/player-insight (Node.js); usePlayerInsight mutation hook; PlayerInsightSection; two-tier cache; 43/43 tests *(complete 2026-05-13)*
 
 </details>
+
+### v1.19 AI Quality & Insight Delivery — New Phases (106-109)
+
+- [ ] **Phase 106: Code Quality Cleanup** — WR backlog clearance: DecisionSummaryTab duplicate transition classes; decision-severity captain LOW/MEDIUM fix; MobileNav test description + Acc pill test
+- [ ] **Phase 107: NLP-02 Prompt Caching** — `cache_control: ephemeral` on system prompt block; cache_creation/cache_read token logging in Vercel
+- [ ] **Phase 108: Batch AI Insight Pre-Generation** — Pipeline pre-generates top-20 insights to Vercel Blob; `INSIGHT_BATCH_ENABLED` gate; UI reads cached Blob transparently
+- [ ] **Phase 109: MC-Enabled Calibration** — Calibration pipeline uses MC `haul_prob` as `predicted_rate`; CalibrationHealthIndicator surfaces MC-vs-analytical mode label
 
 ## Phase Details
 
@@ -1364,6 +1372,56 @@ Plans:
 
 ---
 
+### Phase 106: Code Quality Cleanup _(v1.19 — see `.planning/milestones/v1.19-ROADMAP.md`)_
+**Goal**: Users get a quieter, more predictable UI on the Decision and Squad surfaces — duplicate Tailwind transition utilities removed from the Load Squad button, captain card severity returns the correct LOW signal when no real captain choice exists, and the mobile nav test suite accurately reflects the live 5-pill nav row including the Acc pill
+**Depends on**: Phase 105 (v1.18 complete)
+**Requirements**: WR-01, WR-02, WR-03, WR-04
+**Success Criteria** (what must be TRUE):
+  1. User can click the Load Squad button on the Decision Summary tab and see a clean single-transition hover/active animation — duplicate `transition-*` Tailwind utilities removed from `DecisionSummaryTab.tsx`, no behavioural change, no regressions in the Decision tab visual layout
+  2. User can open the Decision tab with a squad that has fewer than 2 viable captain candidates and see the captain card severity render as LOW (not MEDIUM) — `decision-severity.ts` captain branch corrected so `candidates.length < 2` returns `LOW`, matching the documented severity ladder
+  3. The MobileNav test suite description text accurately matches the live nav (5 pills, not 4) and includes a regression test that verifies the Acc pill is rendered, is focusable, and routes to the Accuracy sub-tab — eliminating two long-standing carry-forward WR items from v1.16
+**Plans**: 1 plan (1 wave)
+  **Wave 1**
+  - [ ] 106-01-PLAN.md — Clear WR-01/02/04 (WR-03 no-op): replace duplicate transition utilities with transition-all on Load Squad button; captain severity returns LOW when candidates.length less than 2 (update Tests 4 and 5); extend NAV-05 analyse-pills click test to all 7 pills (Form/Acc/Prices)
+**Phase notes**: All four WR items are small, independent, mechanical cleanups carried forward from v1.16 (see STATE.md Pre-existing deferred items). Combining into one warm-up phase because each individual fix is ≤10 LOC, the risk surface is isolated (one button, one severity branch, one test file), and a single cleanup phase keeps the v1.19 progress table tidy. No new dependencies, no design decisions, no UAT gate beyond the existing Vitest suites turning green. Pitfall to avoid: do NOT bundle WR fixes into the larger NLP-BATCH or MC-CAL phases — keep them isolated so a regression in this phase cannot block the higher-value feature work.
+
+### Phase 107: NLP-02 Prompt Caching _(v1.19 — see `.planning/milestones/v1.19-ROADMAP.md`)_
+**Goal**: User-visible behaviour is unchanged but the per-player AI insight feature ships with Anthropic prompt caching active on the system prompt block — every Claude call after the first within the 5-minute cache window pays the cache-read rate (~0.1× input) instead of full input tokens, and cache hit rate is observable in Vercel server logs so cost trajectory can be monitored without a separate dashboard
+**Depends on**: Phase 105 (`/api/player-insight` Node.js Route Handler + system prompt block must exist as the target call site); Phase 106 (clean WR baseline)
+**Requirements**: CACHE-01, CACHE-02
+**Success Criteria** (what must be TRUE):
+  1. User can request AI insights for multiple players in the same session and the second-through-N requests within the 5-minute Anthropic cache window cost cache-read input tokens rather than full input tokens — system prompt message block in `/api/player-insight` carries `cache_control: {"type": "ephemeral"}` and the prompt body crosses Anthropic's 1024-token minimum (or the call gracefully falls back if it does not)
+  2. Server-side Vercel logs include a structured log line per `/api/player-insight` call recording `cache_creation_input_tokens` and `cache_read_input_tokens` from `response.usage`, so cache hit rate can be observed by filtering Vercel logs — no separate dashboard, no PII, no player IDs in logs beyond what is already there
+  3. The two-attempt name-whitelist guardrail behaviour from Phase 105 is unchanged — if the first attempt is cached but fails the guardrail, the retry attempt re-uses the same cached system prompt and continues to fall back to structured `reasons[]` on double failure (caching never degrades the safety contract)
+**Plans**: TBD
+**UI hint**: no
+**Phase notes**: Sequenced before NLP-BATCH so any pipeline batch run benefits from caching from day one. Pure server-side change at a single call site — `cache_control: ephemeral` on the system prompt message block plus a `console.log` or structured log of `response.usage.cache_creation_input_tokens` / `cache_read_input_tokens`. Pitfall to avoid: the cache requires the prompt prefix to be byte-identical and at least 1024 tokens — if Phase 105 system prompt is only ~80 tokens (it is, per Phase 105 phase notes), the prompt body must be padded with stable structural framing OR the test must accept that caching is a no-op until the prompt grows. Confirm prompt token count during planning before relying on the cost saving. No UI work; no user-facing copy change.
+
+### Phase 108: Batch AI Insight Pre-Generation _(v1.19 — see `.planning/milestones/v1.19-ROADMAP.md`)_
+**Goal**: User clicks "Get AI insight" on a top-20 player and the response is instant (Vercel Blob read, ~50–150ms) instead of the previous 2–6 second Claude round-trip — the daily pipeline pre-generates insights for the 20 highest-`xPts_1gw` players and writes them to the same Blob namespace the on-demand route uses, so the existing two-tier cache (localStorage → Blob → live API) finds a hit on first interaction for the most-viewed candidates
+**Depends on**: Phase 107 (prompt caching active so the batch job runs at cache-read cost from the second player onward; same `cache_control` block keeps batch and on-demand paths cost-aligned); Phase 105 Blob namespace (`player_insights/gw{N}/element_{id}.json`)
+**Requirements**: NLP-BATCH-01, NLP-BATCH-02, NLP-BATCH-03
+**Success Criteria** (what must be TRUE):
+  1. After a daily pipeline run with `INSIGHT_BATCH_ENABLED=true`, Vercel Blob contains insight files at `player_insights/gw{N}/element_{id}.json` for each of the top 20 players ranked by `xPts_1gw` from that day's `merged_players.json`, written with `addRandomSuffix: false` and `allowOverwrite: true` so subsequent days overwrite the same keys cleanly
+  2. With `INSIGHT_BATCH_ENABLED=false` (or unset), the daily pipeline runs to completion without making any Anthropic API calls — the batch step is fully skippable and isolated in a try/except block so a batch failure cannot break the rest of the pipeline (`merged_players.json`, `captain_picks.json`, `accuracy_backtest.json` all still write)
+  3. User can click "Get AI insight" on a top-20 player after a successful batch run and see the insight render within 200ms with zero new Claude spend — `usePlayerInsight` hits the Blob via the existing read path with no UI change required; on cache miss (non-top-20 player, batch disabled, or fresh GW before batch ran) on-demand generation still fires exactly as before
+**Plans**: TBD
+**UI hint**: no
+**Phase notes**: Pipeline-side feature only — no UI changes required because the existing two-tier cache (Phase 105) reads Blob transparently. The batch step lives in `pipeline/run.py` after `merged_players.json` is finalised and runs strictly behind `INSIGHT_BATCH_ENABLED` to keep cost controllable independently of the daily refresh. Pitfall to avoid: do NOT pre-generate insights for all 700 players — top-20 only (20 × ~900 tokens × ~30 cents per MTok ≈ free at cache-read rate after the first call, but bypassing the cap is the kind of bug that bills USD 100/month silently). Top-20 selection rule: rank by `xPts_1gw` after status filter (`status == 'a'`); ties broken by `selected_by_percent` desc; cap is a hard 20 even if 21st-ranked player ties. Anthropic Console monthly spending cap from Phase 105 remains the defence-in-depth ceiling. Sequenced after Phase 107 so caching is live before batch generation amplifies the call volume.
+
+### Phase 109: MC-Enabled Calibration _(v1.19 — see `.planning/milestones/v1.19-ROADMAP.md`)_
+**Goal**: User trusts the calibration evidence more because predicted haul rates are now grounded in actual 10k-sim MC `haul_prob` percentiles rather than an analytical xPts decile-rank proxy — and the CalibrationHealthIndicator on the Decision Summary labels which mode the calibration is running in so the manager knows whether they are looking at MC-grounded or analytical-fallback evidence
+**Depends on**: Phase 102 (v1.18) — `MC_ENABLED = True` must be live in production so `haul_prob` is non-null for every player on every daily run; Phase 103 (v1.18) — `_compute_calibration_data` + `CalibrationHealthIndicator` exist as the modification surface
+**Requirements**: MC-CAL-01, MC-CAL-02
+**Success Criteria** (what must be TRUE):
+  1. Calibration backtest in `pipeline/accuracy.py` uses MC `haul_prob` (P(pts ≥ 10) from 10k sims, per-player per-GW) as the `predicted_rate` for each decile bin, replacing the analytical xPts decile-rank proxy — gated by the existing `mc_enabled` flag in `accuracy_backtest.json.summary` so a future gate flip cleanly reverts to the analytical path without code change
+  2. User can open the Decision Summary tab and see the CalibrationHealthIndicator render a distinguishing label (e.g. "Calibration: good — MC-grounded" vs "Calibration: good — analytical fallback") so it is observable from the UI which calibration mode is in use; no new fetch, no new endpoint — derived from existing `useAccuracy` payload via a new `calibration_mode: 'mc' | 'analytical'` field on the summary
+  3. When `mc_enabled` is true but MC fields are partially missing (e.g. a player without `haul_prob` due to a pipeline gap), the calibration computation falls back to the analytical proxy for that player only and the summary still reports `calibration_mode: 'mc'` if ≥80% of the population has MC fields — graceful degradation, never NaN, never an empty chart
+**Plans**: TBD
+**UI hint**: yes
+**Phase notes**: Two-file change at heart — `pipeline/accuracy.py` (`_compute_calibration_data` switches from analytical decile rank to MC `haul_prob` percentile when `mc_enabled and haul_prob is not None`; emits `calibration_mode` on the summary) and `CalibrationHealthIndicator.tsx` (renders the mode label). MC-CAL was deferred from v1.18 (see STATE.md Pre-existing deferred items) and unblocks now that MC-01 has shipped and `haul_prob` is populated in production. Pitfall to avoid: do NOT compute MC haul rate as raw count ≥ 10 across the population — use per-player `haul_prob` (already in `merged_players.json`) averaged within each decile bin, which is what the analytical proxy approximates and what makes the MC and analytical paths directly comparable. The ≥80% population coverage rule for declaring `calibration_mode: 'mc'` is from the existing position-pool guard pattern in Phase 103 — keep the threshold consistent.
+
+
 ## Progress
 
 | Phase | Milestone | Plans | Status | Completed |
@@ -1434,3 +1492,7 @@ Plans:
 | 103 | v1.18 | 2/2 | Complete    | 2026-05-13 |
 | 104 | v1.18 | 1/1 | Complete    | 2026-05-13 |
 | 105 | v1.18 | 3/3 | Complete    | 2026-05-13 |
+| 106 | v1.19 | 0 | Not started | - |
+| 107 | v1.19 | 0 | Not started | - |
+| 108 | v1.19 | 0 | Not started | - |
+| 109 | v1.19 | 0 | Not started | - |
