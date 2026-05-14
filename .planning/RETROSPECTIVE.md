@@ -4,6 +4,51 @@
 
 ---
 
+## Milestone: v1.19 — AI Quality & Insight Delivery
+
+**Shipped:** 2026-05-14
+**Phases:** 4 (106-109) | **Plans:** 7
+**Timeline:** 1 day (2026-05-14)
+**Files changed:** 42 files, +4,911 / −89 lines
+
+### What Was Built
+
+- WR carry-forward backlog cleared: single `transition-all` on Load Squad button; captain severity `LOW` for `<2 candidates`; NAV-05 extended to all 7 pills — Phase 106
+- Anthropic prompt caching plumbing: `system` prompt wrapped as `TextBlockParam[]` with `cache_control: ephemeral` on both Claude call attempts; cache token metrics logged per call — Phase 107
+- Batch AI insight pre-generation pipeline: `pipeline/batch_insights.py` generates Claude insights for top-20 players by xPts; `INSIGHT_BATCH_ENABLED` gate in `run.py`; Blob read-before-generate inserted into `/api/player-insight` route (cache hits ~50-150ms, zero Claude spend) — Phase 108
+- MC-enabled calibration: `haul_prob` replaces analytical decile-rank proxy as `predicted_rate` in `accuracy.py`; `calibration_mode` written to `accuracy_backtest.json`; teal MC / zinc Analytical mode badge on `CalibrationHealthIndicator`; D-11 `maxDeviation` bug fixed — Phase 109
+
+### What Worked
+
+- **Gap closure pattern**: Phase 108 needed a third plan (Plan 03) to close NLP-BATCH-03 — the original two plans left the UI route not reading from Blob. Recognising the gap during VERIFICATION.md review and inserting Plan 03 as a targeted TDD RED→GREEN cycle was clean and fast (~3 min)
+- **Auto-deviation discipline**: Phase 108 Plan 03 auto-deviated from spec (cache block inserted before Anthropic constructor, not after userMsg) to satisfy the test contract — the deviation was justified, documented, and committed without escalation. Good example of Rule 1 (auto-fix to satisfy plan's own test contract)
+- **Single-day milestone**: 4 phases across a single day with no blocking dependencies — achievable because MC_ENABLED had been live since Phase 102 and the blob namespace was established in Phase 105
+- **TDD RED→GREEN on every plan**: All 7 plans used TDD; GREEN gates confirmed on every commit. 1,261 suite tests passing at close with no new regressions
+
+### What Was Inefficient
+
+- **REQUIREMENTS.md not updated during execution (again)**: NLP-BATCH-01/02/03 and MC-CAL-01/02 traceability rows stayed "Pending" after Phases 108 and 109 completed; Phase 108 checkbox was also left `[ ]` in ROADMAP.md. Required manual correction at milestone close. This is a recurring pattern across multiple milestones
+- **STATE.md v1.19 phase sequence out of sync**: STATE.md still showed `[ ]` for Phases 108 and 109 even after they completed, while the Progress table in ROADMAP.md was correct. Two sources of truth drifted
+
+### Patterns Established
+
+- **Blob read-before-generate pattern**: Cache check inserted before Anthropic client construction to guarantee zero-constructor-calls on hit — reusable in any future on-demand + batch hybrid route
+- **`calibration_mode` discriminated union on AccuracySummary**: `'mc' | 'analytical'` field drives badge rendering via Record lookup — same pattern as TIER_BADGE_CLASSES; reusable for any future mode-discriminated UI
+
+### Key Lessons
+
+1. **REQUIREMENTS.md maintenance requires a post-SUMMARY step, not end-of-milestone**: Four milestones in a row with stale requirements at close. The fix is to update REQUIREMENTS.md checkboxes and traceability rows as part of each plan's SUMMARY commit — not deferred to milestone close
+2. **NLP-BATCH-03 gap was architectural, not incidental**: The plan spec allocated NLP-BATCH-03 to "existing two-tier cache" but the route was never updated to read from the batch blob namespace. Verification caught it; a plan-phase gap analysis step before execution would have caught it earlier
+3. **Single-day milestones are achievable when dependencies are pre-resolved**: v1.19 shipped in one day because Phase 102 (MC) and Phase 105 (NLP-02 blob namespace) did the heavy lifting in v1.18 — v1.19 was integration and surface work on established foundations
+
+### Cost Observations
+
+- Model: Sonnet 4.6 (executor); Opus used for planning phases
+- Sessions: 1 day, ~4 sessions
+- Notable: Phase 108 Plan 03 was the shortest plan in the milestone (~3 min) despite closing the most critical gap — TDD-first made the implementation scope obvious
+
+---
+
 ## Milestone: v1.6 — Squad Optimiser
 
 **Shipped:** 2026-05-01
