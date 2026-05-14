@@ -443,4 +443,67 @@ describe('Phase 110 FIX-03/04: /api/gw-review live endpoint for settled GW point
     expect(body.best_bench_player_pts).toBe(0)
     expect(body.your_score).toBe(72)
   })
+
+  // Test 4 (FIX-CAP-DELTA / CR-01): captain_delta must reflect liveMap point difference
+  // when yourCaptain != optimalCaptain in a settled GW (pick.total_points=0 for all).
+  // The broken formula reads pick.total_points=0 for both operands → captainDelta=0.
+  // The fixed formula reads liveMap: element2=20 pts (optimal), element1=14 pts (captain)
+  // → captainDeltaRaw = 20*2 - 14*2 = 12 → captain_delta = 12.
+  it('captain_delta reflects liveMap point difference when yourCaptain != optimalCaptain in a settled GW (CR-01)', async () => {
+    // Settled GW: all pick.total_points=0, liveMap carries actual points
+    const starters = makeStarters()
+    // Set pick.total_points=0 for all starters (settled-GW model)
+    for (let i = 0; i < starters.length; i++) {
+      starters[i].total_points = 0
+    }
+    // element=1 remains captain (multiplier=2, is_captain=true) from makeStarters()
+    // element=2 remains is_vice_captain=true with multiplier=1
+
+    const benchPicks = [bench(101, 0), bench(102, 0), bench(103, 0), bench(104, 0)]
+    const allPicks = [...starters, ...benchPicks]
+
+    const elements = [
+      ...starters.map(s => ({ id: s.element, web_name: `Player${s.element}` })),
+      { id: 101, web_name: 'Bench1' },
+      { id: 102, web_name: 'Bench2' },
+      { id: 103, web_name: 'Bench3' },
+      { id: 104, web_name: 'Bench4' },
+    ]
+
+    // liveData: element=2 is the top scorer (20 pts), element=1 (user's captain) has 14 pts
+    // All other starters have 4 pts so element=2 is unambiguously the optimal captain
+    const liveData = {
+      elements: [
+        { id: 1, stats: { total_points: 14 } },
+        { id: 2, stats: { total_points: 20 } },
+        ...Array.from({ length: 9 }, (_, i) => ({ id: i + 3, stats: { total_points: 4 } })),
+        { id: 101, stats: { total_points: 0 } },
+        { id: 102, stats: { total_points: 0 } },
+        { id: 103, stats: { total_points: 0 } },
+        { id: 104, stats: { total_points: 0 } },
+      ],
+    }
+
+    // dreamTeamOk=false keeps dream-team branch out of scope; liveOk=true so /live/ returns liveData
+    mockUpstream(allPicks, elements, null, false, liveData, true)
+
+    const response = await GET(makeRequest())
+    expect(response.status).toBe(200)
+    const body = await response.json() as {
+      captain_delta: number
+      captain_name: string
+      optimal_captain_name: string
+      top_scorer_pts: number
+    }
+
+    // User picked element=1 as captain
+    expect(body.captain_name).toBe('Player1')
+    // Element=2 was optimal per liveMap (20 > 14 > 4)
+    expect(body.optimal_captain_name).toBe('Player2')
+    // Sanity: liveMap-driven top scorer
+    expect(body.top_scorer_pts).toBe(20)
+    // Critical: Math.max(0, 20*2 - 14*2) = Math.max(0, 40 - 28) = 12
+    // FAILS against current production code: broken formula yields 0*2 - 0*2 = 0
+    expect(body.captain_delta).toBe(12)
+  })
 })
