@@ -155,6 +155,13 @@ export async function POST(request: Request) {
   }
 
   const corpus = await readPlayerCorpus()
+  // Guard: empty corpus means the guardrail cannot function — fail closed.
+  if (corpus.length === 0) {
+    return Response.json(
+      { error: 'Service unavailable', detail: 'player corpus unavailable' },
+      { status: 503 },
+    )
+  }
   const allowed = [body.player.web_name]
   const client = new Anthropic({ apiKey })
   const xmlContext = buildXmlContext(body)
@@ -173,8 +180,12 @@ export async function POST(request: Request) {
       })
       const block = msg.content[0]
       prose = block && block.type === 'text' ? block.text : ''
-    } catch {
-      return Response.json({ error: 'LLM error', detail: 'upstream call failed' }, { status: 502 })
+    } catch (err) {
+      // On last attempt, give up and surface 502; otherwise retry
+      if (attempt === 1) {
+        return Response.json({ error: 'LLM error', detail: 'upstream call failed' }, { status: 502 })
+      }
+      continue
     }
 
     if (!prose.trim()) continue
