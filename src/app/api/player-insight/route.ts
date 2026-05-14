@@ -171,7 +171,8 @@ export async function POST(request: Request) {
     `${xmlContext}\n\nProvide a 2–3 sentence qualitative insight for this player.`
 
   for (let attempt = 0; attempt < 2; attempt++) {
-    const system = buildSystemPrompt(attempt === 1, body.player.web_name)
+    const systemText = buildSystemPrompt(attempt === 1, body.player.web_name)
+    const system = [{ type: 'text' as const, text: systemText, cache_control: { type: 'ephemeral' as const } }]
     let prose = ''
     try {
       const msg = await client.messages.create({
@@ -179,6 +180,11 @@ export async function POST(request: Request) {
         max_tokens: 300,
         system,
         messages: [{ role: 'user', content: userMsg }],
+      })
+      console.log('[player-insight] cache', {
+        attempt,
+        cache_creation_input_tokens: msg.usage.cache_creation_input_tokens ?? 0,
+        cache_read_input_tokens: msg.usage.cache_read_input_tokens ?? 0,
       })
       const block = msg.content[0]
       prose = block && block.type === 'text' ? block.text : ''
