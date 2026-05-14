@@ -87,6 +87,28 @@ Last activity: 2026-05-13
 
 ## Deferred Items
 
+### Acknowledged at v1.18 milestone close (2026-05-14)
+
+Items acknowledged and deferred at milestone close on 2026-05-14:
+
+| Category | Item | Status |
+|----------|------|--------|
+| uat_gap | Phase 61 (4 pending scenarios) | partial |
+| uat_gap | Phase 62 (1 pending scenario) | partial |
+| uat_gap | Phase 63 (2 pending scenarios) | partial |
+| uat_gap | Phase 64 (4 pending scenarios) | partial |
+| uat_gap | Phase 73 (2 pending scenarios) | partial |
+| uat_gap | Phase 76 (3 pending scenarios) | partial |
+| uat_gap | Phase 77 (2 pending scenarios) | partial |
+| uat_gap | Phase 78 (4 pending scenarios) | partial |
+| uat_gap | Phase 80 (5 pending scenarios) | partial |
+| uat_gap | Phases 81, 88, 99–105 (0–3 scenarios each) | partial |
+| verification_gap | Phases 47–105 (26 phases, human_needed) | human_needed |
+
+Known deferred items at close: 47 (see above)
+
+### Pre-existing deferred items
+
 | ID | Description | Phase | Target |
 |----|-------------|-------|--------|
 | BACK-02 | Transfer regret backtester (Python port of suggestTransfers required) | — | v1.19+ |
