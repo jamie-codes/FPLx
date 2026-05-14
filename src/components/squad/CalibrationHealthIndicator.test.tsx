@@ -128,4 +128,74 @@ describe('CalibrationHealthIndicator', () => {
     const { getByRole } = render(<CalibrationHealthIndicator data={data} />)
     expect(getByRole('status')).toBeTruthy()
   })
+
+  // ── Phase 109 MC-CAL-02 — mode badge ─────────────────────────────────────
+
+  it('renders teal MC badge when calibration_mode is "mc"', () => {
+    const data = makeData({ summary: { calibration_mode: 'mc' } as never })
+    const { getByLabelText, getByText } = render(<CalibrationHealthIndicator data={data} />)
+    expect(getByText('MC')).toBeTruthy()
+    expect(getByLabelText('Calibration mode: MC')).toBeTruthy()
+    const badge = getByLabelText('Calibration mode: MC')
+    expect(badge.className).toContain('teal')
+  })
+
+  it('renders zinc Analytical badge when calibration_mode is "analytical"', () => {
+    const data = makeData({ summary: { calibration_mode: 'analytical' } as never })
+    const { getByLabelText, getByText } = render(<CalibrationHealthIndicator data={data} />)
+    expect(getByText('Analytical')).toBeTruthy()
+    expect(getByLabelText('Calibration mode: Analytical')).toBeTruthy()
+    const badge = getByLabelText('Calibration mode: Analytical')
+    expect(badge.className).toContain('zinc')
+  })
+
+  it('does not render mode badge when calibration_mode is undefined (legacy cache)', () => {
+    const data = makeData({ summary: {} as never })
+    const { queryByLabelText } = render(<CalibrationHealthIndicator data={data} />)
+    expect(queryByLabelText(/Calibration mode:/)).toBeNull()
+  })
+
+  it('does not render mode badge in cold-start branch', () => {
+    const data = makeData({
+      gws_covered: [32, 31],
+      summary: { calibration_mode: 'mc' } as never,
+    })
+    const { queryByLabelText } = render(<CalibrationHealthIndicator data={data} />)
+    expect(queryByLabelText(/Calibration mode:/)).toBeNull()
+  })
+
+  it('tier badge classes are unchanged by mode badge addition (good tier)', () => {
+    const data = makeData({ summary: { calibration_mode: 'mc' } as never })
+    const { getByLabelText } = render(<CalibrationHealthIndicator data={data} />)
+    const tierBadge = getByLabelText('Calibration health: good')
+    expect(tierBadge.className).toContain('green')
+  })
+
+  it('mode badge aria-label contains human-readable mode name', () => {
+    const data = makeData({ summary: { calibration_mode: 'mc' } as never })
+    const { getByLabelText } = render(<CalibrationHealthIndicator data={data} />)
+    expect(getByLabelText('Calibration mode: MC')).toBeTruthy()
+  })
+
+  // ── Phase 109 D-11 bug fix — maxDeviation uses predicted_rate ────────────
+
+  it('maxDeviation uses predicted_rate not bucket_mid (D-11 bug fix)', () => {
+    // In MC mode predicted_rate != bucket_mid; supply bucket where predicted_rate=0.3
+    // and bucket_mid=0.05. deviation from predicted_rate = |0.06-0.3|=0.24 (poor tier),
+    // deviation from bucket_mid = |0.06-0.05|=0.01 (good tier).
+    const data = makeData({
+      summary: { calibration_mode: 'mc' } as never,
+      calibration: {
+        by_position: {
+          all: [
+            { bucket_mid: 0.05, predicted_rate: 0.3, actual_rate: 0.06, sample_n: 25 },
+          ],
+          '1': [], '2': [], '3': [], '4': [],
+        },
+      },
+    })
+    const { getByText } = render(<CalibrationHealthIndicator data={data} />)
+    // deviation = |0.06 - 0.3| = 0.24 → poor tier (> 10pp)
+    expect(getByText('poor')).toBeTruthy()
+  })
 })
