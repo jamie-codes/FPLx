@@ -394,6 +394,27 @@ def run(dry_run: bool = False):
             import sys
             print(f"[prose_summary] non-fatal error: {exc}", file=sys.stderr)
 
+        # Phase 108 NLP-BATCH-01/02/03 — batch pre-generation of player insights.
+        # Non-fatal: a batch failure must never block last_updated.json or data_health writes.
+        # Batch gate defaults to off; production must explicitly set env var to 'true'
+        # after first verified local run (see plan 108-02 user_setup for details).
+        if os.getenv('INSIGHT_BATCH_ENABLED', '').lower() == 'true':
+            try:
+                from batch_insights import generate_batch_insights
+                BATCH_TOP_N = 20
+                eligible = [p for p in merged if p.get('status') == 'a' and p.get('xPts_1gw') is not None]
+                top20 = sorted(
+                    eligible,
+                    key=lambda p: (p.get('xPts_1gw') or 0, float(p.get('selected_by_percent') or 0)),
+                    reverse=True,
+                )[:BATCH_TOP_N]
+                corpus = [p.get('web_name') for p in merged if p.get('web_name')]
+                result = generate_batch_insights(top20, corpus, current_gw)
+                print(f"Batch insights: {result['written']} written, {result['skipped']} skipped (GW {current_gw})")
+            except Exception as exc:
+                import sys
+                print(f"[batch_insights] non-fatal error: {exc}", file=sys.stderr)
+
         # Write last_updated.json with success metadata
         from datetime import datetime, timezone
         timestamp = datetime.now(timezone.utc).isoformat()
