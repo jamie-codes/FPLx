@@ -355,6 +355,7 @@ export interface AccuracySummary {
   save_predictor_enabled?: boolean   // Phase 83 GK-01 gate (preserved across runs)
   news_flag_enabled?: boolean        // Phase 88 SCRAPER-01 gate (default true; kill switch)
   mc_enabled?: boolean               // Phase 90 MC-01: 5-GW MC simulation gate (default false)
+  calibration_mode?: 'mc' | 'analytical'  // Phase 109 MC-CAL-01: which mode was used for calibration bucketing
 }
 
 export interface AccuracyHaulter {
