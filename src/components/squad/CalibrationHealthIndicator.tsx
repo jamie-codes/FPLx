@@ -14,6 +14,19 @@ const TIER_BADGE_CLASSES: Record<Tier, string> = {
   poor: 'text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900',
 }
 
+// Phase 109 D-09/D-10: mode badge for MC vs Analytical calibration path
+type CalibrationMode = 'mc' | 'analytical'
+
+const MODE_BADGE_CLASSES: Record<CalibrationMode, string> = {
+  mc: 'text-teal-700 dark:text-teal-400 bg-teal-100 dark:bg-teal-900',
+  analytical: 'text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800',
+}
+
+const MODE_BADGE_LABEL: Record<CalibrationMode, string> = {
+  mc: 'MC',
+  analytical: 'Analytical',
+}
+
 function computeTier(maxDeviation: number): Tier {
   if (maxDeviation < 0.05) return 'good'
   if (maxDeviation <= 0.10) return 'fair'
@@ -53,8 +66,10 @@ export function CalibrationHealthIndicator({ data }: CalibrationHealthIndicatorP
   }
 
   // D-09 / D-10 / D-11: max haul-rate deviation -> tier -> locked status sentence.
-  const maxDeviation = Math.max(...buckets.map((b) => Math.abs(b.actual_rate - b.bucket_mid)))
+  // Phase 109 D-11 bug fix: use predicted_rate (not bucket_mid) so MC-mode tier is correct.
+  const maxDeviation = Math.max(...buckets.map((b) => Math.abs(b.actual_rate - b.predicted_rate)))
   const tier = computeTier(maxDeviation)
+  const calibrationMode = data.summary?.calibration_mode as CalibrationMode | undefined
   const N = Math.round(maxDeviation * 100)
   const M = buckets.length
   const sentence = `Calibration: ${tier} — predicted vs actual within ${N}pp across ${M} deciles`
@@ -71,6 +86,14 @@ export function CalibrationHealthIndicator({ data }: CalibrationHealthIndicatorP
       >
         {tier}
       </span>
+      {calibrationMode && (
+        <span
+          aria-label={`Calibration mode: ${MODE_BADGE_LABEL[calibrationMode]}`}
+          className={`text-xs font-semibold rounded px-2 py-0.5 ${MODE_BADGE_CLASSES[calibrationMode]}`}
+        >
+          {MODE_BADGE_LABEL[calibrationMode]}
+        </span>
+      )}
       <span className="text-sm text-zinc-700 dark:text-zinc-300">{sentence}</span>
     </div>
   )
