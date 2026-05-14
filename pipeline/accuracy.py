@@ -124,8 +124,13 @@ def compute_accuracy_backtest(
     bootstrap: dict,
     fixtures: list,
     cache_dir: str = '',
+    merged_haul_lookup: dict = None,
 ) -> dict:
     """Compute pre-aggregated accuracy backtest for the last 5 finished GWs.
+
+    Phase 109 MC-CAL-01: accepts merged_haul_lookup (player_id -> haul_prob dict built by
+    run.py from the current merged list). When mc_enabled and coverage >= 80%, sets
+    use_mc=True and writes calibration_mode='mc' to summary. Otherwise analytical.
 
     Args:
         summaries: dict mapping player_id (int) -> element-summary dict.
@@ -133,10 +138,15 @@ def compute_accuracy_backtest(
         finished_gws: count of completed gameweeks (from bootstrap events).
         bootstrap: Full FPL bootstrap-static JSON (elements, teams, events).
         fixtures: list of all fixture dicts from fpl_fixtures.json.
+        merged_haul_lookup: optional dict mapping player_id (int) -> haul_prob (float).
+                            Built by run.py from the current merged list after MC simulation.
+                            None (default) produces the analytical calibration path.
 
     Returns:
         Dict matching accuracy_backtest.json structure (D-08).
     """
+    if merged_haul_lookup is None:
+        merged_haul_lookup = {}
     # D-01: identify last 5 finished GWs
     if finished_gws < 1:
         return _empty_backtest(cache_dir)
@@ -345,9 +355,6 @@ def compute_accuracy_backtest(
                 'xpts_flagged': xpts_flagged_by_gw_pid.get((gw, pid), False),                  # Phase 76 ACC2-01
             })
 
-    # Phase 63 CAL-01 / CAL-02: precompute calibration data over per_gw_rows.
-    calibration = _compute_calibration_data(per_gw_rows)
-
     overall_xpts_hit = total_xpts_flagged / total_haulters if total_haulters > 0 else 0.0
     overall_xpts_blended_hit = total_xpts_blended_flagged / total_haulters if total_haulters > 0 else 0.0
     overall_mid_tier_hit = total_xpts_mid_flagged / total_mid_tier if total_mid_tier > 0 else 0.0
@@ -366,6 +373,21 @@ def compute_accuracy_backtest(
     bonus_predictor_enabled = bool(prior_cache.get('summary', {}).get('bonus_predictor_enabled', False))  # Phase 53 BPS-01
     save_predictor_enabled = bool(prior_cache.get('summary', {}).get('save_predictor_enabled', False))  # Phase 83 GK-03
     mc_enabled = bool(prior_cache.get('summary', {}).get('mc_enabled', False))  # Phase 90 MC-01
+
+    # Phase 109 MC-CAL-01 / D-03: derive use_mc from mc_enabled + coverage check.
+    # When >= 80% of bootstrap elements have haul_prob in merged_haul_lookup, use MC path.
+    total_elements = len([e for e in bootstrap.get('elements', []) if e.get('starts', 0) > 0])
+    coverage_pct = len(merged_haul_lookup) / total_elements if total_elements > 0 else 0.0
+    use_mc = mc_enabled and coverage_pct >= 0.80
+    calibration_mode = 'mc' if use_mc else 'analytical'
+
+    # Phase 63 CAL-01 / CAL-02: precompute calibration data over per_gw_rows.
+    # Phase 109 MC-CAL-01: pass use_mc and merged_haul_lookup to enable MC bucketing.
+    calibration = _compute_calibration_data(
+        per_gw_rows,
+        use_mc=use_mc,
+        merged_haul_lookup=merged_haul_lookup,
+    )
 
     # Phase 63 VER-01 / D-02 / D-03 / D-04: read prior versions, dedup-append new record.
     _existing = prior_cache.get('versions', [])
@@ -398,6 +420,7 @@ def compute_accuracy_backtest(
             'bonus_predictor_enabled': bonus_predictor_enabled,                  # Phase 53 BPS-01: gate for per-player bonus EV; preserved across runs once flipped
             'save_predictor_enabled': save_predictor_enabled,                    # Phase 83 GK-03: gate for GK Poisson-floor save_pts; preserved across runs once flipped
             'mc_enabled': mc_enabled,                                            # Phase 90 MC-01 / D-01: gate for 5-GW MC simulation; preserved across runs once flipped
+            'calibration_mode': calibration_mode,                                # Phase 109 MC-CAL-01: 'mc' when MC coverage >= 80%; 'analytical' otherwise
             'news_flag_enabled': True,                                           # Phase 88 SCRAPER-01: always on; kill switch in UI gate
             'blend_alpha_used': BLEND_ALPHA,                                     # Phase 42 ACC-03
             'mid_tier_hit_rate': round(overall_mid_tier_hit, 4),                 # Phase 42 ACC-04
@@ -493,44 +516,71 @@ def _empty_backtest(cache_dir: str = '') -> dict:
     }
 
 
-def _compute_calibration_data(per_gw_rows: dict) -> dict:
+def _compute_calibration_data(
+    per_gw_rows: dict,
+    use_mc: bool = False,
+    merged_haul_lookup: dict = None,
+) -> dict:
     """Phase 63 CAL-01 / CAL-02 / D-05 / D-06 / D-07: decile calibration by position.
 
-    Per-GW: rank players by xpts_predicted descending, divide into 10 equal-population
-    deciles (0=top, 9=bottom). Compute observed haul rate (actual_pts >= HAULTER_THRESHOLD)
-    per decile, by position (1=GK, 2=DEF, 3=MID, 4=FWD) and aggregated across all positions.
+    Phase 109 MC-CAL-01 extension: when use_mc=True and merged_haul_lookup is provided,
+    sorts players by effective_haul_prob (from merged_haul_lookup) descending instead of
+    by xpts_predicted, and sets predicted_rate = mean(haul_prob) per bucket.
+
+    Analytical path (use_mc=False): unchanged — sorts by xpts_predicted, predicted_rate = bucket_mid.
 
     D-07: filter buckets with sample_n < 5 (they appear as gaps in the chart, not zeros).
     Phase 103 D-01/D-03 tightens per-position thresholds (15 for GK/DEF, 8 for MID/FWD) and adds a < 50 position-pool guard.
-    Open Question 1 resolution: predicted_rate == bucket_mid (decile midpoint as fraction).
+
+    Args:
+        per_gw_rows: dict mapping gw -> list of player-row dicts with xpts_predicted, actual_pts, element_type.
+        use_mc: when True, use haul_prob for sorting and predicted_rate computation (MC path).
+        merged_haul_lookup: dict mapping player_id (int) -> haul_prob (float). Required when use_mc=True.
+            Players absent from the lookup receive effective_haul_prob=0.0 (D-06).
 
     Returns:
         { 'by_position': { 'all': [bucket, ...], '1': [...], '2': [...], '3': [...], '4': [...] } }
         Each bucket: { 'bucket_mid': float, 'predicted_rate': float, 'actual_rate': float, 'sample_n': int }
     """
+    if merged_haul_lookup is None:
+        merged_haul_lookup = {}
+
     # bucket_haul[pos_key][decile_idx] = haul count; bucket_total[pos_key][decile_idx] = total count
     bucket_haul: dict = defaultdict(lambda: defaultdict(int))
     bucket_total: dict = defaultdict(lambda: defaultdict(int))
     # Phase 91 CAL-01 (D-07): xPts-mean accumulators — float sums for predicted_mean / actual_mean
     bucket_sum_predicted: dict = defaultdict(lambda: defaultdict(float))
     bucket_sum_actual: dict = defaultdict(lambda: defaultdict(float))
+    # Phase 109 MC-CAL-01: haul_prob accumulator for predicted_rate in MC mode
+    bucket_sum_haul_prob: dict = defaultdict(lambda: defaultdict(float))
 
     for gw, rows in per_gw_rows.items():
         if not rows:
             continue
         n = len(rows)
-        # Rank by xpts_predicted descending; rank_idx 0 = top
-        ranked = sorted(rows, key=lambda r: r['xpts_predicted'], reverse=True)
+        if use_mc and merged_haul_lookup:
+            # MC path: sort by effective_haul_prob descending; missing players get 0.0 (D-06)
+            ranked = sorted(
+                rows,
+                key=lambda r: merged_haul_lookup.get(r['player_id'], 0.0),
+                reverse=True,
+            )
+        else:
+            # Analytical path: rank by xpts_predicted descending (unchanged)
+            ranked = sorted(rows, key=lambda r: r['xpts_predicted'], reverse=True)
         for rank_idx, row in enumerate(ranked):
             decile = min(int(rank_idx * 10 / n), 9)
             is_haul = 1 if row['actual_pts'] >= HAULTER_THRESHOLD else 0
             pos_key = str(row['element_type'])  # Pitfall 3: element_type is int 1-4
+            effective_haul_prob = merged_haul_lookup.get(row['player_id'], 0.0) if use_mc else 0.0
             for pk in ('all', pos_key):
                 bucket_haul[pk][decile] += is_haul
                 bucket_total[pk][decile] += 1
                 # Phase 91 CAL-01: accumulate xPts sums for mean computation
                 bucket_sum_predicted[pk][decile] += row['xpts_predicted']
                 bucket_sum_actual[pk][decile]    += row['actual_pts']
+                # Phase 109 MC-CAL-01: accumulate haul_prob for MC predicted_rate
+                bucket_sum_haul_prob[pk][decile] += effective_haul_prob
 
     # D-06: bucket midpoints for 10 deciles -> 0.05, 0.15, ..., 0.95
     bucket_mids = [round(d * 0.1 + 0.05, 2) for d in range(10)]
@@ -556,9 +606,15 @@ def _compute_calibration_data(per_gw_rows: dict) -> dict:
             if pos_key == 'all' and total < 5:
                 continue
             haul = bucket_haul[pos_key][d]
+            # Phase 109 MC-CAL-01: in MC mode, predicted_rate = mean(haul_prob) per bucket.
+            # In analytical mode, predicted_rate = bucket_mid (backward compat).
+            if use_mc and merged_haul_lookup:
+                predicted_rate = round(bucket_sum_haul_prob[pos_key][d] / total, 4)
+            else:
+                predicted_rate = bucket_mids[d]
             buckets.append({
                 'bucket_mid': bucket_mids[d],
-                'predicted_rate': bucket_mids[d],  # Open Q1: decile midpoint as predicted rate
+                'predicted_rate': predicted_rate,
                 'actual_rate': round(haul / total, 4),
                 'sample_n': total,
                 # Phase 91 CAL-01 (D-07): xPts means; round to 2dp matches UI toFixed(2)
