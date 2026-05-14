@@ -81,7 +81,7 @@ def test_writes_blob_per_successful_player(with_api_key):
          patch('batch_insights.save') as mock_save:
         client = MockClient.return_value
         client.messages.create.return_value = _stub_message(
-            'Salah is a solid captain pick this week with a great fixture.'
+            'This player is a solid captain pick this week with a great fixture ahead.'
         )
         result = generate_batch_insights(players=players, corpus=_corpus(), gameweek=35)
         assert result == {'written': 2, 'skipped': 0}
