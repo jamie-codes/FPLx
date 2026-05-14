@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.19
-milestone_name: AI Quality & Insight Delivery — New Phases
-status: complete
-stopped_at: Phase 109 complete — v1.19 milestone done
-last_updated: "2026-05-14T14:20:00.000Z"
-last_activity: 2026-05-14 -- Phase 109 verified and complete
+milestone_name: AI Quality & Insight Delivery — SHIPPED
+status: milestone_complete
+stopped_at: v1.19 milestone archived 2026-05-14
+last_updated: "2026-05-14T14:30:00.000Z"
+last_activity: 2026-05-14 -- v1.19 milestone complete and archived
 progress:
-  total_phases: 8
-  completed_phases: 8
-  total_plans: 13
-  completed_plans: 26
+  total_phases: 4
+  completed_phases: 4
+  total_plans: 7
+  completed_plans: 7
   percent: 100
 ---
 
@@ -18,24 +18,23 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-14 — v1.18 complete, v1.19 started)
+See: .planning/PROJECT.md (updated 2026-05-14 — v1.19 complete, planning v1.20)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.19 AI Quality & Insight Delivery — Phase 108 (Batch AI Insight Pre-Generation) is next
+**Current focus:** v1.19 archived — planning v1.20 next (`/gsd-new-milestone`)
 
 ## Current Position
 
-Phase: 109 (complete — verified)
-Plan: 2/2
-Status: Complete
-Last activity: 2026-05-14 -- Phase 109 verified; v1.19 milestone all phases complete
+Milestone: v1.19 archived
+Status: Complete — all 4 phases, 7 plans shipped
+Last activity: 2026-05-14 -- v1.19 milestone archived; git tag v1.19 created
 
-### v1.19 Phase Sequence
+### v1.19 Phase Sequence (Complete)
 
 - [x] Phase 106: Code Quality Cleanup — WR-01, WR-02, WR-03, WR-04 (complete 2026-05-14)
 - [x] Phase 107: NLP-02 Prompt Caching — CACHE-01, CACHE-02 (complete 2026-05-14)
-- [ ] Phase 108: Batch AI Insight Pre-Generation — NLP-BATCH-01, NLP-BATCH-02, NLP-BATCH-03
-- [ ] Phase 109: MC-Enabled Calibration — MC-CAL-01, MC-CAL-02
+- [x] Phase 108: Batch AI Insight Pre-Generation — NLP-BATCH-01, NLP-BATCH-02, NLP-BATCH-03 (complete 2026-05-14)
+- [x] Phase 109: MC-Enabled Calibration — MC-CAL-01, MC-CAL-02 (complete 2026-05-14)
 
 ## Performance Metrics
 
@@ -132,6 +131,6 @@ Known deferred items at close: 47 (see above)
 
 ## Session Continuity
 
-Last session: 2026-05-14T11:55:11.584Z
-Stopped at: Phase 109 context gathered
-Next command: `/gsd-plan-phase 106` (or `/gsd-next` to auto-route to Phase 106)
+Last session: 2026-05-14
+Stopped at: v1.19 milestone archived and tagged
+Next command: `/clear` then `/gsd-new-milestone` to plan v1.20

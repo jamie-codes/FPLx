@@ -7,14 +7,14 @@
 
 ### AI Insight Batch Delivery
 
-- [ ] **NLP-BATCH-01**: Pipeline pre-generates insights for the top 20 players by `xPts_1gw` after each daily run and writes them to Vercel Blob (`player_insights/gw{N}/element_{id}.json`)
-- [ ] **NLP-BATCH-02**: Batch generation is gated by `INSIGHT_BATCH_ENABLED` env var so cost can be controlled independently of the daily pipeline
-- [ ] **NLP-BATCH-03**: UI reads Blob-cached insights transparently — on-demand generation still fires on cache miss (existing two-tier cache handles this; no UI change required)
+- [x] **NLP-BATCH-01**: Pipeline pre-generates insights for the top 20 players by `xPts_1gw` after each daily run and writes them to Vercel Blob (`player_insights/gw{N}/element_{id}.json`) — Validated in Phase 108
+- [x] **NLP-BATCH-02**: Batch generation is gated by `INSIGHT_BATCH_ENABLED` env var so cost can be controlled independently of the daily pipeline — Validated in Phase 108
+- [x] **NLP-BATCH-03**: UI reads Blob-cached insights transparently — on-demand generation still fires on cache miss (existing two-tier cache handles this; no UI change required) — Validated in Phase 108
 
 ### MC-Enabled Calibration
 
-- [ ] **MC-CAL-01**: Calibration pipeline uses MC `haul_prob` (P(pts ≥ 10) from 10k sims) as `predicted_rate`, replacing the analytical xPts decile-rank proxy — gated by existing `mc_enabled` flag in `accuracy_backtest.json`
-- [ ] **MC-CAL-02**: `CalibrationHealthIndicator` surfaces MC-based calibration evidence with a label distinguishing MC mode from the analytical fallback
+- [x] **MC-CAL-01**: Calibration pipeline uses MC `haul_prob` (P(pts ≥ 10) from 10k sims) as `predicted_rate`, replacing the analytical xPts decile-rank proxy — gated by existing `mc_enabled` flag in `accuracy_backtest.json` — Validated in Phase 109
+- [x] **MC-CAL-02**: `CalibrationHealthIndicator` surfaces MC-based calibration evidence with a label distinguishing MC mode from the analytical fallback — Validated in Phase 109
 
 ### NLP-02 Prompt Caching
 
@@ -23,10 +23,10 @@
 
 ### Code Quality Cleanup
 
-- [ ] **WR-01**: Remove duplicate transition classes on Load Squad button in `DecisionSummaryTab.tsx`
-- [ ] **WR-02**: `decision-severity.ts` captain card returns `LOW` (not `MEDIUM`) when `candidates.length < 2`
-- [ ] **WR-03**: Fix MobileNav test description — update "4 pills" description to reflect the correct 5-pill count
-- [ ] **WR-04**: Add Acc pill test case to `MobileNav.test.tsx`
+- [x] **WR-01**: Remove duplicate transition classes on Load Squad button in `DecisionSummaryTab.tsx` — Validated in Phase 106
+- [x] **WR-02**: `decision-severity.ts` captain card returns `LOW` (not `MEDIUM`) when `candidates.length < 2` — Validated in Phase 106
+- [x] **WR-03**: Fix MobileNav test description — update "4 pills" description to reflect the correct 5-pill count — Validated in Phase 106 (no-op: already resolved by Phase 97)
+- [x] **WR-04**: Add Acc pill test case to `MobileNav.test.tsx` — Validated in Phase 106
 
 ## Future Requirements
 
@@ -60,11 +60,11 @@
 | WR-04 | Phase 106 | Complete |
 | CACHE-01 | Phase 107 | Complete |
 | CACHE-02 | Phase 107 | Complete |
-| NLP-BATCH-01 | Phase 108 | Pending |
-| NLP-BATCH-02 | Phase 108 | Pending |
-| NLP-BATCH-03 | Phase 108 | Pending |
-| MC-CAL-01 | Phase 109 | Pending |
-| MC-CAL-02 | Phase 109 | Pending |
+| NLP-BATCH-01 | Phase 108 | Complete |
+| NLP-BATCH-02 | Phase 108 | Complete |
+| NLP-BATCH-03 | Phase 108 | Complete |
+| MC-CAL-01 | Phase 109 | Complete |
+| MC-CAL-02 | Phase 109 | Complete |
 
 **Coverage:**
 - v1.19 requirements: 11 total

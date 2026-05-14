@@ -1,5 +1,20 @@
 # Milestones
 
+## v1.19 AI Quality & Insight Delivery (Shipped: 2026-05-14)
+
+**Phases completed:** 4 phases (106-109), 7 plans
+**Timeline:** 2026-05-14 (1 day)
+**Files changed:** 42 files, +4,911 / −89 lines
+
+**Key accomplishments:**
+
+1. Code Quality Cleanup (Phase 106): Four v1.16 WR carry-forward items cleared — single `transition-all` on Load Squad button; `computeDecisionSeverity` captain branch returns `LOW` for `candidates.length < 2`; NAV-05 click test extended to all 7 analyse pills; WR-03 traced as no-op (Phase 97 D-02 already resolved) — WR-01/02/03/04
+2. NLP-02 Prompt Caching (Phase 107): `system` parameter on `/api/player-insight` wrapped as `TextBlockParam[]` with `cache_control: ephemeral` on both attempt loops; `cache_creation_input_tokens` / `cache_read_input_tokens` logged after each successful Claude call; 12/12 TDD tests GREEN — CACHE-01/02
+3. Batch AI Insight Pre-Generation (Phase 108): `pipeline/batch_insights.py` generates 2-3 sentence Claude insights for top-20 players by xPts and writes to `player_insights/gw{N}/element_{id}.json`; `pipeline/run.py` wired with `INSIGHT_BATCH_ENABLED` gate; `/api/player-insight` route now reads Blob before calling Anthropic — cache hits ~50-150ms with zero Claude spend; NLP-BATCH-03 gap closed via Plan 03 TDD cycle; 16/16 tests GREEN — NLP-BATCH-01/02/03
+4. MC-Enabled Calibration (Phase 109): `pipeline/accuracy.py` uses MC `haul_prob` as `predicted_rate` when `mc_enabled`; `calibration_mode` written to `accuracy_backtest.json`; teal `MC` / zinc `Analytical` mode badge on `CalibrationHealthIndicator`; `maxDeviation` D-11 bug fixed (`b.bucket_mid` → `b.predicted_rate`); 14/14 TDD tests GREEN — MC-CAL-01/02
+
+---
+
 ## v1.18 Forecast Transparency & AI Intelligence (Shipped: 2026-05-14)
 
 **Phases completed:** 4 phases (102-105), 9 plans

@@ -20,7 +20,7 @@
 - **v1.16 Modelling & Trust** — Phases 88-96 (started 2026-05-09)
 - ✅ **v1.17 End-of-Season Intelligence** — Phases 97-101 (shipped 2026-05-12)
 - ✅ **v1.18 Forecast Transparency & AI Intelligence** — Phases 102-105 (shipped 2026-05-14)
-- **v1.19 AI Quality & Insight Delivery** — Phases 106-109 (started 2026-05-14)
+- ✅ **v1.19 AI Quality & Insight Delivery** — Phases 106-109 (shipped 2026-05-14)
 
 ## Phases
 
@@ -182,12 +182,17 @@ See `.planning/milestones/v1.18-ROADMAP.md` for full phase details.
 
 </details>
 
-### v1.19 AI Quality & Insight Delivery — New Phases (106-109)
+<details>
+<summary>✅ v1.19 AI Quality & Insight Delivery (Phases 106-109) — SHIPPED 2026-05-14</summary>
 
-- [x] **Phase 106: Code Quality Cleanup** — WR backlog clearance: DecisionSummaryTab duplicate transition classes; decision-severity captain LOW/MEDIUM fix; MobileNav test description + Acc pill test (complete 2026-05-14)
-- [x] **Phase 107: NLP-02 Prompt Caching** — `cache_control: ephemeral` on system prompt block; cache_creation/cache_read token logging in Vercel (complete 2026-05-14)
-- [ ] **Phase 108: Batch AI Insight Pre-Generation** — Pipeline pre-generates top-20 insights to Vercel Blob; `INSIGHT_BATCH_ENABLED` gate; UI reads cached Blob transparently
-- [x] **Phase 109: MC-Enabled Calibration** — Calibration pipeline uses MC `haul_prob` as `predicted_rate`; CalibrationHealthIndicator surfaces MC-vs-analytical mode label (complete 2026-05-14)
+See `.planning/milestones/v1.19-ROADMAP.md` for full phase details.
+
+- [x] Phase 106: Code Quality Cleanup — WR backlog clearance (4 items: transition-all, captain LOW fix, NAV-05 7-pill test, WR-03 no-op)
+- [x] Phase 107: NLP-02 Prompt Caching — `cache_control: ephemeral` on system prompt; cache token metrics logged
+- [x] Phase 108: Batch AI Insight Pre-Generation — `pipeline/batch_insights.py`; `INSIGHT_BATCH_ENABLED` gate; Blob read-before-generate in UI route
+- [x] Phase 109: MC-Enabled Calibration — `haul_prob` as `predicted_rate`; MC/Analytical mode badge on `CalibrationHealthIndicator`; D-11 maxDeviation fix
+
+</details>
 
 ## Phase Details
 

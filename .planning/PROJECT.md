@@ -46,15 +46,11 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
-## Current Milestone: v1.19 AI Quality & Insight Delivery
+## Previous Milestone: v1.19 AI Quality & Insight Delivery (Complete 2026-05-14)
 
 **Goal:** Deepen the AI intelligence layer — batch-pre-generate player insights to eliminate latency, wire MC output into calibration, and cut NLP-02 API cost via prompt caching — plus clear the WR backlog.
 
-**Target features:**
-- NLP-BATCH: nightly pipeline pre-generates top-20 player insights (GitHub Actions job, Vercel Blob write, UI reads cached blobs first)
-- MC-CAL: replace analytical calibration proxy with actual MC P(haul) percentiles as predicted_rate (MC gate now live)
-- PROMPT-CACHE: add `cache_control: ephemeral` on NLP-02 system prompt (cost reduction once prompt > 1024 tokens)
-- WR-01/02/03/04: clear pre-existing code/test quality backlog items
+**Delivered:** Batch insight pre-generation pipeline (top-20 by xPts, `INSIGHT_BATCH_ENABLED` gate, Blob write), Blob read-before-generate in UI route (cache hits zero Claude spend), MC-enabled calibration (haul_prob as predicted_rate, calibration_mode badge), prompt caching plumbing (cache_control ephemeral on system prompt, cache token logging), WR backlog cleared (4 items).
 
 ## Previous Milestone: v1.18 Forecast Transparency & AI Intelligence (Complete 2026-05-14)
 
@@ -287,9 +283,17 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 - ✓ WHY-01: `computeRejection` on sell side of every OCS row — up to 4 reason lines always-visible below sell name — v1.18
 - ✓ NLP-02: Per-player LLM insight (`claude-haiku-4-5-20251001`, on-demand, two-tier cache, name-whitelist guardrail) in GemTable expand + TransferPanel buy rows — v1.18
 
-### Active (v1.19)
+### Validated (v1.19)
 
-_(Requirements being defined — see REQUIREMENTS.md)_
+- ✓ NLP-BATCH-01: Pipeline pre-generates insights for top-20 players by `xPts_1gw` → Vercel Blob (`player_insights/gw{N}/element_{id}.json`) — v1.19
+- ✓ NLP-BATCH-02: `INSIGHT_BATCH_ENABLED` env var gates batch independently of daily pipeline — v1.19
+- ✓ NLP-BATCH-03: `/api/player-insight` reads Blob before calling Anthropic — cache hits ~50-150ms, zero Claude spend — v1.19
+- ✓ MC-CAL-01: Calibration uses MC `haul_prob` as `predicted_rate` (gated by `mc_enabled`); `calibration_mode` written to `accuracy_backtest.json` — v1.19
+- ✓ MC-CAL-02: `CalibrationHealthIndicator` renders teal `MC` / zinc `Analytical` mode badge — v1.19
+- ✓ CACHE-01/02: `/api/player-insight` system prompt wrapped as `TextBlockParam[]` with `cache_control: ephemeral`; cache token metrics logged — v1.19
+- ✓ WR-01/02/03/04: Load Squad button uses single `transition-all`; captain severity `LOW` for `<2 candidates`; NAV-05 extended to 7 pills — v1.19
+
+### Active (v1.20)
 
 ### Out of Scope
 
@@ -354,6 +358,10 @@ _(Requirements being defined — see REQUIREMENTS.md)_
 | NLP-02 Node.js runtime, never Edge (v1.18) | `@anthropic-ai/sdk` SSE parsing fails on Edge per anthropics/anthropic-sdk-typescript#292 | ✓ Good — `maxDuration = 30`, non-streaming `messages.create` only |
 | Name-whitelist guardrail with structured fallback (v1.18) | LLM hallucination prevention — two-attempt guardrail; fallback to `reasons[]` array on both failures | ✓ Good — deterministic, never shows hallucinated content |
 | Python single sparse-bucket gate for calibration (v1.18) | TS double-filter caused false confidence when Python had already filtered; single authority in pipeline | ✓ Good — AccuracyTab TS filters removed entirely |
+| `INSIGHT_BATCH_ENABLED` env var gate defaults false (v1.19) | Batch runs on every daily pipeline and can generate unexpected Anthropic spend; gate allows controlled rollout | ✓ Good — cost stays predictable; Anthropic Console monthly cap remains defence-in-depth ceiling |
+| Blob read-before-generate inserted before Anthropic client construction (v1.19) | Inserting after `new Anthropic()` would still call the constructor on cache hits, failing the zero-constructor-calls test contract | ✓ Good — auto-deviation from plan satisfied both the cache-first intent and the TDD contract |
+| `calibration_mode` written per-run to `accuracy_backtest.json` (v1.19) | Allows UI to distinguish MC vs analytical calibration without hardcoding the flag; legacy cache degrades gracefully via `undefined` | ✓ Good — `CalibrationHealthIndicator` handles undefined silently |
+| `maxDeviation` uses `predicted_rate` not `bucket_mid` (v1.19 D-11 fix) | `bucket_mid` is the bucket centre, not the model's prediction — in MC mode they diverge and the wrong field caused incorrect tier assignment | ✓ Fixed — corrective in MC mode, behaviour-preserving in analytical mode |
 
 ---
 
@@ -386,4 +394,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-14 — v1.19 Phase 107 complete. Phase 108 (Batch AI Insight Pre-Generation) is next.*
+*Last updated: 2026-05-14 — v1.19 milestone complete. Planning v1.20 next.*
