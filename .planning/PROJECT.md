@@ -46,6 +46,16 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
+## Current Milestone: v1.20 Fixes & Decision Quality
+
+**Goal:** Fix 6 data accuracy bugs across GW Review, fixture heatmap, planner, and decision history; add transfer regret backtester; make optimiser on-demand; limit transfer suggestions to top 3 per position.
+
+**Target features:**
+- FIX-01–06: Bug sweep — heatmap BGW false-positive for already-played GW, planner cross-position lock, GW Review top scorer points, best bench pts, dream team delta sign, decision history captain delta
+- BACK-02: Transfer regret backtester — per-GW what engine recommended vs what you did, with hindsight xPts delta
+- OPT-01: Lineup optimiser on-demand — "Optimise Lineup" button replaces auto-calculate on tab load
+- TFR-02: Transfer suggestions capped at top 3 candidates per position slot
+
 ## Previous Milestone: v1.19 AI Quality & Insight Delivery (Complete 2026-05-14)
 
 **Goal:** Deepen the AI intelligence layer — batch-pre-generate player insights to eliminate latency, wire MC output into calibration, and cut NLP-02 API cost via prompt caching — plus clear the WR backlog.
@@ -295,6 +305,16 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 
 ### Active (v1.20)
 
+- [ ] **FIX-01**: User sees current-GW fixture correctly when team has already played mid-week (no false BGW on heatmap)
+- [ ] **FIX-02**: Transfer planner only suggests players of the same position as the player being transferred out
+- [ ] **FIX-03**: GW Review top scorer displays actual points earned alongside player name
+- [ ] **FIX-04**: GW Review best bench displays actual bench points (not 0)
+- [ ] **FIX-05**: GW Review dream team delta shows correct sign (positive when dream team beats user score)
+- [ ] **FIX-06**: Decision history captain delta displays actual points difference per GW (not dashes)
+- [ ] **BACK-02**: User can view per-GW transfer regret — what the engine recommended vs what was done, with hindsight xPts delta
+- [ ] **OPT-01**: Lineup optimiser shows empty state with "Optimise Lineup" button; calculation only runs on explicit trigger
+- [ ] **TFR-02**: Transfer suggestions show at most 3 candidates per position slot
+
 ### Out of Scope
 
 - Live in-match updates — data refreshes daily, not during gameweeks
@@ -394,4 +414,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-14 — v1.19 milestone complete. Planning v1.20 next.*
+*Last updated: 2026-05-14 — v1.20 milestone started. 9 requirements across 6 bug fixes + 3 features.*

@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.19
-milestone_name: AI Quality & Insight Delivery — SHIPPED
-status: milestone_complete
-stopped_at: v1.19 milestone archived 2026-05-14
-last_updated: "2026-05-14T14:30:00.000Z"
-last_activity: 2026-05-14 -- v1.19 milestone complete and archived
+milestone: v1.20
+milestone_name: Fixes & Decision Quality
+status: planning
+stopped_at: ~
+last_updated: "2026-05-14T00:00:00.000Z"
+last_activity: 2026-05-14 -- Milestone v1.20 started
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 7
-  completed_plans: 7
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,20 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-14 — v1.19 complete, planning v1.20)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.19 archived — planning v1.20 next (`/gsd-new-milestone`)
+**Current focus:** v1.20 Fixes & Decision Quality — 9 requirements (6 bugs + 3 features), phases 110+
 
 ## Current Position
 
-Milestone: v1.19 archived
-Status: Complete — all 4 phases, 7 plans shipped
-Last activity: 2026-05-14 -- v1.19 milestone archived; git tag v1.19 created
-
-### v1.19 Phase Sequence (Complete)
-
-- [x] Phase 106: Code Quality Cleanup — WR-01, WR-02, WR-03, WR-04 (complete 2026-05-14)
-- [x] Phase 107: NLP-02 Prompt Caching — CACHE-01, CACHE-02 (complete 2026-05-14)
-- [x] Phase 108: Batch AI Insight Pre-Generation — NLP-BATCH-01, NLP-BATCH-02, NLP-BATCH-03 (complete 2026-05-14)
-- [x] Phase 109: MC-Enabled Calibration — MC-CAL-01, MC-CAL-02 (complete 2026-05-14)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-14 — Milestone v1.20 started
 
 ## Performance Metrics
 
