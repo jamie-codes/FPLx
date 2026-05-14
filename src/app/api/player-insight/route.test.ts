@@ -87,6 +87,7 @@ describe('POST /api/player-insight', () => {
         messages: {
           create: vi.fn().mockResolvedValue({
             content: [{ type: 'text', text: 'Haaland is the best pick this week over Salah.' }],
+            usage: { input_tokens: 50, output_tokens: 80, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
           }),
         },
       }
@@ -100,9 +101,11 @@ describe('POST /api/player-insight', () => {
     const create = vi.fn()
       .mockResolvedValueOnce({
         content: [{ type: 'text', text: 'Haaland beats Salah this week.' }],
+        usage: { input_tokens: 50, output_tokens: 80, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
       })
       .mockResolvedValueOnce({
         content: [{ type: 'text', text: 'Salah looks strong this gameweek.' }],
+        usage: { input_tokens: 50, output_tokens: 80, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
       })
     ;(Anthropic as unknown as ReturnType<typeof vi.fn>).mockImplementation(function () {
       return { messages: { create } }
@@ -122,6 +125,7 @@ describe('POST /api/player-insight', () => {
         messages: {
           create: vi.fn().mockResolvedValue({
             content: [{ type: 'text', text: 'Salah looks strong this week.' }],
+            usage: { input_tokens: 50, output_tokens: 80, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
           }),
         },
       }
@@ -138,12 +142,33 @@ describe('POST /api/player-insight', () => {
     })
   })
 
+  it('passes system as TextBlockParam[] with cache_control ephemeral on attempt 0', async () => {
+    const create = vi.fn().mockResolvedValue({
+      content: [{ type: 'text', text: 'Salah looks strong this week.' }],
+      usage: { input_tokens: 50, output_tokens: 80, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
+    })
+    ;(Anthropic as unknown as ReturnType<typeof vi.fn>).mockImplementation(function () {
+      return { messages: { create } }
+    })
+    const { POST } = await import('./route')
+    await POST(makeReq(validBody))
+    const systemParam = create.mock.calls[0][0].system
+    expect(Array.isArray(systemParam)).toBe(true)
+    expect(systemParam).toHaveLength(1)
+    expect(systemParam[0]).toMatchObject({
+      type: 'text',
+      cache_control: { type: 'ephemeral' },
+    })
+    expect(systemParam[0].text).toContain('FPL analyst')
+  })
+
   it('put called with allowOverwrite true', async () => {
     ;(Anthropic as unknown as ReturnType<typeof vi.fn>).mockImplementation(function () {
       return {
         messages: {
           create: vi.fn().mockResolvedValue({
             content: [{ type: 'text', text: 'Salah looks strong this week.' }],
+            usage: { input_tokens: 50, output_tokens: 80, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
           }),
         },
       }
@@ -164,6 +189,7 @@ describe('POST /api/player-insight', () => {
         messages: {
           create: vi.fn().mockResolvedValue({
             content: [{ type: 'text', text: 'Salah looks strong this week.' }],
+            usage: { input_tokens: 50, output_tokens: 80, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
           }),
         },
       }
@@ -181,6 +207,7 @@ describe('POST /api/player-insight', () => {
         messages: {
           create: vi.fn().mockResolvedValue({
             content: [{ type: 'text', text: 'Salah looks strong this week.' }],
+            usage: { input_tokens: 50, output_tokens: 80, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
           }),
         },
       }
@@ -198,6 +225,7 @@ describe('POST /api/player-insight', () => {
         messages: {
           create: vi.fn().mockResolvedValue({
             content: [{ type: 'text', text: 'Salah looks strong this week.' }],
+            usage: { input_tokens: 50, output_tokens: 80, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
           }),
         },
       }
