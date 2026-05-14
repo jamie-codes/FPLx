@@ -21,6 +21,7 @@
 - ✅ **v1.17 End-of-Season Intelligence** — Phases 97-101 (shipped 2026-05-12)
 - ✅ **v1.18 Forecast Transparency & AI Intelligence** — Phases 102-105 (shipped 2026-05-14)
 - ✅ **v1.19 AI Quality & Insight Delivery** — Phases 106-109 (shipped 2026-05-14)
+- **v1.20 Fixes & Decision Quality** — Phases 110-113 (started 2026-05-14)
 
 ## Phases
 
@@ -191,6 +192,16 @@ See `.planning/milestones/v1.19-ROADMAP.md` for full phase details.
 - [x] Phase 107: NLP-02 Prompt Caching — `cache_control: ephemeral` on system prompt; cache token metrics logged
 - [x] Phase 108: Batch AI Insight Pre-Generation — `pipeline/batch_insights.py`; `INSIGHT_BATCH_ENABLED` gate; Blob read-before-generate in UI route
 - [x] Phase 109: MC-Enabled Calibration — `haul_prob` as `predicted_rate`; MC/Analytical mode badge on `CalibrationHealthIndicator`; D-11 maxDeviation fix
+
+</details>
+
+<details open>
+<summary>v1.20 Fixes & Decision Quality (Phases 110-113) — STARTED 2026-05-14</summary>
+
+- [ ] **Phase 110: GW Review & History Fixes** — fix top scorer points display (FIX-03), best bench points (FIX-04), dream team delta sign (FIX-05), decision history captain delta (FIX-06)
+- [ ] **Phase 111: Fixture Heatmap & Planner Cross-Position Fixes** — heatmap BGW false-positive when current GW already played (FIX-01); transfer planner position-lock guard (FIX-02)
+- [ ] **Phase 112: Optimiser On-Demand & Transfer Suggestion Cap** — Optimiser empty-state + button (OPT-01); transfer suggestions capped at top 3 per position slot (TFR-02)
+- [ ] **Phase 113: Transfer Regret Backtester** — per-GW engine recommendation vs actual transfer, hindsight xPts delta (BACK-02)
 
 </details>
 
@@ -1440,6 +1451,61 @@ Plans:
 **Phase notes**: Two-file change at heart — `pipeline/accuracy.py` (`_compute_calibration_data` switches from analytical decile rank to MC `haul_prob` percentile when `mc_enabled and haul_prob is not None`; emits `calibration_mode` on the summary) and `CalibrationHealthIndicator.tsx` (renders the mode label). MC-CAL was deferred from v1.18 (see STATE.md Pre-existing deferred items) and unblocks now that MC-01 has shipped and `haul_prob` is populated in production. Pitfall to avoid: do NOT compute MC haul rate as raw count ≥ 10 across the population — use per-player `haul_prob` (already in `merged_players.json`) averaged within each decile bin, which is what the analytical proxy approximates and what makes the MC and analytical paths directly comparable. The ≥80% population coverage rule for declaring `calibration_mode: 'mc'` is from the existing position-pool guard pattern in Phase 103 — keep the threshold consistent.
 
 
+### Phase 110: GW Review & History Fixes _(v1.20)_
+**Goal**: User trusts the post-gameweek summary because the top scorer, bench points, dream-team comparison and decision-history captain analytics all display correct numbers — eliminating four data-accuracy bugs that currently undermine the review/history surfaces
+**Depends on**: Phase 109 (v1.19 complete)
+**Requirements**: FIX-03, FIX-04, FIX-05, FIX-06
+**Success Criteria** (what must be TRUE):
+  1. User can open GW Review after a settled gameweek and see the top scorer card render the player’s actual points alongside the player name (no missing-points display)
+  2. User can open GW Review and see the best bench card display the actual bench points scored that gameweek (never a stuck zero when bench points were earned)
+  3. User can open GW Review and see the dream-team delta with the correct sign — positive when the dream team outscored the user (e.g. +50 when user=72 and dream team=122), never sign-inverted
+  4. User can open the Back / Decision History view and see the captain delta column populated with the actual points difference per gameweek instead of dashes for every row
+**Plans**: 3 plans (1 wave)
+  **Wave 1** *(all parallel — zero file overlap)*
+  - [ ] 110-01-PLAN.md — FIX-05 dream team delta sign + sentiment fix (GwReviewTab.tsx)
+  - [ ] 110-02-PLAN.md — FIX-03/04 event/{gw}/live/ liveMap for top scorer + best bench points (gw-review/route.ts)
+  - [ ] 110-03-PLAN.md — FIX-06 element-summary deduped fan-out for modelCeilingPts (decision-history/route.ts; new test file)
+**UI hint**: yes
+**Phase notes**: Four independent data-accuracy fixes that all live in the GW Review / Decision History surfaces (`/api/gw-review`, `/api/decision-history`, `GwReviewTab`, `BackTab`). Grouped together so a single TDD pass can lock down all four with one round of UAT against last-settled-GW data. Pitfall to avoid: the four bugs may share a root cause (e.g. a single mis-typed field name in `gw_review_gw{N}.json` or a sign convention drift between pipeline writer and UI reader) — investigate cross-bug correlations during research before assuming four isolated patches.
+
+### Phase 111: Fixture Heatmap & Planner Cross-Position Fixes _(v1.20)_
+**Goal**: Users see correct fixtures on the heatmap during mid-week gameweeks and never get cross-position transfer suggestions — two engine/data-layer bugs that compromise core planning surfaces are resolved
+**Depends on**: Phase 110
+**Requirements**: FIX-01, FIX-02
+**Success Criteria** (what must be TRUE):
+  1. User can view the fixture heat map mid-week when their team has already played the current gameweek and see the current GW cell render that team’s completed fixture (or a "played" state), NOT a false BGW indicator
+  2. User can open the transfer planner, select a player to transfer out, and see only buy candidates of the same position (no MID candidates suggested for a GK sell, no FWD candidates for a DEF sell, etc.)
+  3. Position-lock is enforced everywhere `suggestTransfers` / planner candidate ranking surfaces a buy suggestion — Squad Transfers, Manual Plan, Route Tree, Decision Summary OCS sells, all honour the same rule
+**Plans**: TBD
+**UI hint**: yes
+**Phase notes**: Two unrelated bugs combined because both are short, isolated, engine/data-layer fixes in adjacent code areas (fixture heatmap aggregation, transfer suggestion engine). FIX-01 root cause likely sits in `FixtureHeatMap` BGW detection logic (`fixtures.length === 0` vs `fixtures.filter(f => f.finished === false).length === 0`). FIX-02 root cause is likely missing or wrong position filter in `suggestTransfers` / planner candidate selection — every existing call site should be audited because v1.6 onwards added several new paths (RouteTree, Manual Plan, GW-targeted scoring) that may have regressed the v1.0 position lock.
+
+### Phase 112: Optimiser On-Demand & Transfer Suggestion Cap _(v1.20)_
+**Goal**: Users get a calmer, more deliberate planning surface — the Optimiser tab no longer auto-computes when opened (button-gated, eliminating wasted compute on tab switches), and transfer suggestion lists never overwhelm with more than 3 candidates per position slot so the user can focus on the meaningful top picks
+**Depends on**: Phase 111
+**Requirements**: OPT-01, TFR-02
+**Success Criteria** (what must be TRUE):
+  1. User can open the Squad → Optimiser sub-tab and see an empty state with a clear "Optimise Lineup" call-to-action button — no calculation runs until the user clicks the button
+  2. User can click the "Optimise Lineup" button and the optimiser computes and renders results as before, with all existing controls (1/3/5 GW horizon, chip modes, captain/VC) functioning identically to pre-fix behaviour
+  3. User can open the Squad → Transfers sub-tab and see at most 3 buy candidates per position slot in the transfer suggestion list — ranked by gem delta descending with affordable candidates first, surplus candidates truncated
+**Plans**: TBD
+**UI hint**: yes
+**Phase notes**: Two small UX-layer fixes grouped because both modify Squad sub-tab surfaces with no engine changes. OPT-01: lift `optimisationResult` initial computation out of `useEffect` mount and behind an explicit button click; preserve all downstream wiring (comparison table, headline row, chip toggle). TFR-02: cap is per-position-slot, not global — apply after sort, after affordability ordering, so the top-3 are the *best* top-3 not an arbitrary slice. Confirm with the user whether "position slot" means by `element_type` (GK/DEF/MID/FWD) or by the specific squad-slot being filled (15 slots) — defaults to `element_type` if no clarification.
+
+### Phase 113: Transfer Regret Backtester _(v1.20)_
+**Goal**: User can see, per past gameweek, what the transfer engine recommended that week vs what they actually did — with the hindsight xPts delta showing whether the engine’s recommendation would have earned more, less, or the same points; surfaces a new "Transfer Regret" view alongside the existing captain-decision backtester so transfer ROI becomes observable for the first time
+**Depends on**: Phase 112; Phase 96 (BACK-01 captain backtester pattern provides the snapshot + per-GW join + recharts template); Phase 109 (v1.19 MC calibration provides the trusted scoring substrate)
+**Requirements**: BACK-02
+**Success Criteria** (what must be TRUE):
+  1. Pipeline snapshots a per-GW transfer recommendation for each user (or, where snapshot is impractical, computes a deterministic recommendation post-hoc from that GW’s `merged_players.json`) so the engine’s "what would I have recommended last GW" answer is auditable and stable across runs
+  2. User can open the Back / Decision History tab and see a new "Transfer Regret" section listing, per past settled GW: engine-recommended OUT player, engine-recommended IN player, user’s actual transfer (if any), and the hindsight xPts delta between engine and actual (e.g. +3.2 means engine pick would have outscored, −1.5 means user’s pick was better)
+  3. The Transfer Regret view degrades gracefully when no snapshot exists (early GWs, users with no transfer history) — empty state, never NaN, never a broken chart; cumulative-delta headline updates when enough GWs have data
+  4. The hindsight scoring uses actual realised points (FPL `event-summary`) for both the engine pick and the user’s pick, NOT predicted xPts — so "regret" is grounded in what actually happened, mirroring the captain-decision backtester rule
+**Plans**: TBD
+**UI hint**: yes
+**Phase notes**: Largest v1.20 phase. Requires Python (or TypeScript) port of the `suggestTransfers` recommendation rule so the pipeline can write `transfer_recommendation_gw{N}.json` to Vercel Blob as a durable snapshot trail (mirroring `captain_picks_gw{N}.json` from Phase 96). `/api/decision-history` extended to join the snapshot with the user’s `event_transfers` from authenticated FPL data + element-summary point totals. New `TransferRegretSection` component on the existing `BackTab` (do NOT add a new sub-tab). Pitfall to avoid: do NOT recommend transfers retroactively using *future* GW data — recommendation snapshot must use the data available at deadline minus 1 hour, so the regret comparison is honest. Carry-forward item BACK-02 from v1.19 Deferred Items is now resolved by this phase. BACK-03 (full transfer ROI tracker requiring a multi-GW persistent store) remains out of scope and stays in the v1.20 Out of Scope section.
+
+
 ## Progress
 
 | Phase | Milestone | Plans | Status | Completed |
@@ -1514,3 +1580,7 @@ Plans:
 | 107 | v1.19 | 1/1 | Complete    | 2026-05-14 |
 | 108 | v1.19 | 3/3 | Complete    | 2026-05-14 |
 | 109 | v1.19 | 2/2 | Complete    | 2026-05-14 |
+| 110 | v1.20 | 0 | Not started | - |
+| 111 | v1.20 | 0 | Not started | - |
+| 112 | v1.20 | 0 | Not started | - |
+| 113 | v1.20 | 0 | Not started | - |
