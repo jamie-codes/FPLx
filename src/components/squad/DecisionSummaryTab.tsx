@@ -478,7 +478,7 @@ export function DecisionSummaryTab({
           </div>
           <button
             type="submit"
-            className="px-4 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium rounded hover:bg-zinc-700 dark:hover:bg-zinc-200 transition-colors cursor-pointer active:scale-95 transition-transform w-full sm:w-auto"
+            className="px-4 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium rounded hover:bg-zinc-700 dark:hover:bg-zinc-200 cursor-pointer active:scale-95 transition-all w-full sm:w-auto"
           >
             Load Squad
           </button>

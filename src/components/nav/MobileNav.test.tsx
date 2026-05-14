@@ -120,11 +120,12 @@ describe('Phase 36: MobileNav component', () => {
     expect(onSectionChange).toHaveBeenCalledWith('squad')
   })
 
-  it('clicking analyse pills calls onSubTabChange with correct sub-tab id (NAV-05)', () => {
+  it('clicking analyse pills calls onSubTabChange with correct sub-tab id for all 7 pills (NAV-05, Phase 97 D-02; covers WR-04)', () => {
     const onSubTabChange = vi.fn()
     const { container } = render(<MobileNav {...makeProps({ activeSection: 'analyse' as Section, activeSubTab: 'gems' as SubTab, onSubTabChange })} />)
     const allButtons = Array.from(container.querySelectorAll('button'))
-    const pillButtons = allButtons.filter(b => ['Gems', 'Insights', 'DefCon', 'SP'].includes(b.textContent ?? ''))
+    const pillButtons = allButtons.filter(b => ['Gems', 'Insights', 'DefCon', 'SP', 'Form', 'Acc', 'Prices'].includes(b.textContent ?? ''))
+    expect(pillButtons).toHaveLength(7)
     fireEvent.click(pillButtons[0])
     expect(onSubTabChange).toHaveBeenCalledWith('gems')
     fireEvent.click(pillButtons[1])
@@ -133,6 +134,12 @@ describe('Phase 36: MobileNav component', () => {
     expect(onSubTabChange).toHaveBeenCalledWith('defcon')
     fireEvent.click(pillButtons[3])
     expect(onSubTabChange).toHaveBeenCalledWith('set-pieces')
+    fireEvent.click(pillButtons[4])
+    expect(onSubTabChange).toHaveBeenCalledWith('club-form')
+    fireEvent.click(pillButtons[5])
+    expect(onSubTabChange).toHaveBeenCalledWith('accuracy')
+    fireEvent.click(pillButtons[6])
+    expect(onSubTabChange).toHaveBeenCalledWith('price-changes')
   })
 
   it('nav wrapper has required classes and aria-label; pill row has border-b class (NAV-05)', () => {
