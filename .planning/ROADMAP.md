@@ -184,7 +184,7 @@ See `.planning/milestones/v1.18-ROADMAP.md` for full phase details.
 
 ### v1.19 AI Quality & Insight Delivery — New Phases (106-109)
 
-- [ ] **Phase 106: Code Quality Cleanup** — WR backlog clearance: DecisionSummaryTab duplicate transition classes; decision-severity captain LOW/MEDIUM fix; MobileNav test description + Acc pill test
+- [x] **Phase 106: Code Quality Cleanup** — WR backlog clearance: DecisionSummaryTab duplicate transition classes; decision-severity captain LOW/MEDIUM fix; MobileNav test description + Acc pill test (complete 2026-05-14)
 - [ ] **Phase 107: NLP-02 Prompt Caching** — `cache_control: ephemeral` on system prompt block; cache_creation/cache_read token logging in Vercel
 - [ ] **Phase 108: Batch AI Insight Pre-Generation** — Pipeline pre-generates top-20 insights to Vercel Blob; `INSIGHT_BATCH_ENABLED` gate; UI reads cached Blob transparently
 - [ ] **Phase 109: MC-Enabled Calibration** — Calibration pipeline uses MC `haul_prob` as `predicted_rate`; CalibrationHealthIndicator surfaces MC-vs-analytical mode label
@@ -1382,7 +1382,7 @@ Plans:
   3. The MobileNav test suite description text accurately matches the live nav (5 pills, not 4) and includes a regression test that verifies the Acc pill is rendered, is focusable, and routes to the Accuracy sub-tab — eliminating two long-standing carry-forward WR items from v1.16
 **Plans**: 1 plan (1 wave)
   **Wave 1**
-  - [ ] 106-01-PLAN.md — Clear WR-01/02/04 (WR-03 no-op): replace duplicate transition utilities with transition-all on Load Squad button; captain severity returns LOW when candidates.length less than 2 (update Tests 4 and 5); extend NAV-05 analyse-pills click test to all 7 pills (Form/Acc/Prices)
+  - [x] 106-01-PLAN.md — Clear WR-01/02/04 (WR-03 no-op): replace duplicate transition utilities with transition-all on Load Squad button; captain severity returns LOW when candidates.length less than 2 (update Tests 4 and 5); extend NAV-05 analyse-pills click test to all 7 pills (Form/Acc/Prices)
 **Phase notes**: All four WR items are small, independent, mechanical cleanups carried forward from v1.16 (see STATE.md Pre-existing deferred items). Combining into one warm-up phase because each individual fix is ≤10 LOC, the risk surface is isolated (one button, one severity branch, one test file), and a single cleanup phase keeps the v1.19 progress table tidy. No new dependencies, no design decisions, no UAT gate beyond the existing Vitest suites turning green. Pitfall to avoid: do NOT bundle WR fixes into the larger NLP-BATCH or MC-CAL phases — keep them isolated so a regression in this phase cannot block the higher-value feature work.
 
 ### Phase 107: NLP-02 Prompt Caching _(v1.19 — see `.planning/milestones/v1.19-ROADMAP.md`)_
