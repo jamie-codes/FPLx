@@ -121,6 +121,44 @@ export async function GET(request: NextRequest) {
     Promise.all(finishedGws.map((gw) => readGwPicks(teamId, gw))),
   ])
 
+  // Step 2b (FIX-06, Phase 110): element-summary lookups for unique ceiling IDs.
+  // Deduplication: a single ceiling player (e.g. Salah) across N GWs = 1 fetch, not N.
+  // SC-5: any failure leaves actualPtsMap entry absent → modelCeilingPts stays null.
+  // Per CONTEXT.md D-10: collect unique IDs, Promise.allSettled (NOT Promise.all — individual
+  // fetch failures must not abort the fan-out), build Map<elementId, Map<gwRound, actualPts>>.
+  const uniqueCeilingIds = new Set<number>()
+  for (const snap of snapshots) {
+    if (snap?.ceiling?.id != null) uniqueCeilingIds.add(snap.ceiling.id)
+  }
+
+  const actualPtsMap = new Map<number, Map<number, number>>()
+  if (uniqueCeilingIds.size > 0) {
+    const summaryResults = await Promise.allSettled(
+      [...uniqueCeilingIds].map(async (id) => {
+        try {
+          const res = await fetch(`${FPL_BASE}/element-summary/${id}/`, {
+            headers: { 'User-Agent': FPL_UA },
+          })
+          if (!res.ok) return null
+          const json = (await res.json()) as {
+            history?: Array<{ element: number; round: number; total_points: number }>
+          }
+          return { id, history: json.history ?? [] }
+        } catch {
+          return null
+        }
+      }),
+    )
+    for (const result of summaryResults) {
+      if (result.status === 'fulfilled' && result.value) {
+        const { id, history } = result.value
+        actualPtsMap.set(id, new Map(history.map((h) => [h.round, h.total_points])))
+      }
+    }
+  }
+  // actualPtsMap is now available for Step 3 lookups.
+  // If all element-summary calls fail, actualPtsMap is empty → all modelCeilingPts = null (SC-5).
+
   // Step 3: assemble RegretEntry per GW.
   const entries: RegretEntry[] = finishedGws.map((gw, i) => {
     const snap = snapshots[i]
@@ -130,11 +168,11 @@ export async function GET(request: NextRequest) {
     const ceiling = snap?.ceiling ?? null
     const modelCeilingId = ceiling?.id ?? null
     const modelCeilingName = ceiling?.name ?? null
-    // CR-01: xPts_1gw is a pre-GW prediction, not actual post-GW points.
-    // modelCeilingPts must be actual player points (raw, regret formula doubles it).
-    // Until the snapshot schema stores actual_pts, set to null so regret is null
-    // (SC-5 null semantics) rather than a misleading xPts-vs-actual comparison.
-    const modelCeilingPts: number | null = null
+    // FIX-06 (Phase 110): modelCeilingPts derives from FPL element-summary lookup populated in
+    // Step 2b. Stays null when no snapshot, no ceiling, or element-summary unavailable (SC-5).
+    // CR-01 deferral from Phase 96 is now resolved — actual post-GW raw player points are used.
+    const modelCeilingPts: number | null =
+      modelCeilingId !== null ? (actualPtsMap.get(modelCeilingId)?.get(gw) ?? null) : null
     const hasSnapshot = snap !== null && ceiling !== null
 
     // User side (from FPL picks — captain in the starting XI).
