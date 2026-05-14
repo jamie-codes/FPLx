@@ -503,6 +503,7 @@ def _empty_backtest(cache_dir: str = '') -> dict:
             'bonus_predictor_enabled': bonus_predictor_enabled,  # Phase 53
             'save_predictor_enabled': save_predictor_enabled,    # Phase 83 GK-03
             'mc_enabled': mc_enabled,                            # Phase 90 MC-01
+            'calibration_mode': 'analytical',                    # Phase 109 MC-CAL-01: no merged data in empty path, default analytical
             'news_flag_enabled': True,                            # Phase 88 SCRAPER-01: always on; kill switch in UI gate
             'blend_alpha_used': BLEND_ALPHA,          # Phase 42
             'mid_tier_hit_rate': 0.0,                 # Phase 42

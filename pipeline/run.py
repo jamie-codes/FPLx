@@ -190,8 +190,8 @@ def run(dry_run: bool = False):
         xmins_v2_enabled = False  # Phase 52 D-02 — default OFF; flips ON after non-regression shadow run
         bonus_predictor_enabled = False  # Phase 53 BPS-01 — default OFF; flips ON after non-regression shadow run
         save_predictor_enabled = False  # Phase 83 GK-03 — default OFF; flips ON after >=5-GW non-regression shadow run
-        mc_enabled = False  # Phase 90 MC-01 — default OFF (D-01); flips ON after non-regression run
         MC_ENABLED = True  # Phase 102 MC-01 — permanent ON; surfaces 10k-sim MC fields in merged_players.json
+        mc_enabled = MC_ENABLED  # Phase 109 CR-02: set before try so corrupt cache never silently disables MC
         backtest_path = os.path.join(cache_dir, 'accuracy_backtest.json')
         try:
             with open(backtest_path, 'r', encoding='utf-8') as f:
@@ -201,7 +201,6 @@ def run(dry_run: bool = False):
             xmins_v2_enabled = prev_backtest.get('summary', {}).get('xmins_v2_enabled', False)
             bonus_predictor_enabled = prev_backtest.get('summary', {}).get('bonus_predictor_enabled', False)
             save_predictor_enabled = prev_backtest.get('summary', {}).get('save_predictor_enabled', False)
-            mc_enabled = MC_ENABLED
         except (FileNotFoundError, json.JSONDecodeError):
             pass
 
