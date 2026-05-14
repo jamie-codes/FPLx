@@ -168,6 +168,26 @@ export async function GET(request: NextRequest) {
     // Degraded — useDreamTeamBenchmark stays false, fallback below
   }
 
+  // Step 4b (Phase 110 FIX-03/04): fetch all-player actual points for this GW.
+  // Standalone try/catch — liveMap stays empty on any failure (SC-5 → pts fall back to 0).
+  // NEVER wrap with Step 4 in a Promise.all — that converts individual failures into route-level 502s.
+  let liveMap: Map<number, number> = new Map()
+  try {
+    const liveRes = await fetch(`${FPL_BASE}/event/${gw}/live/`, {
+      headers: { 'User-Agent': 'fplx/1.17 (+https://fplx.app)' },
+    })
+    if (liveRes.ok) {
+      const liveJson = (await liveRes.json()) as {
+        elements?: Array<{ id: number; stats: { total_points: number } }>
+      }
+      if (Array.isArray(liveJson?.elements)) {
+        liveMap = new Map(liveJson.elements.map((e) => [e.id, e.stats.total_points]))
+      }
+    }
+  } catch {
+    // Degrade silently — liveMap stays empty → top_scorer_pts and best_bench_player_pts fall back to 0
+  }
+
   // Step 5: Compute team-specific metrics (D-05, D-06, D-07)
   const starters = picks.filter((p) => p.position <= 11)
   if (starters.length === 0) {
@@ -175,18 +195,24 @@ export async function GET(request: NextRequest) {
   }
 
   const yourCaptain = starters.find((p) => p.is_captain) ?? starters[0]
-  // Optimal captain: highest total_points among starters
-  const optimalCaptain = starters.reduce(
-    (best, p) => (p.total_points > best.total_points ? p : best),
+  // Optimal captain / top scorer: highest actual GW points from liveMap (FIX-03).
+  // liveMap is empty when event/{gw}/live/ fails — comparison falls back to 0 for all (SC-5).
+  const topScorer = starters.reduce(
+    (best, p) =>
+      (liveMap.get(p.element) ?? 0) > (liveMap.get(best.element) ?? 0) ? p : best,
     starters[0]
   )
-  // Top scorer: same as optimal captain by definition (highest total_points among starters)
-  const topScorer = optimalCaptain
+  const optimalCaptain = topScorer
 
-  // Phase 98 PGW-01 / D-09: best bench player = highest total_points among picks with position > 11
+  // Phase 98 PGW-01 / D-09: best bench player = highest actual GW points from liveMap among picks
+  // with position > 11. liveMap.get() ?? 0 handles settled GWs where pick.total_points is 0 (FIX-04).
   const benchPicks = picks.filter((p) => p.position > 11)
   const bestBench = benchPicks.length > 0
-    ? benchPicks.reduce((best, p) => (p.total_points > best.total_points ? p : best), benchPicks[0])
+    ? benchPicks.reduce(
+        (best, p) =>
+          (liveMap.get(p.element) ?? 0) > (liveMap.get(best.element) ?? 0) ? p : best,
+        benchPicks[0]
+      )
     : null
 
   // D-06: captain delta uses pick.multiplier (Pitfall 3 — handles Triple Captain where multiplier=3)
@@ -226,13 +252,13 @@ export async function GET(request: NextRequest) {
     optimal_captain_name: elementMap.get(optimalCaptain.element) ?? `Player ${optimalCaptain.element}`,
     captain_delta: captainDelta,
     top_scorer_name: elementMap.get(topScorer.element) ?? `Player ${topScorer.element}`,
-    top_scorer_pts: topScorer.total_points,
+    top_scorer_pts: liveMap.get(topScorer.element) ?? 0,
     average_score: averageScore,
     // Phase 98 PGW-01 / D-09: empty-bench fallback ('—' / 0) keeps the field non-optional in GwReview
     best_bench_player_name: bestBench
       ? (elementMap.get(bestBench.element) ?? `Player ${bestBench.element}`)
       : '—',
-    best_bench_player_pts: bestBench?.total_points ?? 0,
+    best_bench_player_pts: bestBench != null ? (liveMap.get(bestBench.element) ?? 0) : 0,
     // Phase 99 PGW-03 — new fields
     benchmark_score: benchmarkScore,
     benchmark_label: benchmarkLabel,
