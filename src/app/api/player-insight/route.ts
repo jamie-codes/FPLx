@@ -155,8 +155,10 @@ export async function POST(request: Request) {
   }
 
   const corpus = await readPlayerCorpus()
-  // Guard: empty corpus means the guardrail cannot function — fail closed.
-  if (corpus.length === 0) {
+  // Guard: in production (USE_BLOB=true), an empty corpus means Blob is unpopulated —
+  // the guardrail cannot function, so fail closed rather than silently allowing hallucinations.
+  // In local dev (USE_BLOB=false), the corpus file is optional; skip the hard fail.
+  if (corpus.length === 0 && isUseBlob()) {
     return Response.json(
       { error: 'Service unavailable', detail: 'player corpus unavailable' },
       { status: 503 },
