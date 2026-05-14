@@ -1580,7 +1580,7 @@ Plans:
 | 107 | v1.19 | 1/1 | Complete    | 2026-05-14 |
 | 108 | v1.19 | 3/3 | Complete    | 2026-05-14 |
 | 109 | v1.19 | 2/2 | Complete    | 2026-05-14 |
-| 110 | v1.20 | 0 | Not started | - |
+| 110 | v1.20 | 4/4 | Complete   | 2026-05-14 |
 | 111 | v1.20 | 0 | Not started | - |
 | 112 | v1.20 | 0 | Not started | - |
 | 113 | v1.20 | 0 | Not started | - |

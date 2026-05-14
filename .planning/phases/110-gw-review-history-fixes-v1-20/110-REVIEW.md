@@ -11,10 +11,10 @@ files_reviewed_list:
   - src/app/api/decision-history/route.ts
   - src/app/api/decision-history/route.test.ts
 findings:
-  critical: 1
+  critical: 0
   warning: 3
   info: 0
-  total: 4
+  total: 3
 status: issues_found
 ---
 
@@ -23,7 +23,7 @@ status: issues_found
 **Reviewed:** 2026-05-14T00:00:00Z
 **Depth:** standard
 **Files Reviewed:** 6
-**Status:** issues_found
+**Status:** issues_found (warnings only — no critical issues remain after plan 04 gap closure)
 
 ## Summary
 
@@ -31,43 +31,29 @@ Phase 110 introduces three targeted fixes to the GW review and decision-history 
 
 FIX-05 and FIX-06 are implemented correctly. The decision-history route's element-summary deduplication, SC-5 graceful degradation, and Promise.allSettled fan-out are all sound.
 
-One critical defect remains: FIX-03 migrated top_scorer_pts to use liveMap but left the `captainDeltaRaw` formula using stale `pick.total_points` for both the optimal and user captain. The existing FIX-03 test does not catch this because the test fixture makes the user's captain and optimal captain the same element (so the delta is zero regardless of which point source is used). This produces a wrong `captain_delta` value whenever the user's captain differs from the optimal captain and `pick.total_points` diverges from liveMap — the exact scenario FIX-03 was introduced to handle.
+**Plan 04 gap closure (CR-01):** The `captainDeltaRaw` formula has been correctly rewired to read both operands from `liveMap` with `?? total_points` fallback (not `?? 0`), consistent with the SC-5 requirement. A companion TDD test was added that covers the exact regression scenario (settled GW, `yourCaptain !== optimalCaptain`, `pick.total_points = 0` for all starters). CR-01 is resolved — no critical issues remain.
 
-Three warning-level issues are also present: a silent wrong-data fallback when no captain is found in starters, a misleading amber sentiment colour on an unavailable (null) delta, and inconsistent null-check style.
+Three warning-level issues remain: a silent wrong-data fallback when no captain is found in starters, a misleading amber sentiment colour on an unavailable (null) delta, and inconsistent null-check style.
 
-## Critical Issues
+## ~~Critical Issues~~ — Resolved
 
-### CR-01: `captainDeltaRaw` uses stale `pick.total_points` instead of `liveMap`
+### CR-01: `captainDeltaRaw` — RESOLVED (plan 04)
 
-**File:** `src/app/api/gw-review/route.ts:221-223`
-
-**Issue:** FIX-03 correctly changed `top_scorer_pts` (line 255) and the selection of `topScorer`/`optimalCaptain` (lines 200-205) to use `liveMap`. However, the `captainDeltaRaw` formula on lines 221-223 was not updated and still reads `optimalCaptain.total_points` and `yourCaptain.total_points` directly from the FPL picks response — the same stale field FIX-03 identified as unreliable for settled GWs:
+**Resolution (2026-05-14, plan 04):** `src/app/api/gw-review/route.ts` lines 226-229 now read:
 
 ```typescript
-// Current (broken):
 const captainDeltaRaw =
-  optimalCaptain.total_points * 2 - yourCaptain.total_points * yourCaptain.multiplier
+  (liveMap.get(optimalCaptain.element) ?? optimalCaptain.total_points) * 2 -
+  (liveMap.get(yourCaptain.element) ?? yourCaptain.total_points) * yourCaptain.multiplier
 ```
 
-When liveMap is populated and contains values different from `pick.total_points` (the core FIX-03 scenario), the captain delta is computed from stale data. Consider: user captain element 1 (`pick.total_points=5`, live=14) vs optimal captain element 2 (`pick.total_points=3`, live=20). The current formula yields `3*2 - 5*2 = -4`, clamped to 0 (wrong — no regret shown). The correct formula yields `20*2 - 14*2 = 12` (user missed 12 captain points).
+Both operands use `liveMap.get()` with `?? total_points` fallback (SC-5 compliant — degrades to pick data, not zero, when the live endpoint is unavailable). The companion test at `route.test.ts:452-508` constructs a settled-GW fixture with `pick.total_points = 0`, `yourCaptain = element 1` (14 live pts), `optimalCaptain = element 2` (20 live pts), and asserts `captain_delta === 12` (`Math.max(0, 20*2 - 14*2)`). The fix and test are correct. No further action required on CR-01.
 
-The existing FIX-03 test in `route.test.ts` does not catch this bug because it constructs a fixture where the user's captain and the optimal captain are the same element (`element=1` is both `is_captain=true` and the highest in liveMap), so the delta is 0 under both the old and new formulas. A fixture where `yourCaptain !== optimalCaptain` with differing live vs pick.total_points values is needed.
+---
 
-**Fix:**
-```typescript
-// Use liveMap for both sides of the delta (consistent with top_scorer_pts at line 255).
-// Fall back to pick.total_points only when liveMap is absent (SC-5 — live endpoint failed).
-const optimalCaptainLivePts =
-  liveMap.get(optimalCaptain.element) ?? optimalCaptain.total_points
-const yourCaptainLivePts =
-  liveMap.get(yourCaptain.element) ?? yourCaptain.total_points
+**Original finding (for record):**
 
-const captainDeltaRaw =
-  optimalCaptainLivePts * 2 - yourCaptainLivePts * yourCaptain.multiplier
-const captainDelta = Math.max(0, captainDeltaRaw)
-```
-
-A companion test should be added that sets `yourCaptain` and `optimalCaptain` to different elements with diverging `pick.total_points` vs liveMap values, and asserts `captain_delta` equals the liveMap-based result.
+FIX-03 correctly changed `top_scorer_pts` (line 255) and the selection of `topScorer`/`optimalCaptain` (lines 200-205) to use `liveMap`. However, the `captainDeltaRaw` formula was not updated and still read `optimalCaptain.total_points` and `yourCaptain.total_points` directly from the FPL picks response. When liveMap is populated and contains values different from `pick.total_points` (the core FIX-03 scenario), the captain delta was computed from stale data. The existing FIX-03 test did not catch this because its fixture placed the user's captain and optimal captain on the same element.
 
 ## Warnings
 
@@ -149,3 +135,4 @@ const deltaValue = captainDelta === null
 _Reviewed: 2026-05-14T00:00:00Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
+_Plan 04 gap-closure re-review: 2026-05-14T00:00:00Z — CR-01 resolved, no new issues found_
