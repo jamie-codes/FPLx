@@ -1492,7 +1492,10 @@ Plans:
   1. User can open the Squad → Optimiser sub-tab and see an empty state with a clear "Optimise Lineup" call-to-action button — no calculation runs until the user clicks the button
   2. User can click the "Optimise Lineup" button and the optimiser computes and renders results as before, with all existing controls (1/3/5 GW horizon, chip modes, captain/VC) functioning identically to pre-fix behaviour
   3. User can open the Squad → Transfers sub-tab and see at most 3 buy candidates per position slot in the transfer suggestion list — ranked by gem delta descending with affordable candidates first, surplus candidates truncated
-**Plans**: TBD
+**Plans**: 3 plans
+  - [ ] 112-01-PLAN.md — capByPosition pure utility + tests (TFR-02 foundation)
+  - [ ] 112-02-PLAN.md — OptimiserPanel: OPT-01 button gate + TFR-02 cap/footnote in transferSuggestions
+  - [ ] 112-03-PLAN.md — TransferPanel + OpportunityCostTable: TFR-02 cap/footnote in ocsSuggestions
 **UI hint**: yes
 **Phase notes**: Two small UX-layer fixes grouped because both modify Squad sub-tab surfaces with no engine changes. OPT-01: lift `optimisationResult` initial computation out of `useEffect` mount and behind an explicit button click; preserve all downstream wiring (comparison table, headline row, chip toggle). TFR-02: cap is per-position-slot, not global — apply after sort, after affordability ordering, so the top-3 are the *best* top-3 not an arbitrary slice. Confirm with the user whether "position slot" means by `element_type` (GK/DEF/MID/FWD) or by the specific squad-slot being filled (15 slots) — defaults to `element_type` if no clarification.
 
