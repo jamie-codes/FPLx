@@ -350,6 +350,11 @@ def run(dry_run: bool = False):
         from captain_snapshots import write_captain_snapshot
         write_captain_snapshot(captain_picks, current_gw)
 
+        # Phase 113 BACK-02: per-GW slim player snapshot side-write.
+        # merged is in scope from merge_players() above. current_gw is set at pipeline start.
+        from transfer_snapshots import write_transfer_slim_snapshot
+        write_transfer_slim_snapshot(merged, current_gw)
+
         # Phase 67 NLP-01/NLP-02 — LLM prose summary (Claude call; guardrail-protected).
         # Pitfall 8: a Claude failure must NOT poison the rest of the pipeline.
         print("Generating weekly prose summary...")
