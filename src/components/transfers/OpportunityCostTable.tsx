@@ -23,6 +23,9 @@ interface OpportunityCostTableProps {
   // Phase 104 WHY-01 (D-08): sell-side rejection reasons computed per-leg in PlayerMoveCell.
   allPlayers: ScoredPlayer[]
   lifecycleLabels: Map<number, LifecycleLabel>
+  // Phase 112 TFR-02 (D-07): pre-cap totals per element_type for truncation footnote.
+  // Optional for backward-compat — when absent, no footnotes render.
+  totalsByPosition?: Map<number, number>
 }
 
 interface BadgeConfig {
@@ -31,6 +34,9 @@ interface BadgeConfig {
   label: string
   title: string
 }
+
+// Phase 112 TFR-02: position labels for truncation footnote data-testid and text.
+const POSITION_LABELS: Record<number, string> = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' }
 
 const BADGE_BY_KIND: Record<OCSRowKind, BadgeConfig> = {
   roll: {
@@ -160,7 +166,7 @@ function PlayerMoveCell({
   )
 }
 
-export function OpportunityCostTable({ rows, horizon, targetGw, gw, allPlayers, lifecycleLabels }: OpportunityCostTableProps) {
+export function OpportunityCostTable({ rows, horizon, targetGw, gw, allPlayers, lifecycleLabels, totalsByPosition }: OpportunityCostTableProps) {
   const onlyRoll = rows.length === 1 && rows[0]?.kind === 'roll'
 
   return (
@@ -230,6 +236,21 @@ export function OpportunityCostTable({ rows, horizon, targetGw, gw, allPlayers, 
           })}
         </tbody>
       </table>
+      {/* Phase 112 TFR-02 (D-07): per-position truncation footnotes. Renders one <p> per
+          position bucket whose pre-cap total exceeded 3. Silent when totalsByPosition is
+          undefined (backward-compat) or all buckets are within the cap. */}
+      {totalsByPosition && Array.from(totalsByPosition.entries())
+        .sort(([a], [b]) => a - b)
+        .filter(([, total]) => total > 3)
+        .map(([pos, total]) => (
+          <p
+            key={`cap-footnote-${pos}`}
+            className="text-xs text-zinc-500 dark:text-zinc-400 mt-1"
+            data-testid={`cap-footnote-${POSITION_LABELS[pos] ?? pos}`}
+          >
+            Showing top 3 of {total} {POSITION_LABELS[pos] ?? '??'} suggestions.
+          </p>
+        ))}
       {onlyRoll && (
         <p className="text-xs text-zinc-400 dark:text-zinc-500 pt-1">
           No transfer improvements found for this horizon. Consider rolling your free transfer.

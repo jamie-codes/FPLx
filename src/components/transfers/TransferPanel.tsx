@@ -26,6 +26,7 @@ import type { OptimiserHorizon, TransferSuggestion } from '@/lib/types'
 // Phase 74 D-03: import of OCS-header toggle removed — engine uses derivedFtCount directly (toggle file preserved in OptimiserPanel)
 import { GwToggle } from '@/components/gem-table/GwToggle'
 import { OpportunityCostTable } from '@/components/transfers/OpportunityCostTable'
+import { capByPosition } from '@/lib/cap-transfer-suggestions'
 
 // Phase 43 D-11: teamId / submittedId / onSubmit lifted to page.tsx so OptimiserPanel
 // can receive teamId via props and share the useSquad cache. freeTransfers + isModalOpen
@@ -119,10 +120,15 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
     }
   }, [isAuthenticated, myTeamData])
 
-  const ocsSuggestions: TransferSuggestion[] = useMemo(() => {
-    if (!squadData || scoredPlayers.length === 0) return []
+  // Phase 112 TFR-02 (D-05, D-06): wrap suggestTransfers output in capByPosition(3) to limit
+  // buy candidates to the top 3 per element_type bucket. Engine file is NOT modified (D-05).
+  // ocsSuggestions is the capped list; ocsTotalsByPosition carries pre-cap counts for footnote (D-07).
+  // highOwnershipAbsent continues to use ocsSuggestions (now the capped list — desired behavior: the
+  // user sees what we actually surface, so the HO callout pivots on the capped output).
+  const { ocsSuggestions, ocsTotalsByPosition } = useMemo<{ ocsSuggestions: TransferSuggestion[]; ocsTotalsByPosition: Map<number, number> }>(() => {
+    if (!squadData || scoredPlayers.length === 0) return { ocsSuggestions: [], ocsTotalsByPosition: new Map() }
     // FIX-02 (Phase 111 D-08): position lock is enforced inside suggestTransfers — engine guarantees sell.element_type === buy.element_type per leg. Do NOT pre-filter players by position; the engine builds top-30-per-position pools internally.
-    return suggestTransfers({
+    const raw = suggestTransfers({
       currentPicks: squadData.picks,
       players: scoredPlayers,
       horizon: ocsHorizon,
@@ -131,6 +137,8 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
       sellPrices: exactSellPrices,
       targetGw: targetGw ?? undefined,
     })
+    const { suggestions, totalsByPosition } = capByPosition(raw, 3)
+    return { ocsSuggestions: suggestions, ocsTotalsByPosition: totalsByPosition }
   }, [squadData, scoredPlayers, ocsHorizon, derivedFtCount, manualBank, exactSellPrices, targetGw])
 
   const ocsRows: OCSRow[] = useMemo(
@@ -435,6 +443,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
               gw={nextGw}
               allPlayers={scoredPlayers}
               lifecycleLabels={lifecycleLabels}
+              totalsByPosition={ocsTotalsByPosition}
             />
           </div>
 
