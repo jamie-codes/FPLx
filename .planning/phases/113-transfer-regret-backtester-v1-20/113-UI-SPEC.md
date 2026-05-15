@@ -106,7 +106,7 @@ type BackView = 'captain' | 'transfer'
 
 **Implementation:** New `BackViewToggle` component (or inline in `BackTab.tsx` if small enough), following `GwToggle` structure:
 - Wrapper: `role="group"` `aria-label="Backtester view"` `flex rounded overflow-hidden border border-zinc-300 dark:border-zinc-600`
-- Each button: `px-3 py-2.5 sm:py-1 text-sm font-medium transition-all cursor-pointer active:scale-95 min-h-[44px]`
+- Each button: `px-3 py-2 sm:py-1 text-sm font-medium transition-all cursor-pointer active:scale-95 min-h-[44px]`
 - Active: `bg-zinc-900 dark:bg-white text-white dark:text-zinc-900`
 - Inactive: `bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700`
 
