@@ -1,7 +1,7 @@
 // Phase 45 (TFR-01..TFR-03): suggestTransfers engine — pure-function unit tests.
 // Mirrors src/lib/optimise-lineup.test.ts pattern.
 // @vitest-environment node
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { suggestTransfers } from './suggest-transfers'
 import type { MergedPlayer } from './types'
 import type { SquadPick } from './squad-adapter'
@@ -555,6 +555,95 @@ describe('Phase 101 GWT-01: targetGw parameter', () => {
       currentPicks: picks, players, horizon: 1, ftCount: 1, bank: 0, targetGw: undefined,
     })
     expect(withGwtUndefined).toEqual(withoutGwt)
+  })
+})
+
+// Phase 111 FIX-02 — Position lock regression
+describe('Phase 111 FIX-02: Position lock invariants', () => {
+  it('FIX-02 guard: invalid element_type players are filtered out before suggestion enumeration', () => {
+    const { picks, players } = makeValidSquad()
+    // Inject a player with an invalid element_type (0). Extreme xPts so it would dominate if not filtered.
+    const corruptPlayer = makePlayer({ id: 99, element_type: 0 as unknown as 1, xPts_1gw: 100, team: 15 })
+    // Spy on console.warn to verify the guard fires
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const result = suggestTransfers({
+        currentPicks: picks,
+        players: [...players, corruptPlayer],
+        horizon: 1,
+        ftCount: 1,
+        bank: 1000,
+      })
+      // Guard must emit a console.warn mentioning FIX-02 and the bad id (99)
+      expect(warnSpy).toHaveBeenCalled()
+      const warnArgs = warnSpy.mock.calls.flat().join(' ')
+      expect(warnArgs).toContain('FIX-02')
+      expect(warnArgs).toContain('99')
+      // Corrupt player must not appear in any suggestion
+      for (const sug of result) {
+        if (sug.kind === 'single') {
+          expect(sug.sell.id).not.toBe(99)
+          expect(sug.buy.id).not.toBe(99)
+        } else {
+          for (const leg of sug.transfers) {
+            expect(leg.sell.id).not.toBe(99)
+            expect(leg.buy.id).not.toBe(99)
+          }
+        }
+      }
+    } finally {
+      warnSpy.mockRestore()
+    }
+  })
+
+  it('FIX-02 regression: single suggestions never produce a buy of different position than the sell', () => {
+    const { picks, players } = makeValidSquad()
+    // Inject strong candidates — one per position. ids 20-23, teams 10-13 (no team cap collision).
+    const strongGk = makePlayer({ id: 20, element_type: 1, xPts_1gw: 9.0, team: 10 })
+    const strongDef = makePlayer({ id: 21, element_type: 2, xPts_1gw: 8.5, team: 11 })
+    const strongMid = makePlayer({ id: 22, element_type: 3, xPts_1gw: 8.0, team: 12 })
+    const strongFwd = makePlayer({ id: 23, element_type: 4, xPts_1gw: 7.5, team: 13 })
+    const result = suggestTransfers({
+      currentPicks: picks,
+      players: [...players, strongGk, strongDef, strongMid, strongFwd],
+      horizon: 1,
+      ftCount: 1,
+      bank: 1000,
+    })
+    const singles = result.filter(s => s.kind === 'single')
+    expect(singles.length).toBeGreaterThan(0)
+    for (const sug of singles) {
+      if (sug.kind === 'single') {
+        // Position lock invariant: sell and buy must be same element_type
+        expect(sug.sell.element_type).toBe(sug.buy.element_type)
+      }
+    }
+  })
+
+  it('FIX-02 regression: combo suggestions never mix positions in any leg', () => {
+    const { picks, players } = makeValidSquad()
+    const strongGk = makePlayer({ id: 20, element_type: 1, xPts_1gw: 9.0, team: 10 })
+    const strongDef = makePlayer({ id: 21, element_type: 2, xPts_1gw: 8.5, team: 11 })
+    const strongMid = makePlayer({ id: 22, element_type: 3, xPts_1gw: 8.0, team: 12 })
+    const strongFwd = makePlayer({ id: 23, element_type: 4, xPts_1gw: 7.5, team: 13 })
+    const result = suggestTransfers({
+      currentPicks: picks,
+      players: [...players, strongGk, strongDef, strongMid, strongFwd],
+      horizon: 1,
+      ftCount: 1,
+      bank: 1000,
+    })
+    const combos = result.filter(s => s.kind === 'combo')
+    // Skip assertion if engine produces no combos (combos require 2 affordable positive-gain legs)
+    if (combos.length === 0) return
+    for (const sug of combos) {
+      if (sug.kind === 'combo') {
+        for (const leg of sug.transfers) {
+          // Per-leg position lock: sell and buy in each leg must share element_type
+          expect(leg.sell.element_type).toBe(leg.buy.element_type)
+        }
+      }
+    }
   })
 })
 

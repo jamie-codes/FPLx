@@ -121,6 +121,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
 
   const ocsSuggestions: TransferSuggestion[] = useMemo(() => {
     if (!squadData || scoredPlayers.length === 0) return []
+    // FIX-02 (Phase 111 D-08): position lock is enforced inside suggestTransfers — engine guarantees sell.element_type === buy.element_type per leg. Do NOT pre-filter players by position; the engine builds top-30-per-position pools internally.
     return suggestTransfers({
       currentPicks: squadData.picks,
       players: scoredPlayers,

@@ -270,6 +270,7 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
   // Returns [] when squad/players/lineup are not yet ready, or when no improvements exist.
   const transferSuggestions: TransferSuggestion[] = useMemo(() => {
     if (!squadData || !playersData || !lineup) return []
+    // FIX-02 (Phase 111 D-08): position lock is enforced inside suggestTransfers — engine guarantees sell.element_type === buy.element_type per leg. Do NOT pre-filter players by position; the engine builds top-30-per-position pools internally.
     return suggestTransfers({
       currentPicks: squadData.picks,
       players: playersData,

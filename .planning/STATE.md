@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.20
-milestone_name: milestone
+milestone_name: Modelling & Refinement — Carry-forward
 status: executing
 stopped_at: Phase 111 context gathered
-last_updated: "2026-05-15T09:00:57.812Z"
-last_activity: 2026-05-15 -- Phase 111 planning complete
+last_updated: "2026-05-15T09:43:59.331Z"
+last_activity: 2026-05-15 -- Phase 111 execution started
 progress:
-  total_phases: 61
-  completed_phases: 28
-  total_plans: 89
-  completed_plans: 141
-  percent: 46
+  total_phases: 4
+  completed_phases: 1
+  total_plans: 7
+  completed_plans: 4
+  percent: 57
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-14 — v1.19 complete, v1.20 roadmap drafted)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.20 Fixes & Decision Quality — 9 requirements (6 bugs + 3 features) across 4 phases (110-113)
+**Current focus:** Phase 111 — fixture-heatmap-planner-cross-position-fixes-v1-20
 
 ## Current Position
 
-Phase: 111
-Plan: Not started
-Status: Ready to execute
+Phase: 111 (fixture-heatmap-planner-cross-position-fixes-v1-20) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 111
 
 **v1.20 Phase Plan:**
 
@@ -36,7 +36,7 @@ Status: Ready to execute
 - Phase 112: Optimiser On-Demand & Transfer Suggestion Cap — OPT-01, TFR-02
 - Phase 113: Transfer Regret Backtester — BACK-02
 
-Last activity: 2026-05-15 -- Phase 111 planning complete
+Last activity: 2026-05-15 -- Phase 111 execution started
 
 ## Performance Metrics
 
