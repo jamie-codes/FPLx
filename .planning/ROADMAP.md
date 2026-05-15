@@ -1508,7 +1508,14 @@ Plans:
   2. User can open the Back / Decision History tab and see a new "Transfer Regret" section listing, per past settled GW: engine-recommended OUT player, engine-recommended IN player, user’s actual transfer (if any), and the hindsight xPts delta between engine and actual (e.g. +3.2 means engine pick would have outscored, −1.5 means user’s pick was better)
   3. The Transfer Regret view degrades gracefully when no snapshot exists (early GWs, users with no transfer history) — empty state, never NaN, never a broken chart; cumulative-delta headline updates when enough GWs have data
   4. The hindsight scoring uses actual realised points (FPL `event-summary`) for both the engine pick and the user’s pick, NOT predicted xPts — so "regret" is grounded in what actually happened, mirroring the captain-decision backtester rule
-**Plans**: TBD
+**Plans**: 4 plans (3 waves)
+  **Wave 1**
+  - [ ] 113-01-PLAN.md — Pipeline slim snapshot module + run.py side-write + TransferRegretEntry/SlimPlayer types
+  - [ ] 113-02-PLAN.md — TDD: computeTransferDelta + computeTransferSeasonSummary in src/lib/regret.ts
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 113-03-PLAN.md — /api/decision-history extension: readTransferSlimSnapshot, squad reconstruction, suggestTransfers post-hoc, element-summary fan-out, transferEntries response field
+  **Wave 3** *(blocked on Wave 2 completion)*
+  - [ ] 113-04-PLAN.md — BackTab Captain|Transfer pill toggle + TransferRegretView (summary + bar chart + per-GW rows) + tests + human-verify checkpoint
 **UI hint**: yes
 **Phase notes**: Largest v1.20 phase. Requires Python (or TypeScript) port of the `suggestTransfers` recommendation rule so the pipeline can write `transfer_recommendation_gw{N}.json` to Vercel Blob as a durable snapshot trail (mirroring `captain_picks_gw{N}.json` from Phase 96). `/api/decision-history` extended to join the snapshot with the user’s `event_transfers` from authenticated FPL data + element-summary point totals. New `TransferRegretSection` component on the existing `BackTab` (do NOT add a new sub-tab). Pitfall to avoid: do NOT recommend transfers retroactively using *future* GW data — recommendation snapshot must use the data available at deadline minus 1 hour, so the regret comparison is honest. Carry-forward item BACK-02 from v1.19 Deferred Items is now resolved by this phase. BACK-03 (full transfer ROI tracker requiring a multi-GW persistent store) remains out of scope and stays in the v1.20 Out of Scope section.
 
