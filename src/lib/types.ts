@@ -501,6 +501,7 @@ export interface ClubForm {
   goals_scored: number
   goals_conceded: number
   upcoming_fixtures: ClubFormFixture[]   // next 32
+  current_gw_played: ClubFormFixture[]   // Phase 111 FIX-01 — finished fixtures from active GW only
   // Phase 27 FIX-01 — per-team ease aggregates over upcoming windows.
   // Convention: 1.0 = easiest, 0.0 = hardest (inverted from *_difficulty).
   // null when team has zero fixtures in the window (BGW handling).
@@ -693,6 +694,38 @@ export interface RegretEntry {
   regret: number | null
 }
 
+// Phase 113 BACK-02: Transfer regret backtester types.
+
+export interface SlimPlayer {
+  id: number
+  element_type: 1 | 2 | 3 | 4
+  web_name: string
+  team: number
+  now_cost: number
+  selected_by_percent: string
+  xPts_1gw?: number
+  xPts_3gw?: number
+  xPts_5gw?: number
+}
+
+export interface TransferRegretEntry {
+  gw: number
+  hasSnapshot: boolean            // false = no merged_players_slim_gw{N}.json for this GW
+  // Engine recommendation (from suggestTransfers post-hoc)
+  engineSell: string[] | null     // web_name(s); null when no snapshot
+  engineBuy: string[] | null
+  engineSellPts: number[] | null  // actual pts for engine OUT player(s)
+  engineBuyPts: number[] | null
+  // User's actual transfer (from FPL event_transfers)
+  isHold: boolean                 // true = user made no transfer this GW
+  userSell: string[] | null       // null when isHold or unavailable
+  userBuy: string[] | null
+  userSellPts: number[] | null
+  userBuyPts: number[] | null
+  // Signed delta (D-06/D-07); null when no snapshot or actual pts unavailable
+  delta: number | null
+}
+
 /**
  * Full response shape from GET /api/decision-history?teamId={id}.
  * entries are ordered GW ascending and include pre-deployment rows (D-10).
@@ -701,6 +734,7 @@ export interface DecisionHistory {
   teamId: number
   gwsWithData: number           // count of GWs where regret is non-null
   entries: RegretEntry[]
+  transferEntries?: TransferRegretEntry[]  // Phase 113 BACK-02 extension
 }
 
 /**
