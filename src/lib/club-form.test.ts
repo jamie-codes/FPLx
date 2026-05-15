@@ -188,4 +188,20 @@ describe('computeClubForm — current_gw_played (Phase 111 FIX-01)', () => {
     expect(typeof tA.current_gw_played[0].difficulty_score).toBe('number')
     expect(typeof tB.current_gw_played[0].difficulty_score).toBe('number')
   })
+
+  it('CR-02: fallback picks max finished event id regardless of array order', () => {
+    // events in DESCENDING id order — both finished, neither is_current
+    const events = [rawEvent(36, false, true), rawEvent(35, false, true)]
+    // Fixture finished at event 36 — should be picked as current GW when fallback sort works correctly
+    const fixtures = [
+      rawFixture({ teamH: 1, teamA: 2, event: 36, finished: true, hScore: 1, aScore: 0, hDiff: 2, aDiff: 4 }),
+    ]
+    const result = computeClubForm({ teams: [teamA, teamB, teamC], events }, fixtures)
+
+    const tA = result.find(r => r.team_id === 1)!
+    // Without .sort((a, b) => a.id - b.id) the fallback would pick event 35 (last element of
+    // the unsorted descending array). With the sort, it correctly picks event 36 (max id).
+    expect(tA.current_gw_played).toHaveLength(1)
+    expect(tA.current_gw_played[0].event_id).toBe(36)
+  })
 })

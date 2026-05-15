@@ -165,7 +165,11 @@ function HeatMapRow({ t, grid, mode, tierMap, ownedTeamIds }: HeatMapRowProps) {
         }
         const f = fixtures[0]
         const diff = mode === 'ATT' ? f.attacking_difficulty : f.defensive_difficulty
-        const tooltip = `${f.opponent_team} (${f.is_home ? 'H' : 'A'}) — ${(diff ?? 0).toFixed(2)}`
+        const baseTooltip = `${f.opponent_team} (${f.is_home ? 'H' : 'A'}) — ${(diff ?? 0).toFixed(2)}`
+        const playedSuffix = playedFixtures
+          .map(pf => `${pf.opponent_team} (${pf.is_home ? 'H' : 'A'}) — Played`)
+          .join(' / ')
+        const tooltip = playedSuffix.length > 0 ? `${baseTooltip} / ${playedSuffix}` : baseTooltip
         return (
           <td
             key={gw}

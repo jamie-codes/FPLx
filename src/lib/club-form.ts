@@ -137,7 +137,7 @@ export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[])
   // Phase 111 FIX-01: Derive current GW from events (is_current flag; fallback to last finished).
   const currentGw: number | null =
     bootstrap.events?.find(e => e.is_current)?.id ??
-    bootstrap.events?.filter(e => e.finished).slice(-1)[0]?.id ??
+    bootstrap.events?.filter(e => e.finished).sort((a, b) => a.id - b.id).slice(-1)[0]?.id ??
     null
 
   // Phase 111 FIX-01: Build current_gw_played — finished fixtures from active GW per team.
