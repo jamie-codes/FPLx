@@ -3,7 +3,7 @@
 // BackTab.tsx does not exist yet; this file fails at import. Plan 04 turns it GREEN.
 // Source of truth: .planning/phases/96-captain-decision-backtester/096-UI-SPEC.md §Copywriting Contract
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render } from '@testing-library/react'
+import { render, fireEvent, screen } from '@testing-library/react'
 
 vi.mock('@/lib/hooks/useDecisionHistory', () => ({
   useDecisionHistory: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock('@/lib/hooks/useSeasonAnalytics', () => ({
 import { BackTab } from './BackTab'
 import { useDecisionHistory } from '@/lib/hooks/useDecisionHistory'
 import { useSeasonAnalytics } from '@/lib/hooks/useSeasonAnalytics'
-import type { DecisionHistory, RegretEntry, SeasonAnalytics } from '@/lib/types'
+import type { DecisionHistory, RegretEntry, SeasonAnalytics, TransferRegretEntry } from '@/lib/types'
 
 const mockedUseDecisionHistory = vi.mocked(useDecisionHistory)
 const mockedUseSeasonAnalytics = vi.mocked(useSeasonAnalytics)
@@ -28,6 +28,20 @@ function entry(overrides: Partial<RegretEntry> = {}): RegretEntry {
     modelCeilingId: 200, modelCeilingName: 'Haaland', modelCeilingPts: 10,
     hasSnapshot: true,
     regret: 8,
+    ...overrides,
+  }
+}
+
+function transferEntry(overrides: Partial<TransferRegretEntry> = {}): TransferRegretEntry {
+  return {
+    gw: 30,
+    hasSnapshot: true,
+    engineSell: ['Isak'], engineBuy: ['Salah'],
+    engineSellPts: [3], engineBuyPts: [12],
+    isHold: false,
+    userSell: ['Isak'], userBuy: ['Watkins'],
+    userSellPts: [3], userBuyPts: [9],
+    delta: 3,  // engineGain=(12-3)=9, userGain=(9-3)=6, delta=3
     ...overrides,
   }
 }
@@ -256,5 +270,193 @@ describe('BackTab — Phase 100 HIST-01/02/03', () => {
     expect(container.textContent).toContain('Haaland')
     expect(container.textContent).toContain('+4pts')
     expect(container.textContent).toContain('✓')
+  })
+})
+
+describe('BackTab — Phase 113 BACK-02 Transfer Toggle', () => {
+  it('renders both "Captain" and "Transfer" buttons inside a group with aria-label="Backtester view"', () => {
+    const history: DecisionHistory = {
+      teamId: 12345, gwsWithData: 1, entries: [entry()],
+      transferEntries: [],
+    }
+    mockedUseDecisionHistory.mockReturnValue({
+      data: history, isLoading: false, error: null,
+    } as ReturnType<typeof useDecisionHistory>)
+    const { container } = render(<BackTab teamId="12345" />)
+    const group = container.querySelector('[role="group"][aria-label="Backtester view"]')
+    expect(group).not.toBeNull()
+    expect(container.textContent).toContain('Captain')
+    expect(container.textContent).toContain('Transfer')
+  })
+
+  it('default render: Captain button has aria-pressed="true", Transfer button has aria-pressed="false"', () => {
+    const history: DecisionHistory = {
+      teamId: 12345, gwsWithData: 1, entries: [entry()],
+      transferEntries: [],
+    }
+    mockedUseDecisionHistory.mockReturnValue({
+      data: history, isLoading: false, error: null,
+    } as ReturnType<typeof useDecisionHistory>)
+    render(<BackTab teamId="12345" />)
+    const captainBtn = screen.getByRole('button', { name: 'Captain' })
+    const transferBtn = screen.getByRole('button', { name: 'Transfer' })
+    expect(captainBtn.getAttribute('aria-pressed')).toBe('true')
+    expect(transferBtn.getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('default render: Captain view content is visible; Transfer-only copy is NOT visible', () => {
+    const history: DecisionHistory = {
+      teamId: 12345, gwsWithData: 1, entries: [entry()],
+      transferEntries: [],
+    }
+    mockedUseDecisionHistory.mockReturnValue({
+      data: history, isLoading: false, error: null,
+    } as ReturnType<typeof useDecisionHistory>)
+    const { container } = render(<BackTab teamId="12345" />)
+    // Captain view should show season summary
+    expect(container.textContent).toContain('Total captain regret')
+    // Transfer-only copy should NOT be visible
+    expect(container.textContent).not.toContain('Total transfer regret')
+  })
+
+  it('after clicking Transfer pill: Transfer view content visible, Captain view content hidden', () => {
+    const history: DecisionHistory = {
+      teamId: 12345, gwsWithData: 1, entries: [entry()],
+      transferEntries: [transferEntry()],
+    }
+    mockedUseDecisionHistory.mockReturnValue({
+      data: history, isLoading: false, error: null,
+    } as ReturnType<typeof useDecisionHistory>)
+    const { container } = render(<BackTab teamId="12345" />)
+    const transferBtn = screen.getByRole('button', { name: 'Transfer' })
+    fireEvent.click(transferBtn)
+    // Transfer view content should be visible
+    expect(container.textContent).toContain('Total transfer regret')
+    // Captain view content should be hidden
+    expect(container.textContent).not.toContain('Total captain regret')
+  })
+
+  it('Transfer button click: aria-pressed="true" on Transfer, aria-pressed="false" on Captain', () => {
+    const history: DecisionHistory = {
+      teamId: 12345, gwsWithData: 1, entries: [entry()],
+      transferEntries: [transferEntry()],
+    }
+    mockedUseDecisionHistory.mockReturnValue({
+      data: history, isLoading: false, error: null,
+    } as ReturnType<typeof useDecisionHistory>)
+    render(<BackTab teamId="12345" />)
+    const captainBtn = screen.getByRole('button', { name: 'Captain' })
+    const transferBtn = screen.getByRole('button', { name: 'Transfer' })
+    fireEvent.click(transferBtn)
+    expect(transferBtn.getAttribute('aria-pressed')).toBe('true')
+    expect(captainBtn.getAttribute('aria-pressed')).toBe('false')
+  })
+})
+
+describe('BackTab — Phase 113 TransferRegretView', () => {
+  it('with transferEntries=[] renders empty state copy', () => {
+    const history: DecisionHistory = {
+      teamId: 12345, gwsWithData: 1, entries: [entry()],
+      transferEntries: [],
+    }
+    mockedUseDecisionHistory.mockReturnValue({
+      data: history, isLoading: false, error: null,
+    } as ReturnType<typeof useDecisionHistory>)
+    const { container } = render(<BackTab teamId="12345" />)
+    const transferBtn = screen.getByRole('button', { name: 'Transfer' })
+    fireEvent.click(transferBtn)
+    expect(container.textContent).toContain(
+      'No transfer history yet — data accumulates each GW after this version is deployed.'
+    )
+  })
+
+  it('delta > 0 renders "+8pts (engine better)" with text-red-600 class', () => {
+    const history: DecisionHistory = {
+      teamId: 12345, gwsWithData: 1, entries: [entry()],
+      transferEntries: [transferEntry({
+        delta: 8.0,
+        engineSell: ['Isak'], engineBuy: ['Salah'],
+        engineSellPts: [3], engineBuyPts: [12],
+        isHold: false,
+        userSell: ['Isak'], userBuy: ['Watkins'],
+        userSellPts: [3], userBuyPts: [9],
+        hasSnapshot: true,
+      })],
+    }
+    mockedUseDecisionHistory.mockReturnValue({
+      data: history, isLoading: false, error: null,
+    } as ReturnType<typeof useDecisionHistory>)
+    const { container } = render(<BackTab teamId="12345" />)
+    const transferBtn = screen.getByRole('button', { name: 'Transfer' })
+    fireEvent.click(transferBtn)
+    expect(container.textContent).toContain('+8pts (engine better)')
+    expect(container.innerHTML).toMatch(/text-red-600/)
+  })
+
+  it('isHold=true renders "Held — no transfer" AND delta<0 renders "−2pts (good hold)" with text-green-600', () => {
+    const history: DecisionHistory = {
+      teamId: 12345, gwsWithData: 1, entries: [entry()],
+      transferEntries: [transferEntry({
+        delta: -2.0,
+        isHold: true,
+        userSell: null, userBuy: null, userSellPts: null, userBuyPts: null,
+        hasSnapshot: true,
+      })],
+    }
+    mockedUseDecisionHistory.mockReturnValue({
+      data: history, isLoading: false, error: null,
+    } as ReturnType<typeof useDecisionHistory>)
+    const { container } = render(<BackTab teamId="12345" />)
+    const transferBtn = screen.getByRole('button', { name: 'Transfer' })
+    fireEvent.click(transferBtn)
+    expect(container.textContent).toContain('Held — no transfer')
+    // U+2212 MINUS SIGN, not ASCII hyphen
+    expect(container.textContent).toContain('−2pts (good hold)')
+    expect(container.innerHTML).toMatch(/text-green-600/)
+  })
+
+  it('hasSnapshot=false renders "No model snapshot" in Engine column AND "—" (em-dash) in Delta cell', () => {
+    const history: DecisionHistory = {
+      teamId: 12345, gwsWithData: 1, entries: [entry()],
+      transferEntries: [transferEntry({
+        hasSnapshot: false,
+        engineSell: null, engineBuy: null,
+        engineSellPts: null, engineBuyPts: null,
+        delta: null,
+      })],
+    }
+    mockedUseDecisionHistory.mockReturnValue({
+      data: history, isLoading: false, error: null,
+    } as ReturnType<typeof useDecisionHistory>)
+    const { container } = render(<BackTab teamId="12345" />)
+    const transferBtn = screen.getByRole('button', { name: 'Transfer' })
+    fireEvent.click(transferBtn)
+    expect(container.textContent).toContain('No model snapshot')
+    // U+2014 EM DASH
+    expect(container.textContent).toContain('—')
+  })
+
+  it('season summary: correct "Total transfer regret" and "Engine better:" copy with multiple entries', () => {
+    // delta: 5 (engine better), -2 (user better), 0 (tied), null (no snapshot)
+    const history: DecisionHistory = {
+      teamId: 12345, gwsWithData: 1, entries: [entry()],
+      transferEntries: [
+        transferEntry({ gw: 1, delta: 5, hasSnapshot: true }),
+        transferEntry({ gw: 2, delta: -2, hasSnapshot: true }),
+        transferEntry({ gw: 3, delta: 0, hasSnapshot: true }),
+        transferEntry({ gw: 4, delta: null, hasSnapshot: false, engineSell: null, engineBuy: null, engineSellPts: null, engineBuyPts: null }),
+      ],
+    }
+    mockedUseDecisionHistory.mockReturnValue({
+      data: history, isLoading: false, error: null,
+    } as ReturnType<typeof useDecisionHistory>)
+    const { container } = render(<BackTab teamId="12345" />)
+    const transferBtn = screen.getByRole('button', { name: 'Transfer' })
+    fireEvent.click(transferBtn)
+    // totalDelta = 5 + (-2) + 0 = 3, gwsWithData = 3 (null skipped)
+    expect(container.textContent).toContain('Total transfer regret: 3pts across 3 GWs')
+    expect(container.textContent).toContain('Engine better: 1')
+    expect(container.textContent).toContain('You better: 1')
+    expect(container.textContent).toContain('Tied: 1')
   })
 })
