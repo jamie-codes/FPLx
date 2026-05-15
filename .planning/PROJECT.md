@@ -4,6 +4,8 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
+v1.20 Phase 112 complete (2026-05-15) — OPT-01 + TFR-02: Optimiser tab now shows a calm empty state with 'Optimise Lineup' button; `hasRun` gate prevents auto-compute on tab load; controls remain interactive pre-click; post-click control changes re-trigger silently. `capByPosition(raw, 3)` pure utility caps transfer suggestions at top-3 per element_type bucket in both OptimiserPanel and TransferPanel/OpportunityCostTable; per-position `cap-footnote-{POS}` rendered when bucket exceeds limit. 67/67 Phase 112 tests GREEN. 14/14 must-haves verified. Engine untouched (D-05).
+
 v1.20 Phase 111 complete (2026-05-15) — FIX-01 + FIX-02: Partially-played DGW heatmap cell now surfaces played leg via tooltip suffix `'— Played'` (mixed-state branch in HeatMapRow, 2 new TDD tests). CR-02 fallback-sort hardened in `club-form.ts` (`.sort((a,b) => a.id-b.id)` before `.slice(-1)`, 1 regression test). Position-lock enforced at all 4 `suggestTransfers` call sites with `inPoolByPosition.get(sell.element_type)` + `VALID_ELEMENT_TYPES` guard. 37/37 plan-specific tests GREEN. Score 3/3 must-haves verified.
 
 v1.19 Phase 108 complete (2026-05-14) — NLP-BATCH-01/02/03: Batch AI insight pre-generation pipeline + Blob read-before-generate cache path. `pipeline/batch_insights.py` generates 2–3 sentence Claude insights for top-20 players by xPts and writes to `player_insights/gw{N}/element_{id}.json`. `pipeline/run.py` wired with `INSIGHT_BATCH_ENABLED` gate (non-fatal, top-20 selection, fully skipped when unset). `src/app/api/player-insight/route.ts` now reads Blob before calling Anthropic — cache hit returns pre-generated insight in ~50–150ms with zero Claude spend. 16 vitest + 224 pipeline tests GREEN. NLP-BATCH-03 gap closed via TDD RED→GREEN cycle.
@@ -314,8 +316,8 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 - [ ] **FIX-05**: GW Review dream team delta shows correct sign (positive when dream team beats user score)
 - [ ] **FIX-06**: Decision history captain delta displays actual points difference per GW (not dashes)
 - [ ] **BACK-02**: User can view per-GW transfer regret — what the engine recommended vs what was done, with hindsight xPts delta
-- [ ] **OPT-01**: Lineup optimiser shows empty state with "Optimise Lineup" button; calculation only runs on explicit trigger
-- [ ] **TFR-02**: Transfer suggestions show at most 3 candidates per position slot
+- [x] **OPT-01**: Lineup optimiser shows empty state with "Optimise Lineup" button; calculation only runs on explicit trigger — Validated Phase 112 (2026-05-15)
+- [x] **TFR-02**: Transfer suggestions show at most 3 candidates per position slot — Validated Phase 112 (2026-05-15)
 
 ### Out of Scope
 
@@ -416,4 +418,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-14 — v1.20 milestone started. 9 requirements across 6 bug fixes + 3 features.*
+*Last updated: 2026-05-15 — Phase 112 complete. OPT-01 + TFR-02 shipped. 1 phase remaining in v1.20 (Phase 113: Transfer Regret Backtester).*
