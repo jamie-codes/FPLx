@@ -200,7 +200,7 @@ See `.planning/milestones/v1.19-ROADMAP.md` for full phase details.
 
 - [x] **Phase 110: GW Review & History Fixes** — fix top scorer points display (FIX-03), best bench points (FIX-04), dream team delta sign (FIX-05), decision history captain delta (FIX-06) _(2026-05-14)_
 - [ ] **Phase 111: Fixture Heatmap & Planner Cross-Position Fixes** — heatmap BGW false-positive when current GW already played (FIX-01); transfer planner position-lock guard (FIX-02)
-- [ ] **Phase 112: Optimiser On-Demand & Transfer Suggestion Cap** — Optimiser empty-state + button (OPT-01); transfer suggestions capped at top 3 per position slot (TFR-02)
+- [x] **Phase 112: Optimiser On-Demand & Transfer Suggestion Cap** — Optimiser empty-state + button (OPT-01); transfer suggestions capped at top 3 per position slot (TFR-02) _(2026-05-15)_
 - [ ] **Phase 113: Transfer Regret Backtester** — per-GW engine recommendation vs actual transfer, hindsight xPts delta (BACK-02)
 
 </details>
@@ -1589,5 +1589,5 @@ Plans:
 | 109 | v1.19 | 2/2 | Complete    | 2026-05-14 |
 | 110 | v1.20 | 4/4 | Complete    | 2026-05-14 |
 | 111 | v1.20 | 4/4 | Complete    | 2026-05-15 |
-| 112 | v1.20 | 3/3 | In progress | - |
+| 112 | v1.20 | 3/3 | Complete    | 2026-05-15 |
 | 113 | v1.20 | 0 | Not started | - |

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.20
 milestone_name: Modelling & Refinement — Carry-forward
-status: planning
-stopped_at: Phase 112 planned — ready to execute
-last_updated: "2026-05-15T15:00:00.000Z"
+status: in_progress
+stopped_at: Phase 112 complete — ready for Phase 113
+last_updated: "2026-05-15T16:30:00.000Z"
 last_activity: 2026-05-15
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 11
-  completed_plans: 8
-  percent: 73
+  completed_plans: 11
+  percent: 100
 ---
 
 # Project State
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-14 — v1.19 complete, v1.20 roadmap drafted)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 111 — fixture-heatmap-planner-cross-position-fixes-v1-20
+**Current focus:** Phase 113 — transfer-regret-backtester
 
 ## Current Position
 
