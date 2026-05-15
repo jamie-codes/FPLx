@@ -1,11 +1,13 @@
 'use client'
 
 // Phase 96 BACK-01: captain regret backtester sub-tab.
+// Phase 113 BACK-02: Captain | Transfer pill toggle + TransferRegretView.
 // Sources of truth:
 //   .planning/phases/96-captain-decision-backtester/96-CONTEXT.md (D-05..D-11, SC-5)
 //   .planning/phases/96-captain-decision-backtester/096-UI-SPEC.md (Component Inventory + Copywriting Contract)
 //   .planning/phases/96-captain-decision-backtester/096-PATTERNS.md (§BackTab.tsx)
-import { useMemo } from 'react'
+//   .planning/phases/113-transfer-regret-backtester-v1-20/113-UI-SPEC.md (Component Inventory §1-6 + Copywriting Contract)
+import { useMemo, useState } from 'react'
 import type * as React from 'react'
 import {
   BarChart,
@@ -20,8 +22,8 @@ import {
 import type { TooltipContentProps } from 'recharts'
 import { useDecisionHistory } from '@/lib/hooks/useDecisionHistory'
 import { useSeasonAnalytics } from '@/lib/hooks/useSeasonAnalytics'
-import { computeSeasonSummary } from '@/lib/regret'
-import type { ChipRoiEntry, HitTrackingEntry, RegretEntry } from '@/lib/types'
+import { computeSeasonSummary, computeTransferSeasonSummary } from '@/lib/regret'
+import type { ChipRoiEntry, HitTrackingEntry, RegretEntry, TransferRegretEntry } from '@/lib/types'
 
 // Locked table-chrome classes — duplicated from AccuracyTab.tsx lines 101–104
 // (PATTERNS.md §BackTab.tsx requires local copies, not re-exports).
@@ -46,6 +48,14 @@ function regretFill(regret: number | null): string {
   if (regret === null) return REGRET_GREY
   if (regret > 0) return REGRET_RED
   if (regret < 0) return REGRET_GREEN
+  return REGRET_GREY
+}
+
+// Phase 113 BACK-02: transfer regret bar fill — mirrors regretFill with delta semantics.
+function transferRegretFill(delta: number | null): string {
+  if (delta === null) return REGRET_GREY
+  if (delta > 0) return REGRET_RED    // engine better → red
+  if (delta < 0) return REGRET_GREEN  // user better → green
   return REGRET_GREY
 }
 
@@ -80,6 +90,37 @@ function RegretTooltip({ active, payload }: TooltipContentProps) {
         Model pick: {p.modelCeilingName ?? 'No snapshot'} ({modelPtsLabel})
       </p>
       <p className={regretCls}>Regret: {regretLabel}</p>
+    </div>
+  )
+}
+
+// Phase 113 BACK-02: TransferRegretTooltip — mirrors RegretTooltip for transfer entries.
+function TransferRegretTooltip({ active, payload }: TooltipContentProps) {
+  if (!active || !payload || !payload.length) return null
+  const e = payload[0].payload as TransferRegretEntry
+  const engineLabel = !e.hasSnapshot || !e.engineSell || !e.engineBuy
+    ? 'No snapshot'
+    : `Sell ${e.engineSell.join(' + ')} buy ${e.engineBuy.join(' + ')}`
+  const userLabel = e.isHold
+    ? 'Held'
+    : (!e.userSell || !e.userBuy)
+      ? '—'
+      : `Sell ${e.userSell.join(' + ')} buy ${e.userBuy.join(' + ')}`
+  const deltaLabel =
+    e.delta === null ? '—'
+    : e.delta > 0 ? `+${e.delta}pts`
+    : `${e.delta}pts`
+  const deltaCls =
+    e.delta === null ? 'text-zinc-500 dark:text-zinc-400'
+    : e.delta > 0 ? 'text-red-600 dark:text-red-400'
+    : e.delta < 0 ? 'text-green-600 dark:text-green-400'
+    : 'text-zinc-500 dark:text-zinc-400'
+  return (
+    <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs shadow-sm">
+      <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-1">GW{e.gw}</p>
+      <p className="text-zinc-700 dark:text-zinc-300">Engine: {engineLabel}</p>
+      <p className="text-zinc-700 dark:text-zinc-300">You: {userLabel}</p>
+      <p className={deltaCls}>Delta: {deltaLabel}</p>
     </div>
   )
 }
@@ -314,7 +355,202 @@ function RegretChart({ entries }: { entries: RegretEntry[] }) {
   )
 }
 
+// Phase 113 BACK-02: Transfer Season Summary Header (UI-SPEC §3)
+function TransferSeasonSummaryHeader({ entries }: { entries: TransferRegretEntry[] }) {
+  const summary = useMemo(() => computeTransferSeasonSummary(entries), [entries])
+  const totalCls =
+    summary.totalDelta > 0
+      ? 'text-red-600 dark:text-red-400'
+      : summary.totalDelta < 0
+        ? 'text-green-600 dark:text-green-400'
+        : 'text-zinc-600 dark:text-zinc-400'
+  return (
+    <div className="mb-4 space-y-1">
+      <p className={`text-xl font-semibold ${totalCls}`}>
+        Total transfer regret: {summary.totalDelta}pts across {summary.gwsWithData} GWs
+      </p>
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        Engine better:{' '}
+        <span className="text-red-600 dark:text-red-400">{summary.engineBetter}</span>
+        {' | '}
+        You better:{' '}
+        <span className="text-green-600 dark:text-green-400">{summary.userBetter}</span>
+        {' | '}
+        Tied:{' '}
+        <span className="text-zinc-500 dark:text-zinc-400">{summary.tied}</span>
+      </p>
+    </div>
+  )
+}
+
+// Phase 113 BACK-02: Transfer Regret Bar Chart (UI-SPEC §4)
+function TransferRegretChart({ entries }: { entries: TransferRegretEntry[] }) {
+  return (
+    <div
+      aria-label="Transfer regret per gameweek"
+      className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-2 py-3 relative mb-4"
+    >
+      <ResponsiveContainer width="100%" height={288}>
+        <BarChart data={entries}>
+          <XAxis
+            dataKey="gw"
+            type="number"
+            domain={['dataMin', 'dataMax']}
+            tickFormatter={(v: number) => `GW${v}`}
+            tick={{ fontSize: 12, fill: 'currentColor' }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            tickFormatter={(v: number) => (v >= 0 ? `+${v}` : `${v}`)}
+            tick={{ fontSize: 12, fill: 'currentColor' }}
+            axisLine={false}
+            tickLine={false}
+            width={40}
+          />
+          <ReferenceLine y={0} stroke="rgba(161,161,170,0.5)" strokeWidth={1} />
+          <Tooltip content={TransferRegretTooltip} />
+          <Bar dataKey="delta" isAnimationActive={false}>
+            {entries.map((e, i) => (
+              <Cell key={`cell-${i}`} fill={transferRegretFill(e.delta)} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+// Phase 113 BACK-02: format transfer player cell (Engine or You column).
+// Handles 1-FT and 2-FT (compressed "Sell X buy Y + Sell A buy B" per D-07/UI-SPEC §5).
+function formatTransferCell(
+  sell: string[] | null,
+  buy: string[] | null,
+  sellPts: number[] | null,
+  buyPts: number[] | null,
+): string {
+  if (!sell || !buy || !sellPts || !buyPts) return '—'
+  // Build per-leg strings then join
+  const legs = sell.map((s, i) => {
+    const b = buy[i] ?? '?'
+    const sp = sellPts[i] !== undefined ? `${sellPts[i]}pts` : '?pts'
+    const bp = buyPts[i] !== undefined ? `${buyPts[i]}pts` : '?pts'
+    return `Sell ${s} (${sp}) buy ${b} (${bp})`
+  })
+  return legs.join(' + ')
+}
+
+// Phase 113 BACK-02: TransferRegretView — full transfer view (UI-SPEC §2)
+function TransferRegretView({ entries }: { entries: TransferRegretEntry[] }) {
+  if (entries.length === 0) {
+    return (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">
+        No transfer history yet — data accumulates each GW after this version is deployed.
+      </p>
+    )
+  }
+
+  // Sort by GW ascending (UI-SPEC §5: no sort controls, always ascending)
+  const sorted = [...entries].sort((a, b) => a.gw - b.gw)
+
+  return (
+    <>
+      <TransferSeasonSummaryHeader entries={entries} />
+      <TransferRegretChart entries={sorted} />
+      <div className="overflow-x-auto">
+        <table className={TABLE_CLS}>
+          <thead>
+            <tr>
+              <th className={`${TH_CLS} w-12`}>GW</th>
+              <th className={TH_CLS}>Engine</th>
+              <th className={TH_CLS}>You</th>
+              <th className={`${TH_CLS} text-right`}>Delta</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((e) => {
+              // Engine cell
+              let engineCell: React.ReactNode
+              if (!e.hasSnapshot) {
+                engineCell = (
+                  <td className={`${TD_CLS} italic text-zinc-400 dark:text-zinc-500`}>
+                    No model snapshot
+                  </td>
+                )
+              } else {
+                engineCell = (
+                  <td className={TD_CLS}>
+                    {formatTransferCell(e.engineSell, e.engineBuy, e.engineSellPts, e.engineBuyPts)}
+                  </td>
+                )
+              }
+
+              // You cell
+              let youCell: React.ReactNode
+              if (e.isHold) {
+                youCell = <td className={TD_CLS}>Held — no transfer</td>
+              } else {
+                youCell = (
+                  <td className={TD_CLS}>
+                    {formatTransferCell(e.userSell, e.userBuy, e.userSellPts, e.userBuyPts)}
+                  </td>
+                )
+              }
+
+              // Delta cell (UI-SPEC §5 copywriting contract)
+              let deltaCell: React.ReactNode
+              if (e.delta === null) {
+                deltaCell = (
+                  <td className={`${TD_CLS} text-right text-zinc-400 dark:text-zinc-500`}>
+                    {/* U+2014 EM DASH */}
+                    —
+                  </td>
+                )
+              } else if (e.delta > 0) {
+                deltaCell = (
+                  <td className={`${TD_CLS} text-right`}>
+                    <span className="text-red-600 dark:text-red-400">
+                      +{e.delta}pts (engine better)
+                    </span>
+                  </td>
+                )
+              } else if (e.delta < 0) {
+                deltaCell = (
+                  <td className={`${TD_CLS} text-right`}>
+                    <span className="text-green-600 dark:text-green-400">
+                      {/* U+2212 MINUS SIGN — UI-SPEC copy contract (NOT ASCII hyphen) */}
+                      −{Math.abs(e.delta)}pts (good hold)
+                    </span>
+                  </td>
+                )
+              } else {
+                deltaCell = (
+                  <td className={`${TD_CLS} text-right text-zinc-500 dark:text-zinc-400`}>
+                    0pts (tied)
+                  </td>
+                )
+              }
+
+              return (
+                <tr key={e.gw} className={TR_CLS}>
+                  <td className={TD_CLS}>GW{e.gw}</td>
+                  {engineCell}
+                  {youCell}
+                  {deltaCell}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
+  )
+}
+
 export function BackTab({ teamId }: { teamId: string | null }) {
+  // Phase 113 BACK-02: D-08 — pill toggle state MUST be before all early returns (Rules of Hooks).
+  const [view, setView] = useState<'captain' | 'transfer'>('captain')
+
   const { data, isLoading, error } = useDecisionHistory(teamId)
   const {
     data: seasonData,
@@ -390,31 +626,61 @@ export function BackTab({ teamId }: { teamId: string | null }) {
 
   return (
     <div>
-      <SeasonSummaryHeader entries={entries} />
-      <RegretChart entries={entries} />
-      <div className="overflow-x-auto">
-        <table className={TABLE_CLS}>
-          <thead>
-            <tr>
-              <th className={`${TH_CLS} w-12`}>GW</th>
-              <th className={TH_CLS}>Your captain</th>
-              <th className={TH_CLS}>Model pick</th>
-              <th className={`${TH_CLS} text-right`}>Regret</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((e) => (
-              <tr key={e.gw} className={TR_CLS}>
-                <td className={TD_CLS}>GW{e.gw}</td>
-                <UserCaptainCell entry={e} />
-                <ModelPickCell entry={e} />
-                <RegretCell regret={e.regret} />
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Phase 113 BACK-02 D-08: pill toggle is first visual element (UI-SPEC §1) */}
+      <div
+        role="group"
+        aria-label="Backtester view"
+        className="flex rounded overflow-hidden border border-zinc-300 dark:border-zinc-600 mb-4"
+      >
+        {(['captain', 'transfer'] as const).map((v) => (
+          <button
+            key={v}
+            onClick={() => setView(v)}
+            aria-pressed={view === v}
+            className={`px-3 py-2 sm:py-1 text-sm font-medium transition-all cursor-pointer active:scale-95 min-h-[44px] ${
+              view === v
+                ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
+                : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
+            }`}
+          >
+            {v === 'captain' ? 'Captain' : 'Transfer'}
+          </button>
+        ))}
       </div>
-      {seasonSections}
+
+      {view === 'captain' && (
+        <>
+          <SeasonSummaryHeader entries={entries} />
+          <RegretChart entries={entries} />
+          <div className="overflow-x-auto">
+            <table className={TABLE_CLS}>
+              <thead>
+                <tr>
+                  <th className={`${TH_CLS} w-12`}>GW</th>
+                  <th className={TH_CLS}>Your captain</th>
+                  <th className={TH_CLS}>Model pick</th>
+                  <th className={`${TH_CLS} text-right`}>Regret</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((e) => (
+                  <tr key={e.gw} className={TR_CLS}>
+                    <td className={TD_CLS}>GW{e.gw}</td>
+                    <UserCaptainCell entry={e} />
+                    <ModelPickCell entry={e} />
+                    <RegretCell regret={e.regret} />
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {seasonSections}
+        </>
+      )}
+
+      {view === 'transfer' && (
+        <TransferRegretView entries={data.transferEntries ?? []} />
+      )}
     </div>
   )
 }
