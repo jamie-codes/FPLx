@@ -1510,8 +1510,8 @@ Plans:
   4. The hindsight scoring uses actual realised points (FPL `event-summary`) for both the engine pick and the user’s pick, NOT predicted xPts — so "regret" is grounded in what actually happened, mirroring the captain-decision backtester rule
 **Plans**: 4 plans (3 waves)
   **Wave 1**
-  - [ ] 113-01-PLAN.md — Pipeline slim snapshot module + run.py side-write + TransferRegretEntry/SlimPlayer types
-  - [ ] 113-02-PLAN.md — TDD: computeTransferDelta + computeTransferSeasonSummary in src/lib/regret.ts
+  - [x] 113-01-PLAN.md — Pipeline slim snapshot module + run.py side-write + TransferRegretEntry/SlimPlayer types
+  - [x] 113-02-PLAN.md — TDD: computeTransferDelta + computeTransferSeasonSummary in src/lib/regret.ts
   **Wave 2** *(blocked on Wave 1 completion)*
   - [ ] 113-03-PLAN.md — /api/decision-history extension: readTransferSlimSnapshot, squad reconstruction, suggestTransfers post-hoc, element-summary fan-out, transferEntries response field
   **Wave 3** *(blocked on Wave 2 completion)*
@@ -1597,4 +1597,4 @@ Plans:
 | 110 | v1.20 | 4/4 | Complete    | 2026-05-14 |
 | 111 | v1.20 | 4/4 | Complete    | 2026-05-15 |
 | 112 | v1.20 | 3/3 | Complete    | 2026-05-15 |
-| 113 | v1.20 | 0 | Not started | - |
+| 113 | v1.20 | 2/4 | In Progress|  |
