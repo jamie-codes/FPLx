@@ -307,3 +307,69 @@ describe('Phase 105 NLP-02 integration', () => {
     expect(container.querySelector('[data-testid="player-insight-section"]')).not.toBeNull()
   })
 })
+
+describe('Phase 112 (TFR-02): truncation footnote', () => {
+  it('renders cap-footnote-MID when totalsByPosition.get(3) > 3', () => {
+    const { container } = withQueryClient(
+      <OpportunityCostTable
+        rows={[makeRollRow()]}
+        horizon={1}
+        gw={30}
+        allPlayers={[]}
+        lifecycleLabels={new Map()}
+        totalsByPosition={new Map<number, number>([[3, 7]])}
+      />
+    )
+    const footnote = container.querySelector('[data-testid="cap-footnote-MID"]')
+    expect(footnote).not.toBeNull()
+    expect(footnote!.textContent?.trim()).toBe('Showing top 3 of 7 MID suggestions.')
+  })
+
+  it('renders separate footnotes for each position whose pre-cap total > 3', () => {
+    const { container } = withQueryClient(
+      <OpportunityCostTable
+        rows={[makeRollRow()]}
+        horizon={1}
+        gw={30}
+        allPlayers={[]}
+        lifecycleLabels={new Map()}
+        totalsByPosition={new Map<number, number>([[2, 5], [3, 8], [4, 3]])}
+      />
+    )
+    const defFootnote = container.querySelector('[data-testid="cap-footnote-DEF"]')
+    expect(defFootnote).not.toBeNull()
+    expect(defFootnote!.textContent?.trim()).toBe('Showing top 3 of 5 DEF suggestions.')
+    const midFootnote = container.querySelector('[data-testid="cap-footnote-MID"]')
+    expect(midFootnote).not.toBeNull()
+    expect(midFootnote!.textContent?.trim()).toBe('Showing top 3 of 8 MID suggestions.')
+    const fwdFootnote = container.querySelector('[data-testid="cap-footnote-FWD"]')
+    expect(fwdFootnote).toBeNull()
+  })
+
+  it('renders NO footnotes when every bucket is <= 3 (D-07 silent)', () => {
+    const { container } = withQueryClient(
+      <OpportunityCostTable
+        rows={[makeRollRow()]}
+        horizon={1}
+        gw={30}
+        allPlayers={[]}
+        lifecycleLabels={new Map()}
+        totalsByPosition={new Map<number, number>([[1, 1], [2, 3], [3, 3], [4, 2]])}
+      />
+    )
+    expect(container.querySelectorAll('[data-testid^="cap-footnote-"]').length).toBe(0)
+  })
+
+  it('renders NO footnotes when totalsByPosition is undefined (backward-compat)', () => {
+    const { container } = withQueryClient(
+      <OpportunityCostTable
+        rows={[makeRollRow()]}
+        horizon={1}
+        gw={30}
+        allPlayers={[]}
+        lifecycleLabels={new Map()}
+      />
+    )
+    expect(container.querySelectorAll('[data-testid^="cap-footnote-"]').length).toBe(0)
+  })
+})
