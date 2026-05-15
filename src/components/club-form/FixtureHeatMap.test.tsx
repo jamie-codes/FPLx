@@ -493,4 +493,39 @@ describe('FixtureHeatMap', () => {
     const style = arsCell.getAttribute('style') ?? ''
     expect(style).toContain('linear-gradient')
   })
+
+  // ===========================================================================
+  // Phase 111 FIX-01 (gap) — Partially-played DGW (mixed state) — CR-01 closure
+  // ===========================================================================
+
+  it('FIX-01 (gap): partially-played DGW (1 upcoming + 1 played) tooltip contains both opponents and \'— Played\' marker', () => {
+    const data: ClubForm[] = [
+      team(1, 'ARS', [fix({ opp: 'PSG', home: true, gw: 35, tier: 'easy', ad: 0.28 })], [fix({ opp: 'MCI', home: true, gw: 35, tier: 'easy' })]),
+    ]
+    mockUseClubForm.mockReturnValue({ data, isLoading: false, error: null })
+    const { container } = render(<FixtureHeatMap />)
+    const arsRow = container.querySelector('tbody tr:nth-child(1)')!
+    const arsCell = arsRow.querySelectorAll('td')[0]
+    expect(arsCell.getAttribute('title')).toBe('PSG (H) — 0.28 / MCI (H) — Played')
+    expect(arsCell.className).toMatch(/bg-green-100|bg-green-900/)
+    expect(arsCell.className).not.toMatch(/opacity-40/)
+    expect(arsCell.querySelector('span')?.textContent).toBe('PSG')
+    expect(arsCell.className).not.toMatch(/bg-zinc-50/)
+  })
+
+  it('FIX-01 (gap): partially-played DGW (1 upcoming + 2 played) tooltip lists all three opponents in order', () => {
+    const data: ClubForm[] = [
+      team(1, 'BHA', [fix({ opp: 'LIV', home: false, gw: 35, tier: 'hard', ad: 0.71 })], [
+        fix({ opp: 'MCI', home: true, gw: 35, tier: 'easy' }),
+        fix({ opp: 'CHE', home: false, gw: 35, tier: 'hard' }),
+      ]),
+    ]
+    mockUseClubForm.mockReturnValue({ data, isLoading: false, error: null })
+    const { container } = render(<FixtureHeatMap />)
+    const bhaRow = container.querySelector('tbody tr:nth-child(1)')!
+    const bhaCell = bhaRow.querySelectorAll('td')[0]
+    expect(bhaCell.getAttribute('title')).toBe('LIV (A) — 0.71 / MCI (H) — Played / CHE (A) — Played')
+    expect(bhaCell.querySelector('span')?.textContent).toBe('LIV')
+    expect(bhaCell.className).not.toMatch(/opacity-40/)
+  })
 })
