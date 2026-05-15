@@ -10,8 +10,8 @@ Fix 6 data accuracy bugs across GW Review, fixture heatmap, planner, and decisio
 
 ### Bug Fixes
 
-- [ ] **FIX-01**: User sees current-GW fixture correctly when a team has already played mid-week — heatmap must not show BGW for a fixture that has been completed
-- [ ] **FIX-02**: Transfer planner only suggests buy candidates of the same position as the player being transferred out — no cross-position suggestions (e.g. MID → GK)
+- [x] **FIX-01**: User sees current-GW fixture correctly when a team has already played mid-week — heatmap must not show BGW for a fixture that has been completed
+- [x] **FIX-02**: Transfer planner only suggests buy candidates of the same position as the player being transferred out — no cross-position suggestions (e.g. MID → GK)
 - [x] **FIX-03**: GW Review top scorer card displays the player's actual points alongside their name
 - [x] **FIX-04**: GW Review best bench card displays actual bench points (not 0)
 - [x] **FIX-05**: GW Review dream team delta shows correct sign — positive when dream team outscored the user (e.g. +50 when user=72 and dream team=122)
@@ -51,8 +51,8 @@ Fix 6 data accuracy bugs across GW Review, fixture heatmap, planner, and decisio
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| FIX-01 | Phase 111 | pending |
-| FIX-02 | Phase 111 | pending |
+| FIX-01 | Phase 111 | Complete |
+| FIX-02 | Phase 111 | Complete |
 | FIX-03 | Phase 110 | Complete |
 | FIX-04 | Phase 110 | Complete |
 | FIX-05 | Phase 110 | Complete |

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.20
 milestone_name: Modelling & Refinement — Carry-forward
-status: executing
+status: ready_to_plan
 stopped_at: Phase 111 context gathered
 last_updated: "2026-05-15T09:43:59.331Z"
 last_activity: 2026-05-15 -- Phase 111 execution started
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
   completed_plans: 4
-  percent: 57
+  percent: 50
 ---
 
 # Project State
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-05-14 — v1.19 complete, v1.20 roadmap 
 
 ## Current Position
 
-Phase: 111 (fixture-heatmap-planner-cross-position-fixes-v1-20) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 111
+Phase: 112
+Plan: Not started
+Status: Ready to plan
 
 **v1.20 Phase Plan:**
 
@@ -36,7 +36,7 @@ Status: Executing Phase 111
 - Phase 112: Optimiser On-Demand & Transfer Suggestion Cap — OPT-01, TFR-02
 - Phase 113: Transfer Regret Backtester — BACK-02
 
-Last activity: 2026-05-15 -- Phase 111 execution started
+Last activity: 2026-05-15
 
 ## Performance Metrics
 
