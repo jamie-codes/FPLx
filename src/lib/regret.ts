@@ -5,7 +5,7 @@
 //   .planning/phases/96-captain-decision-backtester/96-CONTEXT.md §D-06 (formula)
 //   .planning/phases/96-captain-decision-backtester/96-CONTEXT.md §D-11 (empty state semantics)
 //   ROADMAP cross-cutting constraints (localStorage key `decisionHistory:teamId:{id}`, 38-GW ring buffer)
-import type { RegretEntry, DecisionHistory } from './types'
+import type { RegretEntry, DecisionHistory, TransferRegretEntry } from './types'
 
 /**
  * Maximum number of GW entries retained in the localStorage ring buffer.
@@ -121,5 +121,70 @@ export function persistHistory(teamId: string, history: DecisionHistory): void {
     window.localStorage.setItem(ringBufferKey(teamId), JSON.stringify(trimmed))
   } catch {
     // Silently ignore storage errors (private mode, quota exceeded)
+  }
+}
+
+// Phase 113 BACK-02: Transfer regret math primitives.
+
+/**
+ * D-06/D-07: signed delta between engine recommendation and user action.
+ *
+ * - 1-FT: delta = (engineIn_pts - engineOut_pts) - (userIn_pts - userOut_pts)
+ * - Hold GW (D-06): delta = engineIn_pts - engineOut_pts (userBuyPts/userSellPts null)
+ * - 2-FT (D-07): delta = Σ(engineLeg gains) - Σ(userLeg gains)
+ * - null propagates when engineBuyPts is empty (no snapshot / fetch failure)
+ *
+ * Positive delta → engine was better (user left points on the table).
+ * Negative delta → user was better (engine's pick would have cost points).
+ */
+export function computeTransferDelta(
+  engineBuyPts: number[],
+  engineSellPts: number[],
+  userBuyPts: number[] | null,
+  userSellPts: number[] | null,
+): number | null {
+  if (engineBuyPts.length === 0) return null
+  const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0)
+  const engineGain = sum(engineBuyPts) - sum(engineSellPts)
+  if (userBuyPts === null || userSellPts === null) {
+    // Hold GW: counterfactual gain from the engine's recommended move
+    return Math.round(engineGain * 10) / 10
+  }
+  const userGain = sum(userBuyPts) - sum(userSellPts)
+  return Math.round((engineGain - userGain) * 10) / 10
+}
+
+/** Season-level transfer regret summary shape (D-13). */
+export interface TransferSeasonSummary {
+  totalDelta: number
+  gwsWithData: number
+  engineBetter: number
+  userBetter: number
+  tied: number
+}
+
+/** Reduce TransferRegretEntry array to season-level summary stats (D-13). */
+export function computeTransferSeasonSummary(
+  entries: TransferRegretEntry[],
+): TransferSeasonSummary {
+  let totalDelta = 0
+  let gwsWithData = 0
+  let engineBetter = 0
+  let userBetter = 0
+  let tied = 0
+  for (const e of entries) {
+    if (e.delta === null) continue
+    totalDelta += e.delta
+    gwsWithData += 1
+    if (e.delta > 0) engineBetter += 1
+    else if (e.delta < 0) userBetter += 1
+    else tied += 1
+  }
+  return {
+    totalDelta: Math.round(totalDelta * 10) / 10,
+    gwsWithData,
+    engineBetter,
+    userBetter,
+    tied,
   }
 }
