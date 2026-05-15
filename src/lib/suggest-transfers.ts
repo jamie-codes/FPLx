@@ -36,6 +36,11 @@ const MID = 3
 const FWD = 4
 const POSITIONS: ReadonlyArray<1 | 2 | 3 | 4> = [GK, DEF, MID, FWD]
 
+// FIX-02 D-09: Defensive guard — valid element_type values per FPL API contract.
+// Engine position filter at line ~118 already enforces position-lock, but this set
+// allows upstream corruption to be detected and logged explicitly.
+const VALID_ELEMENT_TYPES = new Set([1, 2, 3, 4])
+
 // Cap top-N per position for the in-pool (D-03).
 const TOP_N_PER_POSITION = 30
 
@@ -87,12 +92,26 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
 
   if (currentPicks.length === 0 || players.length === 0) return []
 
+  // FIX-02 D-09: Defensive guard — filter players with invalid element_type before enumeration.
+  // The engine's position filter (inPoolByPosition below) already guarantees sell.element_type ===
+  // buy.element_type per leg, but corrupt element_type values (not in {1,2,3,4}) would silently
+  // disappear from all pools without any signal. This guard makes corruption explicit and auditable.
+  const invalidPlayers = players.filter(p => !VALID_ELEMENT_TYPES.has(p.element_type as number))
+  if (invalidPlayers.length > 0) {
+    console.warn(
+      `[FIX-02] suggestTransfers: dropping ${invalidPlayers.length} player(s) with invalid element_type: ids=${invalidPlayers.map(p => p.id).join(',')}`,
+    )
+  }
+  const sanePlayers = invalidPlayers.length > 0
+    ? players.filter(p => VALID_ELEMENT_TYPES.has(p.element_type as number))
+    : players
+
   const field = HORIZON_FIELD[horizon]
   // Phase 101 GWT-01: route scoring through computeGwXpts when targetGw is set.
   const scorePlayer = (p: MergedPlayer): number =>
     targetGw !== undefined ? computeGwXpts(p, targetGw) : horizonScore(p, field)
   const denominator = targetGw !== undefined ? 1 : horizon
-  const playerById = new Map<number, MergedPlayer>(players.map(p => [p.id, p]))
+  const playerById = new Map<number, MergedPlayer>(sanePlayers.map(p => [p.id, p]))
   const ownedIds = new Set<number>(currentPicks.map(p => p.element))
 
   // TFX-01: Build capped-teams set — teams where user already owns 3 players.
@@ -114,7 +133,7 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
   // and players from capped teams (TFX-01: FPL 3-player-per-team cap).
   const inPoolByPosition = new Map<1 | 2 | 3 | 4, MergedPlayer[]>()
   for (const pos of POSITIONS) {
-    const candidates = players
+    const candidates = sanePlayers
       .filter(p => p.element_type === pos && !ownedIds.has(p.id) && !cappedTeams.has(p.team))
       .sort((a, b) => scorePlayer(b) - scorePlayer(a))
       .slice(0, TOP_N_PER_POSITION)
