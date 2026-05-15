@@ -1513,7 +1513,7 @@ Plans:
   - [x] 113-01-PLAN.md — Pipeline slim snapshot module + run.py side-write + TransferRegretEntry/SlimPlayer types
   - [x] 113-02-PLAN.md — TDD: computeTransferDelta + computeTransferSeasonSummary in src/lib/regret.ts
   **Wave 2** *(blocked on Wave 1 completion)*
-  - [ ] 113-03-PLAN.md — /api/decision-history extension: readTransferSlimSnapshot, squad reconstruction, suggestTransfers post-hoc, element-summary fan-out, transferEntries response field
+  - [x] 113-03-PLAN.md — /api/decision-history extension: readTransferSlimSnapshot, squad reconstruction, suggestTransfers post-hoc, element-summary fan-out, transferEntries response field
   **Wave 3** *(blocked on Wave 2 completion)*
   - [ ] 113-04-PLAN.md — BackTab Captain|Transfer pill toggle + TransferRegretView (summary + bar chart + per-GW rows) + tests + human-verify checkpoint
 **UI hint**: yes
@@ -1597,4 +1597,4 @@ Plans:
 | 110 | v1.20 | 4/4 | Complete    | 2026-05-14 |
 | 111 | v1.20 | 4/4 | Complete    | 2026-05-15 |
 | 112 | v1.20 | 3/3 | Complete    | 2026-05-15 |
-| 113 | v1.20 | 2/4 | In Progress|  |
+| 113 | v1.20 | 3/4 | In Progress|  |
