@@ -41,7 +41,11 @@ interface Props {
 
 interface HeatMapRowProps {
   t: ClubForm
-  grid: { allEventIds: number[]; byTeamGw: Map<number, Map<number, ClubFormFixture[]>> }
+  grid: {
+    allEventIds: number[]
+    byTeamGw: Map<number, Map<number, ClubFormFixture[]>>
+    byTeamGwPlayed: Map<number, Map<number, ClubFormFixture[]>>
+  }
   mode: 'ATT' | 'DEF'
   tierMap: Record<DifficultyTier, string>
   ownedTeamIds: Set<number>
@@ -81,13 +85,53 @@ function HeatMapRow({ t, grid, mode, tierMap, ownedTeamIds }: HeatMapRowProps) {
       </th>
       {grid.allEventIds.map(gw => {
         const fixtures = grid.byTeamGw.get(t.team_id)?.get(gw) ?? []
-        if (fixtures.length === 0) {
+        const playedFixtures = grid.byTeamGwPlayed.get(t.team_id)?.get(gw) ?? []
+        if (fixtures.length === 0 && playedFixtures.length === 0) {
+          // True BGW — unchanged visual
           return (
             <td
               key={gw}
               className="px-2 py-1 text-center min-w-[48px] h-8 bg-zinc-50 dark:bg-zinc-900"
               title="No fixture (BGW)"
             />
+          )
+        }
+        if (fixtures.length === 0 && playedFixtures.length >= 2) {
+          // Phase 111 FIX-01: DGW played cell — split gradient + opacity-40
+          const colours = playedFixtures.map(f => tierMap[currentTier(f, mode)])
+          const gradient = colours.length === 2
+            ? `linear-gradient(to bottom right, ${colours[0]} 50%, ${colours[1]} 50%)`
+            : `linear-gradient(to bottom right, ${colours[0]} 33%, ${colours[1]} 33% 66%, ${colours[2]} 66%)`
+          const tooltip = playedFixtures
+            .map(f => `${f.opponent_team} (${f.is_home ? 'H' : 'A'}) — Played`)
+            .join(' / ')
+          return (
+            <td
+              key={gw}
+              className="relative px-0 py-0 text-center min-w-[48px] h-10 opacity-40"
+              style={{ background: gradient }}
+              title={tooltip}
+            >
+              <span className="absolute top-0 left-1 text-[10px] font-mono leading-none pt-0.5 text-zinc-900 dark:text-zinc-100">
+                {playedFixtures[0].opponent_team}
+              </span>
+              <span className="absolute bottom-0 right-1 text-[10px] font-mono leading-none pb-0.5 text-zinc-900 dark:text-zinc-100">
+                {playedFixtures[1].opponent_team}
+              </span>
+            </td>
+          )
+        }
+        if (fixtures.length === 0 && playedFixtures.length === 1) {
+          // Phase 111 FIX-01: single played cell — dimmed difficulty color + opponent label
+          const f = playedFixtures[0]
+          return (
+            <td
+              key={gw}
+              className={`px-2 py-1 text-center min-w-[48px] h-8 ${TIER_CLASSES[currentTier(f, mode)]} opacity-40`}
+              title={`${f.opponent_team} (${f.is_home ? 'H' : 'A'}) — Played`}
+            >
+              <span className="text-xs font-mono">{f.opponent_team}</span>
+            </td>
           )
         }
         if (fixtures.length >= 2) {
@@ -173,8 +217,12 @@ export function FixtureHeatMap({ submittedId = null }: Props) {
 
   const grid = useMemo(() => {
     if (!data || data.length === 0) return null
+    // Phase 111 FIX-01: include current_gw_played event_ids so played-GW column always appears.
     const allEventIds = Array.from(
-      new Set(data.flatMap(t => t.upcoming_fixtures.map(f => f.event_id)))
+      new Set([
+        ...data.flatMap(t => t.upcoming_fixtures.map(f => f.event_id)),
+        ...data.flatMap(t => (t.current_gw_played ?? []).map(f => f.event_id)),
+      ])
     ).sort((a, b) => a - b).slice(0, horizon)
     const byTeamGw = new Map<number, Map<number, ClubFormFixture[]>>()
     for (const t of data) {
@@ -186,10 +234,21 @@ export function FixtureHeatMap({ submittedId = null }: Props) {
       }
       byTeamGw.set(t.team_id, m)
     }
+    // Phase 111 FIX-01: second map for played current-GW fixtures.
+    const byTeamGwPlayed = new Map<number, Map<number, ClubFormFixture[]>>()
+    for (const t of data) {
+      const m = new Map<number, ClubFormFixture[]>()
+      for (const f of (t.current_gw_played ?? [])) {
+        const arr = m.get(f.event_id) ?? []
+        arr.push(f)
+        m.set(f.event_id, arr)
+      }
+      byTeamGwPlayed.set(t.team_id, m)
+    }
     const sortedTeams = [...data].sort((a, b) =>
       a.team_short_name.localeCompare(b.team_short_name)
     )
-    return { allEventIds, byTeamGw, sortedTeams }
+    return { allEventIds, byTeamGw, byTeamGwPlayed, sortedTeams }
   }, [data, horizon])
 
   if (isLoading) {
