@@ -1,7 +1,7 @@
 // Phase 45 (TFR-01..TFR-03): suggestTransfers engine — pure-function unit tests.
 // Mirrors src/lib/optimise-lineup.test.ts pattern.
 // @vitest-environment node
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { suggestTransfers } from './suggest-transfers'
 import type { MergedPlayer } from './types'
 import type { SquadPick } from './squad-adapter'
@@ -560,6 +560,42 @@ describe('Phase 101 GWT-01: targetGw parameter', () => {
 
 // Phase 111 FIX-02 — Position lock regression
 describe('Phase 111 FIX-02: Position lock invariants', () => {
+  it('FIX-02 guard: invalid element_type players are filtered out before suggestion enumeration', () => {
+    const { picks, players } = makeValidSquad()
+    // Inject a player with an invalid element_type (0). Extreme xPts so it would dominate if not filtered.
+    const corruptPlayer = makePlayer({ id: 99, element_type: 0 as unknown as 1, xPts_1gw: 100, team: 15 })
+    // Spy on console.warn to verify the guard fires
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const result = suggestTransfers({
+        currentPicks: picks,
+        players: [...players, corruptPlayer],
+        horizon: 1,
+        ftCount: 1,
+        bank: 1000,
+      })
+      // Guard must emit a console.warn mentioning FIX-02 and the bad id (99)
+      expect(warnSpy).toHaveBeenCalled()
+      const warnArgs = warnSpy.mock.calls.flat().join(' ')
+      expect(warnArgs).toContain('FIX-02')
+      expect(warnArgs).toContain('99')
+      // Corrupt player must not appear in any suggestion
+      for (const sug of result) {
+        if (sug.kind === 'single') {
+          expect(sug.sell.id).not.toBe(99)
+          expect(sug.buy.id).not.toBe(99)
+        } else {
+          for (const leg of sug.transfers) {
+            expect(leg.sell.id).not.toBe(99)
+            expect(leg.buy.id).not.toBe(99)
+          }
+        }
+      }
+    } finally {
+      warnSpy.mockRestore()
+    }
+  })
+
   it('FIX-02 regression: single suggestions never produce a buy of different position than the sell', () => {
     const { picks, players } = makeValidSquad()
     // Inject strong candidates — one per position. ids 20-23, teams 10-13 (no team cap collision).
