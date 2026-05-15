@@ -65,6 +65,15 @@ vi.mock('./ChipModeToggle', () => ({
 // Import AFTER mocks
 import { OptimiserPanel } from './OptimiserPanel'
 
+// Backward compat helper: click the "Optimise Lineup" button if present (OPT-01 hasRun gate).
+// Existing tests assert on post-engine artifacts (comparison-table, etc.). After Task 2 ships the
+// hasRun gate, those artifacts only render after a button click — so we insert this helper after
+// every render() call in tests that assert on post-engine output.
+function clickOptimiseIfPresent(container: HTMLElement) {
+  const btn = container.querySelector('[data-testid="optimise-button"]') as HTMLButtonElement | null
+  if (btn) fireEvent.click(btn)
+}
+
 // ---------- Test fixtures (mirrors src/lib/optimise-lineup.test.ts factories) ----------
 function makePick(element: number, position: number): SquadPick {
   return { element, position, multiplier: 1, is_captain: false, is_vice_captain: false }
@@ -204,6 +213,7 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
       useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
+      clickOptimiseIfPresent(container)
 
       // Click the 5GW toggle button (Phase 101 UX-01: GwToggle now renders "Next 5 GWs")
       const fiveGwBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent?.trim() === 'Next 5 GWs')
@@ -223,6 +233,7 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
       useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
+      clickOptimiseIfPresent(container)
       expect(container.querySelector('[data-testid="comparison-table"]')).not.toBeNull()
       expect(container.querySelector('[data-testid="section-header-gk"]')).not.toBeNull()
       expect(container.querySelector('[data-testid="section-header-def"]')).not.toBeNull()
@@ -258,6 +269,7 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
       useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
+      clickOptimiseIfPresent(container)
       const changedRows = container.querySelectorAll('[data-testid="comparison-row-changed"]')
       expect(changedRows.length).toBeGreaterThan(0)
       const firstChanged = changedRows[0] as HTMLElement
@@ -288,6 +300,7 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
       useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
+      clickOptimiseIfPresent(container)
       const greenBordered = Array.from(container.querySelectorAll('[data-testid="comparison-table"] *'))
         .filter(el => (el as HTMLElement).className && (el as HTMLElement).className.toString().includes('border-l-green-500'))
       expect(greenBordered).toHaveLength(0)
@@ -317,6 +330,7 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
       useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
+      clickOptimiseIfPresent(container)
       // At least one bench row gets a Promoted or Dropped badge
       const promoted = container.querySelectorAll('[data-testid="badge-promoted"]')
       const dropped = container.querySelectorAll('[data-testid="badge-dropped"]')
@@ -332,6 +346,7 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
       useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
+      clickOptimiseIfPresent(container)
       const headline = container.querySelector('[data-testid="headline-row"]')
       expect(headline).not.toBeNull()
       const text = headline!.textContent ?? ''
@@ -362,6 +377,7 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
       useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
+      clickOptimiseIfPresent(container)
       const text = container.querySelector('[data-testid="headline-row"]')!.textContent ?? ''
       expect(text).toContain('Changes: 0 players')
       expect(text).toContain('+0.0 xPts gain')
@@ -392,6 +408,7 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
       useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
+      clickOptimiseIfPresent(container)
       const text = container.querySelector('[data-testid="headline-row"]')!.textContent ?? ''
       expect(text).toContain('Changes: 1 player')
       // Sanity: not "1 players"
@@ -405,6 +422,7 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
       useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
+      clickOptimiseIfPresent(container)
       // Desktop wrapper: hidden sm:block
       const desktopWrapper = Array.from(container.querySelectorAll('div')).find(
         el => el.className.includes('hidden') && el.className.includes('sm:block')
@@ -441,6 +459,7 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
       useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
+      clickOptimiseIfPresent(container)
       expect(container.querySelector('[data-testid="bgw-banner-critical"]')).not.toBeNull()
       expect(container.querySelector('[data-testid="bgw-banner-critical"]')!.textContent).toContain('fewer than 11')
       expect(container.querySelector('[data-testid="comparison-table"]')).toBeNull()
@@ -468,6 +487,7 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
       useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
       usePlayersMock.mockReturnValue({ data: players, isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
+      clickOptimiseIfPresent(container)
       expect(container.querySelector('[data-testid="bgw-banner-soft"]')).not.toBeNull()
       expect(container.querySelector('[data-testid="comparison-table"]')).not.toBeNull()
     })
@@ -484,6 +504,7 @@ describe('Phase 45: Transfer-aware mode (transfer suggestions)', () => {
   it('renders transfer-suggestions-section when lineup is non-null', () => {
     setupValidLineup()
     const { container } = render(<OptimiserPanel teamId="1234567" />)
+    clickOptimiseIfPresent(container)
     expect(container.querySelector('[data-testid="transfer-suggestions-section"]')).not.toBeNull()
     expect(container.textContent).toContain('Transfer Suggestions')
   })
@@ -491,6 +512,7 @@ describe('Phase 45: Transfer-aware mode (transfer suggestions)', () => {
   it('FtToggle defaults to "1 FT" with aria-pressed=true on button 1', () => {
     setupValidLineup()
     const { container } = render(<OptimiserPanel teamId="1234567" />)
+    clickOptimiseIfPresent(container)
     const btn1 = container.querySelector('[data-testid="ft-toggle-1"]') as HTMLButtonElement | null
     const btn2 = container.querySelector('[data-testid="ft-toggle-2"]') as HTMLButtonElement | null
     expect(btn1).not.toBeNull()
@@ -502,6 +524,7 @@ describe('Phase 45: Transfer-aware mode (transfer suggestions)', () => {
   it('clicking "2 FTs" updates aria-pressed and re-invokes suggestTransfers with ftCount=2', () => {
     setupValidLineup()
     const { container } = render(<OptimiserPanel teamId="1234567" />)
+    clickOptimiseIfPresent(container)
     const btn2 = container.querySelector('[data-testid="ft-toggle-2"]') as HTMLButtonElement
     suggestTransfersMock.mockClear()  // clear initial mount call
     fireEvent.click(btn2)
@@ -517,6 +540,7 @@ describe('Phase 45: Transfer-aware mode (transfer suggestions)', () => {
     setupValidLineup()
     suggestTransfersMock.mockReturnValue([])
     const { container } = render(<OptimiserPanel teamId="1234567" />)
+    clickOptimiseIfPresent(container)
     const empty = container.querySelector('[data-testid="suggestions-empty-state"]')
     expect(empty).not.toBeNull()
     expect(empty!.textContent).toBe('Your current squad is already optimal for this horizon.')
@@ -537,6 +561,7 @@ describe('Phase 45: Transfer-aware mode (transfer suggestions)', () => {
       },
     ])
     const { container } = render(<OptimiserPanel teamId="1234567" />)
+    clickOptimiseIfPresent(container)
     const row = container.querySelector('[data-testid="suggestion-row"]') as HTMLElement
     expect(row).not.toBeNull()
     expect(row.getAttribute('data-variant')).toBe('free')
@@ -564,6 +589,7 @@ describe('Phase 45: Transfer-aware mode (transfer suggestions)', () => {
       },
     ])
     const { container } = render(<OptimiserPanel teamId="1234567" />)
+    clickOptimiseIfPresent(container)
     const row = container.querySelector('[data-testid="suggestion-row"]') as HTMLElement
     expect(row.getAttribute('data-variant')).toBe('hit')
     const pill = container.querySelector('[data-testid="cost-pill-hit"]')
@@ -589,6 +615,7 @@ describe('Phase 45: Transfer-aware mode (transfer suggestions)', () => {
       },
     ])
     const { container } = render(<OptimiserPanel teamId="1234567" />)
+    clickOptimiseIfPresent(container)
     const breakEven = container.querySelector('[data-testid="break-even"]')
     expect(breakEven).not.toBeNull()
     expect(breakEven!.textContent).toBe('Breaks even in 1 GW')
@@ -613,6 +640,7 @@ describe('Phase 45: Transfer-aware mode (transfer suggestions)', () => {
     useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
     usePlayersMock.mockReturnValue({ data: players, isLoading: false })
     const { container } = render(<OptimiserPanel teamId="1234567" />)
+    clickOptimiseIfPresent(container)
     // Transfer section not rendered in BGW-critical branch
     expect(container.querySelector('[data-testid="transfer-suggestions-section"]')).toBeNull()
   })
@@ -622,7 +650,8 @@ describe('Phase 45: Transfer-aware mode (transfer suggestions)', () => {
     useMyTeamMock.mockReturnValue({ data: undefined })
     setupValidLineup()
     suggestTransfersMock.mockClear()
-    render(<OptimiserPanel teamId="1234567" />)
+    const { container } = render(<OptimiserPanel teamId="1234567" />)
+    clickOptimiseIfPresent(container)
     // suggestTransfers should have been called at least once with sellPrices being a Map of size 0
     const calls = suggestTransfersMock.mock.calls
     expect(calls.length).toBeGreaterThan(0)
@@ -679,7 +708,8 @@ describe('Phase 46: Chip Modes (CHIP-01, CHIP-02, CHIP-03)', () => {
       budgetUsed: 800,
     }
     buildOptimalSquadMock.mockReturnValue(mockChipResult)
-    const { getByTestId } = render(<OptimiserPanel teamId="123" />)
+    const { container, getByTestId } = render(<OptimiserPanel teamId="123" />)
+    clickOptimiseIfPresent(container)
     fireEvent.click(getByTestId('chip-toggle-wildcard-mock'))
     expect(getByTestId('chip-squad-view-mock')).toBeTruthy()
     expect(getByTestId('chip-squad-view-mock').getAttribute('data-chipmode')).toBe('wildcard')
@@ -688,8 +718,9 @@ describe('Phase 46: Chip Modes (CHIP-01, CHIP-02, CHIP-03)', () => {
   it('activating Wildcard hides the FT toggle (D-02, Pitfall 3)', () => {
     setupValidLineup()
     buildOptimalSquadMock.mockReturnValue({ squad: [], bestXI: [], formation: '4-3-3', budgetUsed: 800 })
-    const { queryByTestId, getByTestId } = render(<OptimiserPanel teamId="123" />)
-    // FT toggle visible initially (None mode)
+    const { container, queryByTestId, getByTestId } = render(<OptimiserPanel teamId="123" />)
+    clickOptimiseIfPresent(container)
+    // FT toggle visible after optimise (None mode)
     expect(queryByTestId('ft-toggle')).toBeTruthy()
     fireEvent.click(getByTestId('chip-toggle-wildcard-mock'))
     // FT toggle hidden in WC mode
@@ -699,7 +730,8 @@ describe('Phase 46: Chip Modes (CHIP-01, CHIP-02, CHIP-03)', () => {
   it('activating Free Hit renders ChipSquadView with chipMode="free-hit" (CHIP-02)', () => {
     setupValidLineup()
     buildOptimalSquadMock.mockReturnValue({ squad: [], bestXI: [], formation: '4-4-2', budgetUsed: 850 })
-    const { getByTestId } = render(<OptimiserPanel teamId="123" />)
+    const { container, getByTestId } = render(<OptimiserPanel teamId="123" />)
+    clickOptimiseIfPresent(container)
     fireEvent.click(getByTestId('chip-toggle-freehit-mock'))
     expect(getByTestId('chip-squad-view-mock').getAttribute('data-chipmode')).toBe('free-hit')
   })
@@ -707,7 +739,8 @@ describe('Phase 46: Chip Modes (CHIP-01, CHIP-02, CHIP-03)', () => {
   it('activating Bench Boost preserves comparison table and shows bb-headline-row (CHIP-03, D-13)', () => {
     setupValidLineup()
     computeBenchBoostXPtsMock.mockReturnValue(8.5)
-    const { getByTestId, queryByTestId } = render(<OptimiserPanel teamId="123" />)
+    const { container, getByTestId, queryByTestId } = render(<OptimiserPanel teamId="123" />)
+    clickOptimiseIfPresent(container)
     fireEvent.click(getByTestId('chip-toggle-benchboost-mock'))
     // Comparison table still rendered
     expect(getByTestId('comparison-table')).toBeTruthy()
@@ -719,7 +752,8 @@ describe('Phase 46: Chip Modes (CHIP-01, CHIP-02, CHIP-03)', () => {
   it('activating Bench Boost shows BB notice (D-15)', () => {
     setupValidLineup()
     computeBenchBoostXPtsMock.mockReturnValue(6.0)
-    const { getByTestId } = render(<OptimiserPanel teamId="123" />)
+    const { container, getByTestId } = render(<OptimiserPanel teamId="123" />)
+    clickOptimiseIfPresent(container)
     fireEvent.click(getByTestId('chip-toggle-benchboost-mock'))
     expect(getByTestId('bb-notice')).toBeTruthy()
     expect(getByTestId('bb-notice').textContent).toContain('All 15 players score points')
@@ -728,7 +762,8 @@ describe('Phase 46: Chip Modes (CHIP-01, CHIP-02, CHIP-03)', () => {
   it('activating Bench Boost shows bench-order-irrelevant note (BENCH-01 / D-11)', () => {
     setupValidLineup()
     computeBenchBoostXPtsMock.mockReturnValue(6.0)
-    const { getByTestId, queryByTestId } = render(<OptimiserPanel teamId="123" />)
+    const { container, getByTestId, queryByTestId } = render(<OptimiserPanel teamId="123" />)
+    clickOptimiseIfPresent(container)
     // Before BB activation: the bench-order note must be absent.
     expect(queryByTestId('bb-bench-order-note')).toBeNull()
     // Activate Bench Boost.
@@ -742,7 +777,8 @@ describe('Phase 46: Chip Modes (CHIP-01, CHIP-02, CHIP-03)', () => {
   it('activating Bench Boost keeps FT toggle visible (D-02)', () => {
     setupValidLineup()
     computeBenchBoostXPtsMock.mockReturnValue(5.0)
-    const { getByTestId } = render(<OptimiserPanel teamId="123" />)
+    const { container, getByTestId } = render(<OptimiserPanel teamId="123" />)
+    clickOptimiseIfPresent(container)
     fireEvent.click(getByTestId('chip-toggle-benchboost-mock'))
     expect(getByTestId('ft-toggle')).toBeTruthy()
   })
@@ -750,7 +786,8 @@ describe('Phase 46: Chip Modes (CHIP-01, CHIP-02, CHIP-03)', () => {
   it("buildOptimalSquad returning null shows amber warning banner (Claude's Discretion)", () => {
     setupValidLineup()
     buildOptimalSquadMock.mockReturnValue(null)
-    const { getByTestId } = render(<OptimiserPanel teamId="123" />)
+    const { container, getByTestId } = render(<OptimiserPanel teamId="123" />)
+    clickOptimiseIfPresent(container)
     fireEvent.click(getByTestId('chip-toggle-wildcard-mock'))
     expect(getByTestId('chip-squad-null-banner')).toBeTruthy()
   })
@@ -758,7 +795,8 @@ describe('Phase 46: Chip Modes (CHIP-01, CHIP-02, CHIP-03)', () => {
   it('Transfer Suggestions section is hidden when WC is active (D-03)', () => {
     setupValidLineup()
     buildOptimalSquadMock.mockReturnValue({ squad: [], bestXI: [], formation: '4-3-3', budgetUsed: 900 })
-    const { queryByTestId, getByTestId } = render(<OptimiserPanel teamId="123" />)
+    const { container, queryByTestId, getByTestId } = render(<OptimiserPanel teamId="123" />)
+    clickOptimiseIfPresent(container)
     fireEvent.click(getByTestId('chip-toggle-wildcard-mock'))
     expect(queryByTestId('transfer-suggestions-section')).toBeNull()
   })
@@ -770,13 +808,6 @@ describe('Phase 112: OPT-01 + TFR-02', () => {
     const { players, squadResp } = makeValidSquad()
     useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
     usePlayersMock.mockReturnValue({ data: players, isLoading: false })
-  }
-
-  // Helper: click the "Optimise Lineup" button if present (for backward compat in existing tests
-  // once the hasRun gate is wired in Task 2).
-  function clickOptimiseIfPresent(container: HTMLElement) {
-    const btn = container.querySelector('[data-testid="optimise-button"]') as HTMLButtonElement | null
-    if (btn) fireEvent.click(btn)
   }
 
   beforeEach(() => {
