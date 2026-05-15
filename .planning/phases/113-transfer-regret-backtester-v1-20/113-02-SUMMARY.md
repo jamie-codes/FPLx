@@ -138,6 +138,17 @@ None - plan executed smoothly with one blocking deviation handled inline.
 - `TransferRegretEntry` type available at `@/lib/types` for all consumers
 - No blockers
 
+## Self-Check: PASSED
+
+- FOUND: src/lib/regret.ts
+- FOUND: src/lib/regret.test.ts
+- FOUND: src/lib/types.ts
+- FOUND: .planning/phases/113-transfer-regret-backtester-v1-20/113-02-SUMMARY.md
+- FOUND: a42370b (test commit — RED)
+- FOUND: 5038e65 (feat commit — GREEN)
+- 25/25 vitest tests pass
+- tsc --noEmit: 0 errors
+
 ---
 *Phase: 113-transfer-regret-backtester-v1-20*
 *Completed: 2026-05-15*
