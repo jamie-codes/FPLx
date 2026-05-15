@@ -1480,7 +1480,7 @@ Plans:
   - [x] 111-01-PLAN.md — FIX-01 data layer: extend ClubForm with current_gw_played, populate from finished current-GW fixtures in computeClubForm, pass bootstrap.events through /api/club-form route (TDD)
   - [x] 111-02-PLAN.md — FIX-01 render layer: extend FixtureHeatMap with byTeamGwPlayed map and three-way cell branch (true BGW / played single / played DGW), dimmed via opacity-40 with "— Played" tooltip (TDD)
   - [x] 111-03-PLAN.md — FIX-02 engine guard + audit: position-lock regression tests (single + combo), defensive element_type guard at suggestTransfers entry per D-09, FIX-02 annotations on all 4 call sites (TDD)
-  - [ ] 111-04-PLAN.md — FIX-01 gap closure: add partially-played DGW render branch (fixtures.length === 1 AND playedFixtures.length >= 1) in FixtureHeatMap with mixed-state tooltip; harden CR-02 fallback-sort in club-form.ts (TDD)
+  - [x] 111-04-PLAN.md — FIX-01 gap closure: add partially-played DGW render branch (fixtures.length === 1 AND playedFixtures.length >= 1) in FixtureHeatMap with mixed-state tooltip; harden CR-02 fallback-sort in club-form.ts (TDD)
 **UI hint**: yes
 **Phase notes**: Two unrelated bugs combined because both are short, isolated, engine/data-layer fixes in adjacent code areas (fixture heatmap aggregation, transfer suggestion engine). FIX-01 root cause likely sits in `FixtureHeatMap` BGW detection logic (`fixtures.length === 0` vs `fixtures.filter(f => f.finished === false).length === 0`). FIX-02 root cause is likely missing or wrong position filter in `suggestTransfers` / planner candidate selection — every existing call site should be audited because v1.6 onwards added several new paths (RouteTree, Manual Plan, GW-targeted scoring) that may have regressed the v1.0 position lock.
 
@@ -1585,6 +1585,6 @@ Plans:
 | 108 | v1.19 | 3/3 | Complete    | 2026-05-14 |
 | 109 | v1.19 | 2/2 | Complete    | 2026-05-14 |
 | 110 | v1.20 | 4/4 | Complete    | 2026-05-14 |
-| 111 | v1.20 | 3/3 | Complete   | 2026-05-15 |
+| 111 | v1.20 | 4/4 | Complete   | 2026-05-15 |
 | 112 | v1.20 | 0 | Not started | - |
 | 113 | v1.20 | 0 | Not started | - |
