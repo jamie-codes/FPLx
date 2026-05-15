@@ -558,6 +558,59 @@ describe('Phase 101 GWT-01: targetGw parameter', () => {
   })
 })
 
+// Phase 111 FIX-02 — Position lock regression
+describe('Phase 111 FIX-02: Position lock invariants', () => {
+  it('FIX-02 regression: single suggestions never produce a buy of different position than the sell', () => {
+    const { picks, players } = makeValidSquad()
+    // Inject strong candidates — one per position. ids 20-23, teams 10-13 (no team cap collision).
+    const strongGk = makePlayer({ id: 20, element_type: 1, xPts_1gw: 9.0, team: 10 })
+    const strongDef = makePlayer({ id: 21, element_type: 2, xPts_1gw: 8.5, team: 11 })
+    const strongMid = makePlayer({ id: 22, element_type: 3, xPts_1gw: 8.0, team: 12 })
+    const strongFwd = makePlayer({ id: 23, element_type: 4, xPts_1gw: 7.5, team: 13 })
+    const result = suggestTransfers({
+      currentPicks: picks,
+      players: [...players, strongGk, strongDef, strongMid, strongFwd],
+      horizon: 1,
+      ftCount: 1,
+      bank: 1000,
+    })
+    const singles = result.filter(s => s.kind === 'single')
+    expect(singles.length).toBeGreaterThan(0)
+    for (const sug of singles) {
+      if (sug.kind === 'single') {
+        // Position lock invariant: sell and buy must be same element_type
+        expect(sug.sell.element_type).toBe(sug.buy.element_type)
+      }
+    }
+  })
+
+  it('FIX-02 regression: combo suggestions never mix positions in any leg', () => {
+    const { picks, players } = makeValidSquad()
+    const strongGk = makePlayer({ id: 20, element_type: 1, xPts_1gw: 9.0, team: 10 })
+    const strongDef = makePlayer({ id: 21, element_type: 2, xPts_1gw: 8.5, team: 11 })
+    const strongMid = makePlayer({ id: 22, element_type: 3, xPts_1gw: 8.0, team: 12 })
+    const strongFwd = makePlayer({ id: 23, element_type: 4, xPts_1gw: 7.5, team: 13 })
+    const result = suggestTransfers({
+      currentPicks: picks,
+      players: [...players, strongGk, strongDef, strongMid, strongFwd],
+      horizon: 1,
+      ftCount: 1,
+      bank: 1000,
+    })
+    const combos = result.filter(s => s.kind === 'combo')
+    // Skip assertion if engine produces no combos (combos require 2 affordable positive-gain legs)
+    if (combos.length === 0) return
+    for (const sug of combos) {
+      if (sug.kind === 'combo') {
+        for (const leg of sug.transfers) {
+          // Per-leg position lock: sell and buy in each leg must share element_type
+          expect(leg.sell.element_type).toBe(leg.buy.element_type)
+        }
+      }
+    }
+  })
+})
+
 describe('Phase 74: Bank constraint (TFX-05)', () => {
   it('respects bank parameter in tenths — over-budget buy not returned as top suggestion', () => {
     // bank = 0 tenths (£0m). Buy candidate now_cost=60 (£6m). Squad player sell value = now_cost=50.
