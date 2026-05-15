@@ -1493,7 +1493,7 @@ Plans:
   2. User can click the "Optimise Lineup" button and the optimiser computes and renders results as before, with all existing controls (1/3/5 GW horizon, chip modes, captain/VC) functioning identically to pre-fix behaviour
   3. User can open the Squad → Transfers sub-tab and see at most 3 buy candidates per position slot in the transfer suggestion list — ranked by gem delta descending with affordable candidates first, surplus candidates truncated
 **Plans**: 3 plans
-  - [ ] 112-01-PLAN.md — capByPosition pure utility + tests (TFR-02 foundation)
+  - [x] 112-01-PLAN.md — capByPosition pure utility + tests (TFR-02 foundation)
   - [ ] 112-02-PLAN.md — OptimiserPanel: OPT-01 button gate + TFR-02 cap/footnote in transferSuggestions
   - [ ] 112-03-PLAN.md — TransferPanel + OpportunityCostTable: TFR-02 cap/footnote in ocsSuggestions
 **UI hint**: yes
@@ -1589,5 +1589,5 @@ Plans:
 | 109 | v1.19 | 2/2 | Complete    | 2026-05-14 |
 | 110 | v1.20 | 4/4 | Complete    | 2026-05-14 |
 | 111 | v1.20 | 4/4 | Complete    | 2026-05-15 |
-| 112 | v1.20 | 0 | Not started | - |
+| 112 | v1.20 | 1/3 | In progress | - |
 | 113 | v1.20 | 0 | Not started | - |
