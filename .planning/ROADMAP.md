@@ -1476,7 +1476,10 @@ Plans:
   1. User can view the fixture heat map mid-week when their team has already played the current gameweek and see the current GW cell render that team’s completed fixture (or a "played" state), NOT a false BGW indicator
   2. User can open the transfer planner, select a player to transfer out, and see only buy candidates of the same position (no MID candidates suggested for a GK sell, no FWD candidates for a DEF sell, etc.)
   3. Position-lock is enforced everywhere `suggestTransfers` / planner candidate ranking surfaces a buy suggestion — Squad Transfers, Manual Plan, Route Tree, Decision Summary OCS sells, all honour the same rule
-**Plans**: TBD
+**Plans**: 3 plans
+  - [ ] 111-01-PLAN.md — FIX-01 data layer: extend ClubForm with current_gw_played, populate from finished current-GW fixtures in computeClubForm, pass bootstrap.events through /api/club-form route (TDD)
+  - [ ] 111-02-PLAN.md — FIX-01 render layer: extend FixtureHeatMap with byTeamGwPlayed map and three-way cell branch (true BGW / played single / played DGW), dimmed via opacity-40 with "— Played" tooltip (TDD)
+  - [ ] 111-03-PLAN.md — FIX-02 engine guard + audit: position-lock regression tests (single + combo), defensive element_type guard at suggestTransfers entry per D-09, FIX-02 annotations on all 4 call sites (TDD)
 **UI hint**: yes
 **Phase notes**: Two unrelated bugs combined because both are short, isolated, engine/data-layer fixes in adjacent code areas (fixture heatmap aggregation, transfer suggestion engine). FIX-01 root cause likely sits in `FixtureHeatMap` BGW detection logic (`fixtures.length === 0` vs `fixtures.filter(f => f.finished === false).length === 0`). FIX-02 root cause is likely missing or wrong position filter in `suggestTransfers` / planner candidate selection — every existing call site should be audited because v1.6 onwards added several new paths (RouteTree, Manual Plan, GW-targeted scoring) that may have regressed the v1.0 position lock.
 
