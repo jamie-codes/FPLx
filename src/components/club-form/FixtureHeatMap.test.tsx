@@ -33,7 +33,7 @@ function fix(opts: { opp: string; home: boolean; gw: number; tier: DifficultyTie
   }
 }
 
-function team(id: number, short: string, fixtures: ClubFormFixture[]): ClubForm {
+function team(id: number, short: string, fixtures: ClubFormFixture[], playedFixtures: ClubFormFixture[] = []): ClubForm {
   return {
     team_id: id,
     team_name: `Team ${short}`,
@@ -41,6 +41,7 @@ function team(id: number, short: string, fixtures: ClubFormFixture[]): ClubForm 
     wins: 0, draws: 0, losses: 0,
     goals_scored: 0, goals_conceded: 0,
     upcoming_fixtures: fixtures,
+    current_gw_played: playedFixtures,
     attacking_ease_1gw: null, attacking_ease_3gw: null, attacking_ease_5gw: null,
     defensive_ease_1gw: null, defensive_ease_3gw: null, defensive_ease_5gw: null,
     // Phase 47 swing fields — set to null; not consumed by this component
@@ -416,5 +417,80 @@ describe('FixtureHeatMap', () => {
       const hasFallback = th.querySelector('span.rounded-full') !== null || th.querySelector('[aria-label*="fallback"]') !== null
       expect(hasCrest || hasFallback).toBe(true)
     })
+  })
+
+  // ===========================================================================
+  // Phase 111 FIX-01 — Played cell rendering
+  // ===========================================================================
+
+  it('FIX-01: played cell renders with difficulty color at opacity-40 and "— Played" tooltip', () => {
+    const playedFix = fix({ opp: 'MCI', home: true, gw: 35, tier: 'easy' })
+    const data: ClubForm[] = [
+      team(1, 'ARS', [], [playedFix]),   // ARS played GW35, nothing upcoming
+      team(2, 'CHE', [fix({ opp: 'BHA', home: true, gw: 35, tier: 'medium' })]),
+    ]
+    mockUseClubForm.mockReturnValue({ data, isLoading: false, error: null })
+    const { container } = render(<FixtureHeatMap />)
+    const arsRow = container.querySelector('tbody tr:nth-child(1)')!
+    const arsCell = arsRow.querySelectorAll('td')[0]
+    expect(arsCell.getAttribute('title')).toBe('MCI (H) — Played')
+    expect(arsCell.className).toMatch(/opacity-40/)
+    expect(arsCell.className).toMatch(/bg-green-100|bg-green-900/)  // difficulty color preserved
+  })
+
+  it('FIX-01: played cell is visually distinct from BGW cell (not bg-zinc-50, not "No fixture (BGW)")', () => {
+    const playedFix = fix({ opp: 'MCI', home: true, gw: 35, tier: 'easy' })
+    const data: ClubForm[] = [
+      team(1, 'ARS', [], [playedFix]),
+      team(2, 'CHE', [fix({ opp: 'BHA', home: true, gw: 35, tier: 'medium' })]),
+    ]
+    mockUseClubForm.mockReturnValue({ data, isLoading: false, error: null })
+    const { container } = render(<FixtureHeatMap />)
+    const arsRow = container.querySelector('tbody tr:nth-child(1)')!
+    const arsCell = arsRow.querySelectorAll('td')[0]
+    expect(arsCell.className).not.toMatch(/bg-zinc-50/)
+    expect(arsCell.getAttribute('title')).not.toBe('No fixture (BGW)')
+  })
+
+  it('FIX-01: true BGW cell unchanged — blank, bg-zinc-50, "No fixture (BGW)"', () => {
+    const data: ClubForm[] = [
+      team(1, 'ARS', [], []),  // no upcoming, no played → true BGW
+      team(2, 'CHE', [fix({ opp: 'BHA', home: true, gw: 35, tier: 'medium' })]),
+    ]
+    mockUseClubForm.mockReturnValue({ data, isLoading: false, error: null })
+    const { container } = render(<FixtureHeatMap />)
+    const arsRow = container.querySelector('tbody tr:nth-child(1)')!
+    const arsCell = arsRow.querySelectorAll('td')[0]
+    expect(arsCell.className).toMatch(/bg-zinc-50/)
+    expect(arsCell.getAttribute('title')).toBe('No fixture (BGW)')
+    expect(arsCell.textContent?.trim()).toBe('')
+  })
+
+  it('FIX-01: allEventIds includes played GW event_id when all teams have played (no upcoming)', () => {
+    const playedFix = fix({ opp: 'MCI', home: true, gw: 35, tier: 'easy' })
+    const data: ClubForm[] = [
+      team(1, 'ARS', [], [playedFix]),
+      team(2, 'CHE', [], [fix({ opp: 'BHA', home: false, gw: 35, tier: 'medium' })]),
+    ]
+    mockUseClubForm.mockReturnValue({ data, isLoading: false, error: null })
+    const { container } = render(<FixtureHeatMap />)
+    const colHeaders = Array.from(container.querySelectorAll('thead th')).slice(1).map(h => h.textContent?.trim())
+    expect(colHeaders).toContain('GW35')
+  })
+
+  it('FIX-01: DGW played cell uses split-cell gradient with opacity-40', () => {
+    const data: ClubForm[] = [
+      team(1, 'ARS', [], [
+        fix({ opp: 'MCI', home: true, gw: 35, tier: 'easy' }),
+        fix({ opp: 'CHE', home: false, gw: 35, tier: 'hard' }),
+      ]),
+    ]
+    mockUseClubForm.mockReturnValue({ data, isLoading: false, error: null })
+    const { container } = render(<FixtureHeatMap />)
+    const arsRow = container.querySelector('tbody tr:nth-child(1)')!
+    const arsCell = arsRow.querySelectorAll('td')[0]
+    expect(arsCell.className).toMatch(/opacity-40/)
+    const style = arsCell.getAttribute('style') ?? ''
+    expect(style).toContain('linear-gradient')
   })
 })
