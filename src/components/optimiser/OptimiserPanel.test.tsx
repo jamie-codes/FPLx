@@ -763,3 +763,145 @@ describe('Phase 46: Chip Modes (CHIP-01, CHIP-02, CHIP-03)', () => {
     expect(queryByTestId('transfer-suggestions-section')).toBeNull()
   })
 })
+
+describe('Phase 112: OPT-01 + TFR-02', () => {
+  // Shared valid lineup fixture (reuse from Phase 45 pattern)
+  function setupValidLineup() {
+    const { players, squadResp } = makeValidSquad()
+    useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
+    usePlayersMock.mockReturnValue({ data: players, isLoading: false })
+  }
+
+  // Helper: click the "Optimise Lineup" button if present (for backward compat in existing tests
+  // once the hasRun gate is wired in Task 2).
+  function clickOptimiseIfPresent(container: HTMLElement) {
+    const btn = container.querySelector('[data-testid="optimise-button"]') as HTMLButtonElement | null
+    if (btn) fireEvent.click(btn)
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // Default mock state (same as global beforeEach)
+    useAuthStatusMock.mockReturnValue({ isAuthenticated: false, isLoading: false })
+    useMyTeamMock.mockReturnValue({ data: undefined })
+    suggestTransfersMock.mockReturnValue([])
+    buildOptimalSquadMock.mockReturnValue(null)
+    computeBenchBoostXPtsMock.mockReturnValue(0)
+  })
+
+  // OPT-01 test 1: ready-state placeholder visible on mount (hasRun === false)
+  it("renders ready-state placeholder with 'Optimise Lineup' button on tab mount (hasRun === false default)", () => {
+    setupValidLineup()
+    const { container } = render(<OptimiserPanel teamId="1234567" />)
+    expect(container.querySelector('[data-testid="optimiser-ready-state"]')).not.toBeNull()
+    const btn = container.querySelector('[data-testid="optimise-button"]') as HTMLButtonElement | null
+    expect(btn).not.toBeNull()
+    expect(btn!.textContent?.trim()).toBe('Optimise Lineup')
+  })
+
+  // OPT-01 test 2: engine not called before button click (no comparison table)
+  it('does NOT call optimiseLineup engine before button click', () => {
+    setupValidLineup()
+    suggestTransfersMock.mockClear()
+    const { container } = render(<OptimiserPanel teamId="1234567" />)
+    expect(container.querySelector('[data-testid="comparison-table"]')).toBeNull()
+    expect(container.querySelector('[data-testid="headline-row"]')).toBeNull()
+    expect(container.querySelector('[data-testid="optimiser-ready-state"]')).not.toBeNull()
+  })
+
+  // OPT-01 test 3: controls visible above the placeholder pre-click (D-01)
+  it('controls (GwToggle, ChipModeToggle) are rendered above the placeholder pre-click (D-01)', () => {
+    setupValidLineup()
+    const { container } = render(<OptimiserPanel teamId="1234567" />)
+    expect(container.querySelector('[data-testid="chip-mode-toggle-mock"]')).not.toBeNull()
+    const gwBtn = Array.from(container.querySelectorAll('button')).find(
+      b => /^Next 1 GW$|^Next 3 GWs$|^Next 5 GWs$/.test(b.textContent?.trim() ?? '')
+    )
+    expect(gwBtn).toBeTruthy()
+  })
+
+  // OPT-01 test 4: clicking button shows comparison-table and removes ready-state (D-03)
+  it("clicking 'Optimise Lineup' renders comparison-table and removes ready-state placeholder (D-03)", () => {
+    setupValidLineup()
+    const { container } = render(<OptimiserPanel teamId="1234567" />)
+    const btn = container.querySelector('[data-testid="optimise-button"]') as HTMLButtonElement
+    fireEvent.click(btn)
+    expect(container.querySelector('[data-testid="optimiser-ready-state"]')).toBeNull()
+    expect(container.querySelector('[data-testid="comparison-table"]')).not.toBeNull()
+  })
+
+  // OPT-01 test 5: after click, changing horizon does NOT re-show the button (D-03 re-trigger policy)
+  it('after click, changing horizon re-computes WITHOUT re-showing the button (D-03 re-trigger policy)', () => {
+    setupValidLineup()
+    const { container } = render(<OptimiserPanel teamId="1234567" />)
+    const optimiseBtn = container.querySelector('[data-testid="optimise-button"]') as HTMLButtonElement
+    fireEvent.click(optimiseBtn)
+    expect(container.querySelector('[data-testid="optimiser-ready-state"]')).toBeNull()
+    expect(container.querySelector('[data-testid="comparison-table"]')).not.toBeNull()
+    const fiveGwBtn = Array.from(container.querySelectorAll('button')).find(
+      b => b.textContent?.trim() === 'Next 5 GWs'
+    )
+    expect(fiveGwBtn).toBeTruthy()
+    fireEvent.click(fiveGwBtn!)
+    expect(container.querySelector('[data-testid="optimiser-ready-state"]')).toBeNull()
+    expect(container.querySelector('[data-testid="comparison-table"]')).not.toBeNull()
+  })
+
+  // TFR-02 test 1: capByPosition(3) applied — at most 3 rows per element_type
+  it('applies capByPosition(3) to transferSuggestions and renders at most 3 rows per element_type', () => {
+    setupValidLineup()
+    // 5 MID singles (element_type=3) with distinct xPtsGain: 10,9,8,7,6
+    const midSuggestions = [10, 9, 8, 7, 6].map((xPtsGain, i) => ({
+      kind: 'single' as const,
+      sell: makePlayer({ id: i + 101, element_type: 3 as const }),
+      buy: makePlayer({ id: i + 1, element_type: 3 as const }),
+      cost: 0,
+      xPtsGain,
+      xPtsGainPerGw: xPtsGain,
+      breakEvenGws: null,
+    }))
+    suggestTransfersMock.mockReturnValue(midSuggestions)
+    const { container } = render(<OptimiserPanel teamId="1234567" />)
+    const btn = container.querySelector('[data-testid="optimise-button"]') as HTMLButtonElement
+    fireEvent.click(btn)
+    expect(container.querySelectorAll('[data-testid="suggestion-row"]').length).toBe(3)
+  })
+
+  // TFR-02 test 2: cap-footnote-MID renders with correct copy when MID bucket truncated (D-07)
+  it('renders cap-footnote-MID with correct copy when MID bucket truncated (D-07)', () => {
+    setupValidLineup()
+    const midSuggestions = [10, 9, 8, 7, 6].map((xPtsGain, i) => ({
+      kind: 'single' as const,
+      sell: makePlayer({ id: i + 101, element_type: 3 as const }),
+      buy: makePlayer({ id: i + 1, element_type: 3 as const }),
+      cost: 0,
+      xPtsGain,
+      xPtsGainPerGw: xPtsGain,
+      breakEvenGws: null,
+    }))
+    suggestTransfersMock.mockReturnValue(midSuggestions)
+    const { container } = render(<OptimiserPanel teamId="1234567" />)
+    const btn = container.querySelector('[data-testid="optimise-button"]') as HTMLButtonElement
+    fireEvent.click(btn)
+    const footnote = container.querySelector('[data-testid="cap-footnote-MID"]')
+    expect(footnote).not.toBeNull()
+    expect(footnote!.textContent?.trim()).toBe('Showing top 3 of 5 MID suggestions.')
+  })
+
+  // TFR-02 test 3: no cap-footnote elements when every bucket has ≤ 3 (D-07 silent)
+  it('renders NO cap-footnote elements when every bucket has ≤ 3 (D-07 silent)', () => {
+    setupValidLineup()
+    // 2 MID singles + 2 DEF singles (all ≤ 3 per bucket)
+    const suggestions = [
+      { kind: 'single' as const, sell: makePlayer({ id: 101, element_type: 3 as const }), buy: makePlayer({ id: 1, element_type: 3 as const }), cost: 0, xPtsGain: 5, xPtsGainPerGw: 5, breakEvenGws: null },
+      { kind: 'single' as const, sell: makePlayer({ id: 102, element_type: 3 as const }), buy: makePlayer({ id: 2, element_type: 3 as const }), cost: 0, xPtsGain: 4, xPtsGainPerGw: 4, breakEvenGws: null },
+      { kind: 'single' as const, sell: makePlayer({ id: 103, element_type: 2 as const }), buy: makePlayer({ id: 3, element_type: 2 as const }), cost: 0, xPtsGain: 3, xPtsGainPerGw: 3, breakEvenGws: null },
+      { kind: 'single' as const, sell: makePlayer({ id: 104, element_type: 2 as const }), buy: makePlayer({ id: 4, element_type: 2 as const }), cost: 0, xPtsGain: 2, xPtsGainPerGw: 2, breakEvenGws: null },
+    ]
+    suggestTransfersMock.mockReturnValue(suggestions)
+    const { container } = render(<OptimiserPanel teamId="1234567" />)
+    const btn = container.querySelector('[data-testid="optimise-button"]') as HTMLButtonElement
+    fireEvent.click(btn)
+    expect(container.querySelectorAll('[data-testid^="cap-footnote-"]').length).toBe(0)
+  })
+})
