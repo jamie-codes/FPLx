@@ -33,7 +33,7 @@ export async function GET() {
 
     const fixtures = JSON.parse(fixturesRaw)
     const bootstrap = JSON.parse(bootstrapRaw)
-    const data = computeClubForm({ teams: bootstrap.teams }, fixtures)
+    const data = computeClubForm({ teams: bootstrap.teams, events: bootstrap.events }, fixtures)
 
     return Response.json(data, {
       headers: {
