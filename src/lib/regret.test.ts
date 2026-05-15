@@ -4,8 +4,8 @@
 //   .planning/phases/96-captain-decision-backtester/96-CONTEXT.md §D-06
 //   .planning/phases/96-captain-decision-backtester/096-PATTERNS.md §src/lib/regret.ts
 import { describe, it, expect } from 'vitest'
-import { computeRegret, computeSeasonSummary } from './regret'
-import type { RegretEntry } from './types'
+import { computeRegret, computeSeasonSummary, computeTransferDelta, computeTransferSeasonSummary } from './regret'
+import type { RegretEntry, TransferRegretEntry } from '@/lib/types'
 
 function entry(gw: number, regret: number | null): RegretEntry {
   return {
@@ -101,5 +101,116 @@ describe('computeSeasonSummary — aggregates RegretEntry array', () => {
     expect(summary.tied).toBe(3)
     expect(summary.captainHits).toBe(3)
     expect(summary.captainHitRate).toBe(1)
+  })
+})
+
+// Phase 113 BACK-02: Transfer regret math primitives (TDD RED).
+// computeTransferDelta and computeTransferSeasonSummary are not yet exported from
+// regret.ts — these tests MUST fail until Task 2 (GREEN) adds the implementations.
+
+describe('computeTransferDelta', () => {
+  it('returns null when engineBuyPts is empty (no snapshot signal)', () => {
+    expect(computeTransferDelta([], [], null, null)).toBeNull()
+  })
+
+  it('returns engine counterfactual gain (rounded 1dp) when user held (userBuyPts null)', () => {
+    // engine: sell 3pts player, buy 12pts player → engineGain = 12-3 = 9
+    expect(computeTransferDelta([12], [3], null, null)).toBe(9.0)
+  })
+
+  it('returns engine counterfactual gain when only userBuyPts is null (defensive hold path)', () => {
+    // Only one of userBuyPts/userSellPts is null → same as full hold path
+    expect(computeTransferDelta([12], [3], null, [3])).toBe(9.0)
+  })
+
+  it('returns engine counterfactual gain when only userSellPts is null (defensive hold path)', () => {
+    expect(computeTransferDelta([12], [3], [6], null)).toBe(9.0)
+  })
+
+  it('1-FT case: delta = engine gain - user gain', () => {
+    // engine: sell 3, buy 12 → engineGain = 9
+    // user:   sell 3, buy 6  → userGain = 3
+    // delta = 9 - 3 = 6
+    expect(computeTransferDelta([12], [3], [6], [3])).toBe(6.0)
+  })
+
+  it('2-FT case: sums across both legs', () => {
+    // engine: sell [3,4], buy [12,5] → engineGain = (12+5) - (3+4) = 10
+    // user:   sell [3,1], buy [6,2]  → userGain = (6+2) - (3+1) = 4
+    // delta = 10 - 4 = 6
+    expect(computeTransferDelta([12, 5], [3, 4], [6, 2], [3, 1])).toBe(6.0)
+  })
+
+  it('rounds to 1dp to eliminate float noise (matches WR-01 convention)', () => {
+    // engineGain = 1.23 - 0 = 1.23 → rounded to 1dp = 1.2
+    expect(computeTransferDelta([1.23], [0], null, null)).toBe(1.2)
+  })
+
+  it('negative delta: user made better transfer (user better → green in UI)', () => {
+    // engine: sell 5, buy 2 → engineGain = 2 - 5 = -3
+    // user:   sell 5, buy 10 → userGain = 10 - 5 = 5
+    // delta = -3 - 5 = -8 (user better)
+    expect(computeTransferDelta([2], [5], [10], [5])).toBe(-8.0)
+  })
+})
+
+describe('computeTransferSeasonSummary', () => {
+  function tEntry(gw: number, delta: number | null): TransferRegretEntry {
+    return {
+      gw,
+      hasSnapshot: delta !== null,
+      engineSell: null, engineBuy: null,
+      engineSellPts: null, engineBuyPts: null,
+      isHold: false,
+      userSell: null, userBuy: null,
+      userSellPts: null, userBuyPts: null,
+      delta,
+    }
+  }
+
+  it('empty array returns zeroed summary', () => {
+    expect(computeTransferSeasonSummary([])).toEqual({
+      totalDelta: 0, gwsWithData: 0, engineBetter: 0, userBetter: 0, tied: 0,
+    })
+  })
+
+  it('skips entries where delta is null', () => {
+    const entries = [tEntry(1, null), tEntry(2, null)]
+    const summary = computeTransferSeasonSummary(entries)
+    expect(summary.gwsWithData).toBe(0)
+    expect(summary.totalDelta).toBe(0)
+    expect(summary.engineBetter).toBe(0)
+  })
+
+  it('delta > 0 increments engineBetter', () => {
+    const entries = [tEntry(1, 5.0), tEntry(2, 3.0)]
+    const summary = computeTransferSeasonSummary(entries)
+    expect(summary.engineBetter).toBe(2)
+    expect(summary.userBetter).toBe(0)
+    expect(summary.tied).toBe(0)
+    expect(summary.gwsWithData).toBe(2)
+  })
+
+  it('delta < 0 increments userBetter', () => {
+    const entries = [tEntry(1, -4.0)]
+    const summary = computeTransferSeasonSummary(entries)
+    expect(summary.userBetter).toBe(1)
+    expect(summary.engineBetter).toBe(0)
+  })
+
+  it('delta === 0 increments tied', () => {
+    const entries = [tEntry(1, 0)]
+    const summary = computeTransferSeasonSummary(entries)
+    expect(summary.tied).toBe(1)
+    expect(summary.userBetter).toBe(0)
+    expect(summary.engineBetter).toBe(0)
+  })
+
+  it('totalDelta sums non-null deltas and rounds to 1dp', () => {
+    // 1.23 + 2.34 = 3.57 → rounded to 1dp = 3.6
+    const entries = [tEntry(1, 1.23), tEntry(2, 2.34)]
+    const summary = computeTransferSeasonSummary(entries)
+    expect(summary.totalDelta).toBe(3.6)
+    expect(summary.gwsWithData).toBe(2)
   })
 })

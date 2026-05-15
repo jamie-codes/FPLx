@@ -27,6 +27,7 @@ function makeClubForm(team_id: number, fixtures: ClubFormFixture[]): ClubForm {
     team_id, team_name: `Team${team_id}`, team_short_name: `T${team_id}`,
     wins: 0, draws: 0, losses: 0, goals_scored: 0, goals_conceded: 0,
     upcoming_fixtures: fixtures,
+    current_gw_played: [],   // Phase 111 FIX-01
     attacking_ease_1gw: null, attacking_ease_3gw: null, attacking_ease_5gw: null,
     defensive_ease_1gw: null, defensive_ease_3gw: null, defensive_ease_5gw: null,
     past_ease_3gw: null, swing_1gw: null, swing_3gw: null, swing_5gw: null,

@@ -39,6 +39,7 @@ function makeClubForm(overrides: Partial<ClubForm> & { team_id: number; team_sho
     team_short_name: overrides.team_short_name,
     wins: 0, draws: 0, losses: 0, goals_scored: 0, goals_conceded: 0,
     upcoming_fixtures: overrides.upcoming_fixtures ?? [],
+    current_gw_played: overrides.current_gw_played ?? [],   // Phase 111 FIX-01
     attacking_ease_1gw: overrides.attacking_ease_1gw ?? null,
     attacking_ease_3gw: overrides.attacking_ease_3gw ?? null,
     attacking_ease_5gw: overrides.attacking_ease_5gw ?? null,

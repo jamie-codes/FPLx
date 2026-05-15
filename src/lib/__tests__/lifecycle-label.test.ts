@@ -87,6 +87,7 @@ function makeClubForm(overrides: Partial<ClubForm> = {}): ClubForm {
     goals_scored: 8,
     goals_conceded: 5,
     upcoming_fixtures: [],
+    current_gw_played: [],   // Phase 111 FIX-01
     attacking_ease_1gw: 0.5,
     attacking_ease_3gw: 0.5,
     attacking_ease_5gw: 0.5,

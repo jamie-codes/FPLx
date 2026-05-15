@@ -38,8 +38,15 @@ interface RawTeam {
   short_name: string
 }
 
+interface RawEvent {
+  id: number
+  is_current: boolean
+  finished: boolean
+}
+
 interface RawBootstrap {
   teams: RawTeam[]
+  events?: RawEvent[]
 }
 
 export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[]): ClubForm[] {
@@ -127,6 +134,50 @@ export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[])
     }
   }
 
+  // Phase 111 FIX-01: Derive current GW from events (is_current flag; fallback to last finished).
+  const currentGw: number | null =
+    bootstrap.events?.find(e => e.is_current)?.id ??
+    bootstrap.events?.filter(e => e.finished).sort((a, b) => a.id - b.id).slice(-1)[0]?.id ??
+    null
+
+  // Phase 111 FIX-01: Build current_gw_played — finished fixtures from active GW per team.
+  const teamPlayedCurrentGw = new Map<number, ClubFormFixture[]>()
+  for (const t of teams.keys()) teamPlayedCurrentGw.set(t, [])
+
+  if (currentGw !== null) {
+    const currentGwFinished = finished.filter(f => f.event === currentGw)
+    for (const fix of currentGwFinished) {
+      const hList = teamPlayedCurrentGw.get(fix.team_h)
+      if (hList) {
+        const opp = teams.get(fix.team_a)
+        const attDiff = fplToAttDiff(fix.team_h_difficulty)
+        hList.push({
+          opponent_team: opp?.short_name ?? String(fix.team_a),
+          is_home: true,
+          event_id: fix.event!,
+          difficulty_score: attDiff,
+          difficulty_tier: tier(attDiff),
+          attacking_difficulty: attDiff,
+          defensive_difficulty: defScore(fix.team_a),
+        })
+      }
+      const aList = teamPlayedCurrentGw.get(fix.team_a)
+      if (aList) {
+        const opp = teams.get(fix.team_h)
+        const attDiff = fplToAttDiff(fix.team_a_difficulty)
+        aList.push({
+          opponent_team: opp?.short_name ?? String(fix.team_h),
+          is_home: false,
+          event_id: fix.event!,
+          difficulty_score: attDiff,
+          difficulty_tier: tier(attDiff),
+          attacking_difficulty: attDiff,
+          defensive_difficulty: defScore(fix.team_h),
+        })
+      }
+    }
+  }
+
   // 5. Aggregate form stats from last WINDOW finished fixtures per team
   const result: ClubForm[] = []
   for (const [tId, t] of teams) {
@@ -173,6 +224,7 @@ export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[])
       goals_scored: gs,
       goals_conceded: gc,
       upcoming_fixtures: upcomingFx,
+      current_gw_played: teamPlayedCurrentGw.get(tId) ?? [],   // Phase 111 FIX-01
       // Phase 27 FIX-01 — per-team ease aggregates (null when window has zero fixtures — BGW)
       attacking_ease_1gw,
       attacking_ease_3gw,
