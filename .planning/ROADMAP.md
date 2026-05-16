@@ -1531,7 +1531,12 @@ Plans:
   2. User opens RouteTreeTab and sees the "Hits" column display the correct total hits count (matching the engine's totalHits field, not totalTransfers)
   3. User opens RouteTreeTab and sees a ChipToggle UI element that is visibly present but disabled, replacing the implicit null hardcode
   4. User opens GemTable and sees a rank trajectory sparkline mini-column showing the player's ownership rank trend across recent GWs, rendered as an inline SVG or Recharts sparkline
-**Plans**: TBD
+**Plans**: 3 plans (2 waves)
+  **Wave 1** *(parallel)*
+  - [ ] 114-01-PLAN.md -- ChipToggle disabled prop + RouteTreeTab: totalHits cell fix + disabled ChipToggle stub (TRT-01, TRT-02)
+  - [ ] 114-02-PLAN.md -- GemTable: rank_trajectory sparkline column in columns.tsx + MOBILE_HIDDEN_COLUMNS + compact preset (SPARK-01)
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 114-03-PLAN.md -- UAT-01 human visual checkpoint: BackTab dark mode, delta colour, multi-transfer format, captain separation (UAT-01)
 **UI hint**: yes
 
 ### Phase 115: Team News Wiring _(v1.21)_
