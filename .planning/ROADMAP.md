@@ -1533,8 +1533,8 @@ Plans:
   4. User opens GemTable and sees a rank trajectory sparkline mini-column showing the player's ownership rank trend across recent GWs, rendered as an inline SVG or Recharts sparkline
 **Plans**: 3 plans (2 waves)
   **Wave 1** *(parallel)*
-  - [ ] 114-01-PLAN.md -- ChipToggle disabled prop + RouteTreeTab: totalHits cell fix + disabled ChipToggle stub (TRT-01, TRT-02)
-  - [ ] 114-02-PLAN.md -- GemTable: rank_trajectory sparkline column in columns.tsx + MOBILE_HIDDEN_COLUMNS + compact preset (SPARK-01)
+  - [x] 114-01-PLAN.md -- ChipToggle disabled prop + RouteTreeTab: totalHits cell fix + disabled ChipToggle stub (TRT-01, TRT-02)
+  - [x] 114-02-PLAN.md -- GemTable: rank_trajectory sparkline column in columns.tsx + MOBILE_HIDDEN_COLUMNS + compact preset (SPARK-01)
   **Wave 2** *(blocked on Wave 1 completion)*
   - [ ] 114-03-PLAN.md -- UAT-01 human visual checkpoint: BackTab dark mode, delta colour, multi-transfer format, captain separation (UAT-01)
 **UI hint**: yes
