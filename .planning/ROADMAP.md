@@ -1522,7 +1522,7 @@ Plans:
 **UI hint**: yes
 **Phase notes**: Largest v1.20 phase. Requires Python (or TypeScript) port of the `suggestTransfers` recommendation rule so the pipeline can write `transfer_recommendation_gw{N}.json` to Vercel Blob as a durable snapshot trail (mirroring `captain_picks_gw{N}.json` from Phase 96). `/api/decision-history` extended to join the snapshot with the user’s `event_transfers` from authenticated FPL data + element-summary point totals. New `TransferRegretSection` component on the existing `BackTab` (do NOT add a new sub-tab). Pitfall to avoid: do NOT recommend transfers retroactively using *future* GW data — recommendation snapshot must use the data available at deadline minus 1 hour, so the regret comparison is honest. Carry-forward item BACK-02 from v1.19 Deferred Items is now resolved by this phase. BACK-03 (full transfer ROI tracker requiring a multi-GW persistent store) remains out of scope and stays in the v1.20 Out of Scope section.
 
-### Phase 114: Polish & Carry-Forward Fixes _(v1.21)_
+### ✅ Phase 114: Polish & Carry-Forward Fixes _(v1.21)_ — COMPLETE 2026-05-16
 **Goal**: Users see a corrected and enriched GemTable surface — the Transfer Route Tree "Hits" label shows the right number, a disabled ChipToggle stub is visible in RouteTreeTab, the Transfer Regret Backtester passes human UAT on all four visual dimensions, and GemTable gains a rank trajectory sparkline column so managers can see trend direction at a glance
 **Depends on**: Phase 113 (v1.20 complete; BACK-02 code delivered; rank_trajectory already in MergedPlayer)
 **Requirements**: UAT-01, TRT-01, TRT-02, SPARK-01
@@ -1536,7 +1536,7 @@ Plans:
   - [x] 114-01-PLAN.md -- ChipToggle disabled prop + RouteTreeTab: totalHits cell fix + disabled ChipToggle stub (TRT-01, TRT-02)
   - [x] 114-02-PLAN.md -- GemTable: rank_trajectory sparkline column in columns.tsx + MOBILE_HIDDEN_COLUMNS + compact preset (SPARK-01)
   **Wave 2** *(blocked on Wave 1 completion)*
-  - [ ] 114-03-PLAN.md -- UAT-01 human visual checkpoint: BackTab dark mode, delta colour, multi-transfer format, captain separation (UAT-01)
+  - [x] 114-03-PLAN.md -- UAT-01 human visual checkpoint: BackTab dark mode, delta colour, multi-transfer format, captain separation (UAT-01)
 **UI hint**: yes
 
 ### Phase 115: Team News Wiring _(v1.21)_
