@@ -4,7 +4,7 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
-v1.20 Phase 112 complete (2026-05-15) — OPT-01 + TFR-02: Optimiser tab now shows a calm empty state with 'Optimise Lineup' button; `hasRun` gate prevents auto-compute on tab load; controls remain interactive pre-click; post-click control changes re-trigger silently. `capByPosition(raw, 3)` pure utility caps transfer suggestions at top-3 per element_type bucket in both OptimiserPanel and TransferPanel/OpportunityCostTable; per-position `cap-footnote-{POS}` rendered when bucket exceeds limit. 67/67 Phase 112 tests GREEN. 14/14 must-haves verified. Engine untouched (D-05).
+v1.20 complete (2026-05-16) — Fixes & Decision Quality milestone shipped: 6 GW Review/history bugs fixed via liveMap sourcing (FIX-03/04/05/06), heatmap partially-played DGW cell fixed (FIX-01), position-lock enforced at all 4 suggestTransfers call sites (FIX-02), Optimiser on-demand with hasRun gate (OPT-01), capByPosition(raw,3) transfer cap (TFR-02), Transfer Regret Backtester wired end-to-end (BACK-02 — human UAT pending). 120 files, +17,166/−2,112 lines, 15 plans across 4 phases.
 
 v1.20 Phase 111 complete (2026-05-15) — FIX-01 + FIX-02: Partially-played DGW heatmap cell now surfaces played leg via tooltip suffix `'— Played'` (mixed-state branch in HeatMapRow, 2 new TDD tests). CR-02 fallback-sort hardened in `club-form.ts` (`.sort((a,b) => a.id-b.id)` before `.slice(-1)`, 1 regression test). Position-lock enforced at all 4 `suggestTransfers` call sites with `inPoolByPosition.get(sell.element_type)` + `VALID_ELEMENT_TYPES` guard. 37/37 plan-specific tests GREEN. Score 3/3 must-haves verified.
 
@@ -50,15 +50,11 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
-## Current Milestone: v1.20 Fixes & Decision Quality
+## Previous Milestone: v1.20 Fixes & Decision Quality (Complete 2026-05-16)
 
 **Goal:** Fix 6 data accuracy bugs across GW Review, fixture heatmap, planner, and decision history; add transfer regret backtester; make optimiser on-demand; limit transfer suggestions to top 3 per position.
 
-**Target features:**
-- FIX-01–06: Bug sweep — heatmap BGW false-positive for already-played GW, planner cross-position lock, GW Review top scorer points, best bench pts, dream team delta sign, decision history captain delta
-- BACK-02: Transfer regret backtester — per-GW what engine recommended vs what you did, with hindsight xPts delta
-- OPT-01: Lineup optimiser on-demand — "Optimise Lineup" button replaces auto-calculate on tab load
-- TFR-02: Transfer suggestions capped at top 3 candidates per position slot
+**Delivered:** 6 bug fixes via liveMap sourcing in `/api/gw-review` (FIX-03/04/05/06), heatmap mixed-state DGW cell (FIX-01), position-lock at all suggestTransfers call sites (FIX-02), `hasRun` gate + empty state on Optimiser (OPT-01), `capByPosition(raw,3)` transfer cap with per-position footnote (TFR-02), Transfer Regret Backtester full stack (BACK-02 — pipeline slim snapshot, computeTransferDelta, API extension, BackTab toggle + chart).
 
 ## Previous Milestone: v1.19 AI Quality & Insight Delivery (Complete 2026-05-14)
 
@@ -307,17 +303,21 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 - ✓ CACHE-01/02: `/api/player-insight` system prompt wrapped as `TextBlockParam[]` with `cache_control: ephemeral`; cache token metrics logged — v1.19
 - ✓ WR-01/02/03/04: Load Squad button uses single `transition-all`; captain severity `LOW` for `<2 candidates`; NAV-05 extended to 7 pills — v1.19
 
-### Active (v1.20)
+### Validated (v1.20)
 
-- [ ] **FIX-01**: User sees current-GW fixture correctly when team has already played mid-week (no false BGW on heatmap)
-- [ ] **FIX-02**: Transfer planner only suggests players of the same position as the player being transferred out
-- [ ] **FIX-03**: GW Review top scorer displays actual points earned alongside player name
-- [ ] **FIX-04**: GW Review best bench displays actual bench points (not 0)
-- [ ] **FIX-05**: GW Review dream team delta shows correct sign (positive when dream team beats user score)
-- [ ] **FIX-06**: Decision history captain delta displays actual points difference per GW (not dashes)
-- [ ] **BACK-02**: User can view per-GW transfer regret — what the engine recommended vs what was done, with hindsight xPts delta
-- [x] **OPT-01**: Lineup optimiser shows empty state with "Optimise Lineup" button; calculation only runs on explicit trigger — Validated Phase 112 (2026-05-15)
-- [x] **TFR-02**: Transfer suggestions show at most 3 candidates per position slot — Validated Phase 112 (2026-05-15)
+- ✓ **FIX-01**: Heatmap partially-played DGW cell no longer shows false BGW — mixed-state tooltip-suffix branch — v1.20
+- ✓ **FIX-02**: Transfer planner position-lock enforced at all 4 `suggestTransfers` call sites — v1.20
+- ✓ **FIX-03**: GW Review top scorer displays actual points (liveMap source) — v1.20
+- ✓ **FIX-04**: GW Review best bench displays actual bench points (liveMap source) — v1.20
+- ✓ **FIX-05**: GW Review dream team delta sign corrected (dream_team − user) — v1.20
+- ✓ **FIX-06**: Decision history captain delta shows actual pts diff via liveMap for settled GWs — v1.20
+- ✓ **BACK-02**: Transfer Regret Backtester — pipeline slim snapshot + computeTransferDelta + API extension + BackTab toggle (human UAT pending) — v1.20
+- ✓ **OPT-01**: Optimiser on-demand with `hasRun` gate and empty state — v1.20
+- ✓ **TFR-02**: `capByPosition(raw, 3)` caps transfer suggestions at top-3 per position with footnote — v1.20
+
+### Active (v1.21+)
+
+_(No requirements defined yet — start with `/gsd-new-milestone`)_
 
 ### Out of Scope
 
@@ -418,4 +418,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-15 — Phase 112 complete. OPT-01 + TFR-02 shipped. 1 phase remaining in v1.20 (Phase 113: Transfer Regret Backtester).*
+*Last updated: 2026-05-16 after v1.20 milestone — Fixes & Decision Quality shipped. All 9 requirements validated. Next: /gsd-new-milestone for v1.21.*

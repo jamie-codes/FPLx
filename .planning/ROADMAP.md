@@ -21,7 +21,7 @@
 - ✅ **v1.17 End-of-Season Intelligence** — Phases 97-101 (shipped 2026-05-12)
 - ✅ **v1.18 Forecast Transparency & AI Intelligence** — Phases 102-105 (shipped 2026-05-14)
 - ✅ **v1.19 AI Quality & Insight Delivery** — Phases 106-109 (shipped 2026-05-14)
-- **v1.20 Fixes & Decision Quality** — Phases 110-113 (started 2026-05-14)
+- ✅ **v1.20 Fixes & Decision Quality** — Phases 110-113 (shipped 2026-05-16)
 
 ## Phases
 
@@ -195,13 +195,15 @@ See `.planning/milestones/v1.19-ROADMAP.md` for full phase details.
 
 </details>
 
-<details open>
-<summary>v1.20 Fixes & Decision Quality (Phases 110-113) — STARTED 2026-05-14</summary>
+<details>
+<summary>✅ v1.20 Fixes & Decision Quality (Phases 110-113) — SHIPPED 2026-05-16</summary>
 
-- [x] **Phase 110: GW Review & History Fixes** — fix top scorer points display (FIX-03), best bench points (FIX-04), dream team delta sign (FIX-05), decision history captain delta (FIX-06) _(2026-05-14)_
-- [ ] **Phase 111: Fixture Heatmap & Planner Cross-Position Fixes** — heatmap BGW false-positive when current GW already played (FIX-01); transfer planner position-lock guard (FIX-02)
-- [x] **Phase 112: Optimiser On-Demand & Transfer Suggestion Cap** — Optimiser empty-state + button (OPT-01); transfer suggestions capped at top 3 per position slot (TFR-02) _(2026-05-15)_
-- [ ] **Phase 113: Transfer Regret Backtester** — per-GW engine recommendation vs actual transfer, hindsight xPts delta (BACK-02)
+See `.planning/milestones/v1.20-ROADMAP.md` for full phase details.
+
+- [x] Phase 110: GW Review & History Fixes — liveMap-sourced top scorer, bench pts, dream team delta sign, captain delta _(2026-05-14)_
+- [x] Phase 111: Fixture Heatmap & Planner Cross-Position Fixes — partially-played DGW cell, position-lock at all suggestTransfers call sites _(2026-05-15)_
+- [x] Phase 112: Optimiser On-Demand & Transfer Suggestion Cap — hasRun gate + empty state (OPT-01); capByPosition(3) transfer cap (TFR-02) _(2026-05-15)_
+- [x] Phase 113: Transfer Regret Backtester — pipeline slim snapshot, computeTransferDelta, API extension, BackTab toggle + chart (BACK-02) _(2026-05-15)_
 
 </details>
 

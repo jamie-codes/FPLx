@@ -1,5 +1,21 @@
 # Milestones
 
+## v1.20 Fixes & Decision Quality (Shipped: 2026-05-16)
+
+**Phases completed:** 4 phases (110-113), 15 plans
+**Timeline:** 2026-05-14 → 2026-05-16 (3 days)
+**Files changed:** 120 files, +17,166 / −2,112 lines
+**Known deferred items at close:** Phase 113 human UAT checkpoint (4 visual verifications — dark mode, multi-transfer GW format, delta colour, captain view regression)
+
+**Key accomplishments:**
+
+1. GW Review & History Fixes (Phase 110): `liveMap.get(element)` sourced for captain delta, top scorer, and best bench pts across `/api/gw-review` — fixes 4 data accuracy bugs (FIX-03/04/05/06). Dream team delta sign corrected. 110-04 CR-01 closed captainDeltaRaw liveMap gap for settled GWs.
+2. Fixture Heatmap & Planner Position-Lock (Phase 111): `HeatMapRow` mixed-state DGW branch (tooltip suffix `'— Played'` for partially-played GWs, FIX-01); position-lock enforced at all 4 `suggestTransfers` call sites with `inPoolByPosition.get(sell.element_type)` + `VALID_ELEMENT_TYPES` guard (FIX-02). CR-02 fallback-sort hardening in `club-form.ts`. 37/37 tests GREEN.
+3. Optimiser On-Demand & Transfer Cap (Phase 112): `hasRun` boolean gate prevents auto-compute on OptimiserPanel mount (OPT-01); `capByPosition(raw, 3)` pure utility caps transfer suggestions at top-3 per `element_type` bucket in both OptimiserPanel and TransferPanel, with per-position `cap-footnote-{POS}` rendered when bucket exceeds limit (TFR-02). 67/67 tests GREEN.
+4. Transfer Regret Backtester (Phase 113): Pipeline writes `merged_players_slim_gw{N}.json` (9-field snapshot) to Vercel Blob; `computeTransferDelta` computes signed engine−user gain per GW; `/api/decision-history` extended with `transferEntries[]`; `BackTab` Captain|Transfer pill toggle + `TransferRegretView` (season summary + Recharts bar chart + per-GW table). BACK-02 code complete; human UAT pending.
+
+---
+
 ## v1.19 AI Quality & Insight Delivery (Shipped: 2026-05-14)
 
 **Phases completed:** 4 phases (106-109), 7 plans
