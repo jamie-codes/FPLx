@@ -22,6 +22,7 @@
 - ✅ **v1.18 Forecast Transparency & AI Intelligence** — Phases 102-105 (shipped 2026-05-14)
 - ✅ **v1.19 AI Quality & Insight Delivery** — Phases 106-109 (shipped 2026-05-14)
 - ✅ **v1.20 Fixes & Decision Quality** — Phases 110-113 (shipped 2026-05-16)
+- **v1.21 Polish, Intelligence & Team News** — Phases 114-116 (in progress)
 
 ## Phases
 
@@ -1521,6 +1522,41 @@ Plans:
 **UI hint**: yes
 **Phase notes**: Largest v1.20 phase. Requires Python (or TypeScript) port of the `suggestTransfers` recommendation rule so the pipeline can write `transfer_recommendation_gw{N}.json` to Vercel Blob as a durable snapshot trail (mirroring `captain_picks_gw{N}.json` from Phase 96). `/api/decision-history` extended to join the snapshot with the user’s `event_transfers` from authenticated FPL data + element-summary point totals. New `TransferRegretSection` component on the existing `BackTab` (do NOT add a new sub-tab). Pitfall to avoid: do NOT recommend transfers retroactively using *future* GW data — recommendation snapshot must use the data available at deadline minus 1 hour, so the regret comparison is honest. Carry-forward item BACK-02 from v1.19 Deferred Items is now resolved by this phase. BACK-03 (full transfer ROI tracker requiring a multi-GW persistent store) remains out of scope and stays in the v1.20 Out of Scope section.
 
+### Phase 114: Polish & Carry-Forward Fixes _(v1.21)_
+**Goal**: Users see a corrected and enriched GemTable surface — the Transfer Route Tree "Hits" label shows the right number, a disabled ChipToggle stub is visible in RouteTreeTab, the Transfer Regret Backtester passes human UAT on all four visual dimensions, and GemTable gains a rank trajectory sparkline column so managers can see trend direction at a glance
+**Depends on**: Phase 113 (v1.20 complete; BACK-02 code delivered; rank_trajectory already in MergedPlayer)
+**Requirements**: UAT-01, TRT-01, TRT-02, SPARK-01
+**Success Criteria** (what must be TRUE):
+  1. User opens the Transfer Regret Backtester in dark mode and sees correct colour polarity (positive delta = green, negative = red), correct multi-transfer GW formatting, and no captain regression artefacts — all four UAT-01 visual checkpoints pass
+  2. User opens RouteTreeTab and sees the "Hits" column display the correct total hits count (matching the engine's totalHits field, not totalTransfers)
+  3. User opens RouteTreeTab and sees a ChipToggle UI element that is visibly present but disabled, replacing the implicit null hardcode
+  4. User opens GemTable and sees a rank trajectory sparkline mini-column showing the player's ownership rank trend across recent GWs, rendered as an inline SVG or Recharts sparkline
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 115: Team News Wiring _(v1.21)_
+**Goal**: Users see live FPL team news on the two highest-stakes decision surfaces — captain picks and transfer candidates — with a 14-day staleness suppression gate ensuring zinc-severity badges for long-settled news never dilute the signal quality on decision-critical surfaces
+**Depends on**: Phase 114; NEWS-01 staleness suppression is a prerequisite that must exist before NewsBanner is wired into any new call site — deploying NEWS-02 or NEWS-03 without this gate would cause badge fatigue
+**Requirements**: NEWS-01, NEWS-02, NEWS-03
+**Success Criteria** (what must be TRUE):
+  1. NewsBanner badges with zinc severity and a news_added date older than 14 days are suppressed from display — red and amber severity badges are never suppressed regardless of age
+  2. User sees NewsBanner in CaptainPicksPanel candidate rows — team news (e.g. "75% chance of playing") is shown alongside each captain pick candidate, using the same severity colour-coding as TransferPanel
+  3. User sees NewsBanner in TransferPanel / OpportunityCostTable buy-candidate rows with staleness suppression from NEWS-01 applied — stale zinc news does not appear on buy candidates
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 116: Prose Staleness & Model Versioning _(v1.21)_
+**Goal**: Users can see when the weekly AI prose summary was generated (so they know whether it reflects a post-deadline injury) and can browse a version history of the accuracy model showing hit rate and sample size per formula version — closing two trust-signal gaps that make the model's outputs harder to rely on without transparency
+**Depends on**: Phase 115; VER-01 schema extension must land in the pipeline before VER-02 UI is built
+**Requirements**: PROSE-01, PROSE-02, VER-01, VER-02
+**Success Criteria** (what must be TRUE):
+  1. User sees the prose summary generation time displayed as relative time ("Updated 2 hours ago") in ProseSummaryBlock alongside the GW label — amber note appears when summary is older than 20 hours
+  2. Pipeline weekly prose narrative includes chip timing context and lifecycle risk flags, producing a richer decision summary that covers more than just captains and gems
+  3. accuracy.py version records include a sample_gws integer field so the version comparison UI can correctly label or filter cold-start entries where 0 GWs have contributed to the hit rate
+  4. User sees a "Versions" pill in the AccuracyTab pill nav (alongside "Summary | Calibration | Back"), displaying a VersionHistoryTable with formula version, date, hit rate, gate flags, and sample_gws — cold-start entries (sample_gws < 3) are labelled rather than shown as misleading 0.0% regressions
+**Plans**: TBD
+**UI hint**: yes
+
 
 ## Progress
 
@@ -1600,3 +1636,6 @@ Plans:
 | 111 | v1.20 | 4/4 | Complete    | 2026-05-15 |
 | 112 | v1.20 | 3/3 | Complete    | 2026-05-15 |
 | 113 | v1.20 | 4/4 | Complete    | 2026-05-16 |
+| 114 | v1.21 | 0/0 | Not started | - |
+| 115 | v1.21 | 0/0 | Not started | - |
+| 116 | v1.21 | 0/0 | Not started | - |

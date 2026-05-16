@@ -58,22 +58,22 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| UAT-01 | — | Pending |
-| TRT-01 | — | Pending |
-| TRT-02 | — | Pending |
-| SPARK-01 | — | Pending |
-| NEWS-01 | — | Pending |
-| NEWS-02 | — | Pending |
-| NEWS-03 | — | Pending |
-| PROSE-01 | — | Pending |
-| PROSE-02 | — | Pending |
-| VER-01 | — | Pending |
-| VER-02 | — | Pending |
+| UAT-01 | Phase 114 | Pending |
+| TRT-01 | Phase 114 | Pending |
+| TRT-02 | Phase 114 | Pending |
+| SPARK-01 | Phase 114 | Pending |
+| NEWS-01 | Phase 115 | Pending |
+| NEWS-02 | Phase 115 | Pending |
+| NEWS-03 | Phase 115 | Pending |
+| PROSE-01 | Phase 116 | Pending |
+| PROSE-02 | Phase 116 | Pending |
+| VER-01 | Phase 116 | Pending |
+| VER-02 | Phase 116 | Pending |
 
 **Coverage:**
 - v1.21 requirements: 11 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 11 ⚠
+- Mapped to phases: 11 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-16*
