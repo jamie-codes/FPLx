@@ -19,7 +19,7 @@ Fix 6 data accuracy bugs across GW Review, fixture heatmap, planner, and decisio
 
 ### Backtester
 
-- [ ] **BACK-02**: User can view a per-GW transfer regret report — what the transfer engine recommended that week vs what was actually done, with hindsight xPts delta (recommended gain vs actual gain)
+- [x] **BACK-02**: User can view a per-GW transfer regret report — what the transfer engine recommended that week vs what was actually done, with hindsight xPts delta (recommended gain vs actual gain)
 
 ### Optimiser UX
 
@@ -57,6 +57,6 @@ Fix 6 data accuracy bugs across GW Review, fixture heatmap, planner, and decisio
 | FIX-04 | Phase 110 | Complete |
 | FIX-05 | Phase 110 | Complete |
 | FIX-06 | Phase 110 | Complete |
-| BACK-02 | Phase 113 | pending |
+| BACK-02 | Phase 113 | Complete |
 | OPT-01 | Phase 112 | pending |
 | TFR-02 | Phase 112 | pending |
