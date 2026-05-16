@@ -148,9 +148,13 @@ export function computeTransferDelta(
   if (engineBuyPts.length === 0) return null
   const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0)
   const engineGain = sum(engineBuyPts) - sum(engineSellPts)
-  if (userBuyPts === null || userSellPts === null) {
+  if (userBuyPts === null && userSellPts === null) {
     // Hold GW: counterfactual gain from the engine's recommended move
     return Math.round(engineGain * 10) / 10
+  }
+  if (userBuyPts === null || userSellPts === null) {
+    // Partial data: one side missing — cannot compute valid delta
+    return null
   }
   const userGain = sum(userBuyPts) - sum(userSellPts)
   return Math.round((engineGain - userGain) * 10) / 10

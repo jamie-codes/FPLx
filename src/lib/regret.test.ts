@@ -118,13 +118,13 @@ describe('computeTransferDelta', () => {
     expect(computeTransferDelta([12], [3], null, null)).toBe(9.0)
   })
 
-  it('returns engine counterfactual gain when only userBuyPts is null (defensive hold path)', () => {
-    // Only one of userBuyPts/userSellPts is null → same as full hold path
-    expect(computeTransferDelta([12], [3], null, [3])).toBe(9.0)
+  it('returns null when only userBuyPts is null (partial data — one side missing)', () => {
+    // Exactly one side null → data integrity gap; return null rather than silently using hold path
+    expect(computeTransferDelta([12], [3], null, [3])).toBeNull()
   })
 
-  it('returns engine counterfactual gain when only userSellPts is null (defensive hold path)', () => {
-    expect(computeTransferDelta([12], [3], [6], null)).toBe(9.0)
+  it('returns null when only userSellPts is null (partial data — one side missing)', () => {
+    expect(computeTransferDelta([12], [3], [6], null)).toBeNull()
   })
 
   it('1-FT case: delta = engine gain - user gain', () => {
