@@ -40,6 +40,7 @@ interface FPLBootstrapEvent { id: number; finished: boolean }
 interface FPLTransferEntry { element_in: number; element_out: number; event: number; time?: string }
 
 async function readSnapshot(gw: number): Promise<CaptainPickSnapshot | null> {
+  if (!Number.isInteger(gw) || gw < 1 || gw > 99) return null
   const filename = `captain_picks_gw${gw}.json`
   try {
     if (USE_BLOB) {
@@ -86,6 +87,7 @@ async function readGwPicks(teamId: string, gw: number): Promise<FPLPick[] | null
  * malformed JSON to null (T-113-09). Pattern: D-10 no-snapshot fold.
  */
 async function readTransferSlimSnapshot(gw: number): Promise<SlimPlayer[] | null> {
+  if (!Number.isInteger(gw) || gw < 1 || gw > 99) return null
   const filename = `merged_players_slim_gw${gw}.json`
   try {
     if (USE_BLOB) {
@@ -347,6 +349,19 @@ export async function GET(request: NextRequest) {
 
       // Reconstruct pre-transfer squad (D-03, Pitfall 1).
       const preTransferSquad = reconstructPreTransferSquad(gwPicks, gwTransfers)
+
+      // WC/FH GWs: user may have made >2 transfers; engine only models ≤2.
+      // Skip engine recommendation for these GWs to avoid a misleading delta.
+      if (gwTransfers.length > 2) {
+        gwResults.push({
+          gw, isHold: false, hasSnapshot: true,
+          engineOutIds: [], engineInIds: [],
+          userOutIds: gwTransfers.map((t) => t.element_out),
+          userInIds: gwTransfers.map((t) => t.element_in),
+          slimSnapshot, gwTransfers,
+        })
+        continue
+      }
 
       // Post-hoc engine call:
       //   bank: 9999 — unconstrained post-hoc simplification (Pitfall 4); goal is xPts
