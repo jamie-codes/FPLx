@@ -109,6 +109,7 @@ export function persistHistory(teamId: string, history: DecisionHistory): void {
   if (typeof window === 'undefined') return
   try {
     const trimmedEntries = history.entries.slice(-RING_BUFFER_SIZE)
+    const trimmedTransferEntries = history.transferEntries?.slice(-RING_BUFFER_SIZE)
     const trimmed: DecisionHistory = {
       teamId: history.teamId,
       // CR-02: recount gwsWithData from the trimmed entries, not from the API
@@ -117,6 +118,7 @@ export function persistHistory(teamId: string, history: DecisionHistory): void {
       // would see the wrong value.
       gwsWithData: trimmedEntries.filter((e) => e.regret !== null).length,
       entries: trimmedEntries,
+      ...(trimmedTransferEntries !== undefined && { transferEntries: trimmedTransferEntries }),
     }
     window.localStorage.setItem(ringBufferKey(teamId), JSON.stringify(trimmed))
   } catch {
