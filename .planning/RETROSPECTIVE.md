@@ -4,6 +4,54 @@
 
 ---
 
+## Milestone: v1.20 — Fixes & Decision Quality
+
+**Shipped:** 2026-05-16
+**Phases:** 4 (110-113) | **Plans:** 15
+**Timeline:** 3 days (2026-05-14 → 2026-05-16)
+**Files changed:** 120 files, +17,166 / −2,112 lines
+
+### What Was Built
+
+- GW Review liveMap sourcing: `/api/gw-review` now calls the FPL live endpoint to source actual settled-GW points for captain delta, top scorer, best bench, and dream team delta; dream team delta sign corrected — Phase 110 (FIX-03/04/05/06)
+- Heatmap partially-played DGW cell: `HeatMapRow` mixed-state branch surfaces played leg via tooltip suffix `'— Played'`; CR-02 fallback-sort hardened in `club-form.ts` — Phase 111 (FIX-01)
+- Position-lock at all 4 `suggestTransfers` call sites: `inPoolByPosition.get(sell.element_type)` + `VALID_ELEMENT_TYPES` guard; 37/37 tests GREEN — Phase 111 (FIX-02)
+- Optimiser on-demand: `hasRun` boolean gate prevents auto-compute on mount; empty state + "Optimise Lineup" button; controls interactive pre-click — Phase 112 (OPT-01)
+- Transfer suggestion cap: `capByPosition(raw, 3)` pure utility; per-position `cap-footnote-{POS}` footnote when bucket exceeds limit; wired in both OptimiserPanel and TransferPanel — Phase 112 (TFR-02)
+- Transfer Regret Backtester (BACK-02): `pipeline/transfer_snapshots.py` writes 9-field slim snapshot to Vercel Blob; `computeTransferDelta` (signed engine−user gain); `/api/decision-history` extended with `transferEntries[]`; `BackTab` Captain|Transfer pill toggle + `TransferRegretView` (season summary + Recharts bar chart + per-GW table) — Phase 113
+
+### What Worked
+
+- **CR gap-closure pattern**: Phases 110 and 111 both required a 4th plan for CR (code review) gap closure. The pattern of VERIFICATION.md catching a real bug (captainDeltaRaw not reading liveMap; partially-played DGW cell missing branch) and inserting a targeted TDD plan to close it worked cleanly every time
+- **liveMap as single source of truth**: Using `liveMap.get(element)` instead of `pick.total_points` resolved all 4 GW Review bugs simultaneously — they all shared the same root cause (wrong data source for settled GWs)
+- **Pure utility extraction**: `capByPosition(raw, n)` as a standalone pure function made TFR-02 testable in isolation and reusable across OptimiserPanel and TransferPanel without coupling
+- **Slim snapshot mirrors captain pattern exactly**: BACK-02 pipeline design mirroring Phase 96 `captain_picks_gw{N}.json` meant the upload/read pattern was already proven; no novel blob infrastructure needed
+- **Code review in REVIEW.md**: Both Phase 110 and 113 had REVIEW.md with WR/CR items that were systematically closed. The review→fix→re-verify loop produced clean, audited code
+
+### What Was Inefficient
+
+- **REQUIREMENTS.md still not updated during execution**: OPT-01 and TFR-02 were left unchecked and "pending" in traceability after Phase 112 completed. Required manual fix at milestone close. This is the fifth milestone in a row with this pattern
+- **Phase 113 human UAT not completed before milestone close**: The BACK-02 checkpoint (dark mode rendering, multi-transfer GW format, delta colour) was flagged as a known gap and deferred. Browser-level tests should be run before milestone close in future
+
+### Patterns Established
+
+- **`liveMap` sourcing pattern**: For any GW Review field that requires actual settled-GW points (not `pick.total_points`), always route through `liveMap.get(element)` — the FPL live endpoint is the authoritative source for settled GWs
+- **Worktree Wave 1 sync pattern**: Phase 113 Plans 03 and 04 both needed a "sync Wave 1 files from main repo" chore commit because worktrees forked before earlier plans landed. Standard pattern for multi-plan phases with blocking dependencies
+
+### Key Lessons
+
+1. **REQUIREMENTS.md must be updated at SUMMARY commit time, not milestone close**: Five milestones in a row. The fix is to make checking the relevant traceability rows part of the SUMMARY.md self-check — not a milestone-close step
+2. **Human UAT gate should block milestone close, not be deferred**: Phase 113 BACK-02 has 4 visual verifications that can only be done in a live browser. Leaving them as known gaps reduces confidence in the shipped feature. Schedule the UAT session before declaring milestone complete
+3. **CR gap-closure plans are predictable overhead**: Phases 110 and 111 both grew to 4 plans because of CR findings. Planning 3 plans but reserving capacity for a 4th CR-closure plan is more accurate than assuming 3 is final
+
+### Cost Observations
+
+- Model: Sonnet 4.6 (executor); Opus for planning/research
+- Sessions: 3 days, multiple sessions
+- Notable: Phase 113 was the largest phase (4 plans, full stack) but shipped fastest relative to scope — the slim snapshot pattern was already proven, so implementation was mostly wiring existing contracts
+
+---
+
 ## Milestone: v1.19 — AI Quality & Insight Delivery
 
 **Shipped:** 2026-05-14
