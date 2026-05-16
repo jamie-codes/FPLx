@@ -218,7 +218,9 @@ function formatSignedPts(value: number): string {
   return `${value}pts`  // includes 0 → "0pts" and negatives like "-4pts"
 }
 
-function deltaColorClass(delta: number): string {
+// Chip ROI: positive delta = chip scored above season average = GOOD (green).
+// Do NOT reuse for transfer regret — transfer delta polarity is opposite.
+function chipDeltaColorClass(delta: number): string {
   if (delta > 0) return 'text-green-600 dark:text-green-400'
   if (delta < 0) return 'text-red-600 dark:text-red-400'
   return 'text-zinc-500 dark:text-zinc-400'
@@ -245,7 +247,7 @@ function ChipRoiSection({ entries }: { entries: ChipRoiEntry[] }) {
             <span className="text-sm text-zinc-700 dark:text-zinc-300">
               {displayName} GW{c.event}
             </span>
-            <span className={`text-sm font-semibold ${deltaColorClass(c.delta)}`}>
+            <span className={`text-sm font-semibold ${chipDeltaColorClass(c.delta)}`}>
               {c.gwPoints}pts vs {avgInt}pt avg → {formatSignedPts(Math.round(c.delta))}
             </span>
           </li>
