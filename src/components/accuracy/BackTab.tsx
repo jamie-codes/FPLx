@@ -432,6 +432,9 @@ function formatTransferCell(
   buyPts: number[] | null,
 ): string {
   if (!sell || !buy || !sellPts || !buyPts) return '—'
+  if (sell.length !== buy.length || sellPts.length !== sell.length || buyPts.length !== sell.length) {
+    return '—'
+  }
   // Build per-leg strings then join
   const legs = sell.map((s, i) => {
     const b = buy[i] ?? '?'
