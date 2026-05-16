@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.20
-milestone_name: Fixes & Decision Quality
-status: milestone_complete
-stopped_at: milestone close (2026-05-16)
-last_updated: "2026-05-16T00:00:00.000Z"
+milestone: v1.21
+milestone_name: Polish, Intelligence & Team News
+status: planning
+last_updated: "2026-05-16T10:07:49.922Z"
 last_activity: 2026-05-16
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 15
-  completed_plans: 15
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,11 +24,10 @@ See: .planning/PROJECT.md (updated 2026-05-16 — v1.20 complete, planning next 
 
 ## Current Position
 
-Phase: —
+Phase: Not started (defining requirements)
 Plan: —
-Status: v1.20 milestone closed (2026-05-16)
-
-Last activity: 2026-05-16
+Status: Defining requirements
+Last activity: 2026-05-16 — Milestone v1.21 started
 
 ## Performance Metrics
 

@@ -50,6 +50,18 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
+## Current Milestone: v1.21 Polish, Intelligence & Team News
+
+**Goal:** Verify the Transfer Regret Backtester, ship weekly AI prose summaries, add rank trajectory sparklines, fix RouteTreeTab cosmetics, introduce model versioning, and wire in live lineup news from the FPL official news feed.
+
+**Target features:**
+- BACK-02-UAT: Human UAT of Transfer Regret Backtester (dark mode, delta colour, multi-transfer format, captain regression)
+- RANK-SPARK: rank_trajectory sparkline column in GemTable
+- TRT-02/TRT-06: RouteTreeTab "Hits" label fix + ChipToggle stub
+- NLP-01: Weekly prose summary — Claude LLM narrative wrapping captain / transfer / chip / risk output
+- VER-01: Model versioning — version tag per prediction in accuracy_backtest.json, structured comparison across formula changes
+- SCRAPER-01: Lineup news scraper — FPL official news feed integration into transfer/captain surfaces
+
 ## Previous Milestone: v1.20 Fixes & Decision Quality (Complete 2026-05-16)
 
 **Goal:** Fix 6 data accuracy bugs across GW Review, fixture heatmap, planner, and decision history; add transfer regret backtester; make optimiser on-demand; limit transfer suggestions to top 3 per position.
@@ -315,9 +327,9 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 - ✓ **OPT-01**: Optimiser on-demand with `hasRun` gate and empty state — v1.20
 - ✓ **TFR-02**: `capByPosition(raw, 3)` caps transfer suggestions at top-3 per position with footnote — v1.20
 
-### Active (v1.21+)
+### Active (v1.21)
 
-_(No requirements defined yet — start with `/gsd-new-milestone`)_
+_(Requirements being defined — see REQUIREMENTS.md once committed)_
 
 ### Out of Scope
 
@@ -418,4 +430,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-16 after v1.20 milestone — Fixes & Decision Quality shipped. All 9 requirements validated. Next: /gsd-new-milestone for v1.21.*
+*Last updated: 2026-05-16 — v1.21 milestone started: Polish, Intelligence & Team News.*
