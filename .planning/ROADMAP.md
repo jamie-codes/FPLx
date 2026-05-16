@@ -1515,7 +1515,7 @@ Plans:
   **Wave 2** *(blocked on Wave 1 completion)*
   - [x] 113-03-PLAN.md — /api/decision-history extension: readTransferSlimSnapshot, squad reconstruction, suggestTransfers post-hoc, element-summary fan-out, transferEntries response field
   **Wave 3** *(blocked on Wave 2 completion)*
-  - [ ] 113-04-PLAN.md — BackTab Captain|Transfer pill toggle + TransferRegretView (summary + bar chart + per-GW rows) + tests + human-verify checkpoint
+  - [x] 113-04-PLAN.md — BackTab Captain|Transfer pill toggle + TransferRegretView (summary + bar chart + per-GW rows) + tests + human-verify checkpoint
 **UI hint**: yes
 **Phase notes**: Largest v1.20 phase. Requires Python (or TypeScript) port of the `suggestTransfers` recommendation rule so the pipeline can write `transfer_recommendation_gw{N}.json` to Vercel Blob as a durable snapshot trail (mirroring `captain_picks_gw{N}.json` from Phase 96). `/api/decision-history` extended to join the snapshot with the user’s `event_transfers` from authenticated FPL data + element-summary point totals. New `TransferRegretSection` component on the existing `BackTab` (do NOT add a new sub-tab). Pitfall to avoid: do NOT recommend transfers retroactively using *future* GW data — recommendation snapshot must use the data available at deadline minus 1 hour, so the regret comparison is honest. Carry-forward item BACK-02 from v1.19 Deferred Items is now resolved by this phase. BACK-03 (full transfer ROI tracker requiring a multi-GW persistent store) remains out of scope and stays in the v1.20 Out of Scope section.
 
@@ -1597,4 +1597,4 @@ Plans:
 | 110 | v1.20 | 4/4 | Complete    | 2026-05-14 |
 | 111 | v1.20 | 4/4 | Complete    | 2026-05-15 |
 | 112 | v1.20 | 3/3 | Complete    | 2026-05-15 |
-| 113 | v1.20 | 3/4 | In Progress|  |
+| 113 | v1.20 | 4/4 | Complete   | 2026-05-16 |
