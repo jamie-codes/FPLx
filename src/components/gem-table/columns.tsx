@@ -331,6 +331,25 @@ export function createColumns(
     ),
     enableSorting: true,
   }),
+  // Phase 114 SPARK-01: rank_trajectory sparkline micro-column (inline SVG polyline, no Recharts).
+  // Values: 0.0 = best rank (top of position), 1.0 = worst rank; length always 5 when present.
+  // Green stroke = rank improving (trend < -0.05), red = declining (trend > +0.05), zinc-400 = flat.
+  col.accessor('rank_trajectory', {
+    header: H('Trend', 'Rank trajectory over last 5 gameweeks. Green = rank improving (lower percentile). Red = rank declining.'),
+    enableSorting: false,
+    cell: (info) => {
+      const trajectory = info.getValue()
+      if (!trajectory || trajectory.length < 2) return <span className="text-zinc-400">—</span>
+      const trend = trajectory[trajectory.length - 1] - trajectory[0]
+      const stroke = trend < -0.05 ? 'var(--color-positive)' : trend > 0.05 ? 'var(--color-negative)' : '#a1a1aa'
+      const pointsStr = trajectory.map((v, i) => `${2 + i * 9},${(1 + v * 18).toFixed(1)}`).join(' ')
+      return (
+        <svg width="40" height="20" viewBox="0 0 40 20" aria-hidden="true">
+          <polyline points={pointsStr} fill="none" stroke={stroke} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )
+    },
+  }),
   col.accessor('regression_signal', {
     header: H('Signal', 'Regression signal: BUY = underperforming xG+xA over last 5 GW; SELL = overperforming. Min 900 min played. Sort ascending for buy candidates.'),
     cell: (info) => (
