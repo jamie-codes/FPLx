@@ -14,6 +14,7 @@ import { buildTransferRouteTree } from '@/lib/transfer-route-tree'
 import { persistManualPlan, loadManualPlan } from '@/lib/manual-plan'
 import type { ManualPlan } from '@/lib/manual-plan'
 import type { PlannerHorizon, PlannerChip } from '@/lib/types'
+import { ChipToggle } from './ChipToggle'
 
 // ---------------------------------------------------------------------------
 // RouteTreeTab
@@ -86,8 +87,6 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
     [sellPrices]
   )
 
-  // chipMode is hard-coded null per architecture decision: TRT-06 satisfied at engine level (Plan 01);
-  // UI ChipToggle deferred. No section-level chipMode exists in page.tsx today.
   const chipMode: PlannerChip = null
 
   // ---------------------------------------------------------------------------
@@ -231,6 +230,15 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
         </p>
       </header>
 
+      <div>
+        <ChipToggle
+          gw={startingGw ?? 1}
+          activeChip={null}
+          onToggle={() => {}}
+          disabled={true}
+        />
+      </div>
+
       {/* Caveat banner — shown only when unauthenticated (MTP-07 mirror) */}
       {!isAuthenticated && picks !== null && (
         <div className="rounded border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/30 px-4 py-3 mb-4">
@@ -297,7 +305,7 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{path.totalTransfers}</td>
+                      <td className="px-3 py-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{path.totalHits ?? 0}</td>
                       <td className="px-3 py-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                         {path.totalHitCostPts === 0
                           ? '0 pts'
