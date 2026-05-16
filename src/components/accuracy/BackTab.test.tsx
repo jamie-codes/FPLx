@@ -415,13 +415,16 @@ describe('BackTab — Phase 113 TransferRegretView', () => {
     expect(container.innerHTML).toMatch(/text-green-600/)
   })
 
-  it('hasSnapshot=false renders "No model snapshot" in Engine column AND "—" (em-dash) in Delta cell', () => {
+  it('hasSnapshot=false renders "No model snapshot" in Engine column, "—" in You cell, and "—" in Delta cell', () => {
     const history: DecisionHistory = {
       teamId: 12345, gwsWithData: 1, entries: [entry()],
       transferEntries: [transferEntry({
         hasSnapshot: false,
         engineSell: null, engineBuy: null,
         engineSellPts: null, engineBuyPts: null,
+        // Match what the route actually emits when hasSnapshot is false
+        userSell: null, userBuy: null,
+        userSellPts: null, userBuyPts: null,
         delta: null,
       })],
     }
@@ -432,7 +435,11 @@ describe('BackTab — Phase 113 TransferRegretView', () => {
     const transferBtn = screen.getByRole('button', { name: 'Transfer' })
     fireEvent.click(transferBtn)
     expect(container.textContent).toContain('No model snapshot')
-    // U+2014 EM DASH
+    // You cell renders '—' when userSell/userBuy/userSellPts/userBuyPts are all null
+    const cells = container.querySelectorAll('td')
+    const youCell = Array.from(cells).find((td) => td.textContent === '—')
+    expect(youCell).not.toBeNull()
+    // U+2014 EM DASH in delta cell as well
     expect(container.textContent).toContain('—')
   })
 
