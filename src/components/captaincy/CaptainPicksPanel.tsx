@@ -14,6 +14,7 @@ import { computeMCLabels, type MCLabel } from '@/lib/mc-labels'
 import type { MergedPlayer } from '@/lib/types'
 import { computeFragility } from '@/lib/sensitivity'
 import { FragilityBadge } from '@/components/shared/FragilityBadge'
+import { NewsBanner } from '@/components/news/NewsBanner'
 
 interface CaptainPicksPanelProps {
   submittedId?: string | null
@@ -129,6 +130,12 @@ function CandidateRow({
         </span>
         {showDangerBadge && <DangerousToFadeBadge />}
         {mcLabel && <McLabel label={mcLabel.label} value={mcLabel.value} />}
+        {/* Phase 115 NEWS-02 (D-04): inline news banner for captain candidate */}
+        <NewsBanner
+          news={candidate.news ?? ''}
+          news_added={candidate.news_added}
+          chance_of_playing_next_round={candidate.chance_of_playing_next_round}
+        />
       </div>
       <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
         <span className="text-xs">{candidate.team_short_name}</span>
