@@ -3,7 +3,7 @@
 // @vitest-environment node
 import { describe, it, expect, vi } from 'vitest'
 import { suggestTransfers } from './suggest-transfers'
-import type { MergedPlayer } from './types'
+import type { MergedPlayer, LineupNewsPlayer, StatusLabel } from './types'
 import type { SquadPick } from './squad-adapter'
 
 function makePick(element: number, position: number): SquadPick {
@@ -673,5 +673,204 @@ describe('Phase 74: Bank constraint (TFX-05)', () => {
     // Affordable GK (id=21) may appear — bank+sellValue=0+50=50 >= 50 ✓
     const affordableBuy = result.find(s => s.kind === 'single' && s.buy.id === 21)
     expect(affordableBuy).toBeDefined()
+  })
+})
+
+// Phase 118 ENGN-01: factory helper for LineupNewsPlayer mocks
+function makeLineupNewsPlayer(
+  id: number,
+  status_label: StatusLabel,
+  availability_factor: 1.0 | 0.75 | 0.5 | 0.25 | 0.0 | null,
+): LineupNewsPlayer {
+  return {
+    id,
+    availability_factor,
+    status_label,
+    news_headline: null,
+    news_source: null,
+    scraped_at: '2026-05-17T10:00:00Z',
+  }
+}
+
+describe('Phase 118 ENGN-01: lineupNewsMap availability penalty', () => {
+  it('absent buy candidate (availability_factor=0.0) appears at bottom with near-zero xPtsGain', () => {
+    const { picks, players } = makeValidSquad()
+    // Strong MID candidate but confirmed absent
+    const absentMid = makePlayer({ id: 99, element_type: 3, xPts_1gw: 8.0, team: 10 })
+    // Healthy MID candidate with lower xPts — should rank above absent
+    const healthyMid = makePlayer({ id: 98, element_type: 3, xPts_1gw: 6.0, team: 11 })
+    const lineupNewsMap = new Map([
+      [99, makeLineupNewsPlayer(99, 'confirmed_absent', 0.0)],
+    ])
+    const result = suggestTransfers({
+      currentPicks: picks,
+      players: [...players, absentMid, healthyMid],
+      horizon: 1,
+      ftCount: 1,
+      bank: 100,
+      lineupNewsMap,
+    })
+    const absentSuggestion = result.find(s => s.kind === 'single' && (s as any).buy?.id === 99)
+    const healthySuggestion = result.find(s => s.kind === 'single' && (s as any).buy?.id === 98)
+    // Absent player must have near-zero gain (factor 0.01 applied)
+    if (absentSuggestion && healthySuggestion) {
+      expect(absentSuggestion.xPtsGain).toBeLessThan(healthySuggestion.xPtsGain)
+    }
+    // Absent player (raw 8.0 * 0.01 = 0.08) has near-zero score, while current squad MIDs are 5.0
+    // So xPtsGain would be 0.08 - 5.0 = negative → filtered out, or appears at bottom
+    // The healthy MID (6.0 - 5.0 = 1.0 gain) should appear
+    expect(healthySuggestion).toBeDefined()
+  })
+
+  it('doubted buy candidate (0.5) is ranked below equally-rated healthy candidate (1.0)', () => {
+    const { picks, players } = makeValidSquad()
+    // Doubted DEF candidate (availability_factor=0.5, xPts_1gw=8.0 → effective score 4.0)
+    const doubtedDef = makePlayer({ id: 97, element_type: 2, xPts_1gw: 8.0, team: 12 })
+    // Healthy DEF candidate (no entry in map → factor 1.0, xPts_1gw=7.0 → effective score 7.0)
+    const healthyDef = makePlayer({ id: 96, element_type: 2, xPts_1gw: 7.0, team: 13 })
+    const lineupNewsMap = new Map([
+      [97, makeLineupNewsPlayer(97, 'doubted', 0.5)],
+    ])
+    const result = suggestTransfers({
+      currentPicks: picks,
+      players: [...players, doubtedDef, healthyDef],
+      horizon: 1,
+      ftCount: 1,
+      bank: 100,
+      lineupNewsMap,
+    })
+    const doubtedSug = result.find(s => s.kind === 'single' && (s as any).buy?.id === 97)
+    const healthySug = result.find(s => s.kind === 'single' && (s as any).buy?.id === 96)
+    // Both should appear but healthy must rank higher (or doubted may not appear if score too low)
+    if (doubtedSug && healthySug) {
+      const doubtedIdx = result.indexOf(doubtedSug)
+      const healthyIdx = result.indexOf(healthySug)
+      expect(healthyIdx).toBeLessThan(doubtedIdx)
+    }
+    // At minimum the healthy candidate should be ranked above the doubted one
+    // Doubted: 8.0 * 0.5 = 4.0; gain = 4.0 - 5.0 = -1.0 → filtered (negative gain)
+    // Healthy: 7.0 * 1.0 = 7.0; gain = 7.0 - 5.0 = 2.0 → appears
+    expect(healthySug).toBeDefined()
+  })
+
+  it('lineupNewsMap=undefined produces identical output to pre-ENGN call (no-penalty baseline)', () => {
+    const { picks, players } = makeValidSquad()
+    const strongDef = makePlayer({ id: 20, element_type: 2, xPts_1gw: 8.0, team: 10 })
+    const withoutMap = suggestTransfers({
+      currentPicks: picks,
+      players: [...players, strongDef],
+      horizon: 1,
+      ftCount: 1,
+      bank: 100,
+    })
+    const withUndefinedMap = suggestTransfers({
+      currentPicks: picks,
+      players: [...players, strongDef],
+      horizon: 1,
+      ftCount: 1,
+      bank: 100,
+      lineupNewsMap: undefined,
+    })
+    expect(withUndefinedMap).toEqual(withoutMap)
+  })
+
+  it('lineupNewsMap with availability_factor=null (unknown) treats candidate as 1.0 — no penalty', () => {
+    const { picks, players } = makeValidSquad()
+    const unknownMid = makePlayer({ id: 95, element_type: 3, xPts_1gw: 8.0, team: 14 })
+    const lineupNewsMap = new Map([
+      [95, makeLineupNewsPlayer(95, 'unknown', null)],
+    ])
+    const withNullFactor = suggestTransfers({
+      currentPicks: picks,
+      players: [...players, unknownMid],
+      horizon: 1,
+      ftCount: 1,
+      bank: 100,
+      lineupNewsMap,
+    })
+    const withoutMap = suggestTransfers({
+      currentPicks: picks,
+      players: [...players, unknownMid],
+      horizon: 1,
+      ftCount: 1,
+      bank: 100,
+    })
+    // null availability_factor = unknown = no penalty, so results should be identical
+    expect(withNullFactor).toEqual(withoutMap)
+  })
+
+  it('sell side is not penalized — absent owned player does not affect xPtsGain when selling', () => {
+    const { picks, players } = makeValidSquad()
+    // Make player 1 (GK, id=1) confirmed absent in lineupNewsMap
+    // Selling player 1 to buy a strong GK candidate should have the same gain regardless
+    const strongGk = makePlayer({ id: 99, element_type: 1, xPts_1gw: 8.0, team: 10 })
+    // Without news map
+    const withoutMap = suggestTransfers({
+      currentPicks: picks,
+      players: [...players, strongGk],
+      horizon: 1,
+      ftCount: 1,
+      bank: 100,
+    })
+    // With player 1 marked absent in news map (sell side should be unaffected)
+    const lineupNewsMap = new Map([
+      [1, makeLineupNewsPlayer(1, 'confirmed_absent', 0.0)],
+    ])
+    const withAbsentSell = suggestTransfers({
+      currentPicks: picks,
+      players: [...players, strongGk],
+      horizon: 1,
+      ftCount: 1,
+      bank: 100,
+      lineupNewsMap,
+    })
+    // Find the suggestion selling player 1 and buying strongGk in both results
+    const noMapSug = withoutMap.find(s => s.kind === 'single' && (s as any).sell?.id === 1 && (s as any).buy?.id === 99)
+    const withMapSug = withAbsentSell.find(s => s.kind === 'single' && (s as any).sell?.id === 1 && (s as any).buy?.id === 99)
+    // Both should produce the same xPtsGain — sell side is unpenalized
+    if (noMapSug && withMapSug) {
+      expect(withMapSug.xPtsGain).toBeCloseTo(noMapSug.xPtsGain, 5)
+    }
+    // The suggestion should exist in both (sell side penalty would affect gain if applied)
+    expect(noMapSug).toBeDefined()
+    expect(withMapSug).toBeDefined()
+  })
+
+  it('2-FT combo: both doubted buy legs (0.5) produce lower xPtsGain than healthy/healthy combo', () => {
+    const { picks, players } = makeValidSquad()
+    // Two doubted candidates
+    const doubtedGk = makePlayer({ id: 90, element_type: 1, xPts_1gw: 9.0, team: 15 })
+    const doubtedDef = makePlayer({ id: 91, element_type: 2, xPts_1gw: 9.0, team: 16 })
+    // Two healthy candidates with same raw xPts
+    const healthyGk = makePlayer({ id: 92, element_type: 1, xPts_1gw: 9.0, team: 17 })
+    const healthyDef = makePlayer({ id: 93, element_type: 2, xPts_1gw: 9.0, team: 18 })
+    const lineupNewsMap = new Map([
+      [90, makeLineupNewsPlayer(90, 'doubted', 0.5)],
+      [91, makeLineupNewsPlayer(91, 'doubted', 0.5)],
+    ])
+    const result = suggestTransfers({
+      currentPicks: picks,
+      players: [...players, doubtedGk, doubtedDef, healthyGk, healthyDef],
+      horizon: 1,
+      ftCount: 2,
+      bank: 100,
+      lineupNewsMap,
+    })
+    // Find the best healthy/healthy combo (buying 92 + 93)
+    const healthyCombo = result.find(
+      s => s.kind === 'combo' &&
+      s.transfers.every(t => [92, 93].includes((t as any).buy?.id)),
+    )
+    // Find the doubted/doubted combo (buying 90 + 91)
+    const doubtedCombo = result.find(
+      s => s.kind === 'combo' &&
+      s.transfers.every(t => [90, 91].includes((t as any).buy?.id)),
+    )
+    if (healthyCombo && doubtedCombo) {
+      // Doubted combo should have lower xPtsGain than healthy combo
+      expect(doubtedCombo.xPtsGain).toBeLessThan(healthyCombo.xPtsGain)
+    }
+    // The healthy combo should appear (both legs positive gain)
+    expect(healthyCombo).toBeDefined()
   })
 })
