@@ -39,11 +39,12 @@ const TIER_CLASSES = {
 type Tier = keyof typeof TIER_CLASSES
 
 // Phase 96 BACK-01 — sub-tab nav inside AccuracyTab (D-01, D-02, D-03, D-04).
-type AccuracySubTab = 'summary' | 'calibration' | 'back'
+type AccuracySubTab = 'summary' | 'calibration' | 'back' | 'versions'
 const ACCURACY_SUB_TABS: ReadonlyArray<{ value: AccuracySubTab; label: string }> = [
   { value: 'summary', label: 'Summary' },
   { value: 'calibration', label: 'Calibration' },
   { value: 'back', label: 'Back' },
+  { value: 'versions', label: 'Versions' },
 ]
 
 function AccuracySubTabNav({
@@ -197,6 +198,7 @@ function VersionHistoryTable({ data }: { data: AccuracyBacktest }) {
             <th scope="col" className={TH_CLS}>Hit Rate</th>
             <th scope="col" className={TH_CLS} title="Change vs previous version">Δ</th>
             <th scope="col" className={TH_CLS}>Active Gates</th>
+            <th scope="col" className={TH_CLS}>Sample GWs</th>
           </tr>
         </thead>
         <tbody>
@@ -215,7 +217,11 @@ function VersionHistoryTable({ data }: { data: AccuracyBacktest }) {
                   )}
                 </td>
                 <td className={TD_CLS}>{formatRecordedAt(v.recorded_at)}</td>
-                <td className={TD_CLS}><HitRateBadge rate={v.hit_rate} /></td>
+                <td className={TD_CLS}>
+                  {(v.sample_gws ?? 0) < 3
+                    ? <span className="text-amber-600 dark:text-amber-400 text-xs">cold start</span>
+                    : <HitRateBadge rate={v.hit_rate} />}
+                </td>
                 <td className={TD_CLS}>
                   {delta === null
                     ? <span className="text-zinc-400 dark:text-zinc-500">—</span>
@@ -223,6 +229,11 @@ function VersionHistoryTable({ data }: { data: AccuracyBacktest }) {
                 </td>
                 <td className={TD_CLS}>
                   <GateFlagsCell flags={v.gate_flags} />
+                </td>
+                <td className={TD_CLS}>
+                  {(v.sample_gws ?? 0) < 3
+                    ? <span className="text-amber-600 dark:text-amber-400 text-xs">{'< 3 GWs'}</span>
+                    : v.sample_gws}
                 </td>
               </tr>
             )
@@ -1103,11 +1114,15 @@ export function AccuracyTab({ teamId = null }: { teamId?: string | null }) {
       )}
       {subTab === 'calibration' && (
         <>
-          {data.versions && data.versions.length >= 1 && <VersionHistoryTable data={data} />}
           {data.calibration && <CalibrationSection data={data} />}
         </>
       )}
       {subTab === 'back' && <BackTab teamId={teamId} />}
+      {subTab === 'versions' && (
+        data.versions && data.versions.length >= 1
+          ? <VersionHistoryTable data={data} />
+          : <p className="text-sm text-zinc-500 dark:text-zinc-400">No version history yet.</p>
+      )}
     </section>
   )
 }

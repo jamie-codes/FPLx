@@ -293,8 +293,8 @@ describe('Phase 63: VersionHistoryTable + CalibrationSection', () => {
   it('VER-02: VersionHistoryTable renders heading and one row per version when data.versions present', () => {
     mockedUseAccuracy.mockReturnValue({ data: fixtureWithVersionsAndCalibration, isLoading: false, error: null } as never)
     const { getByText, container } = render(<AccuracyTab />)
-    // Phase 96: content moved to Calibration sub-tab — click it first.
-    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(2)') as HTMLElement)
+    // Phase 116: content moved to Versions sub-tab (4th pill) — click it first.
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(4)') as HTMLElement)
     const heading = getByText('Model Version History')
     expect(heading).toBeTruthy()
     const table = heading.parentElement?.querySelector('table')
@@ -310,8 +310,8 @@ describe('Phase 63: VersionHistoryTable + CalibrationSection', () => {
   it('VER-02: first version row delta is em-dash; second row delta is +4.0 percentage points', () => {
     mockedUseAccuracy.mockReturnValue({ data: fixtureWithVersionsAndCalibration, isLoading: false, error: null } as never)
     const { getByText, container } = render(<AccuracyTab />)
-    // Phase 96: content moved to Calibration sub-tab — click it first.
-    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(2)') as HTMLElement)
+    // Phase 116: content moved to Versions sub-tab (4th pill) — click it first.
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(4)') as HTMLElement)
     const heading = getByText('Model Version History')
     const tbody = heading.parentElement?.querySelector('tbody')
     expect(tbody).toBeTruthy()
