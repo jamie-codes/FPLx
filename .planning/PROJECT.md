@@ -4,6 +4,8 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
+v1.21 Phase 115 complete (2026-05-17) — Team News Wiring: 14-day staleness suppression gate (`isStale`) in `NewsBanner` (NEWS-01), zinc badges older than 14 days suppressed; red/amber never suppressed. `NewsBanner` wired into `CaptainPicksPanel` CandidateRow inline after McLabel cluster (NEWS-02). NEWS-03 auto-satisfied via pre-existing `news_added` pass-through in `OpportunityCostTable`. 10 NewsBanner tests + 2 CaptainPicksPanel tests + 1 OpportunityCostTable test, all passing. 5 source files changed.
+
 v1.20 complete (2026-05-16) — Fixes & Decision Quality milestone shipped: 6 GW Review/history bugs fixed via liveMap sourcing (FIX-03/04/05/06), heatmap partially-played DGW cell fixed (FIX-01), position-lock enforced at all 4 suggestTransfers call sites (FIX-02), Optimiser on-demand with hasRun gate (OPT-01), capByPosition(raw,3) transfer cap (TFR-02), Transfer Regret Backtester wired end-to-end (BACK-02 — human UAT pending). 120 files, +17,166/−2,112 lines, 15 plans across 4 phases.
 
 v1.20 Phase 111 complete (2026-05-15) — FIX-01 + FIX-02: Partially-played DGW heatmap cell now surfaces played leg via tooltip suffix `'— Played'` (mixed-state branch in HeatMapRow, 2 new TDD tests). CR-02 fallback-sort hardened in `club-form.ts` (`.sort((a,b) => a.id-b.id)` before `.slice(-1)`, 1 regression test). Position-lock enforced at all 4 `suggestTransfers` call sites with `inPoolByPosition.get(sell.element_type)` + `VALID_ELEMENT_TYPES` guard. 37/37 plan-specific tests GREEN. Score 3/3 must-haves verified.
@@ -55,11 +57,9 @@ v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scor
 **Goal:** Verify the Transfer Regret Backtester, ship weekly AI prose summaries, add rank trajectory sparklines, fix RouteTreeTab cosmetics, introduce model versioning, and wire in live lineup news from the FPL official news feed.
 
 **Target features:**
-- BACK-02-UAT: Human UAT of Transfer Regret Backtester (dark mode, delta colour, multi-transfer format, captain regression)
-- RANK-SPARK: rank_trajectory sparkline column in GemTable
-- TRT-02/TRT-06: RouteTreeTab "Hits" label fix + ChipToggle stub
-- NLP-01: Weekly prose summary — Claude LLM narrative wrapping captain / transfer / chip / risk output
-- VER-01: Model versioning — version tag per prediction in accuracy_backtest.json, structured comparison across formula changes
+- ✅ Phase 114: BACK-02-UAT, RANK-SPARK, TRT-01/TRT-02/UAT-01 — backtester UAT, sparkline, RouteTreeTab fixes (complete 2026-05-17)
+- ✅ Phase 115: NEWS-01/02/03 — staleness suppression gate + CaptainPicksPanel + OpportunityCostTable wiring (complete 2026-05-17)
+- Phase 116: NLP-01 prose staleness + VER-01/02 model versioning history table
 - SCRAPER-01: Lineup news scraper — FPL official news feed integration into transfer/captain surfaces
 
 ## Previous Milestone: v1.20 Fixes & Decision Quality (Complete 2026-05-16)
