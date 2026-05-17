@@ -82,6 +82,7 @@ beforeEach(() => {
   vi.mocked(useCaptainPicks).mockReturnValue({ data: { gameweek: 28, ceiling: null, eo_adjusted: null }, isLoading: false, error: null } as never)
   vi.mocked(useAuthStatus).mockReturnValue({ isAuthenticated: false, expiresAt: undefined, isLoading: false, setAuthenticated: vi.fn(), clearAuthenticated: vi.fn() } as never)
   vi.mocked(useMyTeam).mockReturnValue({ data: undefined, isLoading: false, error: null } as never)
+  vi.mocked(useNewsFlagEnabled).mockReturnValue(true)
 })
 
 describe('CaptainPicksPanel — Phase 57', () => {
