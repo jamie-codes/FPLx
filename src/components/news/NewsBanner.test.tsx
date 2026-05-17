@@ -67,7 +67,7 @@ describe('NewsBanner — Phase 88 SCRAPER-01', () => {
 
 describe('NewsBanner — Phase 115 NEWS-01 staleness gate', () => {
   const STALE_NOW = new Date('2026-01-01T00:00:00Z').getTime()
-  const FRESH_NEWS_ADDED = '2026-01-15T00:00:00Z'  // after mocked now → delta negative → not stale
+  const FRESH_NEWS_ADDED = '2025-12-19T00:00:00Z'  // 13 days before mocked now → within 14d → renders
   const STALE_NEWS_ADDED = '2025-12-17T00:00:00Z'  // 15 days before mocked now → stale
 
   afterEach(() => vi.restoreAllMocks())
