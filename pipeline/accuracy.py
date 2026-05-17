@@ -23,6 +23,7 @@ import json
 import os
 from collections import defaultdict
 from datetime import datetime, timezone
+from typing import Optional
 
 HAULTER_THRESHOLD = 10       # D-09: actual_pts >= 10 -> haulter
 MID_TIER_THRESHOLD = 6       # Phase 42 ACC-04: 6 <= actual_pts < 10 -> mid-tier scorer
@@ -124,7 +125,7 @@ def compute_accuracy_backtest(
     bootstrap: dict,
     fixtures: list,
     cache_dir: str = '',
-    merged_haul_lookup: dict = None,
+    merged_haul_lookup: Optional[dict] = None,
 ) -> dict:
     """Compute pre-aggregated accuracy backtest for the last 5 finished GWs.
 
@@ -522,7 +523,7 @@ def _empty_backtest(cache_dir: str = '') -> dict:
 def _compute_calibration_data(
     per_gw_rows: dict,
     use_mc: bool = False,
-    merged_haul_lookup: dict = None,
+    merged_haul_lookup: Optional[dict] = None,
 ) -> dict:
     """Phase 63 CAL-01 / CAL-02 / D-05 / D-06 / D-07: decile calibration by position.
 
