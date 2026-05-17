@@ -403,6 +403,7 @@ def compute_accuracy_backtest(
             'save_predictor_enabled': save_predictor_enabled,   # Phase 83 GK-03
             'mc_enabled': mc_enabled,                            # Phase 90 MC-01
         },
+        'sample_gws': len(target_gws_desc),  # Phase 116 VER-01 / D-09: finished GWs contributing to hit_rate
     }
     # D-03 dedup: use set membership to catch interior matches, not just tail (CR-01).
     existing_versions_set = {v.get('formula_version') for v in versions}
@@ -490,6 +491,7 @@ def _empty_backtest(cache_dir: str = '') -> dict:
                 'save_predictor_enabled': save_predictor_enabled,   # Phase 83 GK-03
                 'mc_enabled': mc_enabled,                            # Phase 90 MC-01
             },
+            'sample_gws': 0,  # Phase 116 VER-01 / D-10: cold start — no finished GWs
         }]
 
     return {
