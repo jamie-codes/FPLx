@@ -1549,7 +1549,7 @@ Plans:
   3. User sees NewsBanner in TransferPanel / OpportunityCostTable buy-candidate rows with staleness suppression from NEWS-01 applied — stale zinc news does not appear on buy candidates
 **Plans**: 2 plans
 - [x] 115-01-PLAN.md — NEWS-01 staleness suppression guard in NewsBanner + 5 new Vitest cases (Wave 1)
-- [ ] 115-02-PLAN.md — NEWS-02 NewsBanner wiring into CaptainPicksPanel CandidateRow + NEWS-03 automated staleness verification in OpportunityCostTable (Wave 2)
+- [x] 115-02-PLAN.md — NEWS-02 NewsBanner wiring into CaptainPicksPanel CandidateRow + NEWS-03 automated staleness verification in OpportunityCostTable (Wave 2)
 **UI hint**: yes
 
 ### Phase 116: Prose Staleness & Model Versioning _(v1.21)_
