@@ -22,7 +22,7 @@
 - ✅ **v1.18 Forecast Transparency & AI Intelligence** — Phases 102-105 (shipped 2026-05-14)
 - ✅ **v1.19 AI Quality & Insight Delivery** — Phases 106-109 (shipped 2026-05-14)
 - ✅ **v1.20 Fixes & Decision Quality** — Phases 110-113 (shipped 2026-05-16)
-- **v1.21 Polish, Intelligence & Team News** — Phases 114-116 (in progress)
+- ✅ **v1.21 Polish, Intelligence & Team News** — Phases 114-116 (shipped 2026-05-17)
 
 ## Phases
 
@@ -1552,7 +1552,7 @@ Plans:
 - [x] 115-02-PLAN.md — NEWS-02 NewsBanner wiring into CaptainPicksPanel CandidateRow + NEWS-03 automated staleness verification in OpportunityCostTable (Wave 2)
 **UI hint**: yes
 
-### Phase 116: Prose Staleness & Model Versioning _(v1.21)_
+### ✅ Phase 116: Prose Staleness & Model Versioning _(v1.21)_ — COMPLETE 2026-05-17
 **Goal**: Users can see when the weekly AI prose summary was generated (so they know whether it reflects a post-deadline injury) and can browse a version history of the accuracy model showing hit rate and sample size per formula version — closing two trust-signal gaps that make the model's outputs harder to rely on without transparency
 **Depends on**: Phase 115; VER-01 schema extension must land in the pipeline before VER-02 UI is built
 **Requirements**: PROSE-01, PROSE-02, VER-01, VER-02
