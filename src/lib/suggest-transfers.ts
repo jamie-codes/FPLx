@@ -119,9 +119,10 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
   // D-02: 0.01 floor prevents exact-zero disappearance for confirmed_absent (factor=0.0).
   const availFactor = (p: MergedPlayer): number => {
     if (!lineupNewsMap) return 1.0
-    const af = lineupNewsMap.get(p.id)?.availability_factor ?? 1.0
-    if (af === null) return 1.0
-    return Math.max(0.01, af)
+    const entry = lineupNewsMap.get(p.id)
+    if (!entry) return 1.0
+    if (entry.availability_factor === null) return 1.0   // unknown status → no penalty (D-03)
+    return Math.max(0.01, entry.availability_factor)
   }
   // D-04: scoreBuyCandidate drives both in-pool sort and xPtsGain for buy side only.
   const scoreBuyCandidate = (p: MergedPlayer): number => scorePlayer(p) * availFactor(p)
