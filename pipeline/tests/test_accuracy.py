@@ -1008,3 +1008,94 @@ def test_mc_calibration_missing_player_gets_zero_haul_prob(tmp_path):
     # Coverage < 80% → analytical mode; no KeyError from missing players
     assert result['summary']['calibration_mode'] == 'analytical'
     assert 'calibration' in result
+
+
+# ============================================================================
+# Phase 116 VER-01 — sample_gws field on version records
+# ============================================================================
+
+def test_new_version_record_includes_sample_gws_equal_to_finished_gw_count():
+    """Phase 116 VER-01 / D-09: compute_accuracy_backtest() version record gains
+    'sample_gws' field equal to len(target_gws_desc) — count of finished GWs
+    contributing to hit_rate."""
+    from accuracy import BACKTEST_GWS
+
+    player_histories = {1: [_hist(gw, 90, 6, xg=0.5) for gw in range(1, 33)]}
+    summaries, fg, bootstrap, fixtures = _build_minimal_inputs(player_histories, finished_gws=32)
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures)
+
+    assert 'versions' in result, "result must have 'versions' key"
+    versions = result['versions']
+    assert len(versions) > 0, "versions list must be non-empty"
+    fv_entry = next((v for v in versions if v.get('formula_version') == FORMULA_VERSION), None)
+    assert fv_entry is not None, f"FORMULA_VERSION entry not found in versions: {versions}"
+    assert 'sample_gws' in fv_entry, f"'sample_gws' key missing from version record: {fv_entry}"
+    assert fv_entry['sample_gws'] == BACKTEST_GWS, (
+        f"Expected sample_gws == BACKTEST_GWS ({BACKTEST_GWS}) but got {fv_entry['sample_gws']}"
+    )
+
+
+def test_empty_backtest_version_record_has_sample_gws_zero(tmp_path):
+    """Phase 116 VER-01 / D-10: _empty_backtest() version record gains 'sample_gws': 0
+    (cold start by definition)."""
+    from accuracy import _empty_backtest
+
+    result = _empty_backtest(str(tmp_path))
+
+    assert 'versions' in result, "empty backtest must have 'versions' key"
+    versions = result['versions']
+    assert len(versions) > 0, "versions list must be non-empty for FORMULA_VERSION cold-start record"
+    last = versions[-1]
+    assert 'sample_gws' in last, f"'sample_gws' missing from empty backtest version record: {last}"
+    assert last['sample_gws'] == 0, (
+        f"Expected sample_gws == 0 (cold start) but got {last['sample_gws']}"
+    )
+
+
+def test_legacy_version_records_without_sample_gws_are_preserved(tmp_path):
+    """Phase 116 VER-01 / T-116-03-01: legacy version entries lacking 'sample_gws' are
+    preserved verbatim — the new code must NOT mutate existing entries."""
+    import json as _json
+
+    legacy_entry = {
+        'formula_version': 'vTEST_LEGACY',
+        'recorded_at': '2025-01-01T00:00:00+00:00',
+        'hit_rate': 0.55,
+        'gate_flags': {
+            'form_signal_enabled': True,
+            'xmins_v2_enabled': True,
+            'bonus_predictor_enabled': False,
+            'save_predictor_enabled': False,
+            'mc_enabled': False,
+        },
+    }
+    prior_cache = {
+        'summary': {},
+        'versions': [legacy_entry],
+    }
+    cache_file = tmp_path / 'accuracy_backtest.json'
+    cache_file.write_text(_json.dumps(prior_cache))
+
+    player_histories = {1: [_hist(gw, 90, 6, xg=0.5) for gw in range(1, 33)]}
+    summaries, fg, bootstrap, fixtures = _build_minimal_inputs(player_histories, finished_gws=32)
+    result = compute_accuracy_backtest(summaries, fg, bootstrap, fixtures, cache_dir=str(tmp_path))
+
+    versions = result['versions']
+    # Legacy entry must be present and unmodified (no sample_gws injected)
+    legacy_in_result = next(
+        (v for v in versions if v.get('formula_version') == 'vTEST_LEGACY'), None
+    )
+    assert legacy_in_result is not None, "Legacy 'vTEST_LEGACY' entry must be preserved in versions"
+    assert 'sample_gws' not in legacy_in_result, (
+        f"Legacy entry must NOT have 'sample_gws' added: {legacy_in_result}"
+    )
+    assert legacy_in_result['hit_rate'] == 0.55, "Legacy entry hit_rate must be unchanged"
+
+    # New FORMULA_VERSION entry must have sample_gws
+    from accuracy import FORMULA_VERSION as _FV, BACKTEST_GWS as _BGWS
+    new_entry = next((v for v in versions if v.get('formula_version') == _FV), None)
+    assert new_entry is not None, f"New FORMULA_VERSION entry must be present: {versions}"
+    assert 'sample_gws' in new_entry, f"New FORMULA_VERSION entry must have 'sample_gws': {new_entry}"
+    assert new_entry['sample_gws'] == _BGWS, (
+        f"Expected sample_gws == {_BGWS} but got {new_entry['sample_gws']}"
+    )
