@@ -360,6 +360,7 @@ def run(dry_run: bool = False):
         print("Generating weekly prose summary...")
         try:
             from prose_summary import generate_weekly_summary
+            from gw_intel import _detect_dgw_bgw
             # Top-3 captains: highest xPts_1gw excluding GKs (element_type==1)
             captains_top3 = sorted(
                 [p for p in merged if p.get('xPts_1gw') is not None and p.get('xPts_1gw') > 0 and p.get('element_type') != 1],
@@ -367,7 +368,13 @@ def run(dry_run: bool = False):
                 reverse=True,
             )[:3]
             cap_payload = [
-                {'name': p.get('web_name'), 'team': p.get('team_short_name', ''), 'xPts_1gw': p.get('xPts_1gw')}
+                {
+                    'name': p.get('web_name'),
+                    'team': p.get('team_short_name', ''),
+                    'xPts_1gw': p.get('xPts_1gw'),
+                    'chance_of_playing_next_round': p.get('chance_of_playing_next_round'),
+                    'news': p.get('news', ''),
+                }
                 for p in captains_top3
             ]
             cap_ids = {p['id'] for p in captains_top3}
@@ -383,8 +390,25 @@ def run(dry_run: bool = False):
                 reverse=True,
             )[:3]
             gem_payload = [
-                {'name': p.get('web_name'), 'team': p.get('team_short_name', ''), 'xPts_1gw': p.get('xPts_1gw')}
+                {
+                    'name': p.get('web_name'),
+                    'team': p.get('team_short_name', ''),
+                    'xPts_1gw': p.get('xPts_1gw'),
+                    'chance_of_playing_next_round': p.get('chance_of_playing_next_round'),
+                    'news': p.get('news', ''),
+                }
                 for p in gems_top3
+            ]
+            dgw_bgw_map = _detect_dgw_bgw(merged, current_gw)
+            team_short_by_id = {}
+            for p in merged:
+                tid = p.get('team')
+                if tid is not None and tid not in team_short_by_id:
+                    team_short_by_id[tid] = p.get('team_short_name', '')
+            dgw_team_names = [
+                team_short_by_id[tid]
+                for tid, kind in dgw_bgw_map.items()
+                if kind == 'dgw' and team_short_by_id.get(tid)
             ]
             corpus = [p.get('web_name') for p in merged if p.get('web_name')]
             summary = generate_weekly_summary(
@@ -392,6 +416,7 @@ def run(dry_run: bool = False):
                 gems=gem_payload,
                 player_corpus=corpus,
                 gameweek=current_gw,
+                dgw_teams=dgw_team_names,
             )
             if summary is not None:
                 save('weekly_summary.json', summary)
