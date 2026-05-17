@@ -78,12 +78,14 @@ const fixtureWithVersionsAndCalibration: AccuracyBacktest = {
       recorded_at: '2026-04-15T00:00:00+00:00',
       hit_rate: 0.380,
       gate_flags: { form_signal_enabled: false, xmins_v2_enabled: false, bonus_predictor_enabled: false, save_predictor_enabled: false, mc_enabled: false },
+      sample_gws: 5,
     },
     {
       formula_version: 'v1.12-a',
       recorded_at: '2026-04-30T00:00:00+00:00',
       hit_rate: 0.420,
       gate_flags: { form_signal_enabled: true, xmins_v2_enabled: false, bonus_predictor_enabled: false, save_predictor_enabled: false, mc_enabled: false },
+      sample_gws: 5,
     },
   ],
   calibration: {
