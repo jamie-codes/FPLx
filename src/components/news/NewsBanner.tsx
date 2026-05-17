@@ -28,13 +28,14 @@ const SEVERITY_ICON: Record<NewsSeverity, string> = {
   none:  '',
 }
 
+// NEWS-01 (Phase 115, D-01/D-02/D-03): suppress stale zinc badges (14-day gate)
+const isStale = (newsAdded?: string): boolean =>
+  newsAdded ? Date.now() - new Date(newsAdded).getTime() > 14 * 24 * 60 * 60 * 1000 : false
+
 export function NewsBanner({ news, news_added, chance_of_playing_next_round }: NewsBannerProps) {
   const enabled = useNewsFlagEnabled()
   if (!enabled || !news || news.trim().length === 0) return null
   const severity = computeNewsSeverity(chance_of_playing_next_round, news)
-  // NEWS-01 (Phase 115, D-01/D-02/D-03): suppress stale zinc badges (14-day gate)
-  const isStale = (newsAdded?: string): boolean =>
-    newsAdded ? Date.now() - new Date(newsAdded).getTime() > 14 * 24 * 60 * 60 * 1000 : false
   if (severity === 'zinc' && isStale(news_added)) return null
   if (severity === 'none') return null
   return (
