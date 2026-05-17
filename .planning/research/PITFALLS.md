@@ -1,301 +1,429 @@
-# Pitfalls Research
+# Pitfalls Research — v1.22 Lineup Intelligence (SCRAPER-01)
 
-**Domain:** FPL Analyst v1.21 — Adding SCRAPER-01 (news field integration), NLP-01 (weekly prose summary wiring), and VER-01 (model versioning UI) to a mature app (~30k LOC)
-**Researched:** 2026-05-16
-**Confidence:** HIGH — all pitfalls grounded in direct codebase audit of `pipeline/accuracy.py`, `pipeline/prose_summary.py`, `src/app/api/prose-summary/route.ts`, `src/lib/newsSeverity.ts`, `src/components/news/NewsBanner.tsx`, `src/lib/hooks/useProseSummary.ts`, `src/lib/prose-guardrail.ts`, and `src/lib/types.ts`. No speculative claims.
-
-**Critical context from codebase inspection:**
-- SCRAPER-01 partially shipped in Phase 88: `computeNewsSeverity`, `NewsBanner`, `news_added` field in `MergedPlayer`, `useNewsFlagEnabled` gate hook. What remains is wiring into TransferPanel and captain surfaces, and adding staleness suppression logic.
-- NLP-01 prose summary pipeline module (`pipeline/prose_summary.py`) and UI route (`/api/prose-summary`) are both fully implemented. The GET path (pipeline-generated) and POST path (user-triggered squad-aware refresh) both exist. `ProseSummaryBlock` with refresh button is in `DecisionSummaryTab`. The v1.21 task is validation + any staleness UX improvements.
-- VER-01: `FORMULA_VERSION = 'v1.12-a'` constant exists in `pipeline/accuracy.py`. D-03 dedup (set-membership check) prevents duplicate records per formula version. `versions[]` array is written to `accuracy_backtest.json`. No UI comparison view exists yet.
-- The two-attempt guardrail (loose attempt 0 + strict attempt 1 with name allowlist) exists in both Python and TypeScript implementations and must be kept byte-equivalent.
+**Domain:** Adding multi-source web scraping (Sky Sports, BBC Sport, Twitter/X, FPL bootstrap) to an existing Python pipeline running in GitHub Actions.
+**Researched:** 2026-05-17
+**Overall confidence:** HIGH for pipeline isolation patterns (grounded in existing codebase); HIGH for Playwright/CI specifics (Playwright official docs); MEDIUM for source-specific anti-bot behaviour (no first-hand testing of skysports.com/bbc.co.uk from GH Actions; patterns from scraping ecosystem reports); LOW for Twitter/X without official API (rapidly-changing target, evidence from community sources only).
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: News Badge Fatigue — Zinc-Tier News That Is Multiple GWs Old
+### Pitfall C-01: Scraper Failure Cascading to Kill the Whole Pipeline
 
 **What goes wrong:**
-The FPL bootstrap `news` field is a free-text string that FPL does not consistently clear between gameweeks. A player who had a knock in GW30, played 90 minutes in GW31, played 90 minutes in GW32, and is fully fit in GW33 may still carry `news: "Recovering from knock — 75% chance of playing"` with `news_added` set 3 weeks ago and `chance_of_playing_next_round: 100`. The `computeNewsSeverity` function already handles this correctly — `chance === 100` + non-empty news returns `'zinc'` — but zinc badges still render for every such player. In a squad of 15, this means 4-6 stale zinc badges permanently visible, training users to ignore all news badges.
+A scraper function raises an unhandled exception — network timeout, HTTP 403, `AttributeError` on a missing HTML element — and the entire `run.py` process exits before writing `merged_players.json`, `captain_picks.json`, or any other core artifact. The Vercel Blob retains the previous day's data; the UI shows "Updated 25 hours ago" in amber; the user gets no FPL intelligence for that day.
+
+This pattern is already documented in the codebase: the `set_piece_quality` scraper at lines 241–251 of `run.py` wraps `run_sp_quality()` in a standalone `try/except Exception as sp_exc` block with `print(f"[set_piece_quality] non-fatal error: {sp_exc}", file=sys.stderr)`. The scraper writes nothing on failure; the previously-cached file is preserved via `save()`'s Blob overwrite-only-on-success behaviour.
 
 **Why it happens:**
-FPL's API does not expire or clear news strings. The `news_added` timestamp is available in the response and already stored in `MergedPlayer.news_added`. However, the current `NewsBanner` does not use `news_added` to suppress stale zinc-severity items. `GemTable.tsx` already computes `relTime = news_added ? formatRelativeTime(news_added) : null` and passes it through to `PlayerRowDetail` — but this is display metadata, not a suppression gate.
+Developers add a scraper call inside the main `try` block of `run()` rather than giving it its own isolated try/except. Any exception propagates up, hits the outer `except Exception` at the bottom of `run.py`, writes the stale `last_updated.json` fallback, and exits.
 
-**How to avoid:**
-Add a staleness suppression rule to `computeNewsSeverity` or a new `isStaleNews(news_added: string | undefined, threshold_days: number): boolean` predicate. The rule: if `severity === 'zinc'` (i.e. `chance === 100` with non-empty news) AND `news_added` is more than 14 days old, return `'none'`. Red and amber severities (`chance < 100`) should never be suppressed regardless of age — an injured player with `chance = 50` is always actionable. The 14-day threshold constant should be a named export so it can be tested and adjusted.
+**Consequences:**
+- All downstream pipeline outputs (merged players, captain picks, insights, GW intel, accuracy) are lost for that run.
+- The UI degrades from "stale data" (recoverable) to "broken pipeline run" (requires investigation).
 
-**Warning signs:**
-- Every player in SquadView shows a zinc badge
-- Players who scored 10+ points last GW still have news badges
-- `news_added` timestamps in the rendered row are more than 2 GWs old
+**Prevention:**
+Every scraper call in `run.py` must live in its own isolated try/except block, following the exact pattern used for `set_piece_quality`:
 
-**Phase to address:** SCRAPER-01 finalisation — specifically before wiring `NewsBanner` into TransferPanel buy candidates.
+```python
+lineup_news = None
+try:
+    from lineup_news_scraper import scrape_lineup_news
+    lineup_news = scrape_lineup_news()
+    save('lineup_news.json', lineup_news)
+    print(f"Lineup news scraped: {len(lineup_news.get('players', []))} entries")
+except Exception as scraper_exc:
+    print(f"[lineup_news] non-fatal error: {scraper_exc}", file=sys.stderr)
+    # lineup_news remains None; downstream consumers check for None
+```
+
+**Detection:**
+- GitHub Actions run log shows `[lineup_news] non-fatal error:` lines but no pipeline failure — this is the desired non-fatal outcome.
+- If `merged_players.json` is NOT written, the scraper error escalated into the main try block — isolation is broken.
+
+**Phase to address:** SCRAPER-01, before any scraper code is written.
 
 ---
 
-### Pitfall 2: Doubtful Players as Unpenalised Transfer Targets
+### Pitfall C-02: Sky Sports and BBC Sport Pages Are Partially or Fully JavaScript-Rendered
 
 **What goes wrong:**
-`suggestTransfers` scores buy candidates by xPts delta. The `xmins` pipeline feeds `start_prob` into xPts, which does partially penalise uncertain starters. However, `chance_of_playing_next_round` is FPL's assessment from press conferences and medical staff — it reflects information more current than the historical `start_prob` signal. A player can have `start_prob = 0.87` (5-GW historical) but `chance_of_playing_next_round = 50` (just announced doubtful for this GW). The model scores him near the top; the news badge shows red; the user sees a top-ranked transfer suggestion with a red warning. Without additional context this reads as "system recommends this player despite the flag" when the correct action is "do not buy until fitness confirmed."
+`requests` + `BeautifulSoup` fetch the initial HTML response, which for major sports news sites may be a skeleton with JavaScript tags. The actual team news content is injected by client-side JavaScript after page load. `requests` never executes JavaScript. `BeautifulSoup` parses the skeleton. The CSS selector or element the scraper expects does not exist. The scraper silently returns no data, or the `find()` call returns `None`, and subsequent attribute access raises `AttributeError`.
 
 **Why it happens:**
-`suggestTransfers` in TypeScript has no access to `chance_of_playing_next_round` at scoring time — the field is in `MergedPlayer` but the scoring logic uses `xPts_1gw` which was computed from `start_prob` in the Python pipeline. The live `chance` field is not fed back into the scoring engine.
+Both Sky Sports (`skysports.com`) and BBC Sport (`bbc.co.uk/sport`) use modern React/Vue front ends for their sports pages. The rendered HTML seen by `requests` may contain only `<div id="root"></div>` or equivalent shell containers. The team news content that a browser user sees is not present in the raw HTTP response.
 
-**How to avoid:**
-Two options, in order of preference:
-1. In `pipeline/merge.py`, when `chance_of_playing_next_round` is defined and < 75, apply a multiplier to `xPts_1gw` before writing to `merged_players.json` (e.g. `xPts_1gw *= chance / 100`). This is pipeline-side and ensures consistent scoring across all surfaces.
-2. If option 1 is too invasive for v1.21 scope: add a visual callout in TransferPanel when the top-N buy candidate has `chance < 100`: a banner above the OCS table reading "Top transfer target has an injury flag — wait for fitness news" with the amber/red colour of the news severity.
-Do NOT silently re-rank; make the intervention visible to the user.
+**Consequences:**
+The scraper appears to succeed (no exception) but returns empty results. `lineup_news.json` is written with zero players. All downstream consumers that check `lineup_news` find no news, even when real news exists.
 
-**Warning signs:**
-- A player with `chance_of_playing_next_round = 25` appears as the #1 transfer recommendation
-- TransferPanel shows a red news badge on the buy candidate with no other visual change to ranking or prominence
+**Prevention:**
+Before implementing with `requests+BS4`, verify each target URL's rendering behaviour:
 
-**Phase to address:** SCRAPER-01 TransferPanel integration step.
+1. `curl https://www.skysports.com/football/news/11661 | grep "Injury"` — if content is absent in the raw response, Playwright is required.
+2. `curl https://www.bbc.co.uk/sport/football/premier-league | grep "doubt"` — same test.
+
+If static HTML is not sufficient: use `playwright` in headless mode with `page.wait_for_selector()` before extracting content. If static HTML is sufficient: `requests+BS4` is faster and has no CI overhead.
+
+The decision is per-source, not per-milestone. Sky Sports and BBC Sport may differ from each other.
+
+**Detection:**
+- Scraper returns 0 players despite a press-conference week (GW before matchday).
+- Add a minimum-results assertion: if `len(results) == 0` and the pipeline has never returned 0 before, log a warning.
+
+**Phase to address:** SCRAPER-01, in the RESEARCH task before writing any scraper code. Test each URL with `curl` in GitHub Actions first.
 
 ---
 
-### Pitfall 3: LLM Cost Explosion — Prose Summary POST Triggered Automatically
+### Pitfall C-03: Silent HTML Structure Changes Breaking Scrapers
 
 **What goes wrong:**
-The `/api/prose-summary` POST route generates a Claude Haiku prose summary on demand. The GET route serves the pipeline-generated `weekly_summary.json`. The risk for v1.21 is that any future code change wires the POST trigger to a reactive hook (e.g. `useEffect` that fires when captain picks change, when a transfer is selected, or when the Decision Summary tab mounts). A single `useEffect(() => { refresh.mutate(payload) }, [payload])` in `DecisionSummaryTab` would fire on every transfer interaction, potentially dozens of times per session.
-
-At ~900 tokens/call × 4 sessions/day × 180 GW days = 648K tokens/season, cost is negligible. But a bug that triggers the POST on every re-render of a component that re-renders 50 times per session multiplies this by 50: 32M tokens/season ≈ $16-32/season from a single oversight. This exact risk is already documented in the PROJECT.md Key Decisions table ("NLP-02 on-demand trigger only, never useEffect").
+The scraper ships targeting `.player-news__status` or `div[data-module="team-news"]`. Sky Sports or BBC Sport redesigns their team news section six weeks later. The CSS class no longer exists. `soup.find('div', class_='player-news__status')` returns `None`. The code does `result = soup.find(...).text` — `AttributeError: 'NoneType' object has no attribute 'text'`. If this exception is caught by the non-fatal wrapper, `lineup_news.json` is preserved from the previous run. But that run's data is now 48 hours old and still serving as "current news."
 
 **Why it happens:**
-`useProseRefresh` returns a `useMutation` hook, which is safe by design — mutations do not auto-fire. The pitfall is if a developer wraps `refresh.mutate(payload)` in a `useEffect` or calls it from a function that runs reactively. The existing `ProseSummaryBlock` correctly places the call behind the `↻` button click handler — the risk is regression when other developers touch this component.
+Sports news sites redesign frequently, particularly before new seasons. HTML class names are implementation details — sites do not version them or announce changes. There is no notification mechanism.
 
-**How to avoid:**
-- The `↻` button + `onClick={handleRefresh}` pattern in `ProseSummaryBlock` is correct; preserve it.
-- Never add the prose refresh to `useEffect`, `useMemo`, or any subscription/reactive chain.
-- Add a cooldown: disable the refresh button for 60 seconds after a successful POST (beyond the `isPending` guard already in place). This prevents rapid re-clicking from generating multiple summaries in a session.
-- The Anthropic monthly spend cap in the Anthropic Console is the backstop — keep it set.
+**Consequences:**
+The scraper silently serves stale data. The UI shows news that is days old with no indication of staleness. A player marked "Fit — expected to start" may have been ruled out since the last successful scrape.
 
-**Warning signs:**
-- More than 2 `POST /api/prose-summary` log entries per session in Vercel function logs
-- Prose summary refreshes without user clicking `↻`
-- Monthly Anthropic spend jumps during a week with no schema changes
+**Prevention:**
+1. Use the most general selectors available — semantic tags (`<article>`, `<section>`) over generated class names.
+2. Add explicit result-count validation: if `len(entries) < 3` on a day when team news is expected, log a specific warning: `"[lineup_news_skysports] unexpected result count: 0 entries — possible HTML structure change"`.
+3. Include a `scraped_at` ISO timestamp in every `lineup_news.json` write.
+4. The `NewsBanner` component should display staleness relative to `scraped_at`, not assume freshness.
+5. Introduce a `news_source_health` field in `lineup_news.json`: `{ "sky_sports": { "ok": false, "last_success": "...", "last_error": "..." } }` — surfaces scraper health to monitoring without breaking downstream consumers.
 
-**Phase to address:** NLP-01 validation / any phase that modifies `DecisionSummaryTab` or `ProseSummaryBlock`.
+**Detection:**
+- `lineup_news.json` `scraped_at` falls more than 48 hours behind wall clock.
+- GitHub Actions logs show non-fatal scraper errors two runs in a row.
+
+**Phase to address:** SCRAPER-01 — include `scraped_at` and `news_source_health` in the schema design.
 
 ---
 
-### Pitfall 4: Prose Summary Staleness Without Visual Indication
+### Pitfall C-04: Twitter/X Has No Viable Unauthenticated Scraping Path
 
 **What goes wrong:**
-`ProseSummaryBlock` shows `Updated GW{N}` — a gameweek number, not a timestamp. The pipeline generates `weekly_summary.json` once per daily run. Between pipeline runs, the Blob response is served with `stale-while-revalidate=86400` (24h revalidation). If the pipeline runs at 03:00 and recommends captaining Player A, but at 14:00 Player A is announced out injured, the prose summary continues recommending him until the next pipeline run at 03:00 the next day. The user sees `Updated GW38` with no indication the summary is 11 hours old and potentially wrong.
+As of January 2025, X requires authenticated sessions to view profile timelines and search results beyond a limited preview. Guest token access (the basis of all pre-2023 unauthenticated scrapers) has been closed. Tools built on guest tokens — including `twint`, `snscrape`, and `nitter` in its original form — are effectively dead for production use.
 
-The `generated_at` field is already in the response schema (`{ prose, gw, generated_at }`). It is not currently displayed in `ProseSummaryBlock`.
+The currently-working approach (twscrape, Scweet) requires authenticating with real Twitter account credentials and using the same internal GraphQL endpoints the web client uses. X monitors for anomalous session behaviour and terminates sessions from datacenter IPs (GitHub Actions uses Azure/Microsoft datacenter IPs, which X permanently banned in January 2025).
 
 **Why it happens:**
-`Updated GW{N}` was the initial design (intuitive for FPL managers who think in GW terms). Timestamp staleness was a secondary concern when NLP-01 shipped. With SCRAPER-01 bringing live news into other parts of the UI, the mismatch between "news says player is injured" and "AI summary says captain him" becomes jarring.
+X's product direction since 2023 has been to remove all free data access and force use of the official API (which costs $100/month minimum for Basic access). Unofficial scrapers face a continuously narrowing surface area.
 
-**How to avoid:**
-Display `generated_at` as a relative time string in `ProseSummaryBlock` alongside the GW number: `Updated GW38 · 6 hours ago`. Use `formatRelativeTime(displayed.generated_at)` — this utility already exists in `src/lib/formatRelativeTime.ts`. If `generated_at` is more than 20 hours old (approaching next pipeline run), add a subtle amber note: "Summary may be outdated — click ↻ to refresh."
+**Consequences:**
+- Any unofficial Twitter/X scraper in a GitHub Actions pipeline will fail within days to weeks as sessions are terminated.
+- Session recovery requires human intervention (CAPTCHA, email verification).
+- The pipeline's non-fatal wrapper catches the exception but leaves the Twitter/X news source permanently returning no data, with no user notification.
 
-**Warning signs:**
-- `ProseSummaryBlock` renders without any timestamp
-- Users report the summary recommends a player who is confirmed absent
-- `generated_at` in the response payload is > 20 hours before current time
+**Prevention:**
+Do not implement Twitter/X scraping from GitHub Actions with unofficial tools. Use one of these alternatives instead:
 
-**Phase to address:** NLP-01 — add staleness display as part of the implementation, not as later polish.
+1. **FPL bootstrap `news` field** — already available in the pipeline with no scraping required. Contains structured FPL-official availability information. Highest confidence tier. Already being used for v1.21 news badges.
+2. **Sky Sports + BBC Sport RSS feeds** — both sites publish RSS/Atom feeds for football news sections. RSS is static XML, requires only `requests`, never JavaScript-renders, and changes structure far less often than HTML pages. Check `https://www.skysports.com/rss/0,20514,11661,00.xml` and `https://feeds.bbci.co.uk/sport/football/rss.xml`.
+3. **Third-party FPL news aggregator APIs** — sites like Fantasy Football Scout, Rotowire (Football), and FPL Review publish structured team news. Some have free tiers or RSS.
+4. **Manual curation with structured JSON** — for a personal tool, maintaining a small `overrides.json` for key players' availability between scrape runs is more reliable than an unstable scraper.
+
+**Detection:**
+Twitter/X scraper failure will be logged as a non-fatal error within hours of deployment if datacenter IPs are blocked.
+
+**Phase to address:** SCRAPER-01 design phase — exclude Twitter/X from the automated scraping scope; rely on FPL bootstrap + RSS feeds.
 
 ---
 
-### Pitfall 5: Hallucination Risk When News Context Is Added to LLM Prompt
+## Pipeline Isolation
+
+### Pitfall P-01: Playwright Added to the Main Pipeline Install Without Caching
 
 **What goes wrong:**
-If v1.21 extends the prose summary POST payload to include team news strings (from SCRAPER-01), the LLM prompt grows and the guardrail surface area increases. The current guardrail (`passesGuardrail`) checks that no player from the full FPL corpus appears in the prose unless they are in the `allowed` name set (captains + transfer pair + risks). Adding news context like `"Salah: Fit after training — expected to start"` to the user prompt introduces player names that are prominent in the context but may not be in the `allowed` set if Salah is not the user's captain or transfer target. The LLM, seeing the name in context, mentions it. Guardrail rejects. Both attempts fail. 422 returned. No prose shown.
+`playwright` is added to `requirements.txt` or `pip install playwright` is added to the GitHub Actions workflow. The first run also requires `playwright install chromium --with-deps`. Without caching:
 
-**Why it happens:**
-The `collectAllowedNames` function in `route.ts` only accepts names from `captains[]`, `transfer.sell/buy`, and `risks[]`. News player names are not added to `allowed`. If news text contains player names from outside the squad/recommendation context, guardrail failure is near-certain.
+- Playwright browser binaries are ~150MB for Chromium alone.
+- `playwright install --with-deps chromium` takes 8-20 minutes on a cold GitHub Actions runner.
+- This adds to the runtime of every daily pipeline run, even on days when the scraper returns no results.
+- GitHub Actions free tier has a 2,000 minutes/month budget per repository. Adding 10 minutes per run costs 300 minutes/month for 30 days — 15% of the free budget consumed by browser installation alone.
 
-**How to avoid:**
-Do NOT add raw news strings from the FPL bootstrap to the prose prompt. If injury context is needed, either:
-1. Include only news for players already in the `allowed` set (filter before building prompt).
-2. Express news as structured status data (e.g. `<availability name="Salah" status="fit"/>`) and add `Salah` to `allowed` only when he appears in that block.
-3. Keep the current prompt scope (captains + gems + risks) and handle news separately in the UI rather than the prose.
-Approach 3 is safest for v1.21 scope.
+**Prevention:**
+Cache the Playwright browser binaries between runs:
 
-**Warning signs:**
-- Guardrail rejection rate rises above 10% after adding news to prompt context
-- 422 responses in logs for squads that previously generated prose successfully
-- Strict-mode retry always failing (both attempts fail with different players mentioned)
+```yaml
+- name: Cache Playwright browsers
+  uses: actions/cache@v3
+  with:
+    path: ~/.cache/ms-playwright
+    key: playwright-chromium-${{ hashFiles('requirements.txt') }}
 
-**Phase to address:** NLP-01 — if extending the prompt payload beyond its current schema.
+- name: Install Playwright browsers (only if cache miss)
+  run: python -m playwright install chromium --with-deps
+```
+
+Only install Chromium, not all browsers (`--with-deps chromium` not `--with-deps`). Use `--only-shell` if only headless scraping is needed.
+
+**Detection:**
+- GitHub Actions run time increases by 8+ minutes on cache misses.
+- Monthly Actions minutes consumption increases proportionally.
+
+**Phase to address:** SCRAPER-01, at the point where Playwright is first introduced to the workflow.
 
 ---
 
-### Pitfall 6: Version Tag Drift — `FORMULA_VERSION` Not Bumped After Formula Changes in Other Files
+### Pitfall P-02: Playwright Used When requests+BS4 Is Sufficient
 
 **What goes wrong:**
-`FORMULA_VERSION = 'v1.12-a'` lives in `pipeline/accuracy.py`. The D-03 dedup mechanism (set-membership check on `versions[]`) means that if `FORMULA_VERSION` is not bumped after a formula change, the next pipeline run finds the existing record and does NOT append a new one. The hit rate associated with the old tag continues to accumulate from new GWs' data, but the tag never signals that the formula changed. The AccuracyTab version comparison shows one version across the entire season — no history, no evidence of formula evolution.
+Playwright is introduced for all scraping targets by default, even for sites that serve their content in the initial HTML response. The pipeline now spins up a headless Chromium browser on every daily cron run, consuming CI minutes, RAM (Chromium uses ~200MB), and time, when a 10ms `requests.get()` would suffice.
 
-The risk is highest when changes to xPts calculation happen in `pipeline/merge.py`, `pipeline/simulate.py`, `pipeline/xmins.py`, or `pipeline/bonus.py` — none of which touch `accuracy.py`. A developer making a CS probability adjustment in `merge.py` may not think to open `accuracy.py` to bump the tag.
+**Prevention:**
+Use the decision matrix: `requests+BS4` first; upgrade to Playwright only per-source if the static HTML test (see C-02) shows content is absent. Structure the code so sources can be swapped independently:
 
-**Why it happens:**
-Manual version bumping has no automated enforcement gate. Code review is the only mechanism. Changes to files that don't import `FORMULA_VERSION` silently skip the bump.
+```python
+def scrape_sky_sports_news() -> list[dict]:
+    """Try static HTML first; fall back to Playwright if needed."""
+    ...
 
-**How to avoid:**
-Add "Did you bump `FORMULA_VERSION` in `pipeline/accuracy.py`?" as a mandatory acceptance criterion in every phase plan that modifies any of: `merge.py`, `simulate.py`, `xmins.py`, `bonus.py`, `saves.py`. The tag pattern `v{milestone}-{letter}` (e.g. `v1.21-a`) is already defined — apply it. For VER-01, add a comment block above the `FORMULA_VERSION` constant listing the files that should trigger a bump.
+def scrape_bbc_sport_news() -> list[dict]:
+    """Static HTML only — verified to not require JS rendering."""
+    ...
+```
 
-**Warning signs:**
-- `versions[]` in `accuracy_backtest.json` has only one entry despite multiple milestone deliveries
-- AccuracyTab shows a single version row with no comparison history
-- A PR modifies `merge.py` xPts logic but `accuracy.py` diff shows no change
+If Playwright is not needed for any source, do not include it in the workflow at all.
 
-**Phase to address:** VER-01 — define the bump protocol and add it to the phase checklist.
+**Detection:**
+- All scrapers return data correctly with `requests+BS4` after testing.
+- Playwright install step appears in workflow but is never exercised in the scraper logic.
+
+**Phase to address:** SCRAPER-01 — make the static/dynamic determination per-source before writing any code.
 
 ---
 
-### Pitfall 7: Sample Size Incomparability in Version Comparison UI
+### Pitfall P-03: Scraper Writes to Blob on Every Run Without Stale-Preservation Logic
 
 **What goes wrong:**
-The `versions[]` array in `accuracy_backtest.json` stores one record per `FORMULA_VERSION` with `hit_rate` (a scalar). Two entries side by side in a comparison UI can show `v1.12-a: 18.99%` and `v1.21-a: 0.0%`. The second entry was written by `_empty_backtest` at the start of the season when no GWs were finished. `hit_rate: 0.0` is not a regression — it is a cold-start artefact — but it looks catastrophic next to a mature version's 19% hit rate.
+The scraper runs, encounters a temporary network error, and returns an empty list. The `save()` call writes `{"players": []}` to Blob, overwriting the previous run's real data. All downstream consumers now see zero player news. The UI shows no news badges on any player for the day.
 
-More broadly: a version recorded at GW3 (3 GWs of data, 30 observations per decile) is not comparable to one at GW38 (5-GW rolling window, 200 observations per decile). Presenting them with equal visual weight misleads.
+**Prevention:**
+Add a minimum-content guard before calling `save()`:
 
-**Why it happens:**
-The current schema `{ formula_version, recorded_at, hit_rate, gate_flags }` has no `sample_gws` field. The UI, when built, has no way to distinguish a cold-start zero from a genuinely low-performing formula.
+```python
+if lineup_news and len(lineup_news.get('players', [])) > 0:
+    save('lineup_news.json', lineup_news)
+else:
+    print("[lineup_news] skipping Blob write — empty result; preserving previous run")
+```
 
-**How to avoid:**
-Before building the VER-01 comparison UI: extend the version record schema to include `sample_gws: int` (count of GWs that contributed observations to the hit_rate calculation). The `_empty_backtest` path writes `sample_gws: 0`; the normal path writes `sample_gws: len(target_gws_desc)` (already tracked as `gws_covered`). The UI should: (a) filter entries with `sample_gws < 3` from the comparison table, or (b) label them clearly as "Pre-season (no data)".
+Note: this is already the pattern used by `set_piece_quality`'s `run_sp_quality()` which returns `None` on failure, and `run.py` checks for `None` before saving.
 
-**Warning signs:**
-- Version comparison table shows `0.0%` in one row with no qualifier
-- User asks "did the model get worse?" after a version bump at season start
-- `versions[]` includes the initial pre-season `_empty_backtest` entry in the UI
+**Detection:**
+- `lineup_news.json` in Blob has `players: []` after a pipeline run.
+- GitHub Actions log shows a network-level error from the scraper in the same run.
 
-**Phase to address:** VER-01 — extend schema before building UI.
+**Phase to address:** SCRAPER-01.
 
 ---
 
-### Pitfall 8: Storage Growth From Per-Run Version Appending
+### Pitfall P-04: Rate Limiting from Running on a Static Datacenter IP
 
 **What goes wrong:**
-The D-03 dedup correctly prevents appending on every pipeline run — only one record per unique `FORMULA_VERSION`. This is the safe design. The pitfall is a future developer treating VER-01 as "full historical backtesting" and changing the append logic to add one record per pipeline run (e.g. to track accuracy evolution within a single formula version across the season). At 38 GWs × 1 record/run, the `versions[]` array is still small. But if `predictions_snapshot.json` is extended to store per-run snapshots per formula version (600 players × 5 historical GWs × N runs), the Blob storage cost grows proportionally.
+GitHub Actions runners share a pool of IP addresses owned by Microsoft Azure. Sports news sites that apply IP reputation scoring may rate-limit or block requests from datacenter IP ranges outright (not just flagging browser fingerprints). A `requests.get()` to `skysports.com` may return HTTP 403 or 429 immediately, not because of header or bot-detection issues, but because the IP range is known to be non-residential.
 
-**Why it happens:**
-The current design is explicitly scoped to "one record per formula tag" (D-03). The temptation after shipping VER-01 is to add granularity: "track how the same formula performs across the season." This is a reasonable idea but out of scope for v1.21.
+**Prevention:**
+1. Set a `User-Agent` header that matches a real browser (already done in `fpl_client.py` as a model). Include `Accept-Language`, `Accept`, and `Referer` headers.
+2. Add a randomised delay (`time.sleep(random.uniform(2, 5))`) between scraper calls.
+3. Do not request the same page multiple times per run.
+4. If rate limiting is consistently encountered, move to RSS feeds for those sources (see C-04 alternative 2).
+5. Do not use proxies (cost-sensitive constraint).
 
-**How to avoid:**
-Keep `versions[]` as-is: one lightweight record per unique formula tag (formula_version, recorded_at, hit_rate, gate_flags, sample_gws). Do NOT change the dedup logic to allow multiple records per tag. If within-version accuracy tracking is needed in a future milestone, the correct approach is a separate `accuracy_trend.json` keyed by `(formula_version, gw)` — not modifying the existing versions array.
+**Detection:**
+- Scraper returns HTTP 403 or 429 in pipeline logs.
+- Replacing the GitHub Actions runner with a local run succeeds, confirming datacenter IP is the issue.
 
-**Warning signs:**
-- `versions[]` grows more than ~5 entries per season (would indicate per-run appending)
-- `accuracy_backtest.json` file size in Blob increases by more than 1KB per pipeline run
-- D-03 dedup condition is modified to allow same-version re-appends
-
-**Phase to address:** VER-01 — explicitly note the per-tag (not per-run) constraint in the implementation plan.
-
----
-
-## Technical Debt Patterns
-
-| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
-|----------|-------------------|----------------|-----------------|
-| Hardcode `FORMULA_VERSION` in `accuracy.py` with no CI enforcement | Zero tooling overhead | Version drift when formula changes in other files; no audit trail | Acceptable for personal tool — compensate with per-phase checklist item |
-| Display raw `news` string with no staleness suppression | Zero parsing complexity | Zinc badge fatigue; users ignore all news badges | Never acceptable — `news_added` field already available to fix this |
-| Show `Updated GW{N}` without `generated_at` timestamp in `ProseSummaryBlock` | Simpler copy | Users cannot tell if summary is from today or yesterday | Never in v1.21 — `generated_at` is already in the response payload |
-| Omit `sample_gws` from version record | No schema change needed | Cold-start zeros look like real regressions in version comparison UI | Never if building a comparison UI |
-| One `FORMULA_VERSION` record per unique tag (not per run) | Minimal Blob growth | Cannot track within-version accuracy drift across a season | Acceptable for v1.21 — out-of-scope concern |
+**Phase to address:** SCRAPER-01.
 
 ---
 
-## Integration Gotchas
+## Source-Specific Risks
 
-| Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| FPL `news` field | Treating non-empty string as always current news | Cross-reference `news_added` timestamp; suppress zinc-tier (`chance === 100`) badges older than 14 days |
-| FPL `chance_of_playing_next_round` | Assuming `null` always means "healthy" | `null` means FPL hasn't set an availability estimate — could be healthy OR pre-season/untracked. Cross-reference with `status` field: `status: 'a'` + `chance: null` = healthy |
-| Anthropic API in prose-summary POST | Calling from `useEffect` or any reactive hook | `useMutation` + explicit user button only; never in `useEffect` |
-| `passesGuardrail` in TypeScript + Python | Adding a new guardrail rule only in one implementation | Both `src/lib/prose-guardrail.ts` and `pipeline/prose_summary.py::_passes_guardrail` must stay byte-equivalent. If you add a staleness check or additional rule to one, mirror it in the other |
-| `versions[]` dedup in `accuracy_backtest.json` | Changing dedup from set-membership to tail-only comparison | Set-membership (current D-03) catches interior matches; tail-only would allow the same version to reappear after a bump-and-revert cycle |
-| `news_added` field in pipeline | Returning empty string `''` as default vs `None` | `pipeline/merge.py` already uses `element.get('news_added', '')` — the TypeScript type is `news_added?: string`. An empty string should be treated the same as `undefined` when computing staleness |
+### Risk S-01: Sky Sports — Cloudflare Bot Protection
 
----
+**Evidence:** Cloudflare JavaScript challenges are common on major sports media sites. Sky Sports operates as a high-value media property and is likely to have Cloudflare or equivalent protection. Confidence: MEDIUM (not directly verified by testing skysports.com from GH Actions; Cloudflare patterns confirmed from ecosystem research).
 
-## Performance Traps
+**What happens:**
+A `requests.get('https://www.skysports.com/...')` call returns HTTP 403 with a Cloudflare challenge page. The HTML body contains `<title>Just a moment...</title>`. `BeautifulSoup` parses it; no team news elements are found. The scraper silently returns empty results.
 
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| Prose summary POST on every Decision Summary tab mount | Anthropic spend scales with tab switches | POST is behind `useMutation` + button — never in `useEffect`; preserve this invariant | Day 1 if wired incorrectly |
-| `readPlayerCorpus` in prose-summary POST reads 3-5MB Blob on every call | Slow POST response; Vercel function cold-start amplified | Vercel function reuse caches in-memory after first call in same instance; acceptable for single-user tool | If POST is called frequently from a serverless cold-start environment |
-| `computeNewsSeverity` called on every row render for all 600+ players in GemTable | Negligible — pure function, no I/O | No issue at this scale | Not a concern; `formatRelativeTime` is the heavier call |
-| `versions[]` array iteration in `compute_accuracy_backtest` | Linear scan on every pipeline run | Already O(n) set-membership; n < 20 entries per season — not a concern | Never |
+**Mitigation options, in preference order:**
+1. Use the Sky Sports RSS feed instead of HTML pages: `https://www.skysports.com/rss/0,20514,11661,00.xml` (Premier League news). RSS endpoints are static XML and are typically not behind Cloudflare challenges.
+2. Use `cloudscraper` Python library, which emulates a browser TLS handshake and solves simple Cloudflare JavaScript challenges without a full browser.
+3. Use `playwright` in headless mode — passes the JavaScript challenge but adds CI overhead (see P-01).
+
+**Detection:**
+- Raw HTTP response body contains "cloudflare" or "Just a moment" in the logs.
+- HTTP status code 403 or 503 in scraper logs.
 
 ---
 
-## UX Pitfalls
+### Risk S-02: BBC Sport — Dynamic Team News Content
 
-| Pitfall | User Impact | Better Approach |
-|---------|-------------|-----------------|
-| Zinc news badge for players who played 90 min last GW | Trained badge blindness; all news dismissed | Add staleness suppression: zinc-severity + `news_added` > 14 days old → suppress badge |
-| AI summary recommending an injured player with no staleness indicator | Trust erosion in AI summary feature | Display `generated_at` as relative time ("6 hours ago") in `ProseSummaryBlock` |
-| Version comparison table showing `0.0%` cold-start entry | Looks like catastrophic regression | Filter `sample_gws < 3` entries or label as "Pre-season — no data" |
-| Red news badge on top transfer target with no UI context | User confused whether engine accounts for injury | Add advisory banner in TransferPanel when top buy candidate has `chance < 100` |
-| News badge appearing in GemTable for all 600 players | Noise in a data-dense table | News badges in GemTable expand-row only; in TransferPanel and captain surfaces as primary decision context |
+**Evidence:** BBC Sport pages use a React front-end. Simple fixture and score data appears in the initial HTML; detailed team news injury lists may or may not. The BBC has published RSS feeds for sport sections historically. Confidence: MEDIUM.
 
----
+**What happens:**
+`requests.get('https://www.bbc.co.uk/sport/football/premier-league')` may return the page shell but not the team news paragraphs.
 
-## "Looks Done But Isn't" Checklist
-
-- [ ] **SCRAPER-01 news badge staleness:** `computeNewsSeverity` or a new predicate suppresses zinc-severity badges when `news_added` is more than 14 days old. Verify by checking a player with `chance === 100` and `news_added` 3+ weeks ago renders no badge.
-- [ ] **SCRAPER-01 TransferPanel wiring:** `NewsBanner` renders on buy-candidate rows in `OpportunityCostTable`. `news_added` is already passed at line 139 — confirm the badge renders in production with real squad data.
-- [ ] **NLP-01 staleness display:** `ProseSummaryBlock` shows `generated_at` as a relative time string alongside `GW{N}`. Verify by checking the rendered output when `generated_at` is 10+ hours old.
-- [ ] **NLP-01 refresh cooldown:** The `↻` button is disabled during `isPending`. Verify it also becomes disabled for 60 seconds after a successful POST (not just during the in-flight request).
-- [ ] **VER-01 schema extension:** Every new version record includes `sample_gws: int` before the comparison UI is built. Verify `accuracy_backtest.json` versions array includes `sample_gws` in its entries.
-- [ ] **VER-01 cold-start suppression:** The AccuracyTab version comparison table filters or labels entries where `sample_gws < 3`. Verify by checking a cold-start `accuracy_backtest.json` does not cause a `0.0%` row to render alongside a mature version.
-- [ ] **VER-01 bump protocol:** The phase plan for any v1.21 task that modifies xPts formula files includes "bump `FORMULA_VERSION` in `pipeline/accuracy.py`" as an explicit acceptance criterion.
-- [ ] **SCRAPER-01 `news_flag_enabled` gate:** `useNewsFlagEnabled()` returns `false` on cold-start (no `accuracy_backtest.json` loaded yet). Verify `NewsBanner` renders nothing when the gate is `false`.
+**Mitigation options:**
+1. Use the BBC Sport RSS feed: `https://feeds.bbci.co.uk/sport/football/rss.xml` — static XML, no JavaScript rendering, contains news headlines.
+2. If full team news prose is required (not just headlines), use Playwright with `page.wait_for_load_state('networkidle')` before extraction.
+3. Scope the BBC Sport scraper to RSS headlines only; use FPL bootstrap `news` field as the authoritative availability source.
 
 ---
 
-## Recovery Strategies
+### Risk S-03: FPL Bootstrap `news` Field — Parsing Complexity
 
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|---------------|----------------|
-| Prose summary POST wired to `useEffect` (cost explosion) | MEDIUM | Kill switch: remove `ANTHROPIC_API_KEY` from Vercel env to disable all LLM routes; fix the `useEffect` trigger; redeploy; restore key; Anthropic Console cap is the backstop |
-| Version tag drift (formula changed without bump) | LOW | Bump `FORMULA_VERSION` immediately; redeploy pipeline; next run creates new record; old record retains its (incorrect) attribution — acceptable data quality note for a personal tool |
-| Guardrail always rejecting prose after news context added | LOW | Revert news context from POST payload; return to captains/transfer/risks-only scope; audit `collectAllowedNames` to include all prompt-referenced player names |
-| Zinc badge fatigue (all players show news badges) | LOW | Add staleness predicate to `computeNewsSeverity`; one function change; no pipeline changes needed |
-| VER-01 UI showing misleading cold-start `0.0%` row | LOW | Add `sample_gws < 3` filter to the AccuracyTab version table query; one UI component change |
+**Evidence:** The field already exists in `merged_players.json` via `pipeline/merge.py`. The v1.21 `NewsBanner` component reads it. What remains for SCRAPER-01 is structured extraction: parsing the free-text string into `{ status, confidence, source }` rather than showing raw text. Confidence: HIGH (grounded in codebase).
+
+**What goes wrong:**
+The `news` field is free text: `"Knee injury - 50% chance of playing"`, `"Expected to be available"`, `"Illness - doubtful"`, `"International duty"`. A regex or keyword match that extracts confidence fails on unusual wordings. A player with `news = "Groin injury - 25% chance of playing"` should yield `confidence: 'low'`; one with `news = "Slight knock - should be fine"` should yield `confidence: 'high'`. Edge cases: `"COVID-19 isolation"`, `"Compassionate leave"`, `"Awaiting scan results"`.
+
+**Prevention:**
+- Extract `chance_of_playing_next_round` (an integer, already available) as the primary confidence signal.
+- Use `news` as supplementary text label, not as the confidence source.
+- Map `chance_of_playing_next_round` to tiers: `null` = no news; `75-100` = low concern; `50` = doubtful; `25` = unlikely; `0` = ruled out.
+- Do not attempt to parse `news` free text into structured confidence — the `chance` integer already provides this.
 
 ---
 
-## Pitfall-to-Phase Mapping
+### Risk S-04: Twitter/X — Permanent Datacenter IP Blocks and Authentication Arms Race
 
-| Pitfall | Prevention Phase | Verification |
-|---------|------------------|--------------|
-| Zinc badge fatigue from stale news | SCRAPER-01 (staleness rule) | Player with `chance === 100` and `news_added` > 14 days renders no badge |
-| Doubtful player as unpenalised transfer target | SCRAPER-01 (TransferPanel integration) | Player with `chance < 75` is visually distinguished in OCS buy-candidate list |
-| Prose POST cost explosion from reactive trigger | NLP-01 wiring | No POST entry in Vercel logs except on explicit `↻` button click |
-| Stale prose with no temporal indicator | NLP-01 | `ProseSummaryBlock` shows relative `generated_at` timestamp |
-| Hallucination from news names in prompt | NLP-01 (if prompt extended) | Guardrail rejection rate < 5% with real squad data |
-| Version tag drift | VER-01 | Each phase plan modifying formula files includes explicit FORMULA_VERSION bump in acceptance criteria |
-| Sample size incomparability in version comparison | VER-01 | `sample_gws` field present in version records; cold-start entries filtered or labelled in UI |
-| Storage growth from per-run appending | VER-01 | `versions[]` grows by at most 1 entry per unique formula tag per season |
+**Evidence:** X permanently banned datacenter IP ranges in January 2025. All unofficial scraping requires authenticated sessions. twscrape (the leading current tool) requires Twitter account credentials and survives for days to weeks before session termination. Confidence: HIGH (multiple community sources, actively maintained library documentation).
+
+**What goes wrong:**
+Even with twscrape + account credentials, GitHub Actions' Azure-owned IPs hit X's datacenter IP block before the session-level rate limit. The scraper fails on the first request. The exception is caught by the non-fatal wrapper. No Twitter/X data is returned. The failure recurs on every pipeline run.
+
+**Mitigation:**
+Exclude Twitter/X from automated scraping entirely. The FPL bootstrap `news` field and RSS-sourced news provide sufficient signal for player availability. Twitter/X adds marginal value over these structured sources for a once-daily pipeline: breaking news breaks before the next FPL bootstrap update anyway (FPL updates bootstrap several times per day for injury news).
+
+---
+
+## Prevention Strategies
+
+### Strategy 1: Source Tier Architecture
+
+Structure `lineup_news.json` with explicit source tiers so consumers know how to weight each signal:
+
+```json
+{
+  "scraped_at": "2026-05-17T03:15:00Z",
+  "players": [
+    {
+      "element_id": 308,
+      "web_name": "Salah",
+      "status": "confirmed",
+      "confidence": "high",
+      "source": "fpl_bootstrap",
+      "news": "Fit and available",
+      "news_added": "2026-05-16T10:00:00Z"
+    }
+  ],
+  "source_health": {
+    "fpl_bootstrap": { "ok": true, "last_success": "2026-05-17T03:14:00Z" },
+    "sky_sports_rss": { "ok": true, "last_success": "2026-05-17T03:14:30Z" },
+    "bbc_sport_rss": { "ok": false, "last_success": "2026-05-16T03:12:00Z", "last_error": "HTTP 503" }
+  }
+}
+```
+
+Tiers by confidence, highest to lowest: `fpl_bootstrap` > `sky_sports_rss` > `bbc_sport_rss`. Downstream consumers (INTEL-01/02/03/04) pick the highest-confidence source per player.
+
+### Strategy 2: Try RSS Before HTML
+
+RSS feeds are the scraping-friendly interface for news sites. They are static XML, never JavaScript-rendered, change structure rarely, and do not trigger bot detection. Always attempt RSS integration before HTML scraping:
+
+- Sky Sports Premier League news RSS: `https://www.skysports.com/rss/0,20514,11661,00.xml`
+- BBC Sport football RSS: `https://feeds.bbci.co.uk/sport/football/rss.xml`
+
+RSS parsing in Python: `import feedparser; feed = feedparser.parse(url)` — zero dependencies beyond `feedparser`. If RSS coverage is sufficient, HTML scraping is not needed.
+
+### Strategy 3: Schema-First, Scraper-Second
+
+Define the `lineup_news.json` schema and the `LineupNews` TypeScript type before writing any scraper code. This forces the question: "what minimum data does each INTEL phase need?" rather than "what can we get from Sky Sports?" A schema-first approach prevents scope creep where scrapers grow to accommodate data that is never used.
+
+Minimum viable fields per player entry:
+- `element_id` (FPL player ID)
+- `web_name`
+- `status` (`confirmed_out` | `doubtful` | `likely` | `confirmed_fit`)
+- `confidence` (`high` | `medium` | `low`)
+- `source` (which scraper provided this)
+- `news_added` (ISO timestamp of when the news was first observed)
+
+### Strategy 4: Staleness Gates in All Downstream Consumers
+
+Every INTEL-phase consumer of `lineup_news.json` must check `scraped_at` before applying news penalties. If `scraped_at` is more than 48 hours old, treat the news as stale and do not apply penalisation to transfer scores or captain recommendations:
+
+```python
+from datetime import datetime, timezone, timedelta
+
+def is_news_stale(scraped_at_iso: str, threshold_hours: int = 48) -> bool:
+    scraped = datetime.fromisoformat(scraped_at_iso.replace('Z', '+00:00'))
+    return (datetime.now(timezone.utc) - scraped) > timedelta(hours=threshold_hours)
+```
+
+### Strategy 5: Fail-Fast Validation in Local Testing
+
+Before adding any scraper to the GitHub Actions pipeline, run it locally with logging enabled to verify:
+1. The target URL returns the expected HTML content type.
+2. The CSS selector or RSS path successfully finds at least one result.
+3. The output schema matches `lineup_news.json` exactly.
+
+Add an explicit assertion at the end of each scraper function: `assert len(results) > 0, f"No results from {source} — possible structure change"`. In the pipeline, this assertion raises an exception caught by the non-fatal wrapper (acceptable); in local testing, it surfaces the failure immediately.
+
+---
+
+## Twitter/X Access Options
+
+All options assessed for a personal tool running in GitHub Actions on a zero-cost constraint.
+
+| Option | Works in GH Actions | Cost | Stability | Verdict |
+|--------|--------------------|----|-----------|---------|
+| Official X API (Basic tier) | Yes | $100/month | High | Out of scope (cost constraint) |
+| twscrape (account auth) | No — Azure IPs blocked since Jan 2025 | Free but fragile | Very low | Exclude |
+| Scweet (cookies + GraphQL) | No — same IP block issue | Free but fragile | Very low | Exclude |
+| Nitter self-hosted | Requires separate server | Hosting cost | Low (guest account pools needed) | Out of scope |
+| RSS feed from Twitter profile | X disabled RSS feeds in 2023 | Free | N/A — not available | N/A |
+| FPL bootstrap `news` field | Yes — already in pipeline | Free | High | Recommended |
+| Sky Sports / BBC RSS | Yes | Free | Medium-High | Recommended |
+| Manual `overrides.json` | Yes | Free | High (manual effort) | Acceptable fallback |
+
+**Recommendation:** Exclude Twitter/X from SCRAPER-01 scope entirely. Use FPL bootstrap (primary) + Sky Sports RSS + BBC Sport RSS (secondary sources). This gives sufficient player availability signal without the authentication complexity, datacenter IP blocks, or ongoing maintenance burden of unofficial X scraping.
+
+The FPL bootstrap `news` field is already the most reliable source: it is updated multiple times per day by FPL's editorial team from actual press conferences and physio reports. External scraping adds marginal value and material fragility.
+
+---
+
+## Phase-Specific Warnings
+
+| Phase | Likely Pitfall | Mitigation |
+|-------|----------------|------------|
+| SCRAPER-01: schema design | Modelling `news` as free text instead of structured tiers | Use `chance_of_playing_next_round` integer as confidence; `news` text as label only |
+| SCRAPER-01: source implementation | Using `requests` on a Cloudflare-protected HTML page | Test each source with `curl` first; use RSS feeds as the default |
+| SCRAPER-01: pipeline wiring | Adding scraper call inside main `try` block | Wrap each scraper in its own `try/except Exception`; follow `set_piece_quality` pattern at `run.py:241-251` |
+| SCRAPER-01: Playwright decision | Adding Playwright to workflow even when `requests` suffices | Per-source static/dynamic determination before writing code |
+| SCRAPER-01: Twitter/X | Any unofficial X scraper in GH Actions | Do not implement; FPL bootstrap covers the same information |
+| INTEL-01 through INTEL-04 | Consuming stale `lineup_news.json` without staleness check | Check `scraped_at` before applying news penalties; gate on 48-hour threshold |
+| All INTEL phases | No data when scraper is down | Treat absent/stale `lineup_news.json` as "no news" (not "no doubts") — neutral, not optimistic |
 
 ---
 
 ## Sources
 
-- Direct codebase audit: `src/lib/newsSeverity.ts` — severity classification rules, zinc/amber/red thresholds
-- Direct codebase audit: `src/components/news/NewsBanner.tsx` — `useNewsFlagEnabled` gate, rendering logic
-- Direct codebase audit: `src/components/gem-table/GemTable.tsx` — `news_added` passed as `relTime` metadata but not used as suppression gate
-- Direct codebase audit: `pipeline/accuracy.py` — `FORMULA_VERSION = 'v1.12-a'`, D-03 set-membership dedup, `versions[]` append logic, `_empty_backtest` path
-- Direct codebase audit: `pipeline/prose_summary.py` — qualitative-only prompt, two-attempt guardrail, non-fatal try/except, `None` fallback
-- Direct codebase audit: `src/app/api/prose-summary/route.ts` — GET/POST split, `readPlayerCorpus`, `collectAllowedNames`, `buildUserPrompt`, `passesGuardrail`
-- Direct codebase audit: `src/lib/hooks/useProseSummary.ts` — 6h staleTime, 404 → null pattern
-- Direct codebase audit: `src/lib/hooks/useProseRefresh.ts` — `useMutation` pattern, 422 → GUARDRAIL_FAILED sentinel
-- Direct codebase audit: `src/components/squad/ProseSummaryBlock.tsx` — refresh button, `override` state, guardrail error handling
-- Direct codebase audit: `src/lib/types.ts` — `news_added?: string`, `chance_of_playing_next_round?: number | null`, `news_flag_enabled?: boolean`
-- Direct codebase audit: `pipeline/merge.py` lines 992-995 — `news`, `news_added`, `chance_of_playing_next_round` passthrough from FPL bootstrap
-- Existing key decision (PROJECT.md): "NLP-02 on-demand trigger only, never useEffect — cost explosion risk: 50 rows × 900 tokens × 4 sessions × 180 days ≈ USD 16–32/season from one bug"
-- Existing key decision (PROJECT.md): "INSIGHT_BATCH_ENABLED env var gate defaults false — cost stays predictable"
-- FPL API behaviour: `news` field is not cleared between GWs; `news_added` timestamp is the only staleness signal available
+- Direct codebase audit: `pipeline/run.py` lines 241-251 — set_piece_quality non-fatal try/except pattern
+- Direct codebase audit: `pipeline/fpl_client.py` — existing User-Agent + Referer headers pattern for FPL API requests
+- Playwright official docs: `playwright.dev/python/docs/ci-intro` — GitHub Actions setup, browser caching, headless shell mode
+- Playwright official docs: `playwright.dev/python/docs/browsers` — chromium headless shell, `--only-shell` install flag
+- twscrape GitHub: `github.com/vladkens/twscrape` — authentication requirements, IMAP email verification, cookie-based session management
+- Scrapely/ecosystem research: X datacenter IP ban (January 2025), guest token deprecation (August 2023)
+- Cloudflare challenge documentation: `developers.cloudflare.com/cloudflare-challenges/` — JavaScript challenge mechanism
+- Scraping ecosystem: `dev.to/agenthustler/python-requests-vs-selenium-vs-playwright-for-web-scraping-in-2026-125g` — tool selection guidance
+- BBC Sport HTML scraper community projects: `github.com/benedsmith/python-bbcsport-scraper`
+- FPL API documentation (community): `oliverlooney.com/blogs/FPL-APIs-Explained` — `news`, `news_added`, `chance_of_playing_next_round`, `chance_of_playing_this_round` field documentation
+- Simon Willison TIL: `til.simonwillison.net/github-actions/continue-on-error` — `continue-on-error: true` pattern in GitHub Actions
 
 ---
-*Pitfalls research for: FPL Analyst v1.21 — SCRAPER-01, NLP-01, VER-01*
-*Researched: 2026-05-16*
+
+*Pitfalls research for: FPL Analyst v1.22 — SCRAPER-01 Lineup Intelligence*
+*Researched: 2026-05-17*
