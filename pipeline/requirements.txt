@@ -5,3 +5,6 @@ python-dotenv>=1.0.0
 soccerdata==1.8.8
 anthropic>=0.98.1
 numpy>=1.26.0
+feedparser>=6.0.12
+beautifulsoup4>=4.14.3
+lxml>=6.1.0

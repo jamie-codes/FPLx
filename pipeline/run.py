@@ -141,6 +141,14 @@ def run(dry_run: bool = False):
         bootstrap = get_bootstrap_static()
         save('fpl_bootstrap.json', bootstrap)
 
+        # Phase 117 SCRP-01..SCRP-06: lineup_news.json artifact with per-player availability and news headlines.
+        try:
+            from lineup_news import compute_lineup_news
+            compute_lineup_news(bootstrap)
+            print("Lineup news written.")
+        except Exception as ln_exc:
+            print(f"[lineup_news] non-fatal error: {ln_exc}", file=sys.stderr)
+
         # Fetch and save fixtures
         fixtures = get_fixtures()
         save('fpl_fixtures.json', fixtures)
