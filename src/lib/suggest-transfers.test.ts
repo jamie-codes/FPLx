@@ -710,8 +710,8 @@ describe('Phase 118 ENGN-01: lineupNewsMap availability penalty', () => {
       bank: 100,
       lineupNewsMap,
     })
-    const absentSuggestion = result.find(s => s.kind === 'single' && (s as any).buy?.id === 99)
-    const healthySuggestion = result.find(s => s.kind === 'single' && (s as any).buy?.id === 98)
+    const absentSuggestion = result.find(s => s.kind === 'single' && s.buy.id === 99)
+    const healthySuggestion = result.find(s => s.kind === 'single' && s.buy.id === 98)
     // Absent player must have near-zero gain (factor 0.01 applied)
     if (absentSuggestion && healthySuggestion) {
       expect(absentSuggestion.xPtsGain).toBeLessThan(healthySuggestion.xPtsGain)
@@ -739,8 +739,8 @@ describe('Phase 118 ENGN-01: lineupNewsMap availability penalty', () => {
       bank: 100,
       lineupNewsMap,
     })
-    const doubtedSug = result.find(s => s.kind === 'single' && (s as any).buy?.id === 97)
-    const healthySug = result.find(s => s.kind === 'single' && (s as any).buy?.id === 96)
+    const doubtedSug = result.find(s => s.kind === 'single' && s.buy.id === 97)
+    const healthySug = result.find(s => s.kind === 'single' && s.buy.id === 96)
     // Both should appear but healthy must rank higher (or doubted may not appear if score too low)
     if (doubtedSug && healthySug) {
       const doubtedIdx = result.indexOf(doubtedSug)
@@ -825,8 +825,8 @@ describe('Phase 118 ENGN-01: lineupNewsMap availability penalty', () => {
       lineupNewsMap,
     })
     // Find the suggestion selling player 1 and buying strongGk in both results
-    const noMapSug = withoutMap.find(s => s.kind === 'single' && (s as any).sell?.id === 1 && (s as any).buy?.id === 99)
-    const withMapSug = withAbsentSell.find(s => s.kind === 'single' && (s as any).sell?.id === 1 && (s as any).buy?.id === 99)
+    const noMapSug = withoutMap.find(s => s.kind === 'single' && s.sell.id === 1 && s.buy.id === 99)
+    const withMapSug = withAbsentSell.find(s => s.kind === 'single' && s.sell.id === 1 && s.buy.id === 99)
     // Both should produce the same xPtsGain — sell side is unpenalized
     if (noMapSug && withMapSug) {
       expect(withMapSug.xPtsGain).toBeCloseTo(noMapSug.xPtsGain, 5)
@@ -859,12 +859,12 @@ describe('Phase 118 ENGN-01: lineupNewsMap availability penalty', () => {
     // Find the best healthy/healthy combo (buying 92 + 93)
     const healthyCombo = result.find(
       s => s.kind === 'combo' &&
-      s.transfers.every(t => [92, 93].includes((t as any).buy?.id)),
+      s.transfers.every(t => [92, 93].includes(t.buy.id)),
     )
     // Find the doubted/doubted combo (buying 90 + 91)
     const doubtedCombo = result.find(
       s => s.kind === 'combo' &&
-      s.transfers.every(t => [90, 91].includes((t as any).buy?.id)),
+      s.transfers.every(t => [90, 91].includes(t.buy.id)),
     )
     if (healthyCombo && doubtedCombo) {
       // Doubted combo should have lower xPtsGain than healthy combo
