@@ -4,7 +4,9 @@ import type { LineupNews, LineupNewsPlayer } from '../types'
 // Phase 118 INFRA-02 / D-09: 48h staleness select transform.
 // Returns undefined when root scraped_at is >48h old so engines stay timestamp-unaware.
 export const lineupNewsSelect = (data: LineupNews): Map<number, LineupNewsPlayer> | undefined => {
-  const ageMs = Date.now() - new Date(data.scraped_at).getTime()
+  const ts = new Date(data.scraped_at).getTime()
+  if (isNaN(ts)) return undefined  // malformed timestamp → treat as stale
+  const ageMs = Date.now() - ts
   if (ageMs > 48 * 60 * 60 * 1000) return undefined  // stale → engines receive undefined
   return new Map(data.players.map(p => [p.id, p]))
 }
