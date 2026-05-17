@@ -2,7 +2,7 @@
 // Mirrors src/lib/chip-strategy-engine.ts pattern: no 'use client', no React, no side effects.
 // Algorithm: enumerate C(15,11) = 1,365 subsets, validate FPL formation rules, score by horizon
 // xPts, return highest-scoring subset with bench, captain, VC, formation string.
-import type { MergedPlayer, OptimiserHorizon, OptimisedLineup } from './types'
+import type { MergedPlayer, OptimiserHorizon, OptimisedLineup, LineupNewsPlayer } from './types'
 import type { SquadPick } from './squad-adapter'
 
 // Map horizon (1 | 3 | 5) to MergedPlayer field name. Object map preferred over switch (RESEARCH).
@@ -37,6 +37,7 @@ export function optimiseLineup(
   picks: SquadPick[],
   players: MergedPlayer[],
   horizon: OptimiserHorizon,
+  lineupNewsMap?: Map<number, LineupNewsPlayer>,  // Phase 118 ENGN-02 / D-05 / D-08
 ): OptimisedLineup | null {
   const playerMap = new Map<number, MergedPlayer>(players.map(p => [p.id, p]))
   const field = HORIZON_FIELD[horizon]
@@ -45,10 +46,18 @@ export function optimiseLineup(
   // CRITICAL (Pitfall 1): undefined xPts_1gw means "no pipeline data", NOT "BGW".
   // Only exact === 0 triggers exclusion. Players missing from playerMap are also excluded
   // (defensive — pipeline data missing for that player ID).
+  // Phase 118 ENGN-02 (D-05, D-07, D-08): also exclude confirmed_absent players when
+  // lineupNewsMap is provided. Doubted players (status_label !== 'confirmed_absent') are
+  // NOT excluded — they remain in starter enumeration.
   const eligible = picks.filter(pick => {
     const p = playerMap.get(pick.element)
     if (!p) return false
-    return p.xPts_1gw !== 0
+    if (p.xPts_1gw === 0) return false          // existing BGW exclusion
+    if (lineupNewsMap) {
+      const news = lineupNewsMap.get(pick.element)
+      if (news?.status_label === 'confirmed_absent') return false  // D-05, D-08
+    }
+    return true
   })
 
   if (eligible.length < 11) return null
@@ -134,7 +143,7 @@ export function optimiseLineup(
   // Phase 55 BENCH-01: delegate outfield bench ordering to benchOrder() — EV/BGW/formation-aware.
   const starterPlayers = bestStarterIds.map(id => playerMap.get(id)!)
   const benchOutfieldRaw = benchPicks.filter(p => p.element_type !== GK)
-  const benchOutfield = benchOrder(benchOutfieldRaw, starterPlayers, horizon)
+  const benchOutfield = benchOrder(benchOutfieldRaw, starterPlayers, horizon, lineupNewsMap)
 
   // Defensive: if for any reason there is no bench GK (e.g. both GKs in starters — invalid in FPL),
   // we can't satisfy OPT-04. Return null.
@@ -175,6 +184,7 @@ export function benchOrder(
   benchOutfield: MergedPlayer[],
   starters: MergedPlayer[],
   horizon: OptimiserHorizon,
+  lineupNewsMap?: Map<number, LineupNewsPlayer>,  // Phase 118 ENGN-02 / D-06 / D-08
 ): MergedPlayer[] {
   const field = HORIZON_FIELD[horizon]
 
@@ -187,8 +197,12 @@ export function benchOrder(
   }
 
   // EV score for the active (non-BGW) ranking. fixtures.length is the multiplier.
-  const evScore = (p: MergedPlayer): number =>
-    (p.start_prob ?? 0) * ((p[field] as number | undefined) ?? 0) * p.fixtures.length
+  // Phase 118 ENGN-02 (D-06, D-08): confirmed_absent players get evScore=0, sinking them to the
+  // last bench slot. Doubted players (status_label !== 'confirmed_absent') retain their natural EV.
+  const evScore = (p: MergedPlayer): number => {
+    if (lineupNewsMap?.get(p.id)?.status_label === 'confirmed_absent') return 0  // D-06
+    return (p.start_prob ?? 0) * ((p[field] as number | undefined) ?? 0) * p.fixtures.length
+  }
 
   // Formation-flex check: would adding this candidate's position push starters above ceilings?
   // Returns true when the addition is formation-valid (does not exceed DEF=5 / MID=5 / FWD=3).
