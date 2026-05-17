@@ -19,6 +19,7 @@ save() (D-14: no invalid prose is ever persisted).
 """
 
 import os
+import re
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -51,13 +52,17 @@ def _passes_guardrail(prose: str, allowed: set, corpus: list) -> bool:
     """Reject if any corpus name appears in prose AND is NOT in allowed.
 
     Mirror of src/lib/prose-guardrail.ts::passesGuardrail (Plan 01).
+    Uses whole-word boundary matching to avoid short names like "Lu" matching
+    inside words such as "valuable" or "club".
     """
     text = _normalize(prose)
     for name in corpus:
         n = _normalize(name)
         if not n:
             continue
-        if n in text and n not in allowed:
+        # WR-02: whole-word match — prevents "lu" matching inside "valuable"
+        pattern = r'\b' + re.escape(n) + r'\b'
+        if re.search(pattern, text) and n not in allowed:
             return False
     return True
 
