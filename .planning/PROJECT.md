@@ -437,4 +437,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-17 — v1.22 milestone started: Lineup Intelligence.*
+*Last updated: 2026-05-17 — Phase 118 complete: engines (suggestTransfers, optimiseLineup, benchOrder) now accept lineupNewsMap and apply availability penalties (INFRA-02, ENGN-01, ENGN-02).*
