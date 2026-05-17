@@ -14,7 +14,10 @@ findings:
   warning: 3
   info: 1
   total: 5
-status: issues_found
+findings_resolved:
+  critical: 1
+  warning: 3
+status: clean
 ---
 
 # Phase 115: Code Review Report
