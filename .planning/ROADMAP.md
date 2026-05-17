@@ -1563,9 +1563,12 @@ Plans:
   4. User sees a "Versions" pill in the AccuracyTab pill nav (alongside "Summary | Calibration | Back"), displaying a VersionHistoryTable with formula version, date, hit rate, gate flags, and sample_gws — cold-start entries (sample_gws < 3) are labelled rather than shown as misleading 0.0% regressions
 **Plans**: 4 plans
 Plans:
+**Wave 1**
 - [ ] 116-01-PLAN.md — PROSE-01 ProseSummaryBlock staleness footer (relative time + amber when >=20h)
 - [ ] 116-02-PLAN.md — PROSE-02 prose pipeline DGW + lifecycle enrichment
 - [ ] 116-03-PLAN.md — VER-01 sample_gws field on accuracy.py version records + VersionRecord TS type
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 116-04-PLAN.md — VER-02 Versions sub-tab in AccuracyTab with Sample GWs column + cold-start render
 **UI hint**: yes
 
