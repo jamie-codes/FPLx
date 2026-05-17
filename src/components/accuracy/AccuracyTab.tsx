@@ -241,11 +241,6 @@ function VersionHistoryTable({ data }: { data: AccuracyBacktest }) {
         </tbody>
       </table>
       </div>
-      {versions.length === 1 && (
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
-          First pipeline run — no version history yet.
-        </p>
-      )}
     </div>
   )
 }
