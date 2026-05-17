@@ -69,7 +69,7 @@ function makeScoredPlayer(overrides: Partial<ScoredPlayer> = {}): ScoredPlayer {
     xg_per90: 0.4,
     xa_per90: 0.2,
     news: '',
-    news_added: null,
+    news_added: undefined,
     // Phase 93: undefined skips the news-doubt fragility check
     chance_of_playing_next_round: undefined,
     // Phase 93: undefined skips the mins_60_prob fragility check
