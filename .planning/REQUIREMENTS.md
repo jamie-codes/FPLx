@@ -1,35 +1,35 @@
-# Requirements: FPL Analyst v1.21
+# Requirements: FPL Analyst v1.22
 
-**Defined:** 2026-05-16
+**Defined:** 2026-05-17
 **Core Value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
 
-## v1.21 Requirements
+## v1.22 Requirements
 
-### UAT & Carry-Forward Fixes
+### Scraper Pipeline (SCRP)
 
-- [ ] **UAT-01**: User verifies Transfer Regret Backtester renders correctly — dark mode, multi-transfer GW format, delta colour polarity, and captain view show no regressions
-- [ ] **TRT-01**: RouteTreeTab "Hits" column displays total hits (not total transfers) matching the engine's `totalHits` field
-- [ ] **TRT-02**: ChipToggle in RouteTreeTab is visibly present as a disabled stub (current null hardcode removed or replaced with a disabled UI state)
+- [ ] **SCRP-01**: Pipeline emits `lineup_news.json` to Vercel Blob, deriving per-player `availability_factor` (1.0 / 0.75 / 0.5 / 0.25 / 0.0) and `status_label` (confirmed_start / doubted / confirmed_absent / unknown) from FPL official bootstrap fields (`status`, `chance_of_playing_next_round`, `news`, `news_added`)
+- [ ] **SCRP-02**: Pipeline enriches `lineup_news.json` with premierleague.com/latest-player-injuries HTML (requests + BS4, non-fatal, `source_tier: "reputable"`) — often hours earlier than FPL bootstrap update
+- [ ] **SCRP-03**: Pipeline enriches `lineup_news.json` with Sky Sports RSS team news (feedparser preferred, non-fatal, `source_tier: "reputable"`) — Datawrapper interactive page excluded, RSS only
+- [ ] **SCRP-04**: Pipeline enriches `lineup_news.json` with BBC Sport RSS team news (feedparser preferred, non-fatal, `source_tier: "reputable"`)
+- [ ] **SCRP-05**: Each scraper source is isolated in its own `try/except Exception` block outside the main pipeline try; `merged_players.json` is written regardless of scraper failure; `lineup_news.json` with empty `players[]` is never written to Blob (preserves previous run's valid data)
+- [ ] **SCRP-06**: `lineup_news.json` includes a `source_health` object tracking `ok`, `last_success`, and `last_error` per source, enabling silent failure diagnosis without breaking consumers
 
-### GemTable Sparkline
+### Infrastructure (INFRA)
 
-- [ ] **SPARK-01**: User sees a `rank_trajectory` sparkline in GemTable using the existing `rank_trajectory` field from MergedPlayer — micro-sparkline cell using Recharts or inline SVG
+- [ ] **INFRA-01**: `/api/lineup-news` route reads `lineup_news.json` from Vercel Blob; `useLineupNews` TanStack Query hook (6h staleTime) fetches from the route — follows the established gw-intel / set-pieces artifact pattern
+- [ ] **INFRA-02**: All engine consumers treat `lineup_news.json` with `scraped_at` older than 48 hours as neutral — no `availability_factor` penalty applied when data is stale
 
-### Team News (SCRAPER-01)
+### Engine Integration (ENGN)
 
-- [x] **NEWS-01**: `NewsBanner` badges older than 14 days (via `news_added` field) are suppressed from zinc-severity display to prevent stale badge fatigue in decision-critical surfaces
-- [x] **NEWS-02**: User sees `NewsBanner` in `CaptainPicksPanel` candidate rows — team news shown alongside captain picks (e.g. "75% chance of playing")
-- [x] **NEWS-03**: User sees `NewsBanner` in `TransferPanel`/`OpportunityCostTable` buy-candidate rows (staleness suppression from NEWS-01 applies)
+- [ ] **ENGN-01**: User sees transfer suggestions penalise doubted (`×0.70`) and confirmed-absent (`×0.01`) buy candidates when lineup news is available — via optional `lineupNewsMap?: Map<number, LineupNewsEntry>` param in `suggestTransfers()`
+- [ ] **ENGN-02**: User sees bench order and lineup optimiser treat confirmed-absent players as 0 EV score (sink to last bench slot automatically) when lineup news is available — via optional `lineupNewsMap` param in `optimiseLineup()` / `benchOrder()`
 
-### Weekly Prose Summary (NLP-01)
+### UI Surfaces (UI)
 
-- [x] **PROSE-01**: User sees `generated_at` displayed as relative time ("Updated 2 hours ago") in `ProseSummaryBlock` so they know when the prose summary was generated
-- [x] **PROSE-02**: Pipeline `generate_weekly_summary()` includes chip timing and lifecycle risk data in the prompt payload, producing a richer weekly narrative
-
-### Model Versioning (VER-01)
-
-- [x] **VER-01**: `accuracy.py` version records include a `sample_gws` count field so the version comparison UI can label or filter cold-start entries with 0 contributing GWs
-- [x] **VER-02**: User sees a "Versions" pill in `AccuracyTab` alongside "Summary | Calibration | Back", displaying a `VersionHistoryTable` with hit rate, gate flags, and sample_gws per version record
+- [ ] **UI-01**: User sees an availability badge (confirmed_start / doubted / confirmed_absent) on each `CaptainPicksPanel` CandidateRow when lineup news is available for that player
+- [ ] **UI-02**: User sees doubted/absent buy candidates visually flagged in `TransferPanel` OCS rows when lineup news is available — inline news confidence badge or news text in the buy-candidate cell
+- [ ] **UI-03**: User sees a "Team News Alert" severity card on the Decision Summary tab listing owned squad players with active news (within 14 days, respects existing staleness gate from NEWS-01)
+- [ ] **UI-04**: User sees transfer suggestions on the Decision Summary tab factor in lineup news — `DecisionSummaryTab` threads `lineupNewsMap` into its `suggestTransfers()` call so the OCS table reflects availability penalties
 
 ## Future Requirements
 
@@ -48,33 +48,35 @@
 
 | Feature | Reason |
 |---------|--------|
+| Twitter/X scraping | GH Actions Azure IPs permanently blocked since Jan 2025; official API costs USD 100/month; FPL bootstrap + RSS covers same information with acceptable delay |
+| GemTable news badges | News is decision-contextual (transfer/captain/bench surfaces); GemTable rows would add noise without changing a weekly decision |
 | Real-time / in-match updates | Data refreshes daily; in-match granularity not needed for personal tool |
 | Mobile app | Responsive web covers mobile use case |
-| News from external scrapers | FPL official news field is sufficient and safe; external scraping adds infra overhead |
-| GemTable news badges | News is decision-contextual (transfer/captain surfaces); GemTable news rows would add noise without changing an action |
 | Fully automated chip timing | Chip visibility in plan is in-scope; auto-timing remains deferred |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| UAT-01 | Phase 114 | Pending |
-| TRT-01 | Phase 114 | Pending |
-| TRT-02 | Phase 114 | Pending |
-| SPARK-01 | Phase 114 | Pending |
-| NEWS-01 | Phase 115 | Complete |
-| NEWS-02 | Phase 115 | Complete |
-| NEWS-03 | Phase 115 | Complete |
-| PROSE-01 | Phase 116 | Complete |
-| PROSE-02 | Phase 116 | Complete |
-| VER-01 | Phase 116 | Complete |
-| VER-02 | Phase 116 | Complete |
+| SCRP-01 | TBD | Pending |
+| SCRP-02 | TBD | Pending |
+| SCRP-03 | TBD | Pending |
+| SCRP-04 | TBD | Pending |
+| SCRP-05 | TBD | Pending |
+| SCRP-06 | TBD | Pending |
+| INFRA-01 | TBD | Pending |
+| INFRA-02 | TBD | Pending |
+| ENGN-01 | TBD | Pending |
+| ENGN-02 | TBD | Pending |
+| UI-01 | TBD | Pending |
+| UI-02 | TBD | Pending |
+| UI-03 | TBD | Pending |
+| UI-04 | TBD | Pending |
 
 **Coverage:**
-- v1.21 requirements: 11 total
-- Mapped to phases: 11 ✓
-- Unmapped: 0
+- v1.22 requirements: 14 total
+- Mapped to phases: TBD (roadmap pending)
+- Unmapped: 14
 
 ---
-*Requirements defined: 2026-05-16*
-*Last updated: 2026-05-17 after Phase 115 completion — NEWS-01/02/03 verified*
+*Requirements defined: 2026-05-17*
