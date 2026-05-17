@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.21
-milestone_name: milestone
-status: executing
+milestone_name: Modelling & Refinement — Carry-forward
+status: milestone_complete
 stopped_at: Phase 116 UI-SPEC approved
-last_updated: "2026-05-17T12:49:21.581Z"
-last_activity: 2026-05-17 -- Phase 116 planning complete
+last_updated: "2026-05-17T13:00:06.570Z"
+last_activity: 2026-05-17 -- Phase 116 execution started
 progress:
-  total_phases: 61
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 152
-  percent: 0
+  total_phases: 1
+  completed_phases: 1
+  total_plans: 4
+  completed_plans: 0
+  percent: 100
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-16 — v1.21 milestone active)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.21 Phase 116 — Prose Staleness & Model Versioning
+**Current focus:** Phase 116 — prose-staleness-model-versioning-v1-21
 
 ## Current Position
 
 Phase: 116
-Plan: —
-Status: Ready to execute
-Last activity: 2026-05-17 -- Phase 116 planning complete
+Plan: Not started
+Status: Milestone complete
+Last activity: 2026-05-17
 
 ```
 Phase 114 [██████████] 100% ✅ COMPLETE

@@ -1564,12 +1564,12 @@ Plans:
 **Plans**: 4 plans
 Plans:
 **Wave 1**
-- [ ] 116-01-PLAN.md — PROSE-01 ProseSummaryBlock staleness footer (relative time + amber when >=20h)
-- [ ] 116-02-PLAN.md — PROSE-02 prose pipeline DGW + lifecycle enrichment
-- [ ] 116-03-PLAN.md — VER-01 sample_gws field on accuracy.py version records + VersionRecord TS type
+- [x] 116-01-PLAN.md — PROSE-01 ProseSummaryBlock staleness footer (relative time + amber when >=20h)
+- [x] 116-02-PLAN.md — PROSE-02 prose pipeline DGW + lifecycle enrichment
+- [x] 116-03-PLAN.md — VER-01 sample_gws field on accuracy.py version records + VersionRecord TS type
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 116-04-PLAN.md — VER-02 Versions sub-tab in AccuracyTab with Sample GWs column + cold-start render
+- [x] 116-04-PLAN.md — VER-02 Versions sub-tab in AccuracyTab with Sample GWs column + cold-start render
 **UI hint**: yes
 
 
@@ -1653,4 +1653,4 @@ Plans:
 | 113 | v1.20 | 4/4 | Complete    | 2026-05-16 |
 | 114 | v1.21 | 0/0 | Not started | - |
 | 115 | v1.21 | 0/0 | Not started | - |
-| 116 | v1.21 | 0/0 | Not started | - |
+| 116 | v1.21 | 4/4 | Complete    | 2026-05-17 |

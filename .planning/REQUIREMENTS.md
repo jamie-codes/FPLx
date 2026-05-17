@@ -23,13 +23,13 @@
 
 ### Weekly Prose Summary (NLP-01)
 
-- [ ] **PROSE-01**: User sees `generated_at` displayed as relative time ("Updated 2 hours ago") in `ProseSummaryBlock` so they know when the prose summary was generated
-- [ ] **PROSE-02**: Pipeline `generate_weekly_summary()` includes chip timing and lifecycle risk data in the prompt payload, producing a richer weekly narrative
+- [x] **PROSE-01**: User sees `generated_at` displayed as relative time ("Updated 2 hours ago") in `ProseSummaryBlock` so they know when the prose summary was generated
+- [x] **PROSE-02**: Pipeline `generate_weekly_summary()` includes chip timing and lifecycle risk data in the prompt payload, producing a richer weekly narrative
 
 ### Model Versioning (VER-01)
 
-- [ ] **VER-01**: `accuracy.py` version records include a `sample_gws` count field so the version comparison UI can label or filter cold-start entries with 0 contributing GWs
-- [ ] **VER-02**: User sees a "Versions" pill in `AccuracyTab` alongside "Summary | Calibration | Back", displaying a `VersionHistoryTable` with hit rate, gate flags, and sample_gws per version record
+- [x] **VER-01**: `accuracy.py` version records include a `sample_gws` count field so the version comparison UI can label or filter cold-start entries with 0 contributing GWs
+- [x] **VER-02**: User sees a "Versions" pill in `AccuracyTab` alongside "Summary | Calibration | Back", displaying a `VersionHistoryTable` with hit rate, gate flags, and sample_gws per version record
 
 ## Future Requirements
 
@@ -65,10 +65,10 @@
 | NEWS-01 | Phase 115 | Complete |
 | NEWS-02 | Phase 115 | Complete |
 | NEWS-03 | Phase 115 | Complete |
-| PROSE-01 | Phase 116 | Pending |
-| PROSE-02 | Phase 116 | Pending |
-| VER-01 | Phase 116 | Pending |
-| VER-02 | Phase 116 | Pending |
+| PROSE-01 | Phase 116 | Complete |
+| PROSE-02 | Phase 116 | Complete |
+| VER-01 | Phase 116 | Complete |
+| VER-02 | Phase 116 | Complete |
 
 **Coverage:**
 - v1.21 requirements: 11 total
