@@ -58,25 +58,25 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SCRP-01 | TBD | Pending |
-| SCRP-02 | TBD | Pending |
-| SCRP-03 | TBD | Pending |
-| SCRP-04 | TBD | Pending |
-| SCRP-05 | TBD | Pending |
-| SCRP-06 | TBD | Pending |
-| INFRA-01 | TBD | Pending |
-| INFRA-02 | TBD | Pending |
-| ENGN-01 | TBD | Pending |
-| ENGN-02 | TBD | Pending |
-| UI-01 | TBD | Pending |
-| UI-02 | TBD | Pending |
-| UI-03 | TBD | Pending |
-| UI-04 | TBD | Pending |
+| SCRP-01 | Phase 117 | Pending |
+| SCRP-02 | Phase 117 | Pending |
+| SCRP-03 | Phase 117 | Pending |
+| SCRP-04 | Phase 117 | Pending |
+| SCRP-05 | Phase 117 | Pending |
+| SCRP-06 | Phase 117 | Pending |
+| INFRA-01 | Phase 117 | Pending |
+| INFRA-02 | Phase 117 | Pending |
+| ENGN-01 | Phase 118 | Pending |
+| ENGN-02 | Phase 118 | Pending |
+| UI-01 | Phase 119 | Pending |
+| UI-02 | Phase 119 | Pending |
+| UI-03 | Phase 119 | Pending |
+| UI-04 | Phase 119 | Pending |
 
 **Coverage:**
 - v1.22 requirements: 14 total
-- Mapped to phases: TBD (roadmap pending)
-- Unmapped: 14
+- Mapped to phases: 14/14 (100%)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-17*

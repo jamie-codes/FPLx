@@ -23,6 +23,7 @@
 - ✅ **v1.19 AI Quality & Insight Delivery** — Phases 106-109 (shipped 2026-05-14)
 - ✅ **v1.20 Fixes & Decision Quality** — Phases 110-113 (shipped 2026-05-16)
 - ✅ **v1.21 Polish, Intelligence & Team News** — Phases 114-116 (shipped 2026-05-17)
+- **v1.22 Lineup Intelligence** — Phases 117-119 (started 2026-05-17)
 
 ## Phases
 
@@ -1573,6 +1574,54 @@ Plans:
 **UI hint**: yes
 
 
+<details>
+<summary>v1.22 Lineup Intelligence (Phases 117-119) — IN PROGRESS</summary>
+
+- [ ] **Phase 117: Scraper Pipeline & Artifact** — lineup_news.json pipeline, API route, hook, staleness guard
+- [ ] **Phase 118: Engine Integration** — suggestTransfers() and optimiseLineup()/benchOrder() availability_factor penalties
+- [ ] **Phase 119: UI Surfaces** — captain badge, transfer flag, Team News Alert card, Decision Summary wiring
+
+</details>
+
+
+### Phase 117: Scraper Pipeline & Lineup News Artifact
+**Goal**: Pipeline emits lineup_news.json with per-player availability signals from four sources (FPL official, premierleague.com, Sky Sports RSS, BBC Sport RSS) -- accessible via API route and hook, with non-fatal scraper isolation and a staleness guard
+**Depends on**: Phase 116 (v1.21 complete)
+**Requirements**: SCRP-01, SCRP-02, SCRP-03, SCRP-04, SCRP-05, SCRP-06, INFRA-01, INFRA-02
+**Success Criteria** (what must be TRUE):
+  1. Pipeline writes lineup_news.json to Vercel Blob with a source_health object tracking ok/last_success/last_error per scraper source; any scraper failure leaves merged_players.json intact and never writes an empty players[] array to Blob
+  2. Each player entry carries availability_factor (1.0 / 0.75 / 0.5 / 0.25 / 0.0) and status_label (confirmed_start / doubted / confirmed_absent / unknown) derived from FPL official bootstrap fields as primary source
+  3. /api/lineup-news route reads lineup_news.json from Vercel Blob and useLineupNews TanStack Query hook (6h staleTime) fetches from the route, following the established gw-intel / set-pieces artifact pattern
+  4. All engine consumers treat lineup_news.json with scraped_at older than 48 hours as neutral -- no availability_factor penalty is applied when data is stale
+  5. premierleague.com, Sky Sports RSS, and BBC Sport RSS scrapers each run in an isolated try/except block outside the main pipeline try; a failure in any one source does not block the others or the main pipeline
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 118: Engine Integration
+**Goal**: Transfer suggestions and lineup optimiser/bench order penalise doubted and confirmed-absent players when lineup news is available -- making the engine's recommendations reflect real-world injury and selection signals
+**Depends on**: Phase 117 (lineup_news.json Blob artifact and useLineupNews hook must exist)
+**Requirements**: ENGN-01, ENGN-02
+**Success Criteria** (what must be TRUE):
+  1. A confirmed-absent buy candidate scores near-zero in suggestTransfers() output -- the availability_factor x0.01 multiplier sinks the player to the bottom of every position bucket regardless of xPts
+  2. A doubted buy candidate (availability_factor 0.75) is visibly downranked relative to an equally-rated healthy candidate in the transfer suggestion list
+  3. A confirmed-absent player in the squad bench sinks to the last bench slot automatically in benchOrder() output -- consistent with BGW treatment (EV score effectively 0)
+  4. When lineupNewsMap is absent or stale (>48 hours), suggestTransfers() and optimiseLineup()/benchOrder() produce identical output to their pre-ENGN state -- no degradation for users with no news data
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 119: UI Surfaces
+**Goal**: Captain picks, transfer candidates, and Decision Summary all surface player availability status -- confirmed-absent and doubted players are visually flagged so the manager never blindly acts on a recommendation for an injured player
+**Depends on**: Phase 117 (useLineupNews hook), Phase 118 (engine params accepting lineupNewsMap)
+**Requirements**: UI-01, UI-02, UI-03, UI-04
+**Success Criteria** (what must be TRUE):
+  1. CaptainPicksPanel CandidateRow shows a status badge (confirmed_start / doubted / confirmed_absent) for each player when lineup news is available -- badge absent when no news entry exists for that player
+  2. TransferPanel OCS buy-candidate rows show an inline news confidence badge or news text for doubted/absent players when lineup news is available -- healthy players show nothing extra
+  3. Decision Summary tab shows a "Team News Alert" severity card listing owned squad players with active news (within 14 days), respecting the existing NEWS-01 staleness gate from Phase 115
+  4. Decision Summary tab OCS table reflects availability penalties -- DecisionSummaryTab threads lineupNewsMap into its suggestTransfers() call so the table rankings match the penalised engine output
+**Plans**: TBD
+**UI hint**: yes
+
+
 ## Progress
 
 | Phase | Milestone | Plans | Status | Completed |
@@ -1654,3 +1703,6 @@ Plans:
 | 114 | v1.21 | 0/0 | Not started | - |
 | 115 | v1.21 | 0/0 | Not started | - |
 | 116 | v1.21 | 4/4 | Complete    | 2026-05-17 |
+| 117 | v1.22 | 0/0 | Not started | - |
+| 118 | v1.22 | 0/0 | Not started | - |
+| 119 | v1.22 | 0/0 | Not started | - |

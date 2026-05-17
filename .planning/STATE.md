@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.22
 milestone_name: Lineup Intelligence
 status: planning
-last_updated: "2026-05-17T14:14:29.943Z"
+last_updated: "2026-05-17T14:30:00.000Z"
 last_activity: 2026-05-17
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,17 +17,22 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-16 — v1.21 milestone active)
+See: .planning/PROJECT.md (updated 2026-05-17 — v1.22 milestone active)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 116 — prose-staleness-model-versioning-v1-21
+**Current focus:** Phase 117 — scraper-pipeline-lineup-news-artifact
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 117 (next to start)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-17 — Milestone v1.22 started
+Status: Roadmap defined; ready to plan Phase 117
+Last activity: 2026-05-17 — Milestone v1.22 roadmap created (3 phases: 117-119)
+
+```
+v1.22 Lineup Intelligence
+Phase 117 [          ] 0%
+```
 
 ## Performance Metrics
 
@@ -36,32 +41,35 @@ Last activity: 2026-05-17 — Milestone v1.22 started
 | 77 | 02 | ~10 min | 2 | 5 |
 | 89 | 02 | ~15 min | 2 | 2 |
 
-**v1.20 velocity:**
-
-- 4 phases (110-113), all complete
-- Shipped 2026-05-16 (3 days)
-- 120 files changed, +17,166 / −2,112 lines
-
 **v1.21 velocity:**
 
+- 3 phases (114-116), all complete
+- Shipped 2026-05-17
+- Team News wiring, rank sparklines, prose staleness, model versioning
+
+**v1.22 velocity:**
+
 - 0 phases complete (3 total)
-- Started 2026-05-16
+- Started 2026-05-17
 
 ## Accumulated Context
 
 ### Decisions
 
-_(No v1.21 decisions yet — roadmap phase only)_
+_(No v1.22 decisions yet — roadmap phase only)_
 
 ### Key Context for Execution
 
-- v1.21 is a UI wiring milestone — backends for SCRAPER-01 news fields, NLP-01 prose, and VER-01 version records are all already in production
-- NEWS-01 (staleness suppression gate) is a PREREQUISITE for NEWS-02 and NEWS-03 — do not wire NewsBanner into new call sites before the 14-day zinc suppression predicate lands
-- VER-01 (sample_gws schema extension in accuracy.py) must precede VER-02 (VersionHistoryTable UI)
-- SPARK-01 uses existing rank_trajectory field already in MergedPlayer — zero pipeline changes needed
-- UAT-01 is a human visual checkpoint, not a code task — verifies dark mode, delta colour polarity, multi-transfer GW format, captain regression in BackTab
-- Research recommends no /gsd-research-phase for any phase — all patterns established, all data confirmed live
-- FORMULA_VERSION: if v1.21 delivers only UI wiring with no formula changes to merge.py/simulate.py/xmins.py/bonus.py, keep at current version; if any formula-touching change lands, bump to v1.21-a
+- Phase 117 is entirely Python pipeline + one API route + one TS hook — no UI components
+- FPL bootstrap fields (status, chance_of_playing_next_round, news, news_added) are already in merged_players.json; the new lineup_news.py module re-reads them to produce a separate artifact keyed by player_id
+- Sky Sports and BBC prefer RSS (feedparser) over HTML scraping — RSS avoids Cloudflare challenges and JS-rendering risk; HTML fallback adds beautifulsoup4 + lxml
+- Twitter/X is permanently excluded from scope — GitHub Actions Azure IPs blocked since Jan 2025; FPL bootstrap + RSS cover the same information with acceptable delay
+- Pipeline isolation pattern is CRITICAL: every scraper call must live in its own try/except block OUTSIDE the main pipeline try; follow set_piece_quality pattern at run.py lines 241-251 exactly
+- Never write players:[] to Blob — if result is empty, skip the Blob write and preserve previous run's valid data
+- INFRA-02 staleness gate: engines treat lineup_news.json with scraped_at older than 48 hours as neutral (availability_factor defaults to 1.0)
+- Phase 118 is pure TypeScript function extensions — optional lineupNewsMap param on suggestTransfers() and optimiseLineup()/benchOrder(); TDD-safe with mock data
+- Phase 119 is additive UI only — useLineupNews() hook threaded into CaptainPicksPanel, TransferPanel OCS rows, and DecisionSummaryTab
+- Stack additions: beautifulsoup4 4.14.3 + lxml 6.1.0 (pip); no npm additions
 
 ### Blockers/Concerns
 
@@ -69,7 +77,7 @@ _(No v1.21 decisions yet — roadmap phase only)_
 
 ## Deferred Items
 
-### Carried from v1.20
+### Carried from v1.21
 
 | ID | Description | Phase | Status |
 |----|-------------|-------|--------|
@@ -88,6 +96,6 @@ _(No v1.21 decisions yet — roadmap phase only)_
 
 ## Session Continuity
 
-Last session: 2026-05-17T12:23:45.147Z
-Stopped at: Phase 116 UI-SPEC approved
-Next command: `/gsd-discuss-phase 115`
+Last session: 2026-05-17T14:30:00.000Z
+Stopped at: v1.22 roadmap created (Phases 117-119)
+Next command: `/gsd-plan-phase 117`
