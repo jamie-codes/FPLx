@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Phase 88 SCRAPER-01: NewsBanner — RTL component tests.
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render } from '@testing-library/react'
 import { NewsBanner } from './NewsBanner'
 
@@ -62,5 +62,84 @@ describe('NewsBanner — Phase 88 SCRAPER-01', () => {
     vi.mocked(useNewsFlagEnabled).mockReturnValue(false)
     const { container } = render(<NewsBanner news="Hamstring" chance_of_playing_next_round={50} />)
     expect(container.firstChild).toBeNull()
+  })
+})
+
+describe('NewsBanner — Phase 115 NEWS-01 staleness gate', () => {
+  const STALE_NOW = new Date('2026-01-01T00:00:00Z').getTime()
+  const FRESH_NEWS_ADDED = '2026-01-15T00:00:00Z'  // after mocked now → delta negative → not stale
+  const STALE_NEWS_ADDED = '2025-12-17T00:00:00Z'  // 15 days before mocked now → stale
+
+  afterEach(() => vi.restoreAllMocks())
+
+  it('suppresses zinc badge when news_added is stale (> 14 days old)', () => {
+    vi.spyOn(Date, 'now').mockReturnValue(STALE_NOW)
+    const { container } = render(
+      <NewsBanner
+        news="Returned from international duty"
+        news_added={STALE_NEWS_ADDED}
+        chance_of_playing_next_round={100}
+      />
+    )
+    expect(container.firstChild).toBeNull()
+    expect(container.querySelector('[data-testid="news-banner"]')).toBeNull()
+  })
+
+  it('renders zinc badge when news_added is fresh (< 14 days old)', () => {
+    vi.spyOn(Date, 'now').mockReturnValue(STALE_NOW)
+    const { container } = render(
+      <NewsBanner
+        news="Returned from international duty"
+        news_added={FRESH_NEWS_ADDED}
+        chance_of_playing_next_round={100}
+      />
+    )
+    const banner = container.querySelector('[data-testid="news-banner"]')
+    expect(banner).not.toBeNull()
+    const cls = banner?.className ?? ''
+    expect(cls).toContain('text-zinc-500')
+    expect(cls).toContain('dark:text-zinc-400')
+  })
+
+  it('does NOT suppress red badge when news_added is stale', () => {
+    vi.spyOn(Date, 'now').mockReturnValue(STALE_NOW)
+    const { container } = render(
+      <NewsBanner
+        news="Hamstring injury"
+        news_added={STALE_NEWS_ADDED}
+        chance_of_playing_next_round={50}
+      />
+    )
+    const banner = container.querySelector('[data-testid="news-banner"]')
+    expect(banner).not.toBeNull()
+    const cls = banner?.className ?? ''
+    expect(cls).toContain('text-red-600')
+  })
+
+  it('does NOT suppress amber badge when news_added is stale', () => {
+    vi.spyOn(Date, 'now').mockReturnValue(STALE_NOW)
+    const { container } = render(
+      <NewsBanner
+        news="Knock - 75% chance"
+        news_added={STALE_NEWS_ADDED}
+        chance_of_playing_next_round={75}
+      />
+    )
+    const banner = container.querySelector('[data-testid="news-banner"]')
+    expect(banner).not.toBeNull()
+    const cls = banner?.className ?? ''
+    expect(cls).toContain('text-amber-600')
+  })
+
+  it('does NOT suppress zinc badge when news_added is missing (undefined)', () => {
+    vi.spyOn(Date, 'now').mockReturnValue(STALE_NOW)
+    const { container } = render(
+      <NewsBanner
+        news="Returned from international duty"
+        chance_of_playing_next_round={100}
+      />
+    )
+    const banner = container.querySelector('[data-testid="news-banner"]')
+    expect(banner).not.toBeNull()
   })
 })
