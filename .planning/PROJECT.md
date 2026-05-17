@@ -52,15 +52,22 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
-## Current Milestone: v1.21 Polish, Intelligence & Team News
+## Current Milestone: v1.22 Lineup Intelligence
+
+**Goal:** Scrape and integrate multi-source team news into the pipeline, surface player availability and confidence signals across transfer, captain, bench order, and decision surfaces.
+
+**Target features:**
+- SCRAPER-01: Python pipeline news scraper — FPL official (structured), Sky Sports, BBC Sport, Twitter/X key accounts; `lineup_news.json` with source-tier confidence (confirmed / high / low)
+- INTEL-01: Transfer suggestions integration — `suggestTransfers()` penalises doubted/absent players
+- INTEL-02: Captain picks integration — confirmed status badge on CaptainPicksPanel
+- INTEL-03: Bench order integration — `benchOrder()` downweights confirmed absent / rotation risk
+- INTEL-04: Decision Summary integration — "Team News Alert" severity card for squad players with active news
+
+## Previous Milestone: v1.21 Polish, Intelligence & Team News (Complete 2026-05-17)
 
 **Goal:** Verify the Transfer Regret Backtester, ship weekly AI prose summaries, add rank trajectory sparklines, fix RouteTreeTab cosmetics, introduce model versioning, and wire in live lineup news from the FPL official news feed.
 
-**Target features:**
-- ✅ Phase 114: BACK-02-UAT, RANK-SPARK, TRT-01/TRT-02/UAT-01 — backtester UAT, sparkline, RouteTreeTab fixes (complete 2026-05-17)
-- ✅ Phase 115: NEWS-01/02/03 — staleness suppression gate + CaptainPicksPanel + OpportunityCostTable wiring (complete 2026-05-17)
-- Phase 116: NLP-01 prose staleness + VER-01/02 model versioning history table
-- SCRAPER-01: Lineup news scraper — FPL official news feed integration into transfer/captain surfaces
+**Delivered:** Backtester human UAT (UAT-01), rank sparklines (SPARK-01), RouteTreeTab hit column + ChipToggle fixes (TRT-01/02), team news staleness suppression gate (NEWS-01), NewsBanner wired into CaptainPicksPanel (NEWS-02) and OpportunityCostTable (NEWS-03), weekly AI prose staleness (NLP-01), model versioning history table (VER-01/02). 3 phases (114-116).
 
 ## Previous Milestone: v1.20 Fixes & Decision Quality (Complete 2026-05-16)
 
@@ -430,4 +437,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-16 — v1.21 milestone started: Polish, Intelligence & Team News.*
+*Last updated: 2026-05-17 — v1.22 milestone started: Lineup Intelligence.*

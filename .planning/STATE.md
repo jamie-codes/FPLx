@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.21
-milestone_name: Modelling & Refinement — Carry-forward
-status: milestone_complete
-stopped_at: Phase 116 UI-SPEC approved
-last_updated: "2026-05-17T13:00:06.570Z"
-last_activity: 2026-05-17 -- Phase 116 execution started
+milestone: v1.22
+milestone_name: Lineup Intelligence
+status: planning
+last_updated: "2026-05-17T14:14:29.943Z"
+last_activity: 2026-05-17
 progress:
-  total_phases: 1
-  completed_phases: 1
-  total_plans: 4
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
   completed_plans: 0
-  percent: 100
+  percent: 0
 ---
 
 # Project State
@@ -25,18 +24,10 @@ See: .planning/PROJECT.md (updated 2026-05-16 — v1.21 milestone active)
 
 ## Current Position
 
-Phase: 116
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-05-17
-
-```
-Phase 114 [██████████] 100% ✅ COMPLETE
-Phase 115 [██████████] 100% ✅ COMPLETE
-Phase 116 [          ] 0%
-
-Milestone  [██████    ] 67%  (2/3 phases complete)
-```
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-17 — Milestone v1.22 started
 
 ## Performance Metrics
 
