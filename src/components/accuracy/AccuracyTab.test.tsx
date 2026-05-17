@@ -17,7 +17,7 @@ vi.mock('@/lib/hooks/useDataHealth', () => ({
 import { AccuracyTab } from '@/components/accuracy/AccuracyTab'
 import { useAccuracy } from '@/lib/hooks/useAccuracy'
 import { useDataHealth } from '@/lib/hooks/useDataHealth'
-import type { AccuracyBacktest, DataHealth, HistoryEntry } from '@/lib/types'
+import type { AccuracyBacktest, DataHealth, HistoryEntry, VersionRecord } from '@/lib/types'
 
 const mockedUseAccuracy = vi.mocked(useAccuracy)
 const mockedUseDataHealth = vi.mocked(useDataHealth)
@@ -293,8 +293,8 @@ describe('Phase 63: VersionHistoryTable + CalibrationSection', () => {
   it('VER-02: VersionHistoryTable renders heading and one row per version when data.versions present', () => {
     mockedUseAccuracy.mockReturnValue({ data: fixtureWithVersionsAndCalibration, isLoading: false, error: null } as never)
     const { getByText, container } = render(<AccuracyTab />)
-    // Phase 96: content moved to Calibration sub-tab — click it first.
-    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(2)') as HTMLElement)
+    // Phase 116: content moved to Versions sub-tab (4th pill) — click it first.
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(4)') as HTMLElement)
     const heading = getByText('Model Version History')
     expect(heading).toBeTruthy()
     const table = heading.parentElement?.querySelector('table')
@@ -310,8 +310,8 @@ describe('Phase 63: VersionHistoryTable + CalibrationSection', () => {
   it('VER-02: first version row delta is em-dash; second row delta is +4.0 percentage points', () => {
     mockedUseAccuracy.mockReturnValue({ data: fixtureWithVersionsAndCalibration, isLoading: false, error: null } as never)
     const { getByText, container } = render(<AccuracyTab />)
-    // Phase 96: content moved to Calibration sub-tab — click it first.
-    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(2)') as HTMLElement)
+    // Phase 116: content moved to Versions sub-tab (4th pill) — click it first.
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(4)') as HTMLElement)
     const heading = getByText('Model Version History')
     const tbody = heading.parentElement?.querySelector('tbody')
     expect(tbody).toBeTruthy()
@@ -576,5 +576,115 @@ describe('Phase 92 DH-04: DataHealthSparkline', () => {
     expect(container.querySelector('[data-testid="data-health-sparkline"]')).toBeNull()
     // DataHealthPanel itself must still render — only the sparkline is suppressed.
     expect(container.querySelector('[data-testid="data-health-panel"]')).toBeTruthy()
+  })
+})
+
+// ============================================================================
+// Phase 116 VER-02: Versions sub-tab + Sample GWs column + cold-start render
+// ============================================================================
+
+const baseGateFlags = {
+  form_signal_enabled: false,
+  xmins_v2_enabled: false,
+  bonus_predictor_enabled: false,
+  save_predictor_enabled: false,
+  mc_enabled: false,
+}
+
+function mockAccuracyWithVersions(versions: VersionRecord[]) {
+  mockedUseAccuracy.mockReturnValue({
+    data: { ...fixtureBacktest, versions } as AccuracyBacktest,
+    isLoading: false,
+    isError: false,
+    error: null,
+  } as never)
+}
+
+describe('Phase 116 VER-02: Versions sub-tab', () => {
+  beforeEach(() => {
+    mockedUseAccuracy.mockReset()
+    mockedUseDataHealth.mockReturnValue({ data: undefined, isLoading: true, error: null } as never)
+  })
+
+  it('renders a Versions pill in the sub-tab nav', () => {
+    mockAccuracyWithVersions([
+      { formula_version: 'v0', recorded_at: '2026-05-01T00:00:00Z', hit_rate: 0.42, gate_flags: baseGateFlags, sample_gws: 5 },
+    ])
+    const { getByText } = render(<AccuracyTab />)
+    expect(getByText('Versions')).toBeTruthy()
+  })
+
+  it('shows VersionHistoryTable Sample GWs column when Versions tab is active', () => {
+    mockAccuracyWithVersions([
+      { formula_version: 'v0', recorded_at: '2026-05-01T00:00:00Z', hit_rate: 0.42, gate_flags: baseGateFlags, sample_gws: 5 },
+    ])
+    const { getByText, container } = render(<AccuracyTab />)
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(4)') as HTMLElement)
+    const th = getByText('Sample GWs')
+    expect(th.tagName).toBe('TH')
+  })
+
+  it('removes VersionHistoryTable from the Calibration tab', () => {
+    mockAccuracyWithVersions([
+      { formula_version: 'v0', recorded_at: '2026-05-01T00:00:00Z', hit_rate: 0.42, gate_flags: baseGateFlags, sample_gws: 5 },
+    ])
+    const { queryByText, container } = render(<AccuracyTab />)
+    // Click Calibration pill (button:nth-child(2))
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(2)') as HTMLElement)
+    expect(queryByText('Sample GWs')).toBeNull()
+    expect(queryByText('Model Version History')).toBeNull()
+  })
+
+  it('renders cold-start label when sample_gws is 0', () => {
+    mockAccuracyWithVersions([
+      { formula_version: 'v0', recorded_at: '2026-05-05T00:00:00Z', hit_rate: 0.0, gate_flags: baseGateFlags, sample_gws: 0 },
+    ])
+    const { getByText, container } = render(<AccuracyTab />)
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(4)') as HTMLElement)
+    const coldStart = getByText('cold start')
+    expect(coldStart.className.includes('text-amber-600')).toBe(true)
+    const ltThreeGws = getByText('< 3 GWs')
+    expect(ltThreeGws.className.includes('text-amber-600')).toBe(true)
+  })
+
+  it('renders cold-start label when sample_gws is 2 (boundary)', () => {
+    mockAccuracyWithVersions([
+      { formula_version: 'v0', recorded_at: '2026-05-05T00:00:00Z', hit_rate: 0.0, gate_flags: baseGateFlags, sample_gws: 2 },
+    ])
+    const { getByText, container } = render(<AccuracyTab />)
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(4)') as HTMLElement)
+    expect(getByText('cold start')).toBeTruthy()
+    expect(getByText('< 3 GWs')).toBeTruthy()
+  })
+
+  it('renders HitRateBadge and integer sample_gws when sample_gws >= 3', () => {
+    mockAccuracyWithVersions([
+      { formula_version: 'v0', recorded_at: '2026-05-05T00:00:00Z', hit_rate: 0.42, gate_flags: baseGateFlags, sample_gws: 5 },
+    ])
+    const { queryByText, container } = render(<AccuracyTab />)
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(4)') as HTMLElement)
+    expect(queryByText('cold start')).toBeNull()
+    expect(queryByText('< 3 GWs')).toBeNull()
+    // sample_gws integer rendered in the Sample GWs cell
+    const table = container.querySelector('table') as HTMLTableElement
+    expect(table).toBeTruthy()
+    const rows = table.querySelectorAll('tbody tr')
+    expect(rows[0].textContent).toContain('5')
+  })
+
+  it('treats version without sample_gws field as cold start (legacy)', () => {
+    const legacyVersion = { formula_version: 'v0', recorded_at: '2026-05-05T00:00:00Z', hit_rate: 0.0, gate_flags: baseGateFlags } as VersionRecord
+    mockAccuracyWithVersions([legacyVersion])
+    const { getByText, container } = render(<AccuracyTab />)
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(4)') as HTMLElement)
+    expect(getByText('cold start')).toBeTruthy()
+    expect(getByText('< 3 GWs')).toBeTruthy()
+  })
+
+  it('renders empty-state message when versions list is empty and Versions tab is active', () => {
+    mockAccuracyWithVersions([])
+    const { getByText, container } = render(<AccuracyTab />)
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] button:nth-child(4)') as HTMLElement)
+    expect(getByText('No version history yet.')).toBeTruthy()
   })
 })
