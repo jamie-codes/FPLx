@@ -1561,7 +1561,12 @@ Plans:
   2. Pipeline weekly prose narrative includes chip timing context and lifecycle risk flags, producing a richer decision summary that covers more than just captains and gems
   3. accuracy.py version records include a sample_gws integer field so the version comparison UI can correctly label or filter cold-start entries where 0 GWs have contributed to the hit rate
   4. User sees a "Versions" pill in the AccuracyTab pill nav (alongside "Summary | Calibration | Back"), displaying a VersionHistoryTable with formula version, date, hit rate, gate flags, and sample_gws — cold-start entries (sample_gws < 3) are labelled rather than shown as misleading 0.0% regressions
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 116-01-PLAN.md — PROSE-01 ProseSummaryBlock staleness footer (relative time + amber when >=20h)
+- [ ] 116-02-PLAN.md — PROSE-02 prose pipeline DGW + lifecycle enrichment
+- [ ] 116-03-PLAN.md — VER-01 sample_gws field on accuracy.py version records + VersionRecord TS type
+- [ ] 116-04-PLAN.md — VER-02 Versions sub-tab in AccuracyTab with Sample GWs column + cold-start render
 **UI hint**: yes
 
 
