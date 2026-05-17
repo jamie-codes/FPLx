@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useProseSummary } from '@/lib/hooks/useProseSummary'
 import { useProseRefresh } from '@/lib/hooks/useProseRefresh'
 import { formatRelativeTime } from '@/lib/formatRelativeTime'
@@ -20,16 +20,22 @@ export function ProseSummaryBlock({ payload }: Props) {
   // D-13: guardrailFailed forces hide even when globalProse is loaded
   const displayed: ProseSummary | null = guardrailFailed ? null : (override ?? globalProse ?? null)
 
+  // CR-01: tick state drives interval so isStale re-evaluates every minute while mounted.
+  // vi.spyOn(Date, 'now') in tests freezes time at mount — tests pass regardless of interval.
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000)
+    return () => clearInterval(id)
+  }, [])
+
   // Staleness computation — D-01..D-04: relative time footer, amber when >= 20h old.
-  // Date.now() is called directly per D-04; vi.spyOn(Date, 'now') controls time in tests.
   const { hasValidGenAt, isStale } = useMemo(() => {
     const genAt = displayed?.generated_at ?? ''
     const genAtMs = new Date(genAt).getTime()
     const valid = !!genAt && Number.isFinite(genAtMs)
-    // eslint-disable-next-line react-hooks/purity
-    const minutesAgo = valid ? Math.floor((Date.now() - genAtMs) / 60000) : 0
+    const minutesAgo = valid ? Math.floor((now - genAtMs) / 60_000) : 0
     return { hasValidGenAt: valid, isStale: valid && minutesAgo >= 20 * 60 }
-  }, [displayed?.generated_at])
+  }, [displayed?.generated_at, now])
 
   // D-13: silently hide when no prose available (404 or guardrail rejection)
   if (!displayed) return null
