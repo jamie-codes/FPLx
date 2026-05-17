@@ -220,11 +220,17 @@ export function benchOrder(
   }
 
   // Partition: BGW (fixtures.length === 0) vs active.
+  // Phase 118 ENGN-02 (D-06): confirmed_absent players are routed to active even when they
+  // have no fixtures, so evScore=0 sinks them below genuine BGW players in the bench ordering.
+  // A confirmed_absent player with high raw xPts must never outrank a healthy BGW player.
   const bgw: MergedPlayer[] = []
   const active: MergedPlayer[] = []
   for (const p of benchOutfield) {
-    if (p.fixtures.length === 0) bgw.push(p)
-    else active.push(p)
+    if (p.fixtures.length === 0 && lineupNewsMap?.get(p.id)?.status_label !== 'confirmed_absent') {
+      bgw.push(p)
+    } else {
+      active.push(p)
+    }
   }
 
   // Sort active: formation-valid first, then formation-invalid; within each group, EV desc.
