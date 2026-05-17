@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useProseSummary } from '@/lib/hooks/useProseSummary'
 import { useProseRefresh } from '@/lib/hooks/useProseRefresh'
+import { formatRelativeTime } from '@/lib/formatRelativeTime'
 import type { ProseSummary, ProseRefreshPayload } from '@/lib/types'
 
 interface Props {
@@ -18,6 +19,17 @@ export function ProseSummaryBlock({ payload }: Props) {
   // D-03: override replaces; D-04: override is component state, lost on unmount
   // D-13: guardrailFailed forces hide even when globalProse is loaded
   const displayed: ProseSummary | null = guardrailFailed ? null : (override ?? globalProse ?? null)
+
+  // Staleness computation — D-01..D-04: relative time footer, amber when >= 20h old.
+  // Date.now() is called directly per D-04; vi.spyOn(Date, 'now') controls time in tests.
+  const { hasValidGenAt, isStale } = useMemo(() => {
+    const genAt = displayed?.generated_at ?? ''
+    const genAtMs = new Date(genAt).getTime()
+    const valid = !!genAt && Number.isFinite(genAtMs)
+    // eslint-disable-next-line react-hooks/purity
+    const minutesAgo = valid ? Math.floor((Date.now() - genAtMs) / 60000) : 0
+    return { hasValidGenAt: valid, isStale: valid && minutesAgo >= 20 * 60 }
+  }, [displayed?.generated_at])
 
   // D-13: silently hide when no prose available (404 or guardrail rejection)
   if (!displayed) return null
@@ -60,9 +72,15 @@ export function ProseSummaryBlock({ payload }: Props) {
       <p className="text-sm text-zinc-700 dark:text-zinc-300 mt-3 leading-relaxed">
         {displayed.prose}
       </p>
-      <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-2">
-        Updated GW{displayed.gw}
-      </p>
+      {hasValidGenAt ? (
+        <p className={`text-xs mt-2 ${isStale ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
+          Updated {formatRelativeTime(displayed.generated_at)} · GW{displayed.gw}
+        </p>
+      ) : (
+        <p className="text-xs mt-2 text-zinc-400 dark:text-zinc-500">
+          Updated GW{displayed.gw}
+        </p>
+      )}
     </div>
   )
 }
