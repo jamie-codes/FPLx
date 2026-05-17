@@ -457,6 +457,7 @@ export interface VersionRecord {
   recorded_at: string    // ISO timestamp from datetime.now(timezone.utc).isoformat()
   hit_rate: number       // 0..1 (rounded to 4 decimals by accuracy.py)
   gate_flags: VersionGateFlags
+  sample_gws?: number   // Phase 116 VER-01: count of finished GWs contributing to hit_rate; optional for backward compat — UI defaults ?? 0
 }
 
 export interface CalibrationBucket {
