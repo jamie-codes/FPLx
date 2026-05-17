@@ -2,7 +2,7 @@
 // Phase 101 GWT-01 + UX-01: column header tests for OpportunityCostTable
 // Phase 104 WHY-01: sell-side rejection reasons tests
 // Phase 105 NLP-02: gw prop threading + PlayerInsightSection presence
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createElement } from 'react'
@@ -10,6 +10,9 @@ import { OpportunityCostTable } from './OpportunityCostTable'
 import type { OCSRow } from '@/lib/opportunity-cost'
 import type { ScoredPlayer } from '@/lib/types'
 import type { LifecycleLabel } from '@/lib/lifecycle-label'
+
+// Phase 115 NEWS-03: mock useNewsFlagEnabled so NewsBanner can be exercised in staleness tests.
+vi.mock('@/lib/hooks/useAccuracy', () => ({ useNewsFlagEnabled: vi.fn(() => true) }))
 
 // Phase 105 NLP-02: mock usePlayerInsight hook and PlayerInsightSection component.
 // Both are mocked so this test file renders cleanly and we can assert on call args and DOM presence.
@@ -371,5 +374,32 @@ describe('Phase 112 (TFR-02): truncation footnote', () => {
       />
     )
     expect(container.querySelectorAll('[data-testid^="cap-footnote-"]').length).toBe(0)
+  })
+})
+
+describe('OpportunityCostTable — Phase 115 NEWS-03 staleness suppression', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('stale zinc buy candidate suppresses NewsBanner in PlayerMoveCell (NEWS-03 automated verification)', () => {
+    // news_added 15 days before mocked now → stale zinc → NewsBanner returns null → no banner in DOM
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-01-01T00:00:00Z').getTime())
+    const buy = makeScoredPlayer({
+      id: 300,
+      web_name: 'StaleBuy',
+      news: 'Old recovery note',
+      news_added: '2025-12-17T00:00:00Z',
+      chance_of_playing_next_round: 100,
+    })
+    const sell = makeScoredPlayer({ id: 100, web_name: 'AnySell' })
+    const { container } = withQueryClient(
+      <OpportunityCostTable
+        rows={[makeSingleFreeRow(sell, buy)]}
+        horizon={1}
+        gw={0}
+        allPlayers={[sell, buy]}
+        lifecycleLabels={new Map()}
+      />
+    )
+    expect(container.querySelectorAll('[data-testid="news-banner"]').length).toBe(0)
   })
 })

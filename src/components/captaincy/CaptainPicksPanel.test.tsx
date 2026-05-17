@@ -1,7 +1,7 @@
 // Phase 57 (EO-01..EO-04): CaptainPicksPanel RTL tests — RED in Wave 0, GREEN after rewrite.
 // Mirrors src/components/optimiser/ChipModeToggle.test.tsx pattern.
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, fireEvent, within } from '@testing-library/react'
 import { CaptainPicksPanel } from './CaptainPicksPanel'
 import type { MergedPlayer } from '@/lib/types'
@@ -10,11 +10,13 @@ vi.mock('@/lib/hooks/usePlayers', () => ({ usePlayers: vi.fn() }))
 vi.mock('@/lib/hooks/useCaptainPicks', () => ({ useCaptainPicks: vi.fn() }))
 vi.mock('@/lib/hooks/useAuthStatus', () => ({ useAuthStatus: vi.fn() }))
 vi.mock('@/lib/hooks/useMyTeam', () => ({ useMyTeam: vi.fn() }))
+vi.mock('@/lib/hooks/useAccuracy', () => ({ useNewsFlagEnabled: vi.fn() }))
 
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useCaptainPicks } from '@/lib/hooks/useCaptainPicks'
 import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
+import { useNewsFlagEnabled } from '@/lib/hooks/useAccuracy'
 
 type PlayerOverrides = Partial<MergedPlayer> & { id: number; element_type: 1 | 2 | 3 | 4 }
 function makePlayer(overrides: PlayerOverrides): MergedPlayer {
@@ -386,5 +388,78 @@ describe('Phase 102 MC-02: CandidateRow P10/P90 inline range', () => {
       s => /·\s*0\.0\s*–\s*0\.0/.test(s.textContent ?? '')
     )
     expect(zeroRange).toBeDefined()
+  })
+})
+
+describe('CaptainPicksPanel — Phase 115 NEWS-02 NewsBanner in CandidateRow', () => {
+  beforeEach(() => {
+    vi.mocked(useNewsFlagEnabled).mockReturnValue(true)
+  })
+  afterEach(() => vi.restoreAllMocks())
+
+  it('news-banner renders inside eo-candidate-row for fresh zinc news (banner present)', () => {
+    // Mock Date.now to 1 day after news_added — fresh zinc (zinc + < 14 days → renders)
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-01-16T00:00:00Z').getTime())
+    const players = buildPlayers().map((p, i) => {
+      if (i === 0) {
+        return makePlayer({
+          id: p.id,
+          element_type: p.element_type as 1 | 2 | 3 | 4,
+          web_name: p.web_name,
+          selected_by_percent: p.selected_by_percent,
+          xPts_1gw: p.xPts_1gw,
+          xPts_90th_1gw: p.xPts_90th_1gw,
+          news: 'Returned from international duty',
+          news_added: '2026-01-15T00:00:00Z',
+          chance_of_playing_next_round: 100,
+        })
+      }
+      return p
+    })
+    vi.mocked(usePlayers).mockReturnValue({ data: players, isLoading: false, error: null } as never)
+    const { getAllByTestId, container } = render(<CaptainPicksPanel />)
+    const rows = getAllByTestId('eo-candidate-row')
+    const bannerInRow = rows.some(row => row.querySelector('[data-testid="news-banner"]') !== null)
+    expect(bannerInRow).toBe(true)
+    const banner = container.querySelector('[data-testid="news-banner"]')
+    expect(banner).not.toBeNull()
+    expect(banner!.textContent).toContain('Returned from international duty')
+  })
+
+  it('no news-banner in any eo-candidate-row for empty news and stale zinc news (banner absent)', () => {
+    // Mock Date.now to 15 days after stale news_added — stale zinc suppressed
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-01-01T00:00:00Z').getTime())
+    const players = buildPlayers().map((p, i) => {
+      if (i === 0) {
+        return makePlayer({
+          id: p.id,
+          element_type: p.element_type as 1 | 2 | 3 | 4,
+          web_name: p.web_name,
+          selected_by_percent: p.selected_by_percent,
+          xPts_1gw: p.xPts_1gw,
+          xPts_90th_1gw: p.xPts_90th_1gw,
+          news: '',
+          chance_of_playing_next_round: 100,
+        })
+      }
+      if (i === 1) {
+        return makePlayer({
+          id: p.id,
+          element_type: p.element_type as 1 | 2 | 3 | 4,
+          web_name: p.web_name,
+          selected_by_percent: p.selected_by_percent,
+          xPts_1gw: p.xPts_1gw,
+          xPts_90th_1gw: p.xPts_90th_1gw,
+          news: 'Old update',
+          news_added: '2025-12-17T00:00:00Z',
+          chance_of_playing_next_round: 100,
+        })
+      }
+      return p
+    })
+    vi.mocked(usePlayers).mockReturnValue({ data: players, isLoading: false, error: null } as never)
+    const { container } = render(<CaptainPicksPanel />)
+    const banners = container.querySelectorAll('[data-testid="news-banner"]')
+    expect(banners.length).toBe(0)
   })
 })
