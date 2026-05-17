@@ -1578,7 +1578,7 @@ Plans:
 <summary>v1.22 Lineup Intelligence (Phases 117-119) — IN PROGRESS</summary>
 
 - [x] **Phase 117: Scraper Pipeline & Artifact** — lineup_news.json pipeline, API route, hook, staleness guard (completed 2026-05-17)
-- [ ] **Phase 118: Engine Integration** — suggestTransfers() and optimiseLineup()/benchOrder() availability_factor penalties
+- [x] **Phase 118: Engine Integration** — suggestTransfers() and optimiseLineup()/benchOrder() availability_factor penalties (completed 2026-05-17)
 - [ ] **Phase 119: UI Surfaces** — captain badge, transfer flag, Team News Alert card, Decision Summary wiring
 
 </details>
@@ -1623,8 +1623,8 @@ Plans:
   - [x] 118-01-PLAN.md — Close Phase 117 INFRA-02 gap: add 48h staleness select transform to useLineupNews hook + Vitest coverage
 
   **Wave 2** *(blocked on Wave 1 completion)*
-  - [ ] 118-02-PLAN.md — ENGN-01 TDD: suggestTransfers buy-side availability_factor penalty (scoreBuyCandidate closure + 6 tests)
-  - [ ] 118-03-PLAN.md — ENGN-02 TDD: optimiseLineup + benchOrder absent-player exclusion / evScore=0 (6 tests)
+  - [x] 118-02-PLAN.md — ENGN-01 TDD: suggestTransfers buy-side availability_factor penalty (scoreBuyCandidate closure + 6 tests)
+  - [x] 118-03-PLAN.md — ENGN-02 TDD: optimiseLineup + benchOrder absent-player exclusion / evScore=0 (6 tests)
 
   **Cross-cutting constraints:**
   - Sell-side scoring stays unpenalised (D-01) — Phase 119 UI-03 Team News Alert handles selling urgency
@@ -1727,5 +1727,5 @@ Plans:
 | 115 | v1.21 | 0/0 | Not started | - |
 | 116 | v1.21 | 4/4 | Complete    | 2026-05-17 |
 | 117 | v1.22 | 2/2 | Complete    | 2026-05-17 |
-| 118 | v1.22 | 1/3 | In Progress|  |
+| 118 | v1.22 | 3/3 | Complete   | 2026-05-17 |
 | 119 | v1.22 | 0/0 | Not started | - |
