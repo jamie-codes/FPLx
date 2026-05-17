@@ -1,16 +1,17 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.21
-milestone_name: Polish, Intelligence & Team News
-status: completed
-stopped_at: Phase 115 context gathered
-last_updated: "2026-05-17T07:24:40.703Z"
-last_activity: 2026-05-16 — Phase 114 complete (10/10 must-haves verified)
+milestone_name: milestone
+status: executing
+stopped_at: Phase 115 Plan 01 complete
+last_updated: "2026-05-17T09:37:00.000Z"
+last_activity: 2026-05-17 -- Phase 115 Plan 01 complete (NEWS-01 staleness gate)
 progress:
-  total_phases: 3
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_phases: 63
+  completed_phases: 0
+  total_plans: 2
+  completed_plans: 1
+  percent: 50
 ---
 
 # Project State
@@ -24,14 +25,14 @@ See: .planning/PROJECT.md (updated 2026-05-16 — v1.21 milestone active)
 
 ## Current Position
 
-Phase: 115 (not started)
-Plan: —
-Status: Phase 114 complete; ready to discuss/plan Phase 115
-Last activity: 2026-05-16 — Phase 114 complete (10/10 must-haves verified)
+Phase: 115
+Plan: 115-02
+Status: Executing (Wave 2)
+Last activity: 2026-05-17 -- Plan 01 complete, Plan 02 starting
 
 ```
 Phase 114 [██████████] 100% ✅ COMPLETE
-Phase 115 [          ] 0%
+Phase 115 [█████     ] 50%  (1/2 plans done)
 Phase 116 [          ] 0%
 
 Milestone  [███       ] 33%  (1/3 phases complete)
@@ -96,6 +97,6 @@ _(No v1.21 decisions yet — roadmap phase only)_
 
 ## Session Continuity
 
-Last session: 2026-05-17T07:24:40.694Z
-Stopped at: Phase 115 context gathered
+Last session: 2026-05-17T07:32:16.455Z
+Stopped at: Phase 115 UI-SPEC approved
 Next command: `/gsd-discuss-phase 115`

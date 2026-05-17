@@ -1547,7 +1547,9 @@ Plans:
   1. NewsBanner badges with zinc severity and a news_added date older than 14 days are suppressed from display — red and amber severity badges are never suppressed regardless of age
   2. User sees NewsBanner in CaptainPicksPanel candidate rows — team news (e.g. "75% chance of playing") is shown alongside each captain pick candidate, using the same severity colour-coding as TransferPanel
   3. User sees NewsBanner in TransferPanel / OpportunityCostTable buy-candidate rows with staleness suppression from NEWS-01 applied — stale zinc news does not appear on buy candidates
-**Plans**: TBD
+**Plans**: 2 plans
+- [x] 115-01-PLAN.md — NEWS-01 staleness suppression guard in NewsBanner + 5 new Vitest cases (Wave 1)
+- [ ] 115-02-PLAN.md — NEWS-02 NewsBanner wiring into CaptainPicksPanel CandidateRow + NEWS-03 automated staleness verification in OpportunityCostTable (Wave 2)
 **UI hint**: yes
 
 ### Phase 116: Prose Staleness & Model Versioning _(v1.21)_
