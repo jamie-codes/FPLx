@@ -114,3 +114,108 @@ def test_missing_api_key_returns_none(monkeypatch):
         )
         assert out is None
         MockClient.assert_not_called()
+
+
+# ---- Phase 116 PROSE-02 tests (Task 1) ----
+
+def test_build_user_prompt_includes_dgw_note(with_api_key):
+    from prose_summary import _build_user_prompt
+    result = _build_user_prompt(
+        captains=_captain_payload(),
+        gems=_gem_payload(),
+        gameweek=33,
+        dgw_teams=['MCI', 'ARS'],
+    )
+    assert 'Note: Gameweek 33 is a double gameweek for: MCI, ARS.' in result
+    # DGW note must appear BEFORE <input>
+    dgw_pos = result.index('Note: Gameweek 33')
+    input_pos = result.index('<input>')
+    assert dgw_pos < input_pos
+
+
+def test_build_user_prompt_omits_dgw_note_when_empty(with_api_key):
+    from prose_summary import _build_user_prompt
+    result_none = _build_user_prompt(
+        captains=_captain_payload(),
+        gems=_gem_payload(),
+        gameweek=33,
+        dgw_teams=None,
+    )
+    assert 'double gameweek' not in result_none
+
+    result_empty = _build_user_prompt(
+        captains=_captain_payload(),
+        gems=_gem_payload(),
+        gameweek=33,
+        dgw_teams=[],
+    )
+    assert 'double gameweek' not in result_empty
+
+
+def test_build_user_prompt_includes_chance_of_playing(with_api_key):
+    from prose_summary import _build_user_prompt
+    caps_with_doubt = [
+        {'name': 'SalahDoubt', 'team': 'LIV', 'xPts_1gw': 6.8, 'chance_of_playing_next_round': 75},
+        {'name': 'HaalandFit', 'team': 'MCI', 'xPts_1gw': 7.2, 'chance_of_playing_next_round': 100},
+        {'name': 'SakaMissing', 'team': 'ARS', 'xPts_1gw': 5.9},
+    ]
+    result = _build_user_prompt(captains=caps_with_doubt, gems=_gem_payload())
+    # Player with chance 75 should have chance_of_playing attribute
+    assert 'chance_of_playing="75"' in result
+    # Player with chance 100 should NOT have chance_of_playing attribute
+    # Find the SalahDoubt and HaalandFit lines and check separately
+    lines = result.split('\n')
+    haaland_lines = [l for l in lines if 'HaalandFit' in l]
+    assert len(haaland_lines) == 1
+    assert 'chance_of_playing=' not in haaland_lines[0]
+    # Player without the key should NOT have chance_of_playing attribute
+    saka_lines = [l for l in lines if 'SakaMissing' in l]
+    assert len(saka_lines) == 1
+    assert 'chance_of_playing=' not in saka_lines[0]
+
+
+def test_build_user_prompt_includes_news_attribute(with_api_key):
+    from prose_summary import _build_user_prompt
+    caps_with_news = [
+        {'name': 'SalahNews', 'team': 'LIV', 'xPts_1gw': 6.8, 'news': 'Doubtful for GW'},
+        {'name': 'HaalandNoNews', 'team': 'MCI', 'xPts_1gw': 7.2, 'news': ''},
+    ]
+    result = _build_user_prompt(captains=caps_with_news, gems=_gem_payload())
+    # Player with news should have news attribute
+    assert 'news="Doubtful for GW"' in result
+    # Player with empty news should NOT have news attribute
+    lines = result.split('\n')
+    haaland_lines = [l for l in lines if 'HaalandNoNews' in l]
+    assert len(haaland_lines) == 1
+    assert 'news=' not in haaland_lines[0]
+
+
+def test_generate_weekly_summary_accepts_dgw_teams_kwarg(with_api_key):
+    from prose_summary import generate_weekly_summary
+    with patch('prose_summary.Anthropic') as MockClient:
+        client = MockClient.return_value
+        client.messages.create.return_value = _stub_message(
+            'Salah and Haaland lead this week. Madueke offers value.'
+        )
+        out = generate_weekly_summary(
+            captains=_captain_payload(),
+            gems=_gem_payload(),
+            player_corpus=_corpus(),
+            gameweek=33,
+            dgw_teams=['MCI'],
+        )
+        assert out is not None
+        assert out['gw'] == 33
+        assert 'prose' in out
+        assert 'generated_at' in out
+        # Inspect user prompt content passed to the mock
+        call_args = client.messages.create.call_args
+        messages = call_args[1].get('messages') or call_args[0][0] if call_args[0] else call_args[1]['messages']
+        # Find the user message
+        user_content = None
+        for m in messages:
+            if m.get('role') == 'user':
+                user_content = m['content']
+                break
+        assert user_content is not None
+        assert 'Note: Gameweek 33 is a double gameweek for: MCI.' in user_content

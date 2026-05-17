@@ -62,17 +62,35 @@ def _passes_guardrail(prose: str, allowed: set, corpus: list) -> bool:
     return True
 
 
-def _build_user_prompt(captains: list, gems: list) -> str:
-    cap_lines = '\n'.join(
-        f'  <player name="{c["name"]}" team="{c["team"]}" />'
-        for c in captains
-    )
-    gem_lines = '\n'.join(
-        f'  <player name="{g["name"]}" team="{g["team"]}" />'
-        for g in gems
-    )
+def _build_player_xml(p: dict) -> str:
+    """Build a single player XML line with optional availability attributes."""
+    attrs = f'name="{p["name"]}" team="{p["team"]}"'
+    cop = p.get('chance_of_playing_next_round')
+    if cop is not None and int(cop) < 100:
+        attrs += f' chance_of_playing="{cop}"'
+    news = p.get('news')
+    if news:
+        attrs += f' news="{news.replace(chr(34), chr(39))}"'
+    return f'  <player {attrs} />'
+
+
+def _build_user_prompt(
+    captains: list,
+    gems: list,
+    gameweek: Optional[int] = None,
+    dgw_teams: Optional[list] = None,
+) -> str:
+    cap_lines = '\n'.join(_build_player_xml(c) for c in captains)
+    gem_lines = '\n'.join(_build_player_xml(g) for g in gems)
+
+    if dgw_teams and gameweek is not None:
+        dgw_prefix = f"Note: Gameweek {gameweek} is a double gameweek for: {', '.join(dgw_teams)}.\n\n"
+    else:
+        dgw_prefix = ''
+
     return (
-        '<input>\n'
+        dgw_prefix
+        + '<input>\n'
         f'<captains>\n{cap_lines}\n</captains>\n'
         f'<gems>\n{gem_lines}\n</gems>\n'
         '</input>\n\n'
@@ -103,6 +121,7 @@ def generate_weekly_summary(
     gems: list,
     player_corpus: list,
     gameweek: Optional[int],
+    dgw_teams: Optional[list] = None,
 ) -> Optional[dict]:
     """Generate the weekly prose summary or return None on failure.
 
@@ -111,6 +130,7 @@ def generate_weekly_summary(
         gems: list of dicts with at least `name` and `team` keys
         player_corpus: full list of PL player web_names for guardrail
         gameweek: int GW number for the summary timestamp
+        dgw_teams: optional list of team short names with a double gameweek (D-05)
 
     Returns:
         {'prose': str, 'gw': int, 'generated_at': iso str} on success
@@ -127,7 +147,7 @@ def generate_weekly_summary(
     client = Anthropic(api_key=api_key)
     allowed = _collect_allowed_names(captains, gems)
     allowed_display = [p['name'] for p in list(captains) + list(gems) if p.get('name')]
-    user = _build_user_prompt(captains, gems)
+    user = _build_user_prompt(captains, gems, gameweek=gameweek, dgw_teams=dgw_teams)
 
     for attempt in range(ALLOWED_RETRIES + 1):
         system = _build_system_prompt(strict=(attempt > 0), allowed_display=allowed_display)
