@@ -139,7 +139,12 @@ export function optimiseLineup(
     .filter((p): p is MergedPlayer => p !== undefined)
 
   // bench[0] = non-starting GK. There must be exactly 1 (FPL squads have exactly 2 GKs).
-  const benchGk = benchPicks.find(p => p.element_type === GK)
+  // Phase 118 ENGN-02 (D-05): also exclude confirmed_absent bench GKs — a GK excluded from
+  // starters by the absent check lands in benchPicks, but must not be returned as bench[0].
+  const benchGk = benchPicks.find(p =>
+    p.element_type === GK &&
+    lineupNewsMap?.get(p.id)?.status_label !== 'confirmed_absent'
+  )
   // Phase 55 BENCH-01: delegate outfield bench ordering to benchOrder() — EV/BGW/formation-aware.
   const starterPlayers = bestStarterIds.map(id => playerMap.get(id)!)
   const benchOutfieldRaw = benchPicks.filter(p => p.element_type !== GK)
