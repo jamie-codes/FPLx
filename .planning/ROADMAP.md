@@ -1594,7 +1594,18 @@ Plans:
   3. /api/lineup-news route reads lineup_news.json from Vercel Blob and useLineupNews TanStack Query hook (6h staleTime) fetches from the route, following the established gw-intel / set-pieces artifact pattern
   4. All engine consumers treat lineup_news.json with scraped_at older than 48 hours as neutral -- no availability_factor penalty is applied when data is stale
   5. premierleague.com, Sky Sports RSS, and BBC Sport RSS scrapers each run in an isolated try/except block outside the main pipeline try; a failure in any one source does not block the others or the main pipeline
-**Plans**: TBD
+**Plans**: 2 plans
+
+  **Wave 1**
+  - [ ] 117-01-PLAN.md — Python pipeline: lineup_news.py module + run.py integration + tests + requirements
+
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 117-02-PLAN.md — TypeScript layer: types + /api/lineup-news route + useLineupNews hook
+
+  **Cross-cutting constraints:**
+  - pipeline/upload.py `save()` is the only Blob write path — never call Vercel Blob SDK directly
+  - Empty `players[]` must never be written to Blob (SCRP-05)
+  - Web scrapers never mutate `availability_factor` — FPL bootstrap is sole source (D-03)
 **UI hint**: no
 
 ### Phase 118: Engine Integration

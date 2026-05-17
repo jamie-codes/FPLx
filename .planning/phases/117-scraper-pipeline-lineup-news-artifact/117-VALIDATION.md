@@ -45,8 +45,8 @@ created: 2026-05-17
 | 117-02-01 | 02 | 1 | SCRP-02 | T: malformed HTML response injection | BS4 get_text extracts text only, no HTML stored | unit | `python -m pytest pipeline/test_lineup_news.py -x -k premierleague` | ❌ W0 | ⬜ pending |
 | 117-02-02 | 02 | 1 | SCRP-03 | T: malformed RSS content injected into headlines | feedparser sanitises entry.title; raw string stored only | unit | `python -m pytest pipeline/test_lineup_news.py -x -k skysports` | ❌ W0 | ⬜ pending |
 | 117-02-03 | 02 | 1 | SCRP-04 | T: malformed RSS content | feedparser sanitises entry.title | unit | `python -m pytest pipeline/test_lineup_news.py -x -k bbc` | ❌ W0 | ⬜ pending |
-| 117-03-01 | 03 | 2 | INFRA-01 | — | GET /api/lineup-news returns 200 with valid JSON | smoke | `curl -s http://localhost:3000/api/lineup-news \| python -m json.tool` | ❌ W0 | ⬜ pending |
-| 117-03-02 | 03 | 2 | INFRA-02 | — | scraped_at field present in artifact | unit | Check JSON key in test | ❌ W0 | ⬜ pending |
+| 117-02-04 | 02 | 2 | INFRA-01 | — | GET /api/lineup-news returns 200 with valid JSON | smoke | `curl -s http://localhost:3000/api/lineup-news \| python -m json.tool` | ❌ W0 | ⬜ pending |
+| 117-02-05 | 02 | 2 | INFRA-02 | — | scraped_at field present in artifact | unit | Check JSON key in test | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 

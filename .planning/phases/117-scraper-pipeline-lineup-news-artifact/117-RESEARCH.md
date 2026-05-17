@@ -729,7 +729,7 @@ Note: The guard applies regardless of `USE_BLOB` setting — also protects local
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **`chance_of_playing_next_round == 100` handling**
    - What we know: D-08 table lists 0/25/50/75/null but not 100
