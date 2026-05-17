@@ -712,14 +712,13 @@ describe('Phase 118 ENGN-01: lineupNewsMap availability penalty', () => {
     })
     const absentSuggestion = result.find(s => s.kind === 'single' && s.buy.id === 99)
     const healthySuggestion = result.find(s => s.kind === 'single' && s.buy.id === 98)
-    // Absent player must have near-zero gain (factor 0.01 applied)
-    if (absentSuggestion && healthySuggestion) {
-      expect(absentSuggestion.xPtsGain).toBeLessThan(healthySuggestion.xPtsGain)
-    }
-    // Absent player (raw 8.0 * 0.01 = 0.08) has near-zero score, while current squad MIDs are 5.0
-    // So xPtsGain would be 0.08 - 5.0 = negative → filtered out, or appears at bottom
-    // The healthy MID (6.0 - 5.0 = 1.0 gain) should appear
+    // Absent player (raw 8.0 * 0.01 = 0.08) has near-zero effective score; current squad MIDs
+    // score 5.0, so xPtsGain = 0.08 - 5.0 = -4.92 → filtered out by the > 0 guard.
+    expect(absentSuggestion).toBeUndefined()
+    // Healthy MID (6.0 * 1.0 = 6.0; gain = 6.0 - 5.0 = 1.0) must appear and its gain must
+    // exceed what the absent candidate would have had (asserting the penalty is meaningful).
     expect(healthySuggestion).toBeDefined()
+    expect(healthySuggestion!.xPtsGain).toBeGreaterThan(0)
   })
 
   it('doubted buy candidate (0.5) is ranked below equally-rated healthy candidate (1.0)', () => {
