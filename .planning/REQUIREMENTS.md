@@ -17,9 +17,9 @@
 
 ### Team News (SCRAPER-01)
 
-- [ ] **NEWS-01**: `NewsBanner` badges older than 14 days (via `news_added` field) are suppressed from zinc-severity display to prevent stale badge fatigue in decision-critical surfaces
-- [ ] **NEWS-02**: User sees `NewsBanner` in `CaptainPicksPanel` candidate rows — team news shown alongside captain picks (e.g. "75% chance of playing")
-- [ ] **NEWS-03**: User sees `NewsBanner` in `TransferPanel`/`OpportunityCostTable` buy-candidate rows (staleness suppression from NEWS-01 applies)
+- [x] **NEWS-01**: `NewsBanner` badges older than 14 days (via `news_added` field) are suppressed from zinc-severity display to prevent stale badge fatigue in decision-critical surfaces
+- [x] **NEWS-02**: User sees `NewsBanner` in `CaptainPicksPanel` candidate rows — team news shown alongside captain picks (e.g. "75% chance of playing")
+- [x] **NEWS-03**: User sees `NewsBanner` in `TransferPanel`/`OpportunityCostTable` buy-candidate rows (staleness suppression from NEWS-01 applies)
 
 ### Weekly Prose Summary (NLP-01)
 
@@ -62,9 +62,9 @@
 | TRT-01 | Phase 114 | Pending |
 | TRT-02 | Phase 114 | Pending |
 | SPARK-01 | Phase 114 | Pending |
-| NEWS-01 | Phase 115 | Pending |
-| NEWS-02 | Phase 115 | Pending |
-| NEWS-03 | Phase 115 | Pending |
+| NEWS-01 | Phase 115 | Complete |
+| NEWS-02 | Phase 115 | Complete |
+| NEWS-03 | Phase 115 | Complete |
 | PROSE-01 | Phase 116 | Pending |
 | PROSE-02 | Phase 116 | Pending |
 | VER-01 | Phase 116 | Pending |
@@ -77,4 +77,4 @@
 
 ---
 *Requirements defined: 2026-05-16*
-*Last updated: 2026-05-16 after initial definition*
+*Last updated: 2026-05-17 after Phase 115 completion — NEWS-01/02/03 verified*

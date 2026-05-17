@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.21
 milestone_name: milestone
 status: executing
-stopped_at: Phase 115 all plans complete — verifying
-last_updated: "2026-05-17T09:47:00.000Z"
-last_activity: 2026-05-17 -- Phase 115 Plan 02 complete (NEWS-02 CaptainPicksPanel + NEWS-03 verification)
+stopped_at: Phase 115 complete
+last_updated: "2026-05-17T09:52:00.000Z"
+last_activity: 2026-05-17 -- Phase 115 complete (NEWS-01/02/03 verified)
 progress:
   total_phases: 63
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
   completed_plans: 2
   percent: 100
@@ -21,21 +21,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-16 — v1.21 milestone active)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.21 Phase 114 — Polish & Carry-Forward Fixes
+**Current focus:** v1.21 Phase 116 — Prose Staleness & Model Versioning
 
 ## Current Position
 
-Phase: 115
+Phase: 116
 Plan: —
-Status: Verifying
-Last activity: 2026-05-17 -- All plans complete, verifying phase goal
+Status: Ready to plan
+Last activity: 2026-05-17 -- Phase 115 complete
 
 ```
 Phase 114 [██████████] 100% ✅ COMPLETE
-Phase 115 [██████████] 100% (verifying)
+Phase 115 [██████████] 100% ✅ COMPLETE
 Phase 116 [          ] 0%
 
-Milestone  [███       ] 33%  (1/3 phases complete)
+Milestone  [██████    ] 67%  (2/3 phases complete)
 ```
 
 ## Performance Metrics

@@ -1539,7 +1539,7 @@ Plans:
   - [x] 114-03-PLAN.md -- UAT-01 human visual checkpoint: BackTab dark mode, delta colour, multi-transfer format, captain separation (UAT-01)
 **UI hint**: yes
 
-### Phase 115: Team News Wiring _(v1.21)_
+### ✅ Phase 115: Team News Wiring _(v1.21)_ — COMPLETE 2026-05-17
 **Goal**: Users see live FPL team news on the two highest-stakes decision surfaces — captain picks and transfer candidates — with a 14-day staleness suppression gate ensuring zinc-severity badges for long-settled news never dilute the signal quality on decision-critical surfaces
 **Depends on**: Phase 114; NEWS-01 staleness suppression is a prerequisite that must exist before NewsBanner is wired into any new call site — deploying NEWS-02 or NEWS-03 without this gate would cause badge fatigue
 **Requirements**: NEWS-01, NEWS-02, NEWS-03
