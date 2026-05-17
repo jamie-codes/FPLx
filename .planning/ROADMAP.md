@@ -1577,7 +1577,7 @@ Plans:
 <details>
 <summary>v1.22 Lineup Intelligence (Phases 117-119) — IN PROGRESS</summary>
 
-- [ ] **Phase 117: Scraper Pipeline & Artifact** — lineup_news.json pipeline, API route, hook, staleness guard
+- [x] **Phase 117: Scraper Pipeline & Artifact** — lineup_news.json pipeline, API route, hook, staleness guard (completed 2026-05-17)
 - [ ] **Phase 118: Engine Integration** — suggestTransfers() and optimiseLineup()/benchOrder() availability_factor penalties
 - [ ] **Phase 119: UI Surfaces** — captain badge, transfer flag, Team News Alert card, Decision Summary wiring
 
@@ -1597,10 +1597,10 @@ Plans:
 **Plans**: 2 plans
 
   **Wave 1**
-  - [ ] 117-01-PLAN.md — Python pipeline: lineup_news.py module + run.py integration + tests + requirements
+  - [x] 117-01-PLAN.md — Python pipeline: lineup_news.py module + run.py integration + tests + requirements
 
   **Wave 2** *(blocked on Wave 1 completion)*
-  - [ ] 117-02-PLAN.md — TypeScript layer: types + /api/lineup-news route + useLineupNews hook
+  - [x] 117-02-PLAN.md — TypeScript layer: types + /api/lineup-news route + useLineupNews hook
 
   **Cross-cutting constraints:**
   - pipeline/upload.py `save()` is the only Blob write path — never call Vercel Blob SDK directly
@@ -1611,13 +1611,25 @@ Plans:
 ### Phase 118: Engine Integration
 **Goal**: Transfer suggestions and lineup optimiser/bench order penalise doubted and confirmed-absent players when lineup news is available -- making the engine's recommendations reflect real-world injury and selection signals
 **Depends on**: Phase 117 (lineup_news.json Blob artifact and useLineupNews hook must exist)
-**Requirements**: ENGN-01, ENGN-02
+**Requirements**: ENGN-01, ENGN-02 (also closes Phase 117 INFRA-02 gap in Plan 01)
 **Success Criteria** (what must be TRUE):
   1. A confirmed-absent buy candidate scores near-zero in suggestTransfers() output -- the availability_factor x0.01 multiplier sinks the player to the bottom of every position bucket regardless of xPts
   2. A doubted buy candidate (availability_factor 0.75) is visibly downranked relative to an equally-rated healthy candidate in the transfer suggestion list
   3. A confirmed-absent player in the squad bench sinks to the last bench slot automatically in benchOrder() output -- consistent with BGW treatment (EV score effectively 0)
   4. When lineupNewsMap is absent or stale (>48 hours), suggestTransfers() and optimiseLineup()/benchOrder() produce identical output to their pre-ENGN state -- no degradation for users with no news data
-**Plans**: TBD
+**Plans**: 3 plans
+
+  **Wave 1**
+  - [x] 118-01-PLAN.md — Close Phase 117 INFRA-02 gap: add 48h staleness select transform to useLineupNews hook + Vitest coverage
+
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 118-02-PLAN.md — ENGN-01 TDD: suggestTransfers buy-side availability_factor penalty (scoreBuyCandidate closure + 6 tests)
+  - [ ] 118-03-PLAN.md — ENGN-02 TDD: optimiseLineup + benchOrder absent-player exclusion / evScore=0 (6 tests)
+
+  **Cross-cutting constraints:**
+  - Sell-side scoring stays unpenalised (D-01) — Phase 119 UI-03 Team News Alert handles selling urgency
+  - Only confirmed_absent triggers starter exclusion and bench zero-out (D-08) — doubted players still selectable as starters
+  - 0.01 floor for absent buy candidates (D-02) — ensures they appear at bottom of position buckets rather than disappearing
 **UI hint**: no
 
 ### Phase 119: UI Surfaces
@@ -1714,6 +1726,6 @@ Plans:
 | 114 | v1.21 | 0/0 | Not started | - |
 | 115 | v1.21 | 0/0 | Not started | - |
 | 116 | v1.21 | 4/4 | Complete    | 2026-05-17 |
-| 117 | v1.22 | 0/0 | Not started | - |
-| 118 | v1.22 | 0/0 | Not started | - |
+| 117 | v1.22 | 2/2 | Complete    | 2026-05-17 |
+| 118 | v1.22 | 1/3 | In Progress|  |
 | 119 | v1.22 | 0/0 | Not started | - |
