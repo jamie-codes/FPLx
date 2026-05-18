@@ -1689,7 +1689,14 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. The Phase 60 VERIFICATION.md file exists at the correct path, is committed, and documents what was shipped in Phase 60 (Transfer Route Tree) with acceptance sign-off
   2. A developer can open the production app, load a player's XPtsCell hover card, and confirm that appearance_pts is rendered as a separate named row in the breakdown (not absent or zero)
-**Plans**: TBD
+**Plans**: 3 plans
+
+  **Wave 1**
+  - [ ] 121-01-PLAN.md — Write Phase 60 historical VERIFICATION.md (DOC-01)
+  - [ ] 121-02-PLAN.md — Write Phase 48 VERIFICATION.md + human production confirmation of appearance_pts hover card (VER-01)
+
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 121-03-PLAN.md — Update REQUIREMENTS.md traceability table for DOC-01 and VER-01
 
 ## Progress
 
