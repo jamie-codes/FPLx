@@ -4,6 +4,8 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
+v1.24 Phase 122 complete (2026-05-18) — Polish Carry-Forwards: POL-01/02 — `RouteTreeTab` chipMode hardcoded null replaced with `useState<PlannerChip>`, ChipToggle wired with toggle-deselect handler, `disabled` prop removed; column header "Hits" renamed "Transfer Hits". POL-04 — `MinsRiskBadge` slotted into `OpportunityCostTable.PlayerMoveCell` buy cluster between `StatusLabelBadge` and `NewsBanner`. POL-03/05/06 verified PASS in source-pinned record (`SquadView:224`, `columns.tsx:271–276`, `PlayerComparisonModal:172`). 4 source files changed, 44/44 tests green. Last updated: 2026-05-18
+
 v1.21 Phase 115 complete (2026-05-17) — Team News Wiring: 14-day staleness suppression gate (`isStale`) in `NewsBanner` (NEWS-01), zinc badges older than 14 days suppressed; red/amber never suppressed. `NewsBanner` wired into `CaptainPicksPanel` CandidateRow inline after McLabel cluster (NEWS-02). NEWS-03 auto-satisfied via pre-existing `news_added` pass-through in `OpportunityCostTable`. 10 NewsBanner tests + 2 CaptainPicksPanel tests + 1 OpportunityCostTable test, all passing. 5 source files changed.
 
 v1.20 complete (2026-05-16) — Fixes & Decision Quality milestone shipped: 6 GW Review/history bugs fixed via liveMap sourcing (FIX-03/04/05/06), heatmap partially-played DGW cell fixed (FIX-01), position-lock enforced at all 4 suggestTransfers call sites (FIX-02), Optimiser on-demand with hasRun gate (OPT-01), capByPosition(raw,3) transfer cap (TFR-02), Transfer Regret Backtester wired end-to-end (BACK-02 — human UAT pending). 120 files, +17,166/−2,112 lines, 15 plans across 4 phases.
@@ -52,14 +54,22 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
-## Current Milestone: v1.23 Technical Debt & Test Health
+## Current Milestone: v1.24 End of Season & Off-Season Intelligence
+
+**Goal:** Clear remaining carry-forwards, surface a full-season review, and build tools that stay useful through the summer window and into next season's planning.
+
+**Target features:**
+- Carry-forward polish: TRT-06 (ChipToggle in RouteTreeTab), TRT-02 (Hits column cosmetic), MinsRiskBadge on SquadView/DecisionSummaryTab/GemTable column/PlayerComparisonModal
+- SCRAPER-02: Multi-source news scraper (Sky Sports, BBC Sport, Twitter/X) — transfer news, pre-season fitness/injury, rotation signals
+- Season Review: Full-season summary card (rank, captain hit rate, chip ROI, transfer net gain) + decision quality grading (process score separating luck from skill)
+- Next Season Planner: Full-pool squad builder (all 700+ players at 100m) + GW1–8 fixture difficulty heatmap
+- Summer Window Tracker: New signings feed integrated into price speculation and squad planning
+
+## Previous Milestone: v1.23 Technical Debt & Test Health (Complete 2026-05-18)
 
 **Goal:** Clear all deferred items from v1.22 and restore the test suite to green.
 
-**Target features:**
-- Fix 25 failing tests across 4 files (captain-picks, MobileNav, useRivals, club-form)
-- VERIFY-60: write missing Phase 60 VERIFICATION.md
-- Phase 48 hover card: verify appearance_pts is live in production
+**Delivered:** 25 failing tests fixed across captain-picks, MobileNav, useRivals, club-form (Phase 120); Phase 60 VERIFICATION.md written (DOC-01); Phase 48 appearance_pts hover card confirmed live in production (VER-01). 2 phases (120–121).
 
 ## Previous Milestone: v1.22 Lineup Intelligence (Complete 2026-05-18)
 
@@ -343,7 +353,7 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 - ✓ **OPT-01**: Optimiser on-demand with `hasRun` gate and empty state — v1.20
 - ✓ **TFR-02**: `capByPosition(raw, 3)` caps transfer suggestions at top-3 per position with footnote — v1.20
 
-### Active (v1.23)
+### Active (v1.24)
 
 _(Requirements being defined — see REQUIREMENTS.md once committed)_
 
@@ -439,6 +449,13 @@ _(Requirements being defined — see REQUIREMENTS.md once committed)_
 
 This document evolves at phase transitions and milestone boundaries.
 
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
 **After each milestone** (via `/gsd-complete-milestone`):
 1. Full review of all sections
 2. Core Value check — still the right priority?
@@ -446,4 +463,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-18 — v1.23 Technical Debt & Test Health complete: 25 tests fixed (Phase 120), VERIFY-60 cleared (Phase 121 DOC-01), Phase 48 hover card confirmed live (Phase 121 VER-01).*
+*Last updated: 2026-05-18 — v1.24 End of Season & Off-Season Intelligence started. v1.23 complete: 25 tests fixed (Phase 120), VERIFY-60 cleared (Phase 121 DOC-01), Phase 48 hover card confirmed live (Phase 121 VER-01).*
