@@ -8,6 +8,7 @@ import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
 import { useChipHistory, type ChipHistoryEntry } from '@/lib/hooks/useChipHistory'
 import { useAccuracy } from '@/lib/hooks/useAccuracy'
+import { useLineupNews } from '@/lib/hooks/useLineupNews'
 import { computeAllGemScores } from '@/lib/gem-score'
 import { computeCaptaincyCandidates, type CaptaincyCandidate } from '@/lib/captaincy-engine'
 import { computeLifecycleLabels, type LifecycleLabel } from '@/lib/lifecycle-label'
@@ -23,10 +24,11 @@ import {
 } from '@/lib/chip-strategy-engine'
 import { fixtureCountForGw } from '@/lib/planning-engine'
 import { computeDecisionSeverity, type SeverityLevel } from '@/lib/decision-severity'
-import type { ClubForm, TransferSuggestion, ProseRefreshPayload } from '@/lib/types'
+import type { ClubForm, TransferSuggestion, ProseRefreshPayload, StatusLabel } from '@/lib/types'
 import { OpportunityCostTable } from '@/components/transfers/OpportunityCostTable'
 import { LifecycleLabelBadge } from '@/components/shared/LifecycleLabelBadge'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
+import { StatusLabelBadge } from '@/components/shared/StatusLabelBadge'
 import { CHIP_LABELS } from '@/components/planner/plan-helpers'
 import { ProseSummaryBlock } from './ProseSummaryBlock'
 import { CalibrationHealthIndicator } from './CalibrationHealthIndicator'
@@ -182,6 +184,9 @@ export function DecisionSummaryTab({
   // useAccuracy is already in the query cache (AccuracyTab uses it); zero additional fetch.
   const { data: accuracyData } = useAccuracy()
 
+  // Phase 119 UI-03 + UI-04: shared map for ocsSuggestions penalty and Team News Alert section
+  const { data: lineupNewsMap } = useLineupNews()
+
   // Derivations
   const scoredPlayers = useMemo(() => computeAllGemScores(playersData ?? []), [playersData])
 
@@ -238,8 +243,9 @@ export function DecisionSummaryTab({
       ftCount: derivedFtCount,
       bank: squadData.entry_history.bank,
       sellPrices: exactSellPrices,
+      lineupNewsMap,
     })
-  }, [squadData, scoredPlayers, derivedFtCount, exactSellPrices])
+  }, [squadData, scoredPlayers, derivedFtCount, exactSellPrices, lineupNewsMap])
 
   const ocsRows: OCSRow[] = useMemo(
     () => computeOpportunityCostRows(ocsSuggestions, derivedFtCount, squadData?.entry_history.bank ?? 0),
@@ -395,6 +401,24 @@ export function DecisionSummaryTab({
       }),
     [captaincyCandidates, riskLabelArr, isDGW, isBGW, hasAvailableChip, hasRecommendedChip],
   )
+
+  // Phase 119 UI-03: flaggedPlayers — all 15 squad picks (D-11) filtered to doubted/confirmed_absent (D-12).
+  // Returns [] when myTeamData or lineupNewsMap is absent (staleness short-circuit).
+  const flaggedPlayers = useMemo((): Array<{ player: typeof scoredPlayers[number]; statusLabel: StatusLabel }> => {
+    if (!myTeamData || !lineupNewsMap || scoredPlayers.length === 0) return []
+    const playerById = new Map(scoredPlayers.map(p => [p.id, p]))
+    const result: Array<{ player: typeof scoredPlayers[number]; statusLabel: StatusLabel }> = []
+    for (const pick of myTeamData.picks) {
+      const entry = lineupNewsMap.get(pick.element)
+      if (!entry) continue
+      if (entry.status_label === 'doubted' || entry.status_label === 'confirmed_absent') {
+        const player = playerById.get(pick.element)
+        if (!player) continue
+        result.push({ player, statusLabel: entry.status_label })
+      }
+    }
+    return result
+  }, [myTeamData, lineupNewsMap, scoredPlayers])
 
   // ---- Loading / error guards ----
   if (playersLoading || (squadLoading && !!submittedId)) {
@@ -585,6 +609,7 @@ export function DecisionSummaryTab({
               gw={nextGw ?? 0}
               allPlayers={scoredPlayers}
               lifecycleLabels={lifecycleLabels}
+              lineupNewsMap={lineupNewsMap}
             />
           </div>
         ) : (
@@ -685,6 +710,26 @@ export function DecisionSummaryTab({
           <NoSquadPlaceholder />
         )}
       </div>
+
+      {/* Phase 119 UI-03: Team News Alert section — all 15 squad picks (D-11) filtered to doubted/confirmed_absent (D-12) */}
+      {flaggedPlayers.length > 0 && (
+        <div
+          className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3 bg-white dark:bg-zinc-900"
+          role="region"
+          aria-label="Team News Alert"
+          data-testid="team-news-alert"
+        >
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Team News Alert</h2>
+          <ul className="space-y-2">
+            {flaggedPlayers.map(({ player, statusLabel }) => (
+              <li key={player.id} className="flex items-center justify-between py-1">
+                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{player.web_name}</span>
+                <StatusLabelBadge statusLabel={statusLabel} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Phase 103 CAL-02: one-line calibration health summary. Renders nothing when
           accuracy data is loading, calibration is absent, or aggregate buckets are empty. */}
