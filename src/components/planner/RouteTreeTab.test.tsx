@@ -265,10 +265,10 @@ describe('summary table — TRT-04', () => {
     expect(recommendedRow!.textContent).toContain('Recommended')
   })
 
-  it('column headers are in order: Path, Hits, Hit cost, Net xPts, Chips, Action', () => {
+  it('column headers are in order: Path, Transfer Hits, Hit cost, Net xPts, Chips, Action', () => {
     const { container } = renderRouteTree()
     const headers = Array.from(container.querySelectorAll('thead th')).map(th => th.textContent?.trim())
-    expect(headers).toEqual(['Path', 'Hits', 'Hit cost', 'Net xPts', 'Chips', 'Action'])
+    expect(headers).toEqual(['Path', 'Transfer Hits', 'Hit cost', 'Net xPts', 'Chips', 'Action'])
   })
 })
 
@@ -449,6 +449,45 @@ describe('bridge — TRT-05', () => {
     fireEvent.click(yesBtn)
     expect(mU(persistManualPlan)).toHaveBeenCalledTimes(1)
     expect(onSwitchSubTab).toHaveBeenCalledWith('manual-plan')
+  })
+})
+
+describe('ChipToggle wiring — POL-01', () => {
+  it('ChipToggle is rendered without disabled state (pointer-events-none absent)', () => {
+    const { container } = renderRouteTree()
+    const chipGroup = container.querySelector('[role="group"]')
+    expect(chipGroup).not.toBeNull()
+    // The wrapper div must NOT have pointer-events-none (disabled=true adds that)
+    const wrapperDiv = chipGroup!.parentElement as HTMLElement
+    expect(wrapperDiv.className).not.toContain('pointer-events-none')
+    expect(wrapperDiv.className).not.toContain('opacity-50')
+  })
+
+  it('clicking Wildcard chip sets aria-pressed to true on the wildcard button', () => {
+    const { container } = renderRouteTree()
+    const chipGroup = container.querySelector('[role="group"]')
+    expect(chipGroup).not.toBeNull()
+    const buttons = Array.from(chipGroup!.querySelectorAll('button'))
+    expect(buttons.length).toBe(4) // wildcard, freehit, bboost, 3xc
+    // Initially no chip is active
+    buttons.forEach(btn => expect(btn.getAttribute('aria-pressed')).toBe('false'))
+    // Click wildcard (first button)
+    fireEvent.click(buttons[0])
+    expect(buttons[0].getAttribute('aria-pressed')).toBe('true')
+    // Other chips remain deselected
+    buttons.slice(1).forEach(btn => expect(btn.getAttribute('aria-pressed')).toBe('false'))
+  })
+
+  it('clicking the active chip again deselects it (toggle-deselect returns to null)', () => {
+    const { container } = renderRouteTree()
+    const chipGroup = container.querySelector('[role="group"]')
+    const buttons = Array.from(chipGroup!.querySelectorAll('button'))
+    // Select wildcard
+    fireEvent.click(buttons[0])
+    expect(buttons[0].getAttribute('aria-pressed')).toBe('true')
+    // Click again to deselect
+    fireEvent.click(buttons[0])
+    expect(buttons[0].getAttribute('aria-pressed')).toBe('false')
   })
 })
 

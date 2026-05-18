@@ -87,7 +87,7 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
     [sellPrices]
   )
 
-  const chipMode: PlannerChip = null
+  const [chipMode, setChipMode] = useState<PlannerChip>(null)
 
   // ---------------------------------------------------------------------------
   // Engine memoization (TRT-07: recomputes when horizon changes)
@@ -233,9 +233,8 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
       <div>
         <ChipToggle
           gw={startingGw ?? 1}
-          activeChip={null}
-          onToggle={() => {}}
-          disabled={true}
+          activeChip={chipMode}
+          onToggle={(chip) => setChipMode(prev => prev === chip ? null : chip)}
         />
       </div>
 
@@ -266,7 +265,7 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
             <thead>
               <tr className="border-b border-zinc-200 dark:border-zinc-700">
                 <th scope="col" className="px-3 py-3 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-left">Path</th>
-                <th scope="col" className="px-3 py-3 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-left">Hits</th>
+                <th scope="col" className="px-3 py-3 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-left">Transfer Hits</th>
                 <th scope="col" className="px-3 py-3 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-left">Hit cost</th>
                 <th scope="col" className="px-3 py-3 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-left">Net xPts</th>
                 <th scope="col" className="px-3 py-3 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-left">Chips</th>
