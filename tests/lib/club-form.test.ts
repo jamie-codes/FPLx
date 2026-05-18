@@ -21,7 +21,7 @@ function makeFixtures() {
     // Upcoming fixtures
     { team_h: 2, team_a: 1, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: null, team_a_score: null, event: 30, finished: false },
     { team_h: 3, team_a: 2, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: null, team_a_score: null, event: 31, finished: false },
-    { team_h: 1, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 3, team_h_score: null, team_a_score: null, event: 32, finished: false },
+    { team_h: 1, team_a: 3, team_h_difficulty: 2, team_a_difficulty: 3, team_h_score: null, team_a_score: null, event: 32, finished: false },
   ]
 }
 
