@@ -12,10 +12,39 @@ vi.mock('@/lib/hooks/useCaptainPicks', () => ({
   useCaptainPicks: vi.fn(),
 }))
 
+vi.mock('@/lib/hooks/usePlayers', () => ({
+  usePlayers: vi.fn(),
+}))
+
+vi.mock('@/lib/hooks/useAuthStatus', () => ({
+  useAuthStatus: vi.fn(),
+}))
+
+vi.mock('@/lib/hooks/useMyTeam', () => ({
+  useMyTeam: vi.fn(),
+}))
+
+vi.mock('@/lib/hooks/useLineupNews', () => ({
+  useLineupNews: vi.fn(),
+}))
+
+vi.mock('@/lib/hooks/useAccuracy', () => ({
+  useAccuracy: vi.fn(),
+  useNewsFlagEnabled: vi.fn().mockReturnValue(false),
+}))
+
 import { CaptainPicksPanel } from '@/components/captaincy/CaptainPicksPanel'
 import { useCaptainPicks } from '@/lib/hooks/useCaptainPicks'
+import { usePlayers } from '@/lib/hooks/usePlayers'
+import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
+import { useMyTeam } from '@/lib/hooks/useMyTeam'
+import { useLineupNews } from '@/lib/hooks/useLineupNews'
 
 const mockedUseCaptainPicks = vi.mocked(useCaptainPicks)
+const mockedUsePlayers = vi.mocked(usePlayers)
+const mockedUseAuthStatus = vi.mocked(useAuthStatus)
+const mockedUseMyTeam = vi.mocked(useMyTeam)
+const mockedUseLineupNews = vi.mocked(useLineupNews)
 
 describe('Phase 31: Captain picks pipeline output', () => {
   it.skip('captain_picks.json exists and parses (requires pipeline run)', async () => {
@@ -122,81 +151,123 @@ describe('Phase 31: Captain picks pipeline output', () => {
 })
 
 describe('Phase 31: CaptainPicksPanel component', () => {
+  // Minimal MergedPlayer fixture satisfying computeEOCandidates eligibility:
+  // status='a', element_type!=1 (not GK), xPts_1gw>0.
+  const sakaFixture = {
+    id: 1,
+    web_name: 'Saka',
+    team: 1,
+    team_short_name: 'ARS',
+    element_type: 3 as const,  // MID
+    now_cost: 91,
+    selected_by_percent: '12.4',
+    form: '8.0',
+    status: 'a' as const,
+    minutes: 270,
+    starts: 3,
+    total_points: 24,
+    goals_scored: 2,
+    assists: 1,
+    expected_goals: 1.2,
+    expected_assists: 0.8,
+    pts_last3gw: 18,
+    pts_last5gw: 30,
+    pts_gw_count: 5,
+    defensive_contribution: null,
+    clearances_blocks_interceptions: null,
+    direct_freekicks_order: null,
+    penalties_order: null,
+    corners_and_indirect_freekicks_order: null,
+    penalties_text: '',
+    direct_freekicks_text: '',
+    corners_and_indirect_freekicks_text: '',
+    news: '',
+    cost_change_event: 0,
+    cost_change_start: 0,
+    understat_id: null,
+    xg_per90: null,
+    xa_per90: null,
+    minutes_per90: 90,
+    form_pts_per90: 6.0,
+    fixtures: [],
+    xmins: 90,
+    start_prob: 0.95,
+    mins_risk: 'low' as const,
+    xPts_1gw: 7.8,
+  }
+
   beforeEach(() => {
     mockedUseCaptainPicks.mockReset()
+    mockedUsePlayers.mockReset()
+    mockedUseAuthStatus.mockReturnValue({ isAuthenticated: false } as ReturnType<typeof useAuthStatus>)
+    mockedUseMyTeam.mockReturnValue({ data: undefined, isLoading: false, error: null } as unknown as ReturnType<typeof useMyTeam>)
+    mockedUseLineupNews.mockReturnValue({ data: undefined, isLoading: false, error: null } as unknown as ReturnType<typeof useLineupNews>)
   })
 
-  const ceilingFixture = {
-    id: 1,
-    name: 'Bukayo Saka',
-    team: 'ARS',
-    position: 'MID',
-    now_cost: 91,
-    xPts_1gw: 7.8,
-    xPts_90th_1gw: 9.2,
-    selected_by_percent: '12.4',
-  }
-
-  const eoFixture = {
-    id: 2,
-    name: 'Ollie Watkins',
-    team: 'AVL',
-    position: 'FWD',
-    now_cost: 86,
-    xPts_1gw: 6.5,
-    xPts_90th_1gw: 7.9,
-    selected_by_percent: '8.1',
-    eo_threshold_used: 25.0,
-  }
-
-  it('renders ceiling card with player name and xPts when data loaded (CAP-03)', () => {
+  it('renders candidate list with GW header when data loaded (CAP-03)', () => {
     mockedUseCaptainPicks.mockReturnValue({
-      data: { generated_at: '2026-04-28T00:00:00Z', gameweek: 30, ceiling: ceilingFixture, eo_adjusted: eoFixture },
+      data: { generated_at: '2026-04-28T00:00:00Z', gameweek: 30, ceiling: null, eo_adjusted: null },
       isLoading: false,
       error: null,
     } as ReturnType<typeof useCaptainPicks>)
-    const { container } = render(CaptainPicksPanel({}))
+    mockedUsePlayers.mockReturnValue({
+      data: [sakaFixture],
+      isLoading: false,
+      error: null,
+    } as unknown as ReturnType<typeof usePlayers>)
+    const { container } = render(<CaptainPicksPanel />)
     expect(container.textContent).toContain('Captain Picks — GW 30')
-    expect(container.textContent).toContain('Bukayo Saka')
+    expect(container.textContent).toContain('Saka')
     expect(container.textContent).toContain('ARS')
-    expect(container.textContent).toContain('£9.1m')
-    expect(container.textContent).toContain('12.4% owned')
-    expect(container.textContent).toContain('xPts:')
-    expect(container.textContent).toContain('7.8')
-    expect(container.textContent).toContain('(90th pct: 9.2)')
+    expect(container.textContent).toContain('pts (C)')
   })
 
-  it('renders EO-Adjusted card with player name and ownership (CAP-04)', () => {
+  it('renders EO mode toggle with all 4 modes (CAP-04)', () => {
     mockedUseCaptainPicks.mockReturnValue({
-      data: { generated_at: '2026-04-28T00:00:00Z', gameweek: 30, ceiling: ceilingFixture, eo_adjusted: eoFixture },
+      data: { generated_at: '2026-04-28T00:00:00Z', gameweek: 30, ceiling: null, eo_adjusted: null },
       isLoading: false,
       error: null,
     } as ReturnType<typeof useCaptainPicks>)
-    const { container } = render(CaptainPicksPanel({}))
-    expect(container.textContent).toContain('EO-Adjusted')
-    expect(container.textContent).toContain('Ollie Watkins')
-    expect(container.textContent).toContain('AVL')
-    expect(container.textContent).toContain('£8.6m')
-    expect(container.textContent).toContain('8.1% owned')
+    mockedUsePlayers.mockReturnValue({
+      data: [sakaFixture],
+      isLoading: false,
+      error: null,
+    } as unknown as ReturnType<typeof usePlayers>)
+    const { container } = render(<CaptainPicksPanel />)
+    expect(container.textContent).toContain('Max xPts')
+    expect(container.textContent).toContain('Protect Rank')
+    expect(container.textContent).toContain('Chase Rank')
+    expect(container.textContent).toContain('Differential')
   })
 
-  it('shows same-player note when ceiling.id === eo_adjusted.id (CAP-03/04 edge case)', () => {
+  it('shows empty candidates message when no eligible players (CAP-03/04 edge case)', () => {
     mockedUseCaptainPicks.mockReturnValue({
-      data: { generated_at: '2026-04-28T00:00:00Z', gameweek: 30, ceiling: ceilingFixture, eo_adjusted: ceilingFixture },
+      data: { generated_at: '2026-04-28T00:00:00Z', gameweek: 30, ceiling: null, eo_adjusted: null },
       isLoading: false,
       error: null,
     } as ReturnType<typeof useCaptainPicks>)
-    const { container } = render(CaptainPicksPanel({}))
-    expect(container.textContent).toContain('Ceiling pick is also low-owned — same player satisfies both criteria this GW.')
+    // All players have status='i' (injured) — computeEOCandidates returns empty
+    mockedUsePlayers.mockReturnValue({
+      data: [{ ...sakaFixture, status: 'i' as const }],
+      isLoading: false,
+      error: null,
+    } as unknown as ReturnType<typeof usePlayers>)
+    const { container } = render(<CaptainPicksPanel />)
+    expect(container.textContent).toContain('No captain candidates available for GW 30')
   })
 
   it('shows loading state with locked copy (CAP-03/04)', () => {
     mockedUseCaptainPicks.mockReturnValue({
       data: undefined,
-      isLoading: true,
+      isLoading: false,
       error: null,
     } as unknown as ReturnType<typeof useCaptainPicks>)
-    const { container } = render(CaptainPicksPanel({}))
+    mockedUsePlayers.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      error: null,
+    } as unknown as ReturnType<typeof usePlayers>)
+    const { container } = render(<CaptainPicksPanel />)
     expect(container.textContent).toContain('Loading captain picks…')
     const p = container.querySelector('p')
     expect(p?.className).toContain('text-center')
@@ -207,9 +278,14 @@ describe('Phase 31: CaptainPicksPanel component', () => {
     mockedUseCaptainPicks.mockReturnValue({
       data: undefined,
       isLoading: false,
-      error: new Error('boom'),
+      error: null,
     } as unknown as ReturnType<typeof useCaptainPicks>)
-    const { container } = render(CaptainPicksPanel({}))
+    mockedUsePlayers.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new Error('boom'),
+    } as unknown as ReturnType<typeof usePlayers>)
+    const { container } = render(<CaptainPicksPanel />)
     expect(container.textContent).toContain('Failed to load captain picks. Check the pipeline output and refresh.')
     const p = container.querySelector('p')
     expect(p?.className).toContain('text-red-600')
