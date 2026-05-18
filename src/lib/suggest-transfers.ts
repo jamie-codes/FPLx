@@ -24,7 +24,7 @@
 //
 // 2-FT xPtsGain uses additive approximation (sum of individual deltas) rather than
 // re-running optimiseLineup per combo — see 45-RESEARCH.md §Risk 7 / Open Question 1.
-import type { MergedPlayer, OptimiserHorizon, TransferSuggestion } from './types'
+import type { MergedPlayer, OptimiserHorizon, TransferSuggestion, LineupNewsPlayer } from './types'
 import type { SquadPick } from './squad-adapter'
 import { HORIZON_FIELD } from './optimise-lineup'
 import { computeGwXpts } from './gw-xpts'
@@ -52,6 +52,7 @@ export interface SuggestTransfersParams {
   bank: number
   sellPrices?: Map<number, number>
   targetGw?: number   // Phase 101 GWT-01: when set, bypasses HORIZON_FIELD; uses computeGwXpts
+  lineupNewsMap?: Map<number, LineupNewsPlayer>  // Phase 118 ENGN-01: absent=near-zero, doubted=penalized
 }
 
 /** Score a player by the active horizon's xPts field (?? 0 fallback). */
@@ -88,7 +89,7 @@ function breakEven(cost: 0 | 4 | 8, xPtsGainPerGw: number): number | null {
 }
 
 export function suggestTransfers(params: SuggestTransfersParams): TransferSuggestion[] {
-  const { currentPicks, players, horizon, ftCount, bank, sellPrices, targetGw } = params
+  const { currentPicks, players, horizon, ftCount, bank, sellPrices, targetGw, lineupNewsMap } = params
 
   if (currentPicks.length === 0 || players.length === 0) return []
 
@@ -111,6 +112,20 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
   const scorePlayer = (p: MergedPlayer): number =>
     targetGw !== undefined ? computeGwXpts(p, targetGw) : horizonScore(p, field)
   const denominator = targetGw !== undefined ? 1 : horizon
+
+  // Phase 118 ENGN-01: availability factor for buy candidates only (D-01..D-04).
+  // D-03: lineupNewsMap absent or player not in map → factor 1.0 (no penalty).
+  // D-03: availability_factor=null (unknown status) → factor 1.0 (no penalty).
+  // D-02: 0.01 floor prevents exact-zero disappearance for confirmed_absent (factor=0.0).
+  const availFactor = (p: MergedPlayer): number => {
+    if (!lineupNewsMap) return 1.0
+    const entry = lineupNewsMap.get(p.id)
+    if (!entry) return 1.0
+    if (entry.availability_factor === null) return 1.0   // unknown status → no penalty (D-03)
+    return Math.max(0.01, entry.availability_factor)
+  }
+  // D-04: scoreBuyCandidate drives both in-pool sort and xPtsGain for buy side only.
+  const scoreBuyCandidate = (p: MergedPlayer): number => scorePlayer(p) * availFactor(p)
   const playerById = new Map<number, MergedPlayer>(sanePlayers.map(p => [p.id, p]))
   const ownedIds = new Set<number>(currentPicks.map(p => p.element))
 
@@ -135,7 +150,7 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
   for (const pos of POSITIONS) {
     const candidates = sanePlayers
       .filter(p => p.element_type === pos && !ownedIds.has(p.id) && !cappedTeams.has(p.team))
-      .sort((a, b) => scorePlayer(b) - scorePlayer(a))
+      .sort((a, b) => scoreBuyCandidate(b) - scoreBuyCandidate(a))
       .slice(0, TOP_N_PER_POSITION)
     inPoolByPosition.set(pos, candidates)
   }
@@ -157,7 +172,7 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
     const pool = inPoolByPosition.get(sell.element_type) ?? []
     const sellScore = scorePlayer(sell)
     for (const buy of pool) {
-      const xPtsGain = scorePlayer(buy) - sellScore
+      const xPtsGain = scoreBuyCandidate(buy) - sellScore
       if (xPtsGain <= 0) continue
 
       // Budget check (D-10): bank + sellValue(sell) >= now_cost(buy)
@@ -217,11 +232,11 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
       const sell2Value = sellValueFor(sell2.id, sellPrices, playerById)
 
       for (const buy1 of pool1) {
-        const gain1 = scorePlayer(buy1) - sell1Pts
+        const gain1 = scoreBuyCandidate(buy1) - sell1Pts
         if (gain1 <= 0) continue  // each leg must individually improve the squad (CR-02)
         for (const buy2 of pool2) {
           if (buy2.id === buy1.id) continue   // buy-side dedup: can't buy the same player twice
-          const gain2 = scorePlayer(buy2) - sell2Pts
+          const gain2 = scoreBuyCandidate(buy2) - sell2Pts
           if (gain2 <= 0) continue  // each leg must individually improve the squad (CR-02)
           const xPtsGain = gain1 + gain2
           if (xPtsGain <= 0) continue

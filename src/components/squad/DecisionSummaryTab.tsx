@@ -8,6 +8,7 @@ import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
 import { useChipHistory, type ChipHistoryEntry } from '@/lib/hooks/useChipHistory'
 import { useAccuracy } from '@/lib/hooks/useAccuracy'
+import { useLineupNews } from '@/lib/hooks/useLineupNews'
 import { computeAllGemScores } from '@/lib/gem-score'
 import { computeCaptaincyCandidates, type CaptaincyCandidate } from '@/lib/captaincy-engine'
 import { computeLifecycleLabels, type LifecycleLabel } from '@/lib/lifecycle-label'
@@ -182,6 +183,9 @@ export function DecisionSummaryTab({
   // useAccuracy is already in the query cache (AccuracyTab uses it); zero additional fetch.
   const { data: accuracyData } = useAccuracy()
 
+  // Phase 119 UI-03 + UI-04: shared map for ocsSuggestions penalty and Team News Alert section
+  const { data: lineupNewsMap } = useLineupNews()
+
   // Derivations
   const scoredPlayers = useMemo(() => computeAllGemScores(playersData ?? []), [playersData])
 
@@ -238,8 +242,9 @@ export function DecisionSummaryTab({
       ftCount: derivedFtCount,
       bank: squadData.entry_history.bank,
       sellPrices: exactSellPrices,
+      lineupNewsMap,
     })
-  }, [squadData, scoredPlayers, derivedFtCount, exactSellPrices])
+  }, [squadData, scoredPlayers, derivedFtCount, exactSellPrices, lineupNewsMap])
 
   const ocsRows: OCSRow[] = useMemo(
     () => computeOpportunityCostRows(ocsSuggestions, derivedFtCount, squadData?.entry_history.bank ?? 0),
@@ -585,6 +590,7 @@ export function DecisionSummaryTab({
               gw={nextGw ?? 0}
               allPlayers={scoredPlayers}
               lifecycleLabels={lifecycleLabels}
+              lineupNewsMap={lineupNewsMap}
             />
           </div>
         ) : (
