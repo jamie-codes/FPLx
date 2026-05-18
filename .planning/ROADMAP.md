@@ -1590,7 +1590,7 @@ Plans:
 <details>
 <summary>v1.23 Technical Debt &amp; Test Health (Phases 120-121) — IN PROGRESS</summary>
 
-- [ ] **Phase 120: Test Suite Restoration** — fix all 25 failing tests across captain-picks, MobileNav, useRivals, club-form (TH-01/02/03/04)
+- [x] **Phase 120: Test Suite Restoration** — fix all 25 failing tests across captain-picks, MobileNav, useRivals, club-form (TH-01/02/03/04)
 - [ ] **Phase 121: Deferred Docs & Verification** — Phase 60 VERIFICATION.md (DOC-01) + Phase 48 hover card live check (VER-01)
 
 </details>
@@ -1677,10 +1677,10 @@ Plans:
   4. club-form test file exits clean with all 1 tests passing (difficulty-tier classification assertion, tests/lib/club-form.test.ts)
   5. Full vitest suite passes with no new failures introduced by the fixes
 **Plans**: 4 plans
-  - [ ] 120-01-PLAN.md — Fix captain-picks JSX render (TH-01)
-  - [ ] 120-02-PLAN.md — Add QueryClientProvider wrapper to MobileNav tests (TH-02)
-  - [ ] 120-03-PLAN.md — Add data_checked to useRivals bootstrap fixture (TH-03)
-  - [ ] 120-04-PLAN.md — Update event 32 difficulty fixture for club-form (TH-04)
+  - [x] 120-01-PLAN.md — Fix captain-picks JSX render (TH-01)
+  - [x] 120-02-PLAN.md — Add QueryClientProvider wrapper to MobileNav tests (TH-02)
+  - [x] 120-03-PLAN.md — Add data_checked to useRivals bootstrap fixture (TH-03)
+  - [x] 120-04-PLAN.md — Update event 32 difficulty fixture for club-form (TH-04)
 
 ### Phase 121: Deferred Docs & Verification
 **Goal**: The VERIFY-60 documentation debt is cleared and the Phase 48 XPtsCell appearance_pts hover card is confirmed live in production
@@ -1775,5 +1775,5 @@ Plans:
 | 117 | v1.22 | 2/2 | Complete    | 2026-05-17 |
 | 118 | v1.22 | 3/3 | Complete    | 2026-05-17 |
 | 119 | v1.22 | 3/3 | Complete | 2026-05-18 |
-| 120 | v1.23 | 0/? | Not started | - |
+| 120 | v1.23 | 4/4 | Complete | 2026-05-18 |
 | 121 | v1.23 | 0/? | Not started | - |
