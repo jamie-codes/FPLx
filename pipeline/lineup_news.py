@@ -17,7 +17,6 @@ Module structure mirrors pipeline/set_piece_quality.py (per-source isolation
 try/except blocks, save() from upload, non-fatal by design).
 """
 
-import difflib
 import sys
 from datetime import datetime, timezone
 
@@ -25,6 +24,7 @@ import feedparser
 import requests
 from bs4 import BeautifulSoup
 
+from player_matching import build_name_lookup, match_player  # SCR-02 shared utility
 from upload import save
 
 # ---------------------------------------------------------------------------
@@ -34,7 +34,6 @@ from upload import save
 SKY_RSS_URL = 'https://www.skysports.com/rss/11095'
 BBC_RSS_URL = 'https://feeds.bbci.co.uk/sport/football/rss.xml'
 PL_URL = 'https://www.premierleague.com/latest-player-injuries'
-FUZZY_CUTOFF = 0.6
 REQUEST_TIMEOUT = 10
 HEADLINE_MAX_LEN = 280
 ERROR_MAX_LEN = 200
@@ -119,61 +118,12 @@ def _scrape_fpl(bootstrap: dict, scraped_at: str) -> dict:
     return players_map
 
 
-def _build_name_lookup(elements: list) -> dict:
-    """Build a name → element lookup for fuzzy player matching.
-
-    Keys are lowercased web_name and second_name values.
-    Values are the FPL element dicts (so we can get player id).
-    """
-    lookup = {}
-    for element in elements:
-        web_name = element.get('web_name', '')
-        second_name = element.get('second_name', '')
-        if web_name:
-            lookup[web_name.lower()] = element
-        if second_name and second_name.lower() != web_name.lower():
-            lookup[second_name.lower()] = element
-    return lookup
-
-
-def _match_player(scraped_name: str, name_lookup: dict, cutoff: float = FUZZY_CUTOFF):
-    """Fuzzy-match a scraped player name against the FPL name lookup.
-
-    Strategy: per-word get_close_matches first, then full-string SequenceMatcher.
-    Returns the FPL element dict if a match is found above cutoff; None otherwise.
-    (D-04: unmatched names are non-fatal — return None.)
-    """
-    if not scraped_name:
-        return None
-
-    query = scraped_name.lower().strip()
-
-    # Direct lookup (exact)
-    if query in name_lookup:
-        return name_lookup[query]
-
-    # Per-word match: try each word in the scraped name against all known names
-    words = query.split()
-    all_names = list(name_lookup.keys())
-    for word in words:
-        if len(word) < 3:
-            continue
-        matches = difflib.get_close_matches(word, all_names, n=1, cutoff=cutoff)
-        if matches:
-            return name_lookup[matches[0]]
-
-    # Full-string SequenceMatcher fallback
-    best_ratio = 0.0
-    best_element = None
-    for name, element in name_lookup.items():
-        ratio = difflib.SequenceMatcher(None, query, name).ratio()
-        if ratio > best_ratio:
-            best_ratio = ratio
-            best_element = element
-    if best_ratio >= cutoff:
-        return best_element
-
-    return None
+# removed SCR-02: _build_name_lookup and _match_player replaced by player_matching.py
+# Both functions are now imported at the top: build_name_lookup, match_player
+# lineup_news call sites updated to use the shared implementations.
+#
+# Note: the old _match_player returned the full element dict; the new match_player
+# returns element_id (int). Call sites below are updated accordingly.
 
 
 def _scrape_premierleague(players_map: dict, name_lookup: dict) -> None:
@@ -195,9 +145,8 @@ def _scrape_premierleague(players_map: dict, name_lookup: dict) -> None:
             text = el.get_text(strip=True)
             if not text:
                 continue
-            matched = _match_player(text, name_lookup)
-            if matched is not None:
-                pid = matched.get('id')
+            pid = match_player(text, name_lookup)  # SCR-02: returns element_id (int) or None
+            if pid is not None:
                 if pid in players_map and players_map[pid]['news_headline'] is None:
                     players_map[pid]['news_headline'] = text[:HEADLINE_MAX_LEN]
                     players_map[pid]['news_source'] = 'premierleague'
@@ -215,9 +164,8 @@ def _scrape_rss_sky(players_map: dict, name_lookup: dict) -> None:
         title = entry.get('title', '')
         if not title:
             continue
-        matched = _match_player(title, name_lookup)
-        if matched is not None:
-            pid = matched.get('id')
+        pid = match_player(title, name_lookup)  # SCR-02: returns element_id (int) or None
+        if pid is not None:
             if pid in players_map and players_map[pid]['news_headline'] is None:
                 players_map[pid]['news_headline'] = title[:HEADLINE_MAX_LEN]
                 players_map[pid]['news_source'] = 'skysports'
@@ -234,9 +182,8 @@ def _scrape_rss_bbc(players_map: dict, name_lookup: dict) -> None:
         title = entry.get('title', '')
         if not title:
             continue
-        matched = _match_player(title, name_lookup)
-        if matched is not None:
-            pid = matched.get('id')
+        pid = match_player(title, name_lookup)  # SCR-02: returns element_id (int) or None
+        if pid is not None:
             if pid in players_map and players_map[pid]['news_headline'] is None:
                 players_map[pid]['news_headline'] = title[:HEADLINE_MAX_LEN]
                 players_map[pid]['news_source'] = 'bbc'
@@ -284,7 +231,7 @@ def compute_lineup_news(bootstrap: dict) -> None:
     # Build name lookup for fuzzy matching (only if we have players)
     name_lookup = {}
     if players_map:
-        name_lookup = _build_name_lookup(bootstrap.get('elements', []))
+        name_lookup = build_name_lookup(bootstrap.get('elements', []))
 
     # Source 2: premierleague.com HTML (non-fatal; typically JS-rendered → zero matches)
     try:
