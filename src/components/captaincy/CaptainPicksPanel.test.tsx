@@ -11,12 +11,15 @@ vi.mock('@/lib/hooks/useCaptainPicks', () => ({ useCaptainPicks: vi.fn() }))
 vi.mock('@/lib/hooks/useAuthStatus', () => ({ useAuthStatus: vi.fn() }))
 vi.mock('@/lib/hooks/useMyTeam', () => ({ useMyTeam: vi.fn() }))
 vi.mock('@/lib/hooks/useAccuracy', () => ({ useNewsFlagEnabled: vi.fn() }))
+// Phase 119 UI-01: CandidateRow calls useLineupNews() directly — mock to return empty map (no badges by default).
+vi.mock('@/lib/hooks/useLineupNews', () => ({ useLineupNews: vi.fn() }))
 
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useCaptainPicks } from '@/lib/hooks/useCaptainPicks'
 import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
 import { useNewsFlagEnabled } from '@/lib/hooks/useAccuracy'
+import { useLineupNews } from '@/lib/hooks/useLineupNews'
 
 type PlayerOverrides = Partial<MergedPlayer> & { id: number; element_type: 1 | 2 | 3 | 4 }
 function makePlayer(overrides: PlayerOverrides): MergedPlayer {
@@ -83,6 +86,8 @@ beforeEach(() => {
   vi.mocked(useAuthStatus).mockReturnValue({ isAuthenticated: false, expiresAt: undefined, isLoading: false, setAuthenticated: vi.fn(), clearAuthenticated: vi.fn() } as never)
   vi.mocked(useMyTeam).mockReturnValue({ data: undefined, isLoading: false, error: null } as never)
   vi.mocked(useNewsFlagEnabled).mockReturnValue(true)
+  // Phase 119 UI-01: default to no lineup news (undefined map → no StatusLabelBadge rendered)
+  vi.mocked(useLineupNews).mockReturnValue({ data: undefined, isLoading: false, error: null } as never)
 })
 
 describe('CaptainPicksPanel — Phase 57', () => {

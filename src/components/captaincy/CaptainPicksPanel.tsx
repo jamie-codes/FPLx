@@ -15,6 +15,8 @@ import type { MergedPlayer } from '@/lib/types'
 import { computeFragility } from '@/lib/sensitivity'
 import { FragilityBadge } from '@/components/shared/FragilityBadge'
 import { NewsBanner } from '@/components/news/NewsBanner'
+import { useLineupNews } from '@/lib/hooks/useLineupNews'
+import { StatusLabelBadge } from '@/components/shared/StatusLabelBadge'
 
 interface CaptainPicksPanelProps {
   submittedId?: string | null
@@ -98,6 +100,9 @@ function CandidateRow({
   myTeamPickIds: Set<number>
   mcLabel?: MCLabel | null
 }) {
+  const { data: lineupNewsMap } = useLineupNews()
+  const statusLabel = lineupNewsMap?.get(candidate.id)?.status_label
+
   const rawEo = parseFloat(candidate.selected_by_percent)
   const eoPercent = Number.isFinite(rawEo) ? Math.round(rawEo) : 0
   const showDangerBadge =
@@ -130,6 +135,8 @@ function CandidateRow({
         </span>
         {showDangerBadge && <DangerousToFadeBadge />}
         {mcLabel && <McLabel label={mcLabel.label} value={mcLabel.value} />}
+        {/* Phase 119 UI-01 (D-07): StatusLabelBadge after McLabel, before NewsBanner — structured signal first */}
+        <StatusLabelBadge statusLabel={statusLabel} />
         {/* Phase 115 NEWS-02 (D-04): inline news banner for captain candidate */}
         <NewsBanner
           news={candidate.news ?? ''}

@@ -6,7 +6,7 @@
 // Visual contract locked by .planning/phases/050-transfer-opportunity-cost-simulator/050-UI-SPEC.md.
 
 import type { OCSRow, OCSRowKind } from '@/lib/opportunity-cost'
-import type { OptimiserHorizon, ScoredPlayer } from '@/lib/types'
+import type { OptimiserHorizon, ScoredPlayer, LineupNewsPlayer } from '@/lib/types'
 import type { LifecycleLabel } from '@/lib/lifecycle-label'
 import { RotationRiskBadge } from '@/components/shared/RotationRiskBadge'
 import { NewsBanner } from '@/components/news/NewsBanner'
@@ -14,6 +14,7 @@ import { computeFragility } from '@/lib/sensitivity'
 import { FragilityBadge } from '@/components/shared/FragilityBadge'
 import { computeRejection } from '@/lib/explain'
 import { PlayerInsightSection } from '@/components/shared/PlayerInsightSection'
+import { StatusLabelBadge } from '@/components/shared/StatusLabelBadge'
 
 interface OpportunityCostTableProps {
   rows: OCSRow[]
@@ -26,6 +27,8 @@ interface OpportunityCostTableProps {
   // Phase 112 TFR-02 (D-07): pre-cap totals per element_type for truncation footnote.
   // Optional for backward-compat — when absent, no footnotes render.
   totalsByPosition?: Map<number, number>
+  // Phase 119 UI-02 (D-09): optional — backward-compat. When absent or player not in map, no StatusLabelBadge renders.
+  lineupNewsMap?: Map<number, LineupNewsPlayer>
 }
 
 interface BadgeConfig {
@@ -106,11 +109,13 @@ function PlayerMoveCell({
   gw,
   allPlayers,
   lifecycleLabels,
+  lineupNewsMap,
 }: {
   row: OCSRow
   gw: number
   allPlayers: ScoredPlayer[]
   lifecycleLabels: Map<number, LifecycleLabel>
+  lineupNewsMap?: Map<number, LineupNewsPlayer>
 }) {
   if (row.kind === 'roll' || !row.transfers || row.transfers.length === 0) {
     return <span className="text-zinc-400 dark:text-zinc-500">—</span>
@@ -133,6 +138,8 @@ function PlayerMoveCell({
               <span className="text-zinc-500 dark:text-zinc-400 text-xs">Buy</span>
               <span className="font-medium">{t.buy.web_name}</span>
               <RotationRiskBadge rotationRisk={t.buy.rotation_risk ?? false} />
+              {/* Phase 119 UI-02: StatusLabelBadge for buy candidate (D-09): after RotationRiskBadge, before NewsBanner */}
+              <StatusLabelBadge statusLabel={lineupNewsMap?.get(t.buy.id)?.status_label} />
               {/* Phase 88 SCRAPER-01: news banner for buy candidate (D-07) */}
               <NewsBanner
                 news={t.buy.news ?? ''}
@@ -166,7 +173,7 @@ function PlayerMoveCell({
   )
 }
 
-export function OpportunityCostTable({ rows, horizon, targetGw, gw, allPlayers, lifecycleLabels, totalsByPosition }: OpportunityCostTableProps) {
+export function OpportunityCostTable({ rows, horizon, targetGw, gw, allPlayers, lifecycleLabels, totalsByPosition, lineupNewsMap }: OpportunityCostTableProps) {
   const onlyRoll = rows.length === 1 && rows[0]?.kind === 'roll'
 
   return (
@@ -200,7 +207,7 @@ export function OpportunityCostTable({ rows, horizon, targetGw, gw, allPlayers, 
                   {row.label}
                 </td>
                 <td className="py-2 align-top">
-                  <PlayerMoveCell row={row} gw={gw} allPlayers={allPlayers} lifecycleLabels={lifecycleLabels} />
+                  <PlayerMoveCell row={row} gw={gw} allPlayers={allPlayers} lifecycleLabels={lifecycleLabels} lineupNewsMap={lineupNewsMap} />
                 </td>
                 <td className="py-2 text-right align-top text-zinc-900 dark:text-zinc-100">
                   <div className={isDisabled ? 'line-through text-zinc-400 dark:text-zinc-600' : ''}>

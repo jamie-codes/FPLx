@@ -31,7 +31,7 @@ export function StatusLabelBadge({
   statusLabel,
 }: {
   statusLabel: StatusLabel | undefined
-}): JSX.Element | null {
+}) {
   const config = statusLabel ? BADGE_MAP[statusLabel] : undefined
   if (!config) return null
   return (

@@ -5,6 +5,7 @@ import { useSquad } from '@/lib/hooks/useSquad'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
+import { useLineupNews } from '@/lib/hooks/useLineupNews'
 import { computeAllGemScores } from '@/lib/gem-score'
 // transfer-engine import removed in Phase 74 D-02
 import { useClubForm } from '@/lib/hooks/useClubForm'
@@ -52,6 +53,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
   const { data: clubFormData } = useClubForm()
   const { isAuthenticated, expiresAt, setAuthenticated, clearAuthenticated } = useAuthStatus()
   const { data: myTeamData } = useMyTeam(isAuthenticated && !!submittedId)
+  const { data: lineupNewsMap } = useLineupNews()
 
   const expiryState = computeAuthExpiryState(expiresAt, Math.floor(Date.now() / 1000))
 
@@ -443,6 +445,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
               gw={nextGw}
               allPlayers={scoredPlayers}
               lifecycleLabels={lifecycleLabels}
+              lineupNewsMap={lineupNewsMap}
               totalsByPosition={ocsTotalsByPosition}
             />
           </div>
