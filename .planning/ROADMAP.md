@@ -1599,7 +1599,8 @@ Plans:
 <details>
 <summary>v1.24 End of Season &amp; Off-Season Intelligence (Phases 122-126) — IN PROGRESS</summary>
 
-- [x] **Phase 122: Polish Carry-Forwards** — ChipToggle in RouteTreeTab, Hits column label, MinsRiskBadge on 4 surfaces (POL-01/06) (completed 2026-05-18)
+- [x] **Phase 122: Polish Carry-Forwards** — ChipToggle in RouteTreeTab, Hits column label, MinsRiskBadge on 4 surfaces (POL-01/06)
+ (completed 2026-05-18)
 - [ ] **Phase 123: SCRAPER-02 Pipeline** — transfer_news.py + player_matching.py + /api/transfer-news + useTransferNews() + IS_OFF_SEASON gate (SCR-01/05, WIN-03)
 - [ ] **Phase 124: Season Review** — season summary card, decision quality grade, GW rank chart, Season sub-tab (REV-01/04)
 - [ ] **Phase 125: Summer Window Tracker** — article feed UI + confirmed signing badges on GemTable/TransferPanel (WIN-01/02)
@@ -1823,7 +1824,10 @@ Plans:
   3. /api/transfer-news Route Handler serves transfer_news.json and useTransferNews() TanStack Query hook fetches from it, following the established artifact pattern
   4. pipeline/run.py detects IS_OFF_SEASON (no event with is_current=True) and all GW-dependent pipeline steps skip gracefully rather than crashing with a null/KeyError
   5. player_matching.py shared utility is used by both transfer_news.py and the existing lineup_news.py (no duplication of name-matching logic)
-**Plans**: TBD
+**Plans**: 3 plans
+  - [ ] 123-01-PLAN.md — Python pipeline foundation: rapidfuzz dependency, player_matching.py, transfer_news.py with classifier + env gate + non-fatal isolation + pytest coverage (SCR-01, SCR-02, SCR-03, SCR-05)
+  - [ ] 123-02-PLAN.md — TypeScript layer: TransferNewsArticle/Feed types, /api/transfer-news Route Handler, useTransferNews() hook with 6h staleTime + Vitest spec (SCR-04)
+  - [ ] 123-03-PLAN.md — IS_OFF_SEASON gate in run.py wrapping GW-dependent steps + year-round transfer_news.scrape() call + contract tests (WIN-03, SCR-01 wiring, SCR-05 outer wrap)
 **UI hint**: no
 
 ### Phase 124: Season Review
@@ -1861,7 +1865,7 @@ Plans:
 **UI hint**: yes
 
 | 122 | v1.24 | 2/2 | Complete    | 2026-05-18 |
-| 123 | v1.24 | 0/0 | Not started | - |
+| 123 | v1.24 | 0/3 | Not started | - |
 | 124 | v1.24 | 0/0 | Not started | - |
 | 125 | v1.24 | 0/0 | Not started | - |
 | 126 | v1.24 | 0/0 | Not started | - |
