@@ -1,196 +1,334 @@
-# Features Research: v1.22 Lineup Intelligence
+# Feature Research
 
-**Domain:** Lineup news scraping and player status intelligence for FPL tools
-**Researched:** 2026-05-17
-**Overall confidence:** HIGH (existing codebase constraints, MEDIUM on scraper technical feasibility)
+**Domain:** FPL analytics web app — end-of-season review, off-season planning, summer window intelligence
+**Researched:** 2026-05-18
+**Confidence:** MEDIUM-HIGH (FPL mechanics well-documented; decision quality grading is emergent/community-defined rather than standardised)
 
 ---
 
-## Table Stakes
+## Feature Landscape
 
-Features that FPL managers universally expect from a tool claiming to surface "team news". Missing any of these makes the feature feel half-baked.
+### Table Stakes (Users Expect These)
+
+Features the FPL manager community treats as baseline for any season-review or planning tool. Missing these makes the feature feel incomplete.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| FPL official status passthrough | The FPL API already publishes `status`, `chance_of_playing_next_round`, `news`, `news_added` per player. Any tool that ignores these is starting behind. | Low | Already partially wired via NewsBanner. `status` values: `a`/`d`/`i`/`s`/`u`/`n`. `chance_of_playing_next_round` is `null` (healthy), `75`, `50`, `25`, or `0`. |
-| Severity colouring for doubts and absences | Red for <=50% chance, amber for 75%, zinc for news-only. Managers cannot absorb raw numbers — they need a fast visual signal. | Low | Already implemented in `computeNewsSeverity()` + `NewsBanner`. |
-| Squad-player filtering | Only show news for players the manager actually owns. Nobody wants a full 500-player injury list. | Low | Implied by INTEL-04: Decision Summary card scoped to owned squad. |
-| Staleness suppression | Old zinc news (informational, not injury-flagged) should age out. Stale amber/red never disappear until chance_of_playing recovers. | Low | Already shipped: 14-day `isStale` gate in `NewsBanner` (NEWS-01). |
-| Transfer suggestion exclusion of absent players | Suggesting a player confirmed absent (chance=0) as a buy is harmful. Engine must downweight or exclude such players. | Medium | INTEL-01. Not yet implemented — `suggestTransfers()` currently uses raw xPts with no news penalty. |
-| Captain surface warning | Displaying a captain candidate without flagging their doubt/absence is a significant omission. | Low | INTEL-02. CaptainPicksPanel has `NewsBanner` inline (NEWS-02) but no explicit status badge or ranking adjustment. |
-| News recency signal | FPL `news_added` timestamp tells you when the news was set. Managers want to know "was this updated before or after the last press conference?" | Low | Already available on the player object; displayed via NewsBanner. |
+| Total points + final rank display | Every season-review product shows this — it is the primary success metric | LOW | Already available from FPL API `/api/entry/{team_id}/history/` |
+| Captain points summary (total, hit rate) | Captain accounts for ~25% of total season score per FPL Statistico data; every manager wants to know how well they captained | LOW | Already computed per-GW in existing `captain_snapshots.py`; needs season aggregation |
+| Chip timeline (when played, points return vs GW average) | Standard FPL wrap feature — official FPL season review includes it; chip ROI is universally tracked | MEDIUM | Chip history in FPL API `entry_history`; ROI = manager GW score vs GW average when chip played |
+| Transfer net gain/loss | Captures whether active management helped or hurt across a full season | MEDIUM | `transfer_snapshots.py` pipeline already exists (v1.20); needs season aggregation across all GWs |
+| Rank trajectory (GW-by-GW) | Managers care about trend not just final rank; "did I recover from the bad GW?" | LOW | SPARK-01 rank sparklines already shipped in v1.21; season aggregation is an extension |
+| GW1–8 fixture heatmap for new season | Standard pre-season planning surface — managers need fixture difficulty before committing £100m | MEDIUM | Existing heatmap engine covers current season; next-season fixture data is a dependency (available ~July) |
+| Full-pool squad builder (100m, 15 players, 3-per-club cap) | Any serious pre-season planning tool does this; FPL Review, FPLOptimized both offer it | HIGH | Constraint-based optimisation with 700+ players is infeasible brute-force; ILP algorithm required |
+| News feed for confirmed new signings | Off-season value requires knowing who has signed where before planning a squad | MEDIUM | No structured FPL API source for rumours; requires scraping Sky Sports / BBC Sport RSS |
 
----
+### Differentiators (Competitive Advantage)
 
-## Differentiators
-
-Features that distinguish a tool and reward engaged users. Not universally expected, but meaningful to anyone who discovers them.
+Features that go beyond existing tools and align with the app's analytical identity — grounded in the app's existing xPts model rather than raw points.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Multi-source scraping with source-tier labeling | The FPL API news lags reality by hours. Sky Sports / BBC Sport / press-conference aggregators often have news 12-24 hours earlier. Labeling the source ("FPL official" vs "Sky Sports" vs "community report") lets the manager calibrate confidence. | High | SCRAPER-01. Sky Sports injury page uses Datawrapper embedded tables (JS-rendered). BBC Sport injury content is embedded in match preview articles. PL official injury page uses static HTML. All require selector maintenance. |
-| Availability confidence tiers from scraped news | Convert free-text to a structured three-tier schema: `confirmed` (press-conference quote), `high` (reputable outlet named source), `low` (community account, rumour). Different tiers warrant different penalty magnitudes in engines. | High | The source tier model proposed in the milestone context. No existing FPL tool in the ecosystem does this systematically — it is genuinely differentiated. |
-| benchOrder downweighting for rotation/absence | If `benchOrder()` has no news signal, it ranks a confirmed-absent player ahead of a healthy lower-starter-probability player. Adding a news penalty multiplier (e.g. 0.0 for confirmed absent, 0.5 for doubtful) makes bench advice far more useful. | Medium | INTEL-03. The `evScore` formula `start_prob x xPts x fixtures.length` is the correct insertion point — multiply by `availabilityFactor`. |
-| Team News Alert card in Decision Summary | A severity-badged weekly digest card that lists only the manager's squad players with active, non-stale news. Gives managers a one-glance pre-deadline check. | Medium | INTEL-04. Fits the existing layout in DecisionSummaryTab alongside the 4-card grid and CalibrationHealthIndicator. |
-| Captain status badge (beyond text news) | A distinct visual status indicator (confirmed-starter green ring, doubt amber ring, absent red cross) is faster to scan than reading news text in a candidate list. | Low | INTEL-02. Complements existing NewsBanner, does not replace it. |
-| Scraper timestamp in pipeline output | Recording when each source was last fetched (not just when FPL set the news) lets the UI show "Sky Sports: updated 2h ago" rather than leaving the manager guessing. | Low | A `scraped_at` ISO field per source tier in `lineup_news.json`. |
+| Decision quality process score (xPts-based, not rank-based) | Separates luck from skill — tells the manager whether decisions were +EV independent of outcomes; no standard industry tool does this for personal accounts | HIGH | Must define own methodology; key inputs are captain EV rate, transfer foresight ratio, chip timing ROI |
+| Captain decision grading per GW | Specific, actionable version of decision quality — was this GW's captain the model's top pick at deadline time? | MEDIUM | Requires joining captain snapshot data with xPts model predictions at the time of the decision; existing BackTab captain backtester (BACK-01) already shows per-GW regret — season aggregate is the grading component |
+| Transfer timing quality (foresight ratio) | Did the transfer produce value in the next 5 GWs? Foresight optimal ratio used by FPLOptimized but rare in personal tools | HIGH | Requires joining `transfer_snapshots.py` data with actual GW points outcomes post-transfer; conflates luck and skill somewhat (injury can nullify a good process pick) |
+| Composite process score grading (A–D letter grade) | Gives the manager a single memorable number representing decision quality across a season; letter grades are more emotionally legible than percentages | MEDIUM | Scoring function: 40% captain EV rate + 40% transfer foresight ratio + 20% chip timing ROI |
+| Summer signing early-mover flags | Signals which newly arrived players are likely early price risers based on ownership velocity + fixtures + role confirmation | HIGH | Requires integrating transfer news (SCRAPER-02) with existing price-change prediction signals (PRC-01, v1.8); news scraping is upstream dependency |
+| GW1–8 early differential targeting in squad builder | Surfaces low-ownership players with good early fixtures as value picks inside budget constraint | MEDIUM | Adds ownership overlay to fixture heatmap; depends on Next Season Planner data being available |
+| Bench points left over full season | Shows whether bench ordering decisions were systematically costing points; a known pain point for most managers | MEDIUM | Pipeline already computes bench points left per GW in GW Review; needs season aggregation into summary |
+
+### Anti-Features (Commonly Requested, Often Problematic)
+
+| Anti-Feature | Why Requested | Why Problematic | Better Alternative |
+|--------------|---------------|-----------------|--------------------|
+| Twitter/X scraping for team news | FPL community accounts (@BenCrellin, @FPL_Rockstar, @FFScout) have high signal-to-noise ratio for injury updates | Twitter API costs $100+/month; Nitter is dead (X shut down public instances); twscrape requires credential account pools with high maintenance and ToS violation risk; X Corp. v. Bright Data (2024) establishes legal exposure | RSS feeds from Sky Sports and BBC Sport cover 90%+ of the same news within hours; use these as primary sources instead |
+| Full hindsight season reconstruction | "What if I had made perfect picks every GW?" is satisfying to compute | Academic research (AlpsCode hindsight study) shows a ghost-ship team (same squad all season, optimal captain only) can rank in top ~6%; hindsight tells the manager nothing actionable about future decisions | Show decision quality deltas (was your decision better than a random pick from the same player pool?) rather than perfect hindsight reconstruction |
+| Real-time price tracking (in-season duplicate) | Managers want to know when to buy before a price rise | In-season price change prediction already covered by PRC-01 (v1.8); building a parallel summer-window version duplicates functionality | Extend PRC-01 with a "season start" mode flag; do not build a separate price tracker |
+| Next-season xPts projections before season data exists | Managers want projections when building their GW1 squad | No Understat data, no fixture difficulty, no minutes history for new signings before July; projections would be fabricated | Use previous season xPts as proxy for established players; flag new signings as "pre-season unknown" with price + rumoured role only |
+| Automated transfer recommendations for next season | Natural extension of current transfer engine | No fixture data, no team news, no price changes to react to during the off-season; the engine has no useful input signal | Reserve transfer engine for in-season; Next Season Planner is a standalone squad-building tool, not a transfer engine |
 
 ---
 
-## Anti-Features (Avoid)
-
-Features that seem tempting but cause more harm than value for this single-user personal tool.
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| Twitter/X scraping via DIY token reversal | X Terms of Service explicitly prohibit automated access. Guest tokens expire every 2-4 hours, `doc_id` values rotate every 2-4 weeks, datacenter IPs are blocked instantly. Maintenance cost is approximately 10-15 hours per month. Legal exposure from X Corp. v. Bright Data (2024) precedent. The paid API starts at $42,000/year. | Use Sky Sports / BBC Sport / premierleague.com as sources. The same news propagates from press conferences to all outlets within hours. Exclude Twitter/X entirely from SCRAPER-01 scope. |
-| Full predicted lineup scraping | Predicting starting 11s requires formation analysis, manager tendencies, and opponent context — a separate, higher-complexity problem. It is not the same as injury/availability news and adds a full new scraping surface. | Scope to injury/doubt/absence status only. Predicted lineups are a future feature if ever needed. |
-| Real-time scraping during match day | This is a personal tool with once-daily pipeline refresh via GitHub Actions cron. Real-time scraping requires a separate trigger mechanism, rate-limit handling, and UI push notifications — infrastructure that does not exist. | Run the scraper as part of the daily pipeline. A pre-deadline cron trigger (e.g. 30 minutes before each Friday 18:30 BST deadline) is the correct extension if freshness becomes a problem later. |
-| Per-player confidence scoring from LLM | Parsing free-text injury reports with Claude to assign numerical confidence values adds Anthropic API cost to the pipeline (not just the UI route). The existing controls (INSIGHT_BATCH_ENABLED gate, Anthropic Console cap) were designed to prevent uncontrolled pipeline spend. | Use rule-based source-tier confidence: FPL API = highest, reputable sports outlet = high. No LLM needed in the scraper. |
-| Storing raw scraped HTML/text in Blob | Blob storage costs money per byte and per read. Raw scraped content from multiple sources per GW is wasteful and has no downstream consumer. | Write only the final `lineup_news.json` (one entry per player, merged from all sources, with source_tier and confidence). |
-| Showing news for non-owned players in Decision Summary | The Decision Summary is a squad-player-centric view. Surfacing injury news for 500 players the manager does not own creates noise and obscures actionable signals. | Scope the Team News Alert card to owned squad only. Transfer suggestions already surface news inline via existing NewsBanner on OpportunityCostTable. |
-| Changing captain pick ranking based on news | Managers often want to see who the best captain would be if a doubtful player returns. Removing or demoting a candidate from the list obscures useful information. | Add visual status badges (INTEL-02) without altering ranking. The `chance_of_playing_next_round` value already appears in `computeNewsSeverity`; let the manager decide. |
-
----
-
-## Player Status Schema
-
-This is the contract that all five features (SCRAPER-01, INTEL-01 through INTEL-04) must share. Existing fields from FPL API are carried through already; new fields are additions.
-
-### Existing FPL API Fields (already in MergedPlayer / types.ts)
-
-| Field | Type | Values | Source |
-|-------|------|--------|--------|
-| `status` | `PlayerStatus` | `'a'` `'d'` `'i'` `'s'` `'u'` `'n'` | FPL API bootstrap-static |
-| `chance_of_playing_next_round` | `number or null` | `null` (healthy), `0`, `25`, `50`, `75` | FPL API bootstrap-static |
-| `news` | `string` | Free-text from FPL (e.g. "Hamstring injury - 50% chance of playing") | FPL API bootstrap-static |
-| `news_added` | `string or undefined` | ISO 8601 timestamp | FPL API bootstrap-static |
-
-### Existing Derived Signals (already in codebase)
-
-| Field | Logic | Where Used |
-|-------|-------|-----------|
-| `NewsSeverity` | `'red'` (<=50%), `'amber'` (75%), `'zinc'` (news only), `'none'` | `computeNewsSeverity()` in `src/lib/newsSeverity.ts` feeds `NewsBanner` |
-| `isStale` | `news_added` > 14 days old, suppress zinc badges | `NewsBanner` NEWS-01 (Phase 115) |
-
-### New Fields from SCRAPER-01 (lineup_news.json)
-
-These fields are written by the Python pipeline scraper and merged into `MergedPlayer` at pipeline run time. They augment (do not replace) the FPL native fields.
+## Feature Dependencies
 
 ```
-PlayerNewsEntry {
-  element_id: number          // FPL player ID — join key to MergedPlayer
-  source_tier: 'official' | 'reputable' | 'community'
-  source_name: string         // e.g. "FPL API", "Sky Sports", "BBC Sport", "PL Official"
-  scraped_at: string          // ISO 8601 UTC — when this entry was last fetched
-  availability: 'confirmed' | 'doubt' | 'absent' | 'unknown'
-  availability_factor: number // 1.0=healthy, 0.75=doubt-75, 0.5=doubt-50, 0.25=doubt-25, 0.0=absent
-  scraped_news_text: string   // supplementary display text (empty if only FPL official available)
-}
+Season Review (summary card)
+    └──requires──> FPL API entry history endpoint (/api/entry/{team_id}/history/)
+    └──requires──> captain_snapshots.py (existing, v1.16)
+    └──requires──> transfer_snapshots.py (existing, v1.20)
+    └──requires──> GW Review API (existing, v1.17)
+
+Decision Quality Process Score
+    └──requires──> Season Review (same GW-by-GW data layer)
+    └──requires──> xPts model predictions at decision time (existing pipeline output)
+    └──enhances──> Captain Backtester BACK-01 (existing, v1.16) — reuses same snapshot trail
+    └──enhances──> Transfer Regret Backtester BACK-02 (existing, v1.20) — reuses transfer delta data
+
+SCRAPER-02 (multi-source news scraper)
+    └──requires──> Sky Sports Football RSS (https://www.skysports.com/rss/12040)
+    └──requires──> BBC Sport Football RSS (https://feeds.bbci.co.uk/sport/football/rss.xml)
+    └──optional──> Twitter/X (fragile, ToS risk — do not block on this)
+    └──extends──> existing lineup_news.py pipeline (v1.22) — seasonal mode extension, not ground-up rebuild
+
+Summer Window Tracker UI
+    └──requires──> SCRAPER-02 (no news feed = no content)
+    └──requires──> FPL bootstrap-static (to match player names to FPL element IDs)
+    └──enhances──> Next Season Planner — confirms confirmed role + price for new arrivals
+    └──enhances──> PRC-01 price change predictor — feeds "new signing hype" signal
+
+Next Season Planner (squad builder)
+    └──requires──> FPL bootstrap-static (player pool + prices — available year-round)
+    └──requires──> Next-season fixture list (typically released ~July; show "fixtures pending" empty state)
+    └──requires──> ILP optimisation algorithm — new, not in existing greedy engine
+    └──does NOT reuse──> buildOptimalSquad() greedy engine (incorrect for global optimisation)
+
+GW1–8 Next-Season Fixture Heatmap
+    └──requires──> Next-season fixture data from FPL API
+    └──reuses──> Existing HeatMapRow component (HEAT-01, v1.17) with new data source
+    └──enhances──> Next Season Planner — surfaces differential targets inside squad builder
 ```
 
-### Derived availability_factor Mapping
+### Dependency Notes
 
-| Source Tier | Availability | availability_factor |
-|-------------|-------------|---------------------|
-| Any | `confirmed` | `1.0` |
-| Any | `unknown` | `1.0` (no penalty without evidence) |
-| `official` | derived from `chance_of_playing_next_round` | `0.75` / `0.5` / `0.25` / `0.0` per FPL value |
-| `reputable` | `doubt` | `0.75` (unless FPL official has a more specific value) |
-| `reputable` | `absent` | `0.0` |
+- **Decision Quality Process Score is co-located with Season Review:** Both consume the same per-GW aggregation layer; building them in separate phases creates redundant data-fetching work. Ship in the same phase.
+- **SCRAPER-02 must precede Summer Window Tracker:** The tracker has no content without a news pipeline. Both can ship in the same phase if SCRAPER-02 is built first within the phase.
+- **Next Season Planner has a data availability constraint:** `bootstrap-static` is available year-round but next-season prices are typically released late June. Squad builder UI should handle "prices not yet confirmed" gracefully with a dated note rather than blocking launch.
+- **SCRAPER-02 is an extension of lineup_news.py, not a replacement:** The v1.22 scraper already handles Sky Sports and BBC Sport for in-season team news. SCRAPER-02 adds a summer/transfer-window mode that captures signing confirmations, pre-season fitness updates, and club-level rotation signals — same sources, different content filters.
 
-The canonical source is the highest-priority tier for a player. `official` overrides `reputable`. When tiers conflict, the more pessimistic availability wins if the source tier is equal; the higher tier wins if tiers differ.
+---
 
-### MergedPlayer Extension
+## MVP Definition
 
-These fields are added to `merged_players.json` by `pipeline/merge.py` after `lineup_news.json` is loaded.
+### Launch With (v1.24)
+
+Minimum viable feature set to make the milestone meaningful.
+
+- [ ] **Season Review summary card** — total rank, captain hit rate, chip ROI, transfer net gain/loss — answers "how did I do this season?" in one screen; data is already available
+- [ ] **Decision quality process score** — composite A–D grade separating process from outcome; this is the differentiating feature that elevates the season review from a stats dump
+- [ ] **SCRAPER-02 (Sky Sports + BBC Sport RSS)** — automated ingestion of summer transfer and fitness news; RSS feeds are stable and structured; extends existing lineup_news.py pipeline
+- [ ] **Summer Window Tracker** — feed of confirmed PL signings matched to FPL IDs, early-mover flag based on ownership velocity + fixtures
+- [ ] **Next Season Planner — squad builder** — ILP-optimised 15-player team from full 700+ player pool at 100m budget; most-requested pre-season feature across FPL tools ecosystem
+
+### Add After Validation (v1.24.x)
+
+- [ ] **GW1–8 next-season fixture heatmap** — can reuse existing component; add when fixture data becomes available (July); low implementation cost once data is ready
+- [ ] **Early differential targeting overlay** — annotates squad builder results with low-ownership options that have excellent early fixtures; depends on GW1–8 heatmap being available
+- [ ] **Transfer timing quality grading** — more sophisticated than hit-rate; requires historical xPts snapshot comparison at transfer date; medium complexity addition to the process score
+
+### Future Consideration (v2+)
+
+- [ ] **Twitter/X monitoring** — only viable if X API pricing changes or a stable free alternative emerges; current risk is too high for a personal tool
+- [ ] **Multi-season trend view** — requires season-over-season data persistence; out of scope for this architecture
+
+---
+
+## Feature Prioritization Matrix
+
+| Feature | User Value | Implementation Cost | Priority |
+|---------|------------|---------------------|----------|
+| Season Review summary card | HIGH | LOW (data already exists in pipeline) | P1 |
+| Decision quality process score | HIGH | MEDIUM (methodology novel; data layer shared with season review) | P1 |
+| SCRAPER-02 (RSS-based) | HIGH | MEDIUM (extends existing scraper) | P1 |
+| Summer Window Tracker UI | HIGH | LOW (UI over SCRAPER-02 data; match name to FPL ID) | P1 |
+| Next Season Planner — squad builder | HIGH | HIGH (ILP algorithm is new) | P1 |
+| GW1–8 next-season heatmap | MEDIUM | LOW (reuses existing heatmap component) | P2 |
+| Early differential targeting | MEDIUM | MEDIUM (ownership overlay on squad builder) | P2 |
+| Transfer timing quality grading | MEDIUM | HIGH (historical snapshot comparison needed) | P3 |
+| Twitter/X monitoring | LOW | HIGH (fragile, ToS risk, maintenance cost) | P3 |
+
+**Priority key:** P1 = must have for v1.24 launch; P2 = add in v1.24.x after core validated; P3 = future consideration
+
+---
+
+## Decision Quality Process Score — Methodology Detail
+
+This is the most novel feature; a clear methodology is essential to avoid building something unmeasurable.
+
+### The core problem: rank conflates luck and skill
+
+Final rank is dominated by variance. Academic research (PLOS ONE, n=~1M managers) found each additional year of FPL experience is worth only 22.1 additional points — skill exists but is small relative to variance. A "ghost-ship" team (same squad all season, only captain changed) can rank top 6% in some seasons. Therefore rank alone cannot grade decision quality.
+
+### Three measurable process proxies
+
+**1. Captain EV Rate (MEDIUM confidence)**
+
+Per GW: Was the captain the highest-xPts candidate in the model at deadline time?
+- Season score: % of GWs where captain was the model's top pick, or within the top-2 (acknowledging that #1 vs #2 is often within the model's uncertainty margin)
+- Data source: `captain_picks_gw{N}.json` snapshots (existing pipeline, v1.16) joined with `merged_players.json` xPts at the same pipeline run
+- Existing BACK-01 captain backtester already shows per-GW regret; season aggregate of "was this an EV-positive pick?" is the captain process score component
+- Ceiling: Only computable for GWs where a snapshot was captured; sparse coverage in early season
+
+**2. Transfer Foresight Ratio (LOW-MEDIUM confidence)**
+
+Did the player brought in outperform the player sold over the following 5 GWs?
+- Season score: Number of transfers where (bought player next-5-GW points > sold player next-5-GW points) / total transfers made
+- Mirrors the "Foresight Optimal Ratio" used by FPLOptimized — the closest thing to a community standard for transfer decision quality
+- Data source: `transfer_snapshots.py` (existing, v1.20) joined with actual GW points from FPL API element-summary history
+- Honest caveat: conflates luck and skill somewhat — a good process pick can underperform due to injury after the transfer. Flag this in the UI.
+
+**3. Chip Timing ROI (MEDIUM confidence)**
+
+For each chip played: did the manager's score exceed the expected benchmark?
+- Triple Captain: (manager's TC return) / (average TC return among all TC users in that GW, from FPL API chip stats)
+- Bench Boost: bench points scored vs. average bench points in that GW (FPL API provides GW averages)
+- Wildcard: compare the week-1 squad built post-WC against the GW average squad score for the following 4 GWs
+- Free Hit: manager's FH week score vs. GW average
+- Score: average ROI across all chips played; normalised to 0–1
+
+**Composite grading function:**
 
 ```
-availability_factor?: number      // 0.0-1.0; absent means undefined, treat as 1.0 in engines
-scraped_news_text?: string        // supplementary display text beyond FPL native `news`
-scraped_source?: string           // e.g. "Sky Sports" for UI attribution
-scraped_at?: string               // ISO 8601 of when scraper last checked this player
+ProcessScore = (0.40 × CaptainEVRate) + (0.40 × TransferForesightRatio) + (0.20 × ChipROI)
 ```
 
----
+Grade tiers:
+- A (80–100): Consistently +EV decisions, chips well-timed
+- B (60–79): More good than bad; some luck dependence
+- C (40–59): Mixed — some positive processes, some reactive decisions
+- D (<40): Outcomes driven primarily by variance, not process
 
-## Source Tier Model
-
-### Tier Definitions
-
-| Tier | Sources | Confidence Basis | Scraping Approach |
-|------|---------|-----------------|-------------------|
-| `official` | FPL API bootstrap-static | Updated by Premier League/FPL directly. Structured numeric chance values. | Existing `fpl_client.get_bootstrap_static()` — no new scraping needed |
-| `reputable` | premierleague.com/en/latest-player-injuries, Sky Sports injury article, BBC Sport match previews | Named journalist/club sources. Press-conference quotes. Typically 12-24h ahead of FPL updates. | `requests` + `BeautifulSoup`. PL official is most reliable (same data pipeline as FPL). Sky Sports static article URL preferred over the Datawrapper-rendered interactive table. |
-| `community` | (Explicitly de-scoped — Twitter/X excluded from v1.22) | n/a | n/a |
-
-### Scraping Strategy per Source
-
-**FPL API (official, already implemented):** `fpl_client.get_bootstrap_static()` provides all player objects. This is the primary source. Scraped sources are supplements only.
-
-**premierleague.com/en/latest-player-injuries (reputable, highest priority within tier):** Static HTML updated with the same information that feeds the FPL API — often hours earlier. Per-club sections with player name, injury type, expected return. Use `requests` with a standard browser `User-Agent` header. This is the most structurally stable source.
-
-**Sky Sports injury tracker (reputable):** The interactive version embeds Datawrapper charts (JS-rendered, not scrapable via `requests`). However Sky Sports also publishes a static prose article with club-by-club injury sections as HTML paragraphs. Use the article URL and extract player names and doubt/absent language from prose. Parsing is heuristic — players are mentioned by surname in free text. Flag extracted entries as `confidence: 'medium'` to reflect parsing uncertainty.
-
-**BBC Sport (reputable, lowest priority):** Injury/availability content is embedded in match preview articles rather than a dedicated injury page. Less reliably structured than PL official or Sky Sports. Treat as a supplementary signal to confirm existing data, not a primary source.
-
-**Fallback rule:** If Sky Sports or BBC scraping fails (network error, Cloudflare block, selector mismatch), the pipeline must still write `lineup_news.json` using FPL API data alone. Scraping failures are non-fatal and must be logged but not raise exceptions.
-
-### Penalty Application in Existing Engines
-
-| Engine | Integration Point | Penalty Logic |
-|--------|-----------------|---------------|
-| `suggestTransfers()` in `suggest-transfers.ts` (INTEL-01) | `scorePlayer()` function, line ~111 | `score = horizonScore(p) * (p.availability_factor ?? 1.0)`. Players with `availability_factor === 0.0` score 0 and never enter the buy pool (already filtered by `xPtsGain <= 0` check). |
-| `benchOrder()` in `optimise-lineup.ts` (INTEL-03) | `evScore` arrow function, line ~190 | `evScore = start_prob * xPts * fixtures.length * (p.availability_factor ?? 1.0)`. Confirmed-absent bench player scores 0 and sinks to last slot (consistent with BGW treatment). |
-| `CaptainPicksPanel` / `CandidateRow` (INTEL-02) | Visual badge only, no ranking change | Add `StatusBadge` component: green ring for `confirmed`, amber for `doubt`, red cross for `absent`. Renders adjacent to existing `NewsBanner`. |
-| `DecisionSummaryTab` (INTEL-04) | New "Team News Alert" card | Filters `currentSquad` for players where `computeNewsSeverity(p.chance_of_playing_next_round, p.news) !== 'none'` and `!isStale(p.news_added)`. Severity-sorted list with player name, team, and news text. |
-
-### Update Frequency
-
-The scraper runs as part of the daily GitHub Actions pipeline. The `scraped_at` field allows the UI to display "Sky Sports checked Xh ago". Given once-daily updates:
-
-- Pre-deadline window (typically Thursday/Friday before 18:30 BST deadline): scraper should run at least once after Thursday press conferences have concluded.
-- FPL API `news_added` is the gold standard for staleness; `scraped_at` is informational for reputable tier data.
-- A missing `scraped_at` (scraper failed) should degrade to FPL official data without breaking the UI.
+**What NOT to include in process score:**
+- Final rank: dominated by variance
+- Total points: dominated by template ownership and price
+- Transfer count: volume is not quality
 
 ---
 
-## Feature Dependencies on Existing v1.21 Engines
+## Full-Pool Squad Optimiser — Algorithm Detail
 
-| v1.22 Feature | Depends On | Risk if Dependency Changes |
-|---------------|-----------|---------------------------|
-| INTEL-01 (suggestTransfers penalty) | `suggestTransfers()` `scorePlayer()` inner function (lines 111-113 in suggest-transfers.ts) | Low — named helper with a clear extension point |
-| INTEL-03 (benchOrder penalty) | `benchOrder()` `evScore` anonymous arrow function (line ~190 in optimise-lineup.ts) | Low — single insertion point, formula is documented |
-| INTEL-02 (captain badge) | `CaptainPicksPanel` `CandidateRow` sub-component | Low — `NewsBanner` wiring (NEWS-02) establishes the prop-threading pattern |
-| INTEL-04 (Decision Summary card) | `DecisionSummaryTab` layout, existing 4-card grid + CalibrationHealthIndicator | Medium — grid is at capacity; fifth element needs layout consideration |
-| All INTEL features | `lineup_news.json` being written to Blob by SCRAPER-01 | High — if scraper fails silently, `availability_factor` is absent. Engines must treat `undefined` as `1.0` (no penalty) to degrade gracefully. |
+### Why brute-force is infeasible
+
+Selecting 15 from ~700 players: C(700, 15) ≈ 3.7 × 10^27 combinations. Even filtering to ~200 realistic candidates, C(200, 15) ≈ 6.6 × 10^23. The existing `optimiseLineup()` C(15,11) = 1,365 subsets works because it operates on the manager's 15-player squad, not the full pool.
+
+### Recommended approach: Integer Linear Programming (ILP)
+
+FPL community consensus across multiple open-source solvers (`fpl-solver`, `FPL-Optimization-Tools`, `fpl-optimiser` on GitHub) is ILP, not greedy and not DP.
+
+Why ILP over the existing greedy `buildOptimalSquad()`:
+- Greedy does not guarantee global optimum under simultaneously binding constraints (budget + formation + club cap)
+- ILP with CBC backend (via PuLP) finds the provably optimal solution in under 5 seconds for this problem size — no WASM solver needed
+
+Why ILP over dynamic programming:
+- DP (6-dimensional cache key: budget × index × goalies × defenders × midfielders × forwards) is theoretically correct but memory-intensive at 1000 budget units precision with 700 players
+- ILP is cleaner to express, easier to maintain, and equally fast in practice
+
+**Python implementation via PuLP (already in the ecosystem; add as pipeline dependency):**
+
+```python
+from pulp import LpProblem, LpVariable, LpMaximize, lpSum, value, PULP_CBC_CMD
+
+# Decision variables: x[i] = 1 if player i selected
+x = [LpVariable(f"x_{i}", cat="Binary") for i in range(len(players))]
+
+prob = LpProblem("fpl_squad", LpMaximize)
+prob += lpSum(players[i]["xPts_5gw"] * x[i] for i in range(n))  # objective
+
+# Constraints
+prob += lpSum(x) == 15                           # squad size
+prob += lpSum(x[i] for i in GK_indices) == 2    # 2 goalkeepers
+prob += lpSum(x[i] for i in DEF_indices) == 5   # 5 defenders
+prob += lpSum(x[i] for i in MID_indices) == 5   # 5 midfielders
+prob += lpSum(x[i] for i in FWD_indices) == 3   # 3 forwards
+prob += lpSum(players[i]["now_cost"] * x[i]) <= 1000  # 100.0m budget in 0.1m units
+for club_id, club_players in by_club.items():
+    prob += lpSum(x[i] for i in club_players) <= 3    # 3-per-club cap
+```
+
+**Objective function options:**
+- Pre-season (July+): Maximise `xPts_5gw` using fixture data from new season bootstrap-static
+- Pre-season (before fixtures released): Maximise previous season total points as proxy ranking
+- For new signings without history: flag as "no history — price-only estimate"
+
+**Formation validity:** The squad builder selects 15 players. Starting 11 / bench ordering is a subsequent step using the existing `optimiseLineup()` engine — no change needed there.
 
 ---
 
-## UX Behavior Expectations
+## Summer Window Tracker — Source Details
 
-**Confirmed-absent in transfer suggestions:** A player with `availability_factor === 0.0` will have their xPts multiplied to zero, so they will naturally never appear in the buy pool (the `xPtsGain <= 0` guard in `suggestTransfers` will filter them). No explicit exclusion logic needed — the penalty formula handles it.
+### Sky Sports RSS
+- URL: `https://www.skysports.com/rss/12040` (Football news feed)
+- Format: Standard RSS 2.0 with `<title>`, `<description>`, `<pubDate>`, `<link>` fields
+- Coverage: Transfer news, confirmed signings, injury/fitness updates, pre-season team news
+- Update frequency: Multiple times daily during transfer windows
+- Reliability: HIGH — Sky Sports has maintained this RSS feed for years; no authentication required
+- FPL-relevant filter: Keywords include player names, "signs", "agrees", "completes", "pre-season", "injury", "fitness"
 
-**Doubtful in buy pool:** A player with `availability_factor === 0.5` will appear ranked lower than an equivalent player without news. The existing `NewsBanner` on `OpportunityCostTable` provides the visual warning. No additional suppression needed.
+### BBC Sport Football RSS
+- URL: `https://feeds.bbci.co.uk/sport/football/rss.xml`
+- Format: Standard RSS 2.0
+- Coverage: Confirmed transfers, Premier League player news, fitness updates
+- Update frequency: Multiple times daily
+- Reliability: HIGH — BBC maintains these feeds as public infrastructure
 
-**Captain picks ranking vs news:** Do not adjust ranking order of captain candidates based on news. The status badge (INTEL-02) provides the warning signal without removing information the manager may want (e.g. "who would I captain if Salah returns?").
+### Twitter/X
+- Status: NOT recommended as primary source
+- Nitter is dead (X shut down all public instances)
+- Official X API: Basic tier costs $100+/month; Elevated $5,000+/month
+- twscrape (authenticated scraping): Requires credential pools, high maintenance, ToS violation exposure
+- Recommendation: Defer entirely to post-v1.24; document as a known gap in the feature
+- If ever added: Target only official Premier League club Twitter accounts via a managed scraping service (Apify), not individual FPL community accounts
 
-**Bench order and confirmed absence:** A bench player with `availability_factor === 0.0` will score 0 in `evScore`, sinking them to the last bench slot. This is consistent with how BGW players (fixtures.length === 0) already work.
+### FPL API (new signing confirmation)
+- When FPL registers a new signing, the player appears in `bootstrap-static` elements array with `status`, `team`, `now_cost`, `element_type`
+- This is the authoritative source for confirming FPL registration and initial price
+- Summer Window Tracker cross-references RSS news entities against `bootstrap-static` to confirm FPL ID match and current price
 
-**Team News Alert card trigger:** Render the card only when at least one owned player has active, non-stale news (severity !== 'none'). If no squad players have active news, do not render the card. An empty card is worse than no card.
+### Early-mover price signal
+The app already has the component parts. Early-mover flag = conjunction of:
+1. FPL registration confirmed (player in bootstrap-static)
+2. Ownership climbing rapidly (net transfers above threshold — existing PRC-01 logic)
+3. Favourable GW1-4 fixtures (depends on next-season fixture data)
+4. Role confirmation signal from scraped news ("first choice", "starter", "handed #9 shirt")
 
-**Source attribution:** Show "FPL" or "Sky Sports" as a small muted label next to the news text only when source differs from FPL native. Do not show attribution for `official` tier — it is the baseline.
+Components 1, 2, 3 already exist. Component 4 is new (news-derived role signal from SCRAPER-02).
 
 ---
 
-## Complexity Assessment
+## Competitor Feature Analysis
 
-| Feature | Effort Estimate | Primary Risk |
-|---------|----------------|-------------|
-| SCRAPER-01 (pipeline scraper) | High — 2-3 days | Sky Sports Datawrapper embed requires finding the static article URL; HTML structure changes without notice; Cloudflare can block `requests` on some targets; name extraction from prose is heuristic |
-| INTEL-01 (suggestTransfers penalty) | Low — 2-4 hours | Clean insertion point in `scorePlayer()`; requires `availability_factor` field to be present in `MergedPlayer` |
-| INTEL-02 (captain badge) | Low — 2-4 hours | Prop-threading pattern established by NEWS-02; new `StatusBadge` component is minimal |
-| INTEL-03 (benchOrder penalty) | Low — 2-4 hours | Single `evScore` insertion point; TDD tests will need updating |
-| INTEL-04 (Decision Summary card) | Medium — 4-6 hours | Layout within existing DecisionSummaryTab, filtering logic, severity sorting, empty-state handling |
+| Feature | FPL Review | FPL Statistico | FPLOptimized | This App's Approach |
+|---------|------------|----------------|--------------|---------------------|
+| Season summary card | Yes (full suite) | Yes (comprehensive stats) | Yes (highlights page) | Tied to existing xPts model — more analytically grounded than raw-points view |
+| Decision quality grade | No formal grade | Implicit in captain % only | Foresight/hindsight ratio shown | Composite process score (A–D) — novel; no existing personal tool does this |
+| Squad builder (full pool) | Yes (ILP-based) | No | Yes | ILP via PuLP; first time this app enters full-pool territory |
+| Summer news feed / signing tracker | No | No | No | Differentiator — integrates with price prediction pipeline |
+| GW1–8 fixture heatmap | External FDR tool | No | Yes (fixture page) | Reuse existing HEAT-01 component with next-season data |
 
-SCRAPER-01 is the hard dependency for all INTEL features. It must be built first. INTEL-01 through INTEL-04 can proceed in parallel once `lineup_news.json` is being emitted (even if the scraped content initially only reflects FPL official data).
+---
+
+## Carry-Forward Items (v1.24 also includes)
+
+The milestone also includes carry-forward polish items that are NOT new features but must be scheduled:
+
+| Item | Description | Complexity |
+|------|-------------|------------|
+| TRT-06 | ChipToggle in RouteTreeTab (deferred from v1.9) | LOW |
+| TRT-02 | Hits column cosmetic fix in RouteTreeTab | LOW |
+| MinsRiskBadge | Wire onto SquadView, DecisionSummaryTab, GemTable column, PlayerComparisonModal | MEDIUM |
+
+These are independent of the four main features and can be shipped in any order.
+
+---
+
+## Sources
+
+- [AlpsCode: Intro to FPL Analytics](https://alpscode.com/blog/intro-to-fpl-analytics/) — EV framework for decision quality in FPL
+- [AlpsCode: Hindsight Optimization for FPL](https://alpscode.com/blog/hindsight-optimization/) — process vs. outcome analysis; ghost-ship team experiment
+- [FPLOptimized: Season Highlights](https://fploptimized.com/highlights.html) — foresight/hindsight optimal ratio metrics; predicted vs. realized points framework
+- [FPL Statistico](https://www.anewpla.net/fpl/report/lander.php) — captain %, chip performance, bench analysis reference
+- [PLOS ONE: Identification of skill in FPL](https://pmc.ncbi.nlm.nih.gov/articles/PMC7928501/) — academic evidence that experience = 22.1 pts/year; skill exists but is small relative to variance
+- [LiveFPL: FPL Price Changes](https://livefpl.com/blog/fpl-price-changes) — price change algorithm: net transfer velocity, ownership threshold mechanics
+- [eirikur.dev: FPL and DP](https://eirikur.dev/blog/2024-08-05-fpl-and-dp/) — dynamic programming approach; brute-force infeasibility analysis
+- [GitHub: FPL-Optimization-Tools (sertalpbilal)](https://github.com/sertalpbilal/FPL-Optimization-Tools) — ILP as community standard approach
+- [apply-maths.com: Linear Programming for Fantasy PL](https://apply-maths.com/en/linear-programming-for-fantasy-pl) — ILP constraints reference (2 GK, 5 DEF, 5 MID, 3 FWD, 100m, 3-per-club)
+- [Sky Sports RSS Feeds](https://rss.feedspot.com/sky_sports_rss_feeds/) — RSS feed availability confirmation
+- [BBC Sport Football RSS](https://feeds.bbci.co.uk/sport/football/rss.xml) — direct BBC feed URL (public, no auth)
+- [FPLGameweek: Twitter accounts for FPL](https://www.fplgameweek.com/articles/fpl-twitter-accounts-and-use/) — key accounts and Twitter signal value
+- [scrapfly.io: How to Scrape X.com in 2026](https://scrapfly.io/blog/posts/how-to-scrape-twitter) — current Twitter scraping status; Nitter dead; account pools required
+- [FPL Basics: How to pick a squad](https://www.premierleague.com/en/news/2174419/fpl-basics-how-to-pick-a-squad) — official 100m budget, 3-per-club, squad composition constraints
+- [FPL API Guide](https://www.game-change.co.uk/2023/02/10/a-complete-guide-to-the-fantasy-premier-league-fpl-api/) — bootstrap-static as pre-season player data source
+
+---
+
+*Feature research for: FPL Analyst v1.24 — End of Season & Off-Season Intelligence*
+*Researched: 2026-05-18*
