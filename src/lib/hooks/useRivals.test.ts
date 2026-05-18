@@ -9,7 +9,7 @@ import { createElement } from 'react'
 import { useRivals } from './useRivals'
 
 function makeWrapper() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: 0, gcTime: 0 } } })
   return ({ children }: { children: ReactNode }) =>
     createElement(QueryClientProvider, { client: qc }, children)
 }
@@ -19,7 +19,7 @@ function bootstrapPayload(deadlineISO: string) {
     elements: [],
     teams: [],
     events: [
-      { id: 10, is_current: true, is_next: false, finished: false, deadline_time: deadlineISO },
+      { id: 10, is_current: true, is_next: false, finished: false, data_checked: false, deadline_time: deadlineISO },
     ],
   }
 }
