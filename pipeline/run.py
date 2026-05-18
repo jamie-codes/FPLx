@@ -141,6 +141,14 @@ def run(dry_run: bool = False):
         bootstrap = get_bootstrap_static()
         save('fpl_bootstrap.json', bootstrap)
 
+        # Phase 123 WIN-03: IS_OFF_SEASON gate (D-05, D-06).
+        # Detects end-of-season (no event with is_current=True); wraps GW-dependent
+        # pipeline steps so they skip gracefully rather than KeyError on missing current GW.
+        events = bootstrap.get('events', [])
+        IS_OFF_SEASON = not any(e.get('is_current') for e in events)
+        if IS_OFF_SEASON:
+            print("[pipeline] IS_OFF_SEASON detected — no current GW in events[]; GW-dependent steps will skip.")
+
         # Phase 117 SCRP-01..SCRP-06: lineup_news.json artifact with per-player availability and news headlines.
         try:
             from lineup_news import compute_lineup_news
@@ -148,6 +156,16 @@ def run(dry_run: bool = False):
             print("Lineup news written.")
         except Exception as ln_exc:
             print(f"[lineup_news] non-fatal error: {ln_exc}", file=sys.stderr)
+
+        # Phase 123 SCR-01 / SCR-05: transfer_news.json artifact (Sky Sports + BBC RSS, classified).
+        # D-05: runs YEAR-ROUND — outside IS_OFF_SEASON because most valuable in off-season.
+        # D-06 / Pattern 1: per-source isolation inside scrape(); outer try/except is defensive.
+        try:
+            from transfer_news import scrape as scrape_transfer_news
+            scrape_transfer_news(bootstrap)
+            print("Transfer news written.")
+        except Exception as tn_exc:
+            print(f"[transfer_news] non-fatal error: {tn_exc}", file=sys.stderr)
 
         # Fetch and save fixtures
         fixtures = get_fixtures()
@@ -175,121 +193,295 @@ def run(dry_run: bool = False):
             _time.sleep(0.1)
         print(f"Element summaries fetched: {len(summaries)} players")
 
-        # Count finished gameweeks for xmins start_rate fallback
-        finished_gws = sum(1 for e in bootstrap.get('events', []) if e.get('finished'))
-
-        # Compute xmins stats (Phase 7 — MINS-01)
-        print("Computing xmins stats...")
-        xmins_stats = compute_xmins_stats(bootstrap, summaries, finished_gws)
-        print(f"xmins stats: {len(xmins_stats)} players")
-
-        # Compute bonus EV stats (Phase 53 BPS-01) — same shared summaries cache, no new HTTP calls
-        print("Computing bonus EV stats...")
-        bonus_stats = compute_bonus_predictions(bootstrap, summaries, finished_gws)
-        print(f"bonus stats: {len(bonus_stats)} players")
-
-        # Merge FPL + Understat data (per-90 normalisation, custom FDR, fixtures)
-        # Phase 31: merge_players now returns a tuple — (player list, captain picks dict).
-
-        # Phase 42 ACC-03: read form-signal gate from previous run's accuracy_backtest.json.
-        # Default (False, 0.4) on cold start (file absent) or corrupt JSON — preserves baseline.
-        form_signal_enabled = False
-        blend_alpha_used = 0.4
-        xmins_v2_enabled = False  # Phase 52 D-02 — default OFF; flips ON after non-regression shadow run
-        bonus_predictor_enabled = False  # Phase 53 BPS-01 — default OFF; flips ON after non-regression shadow run
-        save_predictor_enabled = False  # Phase 83 GK-03 — default OFF; flips ON after >=5-GW non-regression shadow run
-        MC_ENABLED = True  # Phase 102 MC-01 — permanent ON; surfaces 10k-sim MC fields in merged_players.json
-        mc_enabled = MC_ENABLED  # Phase 109 CR-02: set before try so corrupt cache never silently disables MC
-        backtest_path = os.path.join(cache_dir, 'accuracy_backtest.json')
-        try:
-            with open(backtest_path, 'r', encoding='utf-8') as f:
-                prev_backtest = json.load(f)
-            form_signal_enabled = prev_backtest.get('summary', {}).get('form_signal_enabled', False)
-            blend_alpha_used = prev_backtest.get('summary', {}).get('blend_alpha_used', 0.4)
-            xmins_v2_enabled = prev_backtest.get('summary', {}).get('xmins_v2_enabled', False)
-            bonus_predictor_enabled = prev_backtest.get('summary', {}).get('bonus_predictor_enabled', False)
-            save_predictor_enabled = prev_backtest.get('summary', {}).get('save_predictor_enabled', False)
-        except (FileNotFoundError, json.JSONDecodeError):
-            pass
-
-        print(f"Form signal blend: {'ENABLED' if form_signal_enabled else 'DISABLED'} (alpha={blend_alpha_used})")
-        print(f"xMins v2 (mins_60_prob in _cs_prob): {'ENABLED' if xmins_v2_enabled else 'DISABLED'}")
-        print(f"Bonus predictor (per-player EV): {'ENABLED' if bonus_predictor_enabled else 'DISABLED'}")
-        print(f"Save predictor (GK Poisson-floor): {'ENABLED' if save_predictor_enabled else 'DISABLED'}")
-        print(f"MC simulation (5-GW uncertainty bands): {'ENABLED' if mc_enabled else 'DISABLED'}")
-
-        merged, captain_picks = merge_players(
-            bootstrap, fixtures, understat, id_map,
-            xmins_stats=xmins_stats, summaries=summaries,
-            form_signal_enabled=form_signal_enabled,
-            blend_alpha=blend_alpha_used,
-            xmins_v2_enabled=xmins_v2_enabled,
-            bonus_stats=bonus_stats,
-            bonus_predictor_enabled=bonus_predictor_enabled,
-            save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01 / GK-03
-        )
-        if mc_enabled:
-            merged = compute_simulations(merged, xmins_v2_enabled)
-        save('merged_players.json', merged)
-        timestamps['merged_players.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
-        save('captain_picks.json', captain_picks)  # Phase 31 CAP-03/CAP-04
-
-        # Phase 80 GWI-01 (D-02/D-03): rotation_risk flag per player from cup-fixture clash.
-        merged = _apply_rotation_risk(merged, fixtures, EUROPEAN_CUP_DATES)
-        save('merged_players.json', merged)  # re-save to persist rotation_risk field
-        timestamps['merged_players.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
-
-        # Phase 84 SPQ-01 / SPQ-02: set-piece delivery quality.
-        # Wrapped in try/except (mirrors prose_summary at line 325-367) so a 403
-        # bot-protection or network failure cannot poison merged_players.json.
-        # Initialise sp_unmatched_count BEFORE try (CONTEXT.md D-05 / Pitfall 2)
-        # so the failure case never reaches compute_data_health() with a false 0.
-        # Plan 02 (Phase 84) will extend the compute_data_health() call site below
-        # to pass sp_unmatched_count once data_health.py adds the matching kwarg.
+        # Phase 123 WIN-03: IS_OFF_SEASON gate wraps all GW-dependent pipeline steps.
+        # Year-round steps (fixtures, understat, id_map, element summaries, price_changes,
+        # transfer_news) remain OUTSIDE this block (D-05).
+        # merged defaults to [] so downstream references (last_updated, data_health) are safe.
+        merged: list = []
         sp_unmatched_count = None
-        try:
-            from set_piece_quality import run_sp_quality
-            sp_unmatched_count = run_sp_quality(understat, id_map, cache_dir)
-            if sp_unmatched_count is not None:
-                print(f"SP quality written: {sp_unmatched_count} unmatched Understat IDs")
-            else:
-                print("SP quality: returned None (scrape failed, stale sp_quality.json preserved)")
-        except Exception as sp_exc:
-            print(f"[set_piece_quality] non-fatal error: {sp_exc}", file=sys.stderr)
+        if not IS_OFF_SEASON:
+            # Count finished gameweeks for xmins start_rate fallback
+            finished_gws = sum(1 for e in bootstrap.get('events', []) if e.get('finished'))
 
-        # Phase 33 INS-02/03/04 — pattern statements with confidence weights
-        insights = compute_insights(merged, bootstrap, fixtures, summaries, finished_gws)
-        save('insights.json', insights)
-        timestamps['insights.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
-        print(f"Insights computed: {len(insights)} pattern(s) emitted")
+            # Compute xmins stats (Phase 7 — MINS-01)
+            print("Computing xmins stats...")
+            xmins_stats = compute_xmins_stats(bootstrap, summaries, finished_gws)
+            print(f"xmins stats: {len(xmins_stats)} players")
 
-        # Phase 80 GWI-02/GWI-03/GWI-04 (D-05): GW-specific intelligence cards
-        gw_intel = compute_gw_intel(
-            merged, bootstrap, fixtures, summaries, finished_gws, EUROPEAN_CUP_DATES
-        )
-        save('gw_intel.json', gw_intel)
-        timestamps['gw_intel.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
-        print(f"GW intel computed: {len(gw_intel.get('cards', []))} card(s) emitted")
+            # Compute bonus EV stats (Phase 53 BPS-01) — same shared summaries cache, no new HTTP calls
+            print("Computing bonus EV stats...")
+            bonus_stats = compute_bonus_predictions(bootstrap, summaries, finished_gws)
+            print(f"bonus stats: {len(bonus_stats)} players")
 
-        # SP-02: Set-piece snapshot diff
-        print("Computing set-piece snapshot diff...")
-        curr_snapshot = _extract_sp_snapshot(merged)
+            # Merge FPL + Understat data (per-90 normalisation, custom FDR, fixtures)
+            # Phase 31: merge_players now returns a tuple — (player list, captain picks dict).
 
-        # Read previous snapshot (first run: empty dict)
-        sp_snapshot_path = os.path.join(cache_dir, 'set_pieces_snapshot.json')
-        prev_snapshot = {}
-        try:
-            with open(sp_snapshot_path, 'r', encoding='utf-8') as f:
-                prev_snapshot = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            pass
+            # Phase 42 ACC-03: read form-signal gate from previous run's accuracy_backtest.json.
+            # Default (False, 0.4) on cold start (file absent) or corrupt JSON — preserves baseline.
+            form_signal_enabled = False
+            blend_alpha_used = 0.4
+            xmins_v2_enabled = False  # Phase 52 D-02 — default OFF; flips ON after non-regression shadow run
+            bonus_predictor_enabled = False  # Phase 53 BPS-01 — default OFF; flips ON after non-regression shadow run
+            save_predictor_enabled = False  # Phase 83 GK-03 — default OFF; flips ON after >=5-GW non-regression shadow run
+            MC_ENABLED = True  # Phase 102 MC-01 — permanent ON; surfaces 10k-sim MC fields in merged_players.json
+            mc_enabled = MC_ENABLED  # Phase 109 CR-02: set before try so corrupt cache never silently disables MC
+            backtest_path = os.path.join(cache_dir, 'accuracy_backtest.json')
+            try:
+                with open(backtest_path, 'r', encoding='utf-8') as f:
+                    prev_backtest = json.load(f)
+                form_signal_enabled = prev_backtest.get('summary', {}).get('form_signal_enabled', False)
+                blend_alpha_used = prev_backtest.get('summary', {}).get('blend_alpha_used', 0.4)
+                xmins_v2_enabled = prev_backtest.get('summary', {}).get('xmins_v2_enabled', False)
+                bonus_predictor_enabled = prev_backtest.get('summary', {}).get('bonus_predictor_enabled', False)
+                save_predictor_enabled = prev_backtest.get('summary', {}).get('save_predictor_enabled', False)
+            except (FileNotFoundError, json.JSONDecodeError):
+                pass
 
-        sp_changes = _diff_sp_snapshots(prev_snapshot, curr_snapshot, bootstrap)
-        save('set_piece_changes.json', sp_changes)
-        save('set_pieces_snapshot.json', curr_snapshot)
-        print(f"Set-piece changes: {sp_changes['change_count']} change(s)")
+            print(f"Form signal blend: {'ENABLED' if form_signal_enabled else 'DISABLED'} (alpha={blend_alpha_used})")
+            print(f"xMins v2 (mins_60_prob in _cs_prob): {'ENABLED' if xmins_v2_enabled else 'DISABLED'}")
+            print(f"Bonus predictor (per-player EV): {'ENABLED' if bonus_predictor_enabled else 'DISABLED'}")
+            print(f"Save predictor (GK Poisson-floor): {'ENABLED' if save_predictor_enabled else 'DISABLED'}")
+            print(f"MC simulation (5-GW uncertainty bands): {'ENABLED' if mc_enabled else 'DISABLED'}")
 
-        # PRC-01: Price-change snapshot and predictions
+            merged, captain_picks = merge_players(
+                bootstrap, fixtures, understat, id_map,
+                xmins_stats=xmins_stats, summaries=summaries,
+                form_signal_enabled=form_signal_enabled,
+                blend_alpha=blend_alpha_used,
+                xmins_v2_enabled=xmins_v2_enabled,
+                bonus_stats=bonus_stats,
+                bonus_predictor_enabled=bonus_predictor_enabled,
+                save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01 / GK-03
+            )
+            if mc_enabled:
+                merged = compute_simulations(merged, xmins_v2_enabled)
+            save('merged_players.json', merged)
+            timestamps['merged_players.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
+            save('captain_picks.json', captain_picks)  # Phase 31 CAP-03/CAP-04
+
+            # Phase 80 GWI-01 (D-02/D-03): rotation_risk flag per player from cup-fixture clash.
+            merged = _apply_rotation_risk(merged, fixtures, EUROPEAN_CUP_DATES)
+            save('merged_players.json', merged)  # re-save to persist rotation_risk field
+            timestamps['merged_players.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
+
+            # Phase 84 SPQ-01 / SPQ-02: set-piece delivery quality.
+            # Wrapped in try/except (mirrors prose_summary at line 325-367) so a 403
+            # bot-protection or network failure cannot poison merged_players.json.
+            # Initialise sp_unmatched_count BEFORE try (CONTEXT.md D-05 / Pitfall 2)
+            # so the failure case never reaches compute_data_health() with a false 0.
+            # Plan 02 (Phase 84) will extend the compute_data_health() call site below
+            # to pass sp_unmatched_count once data_health.py adds the matching kwarg.
+            try:
+                from set_piece_quality import run_sp_quality
+                sp_unmatched_count = run_sp_quality(understat, id_map, cache_dir)
+                if sp_unmatched_count is not None:
+                    print(f"SP quality written: {sp_unmatched_count} unmatched Understat IDs")
+                else:
+                    print("SP quality: returned None (scrape failed, stale sp_quality.json preserved)")
+            except Exception as sp_exc:
+                print(f"[set_piece_quality] non-fatal error: {sp_exc}", file=sys.stderr)
+
+            # Phase 33 INS-02/03/04 — pattern statements with confidence weights
+            insights = compute_insights(merged, bootstrap, fixtures, summaries, finished_gws)
+            save('insights.json', insights)
+            timestamps['insights.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
+            print(f"Insights computed: {len(insights)} pattern(s) emitted")
+
+            # Phase 80 GWI-02/GWI-03/GWI-04 (D-05): GW-specific intelligence cards
+            gw_intel = compute_gw_intel(
+                merged, bootstrap, fixtures, summaries, finished_gws, EUROPEAN_CUP_DATES
+            )
+            save('gw_intel.json', gw_intel)
+            timestamps['gw_intel.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
+            print(f"GW intel computed: {len(gw_intel.get('cards', []))} card(s) emitted")
+
+            # SP-02: Set-piece snapshot diff
+            print("Computing set-piece snapshot diff...")
+            curr_snapshot = _extract_sp_snapshot(merged)
+
+            # Read previous snapshot (first run: empty dict)
+            sp_snapshot_path = os.path.join(cache_dir, 'set_pieces_snapshot.json')
+            prev_snapshot = {}
+            try:
+                with open(sp_snapshot_path, 'r', encoding='utf-8') as f:
+                    prev_snapshot = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError):
+                pass
+
+            sp_changes = _diff_sp_snapshots(prev_snapshot, curr_snapshot, bootstrap)
+            save('set_piece_changes.json', sp_changes)
+            save('set_pieces_snapshot.json', curr_snapshot)
+            print(f"Set-piece changes: {sp_changes['change_count']} change(s)")
+
+            # PGW-02: GW review writer (Phase 73 D-01, D-10)
+            # Sliding window of last 3 finished GWs; overwritten each daily run.
+            # Writes global data only (gw, average_score) — team-specific data is
+            # computed on-demand by /api/gw-review.
+            print("Computing GW review files...")
+            finished_events = [e for e in bootstrap.get('events', []) if e.get('finished')]
+            last_3_gws = sorted(finished_events, key=lambda e: e['id'])[-3:]
+            for event in last_3_gws:
+                gw_data = {
+                    'gw': event['id'],
+                    'average_score': event.get('average_entry_score') or 0,
+                }
+                save(f'gw_review_gw{event["id"]}.json', gw_data)
+            print(f"GW review files written: {[e['id'] for e in last_3_gws]}")
+
+            # Compute DefCon stats from element-summary history (Phase 4)
+            print("Computing DefCon stats...")
+            from merge import _compute_difficulty_scores
+            difficulty_scores = _compute_difficulty_scores(bootstrap, fixtures)
+            defcon_stats = compute_defcon_stats(bootstrap, difficulty_scores, summaries)
+            save('defcon_stats.json', defcon_stats)
+            print(f"DefCon stats: {len(defcon_stats)} players analysed")
+
+            # Phase 40 / ACC-01: Accuracy backtest + predictions snapshot
+            print("Computing accuracy backtest...")
+            # Phase 109 MC-CAL-01 / D-01: build haul_prob lookup from current merged list.
+            # merged already has haul_prob populated (MC_ENABLED=True since Phase 102).
+            haul_lookup = {p['id']: p['haul_prob'] for p in merged if p.get('haul_prob') is not None}
+            print(f"MC haul_prob coverage: {len(haul_lookup)}/{len(merged)} players ({100*len(haul_lookup)//max(len(merged),1)}%)")
+            backtest_data = compute_accuracy_backtest(summaries, finished_gws, bootstrap, fixtures, cache_dir=cache_dir, merged_haul_lookup=haul_lookup)
+            save('accuracy_backtest.json', backtest_data)
+            timestamps['accuracy_backtest.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
+            print(f"Accuracy backtest: {len(backtest_data.get('gws_covered', []))} GWs covered, "
+                  f"{len(backtest_data.get('haulters', []))} haulter entries")
+
+            # D-11/D-12: Predictions snapshot for the current GW
+            # current_gw = next GW (i.e., finished_gws + 1) so the snapshot represents
+            # the predictions made BEFORE that GW is played
+            current_gw = finished_gws + 1
+            print(f"Writing predictions snapshot for GW {current_gw}...")
+            snapshot_data = build_predictions_snapshot(merged, current_gw)
+            save('predictions_snapshot.json', snapshot_data)
+
+            # Blob accumulation (D-12): per-GW named copy so multiple snapshots survive
+            if os.getenv('USE_BLOB', '').lower() == 'true':
+                from upload import upload_json
+                upload_json(f'predictions_snapshot_gw{current_gw}.json', snapshot_data)
+                print(f"Predictions snapshot uploaded to Blob: predictions_snapshot_gw{current_gw}.json")
+
+            # Phase 96 BACK-01: per-GW captain snapshot side-write — decision evidence
+            # that cannot drift retrospectively. captain_picks is in scope from merge above.
+            from captain_snapshots import write_captain_snapshot
+            write_captain_snapshot(captain_picks, current_gw)
+
+            # Phase 113 BACK-02: per-GW slim player snapshot side-write.
+            # merged is in scope from merge_players() above. current_gw is set at pipeline start.
+            from transfer_snapshots import write_transfer_slim_snapshot
+            write_transfer_slim_snapshot(merged, current_gw)
+
+            # Phase 67 NLP-01/NLP-02 — LLM prose summary (Claude call; guardrail-protected).
+            # Pitfall 8: a Claude failure must NOT poison the rest of the pipeline.
+            print("Generating weekly prose summary...")
+            try:
+                from prose_summary import generate_weekly_summary
+                from gw_intel import _detect_dgw_bgw
+                # Top-3 captains: highest xPts_1gw excluding GKs (element_type==1)
+                captains_top3 = sorted(
+                    [p for p in merged if p.get('xPts_1gw') is not None and p.get('xPts_1gw') > 0 and p.get('element_type') != 1],
+                    key=lambda p: p.get('xPts_1gw') if p.get('xPts_1gw') is not None else 0,
+                    reverse=True,
+                )[:3]
+                cap_payload = [
+                    {
+                        'name': p.get('web_name'),
+                        'team': p.get('team_short_name', ''),
+                        'xPts_1gw': p.get('xPts_1gw'),
+                        'chance_of_playing_next_round': p.get('chance_of_playing_next_round'),
+                        'news': p.get('news', ''),
+                    }
+                    for p in captains_top3
+                ]
+                cap_ids = {p['id'] for p in captains_top3}
+                # Top-3 differential gems: ownership < 15.0, xPts_1gw > 0, exclude already-picked captains
+                gems_top3 = sorted(
+                    [
+                        p for p in merged
+                        if p.get('xPts_1gw') is not None and p.get('xPts_1gw') > 0
+                        and float(p.get('selected_by_percent') or 0) < 15.0
+                        and p.get('id') not in cap_ids
+                    ],
+                    key=lambda p: p.get('xPts_1gw') if p.get('xPts_1gw') is not None else 0,
+                    reverse=True,
+                )[:3]
+                gem_payload = [
+                    {
+                        'name': p.get('web_name'),
+                        'team': p.get('team_short_name', ''),
+                        'xPts_1gw': p.get('xPts_1gw'),
+                        'chance_of_playing_next_round': p.get('chance_of_playing_next_round'),
+                        'news': p.get('news', ''),
+                    }
+                    for p in gems_top3
+                ]
+                dgw_bgw_map = _detect_dgw_bgw(merged, current_gw)
+                team_short_by_id = {}
+                for p in merged:
+                    tid = p.get('team')
+                    if tid is not None and tid not in team_short_by_id:
+                        team_short_by_id[tid] = p.get('team_short_name', '')
+                dgw_team_names = [
+                    team_short_by_id[tid]
+                    for tid, kind in dgw_bgw_map.items()
+                    if kind == 'dgw' and team_short_by_id.get(tid)
+                ]
+                corpus = [p.get('web_name') for p in merged if p.get('web_name')]
+                summary = generate_weekly_summary(
+                    captains=cap_payload,
+                    gems=gem_payload,
+                    player_corpus=corpus,
+                    gameweek=current_gw,
+                    dgw_teams=dgw_team_names,
+                )
+                if summary is not None:
+                    save('weekly_summary.json', summary)
+                    print(f"Weekly summary written: GW {summary.get('gw')}")
+                else:
+                    print("Weekly summary skipped (missing key or guardrail rejection)")
+            except Exception as exc:
+                import sys
+                print(f"[prose_summary] non-fatal error: {exc}", file=sys.stderr)
+
+            # Phase 108 NLP-BATCH-01/02/03 — batch pre-generation of player insights.
+            # Non-fatal: a batch failure must never block last_updated.json or data_health writes.
+            # Batch gate defaults to off; production must explicitly set env var to 'true'
+            # after first verified local run (see plan 108-02 user_setup for details).
+            if os.getenv('INSIGHT_BATCH_ENABLED', '').lower() == 'true':
+                try:
+                    from batch_insights import generate_batch_insights
+                    BATCH_TOP_N = 20
+                    eligible = [p for p in merged if p.get('status') == 'a' and p.get('xPts_1gw') is not None]
+                    top20 = sorted(
+                        eligible,
+                        key=lambda p: (p.get('xPts_1gw') or 0, float(p.get('selected_by_percent') or 0)),
+                        reverse=True,
+                    )[:BATCH_TOP_N]
+                    corpus = [p.get('web_name') for p in merged if p.get('web_name')]
+                    result = generate_batch_insights(top20, corpus, current_gw)
+                    print(f"Batch insights: {result['written']} written, {result['skipped']} skipped (GW {current_gw})")
+                except Exception as exc:
+                    import sys
+                    print(f"[batch_insights] non-fatal error: {exc}", file=sys.stderr)
+
+        else:
+            # IS_OFF_SEASON=True — no current GW; skip all GW-dependent pipeline steps.
+            # D-06: exactly one print per skipped step, verbatim format.
+            print("[pipeline] IS_OFF_SEASON: skipping xmins")
+            print("[pipeline] IS_OFF_SEASON: skipping bonus")
+            print("[pipeline] IS_OFF_SEASON: skipping merge")
+            print("[pipeline] IS_OFF_SEASON: skipping mc_simulations")
+            print("[pipeline] IS_OFF_SEASON: skipping rotation_risk")
+            print("[pipeline] IS_OFF_SEASON: skipping set_piece_quality")
+            print("[pipeline] IS_OFF_SEASON: skipping insights")
+            print("[pipeline] IS_OFF_SEASON: skipping gw_intel")
+            print("[pipeline] IS_OFF_SEASON: skipping gw_review")
+            print("[pipeline] IS_OFF_SEASON: skipping defcon")
+            print("[pipeline] IS_OFF_SEASON: skipping captain_snapshots")
+            print("[pipeline] IS_OFF_SEASON: skipping dgw_bgw")
+
+        # PRC-01: Price-change snapshot and predictions — year-round (off-season pre-prep).
         print("Computing price change predictions...")
         pc_snapshot_path = os.path.join(cache_dir, 'price_changes_snapshot.json')
         prev_pc_snapshot = {}
@@ -303,158 +495,6 @@ def run(dry_run: bool = False):
         save('price_changes.json', pc_predictions)
         save('price_changes_snapshot.json', curr_pc_snapshot)
         print(f"Price change predictions: {len(pc_predictions.get('predictions', []))} player(s) with direction signal")
-
-        # PGW-02: GW review writer (Phase 73 D-01, D-10)
-        # Sliding window of last 3 finished GWs; overwritten each daily run.
-        # Writes global data only (gw, average_score) — team-specific data is
-        # computed on-demand by /api/gw-review.
-        print("Computing GW review files...")
-        finished_events = [e for e in bootstrap.get('events', []) if e.get('finished')]
-        last_3_gws = sorted(finished_events, key=lambda e: e['id'])[-3:]
-        for event in last_3_gws:
-            gw_data = {
-                'gw': event['id'],
-                'average_score': event.get('average_entry_score') or 0,
-            }
-            save(f'gw_review_gw{event["id"]}.json', gw_data)
-        print(f"GW review files written: {[e['id'] for e in last_3_gws]}")
-
-        # Compute DefCon stats from element-summary history (Phase 4)
-        print("Computing DefCon stats...")
-        from merge import _compute_difficulty_scores
-        difficulty_scores = _compute_difficulty_scores(bootstrap, fixtures)
-        defcon_stats = compute_defcon_stats(bootstrap, difficulty_scores, summaries)
-        save('defcon_stats.json', defcon_stats)
-        print(f"DefCon stats: {len(defcon_stats)} players analysed")
-
-        # Phase 40 / ACC-01: Accuracy backtest + predictions snapshot
-        print("Computing accuracy backtest...")
-        # Phase 109 MC-CAL-01 / D-01: build haul_prob lookup from current merged list.
-        # merged already has haul_prob populated (MC_ENABLED=True since Phase 102).
-        haul_lookup = {p['id']: p['haul_prob'] for p in merged if p.get('haul_prob') is not None}
-        print(f"MC haul_prob coverage: {len(haul_lookup)}/{len(merged)} players ({100*len(haul_lookup)//max(len(merged),1)}%)")
-        backtest_data = compute_accuracy_backtest(summaries, finished_gws, bootstrap, fixtures, cache_dir=cache_dir, merged_haul_lookup=haul_lookup)
-        save('accuracy_backtest.json', backtest_data)
-        timestamps['accuracy_backtest.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
-        print(f"Accuracy backtest: {len(backtest_data.get('gws_covered', []))} GWs covered, "
-              f"{len(backtest_data.get('haulters', []))} haulter entries")
-
-        # D-11/D-12: Predictions snapshot for the current GW
-        # current_gw = next GW (i.e., finished_gws + 1) so the snapshot represents
-        # the predictions made BEFORE that GW is played
-        current_gw = finished_gws + 1
-        print(f"Writing predictions snapshot for GW {current_gw}...")
-        snapshot_data = build_predictions_snapshot(merged, current_gw)
-        save('predictions_snapshot.json', snapshot_data)
-
-        # Blob accumulation (D-12): per-GW named copy so multiple snapshots survive
-        if os.getenv('USE_BLOB', '').lower() == 'true':
-            from upload import upload_json
-            upload_json(f'predictions_snapshot_gw{current_gw}.json', snapshot_data)
-            print(f"Predictions snapshot uploaded to Blob: predictions_snapshot_gw{current_gw}.json")
-
-        # Phase 96 BACK-01: per-GW captain snapshot side-write — decision evidence
-        # that cannot drift retrospectively. captain_picks is in scope from line 213.
-        from captain_snapshots import write_captain_snapshot
-        write_captain_snapshot(captain_picks, current_gw)
-
-        # Phase 113 BACK-02: per-GW slim player snapshot side-write.
-        # merged is in scope from merge_players() above. current_gw is set at pipeline start.
-        from transfer_snapshots import write_transfer_slim_snapshot
-        write_transfer_slim_snapshot(merged, current_gw)
-
-        # Phase 67 NLP-01/NLP-02 — LLM prose summary (Claude call; guardrail-protected).
-        # Pitfall 8: a Claude failure must NOT poison the rest of the pipeline.
-        print("Generating weekly prose summary...")
-        try:
-            from prose_summary import generate_weekly_summary
-            from gw_intel import _detect_dgw_bgw
-            # Top-3 captains: highest xPts_1gw excluding GKs (element_type==1)
-            captains_top3 = sorted(
-                [p for p in merged if p.get('xPts_1gw') is not None and p.get('xPts_1gw') > 0 and p.get('element_type') != 1],
-                key=lambda p: p.get('xPts_1gw') if p.get('xPts_1gw') is not None else 0,
-                reverse=True,
-            )[:3]
-            cap_payload = [
-                {
-                    'name': p.get('web_name'),
-                    'team': p.get('team_short_name', ''),
-                    'xPts_1gw': p.get('xPts_1gw'),
-                    'chance_of_playing_next_round': p.get('chance_of_playing_next_round'),
-                    'news': p.get('news', ''),
-                }
-                for p in captains_top3
-            ]
-            cap_ids = {p['id'] for p in captains_top3}
-            # Top-3 differential gems: ownership < 15.0, xPts_1gw > 0, exclude already-picked captains
-            gems_top3 = sorted(
-                [
-                    p for p in merged
-                    if p.get('xPts_1gw') is not None and p.get('xPts_1gw') > 0
-                    and float(p.get('selected_by_percent') or 0) < 15.0
-                    and p.get('id') not in cap_ids
-                ],
-                key=lambda p: p.get('xPts_1gw') if p.get('xPts_1gw') is not None else 0,
-                reverse=True,
-            )[:3]
-            gem_payload = [
-                {
-                    'name': p.get('web_name'),
-                    'team': p.get('team_short_name', ''),
-                    'xPts_1gw': p.get('xPts_1gw'),
-                    'chance_of_playing_next_round': p.get('chance_of_playing_next_round'),
-                    'news': p.get('news', ''),
-                }
-                for p in gems_top3
-            ]
-            dgw_bgw_map = _detect_dgw_bgw(merged, current_gw)
-            team_short_by_id = {}
-            for p in merged:
-                tid = p.get('team')
-                if tid is not None and tid not in team_short_by_id:
-                    team_short_by_id[tid] = p.get('team_short_name', '')
-            dgw_team_names = [
-                team_short_by_id[tid]
-                for tid, kind in dgw_bgw_map.items()
-                if kind == 'dgw' and team_short_by_id.get(tid)
-            ]
-            corpus = [p.get('web_name') for p in merged if p.get('web_name')]
-            summary = generate_weekly_summary(
-                captains=cap_payload,
-                gems=gem_payload,
-                player_corpus=corpus,
-                gameweek=current_gw,
-                dgw_teams=dgw_team_names,
-            )
-            if summary is not None:
-                save('weekly_summary.json', summary)
-                print(f"Weekly summary written: GW {summary.get('gw')}")
-            else:
-                print("Weekly summary skipped (missing key or guardrail rejection)")
-        except Exception as exc:
-            import sys
-            print(f"[prose_summary] non-fatal error: {exc}", file=sys.stderr)
-
-        # Phase 108 NLP-BATCH-01/02/03 — batch pre-generation of player insights.
-        # Non-fatal: a batch failure must never block last_updated.json or data_health writes.
-        # Batch gate defaults to off; production must explicitly set env var to 'true'
-        # after first verified local run (see plan 108-02 user_setup for details).
-        if os.getenv('INSIGHT_BATCH_ENABLED', '').lower() == 'true':
-            try:
-                from batch_insights import generate_batch_insights
-                BATCH_TOP_N = 20
-                eligible = [p for p in merged if p.get('status') == 'a' and p.get('xPts_1gw') is not None]
-                top20 = sorted(
-                    eligible,
-                    key=lambda p: (p.get('xPts_1gw') or 0, float(p.get('selected_by_percent') or 0)),
-                    reverse=True,
-                )[:BATCH_TOP_N]
-                corpus = [p.get('web_name') for p in merged if p.get('web_name')]
-                result = generate_batch_insights(top20, corpus, current_gw)
-                print(f"Batch insights: {result['written']} written, {result['skipped']} skipped (GW {current_gw})")
-            except Exception as exc:
-                import sys
-                print(f"[batch_insights] non-fatal error: {exc}", file=sys.stderr)
 
         # Write last_updated.json with success metadata
         from datetime import datetime, timezone
