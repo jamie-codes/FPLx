@@ -1029,3 +1029,33 @@ export interface LineupNews {
     bbc: SourceHealth
   }
 }
+
+// Phase 123: Transfer News Artifact (SCR-01..SCR-05, WIN-03)
+// ============================================================================
+
+export type TransferClass =
+  | 'confirmed_signing'
+  | 'rumour'
+  | 'injury_return'
+  | 'rotation_signal'
+  | 'general'
+
+export interface TransferNewsArticle {
+  title: string
+  summary: string | null
+  url: string
+  published: string | null          // ISO 8601 or null if feed doesn't provide
+  source: 'skysports' | 'bbc'
+  classification: TransferClass
+  element_id: number | null         // null = unmatched player or no player mentioned
+  scraped_at: string                // ISO 8601 UTC
+}
+
+export interface TransferNewsFeed {
+  scraped_at: string                // ISO 8601 UTC — pipeline run timestamp
+  articles: TransferNewsArticle[]
+  source_health: {
+    skysports: SourceHealth         // reuses SourceHealth defined at line 1016
+    bbc: SourceHealth
+  }
+}
