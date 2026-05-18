@@ -52,7 +52,7 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
-## Current Milestone: v1.22 Lineup Intelligence
+## Previous Milestone: v1.22 Lineup Intelligence (Complete 2026-05-18)
 
 **Goal:** Scrape and integrate multi-source team news into the pipeline, surface player availability and confidence signals across transfer, captain, bench order, and decision surfaces.
 
@@ -437,4 +437,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-17 — Phase 118 complete: engines (suggestTransfers, optimiseLineup, benchOrder) now accept lineupNewsMap and apply availability penalties (INFRA-02, ENGN-01, ENGN-02).*
+*Last updated: 2026-05-18 — v1.22 Lineup Intelligence complete: Phase 119 wires lineup news badges into CaptainPicksPanel, OpportunityCostTable, TransferPanel, and DecisionSummaryTab; Team News Alert section added to DecisionSummaryTab; Phase 118 engine penalties now visible in OCS rankings (UI-01, UI-02, UI-03, UI-04).*
