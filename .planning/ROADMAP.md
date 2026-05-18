@@ -1676,7 +1676,11 @@ Plans:
   3. useRivals test file exits clean with all 8 tests passing (ML-01/02/08, D-05 sub-tab memory, src/lib/hooks/useRivals.test.ts)
   4. club-form test file exits clean with all 1 tests passing (difficulty-tier classification assertion, tests/lib/club-form.test.ts)
   5. Full vitest suite passes with no new failures introduced by the fixes
-**Plans**: TBD
+**Plans**: 4 plans
+  - [ ] 120-01-PLAN.md — Fix captain-picks JSX render (TH-01)
+  - [ ] 120-02-PLAN.md — Add QueryClientProvider wrapper to MobileNav tests (TH-02)
+  - [ ] 120-03-PLAN.md — Add data_checked to useRivals bootstrap fixture (TH-03)
+  - [ ] 120-04-PLAN.md — Update event 32 difficulty fixture for club-form (TH-04)
 
 ### Phase 121: Deferred Docs & Verification
 **Goal**: The VERIFY-60 documentation debt is cleared and the Phase 48 XPtsCell appearance_pts hover card is confirmed live in production
