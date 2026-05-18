@@ -995,3 +995,37 @@ export interface GwReview {
   benchmark_label: string            // 'Dream team' | 'FPL average' (degraded fallback)
   missed_players: { name: string; pts: number }[]  // ≤3 dream-team players not in squad; [] when none
 }
+
+// ============================================================================
+// Phase 117: Lineup News Artifact (SCRP-01..SCRP-06, INFRA-01..INFRA-02)
+// ============================================================================
+
+export type LineupNewsSource = 'fpl' | 'premierleague' | 'skysports' | 'bbc' | null
+
+export type StatusLabel = 'confirmed_start' | 'doubted' | 'confirmed_absent' | 'unknown'
+
+export interface LineupNewsPlayer {
+  id: number
+  availability_factor: 1.0 | 0.75 | 0.5 | 0.25 | 0.0 | null  // null = unknown status
+  status_label: StatusLabel
+  news_headline: string | null    // null when no web scraper match found
+  news_source: LineupNewsSource   // null when no web scraper match found
+  scraped_at: string              // ISO 8601 UTC
+}
+
+export interface SourceHealth {
+  ok: boolean
+  last_success: string | null     // ISO 8601 UTC or null
+  last_error: string | null       // error message truncated to 200 chars
+}
+
+export interface LineupNews {
+  scraped_at: string              // ISO 8601 UTC — pipeline run timestamp
+  players: LineupNewsPlayer[]
+  source_health: {
+    fpl: SourceHealth
+    premierleague: SourceHealth
+    skysports: SourceHealth
+    bbc: SourceHealth
+  }
+}
