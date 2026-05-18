@@ -1,99 +1,85 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.23
-milestone_name: Technical Debt & Test Health
-status: complete
-stopped_at: Phase 121 complete — v1.23 milestone finished
-last_updated: "2026-05-18T14:00:00.000Z"
-last_activity: 2026-05-18 -- Phase 121 complete (DOC-01/VER-01 satisfied)
+milestone: v1.24
+milestone_name: End of Season & Off-Season Intelligence
+status: planning
+stopped_at: Phase 122 context gathered
+last_updated: "2026-05-18T15:05:26.639Z"
+last_activity: 2026-05-18 — Roadmap created, v1.24 phases 122-126 defined
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
-  percent: 100
+  total_phases: 1
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-18 — v1.23 milestone active)
+See: .planning/PROJECT.md (updated 2026-05-18 — v1.24 milestone active)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.23 Technical Debt & Test Health — restore 25 failing tests, clear VERIFY-60 doc debt, confirm Phase 48 hover card live
+**Current focus:** v1.24 End of Season & Off-Season Intelligence — Phase 122 ready to plan
 
 ## Current Position
 
-Phase: 121 (complete) — v1.23 milestone complete
-Plan: 3/3 plans complete
-Status: Phase 121 verified and complete — DOC-01/VER-01 satisfied
-Last activity: 2026-05-18 -- Phase 121 complete (DOC-01/VER-01 satisfied)
+Phase: 122 of 126 (Polish Carry-Forwards)
+Plan: —
+Status: Ready to plan
+Last activity: 2026-05-18 — Roadmap created, v1.24 phases 122-126 defined
 
-```
-[Phase 120] [Phase 121]
-[  DONE   ] [  DONE   ]
-   100%
-```
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
-| Phase | Plan | Duration | Tasks | Files |
-|-------|------|----------|-------|-------|
-| 77 | 02 | ~10 min | 2 | 5 |
-| 89 | 02 | ~15 min | 2 | 2 |
+**v1.23 velocity:**
 
-**v1.22 velocity:**
+- 2 phases (120-121), complete 2026-05-18
+- Phase 120: 4 plans (test suite restoration)
+- Phase 121: 3 plans (docs & verification)
 
-- 3 phases (117-119), all complete
-- Shipped 2026-05-18
-- Lineup news pipeline, engine integration, UI surfaces
+**v1.24 target:**
 
-**v1.23 target:**
-
-- 2 phases (120-121)
-- Phase 120: fix 25 failing tests across 4 files
-- Phase 121: write Phase 60 VERIFICATION.md + confirm Phase 48 hover card live
+- 5 phases (122-126)
+- Phase 122: UI-only polish (zero new infra)
+- Phase 123: SCRAPER-02 pipeline + IS_OFF_SEASON gate (new Python modules)
+- Phase 124: Season Review (client-side aggregation, new Analyse sub-tab)
+- Phase 125: Summer Window Tracker (depends on Phase 123)
+- Phase 126: Next Season Planner (highest complexity, depends on Phase 123)
 
 ## Accumulated Context
 
 ### Decisions
 
-_(No v1.23 decisions yet — roadmap phase only)_
+- v1.24: Twitter/X scraping excluded from SCRAPER-02 — Azure datacenter IPs permanently blocked from GitHub Actions; RSS feeds cover same signal reliably (research confirmed)
+- v1.24: Season Review process score framed as A-D grade checklist, not single luck/skill number — methodology note required on card (C-06 pitfall from research)
+- v1.24: buildPreSeasonSquad() new function, never reuses buildOptimalSquad() — greedy cold-start on 700+ players fails at 100m without backtracking (C-01)
+- v1.24: archive_season.py is time-sensitive — must ship before GW38 closes; data permanently lost after season rollover (no recovery path)
 
 ### Key Context for Execution
 
-- TH-01 (5 failures): tests/lib/captain-picks.test.ts — CAP-03/CAP-04 CaptainPicksPanel rendering; Phase 31 origin
-- TH-02 (10 failures): src/components/nav/MobileNav.test.tsx — NAV drift after Phase 119 added Lineup tab to nav; most likely test mocks / tab count assertions need updating
-- TH-03 (8 failures): src/lib/hooks/useRivals.test.ts — ML-01/02/08 + D-05 sub-tab memory; Phase 58 origin; likely stale mocks or hook interface drift
-- TH-04 (1 failure): tests/lib/club-form.test.ts — difficulty tier classification assertion; Phase 27 origin; likely a threshold constant or sort order change
-- DOC-01: Phase 60 VERIFICATION.md is the only missing phase verification doc; goes at .planning/phases/060-transfer-route-tree/060-VERIFICATION.md
-- VER-01: Phase 48 appearance_pts pipeline field already confirmed present in cache; verification is a human visual check on production hover card + sign-off commit
-- Total failing tests: 24 (5 + 10 + 8 + 1) — all pre-existing, no new regressions introduced by v1.22
+- Phase 122 is free-standing: no new types, routes, or infrastructure; UI-only wiring of existing MinsRiskBadge + ChipToggle + label fix
+- Phase 123 and 124 are parallel-eligible: Season Review has zero dependency on SCRAPER-02
+- Phase 125 hard-depends on Phase 123 useTransferNews() hook
+- Phase 126 core squad builder is independent of Phase 123; signing badges are an enhancement
+- NSP-01 (archive_season.py) is the single time-sensitive item — must run before GW38 final pipeline execution
 
 ### Blockers/Concerns
 
-- None active. All test failures are pre-existing and traceable to known sources.
+- None active. Clean CI baseline from v1.23 (all tests green).
 
 ## Deferred Items
 
-### Active deferred items entering v1.23
-
 | ID | Description | Phase | Status |
 |----|-------------|-------|--------|
-| VERIFY-60 | Phase 60 VERIFICATION.md not created | 60 | Addressed by DOC-01 in Phase 121 |
-| TEST-57 | captain-picks.test.ts 5 pre-existing failures | 57 | Addressed by TH-01 in Phase 120 |
-| Phase 48 hover card | appearance_pts live check pending | 48 | Addressed by VER-01 in Phase 121 |
-
-### Items resolved by v1.22
-
-| ID | Description | Resolution |
-|----|-------------|------------|
-| SCRAPER-01 | Python news scraper | Phase 117 complete |
-| INTEL-01/02/03/04 | Engine + UI integration | Phases 118-119 complete |
+| GREEDY-NULL | buildPreSeasonSquad() null rate on 100m full-pool build unmeasured | 126 | Phase 126 research required before UI layer |
+| GW1-8-FIXTURES | Next-season fixture data not yet published by FPL (expected June/July) | 126 | Empty state handles; self-activates when data available |
+| DQ-THRESHOLDS | Decision quality A/B/C/D cutoffs untested against real data | 124 | Methodology note in UI flags as v1 |
 
 ## Session Continuity
 
-Last session: 2026-05-18T13:37:14.156Z
-Stopped at: Phase 121 context gathered
-Next command: `/gsd-execute-phase 120`
+Last session: 2026-05-18T15:05:26.630Z
+Stopped at: Phase 122 context gathered
+Next command: `/gsd-plan-phase 122`
