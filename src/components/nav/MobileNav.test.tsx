@@ -2,8 +2,16 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest'
 import { render, fireEvent } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import type { ReactNode } from 'react'
 import { MobileNav } from '@/components/nav/MobileNav'
 import type { Section, SubTab } from '@/app/page'
+
+function makeWrapper() {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: 0, gcTime: 0 } } })
+  return ({ children }: { children: ReactNode }) =>
+    <QueryClientProvider client={qc}>{children}</QueryClientProvider>
+}
 
 function makeProps(overrides?: Partial<{ activeSection: Section; activeSubTab: SubTab | null; onSectionChange: (s: Section) => void; onSubTabChange: (s: SubTab) => void }>) {
   return {
@@ -17,7 +25,7 @@ function makeProps(overrides?: Partial<{ activeSection: Section; activeSubTab: S
 
 describe('Phase 36: MobileNav component', () => {
   it('renders 3 section buttons with labels Analyse, Plan, Squad in order (NAV-01)', () => {
-    const { container } = render(<MobileNav {...makeProps()} />)
+    const { container } = render(<MobileNav {...makeProps()} />, { wrapper: makeWrapper() })
     const allButtons = Array.from(container.querySelectorAll('button'))
     const sectionButtons = allButtons.filter(b => ['Analyse', 'Plan', 'Squad'].includes(b.textContent ?? ''))
     expect(sectionButtons).toHaveLength(3)
@@ -27,7 +35,7 @@ describe('Phase 36: MobileNav component', () => {
   })
 
   it('aria-current="page" is on active section button only (NAV-01)', () => {
-    const { container } = render(<MobileNav {...makeProps({ activeSection: 'plan' as Section })} />)
+    const { container } = render(<MobileNav {...makeProps({ activeSection: 'plan' as Section })} />, { wrapper: makeWrapper() })
     const allButtons = Array.from(container.querySelectorAll('button'))
     const analyseBtn = allButtons.find(b => b.textContent === 'Analyse')
     const planBtn = allButtons.find(b => b.textContent === 'Plan')
@@ -38,7 +46,7 @@ describe('Phase 36: MobileNav component', () => {
   })
 
   it('Analyse active: renders 7 pills with mobile labels Gems/Insights/DefCon/SP/Form/Acc/Prices in order (NAV-02, Phase97 D-02)', () => {
-    const { container } = render(<MobileNav {...makeProps({ activeSection: 'analyse' as Section, activeSubTab: 'gems' as SubTab })} />)
+    const { container } = render(<MobileNav {...makeProps({ activeSection: 'analyse' as Section, activeSubTab: 'gems' as SubTab })} />, { wrapper: makeWrapper() })
     const allButtons = Array.from(container.querySelectorAll('button'))
     const pillButtons = allButtons.filter(b => ['Gems', 'Insights', 'DefCon', 'SP', 'Form', 'Acc', 'Prices'].includes(b.textContent ?? ''))
     expect(pillButtons).toHaveLength(7)
@@ -52,7 +60,7 @@ describe('Phase 36: MobileNav component', () => {
   })
 
   it('active sub-tab pill has aria-current="page", inactive pills do not (NAV-02)', () => {
-    const { container } = render(<MobileNav {...makeProps({ activeSection: 'analyse' as Section, activeSubTab: 'insights' as SubTab })} />)
+    const { container } = render(<MobileNav {...makeProps({ activeSection: 'analyse' as Section, activeSubTab: 'insights' as SubTab })} />, { wrapper: makeWrapper() })
     const allButtons = Array.from(container.querySelectorAll('button'))
     const insightsBtn = allButtons.find(b => b.textContent === 'Insights')
     const gemsBtn = allButtons.find(b => b.textContent === 'Gems')
@@ -61,7 +69,7 @@ describe('Phase 36: MobileNav component', () => {
   })
 
   it('Plan active: renders 3 pills with mobile labels Planner/Values/Rivals in order; Form pill absent (NAV-03, Phase97 D-02)', () => {
-    const { container } = render(<MobileNav {...makeProps({ activeSection: 'plan' as Section, activeSubTab: 'planner' as SubTab })} />)
+    const { container } = render(<MobileNav {...makeProps({ activeSection: 'plan' as Section, activeSubTab: 'planner' as SubTab })} />, { wrapper: makeWrapper() })
     const allButtons = Array.from(container.querySelectorAll('button'))
     const pillButtons = allButtons.filter(b => ['Planner', 'Values', 'Rivals'].includes(b.textContent ?? ''))
     expect(pillButtons).toHaveLength(3)
@@ -75,11 +83,12 @@ describe('Phase 36: MobileNav component', () => {
 
   it('Squad active: pill row shows 5 pills Decision, Transfers, Optimiser, Lineup, Review; total 8 buttons in DOM (NAV-04 / NAV-01, updated Phase73)', () => {
     const { container } = render(
-      <MobileNav {...makeProps({ activeSection: 'squad' as Section, activeSubTab: 'transfers' as SubTab })} />
+      <MobileNav {...makeProps({ activeSection: 'squad' as Section, activeSubTab: 'transfers' as SubTab })} />,
+      { wrapper: makeWrapper() }
     )
     const allButtons = Array.from(container.querySelectorAll('button'))
-    // 3 section buttons + 5 Squad pills (Decision/Transfers/Optimiser/Lineup/Review) = 8 total
-    expect(allButtons).toHaveLength(8)
+    // 1 ThemeToggle + 3 section buttons + 5 Squad pills (Decision/Transfers/Optimiser/Lineup/Review) = 9 total
+    expect(allButtons).toHaveLength(9)
     const pillButtons = allButtons.filter(b => ['Decision', 'Transfers', 'Optimiser', 'Lineup', 'Review'].includes(b.textContent ?? ''))
     expect(pillButtons).toHaveLength(5)
     expect(pillButtons[0].textContent).toBe('Decision')
@@ -96,7 +105,7 @@ describe('Phase 36: MobileNav component', () => {
   })
 
   it('Phase 62: Plan active includes Rank Sim pill; Phase 97 D-02: Form pill absent from Plan (MC-03, HEAT-01)', () => {
-    const { container } = render(<MobileNav {...makeProps({ activeSection: 'plan' as Section, activeSubTab: 'planner' as SubTab })} />)
+    const { container } = render(<MobileNav {...makeProps({ activeSection: 'plan' as Section, activeSubTab: 'planner' as SubTab })} />, { wrapper: makeWrapper() })
     const allButtons = Array.from(container.querySelectorAll('button'))
     // Plan section now has 6 sub-tabs (Club Form moved to Analyse in Phase 97 D-02): Planner, Manual, Routes, Rank Sim, Values, Rivals
     const planPills = allButtons.filter(b => ['Planner', 'Manual', 'Routes', 'Rank Sim', 'Values', 'Rivals'].includes(b.textContent ?? ''))
@@ -109,7 +118,7 @@ describe('Phase 36: MobileNav component', () => {
 
   it('clicking section buttons calls onSectionChange with correct id (NAV-05)', () => {
     const onSectionChange = vi.fn()
-    const { container } = render(<MobileNav {...makeProps({ onSectionChange })} />)
+    const { container } = render(<MobileNav {...makeProps({ onSectionChange })} />, { wrapper: makeWrapper() })
     const allButtons = Array.from(container.querySelectorAll('button'))
     const sectionButtons = allButtons.filter(b => ['Analyse', 'Plan', 'Squad'].includes(b.textContent ?? ''))
     fireEvent.click(sectionButtons[0])
@@ -122,7 +131,7 @@ describe('Phase 36: MobileNav component', () => {
 
   it('clicking analyse pills calls onSubTabChange with correct sub-tab id for all 7 pills (NAV-05, Phase 97 D-02; covers WR-04)', () => {
     const onSubTabChange = vi.fn()
-    const { container } = render(<MobileNav {...makeProps({ activeSection: 'analyse' as Section, activeSubTab: 'gems' as SubTab, onSubTabChange })} />)
+    const { container } = render(<MobileNav {...makeProps({ activeSection: 'analyse' as Section, activeSubTab: 'gems' as SubTab, onSubTabChange })} />, { wrapper: makeWrapper() })
     const allButtons = Array.from(container.querySelectorAll('button'))
     const pillButtons = allButtons.filter(b => ['Gems', 'Insights', 'DefCon', 'SP', 'Form', 'Acc', 'Prices'].includes(b.textContent ?? ''))
     expect(pillButtons).toHaveLength(7)
@@ -143,7 +152,7 @@ describe('Phase 36: MobileNav component', () => {
   })
 
   it('nav wrapper has required classes and aria-label; pill row has border-b class (NAV-05)', () => {
-    const { container } = render(<MobileNav {...makeProps({ activeSection: 'analyse' as Section, activeSubTab: 'gems' as SubTab })} />)
+    const { container } = render(<MobileNav {...makeProps({ activeSection: 'analyse' as Section, activeSubTab: 'gems' as SubTab })} />, { wrapper: makeWrapper() })
     const nav = container.querySelector('nav[aria-label="Mobile navigation"]')
     expect(nav).not.toBeNull()
     expect(nav?.className).toContain('sm:hidden')
