@@ -1591,7 +1591,7 @@ Plans:
 <summary>v1.23 Technical Debt &amp; Test Health (Phases 120-121) — IN PROGRESS</summary>
 
 - [x] **Phase 120: Test Suite Restoration** — fix all 25 failing tests across captain-picks, MobileNav, useRivals, club-form (TH-01/02/03/04)
-- [ ] **Phase 121: Deferred Docs & Verification** — Phase 60 VERIFICATION.md (DOC-01) + Phase 48 hover card live check (VER-01)
+- [x] **Phase 121: Deferred Docs & Verification** — Phase 60 VERIFICATION.md (DOC-01) + Phase 48 hover card live check (VER-01) *(2026-05-18)*
 
 </details>
 
@@ -1696,7 +1696,7 @@ Plans:
   - [x] 121-02-PLAN.md — Write Phase 48 VERIFICATION.md + human production confirmation of appearance_pts hover card (VER-01)
 
   **Wave 2** *(blocked on Wave 1 completion)*
-  - [ ] 121-03-PLAN.md — Update REQUIREMENTS.md traceability table for DOC-01 and VER-01
+  - [x] 121-03-PLAN.md — Update REQUIREMENTS.md traceability table for DOC-01 and VER-01
 
 ## Progress
 
@@ -1783,4 +1783,4 @@ Plans:
 | 118 | v1.22 | 3/3 | Complete    | 2026-05-17 |
 | 119 | v1.22 | 3/3 | Complete | 2026-05-18 |
 | 120 | v1.23 | 4/4 | Complete | 2026-05-18 |
-| 121 | v1.23 | 2/3 | In Progress|  |
+| 121 | v1.23 | 3/3 | Complete | 2026-05-18 |
