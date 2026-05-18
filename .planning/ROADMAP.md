@@ -1692,8 +1692,8 @@ Plans:
 **Plans**: 3 plans
 
   **Wave 1**
-  - [ ] 121-01-PLAN.md — Write Phase 60 historical VERIFICATION.md (DOC-01)
-  - [ ] 121-02-PLAN.md — Write Phase 48 VERIFICATION.md + human production confirmation of appearance_pts hover card (VER-01)
+  - [x] 121-01-PLAN.md — Write Phase 60 historical VERIFICATION.md (DOC-01)
+  - [x] 121-02-PLAN.md — Write Phase 48 VERIFICATION.md + human production confirmation of appearance_pts hover card (VER-01)
 
   **Wave 2** *(blocked on Wave 1 completion)*
   - [ ] 121-03-PLAN.md — Update REQUIREMENTS.md traceability table for DOC-01 and VER-01
@@ -1783,4 +1783,4 @@ Plans:
 | 118 | v1.22 | 3/3 | Complete    | 2026-05-17 |
 | 119 | v1.22 | 3/3 | Complete | 2026-05-18 |
 | 120 | v1.23 | 4/4 | Complete | 2026-05-18 |
-| 121 | v1.23 | 0/? | Not started | - |
+| 121 | v1.23 | 2/3 | In Progress|  |

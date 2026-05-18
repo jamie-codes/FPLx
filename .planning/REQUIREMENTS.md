@@ -18,7 +18,7 @@
 
 ### Verification (VER)
 
-- [ ] **VER-01**: Phase 48 XPtsCell `appearance_pts` hover card confirmed live with production pipeline data (pipeline/cache already has values — needs live visual confirmation and sign-off)
+- [x] **VER-01**: Phase 48 XPtsCell `appearance_pts` hover card confirmed live with production pipeline data (pipeline/cache already has values — needs live visual confirmation and sign-off)
 
 ## Future Requirements
 
@@ -41,4 +41,4 @@ _(Deferred — not in scope for v1.23)_
 | TH-03  | Phase 120 | Pending |
 | TH-04  | Phase 120 | Pending |
 | DOC-01 | Phase 121 | Pending |
-| VER-01 | Phase 121 | Pending |
+| VER-01 | Phase 121 | Complete |
