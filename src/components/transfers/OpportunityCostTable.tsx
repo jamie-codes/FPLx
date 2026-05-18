@@ -15,6 +15,7 @@ import { FragilityBadge } from '@/components/shared/FragilityBadge'
 import { computeRejection } from '@/lib/explain'
 import { PlayerInsightSection } from '@/components/shared/PlayerInsightSection'
 import { StatusLabelBadge } from '@/components/shared/StatusLabelBadge'
+import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
 
 interface OpportunityCostTableProps {
   rows: OCSRow[]
@@ -140,6 +141,8 @@ function PlayerMoveCell({
               <RotationRiskBadge rotationRisk={t.buy.rotation_risk ?? false} />
               {/* Phase 119 UI-02: StatusLabelBadge for buy candidate (D-09): after RotationRiskBadge, before NewsBanner */}
               <StatusLabelBadge statusLabel={lineupNewsMap?.get(t.buy.id)?.status_label} />
+              {/* Phase 122 POL-04: MinsRiskBadge for buy candidate — minutes confidence signal */}
+              <MinsRiskBadge minsRisk={t.buy.mins_risk} />
               {/* Phase 88 SCRAPER-01: news banner for buy candidate (D-07) */}
               <NewsBanner
                 news={t.buy.news ?? ''}

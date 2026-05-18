@@ -377,6 +377,46 @@ describe('Phase 112 (TFR-02): truncation footnote', () => {
   })
 })
 
+describe('OpportunityCostTable — Phase 122 POL-04 MinsRiskBadge buy cluster', () => {
+  it('renders "Rotation risk" badge in buy cluster when t.buy.mins_risk is rotation_risk', () => {
+    const sell = makeScoredPlayer({ id: 100, web_name: 'AnySell' })
+    const buy = makeScoredPlayer({ id: 200, web_name: 'RotationBuy', mins_risk: 'rotation_risk' })
+    const { container } = withQueryClient(
+      <OpportunityCostTable
+        rows={[makeSingleFreeRow(sell, buy)]}
+        horizon={1}
+        gw={33}
+        allPlayers={[sell, buy]}
+        lifecycleLabels={new Map()}
+      />
+    )
+    expect(container.textContent).toContain('Rotation risk')
+    // Badge should appear after the buy player name in the DOM
+    const text = container.textContent ?? ''
+    const buyNameIdx = text.indexOf('RotationBuy')
+    const badgeIdx = text.indexOf('Rotation risk')
+    expect(buyNameIdx).toBeGreaterThanOrEqual(0)
+    expect(badgeIdx).toBeGreaterThan(buyNameIdx)
+  })
+
+  it('renders nothing for MinsRiskBadge when t.buy.mins_risk is injured', () => {
+    const sell = makeScoredPlayer({ id: 100, web_name: 'AnySell' })
+    const buy = makeScoredPlayer({ id: 200, web_name: 'InjuredBuy', mins_risk: 'injured' })
+    const { container } = withQueryClient(
+      <OpportunityCostTable
+        rows={[makeSingleFreeRow(sell, buy)]}
+        horizon={1}
+        gw={33}
+        allPlayers={[sell, buy]}
+        lifecycleLabels={new Map()}
+      />
+    )
+    // MinsRiskBadge should return null for 'injured' — verify no unexpected badge text
+    expect(container.textContent).not.toContain('Rotation risk')
+    expect(container.textContent).not.toContain('Nailed')
+  })
+})
+
 describe('OpportunityCostTable — Phase 115 NEWS-03 staleness suppression', () => {
   afterEach(() => vi.restoreAllMocks())
 

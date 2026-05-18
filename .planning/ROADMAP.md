@@ -24,7 +24,8 @@
 - ✅ **v1.20 Fixes & Decision Quality** — Phases 110-113 (shipped 2026-05-16)
 - ✅ **v1.21 Polish, Intelligence & Team News** — Phases 114-116 (shipped 2026-05-17)
 - ✅ **v1.22 Lineup Intelligence** — Phases 117-119 (shipped 2026-05-18)
-- **v1.23 Technical Debt & Test Health** — Phases 120-121 (in progress)
+- ✅ **v1.23 Technical Debt & Test Health** — Phases 120-121 (shipped 2026-05-18)
+- **v1.24 End of Season & Off-Season Intelligence** — Phases 122-126 (in progress)
 
 ## Phases
 
@@ -1588,10 +1589,21 @@ Plans:
 </details>
 
 <details>
-<summary>v1.23 Technical Debt &amp; Test Health (Phases 120-121) — IN PROGRESS</summary>
+<summary>✅ v1.23 Technical Debt &amp; Test Health (Phases 120-121) — SHIPPED 2026-05-18</summary>
 
 - [x] **Phase 120: Test Suite Restoration** — fix all 25 failing tests across captain-picks, MobileNav, useRivals, club-form (TH-01/02/03/04)
 - [x] **Phase 121: Deferred Docs & Verification** — Phase 60 VERIFICATION.md (DOC-01) + Phase 48 hover card live check (VER-01) *(2026-05-18)*
+
+</details>
+
+<details>
+<summary>v1.24 End of Season &amp; Off-Season Intelligence (Phases 122-126) — IN PROGRESS</summary>
+
+- [ ] **Phase 122: Polish Carry-Forwards** — ChipToggle in RouteTreeTab, Hits column label, MinsRiskBadge on 4 surfaces (POL-01/06)
+- [ ] **Phase 123: SCRAPER-02 Pipeline** — transfer_news.py + player_matching.py + /api/transfer-news + useTransferNews() + IS_OFF_SEASON gate (SCR-01/05, WIN-03)
+- [ ] **Phase 124: Season Review** — season summary card, decision quality grade, GW rank chart, Season sub-tab (REV-01/04)
+- [ ] **Phase 125: Summer Window Tracker** — article feed UI + confirmed signing badges on GemTable/TransferPanel (WIN-01/02)
+- [ ] **Phase 126: Next Season Planner** — archive_season.py + buildPreSeasonSquad() + GW1-8 FDR heatmap + ILP fallback (NSP-01/04)
 
 </details>
 
@@ -1784,3 +1796,72 @@ Plans:
 | 119 | v1.22 | 3/3 | Complete | 2026-05-18 |
 | 120 | v1.23 | 4/4 | Complete | 2026-05-18 |
 | 121 | v1.23 | 3/3 | Complete | 2026-05-18 |
+
+
+### Phase 122: Polish Carry-Forwards
+**Goal**: All carry-forward UI items from v1.9 and v1.8 are resolved, giving the codebase a clean baseline before new infrastructure is introduced
+**Depends on**: Phase 121 (v1.23 complete, test suite green)
+**Requirements**: POL-01, POL-02, POL-03, POL-04, POL-05, POL-06
+**Success Criteria** (what must be TRUE):
+  1. User can select a chip mode (None / Bench Boost / Triple Captain) in RouteTreeTab, and the selected mode is reflected in the route output — chipMode is no longer hardcoded to null
+  2. RouteTreeTab displays the correct "Transfer Hits" column heading (not a stale or incorrect label from Phase 60)
+  3. MinsRiskBadge (Nailed / Likely start / Rotation risk / Cameo) is visible on each player row in SquadView (Transfers tab)
+  4. MinsRiskBadge is visible in the buy-player badge cluster of OpportunityCostTable (after StatusLabelBadge, before NewsBanner), and appears as an inline column cell in GemTable alongside existing signal columns
+  5. MinsRiskBadge is visible for both players in PlayerComparisonModal
+**Plans**: 2 plans
+  - [ ] 122-01-PLAN.md - RouteTreeTab ChipToggle wiring and column label fix (POL-01, POL-02)
+  - [ ] 122-02-PLAN.md - OpportunityCostTable MinsRiskBadge insertion plus POL-03/05/06 verification record (POL-03, POL-04, POL-05, POL-06)
+**UI hint**: yes
+
+### Phase 123: SCRAPER-02 Pipeline
+**Goal**: The pipeline ingests summer transfer news from Sky Sports and BBC Sport RSS feeds, matches articles to FPL player IDs, and exposes the feed to the UI via a Route Handler and TanStack hook; the IS_OFF_SEASON gate prevents null-crashes when no current GW exists
+**Depends on**: Phase 122
+**Requirements**: SCR-01, SCR-02, SCR-03, SCR-04, SCR-05, WIN-03
+**Success Criteria** (what must be TRUE):
+  1. pipeline/transfer_news.json is written to Vercel Blob on each pipeline run containing articles from Sky Sports RSS and BBC Sport RSS, each with a classification field (confirmed_signing / rumour / injury_return / rotation_signal / general) and a matched FPL element ID where the player name is resolved
+  2. The TRANSFER_NEWS_ENABLED env var gates the scraper; a scraper failure logs an error and continues the rest of the pipeline without writing an empty or corrupt artifact
+  3. /api/transfer-news Route Handler serves transfer_news.json and useTransferNews() TanStack Query hook fetches from it, following the established artifact pattern
+  4. pipeline/run.py detects IS_OFF_SEASON (no event with is_current=True) and all GW-dependent pipeline steps skip gracefully rather than crashing with a null/KeyError
+  5. player_matching.py shared utility is used by both transfer_news.py and the existing lineup_news.py (no duplication of name-matching logic)
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 124: Season Review
+**Goal**: The user can view a full-season performance summary with a decision quality process grade, a GW-by-GW rank chart with xPts overlay, all surfaced in a dedicated Season sub-tab in the Analyse section
+**Depends on**: Phase 122
+**Requirements**: REV-01, REV-02, REV-03, REV-04
+**Success Criteria** (what must be TRUE):
+  1. Season summary card displays total rank, total points, captain hit rate %, transfer net gain/loss, best GW score, and worst GW score aggregated across all available GWs; GWs before app deployment are shown as N/A rather than zero
+  2. A decision quality A-D grade is computed from captain EV rate (40%) + hit break-even rate (35%) + chip ROI positive rate (25%); the card shows the composite score, the three component scores, a methodology note, and chip GWs scored separately from normal GWs
+  3. A season variance chart shows GW-by-GW rank trajectory with an xPts expectation overlay; chip GWs are highlighted with a distinct marker
+  4. The Season Review is accessible as a "Season" sub-tab in the Analyse section on both desktop and MobileNav
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 125: Summer Window Tracker
+**Goal**: The user can browse confirmed PL signings and transfer rumours from the scraped feed, filtered by classification, and see confirmed signing badges on relevant player rows across GemTable and TransferPanel
+**Depends on**: Phase 123 (useTransferNews() hook and transfer_news.json artifact must exist)
+**Requirements**: WIN-01, WIN-02
+**Success Criteria** (what must be TRUE):
+  1. Summer Window tab in the Analyse section shows articles from the transfer news feed sorted by date, with filter pills for confirmed / rumour / injury / rotation — an empty state is shown when no articles match the selected filter
+  2. A confirmed signing badge appears on the relevant player row in GemTable and TransferPanel when a confirmed_signing article is matched to that player's FPL element ID; the badge is absent for unmatched players and players with no confirmed_signing articles
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 126: Next Season Planner
+**Goal**: The user can build an optimal 15-player squad from all 700+ FPL players at a 100m budget for next season, see a GW1-8 fixture difficulty heatmap when fixture data is available, and the pipeline archives per-player element-summary history before the GW38 rollover
+**Depends on**: Phase 123 (for confirmed signing badges on squad builder rows; core builder is independent)
+**Requirements**: NSP-01, NSP-02, NSP-03, NSP-04
+**Success Criteria** (what must be TRUE):
+  1. pipeline/archive_season.py writes season_archive_gw38.json to Vercel Blob before GW38 closes, capturing per-player element-summary history that would otherwise be lost after the season rollover
+  2. buildPreSeasonSquad() returns a valid 15-player squad from the full player pool at a 100m budget; if the greedy heuristic returns null, a pipeline/suggest_squad.py ILP fallback (PuLP) serves a pre-computed optimal squad from Blob
+  3. The Next Season Planner tab in the Plan section shows a squad builder UI with a "Prices pending" graceful state when off-season FPL price data is unavailable
+  4. A GW1-8 fixture difficulty heatmap reuses the existing HeatMapRow component; a "Fixtures not yet published" empty state is shown until FPL releases next-season fixture data
+**Plans**: TBD
+**UI hint**: yes
+
+| 122 | v1.24 | 0/0 | Not started | - |
+| 123 | v1.24 | 0/0 | Not started | - |
+| 124 | v1.24 | 0/0 | Not started | - |
+| 125 | v1.24 | 0/0 | Not started | - |
+| 126 | v1.24 | 0/0 | Not started | - |
