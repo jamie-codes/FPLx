@@ -14,7 +14,7 @@
 
 ### Documentation (DOC)
 
-- [ ] **DOC-01**: Phase 60 VERIFICATION.md written and committed (clears VERIFY-60 deferred item from v1.22)
+- [x] **DOC-01**: Phase 60 VERIFICATION.md written and committed (clears VERIFY-60 deferred item from v1.22)
 
 ### Verification (VER)
 
@@ -40,5 +40,5 @@ _(Deferred — not in scope for v1.23)_
 | TH-02  | Phase 120 | Pending |
 | TH-03  | Phase 120 | Pending |
 | TH-04  | Phase 120 | Pending |
-| DOC-01 | Phase 121 | Pending |
+| DOC-01 | Phase 121 | Complete |
 | VER-01 | Phase 121 | Complete |
