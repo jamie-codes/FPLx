@@ -1577,8 +1577,10 @@ Plans:
 <details>
 <summary>v1.22 Lineup Intelligence (Phases 117-119) — IN PROGRESS</summary>
 
-- [x] **Phase 117: Scraper Pipeline & Artifact** — lineup_news.json pipeline, API route, hook, staleness guard (completed 2026-05-17)
-- [x] **Phase 118: Engine Integration** — suggestTransfers() and optimiseLineup()/benchOrder() availability_factor penalties (completed 2026-05-17)
+- [x] **Phase 117: Scraper Pipeline & Artifact** — lineup_news.json pipeline, API route, hook, staleness guard
+ (completed 2026-05-17)
+- [x] **Phase 118: Engine Integration** — suggestTransfers() and optimiseLineup()/benchOrder() availability_factor penalties
+ (completed 2026-05-17)
 - [ ] **Phase 119: UI Surfaces** — captain badge, transfer flag, Team News Alert card, Decision Summary wiring
 
 </details>
@@ -1641,7 +1643,16 @@ Plans:
   2. TransferPanel OCS buy-candidate rows show an inline news confidence badge or news text for doubted/absent players when lineup news is available -- healthy players show nothing extra
   3. Decision Summary tab shows a "Team News Alert" severity card listing owned squad players with active news (within 14 days), respecting the existing NEWS-01 staleness gate from Phase 115
   4. Decision Summary tab OCS table reflects availability penalties -- DecisionSummaryTab threads lineupNewsMap into its suggestTransfers() call so the table rankings match the penalised engine output
-**Plans**: TBD
+**Plans**: 3 plans
+
+  **Wave 1**
+  - [ ] 119-01-PLAN.md — Create shared StatusLabelBadge component (red pill confirmed_absent, amber pill doubted, null for confirmed_start/unknown/undefined) + Vitest coverage
+
+  **Wave 2** *(blocked on Wave 1 completion)*
+  - [ ] 119-02-PLAN.md — UI-01 + UI-02: useLineupNews wired into CaptainPicksPanel CandidateRow; OpportunityCostTable accepts optional lineupNewsMap prop and renders StatusLabelBadge for buy candidate; TransferPanel forwards the map
+
+  **Wave 3** *(blocked on Wave 2 completion)*
+  - [ ] 119-03-PLAN.md — UI-03 + UI-04: DecisionSummaryTab calls useLineupNews, threads lineupNewsMap into suggestTransfers and OpportunityCostTable, and renders the Team News Alert section between the 2x2 grid and CalibrationHealthIndicator
 **UI hint**: yes
 
 
