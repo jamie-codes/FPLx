@@ -52,6 +52,15 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
+## Current Milestone: v1.23 Technical Debt & Test Health
+
+**Goal:** Clear all deferred items from v1.22 and restore the test suite to green.
+
+**Target features:**
+- Fix 25 failing tests across 4 files (captain-picks, MobileNav, useRivals, club-form)
+- VERIFY-60: write missing Phase 60 VERIFICATION.md
+- Phase 48 hover card: verify appearance_pts is live in production
+
 ## Previous Milestone: v1.22 Lineup Intelligence (Complete 2026-05-18)
 
 **Goal:** Scrape and integrate multi-source team news into the pipeline, surface player availability and confidence signals across transfer, captain, bench order, and decision surfaces.
@@ -334,7 +343,7 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 - ✓ **OPT-01**: Optimiser on-demand with `hasRun` gate and empty state — v1.20
 - ✓ **TFR-02**: `capByPosition(raw, 3)` caps transfer suggestions at top-3 per position with footnote — v1.20
 
-### Active (v1.21)
+### Active (v1.23)
 
 _(Requirements being defined — see REQUIREMENTS.md once committed)_
 
@@ -437,4 +446,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-18 — v1.22 Lineup Intelligence complete: Phase 119 wires lineup news badges into CaptainPicksPanel, OpportunityCostTable, TransferPanel, and DecisionSummaryTab; Team News Alert section added to DecisionSummaryTab; Phase 118 engine penalties now visible in OCS rankings (UI-01, UI-02, UI-03, UI-04).*
+*Last updated: 2026-05-18 — v1.23 Technical Debt & Test Health started: 25 failing tests across 4 files, VERIFY-60 missing doc, Phase 48 hover card live check.*

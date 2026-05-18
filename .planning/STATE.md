@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.22
-milestone_name: Lineup Intelligence
-status: complete
-stopped_at: Phase 119 complete
-last_updated: "2026-05-18T12:00:00.000Z"
-last_activity: 2026-05-18 -- Phase 119 complete (v1.22 shipped)
+milestone: v1.23
+milestone_name: Technical Debt & Test Health
+status: planning
+last_updated: "2026-05-18T09:06:38.201Z"
+last_activity: 2026-05-18
 progress:
-  total_phases: 64
-  completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,15 +24,10 @@ See: .planning/PROJECT.md (updated 2026-05-17 — v1.22 milestone active)
 
 ## Current Position
 
-Phase: 119
-Plan: Complete (all 3 plans)
-Status: v1.22 milestone shipped
-Last activity: 2026-05-18 -- Phase 119 complete (v1.22 shipped)
-
-```
-v1.22 Lineup Intelligence
-Phase 117 [          ] 0%
-```
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-18 — Milestone v1.23 started
 
 ## Performance Metrics
 
