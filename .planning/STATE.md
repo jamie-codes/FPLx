@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.24
-milestone_name: milestone
-status: executing
+milestone_name: Modelling & Refinement — Carry-forward
+status: milestone_complete
 stopped_at: Phase 122 UI-SPEC approved
-last_updated: "2026-05-18T15:38:46.632Z"
-last_activity: 2026-05-18 -- Phase 122 planning complete
+last_updated: "2026-05-18T15:40:49.758Z"
+last_activity: 2026-05-18 -- Phase 122 execution started
 progress:
-  total_phases: 71
-  completed_phases: 0
+  total_phases: 1
+  completed_phases: 1
   total_plans: 2
   completed_plans: 0
-  percent: 0
+  percent: 100
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-18 — v1.24 milestone active)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.24 End of Season & Off-Season Intelligence — Phase 122 ready to plan
+**Current focus:** Phase 122 — Polish Carry-Forwards
 
 ## Current Position
 
-Phase: 122 of 126 (Polish Carry-Forwards)
-Plan: —
-Status: Ready to execute
-Last activity: 2026-05-18 -- Phase 122 planning complete
+Phase: 122
+Plan: Not started
+Status: Milestone complete
+Last activity: 2026-05-18
 
 Progress: [░░░░░░░░░░] 0%
 

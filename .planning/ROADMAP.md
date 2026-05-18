@@ -1599,7 +1599,7 @@ Plans:
 <details>
 <summary>v1.24 End of Season &amp; Off-Season Intelligence (Phases 122-126) — IN PROGRESS</summary>
 
-- [ ] **Phase 122: Polish Carry-Forwards** — ChipToggle in RouteTreeTab, Hits column label, MinsRiskBadge on 4 surfaces (POL-01/06)
+- [x] **Phase 122: Polish Carry-Forwards** — ChipToggle in RouteTreeTab, Hits column label, MinsRiskBadge on 4 surfaces (POL-01/06) (completed 2026-05-18)
 - [ ] **Phase 123: SCRAPER-02 Pipeline** — transfer_news.py + player_matching.py + /api/transfer-news + useTransferNews() + IS_OFF_SEASON gate (SCR-01/05, WIN-03)
 - [ ] **Phase 124: Season Review** — season summary card, decision quality grade, GW rank chart, Season sub-tab (REV-01/04)
 - [ ] **Phase 125: Summer Window Tracker** — article feed UI + confirmed signing badges on GemTable/TransferPanel (WIN-01/02)
@@ -1809,8 +1809,8 @@ Plans:
   4. MinsRiskBadge is visible in the buy-player badge cluster of OpportunityCostTable (after StatusLabelBadge, before NewsBanner), and appears as an inline column cell in GemTable alongside existing signal columns
   5. MinsRiskBadge is visible for both players in PlayerComparisonModal
 **Plans**: 2 plans
-  - [ ] 122-01-PLAN.md - RouteTreeTab ChipToggle wiring and column label fix (POL-01, POL-02)
-  - [ ] 122-02-PLAN.md - OpportunityCostTable MinsRiskBadge insertion plus POL-03/05/06 verification record (POL-03, POL-04, POL-05, POL-06)
+  - [x] 122-01-PLAN.md - RouteTreeTab ChipToggle wiring and column label fix (POL-01, POL-02)
+  - [x] 122-02-PLAN.md - OpportunityCostTable MinsRiskBadge insertion plus POL-03/05/06 verification record (POL-03, POL-04, POL-05, POL-06)
 **UI hint**: yes
 
 ### Phase 123: SCRAPER-02 Pipeline
@@ -1860,7 +1860,7 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
-| 122 | v1.24 | 0/0 | Not started | - |
+| 122 | v1.24 | 2/2 | Complete    | 2026-05-18 |
 | 123 | v1.24 | 0/0 | Not started | - |
 | 124 | v1.24 | 0/0 | Not started | - |
 | 125 | v1.24 | 0/0 | Not started | - |
