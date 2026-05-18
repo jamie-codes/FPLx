@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.22
-milestone_name: milestone
-status: executing
-stopped_at: Phase 119 UI-SPEC approved
-last_updated: "2026-05-18T06:45:39.927Z"
-last_activity: 2026-05-18 -- Phase 119 planning complete
+milestone_name: Lineup Intelligence
+status: complete
+stopped_at: Phase 119 complete
+last_updated: "2026-05-18T12:00:00.000Z"
+last_activity: 2026-05-18 -- Phase 119 complete (v1.22 shipped)
 progress:
   total_phases: 64
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 8
-  completed_plans: 5
-  percent: 3
+  completed_plans: 8
+  percent: 100
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17 — v1.22 milestone active)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 117 — scraper-pipeline-lineup-news-artifact
+**Current focus:** v1.22 Lineup Intelligence — complete
 
 ## Current Position
 
-Phase: 118
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-18 -- Phase 119 planning complete
+Phase: 119
+Plan: Complete (all 3 plans)
+Status: v1.22 milestone shipped
+Last activity: 2026-05-18 -- Phase 119 complete (v1.22 shipped)
 
 ```
 v1.22 Lineup Intelligence

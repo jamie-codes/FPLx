@@ -23,7 +23,7 @@
 - ✅ **v1.19 AI Quality & Insight Delivery** — Phases 106-109 (shipped 2026-05-14)
 - ✅ **v1.20 Fixes & Decision Quality** — Phases 110-113 (shipped 2026-05-16)
 - ✅ **v1.21 Polish, Intelligence & Team News** — Phases 114-116 (shipped 2026-05-17)
-- **v1.22 Lineup Intelligence** — Phases 117-119 (started 2026-05-17)
+- ✅ **v1.22 Lineup Intelligence** — Phases 117-119 (shipped 2026-05-18)
 
 ## Phases
 
@@ -1581,7 +1581,8 @@ Plans:
  (completed 2026-05-17)
 - [x] **Phase 118: Engine Integration** — suggestTransfers() and optimiseLineup()/benchOrder() availability_factor penalties
  (completed 2026-05-17)
-- [ ] **Phase 119: UI Surfaces** — captain badge, transfer flag, Team News Alert card, Decision Summary wiring
+- [x] **Phase 119: UI Surfaces** — captain badge, transfer flag, Team News Alert card, Decision Summary wiring
+ (completed 2026-05-18)
 
 </details>
 
@@ -1646,13 +1647,13 @@ Plans:
 **Plans**: 3 plans
 
   **Wave 1**
-  - [ ] 119-01-PLAN.md — Create shared StatusLabelBadge component (red pill confirmed_absent, amber pill doubted, null for confirmed_start/unknown/undefined) + Vitest coverage
+  - [x] 119-01-PLAN.md — Create shared StatusLabelBadge component (red pill confirmed_absent, amber pill doubted, null for confirmed_start/unknown/undefined) + Vitest coverage
 
   **Wave 2** *(blocked on Wave 1 completion)*
-  - [ ] 119-02-PLAN.md — UI-01 + UI-02: useLineupNews wired into CaptainPicksPanel CandidateRow; OpportunityCostTable accepts optional lineupNewsMap prop and renders StatusLabelBadge for buy candidate; TransferPanel forwards the map
+  - [x] 119-02-PLAN.md — UI-01 + UI-02: useLineupNews wired into CaptainPicksPanel CandidateRow; OpportunityCostTable accepts optional lineupNewsMap prop and renders StatusLabelBadge for buy candidate; TransferPanel forwards the map
 
   **Wave 3** *(blocked on Wave 2 completion)*
-  - [ ] 119-03-PLAN.md — UI-03 + UI-04: DecisionSummaryTab calls useLineupNews, threads lineupNewsMap into suggestTransfers and OpportunityCostTable, and renders the Team News Alert section between the 2x2 grid and CalibrationHealthIndicator
+  - [x] 119-03-PLAN.md — UI-03 + UI-04: DecisionSummaryTab calls useLineupNews, threads lineupNewsMap into suggestTransfers and OpportunityCostTable, and renders the Team News Alert section between the 2x2 grid and CalibrationHealthIndicator
 **UI hint**: yes
 
 
@@ -1739,4 +1740,4 @@ Plans:
 | 116 | v1.21 | 4/4 | Complete    | 2026-05-17 |
 | 117 | v1.22 | 2/2 | Complete    | 2026-05-17 |
 | 118 | v1.22 | 3/3 | Complete    | 2026-05-17 |
-| 119 | v1.22 | 0/0 | Not started | - |
+| 119 | v1.22 | 3/3 | Complete | 2026-05-18 |
