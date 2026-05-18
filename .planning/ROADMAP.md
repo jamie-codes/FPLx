@@ -24,6 +24,7 @@
 - ✅ **v1.20 Fixes & Decision Quality** — Phases 110-113 (shipped 2026-05-16)
 - ✅ **v1.21 Polish, Intelligence & Team News** — Phases 114-116 (shipped 2026-05-17)
 - ✅ **v1.22 Lineup Intelligence** — Phases 117-119 (shipped 2026-05-18)
+- **v1.23 Technical Debt & Test Health** — Phases 120-121 (in progress)
 
 ## Phases
 
@@ -1586,6 +1587,14 @@ Plans:
 
 </details>
 
+<details>
+<summary>v1.23 Technical Debt &amp; Test Health (Phases 120-121) — IN PROGRESS</summary>
+
+- [ ] **Phase 120: Test Suite Restoration** — fix all 25 failing tests across captain-picks, MobileNav, useRivals, club-form (TH-01/02/03/04)
+- [ ] **Phase 121: Deferred Docs & Verification** — Phase 60 VERIFICATION.md (DOC-01) + Phase 48 hover card live check (VER-01)
+
+</details>
+
 
 ### Phase 117: Scraper Pipeline & Lineup News Artifact
 **Goal**: Pipeline emits lineup_news.json with per-player availability signals from four sources (FPL official, premierleague.com, Sky Sports RSS, BBC Sport RSS) -- accessible via API route and hook, with non-fatal scraper isolation and a staleness guard
@@ -1656,6 +1665,27 @@ Plans:
   - [x] 119-03-PLAN.md — UI-03 + UI-04: DecisionSummaryTab calls useLineupNews, threads lineupNewsMap into suggestTransfers and OpportunityCostTable, and renders the Team News Alert section between the 2x2 grid and CalibrationHealthIndicator
 **UI hint**: yes
 
+
+### Phase 120: Test Suite Restoration
+**Goal**: The test suite is fully green with all 25 pre-existing failures resolved across four test files
+**Depends on**: Phase 119 (v1.22 complete)
+**Requirements**: TH-01, TH-02, TH-03, TH-04
+**Success Criteria** (what must be TRUE):
+  1. captain-picks test file exits clean with all 5 tests passing (CAP-03/CAP-04 CaptainPicksPanel rendering, tests/lib/captain-picks.test.ts)
+  2. MobileNav test file exits clean with all 10 tests passing (NAV-01 through NAV-05, Lineup tab drift from Phase 119 resolved, src/components/nav/MobileNav.test.tsx)
+  3. useRivals test file exits clean with all 8 tests passing (ML-01/02/08, D-05 sub-tab memory, src/lib/hooks/useRivals.test.ts)
+  4. club-form test file exits clean with all 1 tests passing (difficulty-tier classification assertion, tests/lib/club-form.test.ts)
+  5. Full vitest suite passes with no new failures introduced by the fixes
+**Plans**: TBD
+
+### Phase 121: Deferred Docs & Verification
+**Goal**: The VERIFY-60 documentation debt is cleared and the Phase 48 XPtsCell appearance_pts hover card is confirmed live in production
+**Depends on**: Phase 120 (clean suite baseline established; verification is independent of test fixes but sequenced after for review clarity)
+**Requirements**: DOC-01, VER-01
+**Success Criteria** (what must be TRUE):
+  1. The Phase 60 VERIFICATION.md file exists at the correct path, is committed, and documents what was shipped in Phase 60 (Transfer Route Tree) with acceptance sign-off
+  2. A developer can open the production app, load a player's XPtsCell hover card, and confirm that appearance_pts is rendered as a separate named row in the breakdown (not absent or zero)
+**Plans**: TBD
 
 ## Progress
 
@@ -1741,3 +1771,5 @@ Plans:
 | 117 | v1.22 | 2/2 | Complete    | 2026-05-17 |
 | 118 | v1.22 | 3/3 | Complete    | 2026-05-17 |
 | 119 | v1.22 | 3/3 | Complete | 2026-05-18 |
+| 120 | v1.23 | 0/? | Not started | - |
+| 121 | v1.23 | 0/? | Not started | - |

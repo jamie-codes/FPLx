@@ -36,9 +36,9 @@ _(Deferred — not in scope for v1.23)_
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| TH-01  | —     | Pending roadmap |
-| TH-02  | —     | Pending roadmap |
-| TH-03  | —     | Pending roadmap |
-| TH-04  | —     | Pending roadmap |
-| DOC-01 | —     | Pending roadmap |
-| VER-01 | —     | Pending roadmap |
+| TH-01  | Phase 120 | Pending |
+| TH-02  | Phase 120 | Pending |
+| TH-03  | Phase 120 | Pending |
+| TH-04  | Phase 120 | Pending |
+| DOC-01 | Phase 121 | Pending |
+| VER-01 | Phase 121 | Pending |
