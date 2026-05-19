@@ -1840,7 +1840,16 @@ Plans:
   2. A decision quality A-D grade is computed from captain EV rate (40%) + hit break-even rate (35%) + chip ROI positive rate (25%); the card shows the composite score, the three component scores, a methodology note, and chip GWs scored separately from normal GWs
   3. A season variance chart shows GW-by-GW rank trajectory with an xPts expectation overlay; chip GWs are highlighted with a distinct marker
   4. The Season Review is accessible as a "Season" sub-tab in the Analyse section on both desktop and MobileNav
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+**Wave 1**
+- [ ] 124-01-PLAN.md — Types (SeasonReview/SeasonGwEntry) + computeDecisionGrade pure function (REV-02 D-05/D-06) + /api/season-review Route Handler (REV-01)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 124-02-PLAN.md — useSeasonReview TanStack Query v5 hook with 6h staleTime + numeric teamId guard + Vitest contract spec (REV-03 wiring)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 124-03-PLAN.md — SeasonReviewTab component (REV-01 summary card + REV-02 grade card + REV-03 ComposedChart with avg manager overlay & chip markers) + page.tsx 'season' SubTab wiring (REV-04)
 **UI hint**: yes
 
 ### Phase 125: Summer Window Tracker
