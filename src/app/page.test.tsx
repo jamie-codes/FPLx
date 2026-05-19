@@ -254,6 +254,7 @@ describe('Phase 36: page.tsx state', () => {
       'Set Pieces',
       'Club Form',
       'Accuracy',
+      'Season',        // Phase 124 REV-04: Season sub-tab inserted after Accuracy
       'Price Changes',
     ])
   })
