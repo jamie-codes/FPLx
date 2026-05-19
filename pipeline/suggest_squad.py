@@ -259,6 +259,24 @@ def suggest_squad(bootstrap: dict, archive: dict) -> None:
     Writes pre_season_squad.json via save(). Non-fatal outer wrapper in run.py
     catches any exception from this function.
     """
+    import os as _os
+    # Idempotency check: skip if pre_season_squad.json already exists.
+    # Mirrors the _blob_exists pattern in archive_season.py.
+    if _os.getenv('USE_BLOB', '').lower() == 'true':
+        try:
+            import vercel_blob
+            result = vercel_blob.list({'prefix': SQUAD_KEY, 'limit': 1})
+            if len(result.get('blobs', [])) > 0:
+                print("[suggest_squad] already exists — skipping.")
+                return
+        except Exception as _exc:
+            print(f"[suggest_squad] _blob_exists check failed ({_exc}); assuming not present.", file=sys.stderr)
+    else:
+        local_path = _os.path.join('pipeline', 'cache', SQUAD_KEY)
+        if _os.path.exists(local_path):
+            print("[suggest_squad] already exists — skipping.")
+            return
+
     try:
         # Build candidate list from bootstrap + archive
         score_map = _compute_score_map(bootstrap, archive)
