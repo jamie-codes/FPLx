@@ -63,9 +63,8 @@ const GRADE_LABEL: Record<GradeLabel, string> = {
 // Helper functions (module-scope)
 // ---------------------------------------------------------------------------
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function ChipDot(props: any): React.ReactElement {
-  const { cx, cy, payload } = props as { cx: number; cy: number; payload: SeasonGwEntry }
+interface DotProps { cx: number; cy: number; payload: SeasonGwEntry }
+function ChipDot({ cx, cy, payload }: DotProps): React.ReactElement {
   if (!payload?.chipPlayed) {
     return <circle cx={cx} cy={cy} r={3} fill="currentColor" stroke="none" />
   }
