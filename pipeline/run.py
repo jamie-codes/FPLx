@@ -441,7 +441,6 @@ def run(dry_run: bool = False):
                 else:
                     print("Weekly summary skipped (missing key or guardrail rejection)")
             except Exception as exc:
-                import sys
                 print(f"[prose_summary] non-fatal error: {exc}", file=sys.stderr)
 
             # Phase 108 NLP-BATCH-01/02/03 — batch pre-generation of player insights.
@@ -462,7 +461,6 @@ def run(dry_run: bool = False):
                     result = generate_batch_insights(top20, corpus, current_gw)
                     print(f"Batch insights: {result['written']} written, {result['skipped']} skipped (GW {current_gw})")
                 except Exception as exc:
-                    import sys
                     print(f"[batch_insights] non-fatal error: {exc}", file=sys.stderr)
 
         else:
