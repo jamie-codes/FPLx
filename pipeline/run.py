@@ -235,6 +235,15 @@ def run(dry_run: bool = False):
             except Exception as sq_exc:
                 print(f"[suggest_squad] non-fatal error: {sq_exc}", file=sys.stderr)
 
+            # Phase 127 GREEDY-01: squad health sweep (budget £80m–£120m, 81 greedy builds).
+            # Runs after suggest_squad so health data exists alongside the ILP squad.
+            try:
+                from squad_health import compute_squad_health
+                compute_squad_health(bootstrap)
+                print("Squad health written.")
+            except Exception as sh_exc:
+                print(f"[squad_health] non-fatal error: {sh_exc}", file=sys.stderr)
+
         # Phase 123 WIN-03: IS_OFF_SEASON gate wraps all GW-dependent pipeline steps.
         # Year-round steps (fixtures, understat, id_map, element summaries, price_changes,
         # transfer_news) remain OUTSIDE this block (D-05).
