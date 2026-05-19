@@ -1,0 +1,152 @@
+'use client'
+
+// Phase 126 (NSP-04, NSP-03): NextSeasonPlannerTab — read-only pre-season squad display
+// + GW1-8 FDR heatmap section.
+// D-04: read-only (no mutation paths, no <button> elements that change squad state).
+// D-05: formation grid (GK/DEF/MID/FWD rows + 4 bench).
+// D-06: ppm as native title-attribute tooltip on total-points span only (not visible column).
+import { Fragment } from 'react'
+import type { ReactNode } from 'react'
+import { usePreSeasonSquad } from '@/lib/hooks/usePreSeasonSquad'
+// HeatMapRow imported but fixture data is deferred (GW1-8-FIXTURES deferred item in CONTEXT.md).
+// The populated code path is future-ready; the empty-state path is the expected render at ship time.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { HeatMapRow } from '@/components/club-form/FixtureHeatMap'
+import type { PreSeasonPlayer, PreSeasonSquad } from '@/lib/types'
+
+const POSITION_LABELS: Record<number, string> = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' }
+const POSITION_ORDER = [1, 2, 3, 4]
+
+function FormationGrid({ squad }: { squad: PreSeasonSquad }) {
+  const startersByPosition: Record<number, PreSeasonPlayer[]> = { 1: [], 2: [], 3: [], 4: [] }
+  for (const p of squad.starters) {
+    startersByPosition[p.element_type]?.push(p)
+  }
+
+  return (
+    <>
+      {/* Headline row: formation + budget */}
+      <div className="text-sm text-zinc-700 dark:text-zinc-300 py-2 flex flex-wrap items-center gap-2">
+        <span><span className="font-semibold">Formation:</span> {squad.formation}</span>
+        <span className="text-zinc-400">│</span>
+        <span><span className="font-semibold">Budget used:</span> £{(squad.budgetUsed / 10).toFixed(1)}m</span>
+      </div>
+
+      {/* Position-grouped XI rows */}
+      {POSITION_ORDER.map(pos => {
+        const group = startersByPosition[pos] ?? []
+        if (group.length === 0) return null
+        return (
+          <Fragment key={pos}>
+            <div className="text-[10px] font-semibold uppercase text-zinc-500 dark:text-zinc-400 pt-2 pb-0.5 bg-zinc-50 dark:bg-zinc-800/40 px-1">
+              {POSITION_LABELS[pos]}
+            </div>
+            {group.map(p => (
+              <div
+                key={p.id}
+                className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800 border-l-2 border-green-500 pl-2 text-sm"
+              >
+                <span className="font-semibold text-zinc-700 dark:text-zinc-300">{p.web_name}</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <span>{p.team_short_name}</span>
+                  <span className="ml-2">£{(p.now_cost / 10).toFixed(1)}m</span>
+                  <span className="ml-2" title={`${p.ppm.toFixed(2)}pts/min (last season)`}>{p.total_points}pts</span>
+                </span>
+              </div>
+            ))}
+          </Fragment>
+        )
+      })}
+
+      {/* Bench section */}
+      <div className="text-[10px] font-semibold uppercase text-zinc-500 dark:text-zinc-400 pt-2 pb-0.5 bg-zinc-50 dark:bg-zinc-800/40 px-1">
+        Bench
+      </div>
+      {squad.bench.map(p => (
+        <div
+          key={p.id}
+          className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800 opacity-60 pl-2 text-sm"
+        >
+          <span className="font-semibold text-zinc-700 dark:text-zinc-300">{p.web_name}</span>
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            <span>{p.team_short_name}</span>
+            <span className="ml-2">£{(p.now_cost / 10).toFixed(1)}m</span>
+            <span className="ml-2" title={`${p.ppm.toFixed(2)}pts/min (last season)`}>{p.total_points}pts</span>
+          </span>
+        </div>
+      ))}
+    </>
+  )
+}
+
+export function NextSeasonPlannerTab() {
+  const { data, isLoading, isError } = usePreSeasonSquad()
+
+  // --- SECTION A: Pre-Season Squad (NSP-04) ---
+  let squadSection: ReactNode
+
+  if (isLoading) {
+    squadSection = (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400 py-4">Loading pre-season squad...</p>
+    )
+  } else if (isError) {
+    squadSection = (
+      <p className="text-sm text-red-600 dark:text-red-400 py-4">
+        Failed to load pre-season squad. Check the pipeline output and refresh.
+      </p>
+    )
+  } else if (data === null || data === undefined) {
+    // Archive absent (data===null = 404) or not yet loaded (data===undefined) — "Prices pending"
+    // Note: data===undefined only possible if isLoading is false and not yet fetched, which is
+    // handled by isLoading above. data===null is the canonical "Prices pending" state (D-03).
+    squadSection = (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400 py-4">
+        Pre-season squad not yet available. The squad builder becomes available once the season archive is ready. Check back after GW38.
+      </p>
+    )
+  } else {
+    // data is PreSeasonSquad — render formation grid (D-05)
+    squadSection = <FormationGrid squad={data} />
+  }
+
+  // --- SECTION B: GW1-8 FDR Heatmap (NSP-03) ---
+  // GW1-8-FIXTURES is a known deferred condition: next-season fixture data is not available until
+  // FPL publishes the schedule (typically late June). The empty-state branch is the expected render
+  // path at ship time. The populated branch (HeatMapRow table) is the future-ready code path.
+  // TODO(GW1-8-FIXTURES): when next-season fixture data is available, fetch it here and render
+  // HeatMapRow rows inside a <table> instead of the empty-state paragraph below.
+  const nextSeasonFixtures: unknown[] = [] // deferred: no fixture data available until FPL publishes
+  const hasFixtures = nextSeasonFixtures.length > 0
+
+  const heatmapSection: ReactNode = hasFixtures ? (
+    // Future-ready: HeatMapRow is imported; populate grid/tierMap/ownedTeamIds from fixture data.
+    <p className="text-sm text-zinc-500 dark:text-zinc-400 py-2">
+      Fixture data ready — heatmap rendering.
+    </p>
+  ) : (
+    <>
+      <p className="text-sm text-zinc-500 dark:text-zinc-400 py-2">
+        Fixtures not yet published for next season.
+      </p>
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        Next season&apos;s fixture list hasn&apos;t been released yet. Check back in late June.
+      </p>
+    </>
+  )
+
+  return (
+    <div className="space-y-4">
+      {/* Section A: Pre-Season Squad */}
+      <div>
+        <h3 className="text-xl font-semibold">Pre-Season Squad</h3>
+        {squadSection}
+      </div>
+
+      {/* Section B: GW1-8 FDR Heatmap */}
+      <div>
+        <h3 className="text-xl font-semibold">GW1&#x2013;8 Fixture Difficulty</h3>
+        {heatmapSection}
+      </div>
+    </div>
+  )
+}

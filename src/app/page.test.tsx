@@ -207,8 +207,8 @@ describe('Phase 36: page.tsx state', () => {
     const planSubTabs = container.querySelector('nav[aria-label="Plan sub-tabs"]')
     expect(planSubTabs).not.toBeNull()
     const subTabBtns = Array.from(planSubTabs!.querySelectorAll('button')).map(b => b.textContent)
-    // Order locked by D-01 + D-05/D-06: Manual Plan after Planner, Route Tree after Manual Plan, Rank Sim after Route Tree (Phase 62 MC-03), Club Form moved to Analyse (Phase 97 D-02)
-    expect(subTabBtns).toEqual(['Planner', 'Manual Plan', 'Route Tree', 'Rank Sim', 'Value Gems', 'Rivals'])
+    // Order locked by D-01 + D-05/D-06: Manual Plan after Planner, Route Tree after Manual Plan, Rank Sim after Route Tree (Phase 62 MC-03), Club Form moved to Analyse (Phase 97 D-02), Next Season after Rivals (Phase 126 NSP-04)
+    expect(subTabBtns).toEqual(['Planner', 'Manual Plan', 'Route Tree', 'Rank Sim', 'Value Gems', 'Rivals', 'Next Season'])
   })
 
   it('inserts Route Tree sub-tab after Manual Plan in Plan section nav (D-05/D-06)', () => {
@@ -224,9 +224,9 @@ describe('Phase 36: page.tsx state', () => {
     expect(container.querySelector('[data-testid="route-tree-tab"]')).not.toBeNull()
     // aria-current is Route Tree
     expect(container.querySelector('nav[aria-label="Plan sub-tabs"] button[aria-current="page"]')?.textContent).toBe('Route Tree')
-    // Sub-tab order: Planner | Manual Plan | Route Tree | Rank Sim | Value Gems | Rivals (Phase 62 MC-03; Club Form moved to Analyse in Phase 97 D-02)
+    // Sub-tab order: Planner | Manual Plan | Route Tree | Rank Sim | Value Gems | Rivals | Next Season (Phase 126 NSP-04)
     const subTabBtns = Array.from(container.querySelectorAll('nav[aria-label="Plan sub-tabs"] button')).map(b => b.textContent)
-    expect(subTabBtns).toEqual(['Planner', 'Manual Plan', 'Route Tree', 'Rank Sim', 'Value Gems', 'Rivals'])
+    expect(subTabBtns).toEqual(['Planner', 'Manual Plan', 'Route Tree', 'Rank Sim', 'Value Gems', 'Rivals', 'Next Season'])
   })
 
   it('clicking "Manual Plan" sub-tab mounts ManualPlanTab and hides PlannerTab (MTP-01, D-02)', () => {
