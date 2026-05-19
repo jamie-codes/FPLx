@@ -534,14 +534,14 @@ if IS_GW38:
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **`diagnoseBuildPreSeasonSquad()` in GREEDY-02**
+1. **`diagnoseBuildPreSeasonSquad()` in GREEDY-02** — RESOLVED: not consumed in UI beyond the GREEDY-03 health indicator paragraph. The function ships as a GREEDY-02 compliance artifact; only the health indicator text reads its output. Verified by grepping for `diagnoseBuildPreSeasonSquad` callers in the UI tree and confirming the planned health indicator copy (per UI-SPEC) is the only consumer.
    - What we know: CONTEXT.md mentions it as a sibling function in `src/lib/pre-season-squad.ts`; REQUIREMENTS.md specifies reason codes `incomplete_squad | unmet_min_slots | no_eligible_players`
    - What's unclear: Whether this function is used anywhere in the actual UI (the CONTEXT.md says `health` field is added to the API response, but no UI consumption is mentioned for the diagnose output beyond the already-specified health indicator)
    - Recommendation: Implement `diagnoseBuildPreSeasonSquad()` returning `{ reason: 'incomplete_squad' | 'unmet_min_slots' | 'no_eligible_players' } | null` — the function is needed for GREEDY-02 compliance but UI consumption may be limited to the health indicator text
 
-2. **WatchlistPlayerCard position badge style**
+2. **WatchlistPlayerCard position badge style** — RESOLVED: do not reuse an existing position badge component. D-14 forbids reuse of `PriceTrendCell` and `NewsBanner` for the same self-containment reason; the position badge follows suit. Plan 03 Task 1 specifies an inline `<span>` using the `POSITION_LABELS` map with muted zinc styling — see PLAN.md for exact classes.
    - What we know: Bespoke component (D-14); position badge mentioned but styling is Claude's discretion
    - What's unclear: Whether to reuse any existing position badge component
    - Recommendation: Simple inline span matching the existing `POSITION_LABELS` convention (`GK / DEF / MID / FWD`) with a muted zinc background
