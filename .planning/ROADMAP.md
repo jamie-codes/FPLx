@@ -1605,7 +1605,7 @@ Plans:
  (completed 2026-05-18)
 - [x] **Phase 124: Season Review** — season summary card, decision quality grade, GW rank chart, Season sub-tab (REV-01/04) (completed 2026-05-19)
 - [x] **Phase 125: Summer Window Tracker** — article feed UI + confirmed signing badges on GemTable/TransferPanel (WIN-01/02) (completed 2026-05-19)
-- [ ] **Phase 126: Next Season Planner** — archive_season.py + buildPreSeasonSquad() + GW1-8 FDR heatmap + ILP fallback (NSP-01/04)
+- [x] **Phase 126: Next Season Planner** — archive_season.py + buildPreSeasonSquad() + GW1-8 FDR heatmap + ILP fallback (NSP-01/04) (completed 2026-05-19)
 
 </details>
 
@@ -1885,4 +1885,4 @@ Plans:
 | 123 | v1.24 | 0/3 | Ready       | - |
 | 124 | v1.24 | 3/3 | Complete    | 2026-05-19 |
 | 125 | v1.24 | 3/3 | Complete    | 2026-05-19 |
-| 126 | v1.24 | 3/4 | In Progress|  |
+| 126 | v1.24 | 4/4 | Complete   | 2026-05-19 |
