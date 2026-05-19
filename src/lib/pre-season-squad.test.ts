@@ -1,8 +1,9 @@
 // @vitest-environment node
 // Phase 126 (NSP-02): unit tests for buildPreSeasonSquad.
+// Phase 127 (GREEDY-02): unit tests for diagnoseBuildPreSeasonSquad.
 // Wave 0: all tests RED (module does not exist). Wave 1: GREEN.
 import { describe, it, expect } from 'vitest'
-import { buildPreSeasonSquad } from './pre-season-squad'
+import { buildPreSeasonSquad, diagnoseBuildPreSeasonSquad } from './pre-season-squad'
 import type { PreSeasonPlayer, PreSeasonSquad } from './types'
 
 // Minimal PreSeasonPlayer factory — only fields used by buildPreSeasonSquad
@@ -88,6 +89,7 @@ describe('buildPreSeasonSquad', () => {
   })
 
   it('respects team cap (no team appears more than 3 times across starters+bench)', () => {
+
     // Use a pool where all players are from 2 teams — team cap should limit each to 3
     const players: PreSeasonPlayer[] = []
     let id = 1
@@ -120,5 +122,60 @@ describe('buildPreSeasonSquad', () => {
         expect(count).toBeLessThanOrEqual(3)
       })
     }
+  })
+})
+
+describe('diagnoseBuildPreSeasonSquad', () => {
+  it('returns null for a normal feasible input (mirrors happy-path buildPreSeasonSquad)', () => {
+    const players = makePool()
+    const scoreMap = new Map<number, number>()
+    players.forEach(p => scoreMap.set(p.id, p.ppm))
+
+    const result = diagnoseBuildPreSeasonSquad(players, scoreMap, 1000)
+
+    expect(result).toBeNull()
+  })
+
+  it('returns { reason: no_eligible_players } when scoreMap is empty', () => {
+    const players = makePool()
+    const emptyScoreMap = new Map<number, number>()
+
+    const result = diagnoseBuildPreSeasonSquad(players, emptyScoreMap, 1000)
+
+    expect(result).toEqual({ reason: 'no_eligible_players' })
+  })
+
+  it('returns { reason: unmet_min_slots } when pool lacks minimum at one position (only 1 GK eligible)', () => {
+    // Build a pool where only 1 GK is in the scoreMap — violates MIN_SLOTS[1]=2
+    const players = makePool()
+    const scoreMap = new Map<number, number>()
+    // Add only the first GK (id=1), skip the rest of the GKs
+    let gksAdded = 0
+    players.forEach(p => {
+      if (p.element_type === 1) {
+        if (gksAdded < 1) {
+          scoreMap.set(p.id, p.ppm)
+          gksAdded++
+        }
+        // skip remaining GKs — not in scoreMap (not eligible)
+      } else {
+        scoreMap.set(p.id, p.ppm)
+      }
+    })
+
+    const result = diagnoseBuildPreSeasonSquad(players, scoreMap, 1000)
+
+    expect(result).toEqual({ reason: 'unmet_min_slots' })
+  })
+
+  it('returns { reason: incomplete_squad } when budget is too small to fit 15 players (budget=300)', () => {
+    // budget=300 with all players cost>=45 means at most 6 players — cannot fill 15
+    const players = makePool()
+    const scoreMap = new Map<number, number>()
+    players.forEach(p => scoreMap.set(p.id, p.ppm))
+
+    const result = diagnoseBuildPreSeasonSquad(players, scoreMap, 300)
+
+    expect(result).toEqual({ reason: 'incomplete_squad' })
   })
 })
