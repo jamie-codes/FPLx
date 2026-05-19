@@ -39,7 +39,7 @@ interface Props {
 
 // --- HeatMapRow: module-level to avoid remount on every FixtureHeatMap render ---
 
-interface HeatMapRowProps {
+export interface HeatMapRowProps {
   t: ClubForm
   grid: {
     allEventIds: number[]
@@ -51,7 +51,7 @@ interface HeatMapRowProps {
   ownedTeamIds: Set<number>
 }
 
-function HeatMapRow({ t, grid, mode, tierMap, ownedTeamIds }: HeatMapRowProps) {
+export function HeatMapRow({ t, grid, mode, tierMap, ownedTeamIds }: HeatMapRowProps) {
   const { src, onError, showFallback, fallbackColour, initial } = useTeamBadge(t.team_short_name)
   const isOwned = ownedTeamIds.has(t.team_id)
   const rowClass = isOwned
