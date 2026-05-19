@@ -7,14 +7,14 @@
 
 interface ConfirmedSigningBadgeProps {
   /** Native tooltip text. Format: "<headline> · <source>" per D-15. */
-  title?: string
+  tooltipText?: string
 }
 
-export function ConfirmedSigningBadge({ title }: ConfirmedSigningBadgeProps) {
+export function ConfirmedSigningBadge({ tooltipText }: ConfirmedSigningBadgeProps) {
   return (
     <span
       className="inline-block text-xs font-normal text-green-800 dark:text-green-200 bg-green-100 dark:bg-green-900 rounded px-2 py-1"
-      title={title}
+      title={tooltipText}
       data-testid="confirmed-signing-badge"
     >
       Confirmed Signing

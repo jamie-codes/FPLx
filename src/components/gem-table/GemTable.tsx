@@ -409,7 +409,7 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                           {/* Phase 125 WIN-02 (D-10, D-13): Confirmed Signing badge — expanded row only, absent when unmatched */}
                           {confirmedSigningMap.has(row.original.id) && (
                             <div className="mt-2">
-                              <ConfirmedSigningBadge title={confirmedSigningMap.get(row.original.id)} />
+                              <ConfirmedSigningBadge tooltipText={confirmedSigningMap.get(row.original.id)} />
                             </div>
                           )}
                         </td>
@@ -444,7 +444,7 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                           {/* Phase 125 WIN-02 (D-10, D-13): Confirmed Signing badge — expanded row only, absent when unmatched */}
                           {confirmedSigningMap.has(row.original.id) && (
                             <div className="mt-2">
-                              <ConfirmedSigningBadge title={confirmedSigningMap.get(row.original.id)} />
+                              <ConfirmedSigningBadge tooltipText={confirmedSigningMap.get(row.original.id)} />
                             </div>
                           )}
                         </td>
