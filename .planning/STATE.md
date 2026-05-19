@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.25
 milestone_name: Pre-Season Intelligence
-status: planning
-stopped_at: defining requirements
-last_updated: "2026-05-19T00:00:00.000Z"
-last_activity: 2026-05-19 -- Milestone v1.25 started
+status: Defining requirements
+stopped_at: Phase 127 context gathered
+last_updated: "2026-05-19T13:43:52.128Z"
+last_activity: 2026-05-19 — Milestone v1.25 started
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -43,5 +43,5 @@ Progress: [░░░░░░░░░░] 0%
 
 ### Session Continuity
 
-Last session: 2026-05-19
-Stopped at: v1.25 milestone started — requirements and roadmap in progress
+Last session: 2026-05-19T13:43:52.118Z
+Stopped at: Phase 127 context gathered
