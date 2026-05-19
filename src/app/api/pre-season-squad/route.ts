@@ -1,13 +1,14 @@
 // Phase 126 (NSP-02): pre-season squad API route.
+// Phase 127 (GREEDY-01): envelope response with health side-read and solver inference (D-05/D-06/D-07).
 // Resolution order:
-//   1. pre_season_squad.json (pre-computed ILP result) — return directly
-//   2. season_archive_gw38.json (raw archive) — compute ppm scoreMap, build greedy squad
+//   1. pre_season_squad.json (pre-computed ILP result) — return envelope with solver: 'ilp'
+//   2. season_archive_gw38.json (raw archive) — compute ppm scoreMap, build greedy squad — solver: 'greedy'
 //   3. Neither exists — 404 "Archive not available" (D-03 "Prices pending" trigger)
 import { list } from '@vercel/blob'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
 import { buildPreSeasonSquad } from '@/lib/pre-season-squad'
-import type { PreSeasonPlayer, SeasonArchiveEntry } from '@/lib/types'
+import type { PreSeasonPlayer, SeasonArchiveEntry, SquadHealth, PreSeasonSquadResponse } from '@/lib/types'
 
 const USE_BLOB = process.env.USE_BLOB?.toLowerCase() === 'true'
 
@@ -33,11 +34,16 @@ async function readBlobOrLocal(filename: string): Promise<string | null> {
 
 export async function GET() {
   try {
-    // --- Resolution 1: prefer pre-computed ILP result ---
-    const preComputedData = await readBlobOrLocal('pre_season_squad.json')
+    // --- Resolution 1: prefer pre-computed ILP result — side-read health in parallel (D-06) ---
+    const [preComputedData, healthData] = await Promise.all([
+      readBlobOrLocal('pre_season_squad.json'),
+      readBlobOrLocal('pre_season_squad_health.json'),  // null if absent (D-06)
+    ])
+    const health: SquadHealth | null = healthData ? (JSON.parse(healthData) as SquadHealth) : null
+
     if (preComputedData !== null) {
       const squad = JSON.parse(preComputedData)
-      return Response.json(squad, {
+      return Response.json({ squad, health, solver: 'ilp' } satisfies PreSeasonSquadResponse, {
         status: 200,
         headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
       })
@@ -133,7 +139,7 @@ export async function GET() {
       )
     }
 
-    return Response.json(squad, {
+    return Response.json({ squad, health, solver: 'greedy' } satisfies PreSeasonSquadResponse, {
       status: 200,
       headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
     })
