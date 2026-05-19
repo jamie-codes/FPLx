@@ -193,6 +193,39 @@ def run(dry_run: bool = False):
             _time.sleep(0.1)
         print(f"Element summaries fetched: {len(summaries)} players")
 
+        # Phase 126 NSP-01: GW38 gate — archive_season.py and suggest_squad.py.
+        # CRITICAL (Pitfall 1 in RESEARCH.md): this block MUST be BEFORE the IS_OFF_SEASON
+        # guard below. During GW38, is_current IS set (IS_OFF_SEASON=False). After rollover,
+        # is_current is unset and the opportunity to archive the season is gone.
+        current_event_entry = next((e for e in events if e.get('is_current')), None)
+        last_event_id = max((e['id'] for e in events), default=0)
+        CURRENT_GW = current_event_entry['id'] if current_event_entry else 0
+        IS_GW38 = (CURRENT_GW > 0) and (CURRENT_GW == last_event_id)
+
+        if IS_GW38:
+            try:
+                from archive_season import archive_season
+                archive_season(bootstrap)
+                print("Season archive written.")
+            except Exception as arc_exc:
+                print(f"[archive_season] non-fatal error: {arc_exc}", file=sys.stderr)
+
+            # ILP fallback: runs after archive_season so the archive artifact is available locally.
+            # Only attempted on local (non-Blob) path; in production the archive Blob artifact
+            # is read back from disk if it was just written by archive_season().
+            try:
+                from suggest_squad import suggest_squad
+                archive_path = os.path.join(cache_dir, 'season_archive_gw38.json')
+                if os.path.exists(archive_path):
+                    with open(archive_path, 'r', encoding='utf-8') as _f:
+                        _archive = json.load(_f)
+                    suggest_squad(bootstrap, _archive)
+                    print("Pre-season squad written.")
+                else:
+                    print("[suggest_squad] season_archive_gw38.json not on disk (USE_BLOB path) — skipping ILP.", file=sys.stderr)
+            except Exception as sq_exc:
+                print(f"[suggest_squad] non-fatal error: {sq_exc}", file=sys.stderr)
+
         # Phase 123 WIN-03: IS_OFF_SEASON gate wraps all GW-dependent pipeline steps.
         # Year-round steps (fixtures, understat, id_map, element summaries, price_changes,
         # transfer_news) remain OUTSIDE this block (D-05).
