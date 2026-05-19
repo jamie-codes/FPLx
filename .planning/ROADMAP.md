@@ -1,4 +1,4 @@
-# Roadmap: FPL Analyst
+﻿# Roadmap: FPL Analyst
 
 ## Milestones
 
@@ -26,6 +26,7 @@
 - ✅ **v1.22 Lineup Intelligence** — Phases 117-119 (shipped 2026-05-18)
 - ✅ **v1.23 Technical Debt & Test Health** — Phases 120-121 (shipped 2026-05-18)
 - ✅ **v1.24 End of Season & Off-Season Intelligence** — Phases 122-126 (shipped 2026-05-19)
+- 🚧 **v1.25 Pre-Season Intelligence** — Phases 127-129 (planning 2026-05-19)
 
 ## Phases
 
@@ -1881,8 +1882,62 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
+
+### v1.25 Pre-Season Intelligence (Planning)
+
+**Milestone Goal:** Extend the Next Season Planner with auto-activation when FPL publishes next-season data, a transfer target watchlist, and an interactive squad cost simulator — keeping the app useful through the off-season and ready to light up the moment pre-season data lands.
+
+- [ ] **Phase 127: Squad Health Diagnostics & Transfer Watchlist** — GREEDY-NULL pipeline sweep + diagnoseBuildPreSeasonSquad() + health API field; useWatchlist() hook + pin toggle in GemTable + dedicated Watchlist sub-tab.
+- [ ] **Phase 128: Pre-Season Auto-Activation** — Tri-state PRE_SEASON_ACTIVE gate + pre_season_active.json artifact + suggest_squad.py force=True; usePreSeasonActive() hook + NextSeasonPlannerTab status pill + first-activation banner.
+- [ ] **Phase 129: Squad Cost Simulator** — Budget slider in NextSeasonPlannerTab via useDeferredValue + commit-on-release; /api/pre-season-squad?include=inputs API refactor; infeasibility messaging using health.min_feasible_budget_greedy.
+
+### Phase 127: Squad Health Diagnostics & Transfer Watchlist
+**Goal**: User can see how often the greedy squad builder fails (and at which budget it becomes feasible), and can pin players to a persistent watchlist from any GemTable row and view those picks together on a dedicated Plan sub-tab
+**Depends on**: Phase 126 (v1.24 complete; relies on existing buildPreSeasonSquad(), /api/pre-season-squad, /api/players, GemTable expand-row pattern, lineup_news.json)
+**Requirements**: GREEDY-01, GREEDY-02, GREEDY-03, WATCH-01, WATCH-02, WATCH-03, WATCH-04
+**Success Criteria** (what must be TRUE):
+  1. User can read a health indicator below the cost slider area in NextSeasonPlannerTab showing the greedy null rate and minimum feasible budget computed by pipeline/squad_health.py, and can see a "Greedy" vs "ILP fallback" badge on the squad formation grid identifying which solver produced the displayed squad
+  2. /api/pre-season-squad responds with a health field (greedy_null_rate, min_feasible_budget_greedy, min_feasible_budget_ilp, greedy_optimality_gap_avg) sourced from pre_season_squad_health.json on Vercel Blob; the response shape is stable enough for Phase 128 and Phase 129 to consume without further refactor
+  3. User can tap a star icon in any GemTable row's expand-action cluster (mobile and desktop) to pin or unpin that player, and the pin state persists across page reloads via localStorage['fplx_watchlist']
+  4. User can open a "Watchlist" sub-tab in the Plan section (positioned after "Next Season") and see all pinned players as cards in a 2-column mobile / 3-column desktop grid, each card showing current price + trend arrow, ownership %, news badge (amber border if news within 48h), squad-overlap dot when the player is in the current pre-season squad, and a "Departed" pill when an ID no longer exists in /api/players
+  5. Watchlist tab shows graceful empty-state, loading skeleton, and error state when /api/players is unavailable; no entries are silently dropped when player IDs persist across season boundaries
+**Plans**: 4 plans
+  - [ ] 127-01-PLAN.md — Backend foundation: SquadHealth/PreSeasonSquadResponse types, diagnoseBuildPreSeasonSquad, pipeline/squad_health.py + run.py wiring, /api/pre-season-squad envelope refactor
+  - [ ] 127-02-PLAN.md — useWatchlist hook (localStorage-backed) + GemTable star button action row in both expand rows
+  - [ ] 127-03-PLAN.md — WatchlistPlayerCard + WatchlistTab components (loading/error/empty/grid states)
+  - [ ] 127-04-PLAN.md — Integration: usePreSeasonSquad envelope migration, NextSeasonPlannerTab health indicator + solver badge, page.tsx sub-tab + useWatchlist wiring
+**UI hint**: yes
+
+### Phase 128: Pre-Season Auto-Activation
+**Goal**: When FPL publishes next-season bootstrap data the pipeline detects it automatically, re-runs the ILP squad builder against fresh prices, and the UI flips a status pill from "Awaiting" to "Live" with a one-time activation banner
+**Depends on**: Phase 127 (Phase 127 stabilises the suggest_squad.py idempotency pattern that AUTO-02's force=True parameter refactors, and the /api/pre-season-squad response shape that AUTO-03 consumes)
+**Requirements**: AUTO-01, AUTO-02, AUTO-03
+**Success Criteria** (what must be TRUE):
+  1. The daily (4x-daily) pipeline writes pre_season_active.json to Vercel Blob exactly once — on the first run where the tri-state predicate (IS_OFF_SEASON AND len(events)>=38 AND no event finished AND events[0].deadline_time is present) flips from false to true — and the artifact is idempotent on subsequent runs
+  2. On first activation, pipeline/suggest_squad.py is invoked with force=True and produces a fresh ILP-optimal squad against the newly published bootstrap prices, overriding the previous-season cached squad
+  3. User can open NextSeasonPlannerTab and see a zinc "Awaiting" status pill when pre-season is not yet active, and a green "Live" status pill once pre_season_active.json exists; the visual transition happens within one TanStack Query refetch cycle of the artifact being written
+  4. User sees a dismissible first-activation banner on NextSeasonPlannerTab when pre-season first becomes Live, and never sees it again after dismissal (suppressed via localStorage key nsp_activation_seen_{seasonId})
+  5. /api/pre-season-active responds with the activation timestamp and seasonId so usePreSeasonActive() can drive both pill state and banner suppression deterministically
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 129: Squad Cost Simulator
+**Goal**: User can drag a budget slider in NextSeasonPlannerTab and see the 15-player squad and GW1-8 fixture heatmap re-render to reflect the squad that the greedy builder produces at the chosen budget, with clear infeasibility messaging when no squad is possible
+**Depends on**: Phase 127 (consumes /api/pre-season-squad?include=inputs and health.min_feasible_budget_greedy) and Phase 128 (committed budget recompute path expects suggest_squad.py force=True idempotency from AUTO-02)
+**Requirements**: COST-01, COST-02, COST-03
+**Success Criteria** (what must be TRUE):
+  1. User can drag a budget slider in NextSeasonPlannerTab between £80m and £120m in £0.5m steps (default £100m), and the squad formation grid + GW1-8 FDR heatmap update to reflect the new greedy squad without a server round-trip per slider tick
+  2. The recompute commits on pointer release (or 300ms after keyboard navigation) using useDeferredValue, so the slider stays responsive at every tick while expensive greedy work runs only on commit
+  3. /api/pre-season-squad?include=inputs response now includes inputs (players, scoreMap, budget_default) and health alongside squad, and the client uses cached inputs to drive the recompute in-browser (no Python subprocess from a route handler)
+  4. When greedy returns null at the chosen budget, user sees inline message "No squad possible at £X.Xm — try £Y.Ym+" where Y is health.min_feasible_budget_greedy from Phase 127, and the slider track renders amber below the minimum feasible budget threshold
+  5. Slider state is scoped to NextSeasonPlannerTab via local context (not lifted to page.tsx), so GemTable and other Plan sub-tabs do not re-render on slider drag
+**Plans**: TBD
+**UI hint**: yes
 | 122 | v1.24 | 2/2 | Complete    | 2026-05-18 |
 | 123 | v1.24 | 3/3 | Complete    | 2026-05-18 |
 | 124 | v1.24 | 3/3 | Complete    | 2026-05-19 |
 | 125 | v1.24 | 3/3 | Complete    | 2026-05-19 |
 | 126 | v1.24 | 4/4 | Complete    | 2026-05-19 |
+| 127 | v1.25 | 0 | Not started | - |
+| 128 | v1.25 | 0 | Not started | - |
+| 129 | v1.25 | 0 | Not started | - |
