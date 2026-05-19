@@ -780,6 +780,36 @@ export interface SeasonAnalytics {
   hitTracking: HitTrackingEntry[]
 }
 
+/**
+ * Phase 124 REV-01 / REV-03: one GW entry in the season-review chart and tooltip.
+ * D-01: chart primary y-axis is GW points; overall rank in tooltip only.
+ * D-02: avgManagerScore sourced from FPL bootstrap events[].average_entry_score.
+ * D-03: populated by /api/season-review route from /entry/{teamId}/history/ + bootstrap.
+ * D-04: route returns raw history stats only — no captainHits / captainGwsWithData here.
+ */
+export interface SeasonGwEntry {
+  gw: number
+  points: number             // user's actual GW score
+  avgManagerScore: number    // FPL events[].average_entry_score for this GW
+  overallRank: number        // user's overall rank after this GW
+  chipPlayed: string | null  // chip slug ('bboost'|'3xc'|'freehit'|'wildcard') or null
+}
+
+/**
+ * Phase 124 REV-01: full response from GET /api/season-review?teamId={id}.
+ * D-01..D-04: see CONTEXT.md decisions.
+ * D-04: captain hit rate is derived client-side via computeSeasonSummary on
+ *   useDecisionHistory data — NOT included here to avoid 38-GW picks fetch overhead.
+ */
+export interface SeasonReview {
+  totalPoints: number
+  finalRank: number          // overall_rank from the last current[] entry
+  bestGw: { gw: number; points: number }
+  worstGw: { gw: number; points: number }
+  transferNetPoints: number  // sum of -(event_transfers_cost) — negative means hits taken
+  gwData: SeasonGwEntry[]    // ordered GW1..GW38 (only GWs that have played)
+}
+
 // Insights data (Phase 33 INS-01..INS-06 — pipeline writes pipeline/cache/insights.json)
 // Extended in Phase 79 (Plan 02): 10 new structured fields + signal_label emitted by pipeline.
 // The pipeline emits a flat array of Insight (no wrapper object).
