@@ -110,7 +110,7 @@ export function SummerWindowTab(): React.JSX.Element {
 
       {/* Filter pill row (D-05..D-08) */}
       <div
-        role="group"
+        role="tablist"
         aria-label="Filter transfer news by type"
         className="flex flex-wrap gap-2"
       >
