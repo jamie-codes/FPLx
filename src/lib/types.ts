@@ -1089,3 +1089,35 @@ export interface TransferNewsFeed {
     bbc: SourceHealth
   }
 }
+
+// Phase 126: Next Season Planner types (NSP-01, NSP-02, NSP-04)
+// ============================================================================
+
+export interface PreSeasonPlayer {
+  id: number
+  web_name: string
+  element_type: PositionCode        // 1=GK, 2=DEF, 3=MID, 4=FWD (existing union)
+  team: number
+  team_short_name: string
+  now_cost: number                  // tenths of GBP 1m (GW38 archive price)
+  total_points: number              // last-season total (display field)
+  ppm: number                       // points_per_minute (tooltip signal)
+}
+
+export interface PreSeasonSquad {
+  starters: PreSeasonPlayer[]       // 11 in best XI
+  bench: PreSeasonPlayer[]          // 4
+  formation: string                 // e.g. "4-3-3"
+  budgetUsed: number                // tenths of GBP 1m
+}
+
+export interface SeasonArchiveEntry {
+  // Per-player element-summary archive shape (from /element-summary/{id}/)
+  history: Array<{
+    element: number
+    total_points: number
+    minutes: number
+    [k: string]: unknown            // other fields preserved verbatim
+  }>
+  history_past?: unknown[]
+}
