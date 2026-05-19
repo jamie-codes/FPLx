@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.24
-milestone_name: milestone
-status: milestone_complete
-stopped_at: Phase 124 UI-SPEC approved
-last_updated: "2026-05-19T07:23:22.721Z"
-last_activity: 2026-05-19 -- Phase 124 planning complete
+milestone_name: Modelling & Refinement — Carry-forward
+status: executing
+stopped_at: Phase 125 UI-SPEC approved
+last_updated: "2026-05-19T09:25:14.630Z"
+last_activity: 2026-05-19 -- Phase 125 execution started
 progress:
-  total_phases: 71
+  total_phases: 69
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 172
-  percent: 4
+  total_plans: 11
+  completed_plans: 199
+  percent: 100
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-18 — v1.24 milestone active)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 123 complete — Phase 124 next
+**Current focus:** Phase 125 — Summer Window Tracker
 
 ## Current Position
 
-Phase: 124
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-05-19
+Phase: 125 (Summer Window Tracker) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 125
+Last activity: 2026-05-19 -- Phase 125 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -80,6 +80,6 @@ Progress: [░░░░░░░░░░] 0%
 
 ## Session Continuity
 
-Last session: 2026-05-19T06:41:10.982Z
-Stopped at: Phase 124 UI-SPEC approved
+Last session: 2026-05-19T08:43:46.623Z
+Stopped at: Phase 125 UI-SPEC approved
 Next command: `/gsd-discuss-phase 124` or `/gsd-plan-phase 124`
