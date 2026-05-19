@@ -204,7 +204,7 @@ export function SeasonReviewTab({ teamId = null }: { teamId?: string | null }) {
     )
   }
 
-  if (isError && !isLoading) {
+  if (isError) {
     return (
       <section className="mt-6" aria-label="Season review">
         <div className="rounded border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950 p-4">
