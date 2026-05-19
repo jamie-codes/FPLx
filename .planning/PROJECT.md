@@ -62,6 +62,16 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
+## Current Milestone: v1.25 Pre-Season Intelligence
+
+**Goal:** Extend the Next Season Planner with auto-activation when FPL publishes next-season data, a transfer target watchlist, and an interactive squad cost simulator — keeping the app useful through the off-season and ready to light up the moment pre-season data lands.
+
+**Target features:**
+- Auto-activate pipeline when next-season fixtures/bootstrap land (daily poll, self-activates heatmap + squad planner)
+- Transfer Target Watchlist — pin players with price/trend, ownership%, news badge, squad overlap; localStorage
+- Squad cost simulator — interactive budget slider in NextSeasonPlannerTab; re-runs ILP/greedy on budget change
+- GREEDY-NULL null rate measurement and UI reporting for buildPreSeasonSquad()
+
 ## Previous Milestone: v1.24 End of Season & Off-Season Intelligence (Complete 2026-05-19)
 
 **Goal:** Clear remaining carry-forwards, surface a full-season review, and build tools that stay useful through the summer window and into next season's planning.
@@ -369,9 +379,9 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 - ✓ **NSP-02**: `buildPreSeasonSquad()` greedy TS builder + PuLP ILP fallback via `suggest_squad.py` — v1.24
 - ✓ **NSP-03/04**: `NextSeasonPlannerTab` (formation grid + GW1-8 FDR heatmap, graceful empty states); 'next-season' sub-tab in Plan — v1.24
 
-### Active (next milestone)
+### Active (v1.25 — being defined)
 
-_(Requirements to be defined — run `/gsd-new-milestone`)_
+_(Requirements being defined — see `/gsd-new-milestone` in progress)_
 
 ### Out of Scope
 
@@ -484,4 +494,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-19 after v1.24 milestone — End of Season & Off-Season Intelligence shipped (5 phases: 122-126). v1.24 complete: carry-forward polish, SCRAPER-02 RSS pipeline + IS_OFF_SEASON gate, Season Review, Summer Window Tracker, Next Season Planner with PuLP ILP + GW38 archive.*
+*Last updated: 2026-05-19 — v1.25 Pre-Season Intelligence milestone started. Goal: auto-activation on next-season data, transfer target watchlist, squad cost simulator, GREEDY-NULL measurement.*

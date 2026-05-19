@@ -1,11 +1,11 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.25
-milestone_name: TBD — run /gsd-new-milestone
-status: milestone_complete
-stopped_at: v1.24 milestone archived
+milestone_name: Pre-Season Intelligence
+status: planning
+stopped_at: defining requirements
 last_updated: "2026-05-19T00:00:00.000Z"
-last_activity: 2026-05-19 -- v1.24 milestone closed
+last_activity: 2026-05-19 -- Milestone v1.25 started
 progress:
   total_phases: 0
   completed_phases: 0
@@ -18,38 +18,30 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-19 after v1.24 milestone)
+See: .planning/PROJECT.md (updated 2026-05-19 — v1.25 Pre-Season Intelligence)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Planning next milestone — run `/gsd-new-milestone`
+**Current focus:** v1.25 Pre-Season Intelligence — defining requirements
 
 ## Current Position
 
-Phase: None (milestone complete, next milestone not yet defined)
-Plan: Not started
-Status: Ready for next milestone
-Last activity: 2026-05-19
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-19 — Milestone v1.25 started
 
-Progress: [██████████] 100% (v1.24 complete)
+Progress: [░░░░░░░░░░] 0%
 
-## Shipped in v1.24
+## Accumulated Context
 
-- Phase 122: Polish Carry-Forwards — ChipToggle in RouteTreeTab, MinsRiskBadge wiring (POL-01/06)
-- Phase 123: SCRAPER-02 Pipeline — rapidfuzz player matching, RSS scraper, IS_OFF_SEASON gate (SCR-01/05, WIN-03)
-- Phase 124: Season Review — A–D process grade, GW rank chart, 'season' sub-tab (REV-01/04)
-- Phase 125: Summer Window Tracker — article feed + signing badges (WIN-01/02)
-- Phase 126: Next Season Planner — archive_season.py, PuLP ILP, greedy squad builder, formation grid + GW1-8 heatmap (NSP-01/04)
+### Carry-forwards into v1.25
 
-## Deferred Items
+| ID | Description | Source Phase | Status |
+|----|-------------|-------------|--------|
+| GREEDY-NULL | buildPreSeasonSquad() null rate on 100m full-pool build unmeasured | 126 | In scope for v1.25 |
+| GW1-8-FIXTURES | Next-season fixture data not yet published (expected June/July 2026) | 126 | Auto-activate feature (AUTO-01) will resolve this |
 
-| ID | Description | Phase | Status |
-|----|-------------|-------|--------|
-| GREEDY-NULL | buildPreSeasonSquad() null rate on 100m full-pool build unmeasured | 126 | ILP fallback handles; empirical null rate to be measured post-launch |
-| GW1-8-FIXTURES | Next-season fixture data not yet published by FPL (expected June/July) | 126 | Empty state handles; self-activates when available |
-| DQ-THRESHOLDS | Decision quality A/B/C/D cutoffs untested against real data | 124 | Methodology note in UI flags as v1; calibration next season |
-
-## Session Continuity
+### Session Continuity
 
 Last session: 2026-05-19
-Stopped at: v1.24 milestone complete — all phases 122-126 archived
-Next command: `/clear` then `/gsd-new-milestone`
+Stopped at: v1.25 milestone started — requirements and roadmap in progress
