@@ -31,6 +31,7 @@ import { ComparisonSearch } from '@/components/gem-table/ComparisonSearch'
 import { PlayerInsightSection } from '@/components/shared/PlayerInsightSection'
 import { ConfirmedSigningBadge } from '@/components/shared/ConfirmedSigningBadge'
 import { useTransferNews } from '@/lib/hooks/useTransferNews'
+import { buildConfirmedSigningMap } from '@/lib/buildConfirmedSigningMap'
 
 // Phase 65 WHY-01: position-code label for adaptive-framing rejection-panel rendering.
 const POSITION_CODES_LABEL: Record<number, string> = {
@@ -154,25 +155,10 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
   // Unconditional call (rules-of-hooks); data access gated by isSuccess.
   const { data: transferNewsFeed } = useTransferNews()
   // Build a map: element_id → most-recent confirmed_signing article title+source for tooltip.
-  const confirmedSigningMap = useMemo<Map<number, string>>(() => {
-    const map = new Map<number, string>()
-    const articles = transferNewsFeed?.articles ?? []
-    // Sort descending by published/scraped_at so the first match is most-recent.
-    const sorted = [...articles]
-      .filter(a => a.classification === 'confirmed_signing' && a.element_id !== null)
-      .sort((a, b) => {
-        const aTime = new Date(a.published ?? a.scraped_at).getTime()
-        const bTime = new Date(b.published ?? b.scraped_at).getTime()
-        return bTime - aTime
-      })
-    for (const article of sorted) {
-      if (article.element_id !== null && !map.has(article.element_id)) {
-        const sourceLabel = article.source === 'skysports' ? 'Sky Sports' : 'BBC'
-        map.set(article.element_id, `${article.title} · ${sourceLabel}`)
-      }
-    }
-    return map
-  }, [transferNewsFeed])
+  const confirmedSigningMap = useMemo(
+    () => buildConfirmedSigningMap(transferNewsFeed?.articles ?? []),
+    [transferNewsFeed]
+  )
 
   const scoredPlayers = useMemo(() => computeAllGemScores(data ?? []), [data])
 

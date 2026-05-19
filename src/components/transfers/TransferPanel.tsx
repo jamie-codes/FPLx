@@ -29,6 +29,7 @@ import { GwToggle } from '@/components/gem-table/GwToggle'
 import { OpportunityCostTable } from '@/components/transfers/OpportunityCostTable'
 import { capByPosition } from '@/lib/cap-transfer-suggestions'
 import { useTransferNews } from '@/lib/hooks/useTransferNews'
+import { buildConfirmedSigningMap } from '@/lib/buildConfirmedSigningMap'
 
 // Phase 43 D-11: teamId / submittedId / onSubmit lifted to page.tsx so OptimiserPanel
 // can receive teamId via props and share the useSquad cache. freeTransfers + isModalOpen
@@ -57,24 +58,10 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
   const { data: lineupNewsMap } = useLineupNews()
   // Phase 125 WIN-02 (D-14..D-16): confirmed signing lookup for OpportunityCostTable buy candidates.
   const { data: transferNewsFeed } = useTransferNews()
-  const confirmedSigningMap = useMemo<Map<number, string>>(() => {
-    const map = new Map<number, string>()
-    const articles = transferNewsFeed?.articles ?? []
-    const sorted = [...articles]
-      .filter(a => a.classification === 'confirmed_signing' && a.element_id !== null)
-      .sort((a, b) => {
-        const aTime = new Date(a.published ?? a.scraped_at).getTime()
-        const bTime = new Date(b.published ?? b.scraped_at).getTime()
-        return bTime - aTime
-      })
-    for (const article of sorted) {
-      if (article.element_id !== null && !map.has(article.element_id)) {
-        const sourceLabel = article.source === 'skysports' ? 'Sky Sports' : 'BBC'
-        map.set(article.element_id, `${article.title} · ${sourceLabel}`)
-      }
-    }
-    return map
-  }, [transferNewsFeed])
+  const confirmedSigningMap = useMemo(
+    () => buildConfirmedSigningMap(transferNewsFeed?.articles ?? []),
+    [transferNewsFeed]
+  )
 
   const expiryState = computeAuthExpiryState(expiresAt, Math.floor(Date.now() / 1000))
 
