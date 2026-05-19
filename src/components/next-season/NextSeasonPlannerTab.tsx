@@ -2,6 +2,8 @@
 
 // Phase 126 (NSP-04, NSP-03): NextSeasonPlannerTab — read-only pre-season squad display
 // + GW1-8 FDR heatmap section.
+// Phase 127 (127-04): Updated to consume PreSeasonSquadResponse envelope (D-08).
+//   Added solver badge (ILP/Greedy pill) and health indicator paragraph (GREEDY-03).
 // D-04: read-only (no mutation paths, no <button> elements that change squad state).
 // D-05: formation grid (GK/DEF/MID/FWD rows + 4 bench).
 // D-06: ppm as native title-attribute tooltip on total-points span only (not visible column).
@@ -12,12 +14,12 @@ import { usePreSeasonSquad } from '@/lib/hooks/usePreSeasonSquad'
 // The populated code path is future-ready; the empty-state path is the expected render at ship time.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { HeatMapRow } from '@/components/club-form/FixtureHeatMap'
-import type { PreSeasonPlayer, PreSeasonSquad } from '@/lib/types'
+import type { PreSeasonPlayer, PreSeasonSquad, SquadHealth } from '@/lib/types'
 
 const POSITION_LABELS: Record<number, string> = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' }
 const POSITION_ORDER = [1, 2, 3, 4]
 
-function FormationGrid({ squad }: { squad: PreSeasonSquad }) {
+function FormationGrid({ squad, solver }: { squad: PreSeasonSquad; solver?: 'ilp' | 'greedy' | null }) {
   const startersByPosition: Record<number, PreSeasonPlayer[]> = { 1: [], 2: [], 3: [], 4: [] }
   for (const p of squad.starters) {
     startersByPosition[p.element_type]?.push(p)
@@ -25,11 +27,21 @@ function FormationGrid({ squad }: { squad: PreSeasonSquad }) {
 
   return (
     <>
-      {/* Headline row: formation + budget */}
+      {/* Headline row: formation + budget + solver badge */}
       <div className="text-sm text-zinc-700 dark:text-zinc-300 py-2 flex flex-wrap items-center gap-2">
         <span><span className="font-semibold">Formation:</span> {squad.formation}</span>
         <span className="text-zinc-400">│</span>
         <span><span className="font-semibold">Budget used:</span> £{(squad.budgetUsed / 10).toFixed(1)}m</span>
+        {solver === 'ilp' && (
+          <span className="text-xs font-normal text-green-800 dark:text-green-200 bg-green-100 dark:bg-green-900 rounded px-2 py-1">
+            ILP
+          </span>
+        )}
+        {solver === 'greedy' && (
+          <span className="text-xs font-normal text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 rounded px-2 py-1">
+            Greedy
+          </span>
+        )}
       </div>
 
       {/* Position-grouped XI rows */}
@@ -79,8 +91,39 @@ function FormationGrid({ squad }: { squad: PreSeasonSquad }) {
   )
 }
 
+// Health indicator — rendered after squadSection inside Section A (GREEDY-03).
+// Three text variants per CONTEXT.md D-08 and UI-SPEC Copywriting Contract.
+function HealthIndicator({ health }: { health: SquadHealth }) {
+  if (health.greedy_null_rate === 0) {
+    return (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400 py-2">
+        Greedy success rate: 100% — all budgets feasible.
+      </p>
+    )
+  }
+  if (health.min_feasible_budget_greedy === null) {
+    return (
+      <p className="text-sm text-red-600 dark:text-red-400 py-2">
+        No feasible squad found across £{health.budget_sweep_min}m–£{health.budget_sweep_max}m range.
+      </p>
+    )
+  }
+  return (
+    <p className="text-sm text-zinc-500 dark:text-zinc-400 py-2">
+      Greedy success rate: {Math.round((1 - health.greedy_null_rate) * 100)}% across
+      £{health.budget_sweep_min}m–£{health.budget_sweep_max}m budget sweep.
+      {' '}Min feasible budget: £{health.min_feasible_budget_greedy.toFixed(1)}m.
+    </p>
+  )
+}
+
 export function NextSeasonPlannerTab() {
   const { data, isLoading, isError } = usePreSeasonSquad()
+
+  // Phase 127 D-08: data is now PreSeasonSquadResponse | null
+  const squad = data?.squad ?? null
+  const health = data?.health ?? null
+  const solver = data?.solver ?? null
 
   // --- SECTION A: Pre-Season Squad (NSP-04) ---
   let squadSection: ReactNode
@@ -95,18 +138,17 @@ export function NextSeasonPlannerTab() {
         Failed to load pre-season squad. Check the pipeline output and refresh.
       </p>
     )
-  } else if (data === null || data === undefined) {
-    // Archive absent (data===null = 404) or not yet loaded (data===undefined) — "Prices pending"
-    // Note: data===undefined only possible if isLoading is false and not yet fetched, which is
-    // handled by isLoading above. data===null is the canonical "Prices pending" state (D-03).
+  } else if (data === null || data === undefined || squad === null) {
+    // Archive absent (data===null = 404) or envelope present but no squad yet.
+    // Note: data===null is the canonical "Prices pending" state (D-03).
     squadSection = (
       <p className="text-sm text-zinc-500 dark:text-zinc-400 py-4">
         Pre-season squad not yet available. The squad builder becomes available once the season archive is ready. Check back after GW38.
       </p>
     )
   } else {
-    // data is PreSeasonSquad — render formation grid (D-05)
-    squadSection = <FormationGrid squad={data} />
+    // squad is PreSeasonSquad — render formation grid (D-05)
+    squadSection = <FormationGrid squad={squad} solver={solver} />
   }
 
   // --- SECTION B: GW1-8 FDR Heatmap (NSP-03) ---
@@ -140,6 +182,8 @@ export function NextSeasonPlannerTab() {
       <div>
         <h3 className="text-xl font-semibold">Pre-Season Squad</h3>
         {squadSection}
+        {/* Health indicator rendered after squadSection (GREEDY-03), not inside FormationGrid */}
+        {health !== null && <HealthIndicator health={health} />}
       </div>
 
       {/* Section B: GW1-8 FDR Heatmap */}
