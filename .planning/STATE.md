@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.24
 milestone_name: Modelling & Refinement — Carry-forward
-status: executing
+status: milestone_complete
 stopped_at: Phase 125 UI-SPEC approved
 last_updated: "2026-05-19T09:25:14.630Z"
 last_activity: 2026-05-19 -- Phase 125 execution started
 progress:
   total_phases: 69
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 11
   completed_plans: 199
-  percent: 100
+  percent: 6
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-18 — v1.24 milestone active)
 
 ## Current Position
 
-Phase: 125 (Summer Window Tracker) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 125
-Last activity: 2026-05-19 -- Phase 125 execution started
+Phase: 125
+Plan: Not started
+Status: Milestone complete
+Last activity: 2026-05-19
 
 Progress: [░░░░░░░░░░] 0%
 
