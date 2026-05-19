@@ -16,6 +16,7 @@ import { computeRejection } from '@/lib/explain'
 import { PlayerInsightSection } from '@/components/shared/PlayerInsightSection'
 import { StatusLabelBadge } from '@/components/shared/StatusLabelBadge'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
+import { ConfirmedSigningBadge } from '@/components/shared/ConfirmedSigningBadge'
 
 interface OpportunityCostTableProps {
   rows: OCSRow[]
@@ -30,6 +31,9 @@ interface OpportunityCostTableProps {
   totalsByPosition?: Map<number, number>
   // Phase 119 UI-02 (D-09): optional — backward-compat. When absent or player not in map, no StatusLabelBadge renders.
   lineupNewsMap?: Map<number, LineupNewsPlayer>
+  // Phase 125 WIN-02 (D-14..D-16): optional — confirmed signing badge for buy candidates.
+  // Map of element_id → tooltip text ("<headline> · <source>"). When absent, no badge renders.
+  confirmedSigningMap?: Map<number, string>
 }
 
 interface BadgeConfig {
@@ -111,12 +115,14 @@ function PlayerMoveCell({
   allPlayers,
   lifecycleLabels,
   lineupNewsMap,
+  confirmedSigningMap,
 }: {
   row: OCSRow
   gw: number
   allPlayers: ScoredPlayer[]
   lifecycleLabels: Map<number, LifecycleLabel>
   lineupNewsMap?: Map<number, LineupNewsPlayer>
+  confirmedSigningMap?: Map<number, string>
 }) {
   if (row.kind === 'roll' || !row.transfers || row.transfers.length === 0) {
     return <span className="text-zinc-400 dark:text-zinc-500">—</span>
@@ -143,6 +149,10 @@ function PlayerMoveCell({
               <StatusLabelBadge statusLabel={lineupNewsMap?.get(t.buy.id)?.status_label} />
               {/* Phase 122 POL-04: MinsRiskBadge for buy candidate — minutes confidence signal */}
               <MinsRiskBadge minsRisk={t.buy.mins_risk} />
+              {/* Phase 125 WIN-02 (D-14, D-15, D-16): Confirmed Signing badge for buy candidate only */}
+              {confirmedSigningMap?.has(t.buy.id) && (
+                <ConfirmedSigningBadge title={confirmedSigningMap.get(t.buy.id)} />
+              )}
               {/* Phase 88 SCRAPER-01: news banner for buy candidate (D-07) */}
               <NewsBanner
                 news={t.buy.news ?? ''}
@@ -176,7 +186,7 @@ function PlayerMoveCell({
   )
 }
 
-export function OpportunityCostTable({ rows, horizon, targetGw, gw, allPlayers, lifecycleLabels, totalsByPosition, lineupNewsMap }: OpportunityCostTableProps) {
+export function OpportunityCostTable({ rows, horizon, targetGw, gw, allPlayers, lifecycleLabels, totalsByPosition, lineupNewsMap, confirmedSigningMap }: OpportunityCostTableProps) {
   const onlyRoll = rows.length === 1 && rows[0]?.kind === 'roll'
 
   return (
@@ -210,7 +220,7 @@ export function OpportunityCostTable({ rows, horizon, targetGw, gw, allPlayers, 
                   {row.label}
                 </td>
                 <td className="py-2 align-top">
-                  <PlayerMoveCell row={row} gw={gw} allPlayers={allPlayers} lifecycleLabels={lifecycleLabels} lineupNewsMap={lineupNewsMap} />
+                  <PlayerMoveCell row={row} gw={gw} allPlayers={allPlayers} lifecycleLabels={lifecycleLabels} lineupNewsMap={lineupNewsMap} confirmedSigningMap={confirmedSigningMap} />
                 </td>
                 <td className="py-2 text-right align-top text-zinc-900 dark:text-zinc-100">
                   <div className={isDisabled ? 'line-through text-zinc-400 dark:text-zinc-600' : ''}>
