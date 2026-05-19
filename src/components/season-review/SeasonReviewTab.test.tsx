@@ -71,31 +71,33 @@ const REVIEW_DATA: SeasonReview = {
 
 const ANALYTICS_DATA_WITH_CHIPS: SeasonAnalytics = {
   chipRoi: [
-    { chip: 'bboost', gw: 2, delta: 15, label: 'Bench Boost', weekAvg: 55 },
-    { chip: '3xc', gw: 5, delta: 20, label: 'Triple Captain', weekAvg: 60 },
-    { chip: 'freehit', gw: 8, delta: -5, label: 'Free Hit', weekAvg: 50 },
+    { chipName: 'bboost', event: 2, delta: 15, gwPoints: 70, seasonAvgPoints: 55 },
+    { chipName: '3xc', event: 5, delta: 20, gwPoints: 80, seasonAvgPoints: 60 },
+    { chipName: 'freehit', event: 8, delta: -5, gwPoints: 45, seasonAvgPoints: 50 },
   ],
   hitTracking: [
-    { gw: 3, cost: 4, actualGain: 8, brokeEven: true },
-    { gw: 6, cost: 4, actualGain: 2, brokeEven: false },
-    { gw: 9, cost: 4, actualGain: 6, brokeEven: true },
-    { gw: 12, cost: 4, actualGain: 3, brokeEven: false },
+    { event: 3, elementIn: 1, elementOut: 2, elementInName: 'A', elementOutName: 'B', elementInPts: 12, elementOutPts: 4, netPts: 4, brokeEven: true },
+    { event: 6, elementIn: 3, elementOut: 4, elementInName: 'C', elementOutName: 'D', elementInPts: 2, elementOutPts: 0, netPts: -2, brokeEven: false },
+    { event: 9, elementIn: 5, elementOut: 6, elementInName: 'E', elementOutName: 'F', elementInPts: 10, elementOutPts: 2, netPts: 4, brokeEven: true },
+    { event: 12, elementIn: 7, elementOut: 8, elementInName: 'G', elementOutName: 'H', elementInPts: 3, elementOutPts: 1, netPts: -2, brokeEven: false },
   ],
 }
 
-// captainHitRate = 0.625 (based on entries: 5 gwsWithData, userWon+tied = regret <= 0)
-// We need to provide entries where computeSeasonSummary returns captainHitRate = 0.625
-// gwsWithData = 8, captainHits = 5 → 5/8 = 0.625
+// captainHitRate = 0.625 (based on entries: 8 gwsWithData, captainHits = 5 → 5/8 = 0.625)
+// Entries: regret -2(hit), 0(hit), 4(miss), 2(miss), -3(hit), 2(miss), 0(hit), -1(hit) = 5 hits from 8 GWs = 62.5%
 const HISTORY_DATA_62_5: DecisionHistory = {
+  teamId: 12345,
+  gwsWithData: 8,
   entries: [
-    { gw: 1, regret: -2, userCaptainName: 'A', modelCeilingName: 'B', userCaptainPts: 6, modelCeilingPts: 5 },  // userWon
-    { gw: 2, regret: 0, userCaptainName: 'A', modelCeilingName: 'B', userCaptainPts: 6, modelCeilingPts: 6 },   // tied
-    { gw: 3, regret: -1, userCaptainName: 'A', modelCeilingName: 'B', userCaptainPts: 6, modelCeilingPts: 5.5 }, // userWon
-    { gw: 4, regret: 4, userCaptainName: 'A', modelCeilingName: 'B', userCaptainPts: 4, modelCeilingPts: 6 },   // modelBetter
-    { gw: 5, regret: -3, userCaptainName: 'A', modelCeilingName: 'B', userCaptainPts: 8, modelCeilingPts: 6.5 }, // userWon
-    { gw: 6, regret: 2, userCaptainName: 'A', modelCeilingName: 'B', userCaptainPts: 5, modelCeilingPts: 6 },   // modelBetter
-    { gw: 7, regret: 0, userCaptainName: 'A', modelCeilingName: 'B', userCaptainPts: 7, modelCeilingPts: 7 },   // tied
-    { gw: 8, regret: -1, userCaptainName: 'A', modelCeilingName: 'B', userCaptainPts: 6, modelCeilingPts: 5.5 }, // userWon
+    { gw: 1, regret: -2, userCaptainId: 1, userCaptainName: 'A', userCaptainPts: 6, modelCeilingId: 2, modelCeilingName: 'B', modelCeilingPts: 5, hasSnapshot: true },   // hit
+    { gw: 2, regret: 0, userCaptainId: 1, userCaptainName: 'A', userCaptainPts: 6, modelCeilingId: 2, modelCeilingName: 'B', modelCeilingPts: 6, hasSnapshot: true },    // hit
+    { gw: 3, regret: 4, userCaptainId: 1, userCaptainName: 'A', userCaptainPts: 4, modelCeilingId: 2, modelCeilingName: 'B', modelCeilingPts: 6, hasSnapshot: true },    // miss
+    { gw: 4, regret: 2, userCaptainId: 1, userCaptainName: 'A', userCaptainPts: 5, modelCeilingId: 2, modelCeilingName: 'B', modelCeilingPts: 6, hasSnapshot: true },    // miss
+    { gw: 5, regret: -3, userCaptainId: 1, userCaptainName: 'A', userCaptainPts: 8, modelCeilingId: 2, modelCeilingName: 'B', modelCeilingPts: 6.5, hasSnapshot: true }, // hit
+    { gw: 6, regret: 2, userCaptainId: 1, userCaptainName: 'A', userCaptainPts: 5, modelCeilingId: 2, modelCeilingName: 'B', modelCeilingPts: 6, hasSnapshot: true },    // miss
+    { gw: 7, regret: 0, userCaptainId: 1, userCaptainName: 'A', userCaptainPts: 7, modelCeilingId: 2, modelCeilingName: 'B', modelCeilingPts: 7, hasSnapshot: true },    // hit
+    { gw: 8, regret: -1, userCaptainId: 1, userCaptainName: 'A', userCaptainPts: 6, modelCeilingId: 2, modelCeilingName: 'B', modelCeilingPts: 5.5, hasSnapshot: true }, // hit
+    // 5 hits (regret <= 0) from 8 GWs with data → captainHitRate = 5/8 = 0.625 = 62.5%
   ],
 }
 
@@ -115,19 +117,21 @@ const REVIEW_DATA_GRADE_A: SeasonReview = {
 
 // captainHitRate=1.0: all regret <= 0
 const HISTORY_DATA_ALL_HITS: DecisionHistory = {
+  teamId: 12345,
+  gwsWithData: 3,
   entries: [
-    { gw: 1, regret: 0, userCaptainName: 'A', modelCeilingName: 'B', userCaptainPts: 6, modelCeilingPts: 6 },
-    { gw: 2, regret: -2, userCaptainName: 'A', modelCeilingName: 'B', userCaptainPts: 7, modelCeilingPts: 6 },
-    { gw: 3, regret: -1, userCaptainName: 'A', modelCeilingName: 'B', userCaptainPts: 7, modelCeilingPts: 6.5 },
+    { gw: 1, regret: 0, userCaptainId: 1, userCaptainName: 'A', userCaptainPts: 6, modelCeilingId: 2, modelCeilingName: 'B', modelCeilingPts: 6, hasSnapshot: true },
+    { gw: 2, regret: -2, userCaptainId: 1, userCaptainName: 'A', userCaptainPts: 7, modelCeilingId: 2, modelCeilingName: 'B', modelCeilingPts: 6, hasSnapshot: true },
+    { gw: 3, regret: -1, userCaptainId: 1, userCaptainName: 'A', userCaptainPts: 7, modelCeilingId: 2, modelCeilingName: 'B', modelCeilingPts: 6.5, hasSnapshot: true },
   ],
 }
 
 // All chips ROI positive, all broke even → grade A
 const ANALYTICS_DATA_ALL_POSITIVE: SeasonAnalytics = {
   chipRoi: [
-    { chip: 'bboost', gw: 1, delta: 15, label: 'Bench Boost', weekAvg: 55 },
-    { chip: '3xc', gw: 2, delta: 20, label: 'Triple Captain', weekAvg: 60 },
-    { chip: 'freehit', gw: 3, delta: 10, label: 'Free Hit', weekAvg: 50 },
+    { chipName: 'bboost', event: 1, delta: 15, gwPoints: 70, seasonAvgPoints: 55 },
+    { chipName: '3xc', event: 2, delta: 20, gwPoints: 80, seasonAvgPoints: 60 },
+    { chipName: 'freehit', event: 3, delta: 10, gwPoints: 60, seasonAvgPoints: 50 },
   ],
   hitTracking: [],
 }
@@ -136,7 +140,7 @@ const ANALYTICS_DATA_ALL_POSITIVE: SeasonAnalytics = {
 const ANALYTICS_DATA_NO_CHIPS: SeasonAnalytics = {
   chipRoi: [],
   hitTracking: [
-    { gw: 3, cost: 4, actualGain: 8, brokeEven: true },
+    { event: 3, elementIn: 1, elementOut: 2, elementInName: 'A', elementOutName: 'B', elementInPts: 12, elementOutPts: 4, netPts: 4, brokeEven: true },
   ],
 }
 
@@ -333,15 +337,15 @@ describe('SeasonReviewTab', () => {
     }
     const analyticsWithThreePositive: SeasonAnalytics = {
       chipRoi: [
-        { chip: 'bboost', gw: 1, delta: 10, label: 'Bench Boost', weekAvg: 55 },
-        { chip: '3xc', gw: 2, delta: 15, label: 'Triple Captain', weekAvg: 60 },
-        { chip: 'freehit', gw: 3, delta: 5, label: 'Free Hit', weekAvg: 50 },
+        { chipName: 'bboost', event: 1, delta: 10, gwPoints: 65, seasonAvgPoints: 55 },
+        { chipName: '3xc', event: 2, delta: 15, gwPoints: 75, seasonAvgPoints: 60 },
+        { chipName: 'freehit', event: 3, delta: 5, gwPoints: 55, seasonAvgPoints: 50 },
       ],
       hitTracking: [
-        { gw: 4, cost: 4, actualGain: 8, brokeEven: true },
-        { gw: 5, cost: 4, actualGain: 2, brokeEven: false },
-        { gw: 6, cost: 4, actualGain: 6, brokeEven: true },
-        { gw: 7, cost: 4, actualGain: 3, brokeEven: false },
+        { event: 4, elementIn: 1, elementOut: 2, elementInName: 'A', elementOutName: 'B', elementInPts: 12, elementOutPts: 4, netPts: 4, brokeEven: true },
+        { event: 5, elementIn: 3, elementOut: 4, elementInName: 'C', elementOutName: 'D', elementInPts: 2, elementOutPts: 0, netPts: -2, brokeEven: false },
+        { event: 6, elementIn: 5, elementOut: 6, elementInName: 'E', elementOutName: 'F', elementInPts: 10, elementOutPts: 2, netPts: 4, brokeEven: true },
+        { event: 7, elementIn: 7, elementOut: 8, elementInName: 'G', elementOutName: 'H', elementInPts: 3, elementOutPts: 1, netPts: -2, brokeEven: false },
       ],
     }
     mockedUseSeasonReview.mockReturnValue({
