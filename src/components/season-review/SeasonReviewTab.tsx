@@ -396,7 +396,7 @@ export function SeasonReviewTab({ teamId = null }: { teamId?: string | null }) {
               dataKey="points"
               stroke="currentColor"
               strokeWidth={2}
-              dot={<ChipDot />}
+              dot={(p) => <ChipDot {...(p as DotProps)} />}
               activeDot={{ r: 5 }}
               isAnimationActive={false}
             />
