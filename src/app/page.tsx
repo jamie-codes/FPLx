@@ -25,6 +25,7 @@ import { CaptainPicksPanel } from '@/components/captaincy/CaptainPicksPanel'
 import { InsightsTab } from '@/components/insights/InsightsTab'
 import { AccuracyTab } from '@/components/accuracy/AccuracyTab'
 import { SeasonReviewTab } from '@/components/season-review/SeasonReviewTab'
+import { SummerWindowTab } from '@/components/summer-window/SummerWindowTab'
 import { PriceChangePanel } from '@/components/price-changes/PriceChangePanel'
 import { RivalsTab } from '@/components/rivals/RivalsTab'
 import { OptimiserPanel } from '@/components/optimiser/OptimiserPanel'
@@ -54,7 +55,7 @@ class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: 
 }
 
 export type Section = 'analyse' | 'plan' | 'squad'
-export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'season' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals' | 'lineup' | 'review' | 'rank-sim'
+export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'season' | 'window' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals' | 'lineup' | 'review' | 'rank-sim'
 
 export const SECTIONS = [
   {
@@ -68,6 +69,7 @@ export const SECTIONS = [
       { id: 'club-form' as SubTab,     label: 'Club Form',       mobileLabel: 'Form'     },
       { id: 'accuracy' as SubTab,      label: 'Accuracy',        mobileLabel: 'Acc'      },
       { id: 'season' as SubTab,        label: 'Season',          mobileLabel: 'Season'   },
+      { id: 'window' as SubTab,        label: 'Summer Window',   mobileLabel: 'Window'   },
       { id: 'price-changes' as SubTab, label: 'Price Changes',   mobileLabel: 'Prices'   },
     ],
     defaultSubTab: 'gems' as SubTab,
@@ -282,6 +284,7 @@ export default function Home() {
         {activeSection !== 'squad' && activeSubTab === 'insights' && <InsightsTab />}
         {activeSection !== 'squad' && activeSubTab === 'accuracy' && <AccuracyTab teamId={submittedId} />}
         {activeSection !== 'squad' && activeSubTab === 'season' && <SeasonReviewTab teamId={submittedId} />}
+        {activeSection !== 'squad' && activeSubTab === 'window' && <SummerWindowTab />}
         {activeSection !== 'squad' && activeSubTab === 'price-changes' && <PriceChangePanel />}
         {activeSection !== 'squad' && activeSubTab === 'value-gems' && <ValueGemsTable />}
         {activeSection === 'plan' && activeSubTab === 'rivals' && (
