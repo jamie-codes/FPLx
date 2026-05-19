@@ -29,6 +29,8 @@ import { SummerWindowTab } from '@/components/news/SummerWindowTab'
 import { PriceChangePanel } from '@/components/price-changes/PriceChangePanel'
 import { RivalsTab } from '@/components/rivals/RivalsTab'
 import { NextSeasonPlannerTab } from '@/components/next-season/NextSeasonPlannerTab'
+import { WatchlistTab } from '@/components/watchlist/WatchlistTab'
+import { useWatchlist } from '@/lib/hooks/useWatchlist'
 import { OptimiserPanel } from '@/components/optimiser/OptimiserPanel'
 import { LineupTab } from '@/components/squad/LineupTab'
 import { GwReviewTab } from '@/components/squad/GwReviewTab'
@@ -56,7 +58,7 @@ class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: 
 }
 
 export type Section = 'analyse' | 'plan' | 'squad'
-export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'season' | 'window' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals' | 'lineup' | 'review' | 'rank-sim' | 'next-season'
+export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'season' | 'window' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals' | 'lineup' | 'review' | 'rank-sim' | 'next-season' | 'watchlist'
 
 export const SECTIONS = [
   {
@@ -86,6 +88,7 @@ export const SECTIONS = [
       { id: 'value-gems' as SubTab, label: 'Value Gems', mobileLabel: 'Values'  },
       { id: 'rivals' as SubTab,     label: 'Rivals',     mobileLabel: 'Rivals'  },
       { id: 'next-season' as SubTab, label: 'Next Season', mobileLabel: 'Pre-Season' },
+      { id: 'watchlist' as SubTab,   label: 'Watchlist',   mobileLabel: 'Watchlist' },
     ],
     defaultSubTab: 'planner' as SubTab,
   },
@@ -161,6 +164,10 @@ export default function Home() {
       return 3
     }
   })
+
+  // Phase 127 D-10: watchlist state lifted to page.tsx level.
+  // watchlistIds and toggleWatchlist passed as props to GemTable and WatchlistTab.
+  const { watchlistIds, toggleWatchlist } = useWatchlist()
 
   const handleCompare = useCallback((player: ScoredPlayer) => {
     setComparePlayer(player)
@@ -276,7 +283,7 @@ export default function Home() {
           <GwReviewTab teamId={submittedId ?? ''} settledGws={settledGws} />
         )}
         {activeSection !== 'squad' && activeSubTab === 'gems' && (
-          <GemTable preset={gemPreset} onPresetChange={setGemPreset} onCompare={handleCompare} />
+          <GemTable preset={gemPreset} onPresetChange={setGemPreset} onCompare={handleCompare} watchlistIds={watchlistIds} toggleWatchlist={toggleWatchlist} />
         )}
         {activeSection !== 'squad' && activeSubTab === 'defcon' && <DefConTables />}
         {activeSection !== 'squad' && activeSubTab === 'club-form' && (
@@ -294,6 +301,9 @@ export default function Home() {
         )}
         {activeSection === 'plan' && activeSubTab === 'next-season' && (
           <NextSeasonPlannerTab />
+        )}
+        {activeSection === 'plan' && activeSubTab === 'watchlist' && (
+          <WatchlistTab watchlistIds={watchlistIds} toggleWatchlist={toggleWatchlist} />
         )}
         {activeSection === 'plan' && activeSubTab === 'manual-plan' && (
           <ManualPlanTab submittedId={submittedId} horizon={planHorizon} />
