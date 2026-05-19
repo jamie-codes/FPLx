@@ -1,5 +1,21 @@
 # Milestones
 
+## v1.24 End of Season & Off-Season Intelligence (Shipped: 2026-05-19)
+
+**Phases completed:** 5 phases (122-126), 15 plans
+**Timeline:** 2026-05-18 → 2026-05-19 (2 days)
+**Files changed:** 91 files, +13,515 / −3,077 lines
+
+**Key accomplishments:**
+
+1. Polish Carry-Forwards (Phase 122): `chipMode` `useState<PlannerChip>` in RouteTreeTab with toggle-deselect handler (POL-01); "Hits" → "Transfer Hits" column label (POL-02); MinsRiskBadge injected into OpportunityCostTable buy cluster (POL-04); POL-03/05/06 verified PASS at source-pinned locations. 44/44 tests GREEN.
+2. SCRAPER-02 Pipeline (Phase 123): `player_matching.py` shared rapidfuzz fuzzy-match utility (≥85 ratio, replaces difflib in lineup_news.py); `transfer_news.py` RSS scraper (Sky Sports + BBC) with 5-class classifier, `TRANSFER_NEWS_ENABLED` gate, per-source isolation; `/api/transfer-news` + `useTransferNews()` hook (6h staleTime); IS_OFF_SEASON gate wrapping 12 GW-dependent pipeline steps. 39 new + 280 pipeline tests GREEN.
+3. Season Review (Phase 124): `computeDecisionGrade` (A/B/C/D, captain EV 40% + hit break-even 35% + chip ROI 25%); `/api/season-review` (SSRF guard, parallel FPL fetches); `useSeasonReview` hook; `SeasonReviewTab` with summary card, grade card + methodology note, ComposedChart with ChipDot markers; 'season' sub-tab in Analyse. 33 new tests GREEN.
+4. Summer Window Tracker (Phase 125): `SummerWindowTab` with 5-pill filter, 24h stale banner, article cards with `[SKY]`/`[BBC]` badges; `ConfirmedSigningBadge` green pill injected into GemTable expanded rows (mobile + desktop) and OpportunityCostTable buy cluster; `buildConfirmedSigningMap` shared utility; 'window' sub-tab in Analyse. 32 new tests GREEN.
+5. Next Season Planner (Phase 126): `archive_season.py` (GW38-gated, idempotent concurrent Blob archive, 50% guard); `suggest_squad.py` (PuLP ILP 15-player optimal squad, NSP-02 fallback); `buildPreSeasonSquad()` greedy TS builder; `/api/pre-season-squad`; `usePreSeasonSquad()`; `NextSeasonPlannerTab` (read-only 15-player formation grid + GW1-8 FDR heatmap, graceful empty states); 'next-season' sub-tab in Plan. Full suite 1466/1500 GREEN after fix cycle.
+
+---
+
 ## v1.20 Fixes & Decision Quality (Shipped: 2026-05-16)
 
 **Phases completed:** 4 phases (110-113), 15 plans

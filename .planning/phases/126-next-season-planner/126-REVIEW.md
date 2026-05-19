@@ -24,7 +24,8 @@ findings:
   warning: 2
   info: 3
   total: 7
-status: issues_found
+fixed: 4
+status: fixed
 ---
 
 # Phase 126: Code Review Report

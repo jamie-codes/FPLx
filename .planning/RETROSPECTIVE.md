@@ -4,6 +4,54 @@
 
 ---
 
+## Milestone: v1.24 — End of Season & Off-Season Intelligence
+
+**Shipped:** 2026-05-19
+**Phases:** 5 (122-126) | **Plans:** 15
+**Timeline:** 2 days (2026-05-18 → 2026-05-19)
+**Files changed:** 91 files, +13,515 / −3,077 lines
+
+### What Was Built
+
+- **Phase 122**: ChipToggle wired into RouteTreeTab with `useState<PlannerChip>` toggle-deselect pattern; "Hits" → "Transfer Hits" column label; MinsRiskBadge injected into OpportunityCostTable buy cluster; POL-03/05/06 verified pre-existing at source-pinned locations
+- **Phase 123**: `player_matching.py` rapidfuzz shared utility (≥85 ratio, replaces difflib); `transfer_news.py` RSS scraper (Sky Sports + BBC) with 5-class keyword classifier, `TRANSFER_NEWS_ENABLED` gate; `/api/transfer-news` + `useTransferNews()` hook; IS_OFF_SEASON gate wrapping 12 GW-dependent pipeline steps
+- **Phase 124**: `computeDecisionGrade` A–D process score; `/api/season-review` with SSRF guard + parallel FPL fetches; `SeasonReviewTab` with summary card, grade card + methodology note, ComposedChart + ChipDot chip markers; 'season' sub-tab in Analyse
+- **Phase 125**: `SummerWindowTab` with 5-pill filter, 24h stale banner, article cards with `[SKY]`/`[BBC]` source badges; `ConfirmedSigningBadge` in GemTable expanded rows + OpportunityCostTable buy cluster; `buildConfirmedSigningMap` shared utility; 'window' sub-tab in Analyse
+- **Phase 126**: `archive_season.py` (GW38-gated, idempotent concurrent Blob write, 50% guard); `suggest_squad.py` (PuLP ILP 15-player optimal); `buildPreSeasonSquad()` greedy TS builder; `NextSeasonPlannerTab` (15-player formation grid + GW1-8 FDR heatmap, graceful empty states); WR fix cycle (null guard on toFixed, idempotency guard); full suite 1466/1500 GREEN
+
+### What Worked
+
+- **IS_OFF_SEASON gate as a clean architectural boundary**: Wrapping 12 GW-dependent steps in a single conditional in `run.py` was simple, safe, and immediately testable via contract test scaffold. The detection logic `not any(e.get('is_current') for e in events)` handles BGW false-positives correctly with one line
+- **Source-pinned verification record for pre-existing requirements (POL-03/05/06)**: Rather than re-implementing badges already present, Phase 122 Plan 02 produced a `122-VERIFY-EXISTING.md` record with file paths and line numbers. This pattern is lightweight, produces a durable audit trail, and avoids unnecessary churn
+- **`buildConfirmedSigningMap` extracted early**: Phase 125 Plan 01 extracted the signing-to-element-ID map utility before Plans 02/03 needed it, enabling parallel consumption across GemTable and OpportunityCostTable without prop-drilling conflicts
+- **50% partial-write guard on archive_season.py**: Protecting the single time-sensitive GW38 archive write with a completion threshold prevented silent partial-archive corruption without adding complex retry logic
+- **WR fix cycle as final plan**: Phase 126 Plan 04 revealed two bugs (null guard on toFixed, idempotency in suggest_squad) caught by code review. Treating CR findings as a dedicated fixup plan before SUMMARY kept the phase clean without reopening earlier plan work
+
+### What Was Inefficient
+
+- **REQUIREMENTS.md traceability table not updated during phase execution (again)**: Sixth milestone in a row. All 20 requirements still showed "Pending" at milestone close despite full delivery confirmed via PROJECT.md and SUMMARY.md. The traceability table exists purely as a maintenance artifact — it only gets updated at milestone close when it's verified against evidence
+- **Phase 123 progress table row wrong at milestone close**: ROADMAP.md progress table showed `0/3 Ready` for Phase 123 despite 3/3 plans complete. The executor worktree updated SUMMARY.md files but didn't update the progress table, creating a stale entry that required manual correction at milestone close
+
+### Patterns Established
+
+- **Season archive as time-bounded, non-recoverable step**: `archive_season.py` must run before GW38 closes — data is permanently lost after FPL season rollover. This pattern (one-time window, no retry, pre-gate in run.py) is established for any future end-of-season archival work
+- **`useState<T>(null)` toggle-deselect pattern**: `(chip) => setChipMode(prev => prev === chip ? null : chip)` — canonical toggle-deselect pattern for ChipToggle and similar radio-style pickers. Established in Phase 122, mirrors ManualPlanTab
+- **Source-pinned verify-only record**: For requirements where the implementation already exists, produce a `VERIFY-EXISTING.md` with source file paths + line numbers rather than re-implementing. Faster, auditable, lower risk
+
+### Key Lessons
+
+1. **REQUIREMENTS.md traceability must be updated at SUMMARY commit time, not milestone close**: Now in its sixth milestone. The fix is definitive: the executor's SUMMARY.md self-check must include "update REQUIREMENTS.md traceability rows for this phase before committing"
+2. **ROADMAP.md progress table must be updated at plan completion**: The executor updates SUMMARY.md and PLAN.md but not the progress table. Either automate this or add it explicitly to the phase-completion checklist
+3. **PuLP ILP solver as on-demand fallback, not default**: The greedy builder is fast and covers the majority of cases. PuLP serves as a safety net for null returns — this tiered architecture (greedy + ILP fallback) is a good pattern for any NP-hard optimization at scale
+
+### Cost Observations
+
+- Model: Sonnet 4.6 (executor); Opus for planning/research
+- Sessions: 2 days, multiple sessions
+- Notable: Phase 126 had the highest complexity (4 plans, Python + TypeScript + pipeline integration) but shipped in a single day; the pre-season types scaffold in Plan 01 eliminated wave dependencies and parallelised Plans 02 and 03 cleanly
+
+---
+
 ## Milestone: v1.20 — Fixes & Decision Quality
 
 **Shipped:** 2026-05-16

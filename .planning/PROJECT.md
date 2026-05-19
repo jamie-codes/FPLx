@@ -62,16 +62,11 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
-## Current Milestone: v1.24 End of Season & Off-Season Intelligence
+## Previous Milestone: v1.24 End of Season & Off-Season Intelligence (Complete 2026-05-19)
 
 **Goal:** Clear remaining carry-forwards, surface a full-season review, and build tools that stay useful through the summer window and into next season's planning.
 
-**Target features:**
-- Carry-forward polish: TRT-06 (ChipToggle in RouteTreeTab), TRT-02 (Hits column cosmetic), MinsRiskBadge on SquadView/DecisionSummaryTab/GemTable column/PlayerComparisonModal
-- SCRAPER-02: Multi-source news scraper (Sky Sports, BBC Sport, Twitter/X) — transfer news, pre-season fitness/injury, rotation signals
-- Season Review: Full-season summary card (rank, captain hit rate, chip ROI, transfer net gain) + decision quality grading (process score separating luck from skill)
-- Next Season Planner: Full-pool squad builder (all 700+ players at 100m) + GW1–8 fixture difficulty heatmap
-- Summer Window Tracker: New signings feed integrated into price speculation and squad planning
+**Delivered:** 5 phases (122-126), 15 plans — carry-forward polish (POL-01/06, ChipToggle + MinsRiskBadge), SCRAPER-02 RSS pipeline (Sky Sports + BBC, IS_OFF_SEASON gate), Season Review tab (A–D grade, rank chart), Summer Window Tracker (article feed + signing badges), Next Season Planner (archive_season.py, PuLP ILP squad builder, formation grid + GW1-8 FDR heatmap). Full suite 1466/1500 GREEN.
 
 ## Previous Milestone: v1.23 Technical Debt & Test Health (Complete 2026-05-18)
 
@@ -361,9 +356,22 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 - ✓ **OPT-01**: Optimiser on-demand with `hasRun` gate and empty state — v1.20
 - ✓ **TFR-02**: `capByPosition(raw, 3)` caps transfer suggestions at top-3 per position with footnote — v1.20
 
-### Active (v1.24)
+### Validated (v1.24)
 
-_(Requirements being defined — see REQUIREMENTS.md once committed)_
+- ✓ **POL-01/02**: ChipToggle wired in RouteTreeTab (`useState<PlannerChip>` + toggle-deselect); "Hits" → "Transfer Hits" column label — v1.24
+- ✓ **POL-03/04/05/06**: MinsRiskBadge on SquadView, OpportunityCostTable buy cluster, GemTable column, PlayerComparisonModal — v1.24 (POL-03/05/06 pre-existing; POL-04 newly injected)
+- ✓ **SCR-01/02/03/05**: `transfer_news.py` RSS scraper (Sky Sports + BBC) with `player_matching.py` rapidfuzz utility, 5-class classifier, `TRANSFER_NEWS_ENABLED` gate — v1.24
+- ✓ **SCR-04**: `/api/transfer-news` Route Handler + `useTransferNews()` hook (6h staleTime) — v1.24
+- ✓ **WIN-03**: IS_OFF_SEASON gate in `run.py` wrapping 12 GW-dependent steps; pipeline degrades gracefully off-season — v1.24
+- ✓ **REV-01/02/03/04**: Season Review tab — summary card (6 stats), A–D decision quality grade, GW rank + xPts ComposedChart, 'season' sub-tab in Analyse — v1.24
+- ✓ **WIN-01/02**: Summer Window feed (5-pill filter, article cards with source badges) + ConfirmedSigningBadge in GemTable/TransferPanel; 'window' sub-tab in Analyse — v1.24
+- ✓ **NSP-01**: `archive_season.py` GW38-gated idempotent season archive to Vercel Blob — v1.24
+- ✓ **NSP-02**: `buildPreSeasonSquad()` greedy TS builder + PuLP ILP fallback via `suggest_squad.py` — v1.24
+- ✓ **NSP-03/04**: `NextSeasonPlannerTab` (formation grid + GW1-8 FDR heatmap, graceful empty states); 'next-season' sub-tab in Plan — v1.24
+
+### Active (next milestone)
+
+_(Requirements to be defined — run `/gsd-new-milestone`)_
 
 ### Out of Scope
 
@@ -432,6 +440,11 @@ _(Requirements being defined — see REQUIREMENTS.md once committed)_
 | Blob read-before-generate inserted before Anthropic client construction (v1.19) | Inserting after `new Anthropic()` would still call the constructor on cache hits, failing the zero-constructor-calls test contract | ✓ Good — auto-deviation from plan satisfied both the cache-first intent and the TDD contract |
 | `calibration_mode` written per-run to `accuracy_backtest.json` (v1.19) | Allows UI to distinguish MC vs analytical calibration without hardcoding the flag; legacy cache degrades gracefully via `undefined` | ✓ Good — `CalibrationHealthIndicator` handles undefined silently |
 | `maxDeviation` uses `predicted_rate` not `bucket_mid` (v1.19 D-11 fix) | `bucket_mid` is the bucket centre, not the model's prediction — in MC mode they diverge and the wrong field caused incorrect tier assignment | ✓ Fixed — corrective in MC mode, behaviour-preserving in analytical mode |
+| Twitter/X excluded from SCRAPER-02 (v1.24) | GitHub Actions Azure datacenter IPs permanently blocked from Twitter/X since Jan 2025; RSS feeds cover same signal reliably | ✓ Good — Sky Sports + BBC RSS sufficient; revisit only with self-hosted runners |
+| Season Review grade as A–D process score, not single luck/skill number (v1.24) | Composite metric (captain EV 40% + hit break-even 35% + chip ROI 25%) with methodology note separates skill from luck — framing choice validated by C-06 research pitfall | ✓ Good — methodology note on card manages expectation for v1 thresholds |
+| `buildPreSeasonSquad()` new function, never reuses `buildOptimalSquad()` (v1.24) | `buildOptimalSquad()` greedy cold-start on 700+ players at 100m fails without backtracking — separate ILP-backed path needed for full pre-season pool | ✓ Good — PuLP ILP fallback handles null cases; empirical null rate to be measured |
+| IS_OFF_SEASON detection via `not any(e.get('is_current') for e in events)` (v1.24) | BGW false-positive risk if `is_current=False` used alone; `not any(is_current)` correctly identifies true off-season | ✓ Good — covers mid-season BGW correctly |
+| `archive_season.py` 50% partial-write guard (v1.24) | Concurrent ThreadPoolExecutor fetch — if fewer than 50% of element summaries succeed, Blob write aborted to prevent partial archive corruption | ✓ Good — idempotent re-run safe; critical one-time window before GW38 rollover |
 
 ---
 
@@ -471,4 +484,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-18 — v1.24 End of Season & Off-Season Intelligence started. v1.23 complete: 25 tests fixed (Phase 120), VERIFY-60 cleared (Phase 121 DOC-01), Phase 48 hover card confirmed live (Phase 121 VER-01).*
+*Last updated: 2026-05-19 after v1.24 milestone — End of Season & Off-Season Intelligence shipped (5 phases: 122-126). v1.24 complete: carry-forward polish, SCRAPER-02 RSS pipeline + IS_OFF_SEASON gate, Season Review, Summer Window Tracker, Next Season Planner with PuLP ILP + GW38 archive.*

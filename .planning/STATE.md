@@ -1,85 +1,55 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.24
-milestone_name: Modelling & Refinement — Carry-forward
+milestone: v1.25
+milestone_name: TBD — run /gsd-new-milestone
 status: milestone_complete
-stopped_at: Phase 125 UI-SPEC approved
-last_updated: "2026-05-19T09:25:14.630Z"
-last_activity: 2026-05-19 -- Phase 125 execution started
+stopped_at: v1.24 milestone archived
+last_updated: "2026-05-19T00:00:00.000Z"
+last_activity: 2026-05-19 -- v1.24 milestone closed
 progress:
-  total_phases: 69
-  completed_phases: 5
-  total_plans: 11
-  completed_plans: 199
-  percent: 7
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-18 — v1.24 milestone active)
+See: .planning/PROJECT.md (updated 2026-05-19 after v1.24 milestone)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 125 — Summer Window Tracker
+**Current focus:** Planning next milestone — run `/gsd-new-milestone`
 
 ## Current Position
 
-Phase: 126
+Phase: None (milestone complete, next milestone not yet defined)
 Plan: Not started
-Status: Milestone complete
+Status: Ready for next milestone
 Last activity: 2026-05-19
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100% (v1.24 complete)
 
-## Performance Metrics
+## Shipped in v1.24
 
-**v1.23 velocity:**
-
-- 2 phases (120-121), complete 2026-05-18
-- Phase 120: 4 plans (test suite restoration)
-- Phase 121: 3 plans (docs & verification)
-
-**v1.24 target:**
-
-- 5 phases (122-126)
-- Phase 122: UI-only polish (zero new infra)
-- Phase 123: SCRAPER-02 pipeline + IS_OFF_SEASON gate (new Python modules)
-- Phase 124: Season Review (client-side aggregation, new Analyse sub-tab)
-- Phase 125: Summer Window Tracker (depends on Phase 123)
-- Phase 126: Next Season Planner (highest complexity, depends on Phase 123)
-
-## Accumulated Context
-
-### Decisions
-
-- v1.24: Twitter/X scraping excluded from SCRAPER-02 — Azure datacenter IPs permanently blocked from GitHub Actions; RSS feeds cover same signal reliably (research confirmed)
-- v1.24: Season Review process score framed as A-D grade checklist, not single luck/skill number — methodology note required on card (C-06 pitfall from research)
-- v1.24: buildPreSeasonSquad() new function, never reuses buildOptimalSquad() — greedy cold-start on 700+ players fails at 100m without backtracking (C-01)
-- v1.24: archive_season.py is time-sensitive — must ship before GW38 closes; data permanently lost after season rollover (no recovery path)
-
-### Key Context for Execution
-
-- Phase 122 is free-standing: no new types, routes, or infrastructure; UI-only wiring of existing MinsRiskBadge + ChipToggle + label fix
-- Phase 123 and 124 are parallel-eligible: Season Review has zero dependency on SCRAPER-02
-- Phase 125 hard-depends on Phase 123 useTransferNews() hook
-- Phase 126 core squad builder is independent of Phase 123; signing badges are an enhancement
-- NSP-01 (archive_season.py) is the single time-sensitive item — must run before GW38 final pipeline execution
-
-### Blockers/Concerns
-
-- None active. Clean CI baseline from v1.23 (all tests green).
+- Phase 122: Polish Carry-Forwards — ChipToggle in RouteTreeTab, MinsRiskBadge wiring (POL-01/06)
+- Phase 123: SCRAPER-02 Pipeline — rapidfuzz player matching, RSS scraper, IS_OFF_SEASON gate (SCR-01/05, WIN-03)
+- Phase 124: Season Review — A–D process grade, GW rank chart, 'season' sub-tab (REV-01/04)
+- Phase 125: Summer Window Tracker — article feed + signing badges (WIN-01/02)
+- Phase 126: Next Season Planner — archive_season.py, PuLP ILP, greedy squad builder, formation grid + GW1-8 heatmap (NSP-01/04)
 
 ## Deferred Items
 
 | ID | Description | Phase | Status |
 |----|-------------|-------|--------|
-| GREEDY-NULL | buildPreSeasonSquad() null rate on 100m full-pool build unmeasured | 126 | Phase 126 research required before UI layer |
-| GW1-8-FIXTURES | Next-season fixture data not yet published by FPL (expected June/July) | 126 | Empty state handles; self-activates when data available |
-| DQ-THRESHOLDS | Decision quality A/B/C/D cutoffs untested against real data | 124 | Methodology note in UI flags as v1 |
+| GREEDY-NULL | buildPreSeasonSquad() null rate on 100m full-pool build unmeasured | 126 | ILP fallback handles; empirical null rate to be measured post-launch |
+| GW1-8-FIXTURES | Next-season fixture data not yet published by FPL (expected June/July) | 126 | Empty state handles; self-activates when available |
+| DQ-THRESHOLDS | Decision quality A/B/C/D cutoffs untested against real data | 124 | Methodology note in UI flags as v1; calibration next season |
 
 ## Session Continuity
 
-Last session: 2026-05-19T08:43:46.623Z
-Stopped at: Phase 125 UI-SPEC approved
-Next command: `/gsd-discuss-phase 124` or `/gsd-plan-phase 124`
+Last session: 2026-05-19
+Stopped at: v1.24 milestone complete — all phases 122-126 archived
+Next command: `/clear` then `/gsd-new-milestone`
