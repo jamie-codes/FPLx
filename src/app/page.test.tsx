@@ -65,6 +65,9 @@ vi.mock('@/components/squad/GwReviewTab', () => ({
     <div data-testid="gw-review-tab-mock" data-settled={JSON.stringify(props.settledGws)} />
   ),
 }))
+vi.mock('@/components/news/SummerWindowTab', () => ({
+  SummerWindowTab: () => <div data-testid="summer-window-tab" />,
+}))
 
 import Home from '@/app/page'
 
