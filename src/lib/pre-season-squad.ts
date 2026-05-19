@@ -1,4 +1,5 @@
 // Phase 126 (NSP-02): pure greedy 15-player pre-season squad builder.
+// Phase 127 (GREEDY-02): diagnoseBuildPreSeasonSquad reason-code classifier.
 // No 'use client', no React, no side effects. @vitest-environment node tests.
 import type { PreSeasonPlayer, PreSeasonSquad } from './types'
 
@@ -122,4 +123,87 @@ export function buildPreSeasonSquad(
     formation,
     budgetUsed: runningCost,
   }
+}
+
+/**
+ * diagnoseBuildPreSeasonSquad: returns a reason code explaining why buildPreSeasonSquad
+ * would fail, or null when a valid 15-player squad is producible (GREEDY-02).
+ *
+ * Reason-code precedence (D-02):
+ *   1. 'no_eligible_players' — filtered eligible list is empty
+ *   2. 'unmet_min_slots'    — after greedy fill, any MIN_SLOTS position is unmet
+ *   3. 'incomplete_squad'   — squad.length < 15 but min slots would be met at higher budget
+ *   null                    — a valid 15-player squad is producible at this budget
+ */
+export function diagnoseBuildPreSeasonSquad(
+  players: PreSeasonPlayer[],
+  scoreMap: Map<number, number>,
+  budget = 1000,
+  teamCap = 3,
+): { reason: 'incomplete_squad' | 'unmet_min_slots' | 'no_eligible_players' } | null {
+  // Eligibility: same as buildPreSeasonSquad (present in scoreMap)
+  const eligible = players.filter(p => scoreMap.has(p.id))
+
+  // Reason 1: no eligible players at all
+  if (eligible.length === 0) {
+    return { reason: 'no_eligible_players' }
+  }
+
+  // Run greedy fill to determine actual filled slot counts (ignoring budget to detect unmet_min_slots)
+  const sorted = [...eligible].sort((a, b) => {
+    const diff = (scoreMap.get(b.id) ?? 0) - (scoreMap.get(a.id) ?? 0)
+    return diff !== 0 ? diff : a.now_cost - b.now_cost
+  })
+
+  // First pass: greedy WITHOUT budget constraint to detect unmet_min_slots
+  const filledNoBudget: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0 }
+  const teamCountNoBudget = new Map<number, number>()
+  let countNoBudget = 0
+  for (const player of sorted) {
+    if (countNoBudget >= 15) break
+    const pos = player.element_type
+    if ((filledNoBudget[pos] ?? 0) >= MAX_SLOTS[pos]) continue
+    if ((teamCountNoBudget.get(player.team) ?? 0) >= teamCap) continue
+    filledNoBudget[pos]++
+    teamCountNoBudget.set(player.team, (teamCountNoBudget.get(player.team) ?? 0) + 1)
+    countNoBudget++
+  }
+
+  // Reason 2: if even without budget constraint, min slots cannot be met
+  for (const pos of [1, 2, 3, 4] as const) {
+    if ((filledNoBudget[pos] ?? 0) < MIN_SLOTS[pos]) {
+      return { reason: 'unmet_min_slots' }
+    }
+  }
+
+  // Second pass: greedy WITH budget constraint
+  const filledWithBudget: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0 }
+  const teamCountWithBudget = new Map<number, number>()
+  const squad: PreSeasonPlayer[] = []
+  let runningCost = 0
+  for (const player of sorted) {
+    if (squad.length >= 15) break
+    const pos = player.element_type
+    if ((filledWithBudget[pos] ?? 0) >= MAX_SLOTS[pos]) continue
+    if ((teamCountWithBudget.get(player.team) ?? 0) >= teamCap) continue
+    if (runningCost + player.now_cost > budget) continue
+    squad.push(player)
+    filledWithBudget[pos]++
+    teamCountWithBudget.set(player.team, (teamCountWithBudget.get(player.team) ?? 0) + 1)
+    runningCost += player.now_cost
+  }
+
+  // Reason 3: budget too tight — min slots would be met at higher budgets but not here
+  if (squad.length < 15) {
+    return { reason: 'incomplete_squad' }
+  }
+
+  // All 15 selected; verify min slots (belt-and-braces; greedy normally ensures this)
+  for (const pos of [1, 2, 3, 4] as const) {
+    if ((filledWithBudget[pos] ?? 0) < MIN_SLOTS[pos]) {
+      return { reason: 'unmet_min_slots' }
+    }
+  }
+
+  return null
 }

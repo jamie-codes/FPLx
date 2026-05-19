@@ -1121,3 +1121,22 @@ export interface SeasonArchiveEntry {
   }>
   history_past?: unknown[]
 }
+
+// Phase 127: Squad Health Diagnostics types (GREEDY-01, GREEDY-02)
+// ============================================================================
+
+export interface SquadHealth {
+  greedy_null_rate: number          // 0.0–1.0 fraction of 81 sweeps that returned null
+  min_feasible_budget_greedy: number | null  // £m e.g. 83.5, null if all 81 fail
+  greedy_optimality_gap_avg: null   // deferred (D-02); always null in Phase 127
+  budget_sweep_min: number          // 80.0
+  budget_sweep_max: number          // 120.0
+  budget_sweep_step: number         // 0.5
+  sweep_count: number               // 81
+}
+
+export interface PreSeasonSquadResponse {
+  squad: PreSeasonSquad | null      // null when archive absent
+  health: SquadHealth | null        // null until pipeline runs squad_health.py
+  solver: 'ilp' | 'greedy' | null  // null when squad is null
+}
