@@ -1603,7 +1603,7 @@ Plans:
  (completed 2026-05-18)
 - [x] **Phase 123: SCRAPER-02 Pipeline** — transfer_news.py + player_matching.py + /api/transfer-news + useTransferNews() + IS_OFF_SEASON gate (SCR-01/05, WIN-03)
  (completed 2026-05-18)
-- [ ] **Phase 124: Season Review** — season summary card, decision quality grade, GW rank chart, Season sub-tab (REV-01/04)
+- [x] **Phase 124: Season Review** — season summary card, decision quality grade, GW rank chart, Season sub-tab (REV-01/04) (completed 2026-05-19)
 - [ ] **Phase 125: Summer Window Tracker** — article feed UI + confirmed signing badges on GemTable/TransferPanel (WIN-01/02)
 - [ ] **Phase 126: Next Season Planner** — archive_season.py + buildPreSeasonSquad() + GW1-8 FDR heatmap + ILP fallback (NSP-01/04)
 
@@ -1843,13 +1843,13 @@ Plans:
 **Plans**: 3 plans
 Plans:
 **Wave 1**
-- [ ] 124-01-PLAN.md — Types (SeasonReview/SeasonGwEntry) + computeDecisionGrade pure function (REV-02 D-05/D-06) + /api/season-review Route Handler (REV-01)
+- [x] 124-01-PLAN.md — Types (SeasonReview/SeasonGwEntry) + computeDecisionGrade pure function (REV-02 D-05/D-06) + /api/season-review Route Handler (REV-01)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 124-02-PLAN.md — useSeasonReview TanStack Query v5 hook with 6h staleTime + numeric teamId guard + Vitest contract spec (REV-03 wiring)
+- [x] 124-02-PLAN.md — useSeasonReview TanStack Query v5 hook with 6h staleTime + numeric teamId guard + Vitest contract spec (REV-03 wiring)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 124-03-PLAN.md — SeasonReviewTab component (REV-01 summary card + REV-02 grade card + REV-03 ComposedChart with avg manager overlay & chip markers) + page.tsx 'season' SubTab wiring (REV-04)
+- [x] 124-03-PLAN.md — SeasonReviewTab component (REV-01 summary card + REV-02 grade card + REV-03 ComposedChart with avg manager overlay & chip markers) + page.tsx 'season' SubTab wiring (REV-04)
 **UI hint**: yes
 
 ### Phase 125: Summer Window Tracker
@@ -1876,6 +1876,6 @@ Plans:
 
 | 122 | v1.24 | 2/2 | Complete    | 2026-05-18 |
 | 123 | v1.24 | 0/3 | Ready       | - |
-| 124 | v1.24 | 0/0 | Not started | - |
+| 124 | v1.24 | 3/3 | Complete    | 2026-05-19 |
 | 125 | v1.24 | 0/0 | Not started | - |
 | 126 | v1.24 | 0/0 | Not started | - |
