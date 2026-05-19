@@ -135,9 +135,11 @@ interface GemTableProps {
   preset?: ViewPreset
   onPresetChange?: (p: ViewPreset) => void
   onCompare?: (player: ScoredPlayer) => void
+  watchlistIds?: number[]                          // Phase 127 WATCH-01
+  toggleWatchlist?: (id: number) => void           // Phase 127 WATCH-01
 }
 
-export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemTableProps = {}) {
+export function GemTable({ preset = 'default', onPresetChange, onCompare, watchlistIds = [], toggleWatchlist }: GemTableProps = {}) {
   const { data, isLoading, error } = usePlayers()
 
   // Phase 41 ACC-05: derive the most-recent backtest GW so the last_gw_actual_pts column header
@@ -326,6 +328,20 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                       {/* Mobile expand row — preserved + rejection panel appended (D-03) */}
                       <tr className="bg-blue-50 dark:bg-blue-950 sm:hidden">
                         <td colSpan={row.getVisibleCells().length} className="px-3 py-3">
+                          {/* Phase 127 WATCH-01 D-15: star action row — FIRST child (D-16) */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleWatchlist?.(row.original.id)}
+                              className={`text-xs cursor-pointer ${
+                                watchlistIds.includes(row.original.id)
+                                  ? 'text-amber-500'
+                                  : 'text-zinc-600 dark:text-zinc-300'
+                              }`}
+                            >
+                              {watchlistIds.includes(row.original.id) ? '⭐ Pinned' : '⭐ Pin to watchlist'}
+                            </button>
+                          </div>
                           {actionSheetPlayer?.id === row.original.id && (
                             <div className="flex gap-2 mt-1 sm:hidden">
                               <button
@@ -403,6 +419,20 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare }: GemT
                       {/* NEW desktop expand row — rejection panel ONLY (D-02 + Pitfall 5: hidden sm:table-row) */}
                       <tr className="bg-blue-50 dark:bg-blue-950 hidden sm:table-row">
                         <td colSpan={row.getVisibleCells().length} className="px-3 py-3">
+                          {/* Phase 127 WATCH-01 D-15: star action row — FIRST child (D-16) */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleWatchlist?.(row.original.id)}
+                              className={`text-xs cursor-pointer ${
+                                watchlistIds.includes(row.original.id)
+                                  ? 'text-amber-500'
+                                  : 'text-zinc-600 dark:text-zinc-300'
+                              }`}
+                            >
+                              {watchlistIds.includes(row.original.id) ? '⭐ Pinned' : '⭐ Pin to watchlist'}
+                            </button>
+                          </div>
                           <RejectionPanelInline
                             reasons={rejection.reasons}
                             xPtsRank={rejection.xPtsRank}

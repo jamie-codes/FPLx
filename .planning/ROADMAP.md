@@ -1902,9 +1902,9 @@ Plans:
   4. User can open a "Watchlist" sub-tab in the Plan section (positioned after "Next Season") and see all pinned players as cards in a 2-column mobile / 3-column desktop grid, each card showing current price + trend arrow, ownership %, news badge (amber border if news within 48h), squad-overlap dot when the player is in the current pre-season squad, and a "Departed" pill when an ID no longer exists in /api/players
   5. Watchlist tab shows graceful empty-state, loading skeleton, and error state when /api/players is unavailable; no entries are silently dropped when player IDs persist across season boundaries
 **Plans**: 4 plans
-  - [ ] 127-01-PLAN.md — Backend foundation: SquadHealth/PreSeasonSquadResponse types, diagnoseBuildPreSeasonSquad, pipeline/squad_health.py + run.py wiring, /api/pre-season-squad envelope refactor
-  - [ ] 127-02-PLAN.md — useWatchlist hook (localStorage-backed) + GemTable star button action row in both expand rows
-  - [ ] 127-03-PLAN.md — WatchlistPlayerCard + WatchlistTab components (loading/error/empty/grid states)
+  - [x] 127-01-PLAN.md — Backend foundation: SquadHealth/PreSeasonSquadResponse types, diagnoseBuildPreSeasonSquad, pipeline/squad_health.py + run.py wiring, /api/pre-season-squad envelope refactor
+  - [x] 127-02-PLAN.md — useWatchlist hook (localStorage-backed) + GemTable star button action row in both expand rows
+  - [x] 127-03-PLAN.md — WatchlistPlayerCard + WatchlistTab components (loading/error/empty/grid states)
   - [ ] 127-04-PLAN.md — Integration: usePreSeasonSquad envelope migration, NextSeasonPlannerTab health indicator + solver badge, page.tsx sub-tab + useWatchlist wiring
 **UI hint**: yes
 
@@ -1938,6 +1938,6 @@ Plans:
 | 124 | v1.24 | 3/3 | Complete    | 2026-05-19 |
 | 125 | v1.24 | 3/3 | Complete    | 2026-05-19 |
 | 126 | v1.24 | 4/4 | Complete    | 2026-05-19 |
-| 127 | v1.25 | 0 | Not started | - |
+| 127 | v1.25 | 3/4 | In progress | - |
 | 128 | v1.25 | 0 | Not started | - |
 | 129 | v1.25 | 0 | Not started | - |

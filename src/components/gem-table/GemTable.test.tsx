@@ -125,3 +125,40 @@ describe('GemTable PlayerInsightSection integration', () => {
     expect(mutate).not.toHaveBeenCalled()
   })
 })
+
+describe('watchlist star button', () => {
+  it('renders "⭐ Pin to watchlist" text when player id is not in watchlistIds', () => {
+    const { container, getByText } = withQueryClient(
+      <GemTable watchlistIds={[]} toggleWatchlist={vi.fn()} />
+    )
+    fireEvent.click(getByText('Salah'))
+    const buttons = container.querySelectorAll('button[type="button"]')
+    const pinButtons = Array.from(buttons).filter(b => b.textContent?.includes('Pin to watchlist'))
+    expect(pinButtons.length).toBeGreaterThan(0)
+  })
+
+  it('renders "⭐ Pinned" text and text-amber-500 class when id is in watchlistIds', () => {
+    const { container, getByText } = withQueryClient(
+      <GemTable watchlistIds={[1]} toggleWatchlist={vi.fn()} />
+    )
+    fireEvent.click(getByText('Salah'))
+    const buttons = container.querySelectorAll('button[type="button"]')
+    const pinnedButtons = Array.from(buttons).filter(b => b.textContent?.includes('Pinned'))
+    expect(pinnedButtons.length).toBeGreaterThan(0)
+    expect(pinnedButtons[0].className).toContain('text-amber-500')
+  })
+
+  it('clicking the star button calls toggleWatchlist with the player id', () => {
+    const toggleWatchlist = vi.fn()
+    const { container, getByText } = withQueryClient(
+      <GemTable watchlistIds={[]} toggleWatchlist={toggleWatchlist} />
+    )
+    fireEvent.click(getByText('Salah'))
+    const buttons = container.querySelectorAll('button[type="button"]')
+    const pinButton = Array.from(buttons).find(b => b.textContent?.includes('Pin to watchlist'))
+    expect(pinButton).toBeDefined()
+    fireEvent.click(pinButton!)
+    expect(toggleWatchlist).toHaveBeenCalledWith(1)
+    expect(toggleWatchlist).toHaveBeenCalledTimes(1)
+  })
+})
