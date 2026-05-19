@@ -1,11 +1,12 @@
 // Phase 126 (NSP-03): TanStack Query hook for pre-season squad data.
+// Phase 127 (D-08): return type updated to PreSeasonSquadResponse | null (envelope).
 // 404 → null (archive absent, "Prices pending" graceful state — D-03).
 // Non-404 errors throw (red error state in UI).
 import { useQuery } from '@tanstack/react-query'
-import type { PreSeasonSquad } from '../types'
+import type { PreSeasonSquadResponse } from '../types'
 
 export function usePreSeasonSquad() {
-  return useQuery<PreSeasonSquad | null>({
+  return useQuery<PreSeasonSquadResponse | null>({
     queryKey: ['pre-season-squad'],
     queryFn: async () => {
       const res = await fetch('/api/pre-season-squad')
