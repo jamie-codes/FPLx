@@ -206,23 +206,32 @@ def run(dry_run: bool = False):
             try:
                 from archive_season import archive_season
                 archive_season(bootstrap)
-                print("Season archive written.")
+                print("Season archive step complete.")
             except Exception as arc_exc:
                 print(f"[archive_season] non-fatal error: {arc_exc}", file=sys.stderr)
 
-            # ILP fallback: runs after archive_season so the archive artifact is available locally.
-            # Only attempted on local (non-Blob) path; in production the archive Blob artifact
-            # is read back from disk if it was just written by archive_season().
             try:
                 from suggest_squad import suggest_squad
                 archive_path = os.path.join(cache_dir, 'season_archive_gw38.json')
+                _archive = None
                 if os.path.exists(archive_path):
                     with open(archive_path, 'r', encoding='utf-8') as _f:
                         _archive = json.load(_f)
+                elif os.getenv('USE_BLOB', '').lower() == 'true':
+                    # Production (Blob) path: read back the archive that was just written.
+                    import vercel_blob
+                    import requests as _requests
+                    _blob_list = vercel_blob.list({'prefix': 'season_archive_gw38.json', 'limit': 1})
+                    _blobs = _blob_list.get('blobs', [])
+                    if _blobs:
+                        _url = _blobs[0].get('url', '')
+                        if _url:
+                            _archive = _requests.get(_url, timeout=30).json()
+                if _archive is not None:
                     suggest_squad(bootstrap, _archive)
                     print("Pre-season squad written.")
                 else:
-                    print("[suggest_squad] season_archive_gw38.json not on disk (USE_BLOB path) — skipping ILP.", file=sys.stderr)
+                    print("[suggest_squad] archive not available — skipping ILP.", file=sys.stderr)
             except Exception as sq_exc:
                 print(f"[suggest_squad] non-fatal error: {sq_exc}", file=sys.stderr)
 
