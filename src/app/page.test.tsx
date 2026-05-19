@@ -68,6 +68,12 @@ vi.mock('@/components/squad/GwReviewTab', () => ({
 vi.mock('@/components/news/SummerWindowTab', () => ({
   SummerWindowTab: () => <div data-testid="summer-window-tab" />,
 }))
+vi.mock('@/components/next-season/NextSeasonPlannerTab', () => ({
+  NextSeasonPlannerTab: () => <div data-testid="next-season-planner-tab" />,
+}))
+vi.mock('@/components/season-review/SeasonReviewTab', () => ({
+  SeasonReviewTab: (_props: { teamId: string | null }) => <div data-testid="season-review-tab" />,
+}))
 
 import Home from '@/app/page'
 
