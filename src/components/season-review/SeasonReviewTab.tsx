@@ -123,7 +123,12 @@ export function SeasonReviewTab({ teamId = null }: { teamId?: string | null }) {
     if (summary.captainHitRate === null) return null
     const chipRoi = analyticsQuery.data.chipRoi
     const hitTracking = analyticsQuery.data.hitTracking
-    const chipCount = reviewQuery.data.gwData.filter(g => g.chipPlayed !== null).length
+    // CR-02: derive chipCount from chipRoi.length so both are aligned on the same
+    // exclusion logic (wildcard excluded per D-04/ALLOWED_CHIPS in useSeasonAnalytics).
+    // Using gwData.filter(chipPlayed !== null) overcounts when wildcard is played but
+    // chipRoi.length === 0, causing the grade formula to apply a zero chip ROI weight
+    // instead of triggering the D-06 renormalisation path.
+    const chipCount = chipRoi.length
     // Pitfall 4: zero-hits guard — vacuously true (no hits taken, reward clean play)
     const hitBreakEvenRate = hitTracking.length === 0
       ? 1.0
@@ -166,14 +171,14 @@ export function SeasonReviewTab({ teamId = null }: { teamId?: string | null }) {
       : chipRoi.length === 0
         ? null  // No chips played — display as —; grade formula excludes this per D-06
         : chipRoi.filter(c => c.delta > 0).length / chipRoi.length
-    const chipCount = reviewQuery.isSuccess
-      ? reviewQuery.data.gwData.filter(g => g.chipPlayed !== null).length
-      : 0
+    // CR-02: derive chipCount from chipRoi.length to match grade memo alignment (excludes
+    // wildcard per D-04). This keeps the displayed chipCount consistent with the grade
+    // formula, preventing the "Chip ROI: —" display while grade silently applies 0.
+    const chipCount = analyticsReady ? chipRoi.length : 0
     return { captainEVRate, hitBreakEvenRate, chipROIPositiveRate, chipCount }
   }, [
     historyQuery.isSuccess, historyQuery.data,
     analyticsQuery.isSuccess, analyticsQuery.data,
-    reviewQuery.isSuccess, reviewQuery.data,
   ])
 
   // ---------------------------------------------------------------------------
