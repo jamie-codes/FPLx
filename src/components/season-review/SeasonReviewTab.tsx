@@ -216,9 +216,10 @@ export function SeasonReviewTab({ teamId = null }: { teamId?: string | null }) {
 
   // ---------------------------------------------------------------------------
   // Step 5: Empty-state guard (D-08 + REV-04). After hooks, memos, loading, error.
-  // When teamId is null the three hooks are idle so isLoading=false, isError=false.
+  // When teamId is null/non-numeric the three hooks are idle: isLoading=false, isError=false.
+  // CR-01: guard catches non-numeric teamId (e.g. "abc") — hooks stay idle so data=undefined.
   // ---------------------------------------------------------------------------
-  if (!teamId) {
+  if (!teamId || !/^\d+$/.test(teamId)) {
     return (
       <section className="mt-6" aria-label="Season review">
         <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
@@ -229,9 +230,14 @@ export function SeasonReviewTab({ teamId = null }: { teamId?: string | null }) {
   }
 
   // ---------------------------------------------------------------------------
-  // Step 6: Main render — reviewQuery.data is guaranteed truthy here.
+  // Step 6: Main render — reviewQuery.data is guaranteed defined here (numeric teamId
+  // passed all guards; isSuccess narrows data to SeasonReview for TypeScript).
+  // CR-01: isSuccess guard catches any remaining idle-query edge cases for non-numeric IDs.
   // ---------------------------------------------------------------------------
-  const reviewData = reviewQuery.data!
+  if (!reviewQuery.isSuccess) {
+    return null
+  }
+  const reviewData = reviewQuery.data
   const transferNet = formatTransferNet(reviewData.transferNetPoints)
 
   return (
