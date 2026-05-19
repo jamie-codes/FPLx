@@ -28,6 +28,7 @@ import { SeasonReviewTab } from '@/components/season-review/SeasonReviewTab'
 import { SummerWindowTab } from '@/components/news/SummerWindowTab'
 import { PriceChangePanel } from '@/components/price-changes/PriceChangePanel'
 import { RivalsTab } from '@/components/rivals/RivalsTab'
+import { NextSeasonPlannerTab } from '@/components/next-season/NextSeasonPlannerTab'
 import { OptimiserPanel } from '@/components/optimiser/OptimiserPanel'
 import { LineupTab } from '@/components/squad/LineupTab'
 import { GwReviewTab } from '@/components/squad/GwReviewTab'
@@ -55,7 +56,7 @@ class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: 
 }
 
 export type Section = 'analyse' | 'plan' | 'squad'
-export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'season' | 'window' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals' | 'lineup' | 'review' | 'rank-sim'
+export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'season' | 'window' | 'decision' | 'transfers' | 'optimiser' | 'price-changes' | 'rivals' | 'lineup' | 'review' | 'rank-sim' | 'next-season'
 
 export const SECTIONS = [
   {
@@ -84,6 +85,7 @@ export const SECTIONS = [
       { id: 'rank-sim' as SubTab,    label: 'Rank Sim',    mobileLabel: 'Rank Sim' },  // Phase 62 MC-03
       { id: 'value-gems' as SubTab, label: 'Value Gems', mobileLabel: 'Values'  },
       { id: 'rivals' as SubTab,     label: 'Rivals',     mobileLabel: 'Rivals'  },
+      { id: 'next-season' as SubTab, label: 'Next Season', mobileLabel: 'Pre-Season' },
     ],
     defaultSubTab: 'planner' as SubTab,
   },
@@ -289,6 +291,9 @@ export default function Home() {
         {activeSection !== 'squad' && activeSubTab === 'value-gems' && <ValueGemsTable />}
         {activeSection === 'plan' && activeSubTab === 'rivals' && (
           <RivalsTab submittedId={submittedId} />
+        )}
+        {activeSection === 'plan' && activeSubTab === 'next-season' && (
+          <NextSeasonPlannerTab />
         )}
         {activeSection === 'plan' && activeSubTab === 'manual-plan' && (
           <ManualPlanTab submittedId={submittedId} horizon={planHorizon} />
