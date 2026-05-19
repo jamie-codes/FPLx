@@ -37,9 +37,9 @@ describe('ConfirmedSigningBadge', () => {
     expect(span).not.toBeNull()
   })
 
-  it('sets title attribute when provided', () => {
+  it('sets title attribute when tooltipText provided', () => {
     const tooltipText = 'Salah signs new deal · Sky Sports'
-    const { container } = render(<ConfirmedSigningBadge title={tooltipText} />)
+    const { container } = render(<ConfirmedSigningBadge tooltipText={tooltipText} />)
     const span = container.querySelector('span')
     expect(span?.getAttribute('title')).toBe(tooltipText)
   })
@@ -52,7 +52,7 @@ describe('ConfirmedSigningBadge', () => {
   })
 
   it('renders exactly one span element', () => {
-    const { container } = render(<ConfirmedSigningBadge title="Test · BBC" />)
+    const { container } = render(<ConfirmedSigningBadge tooltipText="Test · BBC" />)
     expect(container.querySelectorAll('span').length).toBe(1)
   })
 })

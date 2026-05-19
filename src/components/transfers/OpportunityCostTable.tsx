@@ -151,7 +151,7 @@ function PlayerMoveCell({
               <MinsRiskBadge minsRisk={t.buy.mins_risk} />
               {/* Phase 125 WIN-02 (D-14, D-15, D-16): Confirmed Signing badge for buy candidate only */}
               {confirmedSigningMap?.has(t.buy.id) && (
-                <ConfirmedSigningBadge title={confirmedSigningMap.get(t.buy.id)} />
+                <ConfirmedSigningBadge tooltipText={confirmedSigningMap.get(t.buy.id)} />
               )}
               {/* Phase 88 SCRAPER-01: news banner for buy candidate (D-07) */}
               <NewsBanner
