@@ -13,6 +13,10 @@ import type { TransferClass } from '@/lib/types'
 
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000
 
+// Module-level helper — avoids calling Date.now() directly in render (react-hooks/purity)
+const isFeedStale = (scrapedAt: string): boolean =>
+  Date.now() - new Date(scrapedAt).getTime() > STALE_THRESHOLD_MS
+
 const PILLS = [
   { value: 'all' as const,                label: 'All'       },
   { value: 'confirmed_signing' as const,  label: 'Confirmed' },
@@ -80,7 +84,7 @@ export function SummerWindowTab(): React.JSX.Element {
   const feed = data
 
   // Stale banner logic
-  const isStale = Date.now() - new Date(feed.scraped_at).getTime() > STALE_THRESHOLD_MS
+  const isStale = isFeedStale(feed.scraped_at)
 
   // Filter + sort articles (never mutate feed.articles — Pitfall 4)
   const filtered =
