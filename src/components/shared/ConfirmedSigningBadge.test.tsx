@@ -47,8 +47,8 @@ describe('ConfirmedSigningBadge', () => {
   it('renders without title attribute when not provided', () => {
     const { container } = render(<ConfirmedSigningBadge />)
     const span = container.querySelector('span')
-    // title attribute should be absent or undefined (not an empty string that shows blank tooltip)
-    expect(span?.getAttribute('title')).toBeNull()
+    // title attribute should be absent or empty (jsdom reflects title={undefined} as "" not null)
+    expect(span?.getAttribute('title')).toBeFalsy()
   })
 
   it('renders exactly one span element', () => {
