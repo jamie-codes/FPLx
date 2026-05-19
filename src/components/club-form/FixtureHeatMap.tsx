@@ -140,7 +140,10 @@ export function HeatMapRow({ t, grid, mode, tierMap, ownedTeamIds }: HeatMapRowP
             ? `linear-gradient(to bottom right, ${colours[0]} 50%, ${colours[1]} 50%)`
             : `linear-gradient(to bottom right, ${colours[0]} 33%, ${colours[1]} 33% 66%, ${colours[2]} 66%)`
           const tooltip = fixtures
-            .map(f => `${f.opponent_team} (${f.is_home ? 'H' : 'A'}) ${(mode === 'ATT' ? f.attacking_difficulty : f.defensive_difficulty).toFixed(2)}`)
+            .map(f => {
+              const d = (mode === 'ATT' ? f.attacking_difficulty : f.defensive_difficulty) ?? 0
+              return `${f.opponent_team} (${f.is_home ? 'H' : 'A'}) ${d.toFixed(2)}`
+            })
             .join(' / ')
           return (
             <td
