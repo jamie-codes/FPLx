@@ -144,6 +144,7 @@ export function NextSeasonPlannerTab() {
   const inputs = data?.inputs ?? null
   const [sliderValue, setSliderValue] = useState<number>(100)
   const [committedBudget, setCommittedBudget] = useState<number>(100)
+  const [testedBudget, setTestedBudget] = useState<number>(100)
   const deferredBudget = useDeferredValue(committedBudget)
   const [lastValidSquad, setLastValidSquad] = useState<PreSeasonSquad | null>(null)
   const [hasCommitted, setHasCommitted] = useState<boolean>(false)
@@ -179,12 +180,14 @@ export function NextSeasonPlannerTab() {
   }
   const handlePointerUp = () => {
     setCommittedBudget(sliderValue)
+    setTestedBudget(sliderValue)
     setHasCommitted(true)
   }
   const handleKeyUp = () => {
     if (keyboardTimerRef.current) clearTimeout(keyboardTimerRef.current)
     keyboardTimerRef.current = setTimeout(() => {
       setCommittedBudget(sliderValue)
+      setTestedBudget(sliderValue)
       setHasCommitted(true)
     }, 300)
   }
@@ -308,8 +311,8 @@ export function NextSeasonPlannerTab() {
         {hasCommitted && clientSquad === null && (
           <p className="text-sm text-amber-600 dark:text-amber-400 py-2">
             {health?.min_feasible_budget_greedy != null
-              ? `No squad possible at £${committedBudget.toFixed(1)}m — try £${health.min_feasible_budget_greedy.toFixed(1)}m+`
-              : `No squad possible at £${committedBudget.toFixed(1)}m`}
+              ? `No squad possible at £${testedBudget.toFixed(1)}m — try £${health.min_feasible_budget_greedy.toFixed(1)}m+`
+              : `No squad possible at £${testedBudget.toFixed(1)}m`}
           </p>
         )}
         {squadSection}
