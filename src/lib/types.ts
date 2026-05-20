@@ -1139,6 +1139,16 @@ export interface PreSeasonSquadResponse {
   squad: PreSeasonSquad | null      // null when archive absent
   health: SquadHealth | null        // null until pipeline runs squad_health.py
   solver: 'ilp' | 'greedy' | null  // null when squad is null
+  inputs?: PreSeasonSquadInputs     // Phase 129 COST-02; present only when ?include=inputs query param was set
+}
+
+// Phase 129: Squad Cost Simulator types (COST-02)
+// ============================================================================
+
+export interface PreSeasonSquadInputs {
+  players: PreSeasonPlayer[]        // full eligible player pool with 500+ minutes from GW38 archive
+  scoreMap: Record<string, number>  // Record<string,number>; client hydrates to Map<number,number> via new Map(Object.entries(...).map(([k,v]) => [Number(k), v])) per D-03
+  budget_default: number            // FPL tenths-of-million; 1000 = £100m per D-04
 }
 
 // Phase 128 AUTO-03: Activation status payload for /api/pre-season-active.
