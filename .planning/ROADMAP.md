@@ -1938,7 +1938,7 @@ Plans:
 **Plans**: 4 plans
   - [x] 129-01-PLAN.md — Wave 0: RED test scaffolding (route.test.ts + extended NextSeasonPlannerTab.test.tsx with makeInputs helper, 15 new component tests, 6 new route tests)
   - [x] 129-02-PLAN.md — Wave 1: types extension (PreSeasonSquadInputs + optional inputs? on PreSeasonSquadResponse) + route refactor (GET(request: NextRequest), shared loadSquadInputs helper, Object.fromEntries serialisation, graceful degradation on Resolution 1)
-  - [ ] 129-03-PLAN.md — Wave 2: hook parameterisation (queryKey discriminator) + component slider, useDeferredValue commit pipeline, scoreMapHydrated/clientSquad memos, lastValidSquad/hasCommitted state, API-squad-before-commit render (D-06)
+  - [x] 129-03-PLAN.md — Wave 2: hook parameterisation (queryKey discriminator) + component slider, useDeferredValue commit pipeline, scoreMapHydrated/clientSquad memos, lastValidSquad/hasCommitted state, API-squad-before-commit render (D-06)
   - [ ] 129-04-PLAN.md — Wave 3: infeasibility paragraph (D-08/D-09 variants A+B), dynamic amber slider gradient (D-10) with zinc fallback (D-11), inputs-refetch reset effect for lastValidSquad/hasCommitted
 **UI hint**: yes
 | 122 | v1.24 | 2/2 | Complete    | 2026-05-18 |
@@ -1948,4 +1948,4 @@ Plans:
 | 126 | v1.24 | 4/4 | Complete    | 2026-05-19 |
 | 127 | v1.25 | 4/4 | Complete    | 2026-05-19 |
 | 128 | v1.25 | 4/4 | Complete    | 2026-05-20 |
-| 129 | v1.25 | 2/4 | In Progress|  |
+| 129 | v1.25 | 3/4 | In Progress|  |
