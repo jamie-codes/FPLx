@@ -1140,3 +1140,8 @@ export interface PreSeasonSquadResponse {
   health: SquadHealth | null        // null until pipeline runs squad_health.py
   solver: 'ilp' | 'greedy' | null  // null when squad is null
 }
+
+export interface PreSeasonActiveResponse {
+  activated_at: string  // ISO 8601 timestamp set by pipeline at first activation
+  season_id: string     // e.g. "2526" — derived from events[0].deadline_time year
+}

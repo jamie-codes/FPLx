@@ -161,3 +161,110 @@ def test_skip_log_format_for_various_steps():
         assert log_line == f'[pipeline] IS_OFF_SEASON: skipping {step}', (
             f"Unexpected format for step '{step}': {log_line!r}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Replica function: Phase 128 AUTO-01 activation predicate
+# ---------------------------------------------------------------------------
+
+
+def _evaluate_activation_predicate(events: list) -> bool:
+    """Replica of Phase 128 AUTO-01 tri-state predicate in run.py (D-02).
+
+    Production form (inside IS_OFF_SEASON block):
+        len(events) >= 38
+        and not any(e.get('finished') for e in events)
+        and bool(events[0].get('deadline_time') if events else None)
+
+    Clause ordering MATTERS: len(events) >= 38 must come first so the
+    events[0] access short-circuits when events is empty (Pitfall 2 in RESEARCH.md).
+    """
+    return (
+        len(events) >= 38
+        and not any(e.get('finished') for e in events)
+        and bool(events[0].get('deadline_time') if events else None)
+    )
+
+
+# ---------------------------------------------------------------------------
+# Phase 128 AUTO-01: activation predicate tests
+# ---------------------------------------------------------------------------
+
+
+def test_activation_predicate_true_when_38_events_unfinished_with_deadline():
+    """Predicate True: exactly 38 events, none finished, events[0] has deadline_time."""
+    events = [
+        {'id': i, 'finished': False, 'deadline_time': '2026-08-15T11:30:00Z'} if i == 1
+        else {'id': i, 'finished': False}
+        for i in range(1, 39)
+    ]
+    assert len(events) == 38
+    result = _evaluate_activation_predicate(events)
+    assert result is True
+
+
+def test_activation_predicate_true_when_39_events_with_dgw():
+    """Predicate True: 39 events (DGW scenario), none finished, events[0] has deadline_time."""
+    events = [
+        {'id': i, 'finished': False, 'deadline_time': '2026-08-15T11:30:00Z'} if i == 1
+        else {'id': i, 'finished': False}
+        for i in range(1, 40)
+    ]
+    assert len(events) == 39
+    result = _evaluate_activation_predicate(events)
+    assert result is True
+
+
+def test_activation_predicate_false_when_any_event_finished():
+    """Predicate False: len>=38 and deadline_time present but one event has finished=True."""
+    events = [
+        {'id': i, 'finished': False, 'deadline_time': '2026-08-15T11:30:00Z'} if i == 1
+        else {'id': i, 'finished': i == 20}  # GW20 is finished
+        for i in range(1, 39)
+    ]
+    result = _evaluate_activation_predicate(events)
+    assert result is False
+
+
+def test_activation_predicate_false_when_fewer_than_38_events():
+    """Predicate False: only 37 events — pre-season bootstrap not yet published."""
+    events = [
+        {'id': i, 'finished': False, 'deadline_time': '2026-08-15T11:30:00Z'} if i == 1
+        else {'id': i, 'finished': False}
+        for i in range(1, 38)
+    ]
+    assert len(events) == 37
+    result = _evaluate_activation_predicate(events)
+    assert result is False
+
+
+def test_activation_predicate_false_when_deadline_time_absent():
+    """Predicate False: 38 unfinished events but events[0] has no deadline_time key."""
+    events = [
+        {'id': i, 'finished': False}  # no deadline_time on any event
+        for i in range(1, 39)
+    ]
+    result = _evaluate_activation_predicate(events)
+    assert result is False
+
+
+def test_activation_predicate_false_when_deadline_time_none():
+    """Predicate False: 38 unfinished events but events[0].deadline_time is None."""
+    events = [
+        {'id': i, 'finished': False, 'deadline_time': None} if i == 1
+        else {'id': i, 'finished': False}
+        for i in range(1, 39)
+    ]
+    result = _evaluate_activation_predicate(events)
+    assert result is False
+
+
+def test_activation_predicate_false_when_events_empty_no_index_error():
+    """Predicate False: empty events list — must NOT raise IndexError.
+
+    The len(events) >= 38 clause short-circuits to False before events[0] is
+    accessed. This confirms correct Python short-circuit evaluation and that
+    the clause ordering in D-02 is preserved (Pitfall 2 in RESEARCH.md).
+    """
+    result = _evaluate_activation_predicate([])
+    assert result is False
