@@ -12,11 +12,10 @@ import type { NextRequest } from 'next/server'
 import { buildPreSeasonSquad } from '@/lib/pre-season-squad'
 import type { PreSeasonPlayer, PreSeasonSquadInputs, SeasonArchiveEntry, SquadHealth, PreSeasonSquadResponse } from '@/lib/types'
 
-const USE_BLOB = process.env.USE_BLOB?.toLowerCase() === 'true'
-
 async function readBlobOrLocal(filename: string): Promise<string | null> {
+  const useBlob = process.env.USE_BLOB?.toLowerCase() === 'true'
   try {
-    if (USE_BLOB) {
+    if (useBlob) {
       const { blobs } = await list({ prefix: filename, limit: 1 })
       if (!blobs.length) return null
       const res = await fetch(blobs[0].url)
