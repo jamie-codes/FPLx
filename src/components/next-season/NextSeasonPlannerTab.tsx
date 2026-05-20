@@ -59,7 +59,7 @@ function FormationGrid({ squad, solver }: { squad: PreSeasonSquad; solver?: 'ilp
             {group.map(p => (
               <div
                 key={p.id}
-                className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800 border-l-2 border-green-500 pl-2 text-sm"
+                className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800 border-l-2 border-l-green-500 pl-2 text-sm"
               >
                 <span className="font-semibold text-zinc-700 dark:text-zinc-300">{p.web_name}</span>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">
