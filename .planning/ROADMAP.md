@@ -1889,7 +1889,7 @@ Plans:
 
 - [x] **Phase 127: Squad Health Diagnostics & Transfer Watchlist** — GREEDY-NULL pipeline sweep + diagnoseBuildPreSeasonSquad() + health API field; useWatchlist() hook + pin toggle in GemTable + dedicated Watchlist sub-tab. *(Complete 2026-05-19, 5 human UAT items pending)*
 - [x] **Phase 128: Pre-Season Auto-Activation** — Tri-state PRE_SEASON_ACTIVE gate + pre_season_active.json artifact + suggest_squad.py force=True; usePreSeasonActive() hook + NextSeasonPlannerTab status pill + first-activation banner. *(Complete 2026-05-20)*
-- [ ] **Phase 129: Squad Cost Simulator** — Budget slider in NextSeasonPlannerTab via useDeferredValue + commit-on-release; /api/pre-season-squad?include=inputs API refactor; infeasibility messaging using health.min_feasible_budget_greedy.
+- [x] **Phase 129: Squad Cost Simulator** — Budget slider in NextSeasonPlannerTab via useDeferredValue + commit-on-release; /api/pre-season-squad?include=inputs API refactor; infeasibility messaging using health.min_feasible_budget_greedy. (completed 2026-05-20)
 
 ### Phase 127: Squad Health Diagnostics & Transfer Watchlist
 **Goal**: User can see how often the greedy squad builder fails (and at which budget it becomes feasible), and can pin players to a persistent watchlist from any GemTable row and view those picks together on a dedicated Plan sub-tab
@@ -1939,7 +1939,7 @@ Plans:
   - [x] 129-01-PLAN.md — Wave 0: RED test scaffolding (route.test.ts + extended NextSeasonPlannerTab.test.tsx with makeInputs helper, 15 new component tests, 6 new route tests)
   - [x] 129-02-PLAN.md — Wave 1: types extension (PreSeasonSquadInputs + optional inputs? on PreSeasonSquadResponse) + route refactor (GET(request: NextRequest), shared loadSquadInputs helper, Object.fromEntries serialisation, graceful degradation on Resolution 1)
   - [x] 129-03-PLAN.md — Wave 2: hook parameterisation (queryKey discriminator) + component slider, useDeferredValue commit pipeline, scoreMapHydrated/clientSquad memos, lastValidSquad/hasCommitted state, API-squad-before-commit render (D-06)
-  - [ ] 129-04-PLAN.md — Wave 3: infeasibility paragraph (D-08/D-09 variants A+B), dynamic amber slider gradient (D-10) with zinc fallback (D-11), inputs-refetch reset effect for lastValidSquad/hasCommitted
+  - [x] 129-04-PLAN.md — Wave 3: infeasibility paragraph (D-08/D-09 variants A+B), dynamic amber slider gradient (D-10) with zinc fallback (D-11), inputs-refetch reset effect for lastValidSquad/hasCommitted
 **UI hint**: yes
 | 122 | v1.24 | 2/2 | Complete    | 2026-05-18 |
 | 123 | v1.24 | 3/3 | Complete    | 2026-05-18 |
@@ -1948,4 +1948,4 @@ Plans:
 | 126 | v1.24 | 4/4 | Complete    | 2026-05-19 |
 | 127 | v1.25 | 4/4 | Complete    | 2026-05-19 |
 | 128 | v1.25 | 4/4 | Complete    | 2026-05-20 |
-| 129 | v1.25 | 3/4 | In Progress|  |
+| 129 | v1.25 | 4/4 | Complete   | 2026-05-20 |
