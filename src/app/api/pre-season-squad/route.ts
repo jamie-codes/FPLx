@@ -1,5 +1,6 @@
 // Phase 126 (NSP-02): pre-season squad API route.
 // Phase 127 (GREEDY-01): envelope response with health side-read and solver inference (D-05/D-06/D-07).
+// Phase 129 (COST-02): ?include=inputs query-param attaches inputs envelope (D-01–D-04).
 // Resolution order:
 //   1. pre_season_squad.json (pre-computed ILP result) — return envelope with solver: 'ilp'
 //   2. season_archive_gw38.json (raw archive) — compute ppm scoreMap, build greedy squad — solver: 'greedy'
@@ -7,8 +8,9 @@
 import { list } from '@vercel/blob'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
+import type { NextRequest } from 'next/server'
 import { buildPreSeasonSquad } from '@/lib/pre-season-squad'
-import type { PreSeasonPlayer, SeasonArchiveEntry, SquadHealth, PreSeasonSquadResponse } from '@/lib/types'
+import type { PreSeasonPlayer, PreSeasonSquadInputs, SeasonArchiveEntry, SquadHealth, PreSeasonSquadResponse } from '@/lib/types'
 
 const USE_BLOB = process.env.USE_BLOB?.toLowerCase() === 'true'
 
@@ -32,48 +34,18 @@ async function readBlobOrLocal(filename: string): Promise<string | null> {
   }
 }
 
-export async function GET() {
+// Phase 129 (COST-02): Extract archive+bootstrap parsing into a shared helper.
+// Takes the raw JSON strings (owns the parse step), applies 500-minute eligibility filter,
+// computes ppm, and returns { players, scoreMap } or null if parse fails / no eligible players.
+function loadSquadInputs(
+  archiveText: string,
+  bootstrapText: string,
+): { players: PreSeasonPlayer[]; scoreMap: Map<number, number> } | null {
   try {
-    // --- Resolution 1: prefer pre-computed ILP result — side-read health in parallel (D-06) ---
-    const [preComputedData, healthData] = await Promise.all([
-      readBlobOrLocal('pre_season_squad.json'),
-      readBlobOrLocal('pre_season_squad_health.json'),  // null if absent (D-06)
-    ])
-    const health: SquadHealth | null = healthData ? (JSON.parse(healthData) as SquadHealth) : null
+    // Parse archive: Record<string, SeasonArchiveEntry> (keyed by player id)
+    const archive = JSON.parse(archiveText) as Record<string, SeasonArchiveEntry>
 
-    if (preComputedData !== null) {
-      const squad = JSON.parse(preComputedData)
-      return Response.json({ squad, health, solver: 'ilp' } satisfies PreSeasonSquadResponse, {
-        status: 200,
-        headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
-      })
-    }
-
-    // --- Resolution 2: fall back to raw archive ---
-    const archiveData = await readBlobOrLocal('season_archive_gw38.json')
-    if (archiveData === null) {
-      // Resolution 3: neither artifact exists → "Prices pending" (D-03)
-      return Response.json({ error: 'Archive not available' }, { status: 404 })
-    }
-
-    // Parse archive: Record<number, SeasonArchiveEntry> (keyed by player id)
-    const archive = JSON.parse(archiveData) as Record<string, SeasonArchiveEntry>
-
-    // Build PreSeasonPlayer[] from archive entries
-    // Archive does not include bootstrap fields (name, team, cost) — those must come from
-    // bootstrap. For now, use only players with valid history and sufficient minutes.
-    // NOTE: The archive stores element-summary objects keyed by player id.
-    // We need bootstrap data to get web_name/team/now_cost. Load fpl_bootstrap.json.
-    const bootstrapData = await readBlobOrLocal('fpl_bootstrap.json')
-    if (bootstrapData === null) {
-      // Cannot build player metadata without bootstrap — return 503
-      return Response.json(
-        { error: 'Bootstrap data not available — squad computation pending' },
-        { status: 503 },
-      )
-    }
-
-    const bootstrap = JSON.parse(bootstrapData)
+    const bootstrap = JSON.parse(bootstrapText)
     const elements: Array<{
       id: number
       web_name: string
@@ -128,6 +100,86 @@ export async function GET() {
       scoreMap.set(id, ppm)
     }
 
+    if (players.length === 0) return null
+
+    return { players, scoreMap }
+  } catch {
+    return null
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const includeInputs = searchParams.get('include') === 'inputs'
+
+    // --- Resolution 1: prefer pre-computed ILP result — side-read health in parallel (D-06) ---
+    // Phase 129 (D-01): when ?include=inputs, also read archive+bootstrap in parallel for the inputs envelope
+    const [preComputedData, healthData, archiveDataR1, bootstrapDataR1] = await Promise.all([
+      readBlobOrLocal('pre_season_squad.json'),
+      readBlobOrLocal('pre_season_squad_health.json'),  // null if absent (D-06)
+      includeInputs ? readBlobOrLocal('season_archive_gw38.json') : Promise.resolve(null),
+      includeInputs ? readBlobOrLocal('fpl_bootstrap.json') : Promise.resolve(null),
+    ])
+    const health: SquadHealth | null = healthData ? (JSON.parse(healthData) as SquadHealth) : null
+
+    if (preComputedData !== null) {
+      const squad = JSON.parse(preComputedData)
+
+      // Phase 129 (COST-02): attach inputs envelope when requested and archive+bootstrap available
+      let inputs: PreSeasonSquadInputs | undefined
+      if (includeInputs && archiveDataR1 !== null && bootstrapDataR1 !== null) {
+        const result = loadSquadInputs(archiveDataR1, bootstrapDataR1)
+        if (result !== null) {
+          // D-03: Object.fromEntries converts Map<number,number> → Record<string,number>
+          inputs = {
+            players: result.players,
+            scoreMap: Object.fromEntries(result.scoreMap),
+            budget_default: 1000,  // D-04: FPL tenths = £100m
+          }
+        }
+        // If loadSquadInputs returns null or archive/bootstrap missing: graceful degradation — no inputs, no 503
+      }
+
+      return Response.json(
+        { squad, health, solver: 'ilp', ...(inputs ? { inputs } : {}) } satisfies PreSeasonSquadResponse,
+        {
+          status: 200,
+          headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
+        },
+      )
+    }
+
+    // --- Resolution 2: fall back to raw archive ---
+    // When includeInputs=true, archive+bootstrap were already fetched above; reuse them.
+    // When includeInputs=false, fetch fresh (D-02: no extra I/O when query param absent).
+    const archiveData = includeInputs ? archiveDataR1 : await readBlobOrLocal('season_archive_gw38.json')
+    if (archiveData === null) {
+      // Resolution 3: neither artifact exists → "Prices pending" (D-03)
+      return Response.json({ error: 'Archive not available' }, { status: 404 })
+    }
+
+    const bootstrapData = includeInputs ? bootstrapDataR1 : await readBlobOrLocal('fpl_bootstrap.json')
+    if (bootstrapData === null) {
+      // Cannot build player metadata without bootstrap — return 503
+      return Response.json(
+        { error: 'Bootstrap data not available — squad computation pending' },
+        { status: 503 },
+      )
+    }
+
+    // Phase 129 (COST-02): use shared loadSquadInputs helper for Resolution 2
+    const result = loadSquadInputs(archiveData, bootstrapData)
+    if (result === null) {
+      // Parse failure or no eligible players — treat equivalently to bootstrap absence
+      console.error('[pre-season-squad] loadSquadInputs returned null — Bootstrap data not available — squad computation pending')
+      return Response.json(
+        { error: 'Bootstrap data not available — squad computation pending' },
+        { status: 503 },
+      )
+    }
+
+    const { players, scoreMap } = result
     const squad = buildPreSeasonSquad(players, scoreMap)
 
     if (squad === null) {
@@ -139,10 +191,24 @@ export async function GET() {
       )
     }
 
-    return Response.json({ squad, health, solver: 'greedy' } satisfies PreSeasonSquadResponse, {
-      status: 200,
-      headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
-    })
+    // Phase 129 (COST-02): attach inputs envelope when requested on greedy path
+    let inputs: PreSeasonSquadInputs | undefined
+    if (includeInputs) {
+      // D-03: Object.fromEntries converts Map<number,number> → Record<string,number>
+      inputs = {
+        players,
+        scoreMap: Object.fromEntries(scoreMap),
+        budget_default: 1000,  // D-04: FPL tenths = £100m
+      }
+    }
+
+    return Response.json(
+      { squad, health, solver: 'greedy', ...(inputs ? { inputs } : {}) } satisfies PreSeasonSquadResponse,
+      {
+        status: 200,
+        headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
+      },
+    )
   } catch (err) {
     const isNotFound =
       err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT'
