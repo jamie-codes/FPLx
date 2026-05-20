@@ -149,6 +149,8 @@ export function NextSeasonPlannerTab() {
   const [lastValidSquad, setLastValidSquad] = useState<PreSeasonSquad | null>(null)
   const [hasCommitted, setHasCommitted] = useState<boolean>(false)
   const keyboardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const sliderValueRef = useRef(sliderValue)
+  useEffect(() => { sliderValueRef.current = sliderValue }, [sliderValue])
 
   const scoreMapHydrated = useMemo<Map<number, number> | null>(() => {
     if (!inputs) return null
@@ -179,15 +181,17 @@ export function NextSeasonPlannerTab() {
     setSliderValue(Number(e.currentTarget.value))
   }
   const handlePointerUp = () => {
-    setCommittedBudget(sliderValue)
-    setTestedBudget(sliderValue)
+    const v = sliderValueRef.current
+    setCommittedBudget(v)
+    setTestedBudget(v)
     setHasCommitted(true)
   }
   const handleKeyUp = () => {
     if (keyboardTimerRef.current) clearTimeout(keyboardTimerRef.current)
     keyboardTimerRef.current = setTimeout(() => {
-      setCommittedBudget(sliderValue)
-      setTestedBudget(sliderValue)
+      const v = sliderValueRef.current
+      setCommittedBudget(v)
+      setTestedBudget(v)
       setHasCommitted(true)
     }, 300)
   }
