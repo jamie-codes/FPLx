@@ -244,63 +244,6 @@ def run(dry_run: bool = False):
             except Exception as sh_exc:
                 print(f"[squad_health] non-fatal error: {sh_exc}", file=sys.stderr)
 
-        # Phase 128 AUTO-01/02: Pre-season auto-activation.
-        # Nested inside IS_OFF_SEASON context (D-01): evaluates the tri-state predicate and,
-        # on first detection of next-season bootstrap, writes pre_season_active.json and
-        # calls suggest_squad (force-bypass) to re-run ILP against fresh next-season prices.
-        if IS_OFF_SEASON:
-            _pre_season_predicate = (
-                len(events) >= 38
-                and not any(e.get('finished') for e in events)
-                and bool(events[0].get('deadline_time') if events else None)
-            )
-            if _pre_season_predicate:
-                try:
-                    # Check artifact existence (same dual-path pattern as IS_GW38 idempotency)
-                    _active_key = 'pre_season_active.json'
-                    _active_exists = False
-                    if os.getenv('USE_BLOB', '').lower() == 'true':
-                        import vercel_blob as _vb
-                        _result = _vb.list({'prefix': _active_key, 'limit': 1})
-                        _active_exists = len(_result.get('blobs', [])) > 0
-                    else:
-                        _active_exists = os.path.exists(os.path.join(cache_dir, _active_key))
-
-                    if not _active_exists:
-                        # First activation: write artifact and force-recompute squad
-                        from datetime import datetime as _dt, timezone as _tz
-                        _year = int(events[0]['deadline_time'][:4])
-                        _season_id = f"{_year-1}{str(_year)[2:]}"
-                        save(_active_key, {
-                            'activated_at': _dt.now(_tz.utc).isoformat(),
-                            'season_id': _season_id,
-                        })
-                        print(f"[pipeline] Pre-season activation written: season_id={_season_id}")
-                        # Force-recompute squad against fresh bootstrap prices.
-                        # Archive may be absent on first-ever run; guard accordingly.
-                        archive_path = os.path.join(cache_dir, 'season_archive_gw38.json')
-                        _arch = None
-                        if os.path.exists(archive_path):
-                            with open(archive_path, 'r', encoding='utf-8') as _f:
-                                _arch = json.load(_f)
-                        elif os.getenv('USE_BLOB', '').lower() == 'true':
-                            import vercel_blob as _vb2
-                            import requests as _req
-                            _blist = _vb2.list({'prefix': 'season_archive_gw38.json', 'limit': 1})
-                            _bs = _blist.get('blobs', [])
-                            if _bs:
-                                _arch = _req.get(_bs[0].get('url', ''), timeout=30).json()
-                        if _arch is not None:
-                            from suggest_squad import suggest_squad
-                            suggest_squad(bootstrap, _arch, force=True)
-                            print("[pipeline] Pre-season squad force-recomputed.")
-                        else:
-                            print("[pipeline] Pre-season activation: archive not available — squad recompute skipped.", file=sys.stderr)
-                    else:
-                        print("[pipeline] Pre-season already activated — skipping.")
-                except Exception as _pa_exc:
-                    print(f"[pipeline] Pre-season activation non-fatal error: {_pa_exc}", file=sys.stderr)
-
         # Phase 123 WIN-03: IS_OFF_SEASON gate wraps all GW-dependent pipeline steps.
         # Year-round steps (fixtures, understat, id_map, element summaries, price_changes,
         # transfer_news) remain OUTSIDE this block (D-05).
