@@ -340,6 +340,13 @@ def suggest_squad(bootstrap: dict, archive: dict, force: bool = False) -> None:
 
         # Derive squad shape and write
         squad_dict = _derive_squad_dict(selected, score_map)
+        if len(squad_dict['starters']) != 11 or len(squad_dict['bench']) != 4:
+            print(
+                f"[suggest_squad] formation error: got {len(squad_dict['starters'])} starters, "
+                f"{len(squad_dict['bench'])} bench — skipping write.",
+                file=sys.stderr,
+            )
+            return
         save(SQUAD_KEY, squad_dict)
         print(f"Pre-season squad written: {len(squad_dict['starters'])} starters, {len(squad_dict['bench'])} bench, formation {squad_dict['formation']}.")
 
