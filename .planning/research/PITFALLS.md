@@ -1,310 +1,348 @@
-# Pitfalls Research — v1.24 End of Season & Off-Season Intelligence
+# v1.25 Pre-Season Intelligence — Integration Pitfalls
 
-**Domain:** Adding end-of-season review, off-season planning tools, multi-source news scraping (SCRAPER-02), and full-pool squad builder to an existing FPL personal web app.
-**Researched:** 2026-05-18
-**Confidence:** HIGH for pipeline patterns and FPL API behavior (grounded in codebase + FPL API community docs); MEDIUM for Twitter/X current state (volatile, multiple community sources agree); HIGH for optimizer algorithm performance (grounded in existing codebase analysis + ILP ecosystem); MEDIUM for season review data gaps (FPL API community knowledge, partially inferred from element-summary API structure).
+**Milestone:** v1.25 Pre-Season Intelligence (adding 4 features to existing FPL Analyst)
+**Researched:** 2026-05-19
+**Scope:** Integration pitfalls specific to wiring AUTO-01 (pipeline polling), WATCH-01/04 (watchlist), COST-01 (budget slider), and GREEDY-NULL (null-rate instrumentation) into the live codebase.
+**Confidence:** HIGH for codebase-specific items (verified by reading `run.py`, `suggest_squad.py`, `pre-season-squad/route.ts`, `pre-season-squad.ts`, `NextSeasonPlannerTab.tsx`, `manual-plan.ts`, `pipeline.yml`); MEDIUM for FPL off-season API behaviour (undocumented, community-reported).
 
 ---
 
-## Critical Pitfalls
+## How to read each pitfall
 
-### Pitfall C-01: Full-Pool Greedy Optimizer Produces Suboptimal Squads Near Budget Ceiling
+Each entry has: **Risk** (High / Medium / Low), **Description** (what goes wrong and why this codebase is vulnerable), **Prevention** (concrete guard to put in code or tests), **Phase** (which v1.25 phase plan should own the fix).
 
-**What goes wrong:**
-`buildOptimalSquad()` uses a greedy sort-by-xPts-then-take approach across 700+ players. When budget is exactly £100m (the intended use case for Next Season Planner), the greedy algorithm often gets "stuck" in the last 2-3 picks: it has overspent on high-xPts premium players and the budget remainder cannot fill remaining position slots with any eligible player. The function returns `null` (D-06 guard) even though a valid £100m squad exists, because the greedy path ran out of budget before satisfying `MIN_SLOTS`.
+---
 
-This is a known limitation of the existing `buildOptimalSquad()` which was designed for in-season WC/FH where the constraint space is somewhat forgiving (the current squad provides a sensible starting point). For a cold-start full-pool builder with exactly 100m budget and 700+ players at varied prices, greedy frequently fails to find a valid squad even when many valid squads exist.
+# Critical Pitfalls (Risk: High)
 
-**Why it happens:**
-Greedy sort-by-score does not backtrack. If it picks 3 expensive midfielders (e.g., £14m, £13.5m, £13m) and then cannot complete the squad within budget, it returns null rather than trying a cheaper midfielder. The existing code at `chip-modes.ts:46–54` has no lookahead or fallback.
+## 1. AUTO-01: Bootstrap "looks normal" mid-July but events[] are stale or partial
 
-**Consequences:**
-Next Season Planner returns null / empty state for common budget scenarios, appearing broken to the user. The issue is masked in-season because FH/WC mode starts from a partially-filled squad with a known sellable value.
+**Risk:** High
+
+**Description:** The existing `IS_OFF_SEASON = not any(e.get('is_current') for e in events)` (`pipeline/run.py:148`) is binary — but the off-season has at least four sub-states the gate cannot distinguish:
+
+1. **True off-season** — `events[]` is the *old* 38-GW array, all `finished: true`, no `is_current`. The current logic handles this.
+2. **Empty/stub bootstrap** — between seasons FPL has historically served an `events: []` (or near-empty) response for hours-to-days. `IS_OFF_SEASON` becomes True (correct), but downstream code that does `max(e['id'] for e in events)` (`run.py:201`) will return the default `0`, which collapses GW38 detection silently.
+3. **Pre-season armed** — new `events[]` published with all `finished: false` and `is_current: false` for the new season. **The current gate still reports True**, even though next-season data has landed. This is exactly the state AUTO-01 must detect.
+4. **GW1 deadline crossed, `is_current` lag** — community reports indicate FPL can be slow to flip `is_current` on the first GW of a new season; the gate flips back to True briefly.
+
+Polling alone (every 24h) does not solve detection — the *predicate* is the bug. If AUTO-01 uses `not IS_OFF_SEASON` as the activation signal, the heatmap and squad planner will *not* light up when next-season bootstrap arms, and will only flip on at the GW1 deadline (~weeks after fixtures are useful).
 
 **Prevention:**
-For the Next Season Planner's full-pool builder, switch from greedy to a Python-side MILP (Mixed Integer Linear Programming) solve using `scipy.optimize.milp`. The HiGHS solver wrapped by `scipy.optimize.milp` solves the FPL 15-player squad selection problem (700 binary variables, ~30 constraints) in under 100ms. Run the solve in the pipeline (not the browser), write the optimal squad to Vercel Blob as `optimal_squad_next_season.json`, and serve it as a static API endpoint.
+- Introduce a tri-state in `run.py`: `NEXT_SEASON_DATA_AVAILABLE = (len(events) > 0 and all(not e.get('finished') for e in events) and not any(e.get('is_current') for e in events))`. This is the AUTO-01 activation gate; it sits *between* off-season and live-season states.
+- Persist `last_known_first_event_id` to Blob. When `events[0]['id']` rises above last-known, treat it as a season rollover signal independent of `is_current`.
+- Add a `fixtures.json` health check in the gate predicate: AUTO-01 should only declare "next-season data has landed" when **both** `bootstrap.events[]` is fresh **and** `/api/fixtures` returns ≥38 fixtures with future kickoff dates. Either alone is insufficient (FPL has shipped bootstrap before fixtures and vice versa).
+- Tests: snapshot-fixture replay for each of the four states (true off-season, empty events, armed pre-season, GW1 live) — assert which features turn on in each state.
 
-If a browser-side solve is required, `scipy.optimize.milp`-style greedy with relaxed budget tolerance (allow up to 1m overspend and post-solve trim) is acceptable as a fallback, but the optimal result must come from server-side MILP.
-
-**Warning signs:**
-- `buildOptimalSquad()` returns `null` more than 20% of the time in local test runs with 700-player datasets.
-- Optimal squad value is significantly below £100m (unused budget = greedy got stuck and accepted a suboptimal fill).
-
-**Phase to address:** Next Season Planner — squad builder implementation phase (before writing the UI).
+**Phase:** AUTO-01 (the polling/activation phase). Write the gate predicate first; the polling cron is the trivial part.
 
 ---
 
-### Pitfall C-02: FPL API Is Empty or Structurally Different During Off-Season
+## 2. COST-01: Budget slider fires PuLP ILP on every tick → UI freeze + Vercel timeout cascade
 
-**What goes wrong:**
-The FPL `bootstrap-static` API is available year-round but its content changes significantly between seasons. During the off-season (typically May–July):
+**Risk:** High
 
-1. `events[]` contains gameweeks from the completed season, all `finished: true`, with no upcoming GWs.
-2. `fixtures` endpoint returns no upcoming fixtures — the `fixture-heat-map` and FDR pipeline logic that relies on `team_h_difficulty`, `team_a_difficulty`, and `kickoff_time` fields receives an empty array.
-3. New player IDs for summer signings are not assigned until FPL officially launches the new season's game (typically late July/early August). A player who moves clubs in June does not appear in the bootstrap until FPL registers them.
-4. The `history` section of `element-summary/{id}/` for completed-season data transitions from "current season" to "history_past" summary format at season rollover — losing the gameweek-by-gameweek breakdown in the API.
-5. The existing pipeline relies on `events[?].is_current` to determine the current GW. During off-season, `is_current` is `false` for all events, causing `current_gw` detection to return `None`, which crashes any pipeline code that assumes a current GW always exists.
+**Description:** `suggest_squad.py` is run as a Python subprocess inside the pipeline (`run.py:213-236`); it takes ~0.5-2 s for the CBC solver on a ~600-player pool, longer on cold starts. The existing `/api/pre-season-squad` route currently **does not** call PuLP — it serves the pre-computed `pre_season_squad.json` from Blob or falls back to the TS greedy builder (`route.ts:36-44, 125`). COST-01 changes that contract: the slider must re-run ILP/greedy *with a new budget*.
 
-**Why it happens:**
-The pipeline was built assuming an active PL season. Off-season behavior is undocumented by FPL and only understood through community-maintained API guides and direct observation.
+Three things break the moment a user moves the slider:
 
-**Consequences:**
-- Daily pipeline runs crash or produce empty/stale data throughout the off-season.
-- FDR heatmap, fixture difficulty, xPts projections, and captain picks all fail silently (no fixtures to score against).
-- The UI shows every player at xPts = 0 (no upcoming fixtures) — transfer suggestions, optimizer, and captain panel all degrade to useless.
+1. **Naive `onChange={(v) => mutate(v)}`** — fires 30-60 events per drag. Each call spawns a Python subprocess if ILP is used. CBC has a documented cold-start issue (`coin-or/pulp#167` cites `cbc -stop` taking >1s after idle); subprocess spawn + solver + JSON write/read will trip Vercel's 60s Pro timeout under load and starve the function pool.
+2. **TanStack Query refetch cascade** — if COST-01 reuses `usePreSeasonSquad()`, every slider value mutation invalidates the query, causing `NextSeasonPlannerTab` (heavy formation grid + 8-GW heatmap rows) to re-render. With `GemTable` mounted in adjacent tabs, an unmemoized prop on the slider's parent will cascade re-renders into TanStack Table (TanStack Table has a documented infinite-re-render trap when columns/data aren't stably memoised, per github.com/TanStack/table#4227).
+3. **Optimistic UX impossible** — debounced mutations don't compose with optimistic updates (TanStack Query discussion #2292) — so the slider will feel laggy regardless.
 
 **Prevention:**
-1. Add an `is_off_season` detection gate in `pipeline/run.py`: if `len([e for e in events if not e['finished']]) == 0`, set `IS_OFF_SEASON = True` and skip all fixture-dependent pipeline steps (xPts, FDR, captain picks, xMins) — writing only player price/availability/history data.
-2. The Next Season Planner should serve pre-computed data (from the last-run pipeline before season end) and not depend on live fixture data.
-3. Archive the full `element-summary` per-GW histories before the season ends: add a `pipeline/archive_season.py` step that runs in GW38, iterating all player IDs and writing `season_history_YYYY.json` to Blob. This is the only window to capture gameweek-level data before it collapses into season-summary format.
-4. Gate all FDR-dependent components (GW1-8 heatmap, xPts projections) with a "New season data not yet available" placeholder when `IS_OFF_SEASON = True`.
+- **Default to TS greedy on slider drag, ILP only on release.** `buildPreSeasonSquad()` is pure TS and <50 ms on 600 players (verified by reading the implementation — single sort + single pass). Run greedy locally on every `onValueChange`; run ILP only on `onValueCommit` (Radix slider) or `onChange` final-debounced (300-400 ms after drag end).
+- Wrap the slider's debounced state in `useDebouncedValue` (custom hook) — *do not* try to debounce the mutation function (`useCallback` + debounce creates a new instance per render unless wrapped in `useRef`, classic React debounce trap).
+- Add `targetBudget` as a query key dimension: `useQuery({ queryKey: ['pre-season-squad', targetBudget] })`. This avoids re-fetching for already-computed budgets (user nudges back to 100m → cache hit).
+- If ILP must run server-side per budget, add `maxDuration = 30` to the route handler, return 408 on solver timeout, and surface a "Solver busy — showing approximate squad" badge.
+- Add a perf test: simulate 60 slider events in 1s, assert <5 mutations fired, P95 mutation latency <200 ms.
 
-**Warning signs:**
-- Pipeline log shows `[run.py] current_gw = None` — off-season entry point.
-- `merged_players.json` shows all players with `xPts_1gw = 0`.
-- Blob contains no upcoming fixtures in `fpl_bootstrap.json`.
-
-**Phase to address:** Season Review (data archiving before GW38 deadline), Next Season Planner (off-season API gating), and any pipeline phase that touches the GW detection logic.
+**Phase:** COST-01. Greedy-on-drag + ILP-on-release is the cheapest architecture; specifying it in the plan prevents the obvious naive implementation.
 
 ---
 
-### Pitfall C-03: Season Review Is Missing Early-Season GW Data (Before App Was Running)
+## 3. AUTO-01 → COST-01: Player IDs are reused across seasons but element_type/team change
 
-**What goes wrong:**
-The Season Review feature depends on per-GW decision snapshots: `captain_picks_gw{N}.json` and `transfer_snapshots_gw{N}.json` written to Vercel Blob by the pipeline. These Blob artifacts only exist from the GW when the pipeline was first deployed. If the app was first run in GW8, GWs 1-7 have no Blob snapshots. The season review will show an incomplete record — captain hit rate for 30 GWs rather than 38, with no indication of why early GWs are missing.
+**Risk:** High
 
-Additionally, the localStorage ring buffer (`useDecisionHistory` stores 38 entries) only holds data from when the user first loaded the app. Early-season GWs before app use are absent from localStorage too. The manager's FPL `entry/{id}/history/` endpoint provides total points and rank per GW, but does not include the captain pick or which players were benched — the data needed for captain regret and bench points calculation.
+**Description:** FPL element IDs (the `id` field on `bootstrap.elements`) are **assigned sequentially across all seasons and not reset**. Player Y's id `351` last season may be re-used (same player) — but new players added pre-season get fresh IDs *after* last season's max, and players who left the league still appear in bootstrap with `status: 'u'` (unavailable) until ~early August. Two specific failure modes for v1.25:
 
-**Why it happens:**
-The app writes Blob snapshots on pipeline run, not retroactively. FPL's `entry/{id}/event/{gw}/picks/` endpoint provides historical picks (including captain designation and bench order) for any completed GW — but this is only accessible when the user is authenticated (team ID alone is not sufficient for all fields, depending on FPL privacy settings).
-
-**Consequences:**
-- Season review shows partial data without clear explanation.
-- Captain hit rate metric is miscounted (denominator should be 38, not 30).
-- User sees a misleading "skill score" based on 30/38 GWs.
+1. **WATCH-01 watchlist becomes a graveyard.** A watchlist persisted in localStorage as `[{id: 351, ...}, ...]` from last season will:
+   - Show players who left the league as "current squad candidates" until FPL purges them
+   - Display *stale* `now_cost`, `team`, `element_type` from the time of pinning
+   - If FPL re-uses an internal squad slot, `element_type` can change (e.g., a player reclassified from MID to FWD; happens 1-3 times per season). The watchlist will render them in the wrong position group.
+2. **Pre-season squad uses old IDs against new prices.** `pre_season_squad.json` is computed at GW38 with last-season `now_cost`. If COST-01 re-runs with a new budget *after* FPL publishes new-season prices but before the archive is regenerated, the squad costs in the UI will mismatch reality (e.g., Saka was 9.5m archived, FPL listed at 10.5m for new season). Budget slider says "£100m budget, used £99.5m" but the real wallet view at FPL says £101m used.
 
 **Prevention:**
-1. For GWs with no Blob snapshot, attempt to backfill from `entry/{id}/event/{gw}/picks/` API on first Season Review load. Cache the backfilled data to Blob (`captain_picks_gw{N}_backfill.json`).
-2. Display a "Data available from GW{X}" notice on the Season Review header so the user understands coverage.
-3. Clearly mark metrics as "GW{X}-GW38" not "Full Season" when backfill is incomplete.
-4. Run the GW38 archive step before the season ends to ensure the final GW snapshot is captured.
+- WATCH-01 storage: persist `{id, web_name, pinned_at_iso}` *only*. Re-hydrate `now_cost`, `team`, `element_type`, `status` from current `/api/players` on every render. Treat the watchlist as a **set of IDs**, not a denormalised record.
+- WATCH-01 needs a "Player no longer in FPL" empty pill — when an id isn't in current `elements[]`, render a zinc badge `Departed (last seen GW38)` rather than silently dropping or crashing.
+- Add `element_type_drift_check` in the hook: if `last_seen_element_type !== current.element_type`, log + show amber `Reclassified` badge so user notices position changes.
+- COST-01 needs a `prices_basis` field on the response (`'archive_gw38'` vs `'live_bootstrap'`) and a banner in the UI when the slider is operating on archive prices. Once `now_cost` for the new season lands in bootstrap, prefer it.
+- Tests: feed a fixture where element 351's element_type flips between snapshots — assert the watchlist UI handles re-classification without throwing.
 
-**Warning signs:**
-- `captain_picks_gw1.json` does not exist in Blob.
-- Season review denominator is less than 38.
-
-**Phase to address:** Season Review — data collection and display logic.
+**Phase:** WATCH-01 owns the watchlist storage contract; COST-01 owns the prices_basis surfacing. Both depend on AUTO-01 establishing the price source detection.
 
 ---
 
-### Pitfall C-04: Twitter/X Has No Viable Path From GitHub Actions
+## 4. GREEDY-NULL: Instrumentation as logging-only is useless without a reproducible fixture corpus
 
-**What goes wrong:**
-SCRAPER-02 lists Twitter/X as a scraping target. As of 2026, all unofficial Twitter/X scraping from datacenter IPs (which GitHub Actions uses, as Azure IPs) is blocked at the network level. X permanently banned datacenter IP ranges in January 2025. Even with valid session cookies or twscrape's account-auth approach, the first request from a GitHub Actions runner is rejected with HTTP 403 before any rate limit is encountered.
+**Risk:** High
 
-This is not a rate limit problem — it is an IP-class block. No amount of session rotation, rate limiting, or header mimicry resolves it without residential proxies (which cost money) or the official API (which costs $100/month minimum).
+**Description:** `buildPreSeasonSquad()` returns `null` when (a) <15 eligible players, (b) any MIN_SLOTS unmet, or (c) the greedy can't fit 15 within budget (`pre-season-squad.ts:54-57`). The route already has *a* console.error on null (`route.ts:128-129`). The deferred GREEDY-NULL item asks for "null rate measurement and UI reporting."
 
-**Why it happens:**
-X's product strategy since 2023 has been to monetize data access. The unofficial scraping surface that existed via guest tokens and public API v1.1 has been progressively closed. The January 2025 datacenter IP ban was the final closure of the last viable unofficial path from automated CI runners.
+The obvious-but-wrong implementation:
+- Increment a counter in localStorage each time greedy returns null. Display "Greedy null rate: 12%" in the UI.
 
-**Consequences:**
-Any X scraping implementation in `pipeline/lineup_news.py` will fail silently within hours of first deploy. The non-fatal wrapper catches the exception; the pipeline continues without Twitter data. No benefit is delivered; maintenance burden is created for a permanently-broken integration.
+This fails because:
+1. **Sample size is tiny.** A single user's localStorage will see this function called maybe 1-2x per session. n=50 over a season is not statistical.
+2. **Confounded by budget slider input.** Once COST-01 lands, the user will deliberately push the slider to absurd values (£60m budget) and observe nulls. localStorage cannot distinguish "intentional infeasibility" from "algorithm shortcoming."
+3. **No remediation path.** If you measure that greedy nulls at 12%, what do you do? Without a fixture set of the *inputs* that caused null, you cannot tune the algorithm. The point of instrumentation is to enable algorithm improvement, not to display a vanity metric.
 
 **Prevention:**
-Exclude Twitter/X from SCRAPER-02 scope entirely. The existing SCRAPER-01 implementation already uses FPL bootstrap (authoritative) + Sky Sports RSS + BBC Sport RSS, which covers the same signal with higher reliability. For transfer news (the primary Twitter/X use case in FPL), the signal arrives in FPL bootstrap's `news` field within hours of official confirmation anyway — Twitter/X rarely provides actionable advance notice beyond what the pipeline already captures.
+- Instrument GREEDY-NULL **server-side, not client-side**. In the API route, when greedy returns null, capture `{score_map_size, budget, position_counts_pre_constraint, team_distribution}` and POST it to a Blob path `greedy_null_log/{iso_date}_{hash}.json`. Logs are durable, comparable, and can drive a fixture corpus.
+- The "null rate" UI surface should be a **debug page** (or behind a `?debug=greedy` query param), not a primary user surface. Surfacing null rate to typical users without explanatory context is anti-feature noise.
+- Add a `greedy_null_reason` enum to the response: `'insufficient_eligible' | 'budget_infeasible' | 'min_slot_unmet:GK' | ...`. This is what makes the data actionable — null with a reason converts to a test fixture immediately.
+- Tests: assert greedy returns null with the right reason for each of 5 hand-crafted infeasibility fixtures, before measuring anything in production.
 
-If Twitter/X signal is specifically desired for pre-season fitness rumors and summer transfer speculation: note that the FPL bootstrap is inactive during the off-season (no `news` updates until the new season launches). In that case, the correct approach is a manual curation step (an `overrides.json` file the user can edit) rather than automated scraping.
-
-**Warning signs:**
-- Any implementation that calls `requests.get('https://twitter.com/...')` or `requests.get('https://x.com/...')` from the pipeline.
-- Any `import twscrape` or `import snscrape` in the pipeline.
-
-**Phase to address:** SCRAPER-02 design phase — define scope to exclude X and document the rationale.
+**Phase:** GREEDY-NULL. Pair the instrumentation work with at least 5 fixture cases derived from real archive snapshots.
 
 ---
 
-### Pitfall C-05: Price Speculation Based on Raw Transfer Count Rather Than Ownership-Adjusted Velocity
+# Moderate Pitfalls (Risk: Medium)
 
-**What goes wrong:**
-The existing `pipeline/price_changes.py` uses cumulative net transfers to predict price rises. The existing implementation is correct for its in-season use case. However, for the Summer Window Tracker (which surfaces "price speculation integration"), there is a temptation to extend the predictor with summer transfer speculation — applying the same in-season model to pre-season ownership data.
+## 5. WATCH-01/04: localStorage namespace collision and missing migration with 4+ existing consumers
 
-The FPL price algorithm does not use raw transfer count — it uses a threshold based on a percentage of the player's existing ownership. A player owned by 5% of managers needs far fewer net buys to trigger a rise than a player owned by 45%. Applying a flat transfer velocity threshold (e.g., "+50k net transfers = likely rise") will over-predict rises for low-ownership players and under-predict for high-ownership premium players.
+**Risk:** Medium
 
-Additionally, the "sell-on tax" (you keep only 50% of the profit, rounded down to £0.1m) means price speculation for squad-planning purposes is almost always dominated by actual xPts value. Buying a player for a predicted £0.1m rise yields at best £0.05m profit after tax — rarely worth the squad slot over a better player.
+**Description:** localStorage is used in 23+ files (verified via grep), including `manual-plan.ts` (`MANUAL_PLAN_KEY`), `useChipHistory`, `useDecisionHistory` (ring buffer), `useGwReview`, `usePlayerInsight` (`playerInsight:{id}:gw{N}`), `useRivals`, theme toggle. There is **no unified abstraction** — each module rolls its own key, version field, validation, and try/catch (`manual-plan.ts:221-264` is the canonical pattern).
 
-**Why it happens:**
-Developers extend existing price prediction code to pre-season without re-examining the algorithm's ownership-adjusted threshold logic. The FPL price algorithm is not public; community reverse-engineering (FPL Core blog, 7-part series) confirms it uses unique manager counts as a fraction of ownership base, not raw numbers.
-
-**Consequences:**
-Summer Window Tracker surfaces "HIGH confidence price rise" for Haaland (high ownership, would need millions of buys to move) and misses a newly-signed £5m player who rises on 30k buys from a 2% ownership base. User makes transfer decisions on unreliable predictions.
+Failure modes when WATCH-01/04 lands:
+1. **Key collision** — naming `watchlist` or `targets` without a `fplx:` prefix risks colliding with a future feature or a browser extension. Several existing keys lack prefix (`manual-plan`, `theme`).
+2. **No schema versioning** — `manual-plan.ts` has `if (p.version !== 1) return null` (line 239). If WATCH-01 ships without a `version` field, the next iteration that adds `pinned_priority` or `notes` will silently discard all existing watchlists.
+3. **Quota cap** — localStorage is 5-10 MB per origin. The combined existing footprint is small (~50-200 KB), but `useDecisionHistory` is a 38-entry ring buffer and `usePlayerInsight` caches up to ~30 KB per insight. A user with 200 pinned players × full denormalised payload × 600-byte JSON = 120 KB; multiplied by stale GW snapshots in `useGwReview`, you can land in `QuotaExceededError` on Safari (lower effective limit).
+4. **`window` undefined during SSR** — `NextSeasonPlannerTab` is a client component (`'use client'`), but `usePreSeasonSquad` is consumed in a tab that may not always be mounted. If WATCH-01's hook reads localStorage *outside* a `useEffect`, Next.js 16 (which has tighter hydration assertions than 14/15) will warn or throw mismatch.
 
 **Prevention:**
-1. Frame the Summer Window Tracker as a "new signings feed and FDR preview" rather than a price prediction engine. Price prediction in the off-season is inherently unreliable because (a) player ownership data is not available until the new season launches, and (b) the FPL algorithm resets between seasons.
-2. If price speculation is shown, label it explicitly as "speculative — based on expected popularity, not current ownership data" with a LOW confidence tier.
-3. Do not extend the in-season `price_changes.py` model to the off-season without adding ownership-denominator correction.
+- Extract a `useLocalStorageState<T>(key, initial, schema)` utility in `src/lib/hooks/useLocalStorageState.ts`. Use Zod for the schema (Zod is already a dependency for FPL adapter). All new features (and ideally a migration of existing ones, out of scope for v1.25) go through this.
+- Mandatory `{version: 1, ...}` envelope on every persisted blob. Increment on schema change; the hook returns `null` if version mismatches and clears the slot.
+- Mandatory `fplx:` prefix on every key. Audit existing keys in a follow-up; for v1.25 *new* keys, enforce.
+- Always read inside `useEffect` (or `useSyncExternalStore` with SSR-safe snapshot). Initial render must return `null` or `[]` to avoid hydration mismatch.
+- Catch `QuotaExceededError` specifically and show a toast: "Watchlist storage full — unpin some players or clear old data." Don't silently drop writes (the existing `manual-plan.ts` swallow-catch pattern hides quota issues).
 
-**Warning signs:**
-- Price prediction for off-season players shows HIGH confidence tiers.
-- No ownership denominator in the prediction formula.
-
-**Phase to address:** Summer Window Tracker design — scope and confidence tiers.
+**Phase:** WATCH-01. Land the `useLocalStorageState` utility in WATCH-01's plan; WATCH-04 reuses it.
 
 ---
 
-### Pitfall C-06: Decision Quality "Luck vs Skill" Score Is Gameable and Misleading Without Explicit Methodology
+## 6. COST-01: GemTable / OpportunityCostTable re-render storm from unmemoized prop drilling
 
-**What goes wrong:**
-The Season Review includes a "decision quality grading (luck vs skill)" feature. The obvious implementation is `actual_pts / xPts_pts = luck_ratio` or `actual_captain_pts - expected_captain_pts = luck_delta`. These metrics are:
+**Risk:** Medium
 
-1. **Gameable**: A user who systematically picks the highest-xPts player as captain every week scores 0 captain luck delta by construction. But if that player gets injured GW1 and scores 2, they appear "unlucky" — but the decision was correct (highest xPts pick). The metric punishes correct-process decisions with bad outcomes.
+**Description:** `NextSeasonPlannerTab` is currently a leaf consumer (`usePreSeasonSquad` → render). Adding the budget slider creates state at the tab level. If that state is propagated as a raw value through any component tree that includes `GemTable`, `OpportunityCostTable`, or even another `HeatMapRow`, every slider tick causes their parents to re-render. TanStack Table specifically penalises this — per the FAQ, columns/data without stable references will re-render the full table, not just the slider's locale.
 
-2. **Misleading for partial seasons**: If early GWs are missing (C-03), the luck/skill decomposition uses only GWs with data. One unlucky GW (triple captain on a 2-point haul) can dominate the metric even if the rest of the season was well-managed.
+The existing codebase is *generally* good at this (use of `useImmer`, memoised columns in `GemTable`), but the v1.25 plan adds:
+- COST-01 budget slider state
+- A "Recompute" button (likely)
+- A `prices_basis` banner
+- WATCH-04 squad-overlap highlight (cross-references watchlist to a player set)
 
-3. **Circular with xPts model accuracy**: The xPts model on this app is calibrated to the current squad's 30-GW accuracy backtest. If the xPts model systematically underrates set-piece takers or overrates high-EO players (which the existing calibration suggests is possible), "luck" and "skill" as measured against xPts will absorb the model's errors.
-
-4. **Captain weight**: A single triple-captain GW (×3 multiplier) can swing the entire season's luck score by 20+ points. A player who was "correct" to triple captain a £9m midfielder (say, based on a home fixture against the weakest team) but the player scored 2 will appear to have been extremely lucky-bad. The skill of the chip timing is lost in the noise.
-
-**Why it happens:**
-Luck/skill decomposition in fantasy sports is genuinely hard. FPL Copilot's approach (replay season with xPts, compare ranks across 6,500-manager sample) is methodologically sound but requires a sample of manager data this app doesn't have. Single-manager luck assessment inherently conflates model error with outcome variance.
-
-**Consequences:**
-User receives a misleading "skill score" that either flatters or punishes them based on one or two high-variance GWs rather than reflecting consistent decision quality.
+Each of these is a new piece of state in the Plan-section tree. Without explicit memoization of the slider's container and an isolated `BudgetSliderProvider` context, the prop chain back into `PlannerTab` / `RouteTreeTab` / `ManualPlanTab` (all sibling Plan-section components sharing `planHorizon`) can re-render on every slider event.
 
 **Prevention:**
-1. Frame the "process score" as a **process checklist** rather than a numerical luck/skill decomposition: "Did you pick the highest-xPts captain 30/38 GWs?", "Did your transfers net positive expected value?", "Did you take unnecessary hits?" These are assessable from the Blob snapshots without requiring a statistical luck model.
-2. If a numerical score is shown, display it as "season variance" (how much actual pts differed from xPts-predicted pts), not as a "luck score" — and note the model calibration caveat.
-3. Cap the displayed captain luck metric to exclude TC/BB chip GWs from the "standard decision" score (analyze chip GWs separately).
-4. Show GW-level detail alongside the season total so the user can see which specific GWs drove variance.
+- Co-locate slider state in a dedicated `BudgetContext` (React context) scoped to `NextSeasonPlannerTab` only — do not lift to `page.tsx` alongside `planHorizon`. The contexts are unrelated.
+- Wrap `FormationGrid`, `HeatmapSection`, and `WatchlistSection` in `React.memo` with shallow-equal prop check. Pass the *resolved* squad object, not the slider value, so memo can stop the re-render at the section boundary.
+- Use `useDeferredValue(budgetValue)` for any expensive derived display (e.g., a "£X.Xm remaining" sub-headline that reads from the recomputed squad). Lets React keep the slider thumb responsive while the table recomputes.
+- Test: add a re-render counter component (Profiler API) inside `GemTable` and assert it does *not* increment when the v1.25 budget slider moves on a different tab. CI guard.
 
-**Warning signs:**
-- Luck/skill score based on a single number (actual_pts / xPts_pts).
-- No methodology explanation visible to the user.
-- Chip GWs not separated from normal GWs in the luck calculation.
-
-**Phase to address:** Season Review — decision quality grading implementation.
+**Phase:** COST-01. State architecture decision is in the plan, before any UI code.
 
 ---
 
-## Technical Debt Patterns
+## 7. AUTO-01: Daily cron may miss a 4-hour FPL window — and a missed window has compounding effect
 
-| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
-|----------|-------------------|----------------|-----------------|
-| Reuse in-season `buildOptimalSquad()` greedy for Next Season Planner | No new algorithm needed | Returns null for many valid £100m squads; user sees broken UI | Never for cold-start full-pool build |
-| Extend in-season `price_changes.py` to off-season | Reuse existing pipeline | Predictions are systematically wrong (no ownership denominator) | Never without ownership correction |
-| Skip GW archive step at season end | Less pipeline complexity | Early-season GWs permanently missing from Season Review | Never — archive is a one-time step with no ongoing cost |
-| Use `current_gw` from pipeline without off-season guard | Works during season | Pipeline crashes off-season when `is_current` is false for all events | Never without null guard |
-| Single-number luck score (actual/xPts) | Simple to compute | Gameable and misleading; erodes user trust | Only as a secondary metric with explicit caveats |
+**Risk:** Medium
 
----
+**Description:** The existing cron is "4x daily baseline + dense weekend deadlines" (`.github/workflows/pipeline.yml:13-16`). For mid-season, this is fine — GW deadlines are predictable. For AUTO-01 in the off-season:
 
-## Integration Gotchas
+- FPL typically publishes next-season bootstrap **once**, often overnight UK time in mid-July with no advance warning.
+- If the cron next runs 4-6 hours later, that's fine for data freshness — but the activation window (when the heatmap "lights up") is delayed by up to 6 hours.
+- More problematic: `refresh_gate.py` was built for *mid-season* deadline-window logic. It probably doesn't know about off-season events and may *suppress* off-season runs entirely (need to verify). If so, AUTO-01's polling cron is gated by a predicate that doesn't apply.
+- The 4x-daily baseline does run unconditionally (line 58 — `'0 6,12,18,0 * * *'` runs even without gate), so the 6h worst case is the bound. But a user opening the app at 9am UK time, the morning bootstrap published at 5am, won't see fixtures until the 12pm cron lands them.
 
-| Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| FPL bootstrap off-season | Assuming `events` always has a current GW | Check `len([e for e in events if not e['finished']]) > 0` before any fixture-dependent logic |
-| FPL element-summary at season end | Relying on API for per-GW history next season | Archive `element-summary` per-player before GW38 deadline; data collapses to season-summary after rollover |
-| FPL entry picks backfill | Assuming picks are always available without auth | `entry/{id}/event/{gw}/picks/` is public for any team ID; captain and bench data is available unauthenticated |
-| Understat off-season | Expecting current-season xG data to exist | Understat updates only after PL matches; off-season queries return empty or last-season data |
-| Twitter/X from GitHub Actions | Any unofficial scraping approach | Do not implement — Azure datacenter IPs are permanently blocked by X |
-| Sky Sports/BBC RSS off-season | Expecting team news in summer | RSS feeds go quiet May-July; "no news" is a valid empty result, not a scraper failure |
-| New signings in FPL bootstrap | Expecting transferred players to appear immediately | New signings only appear in `bootstrap-static` once FPL registers them (typically late July/early August) |
+**Prevention:**
+- Verify `refresh_gate.py` allows off-season runs. If not, add an explicit `is_off_season_or_pre_season` clause that always returns `run=true` once `NEXT_SEASON_DATA_AVAILABLE` is suspected.
+- Add a tighter polling cron *only* during the suspected pre-season window (mid-June to mid-August): `0 */2 * * *` (every 2 hours) inside the gate, gated by date range. This is a 6-week intensification, not a permanent change.
+- Add a "Last bootstrap check: X min ago" debug surface on the planner tab; if next-season data is expected and stale, the user sees an honest staleness indicator instead of "Fixtures not yet published" when they actually are.
+- Don't put activation polling on the client (browser fetch every N seconds) — it duplicates work and complicates Vercel Blob cache invalidation. The pipeline cron is the source of truth.
+
+**Phase:** AUTO-01. Cron-config change is small; the gate-predicate verification is the work.
 
 ---
 
-## Performance Traps
+## 8. AUTO-01: archive_season.py + suggest_squad.py idempotency assumptions break when bootstrap shape changes
 
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| C(700, 15) enumeration for full-pool optimizer | Never completes — combinatorial explosion (~8.5×10^30 subsets) | Use MILP (`scipy.optimize.milp`) — HiGHS solves in <100ms | Immediately for any brute-force approach |
-| Loading 700+ players into browser state for squad builder | 4-8MB JSON in memory, slow initial render | Pre-compute optimal squad server-side; serve result only (not full player list) | At 700+ players if full MergedPlayer objects are loaded |
-| Per-player `element-summary` API calls for season archive | 700 API calls × 1-2s each = 12-23 minutes | Batch with rate limiting and `asyncio` + `aiohttp`; cache to Blob | Always — FPL server will 429 if called serially |
-| `player_id_map.json` becoming stale for summer signings | New players have no Understat ID; xG fields are null | Add explicit "new signing" detection: players with `now_cost > 0` but no `player_id_map` entry get explicit `null` xG with `is_new_signing: true` flag | First pipeline run of new season |
-| Season Review loading all 38 GW snapshots in one request | Slow initial load (38 × snapshot sizes) | Lazy-load GW detail on expand; show season summary from pre-aggregated data | With large transfer_snapshots files |
+**Risk:** Medium
 
----
+**Description:** `archive_season.py` has a 50%-success guard, and `suggest_squad.py` has an idempotency skip (`suggest_squad.py:263-278` — skips if `pre_season_squad.json` already exists). These were designed for a one-shot GW38 window.
 
-## Security Mistakes
+In the v1.25 world:
+- A user changes the budget via COST-01 → the route handler reads `pre_season_squad.json`, but it was computed for £100m. The slider's request for £95m has no pre-computed file.
+- AUTO-01 detects new bootstrap mid-July → should `suggest_squad.py` re-run with the new player pool and new prices? Currently it would **skip** because `pre_season_squad.json` already exists from GW38.
+- The skip key is filename-only; it has no notion of "computed against archive A vs archive B."
 
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| Writing Twitter/X credentials to GitHub Actions secrets | Account termination and credential exposure | Do not implement X scraping; no credentials needed |
-| Storing `entry/{id}/event/{gw}/picks/` backfill data containing full squad details | Low risk (personal app), but picks data is technically public | Data is already public via FPL API; single-user app has no privacy concern |
-| Passing FPL session cookie to client-side code for Season Review auth | Cookie could be logged or leaked | Keep FPL auth server-side only; the backfill fetch should occur in a Next.js API route, not in the browser |
+**Prevention:**
+- Version the artifact name: `pre_season_squad_v{bootstrap_hash}.json` where `bootstrap_hash` is a short hash of `(events[0].id, len(elements), sum(now_cost))`. Different bootstrap → different filename → no skip.
+- Or, *delete* the artifact when bootstrap freshness check fails (i.e., when AUTO-01 detects new-season data). Add a `force_recompute` env var for the cron to set when the bootstrap-hash changes.
+- For COST-01 budget variations, **do not** persist every budget's squad to Blob — that explodes the artifact set. Use the route handler's in-memory ILP call (with greedy-on-drag, ILP-on-release per Pitfall 2) and cache in-memory via the Next.js `unstable_cache` for `s-maxage=3600` only on the default £100m path.
+- Tests: assert `suggest_squad` recomputes when the bootstrap hash differs, even if `pre_season_squad.json` exists.
 
----
-
-## UX Pitfalls
-
-| Pitfall | User Impact | Better Approach |
-|---------|-------------|-----------------|
-| Season Review showing partial data (only GW8-38) with no explanation | User thinks the app is broken; "why is my hit rate 22/30?" | "Tracking data available from GW{X}" notice; show coverage range in all metrics |
-| Next Season Planner using in-season FDR (2025/26 fixture data) for GW1-8 2026/27 | GW1-8 heatmap shows wrong teams/fixtures | Gate GW1-8 FDR heatmap on new-season fixture availability; show "Fixtures not yet announced" placeholder |
-| Luck score showing negative number with no context | "My luck score is -47" is meaningless | Label as "pts above/below xPts expectation"; show what a typical season looks like (-20 to +20 is normal variance) |
-| Summer Window Tracker showing "HIGH confidence" price rises for pre-season | Pre-season prices don't change; the mechanism doesn't activate until GW1 | Label all summer price speculation as "speculative" or "expected at launch" with no confidence tier higher than MEDIUM |
-| Full-pool squad builder returning null silently | User sees empty optimizer panel with no explanation | Show "No valid squad found within £100m budget — try adjusting position or club constraints" with actionable suggestion |
+**Phase:** AUTO-01 (artifact versioning) and COST-01 (slider path doesn't write to Blob).
 
 ---
 
-## "Looks Done But Isn't" Checklist
+## 9. WATCH-01: News badge integration with NewsBanner and ConfirmedSigningBadge — staleness pipeline isn't unified
 
-- [ ] **Season Review:** Verify GW coverage notice appears when early GWs are missing — verify `captain_picks_gw1.json` absence is detected and shown.
-- [ ] **Season Review:** Verify chip GWs (TC, BB) are separated from normal captain decisions in luck/skill score.
-- [ ] **Next Season Planner:** Verify the squad builder returns a valid squad (not null) on the full 700-player pool at £100m budget.
-- [ ] **Next Season Planner:** Verify the GW1-8 FDR heatmap shows "not yet available" placeholder during off-season.
-- [ ] **Summer Window Tracker:** Verify new signing feed handles the period before FPL registers the player (player in news but not in bootstrap yet).
-- [ ] **SCRAPER-02:** Verify no Twitter/X scraping code exists in `pipeline/` directory.
-- [ ] **Off-season pipeline:** Verify `run.py` does not crash when `is_current` is false for all events (i.e., `current_gw = None` is handled).
-- [ ] **Season archive:** Verify `pipeline/archive_season.py` (or equivalent) is wired into the GW38 pipeline run with a conditional trigger.
-- [ ] **Polish carry-forwards (TRT-06, TRT-02, MinsRiskBadge):** Verify these do not depend on FPL fixtures data — they are UI-only changes and should not regress in off-season.
+**Risk:** Medium
 
----
+**Description:** Existing badges on player rows include `NewsBanner` (14-day staleness suppression, `NEWS-01`), `ConfirmedSigningBadge` (green pill, `WIN-02`), `MinsRiskBadge`, `StatusLabelBadge`. Each has its own staleness rule:
 
-## Recovery Strategies
+- `NewsBanner`: zinc badges suppressed >14 days; red/amber never suppressed.
+- `ConfirmedSigningBadge`: rendered from `transfer_news.json` 5-class classification; no explicit staleness gate.
+- WATCH-01 will request "news badge" on watched players. If it naively reuses `NewsBanner`, it inherits the 14-day rule — but in the **off-season**, the most valuable news is *more than 14 days old* (a confirmed signing from 3 weeks ago is still the canonical fact). The 14-day rule was a mid-season decision (`NEWS-01` rationale).
 
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|---------------|----------------|
-| Full-pool greedy optimizer returns null | MEDIUM | Switch to MILP pipeline step; add `optimal_squad_next_season.json` Blob artifact |
-| Season archive not run before season end | HIGH | Per-GW history becomes unavailable; fall back to `entry/{id}/event/{gw}/picks/` backfill for captain/bench data; xG history lost permanently |
-| Off-season pipeline crash (no current GW) | LOW | Add `IS_OFF_SEASON` gate; pipeline recovers on next run |
-| Twitter/X scraper silently failing | LOW | Already handled by non-fatal wrapper; just remove the dead code |
-| Price prediction misleading in off-season | LOW | Add LOW confidence tier to all off-season predictions; label as speculative |
-| Luck/skill score misleading | LOW | Relabel as "season variance"; add methodology note; no rewrite needed |
+**Prevention:**
+- Make `staleness_threshold_days` a prop on `NewsBanner`, default 14, allow `Infinity` (or a sentinel) for off-season use cases.
+- WATCH-01 watchlist row uses `NewsBanner` with `stalenessDays={null}` (no suppression) when `IS_OFF_SEASON` is detected. Mid-season, default suppression applies.
+- Document this in `NewsBanner.tsx` JSDoc so the next consumer doesn't re-derive the rationale.
+- Test: snapshot a 30-day-old confirmed-signing news item; assert it renders in the watchlist row but not in the captain-picks row (which retains 14-day suppression).
+
+**Phase:** WATCH-01. The `NewsBanner` prop extension is a 10-line change but easy to overlook.
 
 ---
 
-## Pitfall-to-Phase Mapping
+## 10. GREEDY-NULL: Sample bias from users who never click the planner tab
 
-| Pitfall | Prevention Phase | Verification |
-|---------|------------------|--------------|
-| Full-pool greedy optimizer failure (C-01) | Next Season Planner — squad builder phase | `buildOptimalSquad()` returns non-null for 700-player test dataset at £100m |
-| FPL API off-season empty/different (C-02) | Season Review archive phase; Next Season Planner gating | Pipeline does not crash when `is_current` is false for all events |
-| Season review early-GW data gaps (C-03) | Season Review — data collection | `captain_picks_gw1..gw7.json` absence handled; backfill attempted; coverage notice shown |
-| Twitter/X scraping impossible (C-04) | SCRAPER-02 design | No Twitter/X scraping code in pipeline |
-| Price speculation ownership-blind (C-05) | Summer Window Tracker design | All off-season price signals capped at MEDIUM confidence; ownership caveat shown |
-| Luck/skill score misleading (C-06) | Season Review — decision quality grading | Chip GWs separated; methodology note visible; variance framing used |
-| C(700,15) combinatorial explosion | Next Season Planner — algorithm selection | Optimizer returns result in <500ms for 700-player dataset |
-| Season archive window missed | GW38 pipeline run | `season_history_YYYY.json` exists in Blob after final GW |
-| New season player IDs absent | Summer Window Tracker / Next Season Planner | New signings without bootstrap entries shown as "Not yet registered in FPL" |
-| `current_gw = None` pipeline crash | SCRAPER-02 + Season Review pipeline | Pipeline completes without error during off-season test with empty-events bootstrap |
+**Risk:** Medium
 
----
+**Description:** `NextSeasonPlannerTab` is a Plan-section sub-tab — most users won't visit it daily. The greedy null observation only happens when:
+1. User opens the Plan section
+2. Selects "Next Season" sub-tab
+3. `usePreSeasonSquad()` fetches `/api/pre-season-squad`
+4. Server tries greedy if no pre-computed ILP exists
 
-## Sources
+In the **production happy path**, the pipeline pre-computes `pre_season_squad.json` via `suggest_squad.py` (ILP) at GW38. The route hits Resolution 1 (`route.ts:36-44`) and never invokes the TS greedy. Greedy is only used when the ILP file is missing — which is exactly the pathological state the instrumentation wants to measure.
 
-- Direct codebase audit: `pipeline/chip-modes.ts` (`buildOptimalSquad()` greedy implementation, lines 37-80)
-- Direct codebase audit: `pipeline/optimise-lineup.ts` (C(15,11) enumeration approach — valid for 15-player squads, not applicable to 700-player selection problem)
-- Direct codebase audit: `pipeline/lineup_news.py` — existing SCRAPER-01 implementation confirming Twitter/X was already excluded, non-fatal wrapper pattern
-- FPL API community documentation: Oliver Looney, `oliverlooney.com/blogs/FPL-APIs-Explained` — off-season API changes, element-summary structure
-- FPL API community guide: GameChange, `game-change.co.uk/2023/02/10/a-complete-guide-to-the-fantasy-premier-league-fpl-api/` — entry history, picks endpoint, season history behavior
-- FPL Core Blog (7-part series): `fplcore.com/blog/the-rabbit-hole-cracking-the-fpl-price-algorithm-part-1-of-7` — price algorithm uses unique manager fraction of ownership base, not raw transfer count; Haaland/Thiago examples
-- FPL Copilot luck/skill methodology: `fplcopilot.com/blog/fpl-luck-vs-skill` — xPts replay approach, limitations (model error ≠ luck, single-GW captain swing dominance, sample bias)
-- X/Twitter scraping ecosystem (2026): Scrapfly blog `scrapfly.io/blog/posts/how-to-scrape-twitter` — Azure datacenter IP permanent ban; twscrape GitHub — residential proxy requirement
-- LiveFPL price change documentation: `livefpl.com/blog/fpl-price-changes` — ownership threshold, sell-on tax math
-- SciPy docs: `scipy.org/doc/scipy/reference/generated/scipy.optimize.milp.html` — HiGHS MILP solver, integrality constraints, <100ms solve time for moderately-sized problems
-- FPL API element-summary community note: "save current season's gameweek histories before season end — data becomes unavailable next year through the API in detailed form" (multiple community sources)
-- Previous v1.22 PITFALLS.md: scraper isolation patterns, RSS-first strategy, Twitter/X options table — all remain valid for SCRAPER-02
+So the deployed null rate will be: "How often does the route hit Resolution 2 + greedy fails?" — which is a *function of pipeline reliability*, not algorithm quality. The instrumentation is measuring the wrong thing.
+
+**Prevention:**
+- Run a **shadow ILP-vs-greedy A/B** in the route: when ILP file exists, run greedy *also* (on the same inputs), compare squads, log delta. This measures algorithmic quality directly.
+- Alternatively, run greedy nightly in the pipeline against synthetic budget perturbations (`£90m`, `£95m`, `£100m`, `£105m`) and log nulls.
+- Define the actual metric clearly in the plan: "% of (archive, budget) inputs for which greedy returns null while ILP returns a feasible squad." This is the algorithmic gap, which is what GREEDY-NULL was deferred to measure.
+
+**Phase:** GREEDY-NULL. Plan must reframe the metric definition before any code is written.
 
 ---
 
-*Pitfalls research for: FPL Analyst v1.24 — End of Season & Off-Season Intelligence*
-*Researched: 2026-05-18*
+# Minor Pitfalls (Risk: Low)
+
+## 11. COST-01: Budget slider UX granularity — £0.1m steps vs £0.5m steps
+
+**Risk:** Low
+
+**Description:** FPL prices are in tenths of millions (`now_cost: 95 = £9.5m`). A naive slider with `step={1}` over `min=600, max=1100` (£60m-£110m) gives 500 ticks — overly granular and wastes solver budget. £0.5m steps (`step=5`) is 100 ticks; £1m steps (`step=10`) is 50 ticks.
+
+**Prevention:** Use `step={5}` (£0.5m). Bounds: `min={800}` (£80m, below which no FPL squad is feasible) to `max={1200}` (£120m, far above reality but allows "what if I had a bigger budget" exploration). Default value: `1000` (£100m).
+
+**Phase:** COST-01.
+
+## 12. AUTO-01: Mid-season BGW false-positive on activation gate
+
+**Risk:** Low
+
+**Description:** The existing `IS_OFF_SEASON` predicate uses `not any(e.get('is_current'))` (correct — handles BGW). The AUTO-01 `NEXT_SEASON_DATA_AVAILABLE` predicate proposed in Pitfall 1 must not false-positive on a mid-season BGW. The check `all(not e.get('finished') for e in events)` is sufficient — in a BGW, prior events are still finished. Document this in the predicate; add a test.
+
+**Prevention:** Pure unit test for the gate: BGW fixture (some events finished, some not, no is_current) → must return False.
+
+**Phase:** AUTO-01.
+
+## 13. WATCH-01: Default sort order — pinned-time vs ownership
+
+**Risk:** Low
+
+**Description:** Watchlist will likely default to "most recently pinned" order. Users with 10+ pins typically prefer ownership/price-trend sort. The decision should be deliberate, not accidental.
+
+**Prevention:** Ship with `useLocalStorageState<{sort: 'recency' | 'ownership' | 'price' | 'xpts'}>` and a column-header sort affordance. Default: `'recency'`. Persist user choice.
+
+**Phase:** WATCH-01.
+
+## 14. AUTO-01: Vercel Blob list() pagination missing for legacy artifacts
+
+**Risk:** Low
+
+**Description:** `route.ts:17` uses `list({ prefix: filename, limit: 1 })` — assumes a single matching blob. If a previous deploy wrote multiple artifact versions (e.g., GREEDY-NULL adds debug logs at `greedy_null_log/*`), and AUTO-01 introduces hash-versioned artifact names (Pitfall 8), the route will pick the first lexicographically, not the latest.
+
+**Prevention:** When versioned artifacts exist, sort blobs by `uploadedAt` descending and pick the newest. Add a unit test for "two versions exist" fixture.
+
+**Phase:** AUTO-01 (if hash-versioning lands).
+
+## 15. COST-01: Budget validation — slider value below £80m makes no FPL squad feasible
+
+**Risk:** Low
+
+**Description:** A FPL squad of 15 players at the absolute floor (4.0m × 15 = £60m, but realistic min is closer to £80m due to position quotas and 2 GKs) is infeasible below ~£80m. ILP will return `Infeasible`, greedy returns null. UX should pre-validate.
+
+**Prevention:** Disable slider range below £80m, or show inline "No FPL squad is feasible below £80m" warning. Don't burn solver time on infeasible budgets.
+
+**Phase:** COST-01.
+
+---
+
+# Phase-Specific Warning Summary
+
+| Phase | Likely Pitfalls (refs) | Most Critical Guard |
+|-------|------------------------|---------------------|
+| **AUTO-01** Pipeline polling | 1, 7, 8, 12, 14 | Tri-state gate (off / armed / live) — not the binary `IS_OFF_SEASON`. |
+| **WATCH-01** Watchlist core | 3, 5, 9, 13 | Store IDs only; rehydrate from current `/api/players` every render. |
+| **WATCH-04** Squad overlap | 5, 6 | Reuse `useLocalStorageState` from WATCH-01; do not invent a parallel storage layer. |
+| **COST-01** Budget slider | 2, 3, 6, 8, 11, 15 | Greedy on drag, ILP on release. Never spawn Python subprocess on every tick. |
+| **GREEDY-NULL** Instrumentation | 4, 10 | Server-side logging with reason codes; shadow A/B against ILP. The user-facing % is a vanity metric. |
+
+---
+
+# What to Test First
+
+For the Planner: these are the 5 highest-value test fixtures to commission *before* any feature code is written. They convert "unknown FPL API behaviour" into deterministic CI guards.
+
+1. **Off-season bootstrap states fixture set** — 4 JSON files representing (true off-season, empty events, armed pre-season, GW1 live). Drives Pitfalls 1, 7, 12.
+2. **Element ID drift fixture** — two consecutive bootstrap snapshots where element 351 changes `element_type` and element 999 disappears entirely. Drives Pitfall 3.
+3. **Greedy null-reason corpus** — 5 (score_map, budget) inputs that exercise each null reason. Drives Pitfall 4 and 10.
+4. **Re-render counter wrapper around GemTable** — Profiler-based test asserting GemTable does not re-render when COST-01 slider is moved. Drives Pitfall 6.
+5. **localStorage quota fixture** — pre-populate localStorage to ~4.5MB, attempt watchlist write, assert graceful QuotaExceededError handling. Drives Pitfall 5.
+
+---
+
+# Sources
+
+**Codebase (HIGH confidence):**
+- `pipeline/run.py` lines 141-244 — `IS_OFF_SEASON` gate, GW38 archive trigger
+- `pipeline/suggest_squad.py` — PuLP ILP, idempotency check, 500-min eligibility
+- `src/app/api/pre-season-squad/route.ts` — three-step resolution, greedy fallback
+- `src/lib/pre-season-squad.ts` — pure TS greedy, null conditions
+- `src/components/next-season/NextSeasonPlannerTab.tsx` — current empty-state UX
+- `src/lib/manual-plan.ts` lines 217-264 — canonical localStorage version-validate-catch pattern
+- `.github/workflows/pipeline.yml` — cron schedule and concurrency model
+
+**External (MEDIUM confidence):**
+- [TanStack Table FAQ — memoization](https://tanstack.com/table/v8/docs/faq) — stable column/data refs to avoid re-render cascades
+- [TanStack/table#4227 — memoization in v8](https://github.com/TanStack/table/issues/4227)
+- [Debounced mutation proposal — TanStack/query#2292](https://github.com/TanStack/query/discussions/2292) — optimistic updates incompatible with debounced mutations
+- [PuLP CBC timeout PR — coin-or/pulp#167](https://github.com/coin-or/pulp/pull/167) — CBC subprocess cold-start delays
+- [Vercel serverless timeout limits](https://vercel.com/kb/guide/what-can-i-do-about-vercel-serverless-functions-timing-out) — 10s free / 60s Pro
+- [Next.js hydration error guide](https://nextjs.org/docs/messages/react-hydration-error) — localStorage in SSR
+- [Frenzel Timothy — FPL API endpoints guide](https://medium.com/@frenzelts/fantasy-premier-league-api-endpoints-a-detailed-guide-acbd5598eb19) — off-season schema change warning
+- [Oliver Looney — FPL APIs Explained](https://www.oliverlooney.com/blogs/FPL-APIs-Explained) — bootstrap-static + events semantics
+- [Vercel cron idempotency guidance](https://vercel.com/docs/cron-jobs/manage-cron-jobs)
+
+**LOW confidence (community-reported, no canonical source):**
+- FPL `is_current` lag on GW1 deadline — community forum chatter; treat as defensive assumption.
+- FPL element re-classification between MID/FWD — observed pattern; no documented FPL policy.
+- Empty `events[]` window between seasons — observed historically; FPL gives no schedule.

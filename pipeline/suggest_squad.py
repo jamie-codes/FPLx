@@ -269,9 +269,11 @@ def suggest_squad(bootstrap: dict, archive: dict, force: bool = False) -> None:
     catches any exception from this function.
     """
     import os as _os
+    # Idempotency check: skip if pre_season_squad.json already exists.
+    # Mirrors the _blob_exists pattern in archive_season.py.
+    # D-03: both blob-path and local-path checks are wrapped in `if not force:`
+    # so force=True bypasses the entire guard (not just one branch).
     if not force:
-        # Idempotency check: skip if pre_season_squad.json already exists.
-        # Mirrors the _blob_exists pattern in archive_season.py.
         if _os.getenv('USE_BLOB', '').lower() == 'true':
             try:
                 import vercel_blob

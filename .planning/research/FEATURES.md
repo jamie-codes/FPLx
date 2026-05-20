@@ -1,334 +1,236 @@
-# Feature Research
+# Feature Landscape: v1.25 Pre-Season Intelligence
 
-**Domain:** FPL analytics web app — end-of-season review, off-season planning, summer window intelligence
-**Researched:** 2026-05-18
-**Confidence:** MEDIUM-HIGH (FPL mechanics well-documented; decision quality grading is emergent/community-defined rather than standardised)
-
----
-
-## Feature Landscape
-
-### Table Stakes (Users Expect These)
-
-Features the FPL manager community treats as baseline for any season-review or planning tool. Missing these makes the feature feel incomplete.
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Total points + final rank display | Every season-review product shows this — it is the primary success metric | LOW | Already available from FPL API `/api/entry/{team_id}/history/` |
-| Captain points summary (total, hit rate) | Captain accounts for ~25% of total season score per FPL Statistico data; every manager wants to know how well they captained | LOW | Already computed per-GW in existing `captain_snapshots.py`; needs season aggregation |
-| Chip timeline (when played, points return vs GW average) | Standard FPL wrap feature — official FPL season review includes it; chip ROI is universally tracked | MEDIUM | Chip history in FPL API `entry_history`; ROI = manager GW score vs GW average when chip played |
-| Transfer net gain/loss | Captures whether active management helped or hurt across a full season | MEDIUM | `transfer_snapshots.py` pipeline already exists (v1.20); needs season aggregation across all GWs |
-| Rank trajectory (GW-by-GW) | Managers care about trend not just final rank; "did I recover from the bad GW?" | LOW | SPARK-01 rank sparklines already shipped in v1.21; season aggregation is an extension |
-| GW1–8 fixture heatmap for new season | Standard pre-season planning surface — managers need fixture difficulty before committing £100m | MEDIUM | Existing heatmap engine covers current season; next-season fixture data is a dependency (available ~July) |
-| Full-pool squad builder (100m, 15 players, 3-per-club cap) | Any serious pre-season planning tool does this; FPL Review, FPLOptimized both offer it | HIGH | Constraint-based optimisation with 700+ players is infeasible brute-force; ILP algorithm required |
-| News feed for confirmed new signings | Off-season value requires knowing who has signed where before planning a squad | MEDIUM | No structured FPL API source for rumours; requires scraping Sky Sports / BBC Sport RSS |
-
-### Differentiators (Competitive Advantage)
-
-Features that go beyond existing tools and align with the app's analytical identity — grounded in the app's existing xPts model rather than raw points.
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Decision quality process score (xPts-based, not rank-based) | Separates luck from skill — tells the manager whether decisions were +EV independent of outcomes; no standard industry tool does this for personal accounts | HIGH | Must define own methodology; key inputs are captain EV rate, transfer foresight ratio, chip timing ROI |
-| Captain decision grading per GW | Specific, actionable version of decision quality — was this GW's captain the model's top pick at deadline time? | MEDIUM | Requires joining captain snapshot data with xPts model predictions at the time of the decision; existing BackTab captain backtester (BACK-01) already shows per-GW regret — season aggregate is the grading component |
-| Transfer timing quality (foresight ratio) | Did the transfer produce value in the next 5 GWs? Foresight optimal ratio used by FPLOptimized but rare in personal tools | HIGH | Requires joining `transfer_snapshots.py` data with actual GW points outcomes post-transfer; conflates luck and skill somewhat (injury can nullify a good process pick) |
-| Composite process score grading (A–D letter grade) | Gives the manager a single memorable number representing decision quality across a season; letter grades are more emotionally legible than percentages | MEDIUM | Scoring function: 40% captain EV rate + 40% transfer foresight ratio + 20% chip timing ROI |
-| Summer signing early-mover flags | Signals which newly arrived players are likely early price risers based on ownership velocity + fixtures + role confirmation | HIGH | Requires integrating transfer news (SCRAPER-02) with existing price-change prediction signals (PRC-01, v1.8); news scraping is upstream dependency |
-| GW1–8 early differential targeting in squad builder | Surfaces low-ownership players with good early fixtures as value picks inside budget constraint | MEDIUM | Adds ownership overlay to fixture heatmap; depends on Next Season Planner data being available |
-| Bench points left over full season | Shows whether bench ordering decisions were systematically costing points; a known pain point for most managers | MEDIUM | Pipeline already computes bench points left per GW in GW Review; needs season aggregation into summary |
-
-### Anti-Features (Commonly Requested, Often Problematic)
-
-| Anti-Feature | Why Requested | Why Problematic | Better Alternative |
-|--------------|---------------|-----------------|--------------------|
-| Twitter/X scraping for team news | FPL community accounts (@BenCrellin, @FPL_Rockstar, @FFScout) have high signal-to-noise ratio for injury updates | Twitter API costs $100+/month; Nitter is dead (X shut down public instances); twscrape requires credential account pools with high maintenance and ToS violation risk; X Corp. v. Bright Data (2024) establishes legal exposure | RSS feeds from Sky Sports and BBC Sport cover 90%+ of the same news within hours; use these as primary sources instead |
-| Full hindsight season reconstruction | "What if I had made perfect picks every GW?" is satisfying to compute | Academic research (AlpsCode hindsight study) shows a ghost-ship team (same squad all season, optimal captain only) can rank in top ~6%; hindsight tells the manager nothing actionable about future decisions | Show decision quality deltas (was your decision better than a random pick from the same player pool?) rather than perfect hindsight reconstruction |
-| Real-time price tracking (in-season duplicate) | Managers want to know when to buy before a price rise | In-season price change prediction already covered by PRC-01 (v1.8); building a parallel summer-window version duplicates functionality | Extend PRC-01 with a "season start" mode flag; do not build a separate price tracker |
-| Next-season xPts projections before season data exists | Managers want projections when building their GW1 squad | No Understat data, no fixture difficulty, no minutes history for new signings before July; projections would be fabricated | Use previous season xPts as proxy for established players; flag new signings as "pre-season unknown" with price + rumoured role only |
-| Automated transfer recommendations for next season | Natural extension of current transfer engine | No fixture data, no team news, no price changes to react to during the off-season; the engine has no useful input signal | Reserve transfer engine for in-season; Next Season Planner is a standalone squad-building tool, not a transfer engine |
+**Domain:** Fantasy Premier League analyst — pre-season/off-season intelligence
+**Researched:** 2026-05-19
+**Downstream consumer:** Roadmap for v1.25 (AUTO-01, WATCH-01/04, COST-01, GREEDY-NULL)
 
 ---
 
-## Feature Dependencies
+## Domain context (FPL off-season cadence)
 
-```
-Season Review (summary card)
-    └──requires──> FPL API entry history endpoint (/api/entry/{team_id}/history/)
-    └──requires──> captain_snapshots.py (existing, v1.16)
-    └──requires──> transfer_snapshots.py (existing, v1.20)
-    └──requires──> GW Review API (existing, v1.17)
+- FPL publishes the next-season `bootstrap-static` (player prices, teams, events list) typically **2nd–3rd week of July**, ~5 weeks before GW1. The 2025/26 bootstrap went live around **20 July 2025**, 2024/25 around **11–18 July 2024**. (MEDIUM confidence — historical, varies year to year.)
+- Player price reveals usually trickle out **5–10 days before** the bootstrap itself via official Premier League social and the PL news site. This means the FPL API briefly carries **last-season's** event/fixture list while the **next season's prices are already being announced publicly**. Detection logic must not confuse these two transitions.
+- The summer transfer window opens **mid-June** and closes **end of August/early September** in the UK. By the time pre-season data lands, ~70% of confirmed signings have already happened.
+- Competitor tooling (Fantasy Football Fix, FPL Scout, fplform.com, livefpl.net) all reactivate in the same July window. Beating them to activation by 24–48h is a real differentiator.
 
-Decision Quality Process Score
-    └──requires──> Season Review (same GW-by-GW data layer)
-    └──requires──> xPts model predictions at decision time (existing pipeline output)
-    └──enhances──> Captain Backtester BACK-01 (existing, v1.16) — reuses same snapshot trail
-    └──enhances──> Transfer Regret Backtester BACK-02 (existing, v1.20) — reuses transfer delta data
-
-SCRAPER-02 (multi-source news scraper)
-    └──requires──> Sky Sports Football RSS (https://www.skysports.com/rss/12040)
-    └──requires──> BBC Sport Football RSS (https://feeds.bbci.co.uk/sport/football/rss.xml)
-    └──optional──> Twitter/X (fragile, ToS risk — do not block on this)
-    └──extends──> existing lineup_news.py pipeline (v1.22) — seasonal mode extension, not ground-up rebuild
-
-Summer Window Tracker UI
-    └──requires──> SCRAPER-02 (no news feed = no content)
-    └──requires──> FPL bootstrap-static (to match player names to FPL element IDs)
-    └──enhances──> Next Season Planner — confirms confirmed role + price for new arrivals
-    └──enhances──> PRC-01 price change predictor — feeds "new signing hype" signal
-
-Next Season Planner (squad builder)
-    └──requires──> FPL bootstrap-static (player pool + prices — available year-round)
-    └──requires──> Next-season fixture list (typically released ~July; show "fixtures pending" empty state)
-    └──requires──> ILP optimisation algorithm — new, not in existing greedy engine
-    └──does NOT reuse──> buildOptimalSquad() greedy engine (incorrect for global optimisation)
-
-GW1–8 Next-Season Fixture Heatmap
-    └──requires──> Next-season fixture data from FPL API
-    └──reuses──> Existing HeatMapRow component (HEAT-01, v1.17) with new data source
-    └──enhances──> Next Season Planner — surfaces differential targets inside squad builder
-```
-
-### Dependency Notes
-
-- **Decision Quality Process Score is co-located with Season Review:** Both consume the same per-GW aggregation layer; building them in separate phases creates redundant data-fetching work. Ship in the same phase.
-- **SCRAPER-02 must precede Summer Window Tracker:** The tracker has no content without a news pipeline. Both can ship in the same phase if SCRAPER-02 is built first within the phase.
-- **Next Season Planner has a data availability constraint:** `bootstrap-static` is available year-round but next-season prices are typically released late June. Squad builder UI should handle "prices not yet confirmed" gracefully with a dated note rather than blocking launch.
-- **SCRAPER-02 is an extension of lineup_news.py, not a replacement:** The v1.22 scraper already handles Sky Sports and BBC Sport for in-season team news. SCRAPER-02 adds a summer/transfer-window mode that captures signing confirmations, pre-season fitness updates, and club-level rotation signals — same sources, different content filters.
+Sources: [Fantasy Football Fix — 2025/26 launch](https://www.fantasyfootballfix.com/blog-index/fpl-2025-26-game-launch-announced/), [Fantasy Football Fix — 2025/26 prices](https://www.fantasyfootballfix.com/blog-index/fpl-2025-26-player-price-revealed-update/), [Premier League — new player prices](https://www.premierleague.com/en/news/4363681/see-the-prices-of-new-players-added-to-202526-fantasy)
 
 ---
 
-## MVP Definition
+## AUTO-01: Next-Season API Detection & Auto-Activation
 
-### Launch With (v1.24)
+### Table Stakes
+- **Daily polling cadence** — FPL bootstrap endpoint already hit by `pipeline/run.py`; just need to interpret what's there during off-season. No new infra.
+- **Reliable detection signal**, not a guess. Best signal: `events` array contains an event with `id=1` (or any event whose `deadline_time` falls in the future and after the previous season's GW38 deadline). Secondary signal: `total_players > 0` and at least one event with `is_next=true`.
+- **Graceful degradation** when only partial data is published (e.g. fixtures published before some teams have their full roster priced). Don't gate the heatmap on having all 380 fixtures — show what's available.
+- **Idempotency** — daily polls must not double-write or re-trigger downstream steps once activated. Match the `archive_season.py` pattern (50% guard, single Blob write).
+- **Manual override** — a `FORCE_PRESEASON_ACTIVATION=true` env var so the user can force-activate for testing or if detection misfires.
 
-Minimum viable feature set to make the milestone meaningful.
+### Differentiators
+- **Activation status surfaced in the UI**, not buried in pipeline logs. A small banner on the Next Season Planner tab: "Pre-season data detected — squad planner active as of [date]" or "Awaiting FPL pre-season data (last checked: 2h ago)." This is the single biggest UX differentiator vs competitors who silently switch on.
+- **Diff summary on first activation** — what changed vs last season's archive: N new players added, M removed, average price delta per position. Builds trust that detection worked correctly.
+- **Two-phase activation** — Phase A: prices published, no fixtures yet → show squad builder but hide FDR heatmap with explanatory empty state. Phase B: fixtures published → unlock heatmap. Avoid "all or nothing" gate.
 
-- [ ] **Season Review summary card** — total rank, captain hit rate, chip ROI, transfer net gain/loss — answers "how did I do this season?" in one screen; data is already available
-- [ ] **Decision quality process score** — composite A–D grade separating process from outcome; this is the differentiating feature that elevates the season review from a stats dump
-- [ ] **SCRAPER-02 (Sky Sports + BBC Sport RSS)** — automated ingestion of summer transfer and fitness news; RSS feeds are stable and structured; extends existing lineup_news.py pipeline
-- [ ] **Summer Window Tracker** — feed of confirmed PL signings matched to FPL IDs, early-mover flag based on ownership velocity + fixtures
-- [ ] **Next Season Planner — squad builder** — ILP-optimised 15-player team from full 700+ player pool at 100m budget; most-requested pre-season feature across FPL tools ecosystem
+### Anti-Features (do NOT build)
+- **Real-time/webhook activation.** FPL has no webhooks. Don't try to detect within minutes of publish — daily cadence is sufficient and matches existing pipeline rhythm.
+- **Push notifications / email alerts on activation.** Out of scope for a personal tool with no notification infra. The UI banner is enough.
+- **Auto-clear of previous-season data on activation.** Keep the archive blob (used by `usePreSeasonSquad()` and Season Review). Activation should be additive, never destructive.
+- **Predicting the activation date.** Tempting to show "Expected: 18 July" countdown. Don't — historical variance is too high (11 July to 21 July range), and being wrong undermines trust.
 
-### Add After Validation (v1.24.x)
+### UX Pattern
+- **Status indicator** on the Next Season Planner tab header — a small zinc/green pill: `Awaiting pre-season data` (zinc) → `Pre-season data live` (green) → `Active for 2026/27` (green, after first GW1 deadline). Mirrors the existing `LastUpdated` ticker pattern (FRE-01, amber when stale).
+- **Banner on first activation** auto-dismisses after 7 days or first user interaction with the planner. Use localStorage flag `nsp_activation_seen_{seasonId}` to suppress.
+- **Pipeline log line** with structured prefix `[auto-detect]` matching `[player-insight]` / `[transfer_news]` conventions for grep-ability.
+- **Pre-season banner copy**: avoid hype ("New season!" "Get ready!"). Inform: "FPL has published 2026/27 data. The Next Season Planner is now using next-season prices."
 
-- [ ] **GW1–8 next-season fixture heatmap** — can reuse existing component; add when fixture data becomes available (July); low implementation cost once data is ready
-- [ ] **Early differential targeting overlay** — annotates squad builder results with low-ownership options that have excellent early fixtures; depends on GW1–8 heatmap being available
-- [ ] **Transfer timing quality grading** — more sophisticated than hit-rate; requires historical xPts snapshot comparison at transfer date; medium complexity addition to the process score
+### Complexity
+**Low-Medium.** Pipeline detection logic is ~30-50 LOC. The UX work (banner, status pill, two-phase activation) is the larger surface — probably 4-5 components, mostly empty-state branching. Existing `IS_OFF_SEASON` gate is the natural seam.
 
-### Future Consideration (v2+)
-
-- [ ] **Twitter/X monitoring** — only viable if X API pricing changes or a stable free alternative emerges; current risk is too high for a personal tool
-- [ ] **Multi-season trend view** — requires season-over-season data persistence; out of scope for this architecture
-
----
-
-## Feature Prioritization Matrix
-
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| Season Review summary card | HIGH | LOW (data already exists in pipeline) | P1 |
-| Decision quality process score | HIGH | MEDIUM (methodology novel; data layer shared with season review) | P1 |
-| SCRAPER-02 (RSS-based) | HIGH | MEDIUM (extends existing scraper) | P1 |
-| Summer Window Tracker UI | HIGH | LOW (UI over SCRAPER-02 data; match name to FPL ID) | P1 |
-| Next Season Planner — squad builder | HIGH | HIGH (ILP algorithm is new) | P1 |
-| GW1–8 next-season heatmap | MEDIUM | LOW (reuses existing heatmap component) | P2 |
-| Early differential targeting | MEDIUM | MEDIUM (ownership overlay on squad builder) | P2 |
-| Transfer timing quality grading | MEDIUM | HIGH (historical snapshot comparison needed) | P3 |
-| Twitter/X monitoring | LOW | HIGH (fragile, ToS risk, maintenance cost) | P3 |
-
-**Priority key:** P1 = must have for v1.24 launch; P2 = add in v1.24.x after core validated; P3 = future consideration
+### Dependencies on existing components
+- `pipeline/run.py` IS_OFF_SEASON gate (invert/extend it — `IS_OFF_SEASON` and `IS_PRESEASON_DETECTED` are distinct states).
+- `archive_season.py` 50% guard pattern — reuse for atomicity.
+- `NextSeasonPlannerTab` graceful empty state — extend with "awaiting data" copy.
+- `LastUpdated` ticker — reuse for "last checked" timestamp.
+- New `useNextSeasonStatus()` hook reading from a small `next_season_status.json` blob.
 
 ---
 
-## Decision Quality Process Score — Methodology Detail
+## WATCH-01/04: Transfer Target Watchlist
 
-This is the most novel feature; a clear methodology is essential to avoid building something unmeasurable.
+### Table Stakes
+- **Pin/unpin a player from GemTable** — leverages the existing tap-to-expand row pattern (MOB-TBL-06) and existing pin/compare actions. One new action button next to Compare. No new modal.
+- **Persistent across sessions** — localStorage, same pattern as decision history ring buffer and squad snapshots (already established).
+- **Show on a dedicated tab/section** — likely under Plan section as `watchlist` sub-tab, similar to how `next-season` was added after `rivals`. Mobile-first 1-column card layout, desktop 2-3 column grid.
+- **Per-card data points** (the non-negotiables FPL managers expect):
+  - Current price + last 7-day delta (use existing `cost_change_event` field)
+  - Ownership % (use existing `selected_by_percent`)
+  - Position + team + shirt colour or badge
+  - News badge (reuse `NewsBanner` component, already gated by 14-day staleness in NEWS-01)
+- **Bulk action: clear watchlist** — single button with confirm step. Matches the manual planner reset pattern.
+- **Empty state** — first-run users need a clear "Pin players from the Gem Ratings table to track them here." Critical: 50%+ of users miss watchlist features because pinning is hidden in row actions.
 
-### The core problem: rank conflates luck and skill
+### Differentiators
+- **Squad overlap badge** — for each watched player, show whether they're in the user's current Pre-Season Squad (NSP-02 output) via a small badge: `In planned squad` (green) / `Not in squad` (zinc). This is the bridge to the squad simulator — instantly answers "should I be planning around this player?"
+- **Price trend sparkline** — tiny 7-day sparkline using the existing `cost_change_event` + history. Differentiates vs competitors who show only static deltas. Reuse `PriceTrendCell` styling.
+- **Group by position** by default — FPL managers think in positions (need a GK, 5 DEFs etc), not alphabetical. Toggle to sort by price/ownership/news-most-recent.
+- **News-newest badge** — surface watchlist players who have **fresh** news (added in last 48h) at the top automatically. Matches the Summer Window Tracker's article-feed feel. Provides "what changed since I last checked" without forcing the user to scan all cards.
+- **Confirmed signing surfacing** — if a watchlist player has a `ConfirmedSigningBadge` (already implemented for v1.24), show it prominently on the card. Two birds, one stone: validates the watchlist as a multi-source signal aggregator.
+- **Compact density** — watchlists for FPL managers commonly hit 20-40 players. Cards must be scannable; long descriptions and large avatars don't scale. Aim for ~80-100px card height on desktop.
 
-Final rank is dominated by variance. Academic research (PLOS ONE, n=~1M managers) found each additional year of FPL experience is worth only 22.1 additional points — skill exists but is small relative to variance. A "ghost-ship" team (same squad all season, only captain changed) can rank top 6% in some seasons. Therefore rank alone cannot grade decision quality.
+### Anti-Features (do NOT build)
+- **Custom notes per player.** Users say they want it; usage data from todo apps and Pocket shows <5% actually use notes. Adds DB-like complexity to a JSON localStorage blob.
+- **Folders/categories for watchlists.** Same trap. A single flat list of 20-40 players is the sweet spot. If the user truly needs more, FPL Scout has paid tooling for this.
+- **Sharing the watchlist via URL.** Personal tool, no multi-user. Adds zero value.
+- **Price-change alerts via push/email/notifications.** Out of scope (no infra). The dashboard view is sufficient.
+- **Automatic suggestions to add players.** No "you might also like" — keep it pure user intent. The Gem Ratings table already surfaces recommendations.
+- **Drag-to-reorder.** Sort options cover this. Drag handles on mobile + 30 cards = bad ergonomics.
 
-### Three measurable process proxies
+### UX Pattern
+- **Pin action** in GemTable row: a star/pin icon between Compare and the existing actions. Filled state = pinned. Tap → optimistic toggle, optimistic localStorage write, toast confirmation "Added [name] to watchlist" with Undo (3s).
+- **Watchlist tab** as a sub-tab of Plan section, after `next-season`. Card grid (mobile: 1col, sm: 2col, lg: 3col). Each card: player name + position pill + team badge + price + sparkline + ownership% + news badge + squad-overlap badge. Tap card to expand (reuse existing PlayerComparisonModal? Or a lighter inline expansion).
+- **localStorage schema** — keep flat:
+  ```ts
+  interface WatchlistEntry {
+    id: number              // FPL player ID
+    pinned_at: string       // ISO 8601
+    last_price_seen: number // for delta-since-pin tracking (differentiator)
+  }
+  type Watchlist = WatchlistEntry[]  // localStorage key: 'fplx_watchlist'
+  ```
+- **Delta-since-pin** — show a small "+0.2 since pinned" or "-0.1 since pinned" delta on each card. Requires `last_price_seen` field. High signal for managers tracking price movement on targets.
+- **News card prominence** — if a watched player has `news_added` in last 48h, the card gets an amber left border (4px) and surfaces to the top of its position group. This is the **what-changed** UX everyone steals from RSS readers.
 
-**1. Captain EV Rate (MEDIUM confidence)**
+### Complexity
+**Medium.** New tab + card component + new localStorage hook + GemTable action button. ~200-300 LOC across 4-5 files. The squad-overlap calculation is trivial (set intersection on player IDs). Risk: getting the card density right takes iteration; build with low-data state in mind (1 player) AND high-data state (40 players, sticky filters).
 
-Per GW: Was the captain the highest-xPts candidate in the model at deadline time?
-- Season score: % of GWs where captain was the model's top pick, or within the top-2 (acknowledging that #1 vs #2 is often within the model's uncertainty margin)
-- Data source: `captain_picks_gw{N}.json` snapshots (existing pipeline, v1.16) joined with `merged_players.json` xPts at the same pipeline run
-- Existing BACK-01 captain backtester already shows per-GW regret; season aggregate of "was this an EV-positive pick?" is the captain process score component
-- Ceiling: Only computable for GWs where a snapshot was captured; sparse coverage in early season
-
-**2. Transfer Foresight Ratio (LOW-MEDIUM confidence)**
-
-Did the player brought in outperform the player sold over the following 5 GWs?
-- Season score: Number of transfers where (bought player next-5-GW points > sold player next-5-GW points) / total transfers made
-- Mirrors the "Foresight Optimal Ratio" used by FPLOptimized — the closest thing to a community standard for transfer decision quality
-- Data source: `transfer_snapshots.py` (existing, v1.20) joined with actual GW points from FPL API element-summary history
-- Honest caveat: conflates luck and skill somewhat — a good process pick can underperform due to injury after the transfer. Flag this in the UI.
-
-**3. Chip Timing ROI (MEDIUM confidence)**
-
-For each chip played: did the manager's score exceed the expected benchmark?
-- Triple Captain: (manager's TC return) / (average TC return among all TC users in that GW, from FPL API chip stats)
-- Bench Boost: bench points scored vs. average bench points in that GW (FPL API provides GW averages)
-- Wildcard: compare the week-1 squad built post-WC against the GW average squad score for the following 4 GWs
-- Free Hit: manager's FH week score vs. GW average
-- Score: average ROI across all chips played; normalised to 0–1
-
-**Composite grading function:**
-
-```
-ProcessScore = (0.40 × CaptainEVRate) + (0.40 × TransferForesightRatio) + (0.20 × ChipROI)
-```
-
-Grade tiers:
-- A (80–100): Consistently +EV decisions, chips well-timed
-- B (60–79): More good than bad; some luck dependence
-- C (40–59): Mixed — some positive processes, some reactive decisions
-- D (<40): Outcomes driven primarily by variance, not process
-
-**What NOT to include in process score:**
-- Final rank: dominated by variance
-- Total points: dominated by template ownership and price
-- Transfer count: volume is not quality
-
----
-
-## Full-Pool Squad Optimiser — Algorithm Detail
-
-### Why brute-force is infeasible
-
-Selecting 15 from ~700 players: C(700, 15) ≈ 3.7 × 10^27 combinations. Even filtering to ~200 realistic candidates, C(200, 15) ≈ 6.6 × 10^23. The existing `optimiseLineup()` C(15,11) = 1,365 subsets works because it operates on the manager's 15-player squad, not the full pool.
-
-### Recommended approach: Integer Linear Programming (ILP)
-
-FPL community consensus across multiple open-source solvers (`fpl-solver`, `FPL-Optimization-Tools`, `fpl-optimiser` on GitHub) is ILP, not greedy and not DP.
-
-Why ILP over the existing greedy `buildOptimalSquad()`:
-- Greedy does not guarantee global optimum under simultaneously binding constraints (budget + formation + club cap)
-- ILP with CBC backend (via PuLP) finds the provably optimal solution in under 5 seconds for this problem size — no WASM solver needed
-
-Why ILP over dynamic programming:
-- DP (6-dimensional cache key: budget × index × goalies × defenders × midfielders × forwards) is theoretically correct but memory-intensive at 1000 budget units precision with 700 players
-- ILP is cleaner to express, easier to maintain, and equally fast in practice
-
-**Python implementation via PuLP (already in the ecosystem; add as pipeline dependency):**
-
-```python
-from pulp import LpProblem, LpVariable, LpMaximize, lpSum, value, PULP_CBC_CMD
-
-# Decision variables: x[i] = 1 if player i selected
-x = [LpVariable(f"x_{i}", cat="Binary") for i in range(len(players))]
-
-prob = LpProblem("fpl_squad", LpMaximize)
-prob += lpSum(players[i]["xPts_5gw"] * x[i] for i in range(n))  # objective
-
-# Constraints
-prob += lpSum(x) == 15                           # squad size
-prob += lpSum(x[i] for i in GK_indices) == 2    # 2 goalkeepers
-prob += lpSum(x[i] for i in DEF_indices) == 5   # 5 defenders
-prob += lpSum(x[i] for i in MID_indices) == 5   # 5 midfielders
-prob += lpSum(x[i] for i in FWD_indices) == 3   # 3 forwards
-prob += lpSum(players[i]["now_cost"] * x[i]) <= 1000  # 100.0m budget in 0.1m units
-for club_id, club_players in by_club.items():
-    prob += lpSum(x[i] for i in club_players) <= 3    # 3-per-club cap
-```
-
-**Objective function options:**
-- Pre-season (July+): Maximise `xPts_5gw` using fixture data from new season bootstrap-static
-- Pre-season (before fixtures released): Maximise previous season total points as proxy ranking
-- For new signings without history: flag as "no history — price-only estimate"
-
-**Formation validity:** The squad builder selects 15 players. Starting 11 / bench ordering is a subsequent step using the existing `optimiseLineup()` engine — no change needed there.
+### Dependencies on existing components
+- `GemTable` row actions (extend createColumns factory).
+- `useLocalStorage`-style hook (may need to write a small one; not seeing a generic one in the codebase, but `useDecisionHistory` uses the ring-buffer pattern).
+- `NewsBanner` component (NEWS-01/02 — reuse, including 14-day staleness gate).
+- `ConfirmedSigningBadge` (v1.24 — reuse from summer window).
+- `PriceTrendCell` (v1.0 — reuse for sparkline-adjacent display).
+- `usePreSeasonSquad()` (v1.24 — read pre-season squad for overlap calculation).
+- `usePlayers()` for canonical player data (existing 6h staleTime).
 
 ---
 
-## Summer Window Tracker — Source Details
+## COST-01: Squad Cost Simulator
 
-### Sky Sports RSS
-- URL: `https://www.skysports.com/rss/12040` (Football news feed)
-- Format: Standard RSS 2.0 with `<title>`, `<description>`, `<pubDate>`, `<link>` fields
-- Coverage: Transfer news, confirmed signings, injury/fitness updates, pre-season team news
-- Update frequency: Multiple times daily during transfer windows
-- Reliability: HIGH — Sky Sports has maintained this RSS feed for years; no authentication required
-- FPL-relevant filter: Keywords include player names, "signs", "agrees", "completes", "pre-season", "injury", "fitness"
+### Table Stakes
+- **Slider control** with a sensible range. FPL gives each manager 100m. The historical sweet spot of "interesting" budgets is **98.5m – 101m** (the user's described range is correct). Below 98.5m gets dull (drops in expensive premiums), above 101m is hypothetical only.
+- **Live update of the displayed squad** as the slider moves — but **debounced** to avoid hammering the ILP solver (which runs server-side via `/api/pre-season-squad`).
+- **Visual feedback during pending compute** — loading skeleton on the formation grid, or a subtle opacity dip + spinner overlay. Without this, users assume the app is broken.
+- **Numeric input alongside slider** for power users who want to type 99.7 directly. Common pattern in financial calculators.
+- **Reset to 100.0** button — the canonical FPL budget.
+- **Show budget actually used** vs budget allowed — e.g. "Used: 99.8 / Allowed: 100.0" so the user sees the ILP didn't necessarily spend every penny.
 
-### BBC Sport Football RSS
-- URL: `https://feeds.bbci.co.uk/sport/football/rss.xml`
-- Format: Standard RSS 2.0
-- Coverage: Confirmed transfers, Premier League player news, fitness updates
-- Update frequency: Multiple times daily
-- Reliability: HIGH — BBC maintains these feeds as public infrastructure
+### Differentiators
+- **Delta view** — show which players were swapped in/out vs the canonical 100.0 squad as the slider moves. Two-column "Added / Removed" panel below the formation grid. Critical insight: at 99.5m budget, who do you lose vs 100m? This is the "aha" the simulator should deliver.
+- **xPts-equivalent or PPM-equivalent total** alongside budget used. So the manager sees: "99.5m saves 0.5m but loses 3.2 ppm of squad value." Quantifies the trade-off in the language the ILP is already optimising on.
+- **Position-pinned mode** — let the user lock specific players (e.g. "I'm definitely owning Salah") and watch the ILP re-solve the remaining 14 slots within remaining budget. This is the killer feature competitors don't have. Adds complexity but huge value.
+- **Budget tick marks at semantic points** — 98.0 ("tight"), 100.0 ("default"), 101.5 ("hypothetical chip-fund"). Visual scaffolding for users who don't know what to try.
 
-### Twitter/X
-- Status: NOT recommended as primary source
-- Nitter is dead (X shut down all public instances)
-- Official X API: Basic tier costs $100+/month; Elevated $5,000+/month
-- twscrape (authenticated scraping): Requires credential pools, high maintenance, ToS violation exposure
-- Recommendation: Defer entirely to post-v1.24; document as a known gap in the feature
-- If ever added: Target only official Premier League club Twitter accounts via a managed scraping service (Apify), not individual FPL community accounts
+### Anti-Features (do NOT build)
+- **Auto-running the slider through every value on mount** to pre-compute a curve. Tempting for instant feedback, but ILP is ~1-3s per solve and 30 budget values × 1.5s = 45s of compute per page load. The user will probably try 3-5 budgets, max.
+- **Multi-objective sliders** ("maximise xPts vs minimise variance"). Out of scope — keep one slider. Adds cognitive load.
+- **Showing the full ILP solution tree.** The internal solver state is not user-facing intelligence.
+- **Decimal step size below 0.1m.** FPL prices are in 0.1m increments; 0.05 steps would imply non-existent precision.
+- **Slider on mobile that requires fine motor control.** Mobile gets large +/- buttons next to a numeric display. Sliders below ~12px range on mobile are unusable.
 
-### FPL API (new signing confirmation)
-- When FPL registers a new signing, the player appears in `bootstrap-static` elements array with `status`, `team`, `now_cost`, `element_type`
-- This is the authoritative source for confirming FPL registration and initial price
-- Summer Window Tracker cross-references RSS news entities against `bootstrap-static` to confirm FPL ID match and current price
+### UX Pattern
+- **Debounce: 350-500ms after last slider movement** before calling `/api/pre-season-squad?budget=N`. Use a `useDebouncedValue` hook (or `useEffect` + setTimeout). Avoid debounce <250ms — feels jittery on the network round-trip. Avoid >600ms — feels laggy.
+- **Skeleton state for the formation grid** while compute is in-flight. Reuse existing loading skeleton patterns from `NextSeasonPlannerTab` empty/loading states.
+- **Slider above the formation grid** — visually anchored to the grid it modifies. Don't put it in a settings panel.
+- **Snap-to-step** at 0.1m increments. Slider thumb shows current value with a tooltip; track shows tick marks at 99.0, 100.0, 101.0.
+- **State persistence** — last-used budget stored in localStorage (`nsp_budget`) so a returning user picks up where they left off. Default to 100.0 on first visit.
+- **Mobile fallback**: slider with `min-h-[44px]` (MOB-TOUCH-01) and a flanking `-0.1` / `+0.1` button pair, plus numeric input. Keeps the UX usable on a 375px screen.
+- **Error state**: if ILP returns null at this budget (e.g. budget too low), show an inline message "No valid 15-player squad at £98.0m. Try a higher budget." Tie into GREEDY-NULL telemetry below.
 
-### Early-mover price signal
-The app already has the component parts. Early-mover flag = conjunction of:
-1. FPL registration confirmed (player in bootstrap-static)
-2. Ownership climbing rapidly (net transfers above threshold — existing PRC-01 logic)
-3. Favourable GW1-4 fixtures (depends on next-season fixture data)
-4. Role confirmation signal from scraped news ("first choice", "starter", "handed #9 shirt")
+### Complexity
+**Medium-High.** The slider + debounce is straightforward (~50 LOC). The ILP wiring is mostly done already (`/api/pre-season-squad` exists). The delta view (added/removed players) requires diffing two PreSeasonSquad results — a small pure function. The position-pinned mode (differentiator) adds significant complexity: requires extending `suggest_squad.py` to accept a `pinned_ids` param threaded to the ILP as forced `x_i = 1` constraints. Recommend shipping the basic slider first, then position-pinning as a follow-up.
 
-Components 1, 2, 3 already exist. Component 4 is new (news-derived role signal from SCRAPER-02).
-
----
-
-## Competitor Feature Analysis
-
-| Feature | FPL Review | FPL Statistico | FPLOptimized | This App's Approach |
-|---------|------------|----------------|--------------|---------------------|
-| Season summary card | Yes (full suite) | Yes (comprehensive stats) | Yes (highlights page) | Tied to existing xPts model — more analytically grounded than raw-points view |
-| Decision quality grade | No formal grade | Implicit in captain % only | Foresight/hindsight ratio shown | Composite process score (A–D) — novel; no existing personal tool does this |
-| Squad builder (full pool) | Yes (ILP-based) | No | Yes | ILP via PuLP; first time this app enters full-pool territory |
-| Summer news feed / signing tracker | No | No | No | Differentiator — integrates with price prediction pipeline |
-| GW1–8 fixture heatmap | External FDR tool | No | Yes (fixture page) | Reuse existing HEAT-01 component with next-season data |
+### Dependencies on existing components
+- `suggest_squad.py` `_solve_ilp(players, score_map, budget, team_cap)` — already parameterised. The `budget` param is exactly what the slider drives.
+- `/api/pre-season-squad` route — extend to accept a `budget` query param (currently uses default).
+- `usePreSeasonSquad()` hook — needs to accept a budget arg and re-fetch on change. Or new `usePreSeasonSquadWithBudget(budget)` hook.
+- `NextSeasonPlannerTab` formation grid — wrap with a loading state during pending fetches.
+- `buildPreSeasonSquad()` TypeScript fallback — must also accept budget. Currently I believe it does (passes through to the ILP call). Verify on implementation.
 
 ---
 
-## Carry-Forward Items (v1.24 also includes)
+## GREEDY-NULL: Telemetry & Reporting
 
-The milestone also includes carry-forward polish items that are NOT new features but must be scheduled:
+### Table Stakes
+- **Track the rate** at which `buildPreSeasonSquad()` returns null vs a valid squad. Today this is invisible — failures degrade silently to the ILP fallback. Telemetry is the only way to know if greedy is good enough or systematically broken.
+- **Two telemetry surfaces**:
+  1. **Pipeline-side**: log structured line `[suggest_squad] greedy_null=true budget=1000 reason=...` when `_solve_ilp` is invoked because greedy returned null. Aggregate over runs.
+  2. **Runtime-side**: when the user moves the COST-01 slider, count how often greedy returns null at that budget (purely client-side; never sent off-device).
+- **Surface the rate to the developer**, not the user. This is internal calibration — does not need a flashy UI.
+- **No PII / no team ID leakage** — even though it's a personal tool. Logs should be parameter-shaped (budget, position counts), not user-identifying.
 
-| Item | Description | Complexity |
-|------|-------------|------------|
-| TRT-06 | ChipToggle in RouteTreeTab (deferred from v1.9) | LOW |
-| TRT-02 | Hits column cosmetic fix in RouteTreeTab | LOW |
-| MinsRiskBadge | Wire onto SquadView, DecisionSummaryTab, GemTable column, PlayerComparisonModal | MEDIUM |
+### Differentiators
+- **Inline "fallback used" indicator** on the formation grid when the squad came from ILP rather than greedy. Tiny badge: `Optimal (ILP)` vs `Heuristic (Greedy)`. Subtle, but it signals to the user *why* the result is good (or merely sufficient).
+- **Reason classification** for null returns: `budget_too_low`, `position_quota_unmet`, `team_cap_hit`, `no_eligible_players_in_pool`. Helps drive future improvements to the greedy heuristic.
+- **Comparison across budget values** — if the simulator is being used heavily, surface a small dev-only stat panel: "Greedy nulls in last 10 budget tries: 3 (30%)." Off by default; behind a debug flag.
 
-These are independent of the four main features and can be shipped in any order.
+### Anti-Features (do NOT build)
+- **Telemetry sent to a server.** Personal tool, no analytics infra. Keep it console.log or local file.
+- **Forcing the user to choose greedy vs ILP.** They shouldn't care. The system should always pick the better answer.
+- **Auto-tuning the greedy heuristic** based on null rate. Premature optimisation; measure first.
+- **Showing null rates to the end user as a metric.** Confusing, low signal.
+
+### UX Pattern
+- **Console logging** for runtime nulls — structured: `[buildPreSeasonSquad] returned null budget=1000 trigger=cost_simulator`.
+- **Pipeline logging** for batch nulls — same format, aggregated by pipeline run.
+- **Optional `?debug=1` query param** that surfaces an info panel on `NextSeasonPlannerTab` showing the last 10 ILP/greedy outcomes with reasons. Strictly dev-facing.
+- **Implicit signal** — if greedy null rate exceeds threshold (e.g. >40%), automatically widen the greedy search or switch to ILP-first. But: don't build the auto-switching until you have the data to justify it.
+
+### Complexity
+**Low.** ~20-30 LOC of logging in `pre-season-squad.ts` and `suggest_squad.py`. Optional debug panel is another 50 LOC. Don't over-engineer — this is observability, not a feature.
+
+### Dependencies on existing components
+- `buildPreSeasonSquad()` (`src/lib/pre-season-squad.ts`) — add structured console.warn when returning null.
+- `suggest_squad.py` — add structured stdout when `_solve_ilp` is reached as fallback.
+- `/api/pre-season-squad` route — pass through error reasons if ILP also fails (currently 404s).
+- No new components required for the must-haves. Optional debug panel could be a small `<DebugInfo />` component gated on `process.env.NEXT_PUBLIC_DEBUG`.
+
+---
+
+## Cross-cutting MVP Recommendation
+
+**Ship order** (smallest blast radius first, biggest UX win last):
+
+1. **GREEDY-NULL telemetry first** — invisible to user, gives data to inform every other feature. ~1 day's work.
+2. **AUTO-01 detection + status banner** — the foundation. Without auto-activation, nothing else lights up automatically when the season turns. ~2-3 days.
+3. **WATCH-01/04 watchlist** — biggest user-facing value, most independent feature, can ship without COST-01 being done. ~3-4 days. Most of the v1.25 value sits here.
+4. **COST-01 budget simulator (basic)** — slider + ILP wiring + delta view. ~2-3 days. Defer position-pinning (differentiator) to a follow-up phase.
+
+**Defer to a future milestone**:
+- Position-pinning in COST-01 (high value, but adds complexity that risks the milestone).
+- Notification/alert system for watchlist (out of scope — no infra).
+- Multi-watchlist / shared watchlists / collaboration features (anti-feature).
 
 ---
 
 ## Sources
 
-- [AlpsCode: Intro to FPL Analytics](https://alpscode.com/blog/intro-to-fpl-analytics/) — EV framework for decision quality in FPL
-- [AlpsCode: Hindsight Optimization for FPL](https://alpscode.com/blog/hindsight-optimization/) — process vs. outcome analysis; ghost-ship team experiment
-- [FPLOptimized: Season Highlights](https://fploptimized.com/highlights.html) — foresight/hindsight optimal ratio metrics; predicted vs. realized points framework
-- [FPL Statistico](https://www.anewpla.net/fpl/report/lander.php) — captain %, chip performance, bench analysis reference
-- [PLOS ONE: Identification of skill in FPL](https://pmc.ncbi.nlm.nih.gov/articles/PMC7928501/) — academic evidence that experience = 22.1 pts/year; skill exists but is small relative to variance
-- [LiveFPL: FPL Price Changes](https://livefpl.com/blog/fpl-price-changes) — price change algorithm: net transfer velocity, ownership threshold mechanics
-- [eirikur.dev: FPL and DP](https://eirikur.dev/blog/2024-08-05-fpl-and-dp/) — dynamic programming approach; brute-force infeasibility analysis
-- [GitHub: FPL-Optimization-Tools (sertalpbilal)](https://github.com/sertalpbilal/FPL-Optimization-Tools) — ILP as community standard approach
-- [apply-maths.com: Linear Programming for Fantasy PL](https://apply-maths.com/en/linear-programming-for-fantasy-pl) — ILP constraints reference (2 GK, 5 DEF, 5 MID, 3 FWD, 100m, 3-per-club)
-- [Sky Sports RSS Feeds](https://rss.feedspot.com/sky_sports_rss_feeds/) — RSS feed availability confirmation
-- [BBC Sport Football RSS](https://feeds.bbci.co.uk/sport/football/rss.xml) — direct BBC feed URL (public, no auth)
-- [FPLGameweek: Twitter accounts for FPL](https://www.fplgameweek.com/articles/fpl-twitter-accounts-and-use/) — key accounts and Twitter signal value
-- [scrapfly.io: How to Scrape X.com in 2026](https://scrapfly.io/blog/posts/how-to-scrape-twitter) — current Twitter scraping status; Nitter dead; account pools required
-- [FPL Basics: How to pick a squad](https://www.premierleague.com/en/news/2174419/fpl-basics-how-to-pick-a-squad) — official 100m budget, 3-per-club, squad composition constraints
-- [FPL API Guide](https://www.game-change.co.uk/2023/02/10/a-complete-guide-to-the-fantasy-premier-league-fpl-api/) — bootstrap-static as pre-season player data source
+- [Fantasy Football Fix — 2025/26 launch date](https://www.fantasyfootballfix.com/blog-index/fpl-2025-26-game-launch-announced/) — MEDIUM confidence (publication may shift YoY)
+- [Fantasy Football Fix — 2025/26 player prices](https://www.fantasyfootballfix.com/blog-index/fpl-2025-26-player-price-revealed-update/) — MEDIUM
+- [Premier League — new player prices 2025/26](https://www.premierleague.com/en/news/4363681/see-the-prices-of-new-players-added-to-202526-fantasy) — HIGH (official PL)
+- [LiveFPL Price Predictor](https://www.livefpl.net/prices) — competitor pattern reference
+- [FPL Dashboard — Price Changes](https://fpl.page/price-changes) — competitor pattern reference
+- [FPL Core](https://www.fplcore.com/price-changes) — competitor pattern reference
+- [Fantasy Football Fix — toolbox/web features](https://www.fantasyfootballfix.com/web_features/) — watchlist + notification patterns
+- [Fantasy Football Scout — Price Predictions](https://www.fantasyfootballscout.co.uk/fpl/price-predictions/) — UX reference
+- [Sportmonks — Building a real-time Livescore app: best practices](https://www.sportmonks.com/blogs/building-a-real-time-livescore-app-with-a-football-api-best-practices/) — polling UX patterns
+- [Eleken — Slider UI examples](https://www.eleken.co/blog-posts/slider-ui) — slider UX patterns
+- [useHooks — useDebounce](https://usehooks.com/usedebounce) — debounce hook implementation reference
+- [FPL API Endpoints guide (Medium)](https://medium.com/@frenzelts/fantasy-premier-league-api-endpoints-a-detailed-guide-acbd5598eb19) — bootstrap shape reference
 
----
-
-*Feature research for: FPL Analyst v1.24 — End of Season & Off-Season Intelligence*
-*Researched: 2026-05-18*
+**Codebase references inspected** (HIGH confidence):
+- `src/lib/types.ts` — `PreSeasonPlayer`, `PreSeasonSquad`, `TransferNewsArticle`, `news_added`, `news_severity`
+- `pipeline/suggest_squad.py` — `_solve_ilp(players, score_map, budget=BUDGET, team_cap=TEAM_CAP)` signature confirmed
+- `src/lib/pre-season-squad.ts` — `buildPreSeasonSquad()` returns `PreSeasonSquad | null`
+- `src/lib/hooks/usePreSeasonSquad.ts` — 404→null TanStack Query pattern
+- `src/components/news/NewsBanner.tsx` — 14-day staleness gate reused
+- `.planning/PROJECT.md` — milestone goals and existing IS_OFF_SEASON gate
