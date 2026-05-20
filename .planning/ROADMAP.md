@@ -1887,7 +1887,7 @@ Plans:
 
 **Milestone Goal:** Extend the Next Season Planner with auto-activation when FPL publishes next-season data, a transfer target watchlist, and an interactive squad cost simulator — keeping the app useful through the off-season and ready to light up the moment pre-season data lands.
 
-- [ ] **Phase 127: Squad Health Diagnostics & Transfer Watchlist** — GREEDY-NULL pipeline sweep + diagnoseBuildPreSeasonSquad() + health API field; useWatchlist() hook + pin toggle in GemTable + dedicated Watchlist sub-tab.
+- [x] **Phase 127: Squad Health Diagnostics & Transfer Watchlist** — GREEDY-NULL pipeline sweep + diagnoseBuildPreSeasonSquad() + health API field; useWatchlist() hook + pin toggle in GemTable + dedicated Watchlist sub-tab. *(Complete 2026-05-19, 5 human UAT items pending)*
 - [ ] **Phase 128: Pre-Season Auto-Activation** — Tri-state PRE_SEASON_ACTIVE gate + pre_season_active.json artifact + suggest_squad.py force=True; usePreSeasonActive() hook + NextSeasonPlannerTab status pill + first-activation banner.
 - [ ] **Phase 129: Squad Cost Simulator** — Budget slider in NextSeasonPlannerTab via useDeferredValue + commit-on-release; /api/pre-season-squad?include=inputs API refactor; infeasibility messaging using health.min_feasible_budget_greedy.
 
@@ -1905,7 +1905,7 @@ Plans:
   - [x] 127-01-PLAN.md — Backend foundation: SquadHealth/PreSeasonSquadResponse types, diagnoseBuildPreSeasonSquad, pipeline/squad_health.py + run.py wiring, /api/pre-season-squad envelope refactor
   - [x] 127-02-PLAN.md — useWatchlist hook (localStorage-backed) + GemTable star button action row in both expand rows
   - [x] 127-03-PLAN.md — WatchlistPlayerCard + WatchlistTab components (loading/error/empty/grid states)
-  - [ ] 127-04-PLAN.md — Integration: usePreSeasonSquad envelope migration, NextSeasonPlannerTab health indicator + solver badge, page.tsx sub-tab + useWatchlist wiring
+  - [x] 127-04-PLAN.md — Integration: usePreSeasonSquad envelope migration, NextSeasonPlannerTab health indicator + solver badge, page.tsx sub-tab + useWatchlist wiring
 **UI hint**: yes
 
 ### Phase 128: Pre-Season Auto-Activation
@@ -1918,7 +1918,11 @@ Plans:
   3. User can open NextSeasonPlannerTab and see a zinc "Awaiting" status pill when pre-season is not yet active, and a green "Live" status pill once pre_season_active.json exists; the visual transition happens within one TanStack Query refetch cycle of the artifact being written
   4. User sees a dismissible first-activation banner on NextSeasonPlannerTab when pre-season first becomes Live, and never sees it again after dismissal (suppressed via localStorage key nsp_activation_seen_{seasonId})
   5. /api/pre-season-active responds with the activation timestamp and seasonId so usePreSeasonActive() can drive both pill state and banner suppression deterministically
-**Plans**: TBD
+**Plans**: 4 plans
+  - [ ] 128-01-PLAN.md — pipeline/suggest_squad.py force-parameter refactor + Phase 128 activation-predicate regression tests
+  - [ ] 128-02-PLAN.md — pipeline/run.py activation block (predicate + idempotent artifact write + suggest_squad force-recompute)
+  - [ ] 128-03-PLAN.md — PreSeasonActiveResponse type + /api/pre-season-active route handler
+  - [ ] 128-04-PLAN.md — usePreSeasonActive hook + tests + NextSeasonPlannerTab status pill + first-activation banner
 **UI hint**: yes
 
 ### Phase 129: Squad Cost Simulator
@@ -1938,6 +1942,6 @@ Plans:
 | 124 | v1.24 | 3/3 | Complete    | 2026-05-19 |
 | 125 | v1.24 | 3/3 | Complete    | 2026-05-19 |
 | 126 | v1.24 | 4/4 | Complete    | 2026-05-19 |
-| 127 | v1.25 | 3/4 | In progress | - |
-| 128 | v1.25 | 0 | Not started | - |
+| 127 | v1.25 | 4/4 | Complete    | 2026-05-19 |
+| 128 | v1.25 | 0/4 | Planned     | -          |
 | 129 | v1.25 | 0 | Not started | - |
