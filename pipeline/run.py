@@ -269,33 +269,37 @@ def run(dry_run: bool = False):
                     if not _active_exists:
                         # First activation: write artifact and force-recompute squad
                         from datetime import datetime as _dt, timezone as _tz
-                        _year = int(events[0]['deadline_time'][:4])
-                        _season_id = f"{str(_year - 1)[-2:]}{str(_year)[-2:]}"
-                        save(_active_key, {
-                            'activated_at': _dt.now(_tz.utc).isoformat(),
-                            'season_id': _season_id,
-                        })
-                        print(f"[pipeline] Pre-season activation written: season_id={_season_id}")
-                        # Force-recompute squad against fresh bootstrap prices.
-                        # Archive may be absent on first-ever run; guard accordingly.
-                        archive_path = os.path.join(cache_dir, 'season_archive_gw38.json')
-                        _arch = None
-                        if os.path.exists(archive_path):
-                            with open(archive_path, 'r', encoding='utf-8') as _f:
-                                _arch = json.load(_f)
-                        elif os.getenv('USE_BLOB', '').lower() == 'true':
-                            import vercel_blob as _vb2
-                            import requests as _req
-                            _blist = _vb2.list({'prefix': 'season_archive_gw38.json', 'limit': 1})
-                            _bs = _blist.get('blobs', [])
-                            if _bs:
-                                _arch = _req.get(_bs[0].get('url', ''), timeout=30).json()
-                        if _arch is not None:
-                            from suggest_squad import suggest_squad
-                            suggest_squad(bootstrap, _arch, force=True)
-                            print("[pipeline] Pre-season squad force-recomputed.")
+                        _dt_str = events[0].get('deadline_time', '')
+                        if not _dt_str or len(_dt_str) < 4 or not _dt_str[:4].isdigit():
+                            print(f"[pipeline] Pre-season activation: malformed deadline_time {_dt_str!r} — skipping.", file=sys.stderr)
                         else:
-                            print("[pipeline] Pre-season activation: archive not available — squad recompute skipped.", file=sys.stderr)
+                            _year = int(_dt_str[:4])
+                            _season_id = f"{str(_year - 1)[-2:]}{str(_year)[-2:]}"
+                            save(_active_key, {
+                                'activated_at': _dt.now(_tz.utc).isoformat(),
+                                'season_id': _season_id,
+                            })
+                            print(f"[pipeline] Pre-season activation written: season_id={_season_id}")
+                            # Force-recompute squad against fresh bootstrap prices.
+                            # Archive may be absent on first-ever run; guard accordingly.
+                            archive_path = os.path.join(cache_dir, 'season_archive_gw38.json')
+                            _arch = None
+                            if os.path.exists(archive_path):
+                                with open(archive_path, 'r', encoding='utf-8') as _f:
+                                    _arch = json.load(_f)
+                            elif os.getenv('USE_BLOB', '').lower() == 'true':
+                                import vercel_blob as _vb2
+                                import requests as _req
+                                _blist = _vb2.list({'prefix': 'season_archive_gw38.json', 'limit': 1})
+                                _bs = _blist.get('blobs', [])
+                                if _bs:
+                                    _arch = _req.get(_bs[0].get('url', ''), timeout=30).json()
+                            if _arch is not None:
+                                from suggest_squad import suggest_squad
+                                suggest_squad(bootstrap, _arch, force=True)
+                                print("[pipeline] Pre-season squad force-recomputed.")
+                            else:
+                                print("[pipeline] Pre-season activation: archive not available — squad recompute skipped.", file=sys.stderr)
                     else:
                         print("[pipeline] Pre-season already activated — skipping.")
                 except Exception as _pa_exc:
