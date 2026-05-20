@@ -7,6 +7,7 @@
 // Phase 128 (128-04): Added usePreSeasonActive hook integration — status pill (Awaiting/Live)
 //   and first-activation banner with localStorage suppression (AUTO-03).
 // Phase 129 (COST-01, COST-02): budget slider + useDeferredValue commit pipeline; consumes inputs envelope from /api/pre-season-squad?include=inputs.
+// Phase 129 Wave 3 (COST-03): infeasibility <p> with D-08/D-09 copy, dynamic amber gradient (D-10), zinc-only track when health null (D-11), inputs-refetch reset effect (R6).
 // D-04: read-only (no mutation paths, no <button> elements that change squad state).
 // D-05: formation grid (GK/DEF/MID/FWD rows + 4 bench).
 // D-06: ppm as native title-attribute tooltip on total-points span only (not visible column).
@@ -159,7 +160,18 @@ export function NextSeasonPlannerTab() {
   }, [inputs, scoreMapHydrated, deferredBudget])
 
   useEffect(() => { if (clientSquad) setLastValidSquad(clientSquad) }, [clientSquad])
+  useEffect(() => {
+    setLastValidSquad(null)
+    setHasCommitted(false)
+  }, [data?.inputs])
   useEffect(() => () => { if (keyboardTimerRef.current) clearTimeout(keyboardTimerRef.current) }, [])
+
+  const trackBackground = useMemo<string>(() => {
+    const minFeasible = health?.min_feasible_budget_greedy
+    if (minFeasible === null || minFeasible === undefined) return '#71717a'
+    const threshold = ((minFeasible - 80) / 40) * 100
+    return `linear-gradient(to right, #f59e0b 0%, #f59e0b ${threshold}%, #71717a ${threshold}%, #71717a 100%)`
+  }, [health?.min_feasible_budget_greedy])
 
   // Phase 129 (COST-01): Slider event handlers
   const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
@@ -284,7 +296,7 @@ export function NextSeasonPlannerTab() {
               onPointerUp={handlePointerUp}
               onKeyUp={handleKeyUp}
               className="w-full mt-2"
-              style={{ background: '#71717a' }}
+              style={{ background: trackBackground }}
               aria-label="Budget slider"
               aria-valuemin={80}
               aria-valuemax={120}
@@ -293,7 +305,13 @@ export function NextSeasonPlannerTab() {
             />
           </div>
         )}
-        {/* Phase 129 Wave 3: infeasibility <p> renders here */}
+        {hasCommitted && clientSquad === null && (
+          <p className="text-sm text-amber-600 dark:text-amber-400 py-2">
+            {health?.min_feasible_budget_greedy != null
+              ? `No squad possible at £${committedBudget.toFixed(1)}m — try £${health.min_feasible_budget_greedy.toFixed(1)}m+`
+              : `No squad possible at £${committedBudget.toFixed(1)}m`}
+          </p>
+        )}
         {squadSection}
         {/* Health indicator rendered after squadSection (GREEDY-03), not inside FormationGrid */}
         {health !== null && <HealthIndicator health={health} />}

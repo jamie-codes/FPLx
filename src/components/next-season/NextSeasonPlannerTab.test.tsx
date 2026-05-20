@@ -457,7 +457,8 @@ describe('NextSeasonPlannerTab', () => {
     const { container } = render(<NextSeasonPlannerTab />)
     const slider = container.querySelector('input[type="range"]') as HTMLInputElement
     // Zinc-only track, no gradient
-    expect(slider.style.background).toContain('#71717a')
+    // jsdom normalises hex colours to rgb() — check for the rgb equivalent of #71717a
+    expect(slider.style.background).toMatch(/#71717a|rgb\(113,\s*113,\s*122\)/)
     expect(slider.style.background).not.toContain('linear-gradient')
   })
 
