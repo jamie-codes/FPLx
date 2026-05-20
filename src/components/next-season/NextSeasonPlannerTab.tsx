@@ -292,7 +292,7 @@ export function NextSeasonPlannerTab() {
               max={120}
               step={0.5}
               value={sliderValue}
-              onInput={handleInput}
+              onChange={handleInput}
               onPointerUp={handlePointerUp}
               onKeyUp={handleKeyUp}
               className="w-full mt-2"
