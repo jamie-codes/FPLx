@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.25
 milestone_name: Pre-Season Intelligence
-status: executing
-stopped_at: Phase 128 UI-SPEC approved
-last_updated: "2026-05-20T06:57:56.058Z"
-last_activity: 2026-05-20 -- Phase 128 planning complete
+status: completed
+stopped_at: Phase 129 context gathered (2026-05-20)
+last_updated: "2026-05-20T10:00:00.000Z"
+last_activity: 2026-05-20 -- Phase 129 context captured
 progress:
   total_phases: 74
-  completed_phases: 33
+  completed_phases: 34
   total_plans: 108
-  completed_plans: 171
-  percent: 45
+  completed_plans: 175
+  percent: 46
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-19 — v1.25 Pre-Season Intelligence)
 
 ## Current Position
 
-Phase: 128 — Pre-Season Auto-Activation (Complete)
-Plan: 4/4 done
-Status: Complete
-Last activity: 2026-05-20 -- Phase 128 complete
+Phase: 129 — Squad Cost Simulator (Context gathered)
+Plan: 0 plans created
+Status: Context ready — awaiting planning
+Last activity: 2026-05-20 -- Phase 129 context captured
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -43,5 +43,5 @@ Progress: [░░░░░░░░░░] 0%
 
 ### Session Continuity
 
-Last session: 2026-05-19T21:12:01.241Z
-Stopped at: Phase 128 UI-SPEC approved
+Last session: 2026-05-20T09:33:52.448Z
+Stopped at: context exhaustion at 77% (2026-05-20)
