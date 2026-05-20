@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.25
 milestone_name: Pre-Season Intelligence
-status: completed
-stopped_at: Phase 129 context gathered (2026-05-20)
-last_updated: "2026-05-20T10:00:00.000Z"
-last_activity: 2026-05-20 -- Phase 129 context captured
+status: executing
+stopped_at: Phase 129 UI-SPEC approved
+last_updated: "2026-05-20T16:42:22.568Z"
+last_activity: 2026-05-20
 progress:
-  total_phases: 74
-  completed_phases: 34
-  total_plans: 108
-  completed_plans: 175
-  percent: 46
+  total_phases: 3
+  completed_phases: 2
+  total_plans: 12
+  completed_plans: 9
+  percent: 75
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-19 — v1.25 Pre-Season Intelligence)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.25 Pre-Season Intelligence — Phase 129 next
+**Current focus:** Phase 129 — squad-cost-simulator
 
 ## Current Position
 
-Phase: 129 — Squad Cost Simulator (Context gathered)
-Plan: 0 plans created
-Status: Context ready — awaiting planning
-Last activity: 2026-05-20 -- Phase 129 context captured
+Phase: 129 (squad-cost-simulator) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-05-20
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [████████░░] 75%
 
 ## Accumulated Context
 
@@ -43,5 +43,5 @@ Progress: [░░░░░░░░░░] 0%
 
 ### Session Continuity
 
-Last session: 2026-05-20T09:33:52.448Z
-Stopped at: context exhaustion at 77% (2026-05-20)
+Last session: 2026-05-20T16:42:22.559Z
+Stopped at: Phase 129 UI-SPEC approved

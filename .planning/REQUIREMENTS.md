@@ -1,0 +1,79 @@
+﻿# Requirements — v1.25 Pre-Season Intelligence
+
+**Milestone:** v1.25 Pre-Season Intelligence
+**Goal:** Extend the Next Season Planner with auto-activation when FPL publishes next-season data, a transfer target watchlist, and an interactive squad cost simulator.
+**Last updated:** 2026-05-19
+
+---
+
+## v1 Requirements
+
+### Pre-Season Activation
+
+- [ ] **AUTO-01**: Pipeline detects next-season bootstrap publication via tri-state gate (`PRE_SEASON_ACTIVE`: `IS_OFF_SEASON && len(events)>=38 && !any(e.finished) && events[0].deadline_time present`); 4×-daily cron sufficient.
+- [ ] **AUTO-02**: Pipeline writes `pre_season_active.json` Blob artifact on first detection; `suggest_squad.py` gains `force=False` parameter and re-runs against fresh bootstrap prices on activation.
+- [ ] **AUTO-03**: `usePreSeasonActive()` hook + `/api/pre-season-active` route; NextSeasonPlannerTab shows zinc "Awaiting" → green "Live" status pill + dismissible first-activation banner (suppressed via `nsp_activation_seen_{seasonId}` localStorage key).
+
+### Transfer Target Watchlist
+
+- [ ] **WATCH-01**: `useWatchlist()` hook backed by `useSyncExternalStore` reads/writes `localStorage['fplx_watchlist']` (`{version: 1, ids: number[], added: Record<string, string>}`); stores IDs only; rehydrates price, ownership, team, position, news from `/api/players` each render; shows "Departed" pill for IDs no longer in the player pool.
+- [ ] **WATCH-02**: Each watchlist card displays: current price + trend arrow (`cost_change_event`), `selected_by_percent` ownership, news badge from `lineup_news.json` (amber border if `news_added` within 48h), squad-overlap indicator (green dot if player is in current pre-season squad from `usePreSeasonSquad`). `ConfirmedSigningBadge` reused from v1.24 where applicable.
+- [ ] **WATCH-03**: Pin/unpin toggle in GemTable expand-row action cluster (mobile rows 329-354 and desktop rows 404-437 pattern); persists to localStorage on toggle; pin state visible as a star icon in the existing action cluster.
+- [ ] **WATCH-04**: Dedicated "Watchlist" sub-tab in Plan section (after "Next Season"); card grid layout (2-col mobile, 3-col desktop); empty-state with prompt to pin players from GemTable; loading skeleton; error state.
+
+### Squad Cost Simulator
+
+- [x] **COST-01**: Budget slider (`min=80`, `max=120`, `step=0.5`, default `100.0` in £m) in NextSeasonPlannerTab drives client-side `buildPreSeasonSquad()` recompute via `useDeferredValue` + commit-on-release (`onPointerUp` or 300ms after keyboard navigation); slider state scoped to `NextSeasonPlannerTab` via local context (NOT lifted to `page.tsx`).
+- [x] **COST-02**: `/api/pre-season-squad?include=inputs` response extended with `inputs: { players, scoreMap, budget_default }` and `health` fields; slider recomputes from cached `inputs` in-browser (no round-trip per tick); formation grid and FDR heatmap update to reflect the new squad on commit. *(FDR heatmap update is prerequisite-blocked by GW1-8 fixture data not yet published — heatmap currently shows static empty-state; will auto-activate when fixture data arrives; Phase 129 delivers squad grid update only.)*
+- [x] **COST-03**: Infeasibility UX: when greedy returns null at the selected budget, show inline message "No squad possible at £X.Xm — try £Y.Ym+" where Y is `health.min_feasible_budget_greedy`; slider track renders amber below min feasible budget.
+
+### Squad Health (GREEDY-NULL)
+
+- [ ] **GREEDY-01**: `pipeline/squad_health.py` sweeps £80–£120m in £0.5m steps, runs a Python port of the greedy builder + PuLP ILP cross-check, writes `pre_season_squad_health.json` to Vercel Blob with fields: `greedy_null_rate`, `min_feasible_budget_greedy`, `min_feasible_budget_ilp`, `greedy_optimality_gap_avg`; gated to pre-season only via `PRE_SEASON_ACTIVE`.
+- [ ] **GREEDY-02**: `diagnoseBuildPreSeasonSquad()` sibling function exported from `src/lib/pre-season-squad.ts` returning structured reason codes (`incomplete_squad` | `unmet_min_slots` | `no_eligible_players`); `health` field added to `/api/pre-season-squad` response schema.
+- [ ] **GREEDY-03**: Health indicator in NextSeasonPlannerTab below the cost slider showing greedy null rate + min viable budget; solver badge ("Greedy" vs "ILP fallback") on the squad formation grid.
+
+---
+
+## Future Requirements
+
+- Position-pinning in cost simulator (lock specific players, re-solve remainder with ILP) — deferred, adds ILP complexity
+- Cross-tab watchlist sync via `storage` event — defer to v1.26 polish
+- Push/email notifications when watchlisted player price changes — requires ALERT-01 infrastructure (future milestone)
+- Watchlist sharing/export — out of scope for personal tool
+- COST-01 ILP fallback at runtime (re-run PuLP on budget commit) — revisit only if empirical GREEDY-01 null rate >40%
+- TC-01 Triple Captain comparison engine (deferred from v1.25 scope)
+
+---
+
+## Out of Scope
+
+- Automated pip notifications (requires external notification infrastructure — deferred to ALERT-01 milestone)
+- Any FPL API "season ID" field dependency (undocumented; multi-signal detection is defence-in-depth)
+- Watchlist folders, custom notes, or drag-to-reorder (personal tool; complexity not warranted)
+- Virtualisation/pagination for watchlist (assumed 20–40 pinned players; revisit if observed scale >100)
+
+---
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| GREEDY-01 | Phase 127 | Pending |
+| GREEDY-02 | Phase 127 | Pending |
+| GREEDY-03 | Phase 127 | Pending |
+| WATCH-01 | Phase 127 | Pending |
+| WATCH-02 | Phase 127 | Pending |
+| WATCH-03 | Phase 127 | Pending |
+| WATCH-04 | Phase 127 | Pending |
+| AUTO-01 | Phase 128 | Pending |
+| AUTO-02 | Phase 128 | Pending |
+| AUTO-03 | Phase 128 | Pending |
+| COST-01 | Phase 129 | Complete |
+| COST-02 | Phase 129 | Complete |
+| COST-03 | Phase 129 | Complete |
+
+**Coverage:** 13 / 13 v1 requirements mapped (100%)
+**Mapped:** 2026-05-19 by roadmapper
+
+---

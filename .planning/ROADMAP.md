@@ -1935,7 +1935,11 @@ Plans:
   3. /api/pre-season-squad?include=inputs response now includes inputs (players, scoreMap, budget_default) and health alongside squad, and the client uses cached inputs to drive the recompute in-browser (no Python subprocess from a route handler)
   4. When greedy returns null at the chosen budget, user sees inline message "No squad possible at £X.Xm — try £Y.Ym+" where Y is health.min_feasible_budget_greedy from Phase 127, and the slider track renders amber below the minimum feasible budget threshold
   5. Slider state is scoped to NextSeasonPlannerTab via local context (not lifted to page.tsx), so GemTable and other Plan sub-tabs do not re-render on slider drag
-**Plans**: TBD
+**Plans**: 4 plans
+  - [x] 129-01-PLAN.md — Wave 0: RED test scaffolding (route.test.ts + extended NextSeasonPlannerTab.test.tsx with makeInputs helper, 15 new component tests, 6 new route tests)
+  - [ ] 129-02-PLAN.md — Wave 1: types extension (PreSeasonSquadInputs + optional inputs? on PreSeasonSquadResponse) + route refactor (GET(request: NextRequest), shared loadSquadInputs helper, Object.fromEntries serialisation, graceful degradation on Resolution 1)
+  - [ ] 129-03-PLAN.md — Wave 2: hook parameterisation (queryKey discriminator) + component slider, useDeferredValue commit pipeline, scoreMapHydrated/clientSquad memos, lastValidSquad/hasCommitted state, API-squad-before-commit render (D-06)
+  - [ ] 129-04-PLAN.md — Wave 3: infeasibility paragraph (D-08/D-09 variants A+B), dynamic amber slider gradient (D-10) with zinc fallback (D-11), inputs-refetch reset effect for lastValidSquad/hasCommitted
 **UI hint**: yes
 | 122 | v1.24 | 2/2 | Complete    | 2026-05-18 |
 | 123 | v1.24 | 3/3 | Complete    | 2026-05-18 |
@@ -1944,4 +1948,4 @@ Plans:
 | 126 | v1.24 | 4/4 | Complete    | 2026-05-19 |
 | 127 | v1.25 | 4/4 | Complete    | 2026-05-19 |
 | 128 | v1.25 | 4/4 | Complete    | 2026-05-20 |
-| 129 | v1.25 | 0 | Not started | - |
+| 129 | v1.25 | 1/4 | In Progress|  |
