@@ -250,11 +250,18 @@ def _derive_squad_dict(selected: list, score_map: dict) -> dict:
 # Public API
 # ---------------------------------------------------------------------------
 
-def suggest_squad(bootstrap: dict, archive: dict) -> None:
+def suggest_squad(bootstrap: dict, archive: dict, force: bool = False) -> None:
     """Compute and write an ILP-optimal pre-season squad to Blob.
 
     Reads player data from bootstrap (for now_cost, element_type, team, web_name)
     and archive (for ppm computation via total_points / total_minutes).
+
+    Args:
+        bootstrap: FPL bootstrap-static response dict.
+        archive: Season archive dict (season_archive_gw38.json).
+        force: If True, bypass the idempotency check and always re-run the ILP.
+               Used by the Phase 128 AUTO-02 activation block to force a fresh
+               squad build against newly published next-season prices (D-03/D-04).
 
     Writes pre_season_squad.json via save(). Non-fatal outer wrapper in run.py
     catches any exception from this function.
@@ -262,20 +269,23 @@ def suggest_squad(bootstrap: dict, archive: dict) -> None:
     import os as _os
     # Idempotency check: skip if pre_season_squad.json already exists.
     # Mirrors the _blob_exists pattern in archive_season.py.
-    if _os.getenv('USE_BLOB', '').lower() == 'true':
-        try:
-            import vercel_blob
-            result = vercel_blob.list({'prefix': SQUAD_KEY, 'limit': 1})
-            if len(result.get('blobs', [])) > 0:
+    # D-03: both blob-path and local-path checks are wrapped in `if not force:`
+    # so force=True bypasses the entire guard (not just one branch).
+    if not force:
+        if _os.getenv('USE_BLOB', '').lower() == 'true':
+            try:
+                import vercel_blob
+                result = vercel_blob.list({'prefix': SQUAD_KEY, 'limit': 1})
+                if len(result.get('blobs', [])) > 0:
+                    print("[suggest_squad] already exists — skipping.")
+                    return
+            except Exception as _exc:
+                print(f"[suggest_squad] _blob_exists check failed ({_exc}); assuming not present.", file=sys.stderr)
+        else:
+            local_path = _os.path.join('pipeline', 'cache', SQUAD_KEY)
+            if _os.path.exists(local_path):
                 print("[suggest_squad] already exists — skipping.")
                 return
-        except Exception as _exc:
-            print(f"[suggest_squad] _blob_exists check failed ({_exc}); assuming not present.", file=sys.stderr)
-    else:
-        local_path = _os.path.join('pipeline', 'cache', SQUAD_KEY)
-        if _os.path.exists(local_path):
-            print("[suggest_squad] already exists — skipping.")
-            return
 
     try:
         # Build candidate list from bootstrap + archive
