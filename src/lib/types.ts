@@ -1141,6 +1141,8 @@ export interface PreSeasonSquadResponse {
   solver: 'ilp' | 'greedy' | null  // null when squad is null
 }
 
+// Phase 128 AUTO-03: Activation status payload for /api/pre-season-active.
+// Returned when pre_season_active.json exists; null (via 404) when awaiting.
 export interface PreSeasonActiveResponse {
   activated_at: string  // ISO 8601 timestamp set by pipeline at first activation
   season_id: string     // e.g. "2526" — derived from events[0].deadline_time year

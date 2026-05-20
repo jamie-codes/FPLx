@@ -2,7 +2,7 @@
 // Phase 126 (NSP-03, NSP-04): NextSeasonPlannerTab RTL integration tests.
 // Phase 127 (127-04): Updated mocks to use PreSeasonSquadResponse envelope shape;
 //   added health indicator and solver badge tests.
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render } from '@testing-library/react'
 import type { PreSeasonSquad, PreSeasonPlayer, SquadHealth, PreSeasonSquadResponse } from '@/lib/types'
 
@@ -10,6 +10,12 @@ import type { PreSeasonSquad, PreSeasonPlayer, SquadHealth, PreSeasonSquadRespon
 const usePreSeasonSquadMock = vi.fn()
 vi.mock('@/lib/hooks/usePreSeasonSquad', () => ({
   usePreSeasonSquad: () => usePreSeasonSquadMock(),
+}))
+
+// Mock usePreSeasonActive hook (Phase 128 AUTO-03) — default to Awaiting (null) so existing tests are unaffected.
+const usePreSeasonActiveMock = vi.fn()
+vi.mock('@/lib/hooks/usePreSeasonActive', () => ({
+  usePreSeasonActive: () => usePreSeasonActiveMock(),
 }))
 
 // Import AFTER mocks
@@ -76,6 +82,11 @@ function makeEnvelope(overrides: Partial<PreSeasonSquadResponse> = {}): PreSeaso
 }
 
 describe('NextSeasonPlannerTab', () => {
+  beforeEach(() => {
+    // Default to Awaiting state (null) so existing tests are unaffected by Phase 128 pill.
+    usePreSeasonActiveMock.mockReturnValue({ data: null, isLoading: false, isSuccess: true })
+  })
+
   it('renders "Pre-season squad not yet available" when usePreSeasonSquad returns null data', () => {
     usePreSeasonSquadMock.mockReturnValue({ data: null, isLoading: false, isError: false })
     const { container } = render(<NextSeasonPlannerTab />)
