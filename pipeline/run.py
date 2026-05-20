@@ -270,7 +270,7 @@ def run(dry_run: bool = False):
                         # First activation: write artifact and force-recompute squad
                         from datetime import datetime as _dt, timezone as _tz
                         _year = int(events[0]['deadline_time'][:4])
-                        _season_id = f"{_year-1}{str(_year)[2:]}"
+                        _season_id = f"{str(_year - 1)[-2:]}{str(_year)[-2:]}"
                         save(_active_key, {
                             'activated_at': _dt.now(_tz.utc).isoformat(),
                             'season_id': _season_id,
