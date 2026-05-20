@@ -288,7 +288,7 @@ export function NextSeasonPlannerTab() {
       {/* Section A: Pre-Season Squad */}
       <div>
         <h3 className="text-xl font-semibold">Pre-Season Squad</h3>
-        {data?.inputs && data?.squad !== null && (
+        {data?.inputs && data.squad != null && (
           <div className="py-2 min-h-[44px]">
             <label className="text-sm text-zinc-700 dark:text-zinc-300 font-semibold">
               Budget: £{sliderValue.toFixed(1)}m
