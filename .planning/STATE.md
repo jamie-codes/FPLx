@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-19 — v1.25 Pre-Season Intelligence)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.25 Pre-Season Intelligence — Phase 127 executing
+**Current focus:** v1.25 Pre-Season Intelligence — Phase 128 executing
 
 ## Current Position
 
-Phase: 127 — Squad Health Diagnostics + Transfer Watchlist (Complete)
-Plan: 4/4 done
-Status: Ready to execute
-Last activity: 2026-05-20 -- Phase 128 planning complete
+Phase: 128 — Pre-Season Auto-Activation (Executing)
+Plan: 2/4 done (Wave 1 complete — plans 01 + 03)
+Status: Executing
+Last activity: 2026-05-20 -- Phase 128 Wave 1 complete
 
 Progress: [░░░░░░░░░░] 0%
 
