@@ -268,3 +268,27 @@ def test_activation_predicate_false_when_events_empty_no_index_error():
     """
     result = _evaluate_activation_predicate([])
     assert result is False
+
+
+# ---------------------------------------------------------------------------
+# Replica function: Phase 128 WR-04 _season_id derivation contract test
+# ---------------------------------------------------------------------------
+
+
+def _derive_season_id(deadline_time: str) -> str:
+    """Replica of the _season_id derivation in run.py activation block.
+
+    Production form:
+        _year = int(events[0]['deadline_time'][:4])
+        _season_id = f"{str(_year - 1)[-2:]}{str(_year)[-2:]}"
+    """
+    year = int(deadline_time[:4])
+    return f"{str(year - 1)[-2:]}{str(year)[-2:]}"
+
+
+def test_derive_season_id_2526():
+    assert _derive_season_id('2026-08-15T11:30:00Z') == '2526'
+
+
+def test_derive_season_id_2425():
+    assert _derive_season_id('2025-08-09T10:00:00Z') == '2425'
