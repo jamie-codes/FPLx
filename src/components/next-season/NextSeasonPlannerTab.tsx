@@ -6,10 +6,11 @@
 //   Added solver badge (ILP/Greedy pill) and health indicator paragraph (GREEDY-03).
 // Phase 128 (128-04): Added usePreSeasonActive hook integration — status pill (Awaiting/Live)
 //   and first-activation banner with localStorage suppression (AUTO-03).
+// Phase 129 (COST-01, COST-02): budget slider + useDeferredValue commit pipeline; consumes inputs envelope from /api/pre-season-squad?include=inputs.
 // D-04: read-only (no mutation paths, no <button> elements that change squad state).
 // D-05: formation grid (GK/DEF/MID/FWD rows + 4 bench).
 // D-06: ppm as native title-attribute tooltip on total-points span only (not visible column).
-import { Fragment, useState } from 'react'
+import { Fragment, useState, useDeferredValue, useMemo, useRef, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { usePreSeasonSquad } from '@/lib/hooks/usePreSeasonSquad'
 import { usePreSeasonActive } from '@/lib/hooks/usePreSeasonActive'
@@ -17,6 +18,7 @@ import { usePreSeasonActive } from '@/lib/hooks/usePreSeasonActive'
 // The populated code path is future-ready; the empty-state path is the expected render at ship time.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { HeatMapRow } from '@/components/club-form/FixtureHeatMap'
+import { buildPreSeasonSquad } from '@/lib/pre-season-squad'
 import type { PreSeasonPlayer, PreSeasonSquad, SquadHealth } from '@/lib/types'
 
 const POSITION_LABELS: Record<number, string> = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' }
@@ -121,7 +123,7 @@ function HealthIndicator({ health }: { health: SquadHealth }) {
 }
 
 export function NextSeasonPlannerTab() {
-  const { data, isLoading, isError } = usePreSeasonSquad()
+  const { data, isLoading, isError } = usePreSeasonSquad({ includeInputs: true })
 
   // Phase 128 AUTO-03: Activation status hook — 404→null (Awaiting), 200→Live.
   // Silent fallback: non-404 errors also return null (per UI-SPEC Interaction Contract).
@@ -136,6 +138,44 @@ export function NextSeasonPlannerTab() {
   const squad = data?.squad ?? null
   const health = data?.health ?? null
   const solver = data?.solver ?? null
+
+  // Phase 129 (COST-01): Budget slider state + derived computations
+  const inputs = data?.inputs ?? null
+  const [sliderValue, setSliderValue] = useState<number>(100)
+  const [committedBudget, setCommittedBudget] = useState<number>(100)
+  const deferredBudget = useDeferredValue(committedBudget)
+  const [lastValidSquad, setLastValidSquad] = useState<PreSeasonSquad | null>(null)
+  const [hasCommitted, setHasCommitted] = useState<boolean>(false)
+  const keyboardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const scoreMapHydrated = useMemo<Map<number, number> | null>(() => {
+    if (!inputs) return null
+    return new Map(Object.entries(inputs.scoreMap).map(([k, v]) => [Number(k), v]))
+  }, [inputs])
+
+  const clientSquad = useMemo<PreSeasonSquad | null>(() => {
+    if (!inputs || !scoreMapHydrated) return null
+    return buildPreSeasonSquad(inputs.players, scoreMapHydrated, Math.round(deferredBudget * 10))
+  }, [inputs, scoreMapHydrated, deferredBudget])
+
+  useEffect(() => { if (clientSquad) setLastValidSquad(clientSquad) }, [clientSquad])
+  useEffect(() => () => { if (keyboardTimerRef.current) clearTimeout(keyboardTimerRef.current) }, [])
+
+  // Phase 129 (COST-01): Slider event handlers
+  const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
+    setSliderValue(Number(e.currentTarget.value))
+  }
+  const handlePointerUp = () => {
+    setCommittedBudget(sliderValue)
+    setHasCommitted(true)
+  }
+  const handleKeyUp = () => {
+    if (keyboardTimerRef.current) clearTimeout(keyboardTimerRef.current)
+    keyboardTimerRef.current = setTimeout(() => {
+      setCommittedBudget(sliderValue)
+      setHasCommitted(true)
+    }, 300)
+  }
 
   // --- SECTION A: Pre-Season Squad (NSP-04) ---
   let squadSection: ReactNode
@@ -160,7 +200,9 @@ export function NextSeasonPlannerTab() {
     )
   } else {
     // squad is PreSeasonSquad — render formation grid (D-05)
-    squadSection = <FormationGrid squad={squad} solver={solver} />
+    // Phase 129 D-06/D-07: before first commit show API squad; after commit show lastValidSquad (or API squad as fallback)
+    const displaySquad: PreSeasonSquad = hasCommitted ? (lastValidSquad ?? squad) : squad
+    squadSection = <FormationGrid squad={displaySquad} solver={solver} />
   }
 
   // --- SECTION B: GW1-8 FDR Heatmap (NSP-03) ---
@@ -227,6 +269,31 @@ export function NextSeasonPlannerTab() {
       {/* Section A: Pre-Season Squad */}
       <div>
         <h3 className="text-xl font-semibold">Pre-Season Squad</h3>
+        {data?.inputs && data?.squad !== null && (
+          <div className="py-2 min-h-[44px]">
+            <label className="text-sm text-zinc-700 dark:text-zinc-300 font-semibold">
+              Budget: £{sliderValue.toFixed(1)}m
+            </label>
+            <input
+              type="range"
+              min={80}
+              max={120}
+              step={0.5}
+              value={sliderValue}
+              onInput={handleInput}
+              onPointerUp={handlePointerUp}
+              onKeyUp={handleKeyUp}
+              className="w-full mt-2"
+              style={{ background: '#71717a' }}
+              aria-label="Budget slider"
+              aria-valuemin={80}
+              aria-valuemax={120}
+              aria-valuenow={sliderValue}
+              aria-valuetext={`£${sliderValue.toFixed(1)}m`}
+            />
+          </div>
+        )}
+        {/* Phase 129 Wave 3: infeasibility <p> renders here */}
         {squadSection}
         {/* Health indicator rendered after squadSection (GREEDY-03), not inside FormationGrid */}
         {health !== null && <HealthIndicator health={health} />}
