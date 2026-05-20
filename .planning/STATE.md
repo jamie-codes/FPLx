@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-19 — v1.25 Pre-Season Intelligence)
 ## Current Position
 
 Phase: 128 — Pre-Season Auto-Activation (Executing)
-Plan: 2/4 done (Wave 1 complete — plans 01 + 03)
-Status: Executing
-Last activity: 2026-05-20 -- Phase 128 Wave 1 complete
+Plan: 3/4 done (Wave 2 automated complete — plan 04 at human checkpoint)
+Status: Awaiting human verification
+Last activity: 2026-05-20 -- Phase 128 Wave 2 automated tasks complete
 
 Progress: [░░░░░░░░░░] 0%
 

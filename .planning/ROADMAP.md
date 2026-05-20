@@ -1920,7 +1920,7 @@ Plans:
   5. /api/pre-season-active responds with the activation timestamp and seasonId so usePreSeasonActive() can drive both pill state and banner suppression deterministically
 **Plans**: 4 plans
   - [x] 128-01-PLAN.md — pipeline/suggest_squad.py force-parameter refactor + Phase 128 activation-predicate regression tests
-  - [ ] 128-02-PLAN.md — pipeline/run.py activation block (predicate + idempotent artifact write + suggest_squad force-recompute)
+  - [x] 128-02-PLAN.md — pipeline/run.py activation block (predicate + idempotent artifact write + suggest_squad force-recompute)
   - [x] 128-03-PLAN.md — PreSeasonActiveResponse type + /api/pre-season-active route handler
   - [ ] 128-04-PLAN.md — usePreSeasonActive hook + tests + NextSeasonPlannerTab status pill + first-activation banner
 **UI hint**: yes
@@ -1943,5 +1943,5 @@ Plans:
 | 125 | v1.24 | 3/3 | Complete    | 2026-05-19 |
 | 126 | v1.24 | 4/4 | Complete    | 2026-05-19 |
 | 127 | v1.25 | 4/4 | Complete    | 2026-05-19 |
-| 128 | v1.25 | 2/4 | Executing   | -          |
+| 128 | v1.25 | 3/4 | Executing   | -          |
 | 129 | v1.25 | 0 | Not started | - |
