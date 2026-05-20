@@ -170,11 +170,12 @@ export function NextSeasonPlannerTab() {
   useEffect(() => () => { if (keyboardTimerRef.current) clearTimeout(keyboardTimerRef.current) }, [])
 
   const trackBackground = useMemo<string>(() => {
-    const minFeasible = health?.min_feasible_budget_greedy
-    if (minFeasible === null || minFeasible === undefined) return '#71717a'
+    if (!health) return '#71717a'
+    const minFeasible = health.min_feasible_budget_greedy
+    if (minFeasible === null) return '#71717a'
     const threshold = ((minFeasible - 80) / 40) * 100
     return `linear-gradient(to right, #f59e0b 0%, #f59e0b ${threshold}%, #71717a ${threshold}%, #71717a 100%)`
-  }, [health?.min_feasible_budget_greedy])
+  }, [health])
 
   // Phase 129 (COST-01): Slider event handlers
   const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
