@@ -4,12 +4,15 @@
 // + GW1-8 FDR heatmap section.
 // Phase 127 (127-04): Updated to consume PreSeasonSquadResponse envelope (D-08).
 //   Added solver badge (ILP/Greedy pill) and health indicator paragraph (GREEDY-03).
+// Phase 128 (128-04): Added usePreSeasonActive hook integration — status pill (Awaiting/Live)
+//   and first-activation banner with localStorage suppression (AUTO-03).
 // D-04: read-only (no mutation paths, no <button> elements that change squad state).
 // D-05: formation grid (GK/DEF/MID/FWD rows + 4 bench).
 // D-06: ppm as native title-attribute tooltip on total-points span only (not visible column).
-import { Fragment } from 'react'
+import { Fragment, useState } from 'react'
 import type { ReactNode } from 'react'
 import { usePreSeasonSquad } from '@/lib/hooks/usePreSeasonSquad'
+import { usePreSeasonActive } from '@/lib/hooks/usePreSeasonActive'
 // HeatMapRow imported but fixture data is deferred (GW1-8-FIXTURES deferred item in CONTEXT.md).
 // The populated code path is future-ready; the empty-state path is the expected render at ship time.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -120,6 +123,15 @@ function HealthIndicator({ health }: { health: SquadHealth }) {
 export function NextSeasonPlannerTab() {
   const { data, isLoading, isError } = usePreSeasonSquad()
 
+  // Phase 128 AUTO-03: Activation status hook — 404→null (Awaiting), 200→Live.
+  // Silent fallback: non-404 errors also return null (per UI-SPEC Interaction Contract).
+  const { data: activeData } = usePreSeasonActive()
+  const isActive = activeData !== null && activeData !== undefined
+  const seasonId = activeData?.season_id ?? ''
+  // dismissed state: initialised false; banner render condition reads localStorage synchronously
+  // each render to avoid stale-init hazard (RESEARCH.md Pitfall 3 + Open Question 2).
+  const [dismissed, setDismissed] = useState(false)
+
   // Phase 127 D-08: data is now PreSeasonSquadResponse | null
   const squad = data?.squad ?? null
   const health = data?.health ?? null
@@ -178,6 +190,40 @@ export function NextSeasonPlannerTab() {
 
   return (
     <div className="space-y-4">
+      {/* Phase 128 AUTO-03: Status pill — render nothing during loading to avoid flash of wrong state */}
+      {activeData !== undefined && (
+        <div className="flex items-center gap-2 py-2">
+          <span className={
+            isActive
+              ? "text-xs font-normal text-green-800 dark:text-green-200 bg-green-100 dark:bg-green-900 rounded px-2 py-1"
+              : "text-xs font-normal text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 rounded px-2 py-1"
+          }>
+            {isActive ? 'Live' : 'Awaiting'}
+          </span>
+        </div>
+      )}
+
+      {/* Phase 128 AUTO-03: First-activation banner — shown only on first visit after activation.
+          localStorage read is synchronous per render (not in useState init) to avoid stale-init
+          with empty seasonId on first render (RESEARCH.md Pitfall 3 + Open Question 2).
+          fplx_ prefix aligns with project localStorage key convention (RESEARCH.md Pitfall 5). */}
+      {isActive && seasonId !== '' && !dismissed && typeof window !== 'undefined' &&
+        localStorage.getItem(`fplx_nsp_activation_seen_${seasonId}`) !== 'true' && (
+        <div className="rounded border border-green-400 bg-green-50 dark:bg-green-950 p-4 text-sm text-green-800 dark:text-green-200 mb-4 flex items-start justify-between">
+          <span>🏆 Pre-season is live — your squad has been re-optimised against the new FPL prices.</span>
+          <button
+            onClick={() => {
+              localStorage.setItem(`fplx_nsp_activation_seen_${seasonId}`, 'true')
+              setDismissed(true)
+            }}
+            className="ml-4 text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Dismiss activation banner"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* Section A: Pre-Season Squad */}
       <div>
         <h3 className="text-xl font-semibold">Pre-Season Squad</h3>
