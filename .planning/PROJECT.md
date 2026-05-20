@@ -64,15 +64,11 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
-## Current Milestone: v1.25 Pre-Season Intelligence
+## Previous Milestone: v1.25 Pre-Season Intelligence (Complete 2026-05-20)
 
-**Goal:** Extend the Next Season Planner with auto-activation when FPL publishes next-season data, a transfer target watchlist, and an interactive squad cost simulator — keeping the app useful through the off-season and ready to light up the moment pre-season data lands.
+**Goal:** Extend the Next Season Planner with auto-activation when FPL publishes next-season data, a transfer target watchlist, and an interactive squad cost simulator.
 
-**Target features:**
-- Auto-activate pipeline when next-season fixtures/bootstrap land (daily poll, self-activates heatmap + squad planner)
-- Transfer Target Watchlist — pin players with price/trend, ownership%, news badge, squad overlap; localStorage
-- Squad cost simulator — interactive budget slider in NextSeasonPlannerTab; re-runs ILP/greedy on budget change
-- GREEDY-NULL null rate measurement and UI reporting for buildPreSeasonSquad()
+**Delivered:** 3 phases (127-129), 12 plans — Squad Health Diagnostics pipeline (81-step greedy sweep, pre_season_squad_health.json, diagnoseBuildPreSeasonSquad()); Transfer Target Watchlist (useWatchlist localStorage hook, star-pin in GemTable, WatchlistTab 4-state cards); Pre-Season Auto-Activation (tri-state predicate gate, pre_season_active.json, force=True recompute, status pill + dismissible banner); Squad Cost Simulator (budget slider with useDeferredValue commit pipeline, in-browser greedy recompute, amber infeasibility messaging, inputs envelope API refactor). 57 deferred UAT/verification items acknowledged and logged in STATE.md.
 
 ## Previous Milestone: v1.24 End of Season & Off-Season Intelligence (Complete 2026-05-19)
 
@@ -496,4 +492,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-19 — v1.25 Pre-Season Intelligence milestone started. Goal: auto-activation on next-season data, transfer target watchlist, squad cost simulator, GREEDY-NULL measurement.*
+*Last updated: 2026-05-20 — v1.25 Pre-Season Intelligence milestone complete. Delivered: squad health diagnostics, transfer watchlist, pre-season auto-activation, squad cost simulator. 57 deferred items acknowledged. Awaiting v1.26 milestone.*

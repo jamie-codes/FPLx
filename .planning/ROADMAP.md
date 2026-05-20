@@ -26,7 +26,7 @@
 - ✅ **v1.22 Lineup Intelligence** — Phases 117-119 (shipped 2026-05-18)
 - ✅ **v1.23 Technical Debt & Test Health** — Phases 120-121 (shipped 2026-05-18)
 - ✅ **v1.24 End of Season & Off-Season Intelligence** — Phases 122-126 (shipped 2026-05-19)
-- 🚧 **v1.25 Pre-Season Intelligence** — Phases 127-129 (planning 2026-05-19)
+- ✅ **v1.25 Pre-Season Intelligence** — Phases 127-129 (shipped 2026-05-20)
 
 ## Phases
 
@@ -1883,13 +1883,16 @@ Plans:
 **UI hint**: yes
 
 
-### v1.25 Pre-Season Intelligence (Planning)
+<details>
+<summary>✅ v1.25 Pre-Season Intelligence (Phases 127-129) — SHIPPED 2026-05-20</summary>
 
-**Milestone Goal:** Extend the Next Season Planner with auto-activation when FPL publishes next-season data, a transfer target watchlist, and an interactive squad cost simulator — keeping the app useful through the off-season and ready to light up the moment pre-season data lands.
+See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
 
-- [x] **Phase 127: Squad Health Diagnostics & Transfer Watchlist** — GREEDY-NULL pipeline sweep + diagnoseBuildPreSeasonSquad() + health API field; useWatchlist() hook + pin toggle in GemTable + dedicated Watchlist sub-tab. *(Complete 2026-05-19, 5 human UAT items pending)*
+- [x] **Phase 127: Squad Health Diagnostics & Transfer Watchlist** — GREEDY-NULL pipeline sweep + diagnoseBuildPreSeasonSquad() + health API field; useWatchlist() hook + pin toggle in GemTable + dedicated Watchlist sub-tab. *(Complete 2026-05-19)*
 - [x] **Phase 128: Pre-Season Auto-Activation** — Tri-state PRE_SEASON_ACTIVE gate + pre_season_active.json artifact + suggest_squad.py force=True; usePreSeasonActive() hook + NextSeasonPlannerTab status pill + first-activation banner. *(Complete 2026-05-20)*
-- [x] **Phase 129: Squad Cost Simulator** — Budget slider in NextSeasonPlannerTab via useDeferredValue + commit-on-release; /api/pre-season-squad?include=inputs API refactor; infeasibility messaging using health.min_feasible_budget_greedy. (completed 2026-05-20)
+- [x] **Phase 129: Squad Cost Simulator** — Budget slider in NextSeasonPlannerTab via useDeferredValue + commit-on-release; /api/pre-season-squad?include=inputs API refactor; infeasibility messaging using health.min_feasible_budget_greedy. *(Complete 2026-05-20)*
+
+</details>
 
 ### Phase 127: Squad Health Diagnostics & Transfer Watchlist
 **Goal**: User can see how often the greedy squad builder fails (and at which budget it becomes feasible), and can pin players to a persistent watchlist from any GemTable row and view those picks together on a dedicated Plan sub-tab

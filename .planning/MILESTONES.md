@@ -1,5 +1,22 @@
 # Milestones
 
+## v1.25 Pre-Season Intelligence (Shipped: 2026-05-20)
+
+**Phases completed:** 3 phases, 12 plans, 9 tasks
+
+**Key accomplishments:**
+
+- Task 1 — Types + diagnoseBuildPreSeasonSquad (TS)
+- Task 1 — useWatchlist hook
+- Task 1 — WatchlistPlayerCard
+- Task 1 — usePreSeasonSquad envelope type update
+- One-liner:
+- One-liner:
+- One-liner:
+- One-liner:
+
+---
+
 ## v1.24 End of Season & Off-Season Intelligence (Shipped: 2026-05-19)
 
 **Phases completed:** 5 phases (122-126), 15 plans

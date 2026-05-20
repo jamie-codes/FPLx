@@ -52,6 +52,44 @@
 
 ---
 
+## Milestone: v1.25 — Pre-Season Intelligence
+
+**Shipped:** 2026-05-20
+**Phases:** 3 (127-129) | **Plans:** 12
+**Timeline:** 2 days (2026-05-19 → 2026-05-20)
+**Commits:** 61
+
+### What Was Built
+
+- **Phase 127**: `pipeline/squad_health.py` 81-step greedy sweep (£80m–£120m, writes `pre_season_squad_health.json`); `diagnoseBuildPreSeasonSquad()` (3 reason codes); `/api/pre-season-squad` envelope refactor with `{squad, health, solver}`; `useWatchlist()` localStorage hook; GemTable star-pin button; `WatchlistPlayerCard` (4 visual states) + `WatchlistTab`; 35 tests, 1505/1539 GREEN
+- **Phase 128**: Tri-state `PRE_SEASON_ACTIVE` gate in `run.py` (IS_OFF_SEASON + len(events)≥38 + no finished event + deadline_time present); `pre_season_active.json` idempotent artifact; `suggest_squad.py` `force=True` parameter; `usePreSeasonActive()` hook; status pill (zinc "Awaiting" / green "Live") + dismissible first-activation banner
+- **Phase 129**: Budget slider £80m–£120m in 50p steps with `useDeferredValue` commit-on-release pipeline; `/api/pre-season-squad?include=inputs` envelope extension; `scoreMapHydrated`/`clientSquad` memos for in-browser greedy recompute; amber slider gradient below `min_feasible_budget_greedy`; infeasibility inline messaging; `lastValidSquad`/`hasCommitted` state; WR-01/02/03/04 fix cycle
+
+### What Worked
+
+- **WR fix cycle as dedicated final plan**: Code review findings (stale closure on slider, loose null guard, explicit undefined vs null in memo, per-call USE_BLOB evaluation) caught in Phase 129 Plan 04 — treated as a clean fixup wave before SUMMARY rather than reopening earlier plans
+- **`useDeferredValue` commit pattern**: Separating the slider's visual feedback from the expensive recompute worked cleanly — slider stays at 60fps while the greedy builder only fires on pointer release or 300ms post-keyboard, matching the COST-02 spec requirement exactly
+- **In-browser greedy recompute via cached inputs**: Caching `PreSeasonSquadInputs` from the initial `/api/pre-season-squad?include=inputs` fetch meant the slider recompute never needs a server round-trip — the `clientSquad` memo rebuilds from the cached pool, which is the right architectural choice for this personal-tool context
+- **API-squad-before-commit render (D-06)**: Showing the last committed server squad before the first slider commit prevents an empty state on initial load — this decision was in the CONTEXT.md and was carried through correctly across all plans
+
+### What Was Inefficient
+
+- **Large accumulated milestone scope**: v1.25 officially covered phases 127-129 but the milestone tracked 70 phases across multiple unclosed milestones (v1.11/v1.12/v1.14/v1.15/v1.16), creating a confusing progress view with "100% complete" while many phases were pending. These are being consolidated into v1.26.
+- **UAT and verification gaps at close**: 57 open items (UAT gaps + human_needed verifications) acknowledged as deferred. These were largely from older executed phases that were never formally verified — a pattern to address going forward with batch verification passes
+
+### Key Lessons
+
+- When a milestone grows beyond its original scope (70 phases vs 3), close it and start fresh — the accumulated orphaned milestones create noise in progress tracking
+- Batch verification passes after major execution runs would reduce the deferred-item debt at close time
+- The `useDeferredValue` + commit-on-release pattern is the right slider UX primitive for expensive backend operations — document as a reusable pattern
+
+### Cost Observations
+
+- Sessions: 2 days, intensive
+- Notable: Phase 129 had the most complex state management (clientSquad memo + lastValidSquad + hasCommitted + amber gradient) but all shipped cleanly via the wave structure; WR fixes were all caught by code review, none escaped to production
+
+---
+
 ## Milestone: v1.20 — Fixes & Decision Quality
 
 **Shipped:** 2026-05-16
