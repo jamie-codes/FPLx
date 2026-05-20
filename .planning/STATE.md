@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-19 — v1.25 Pre-Season Intelligence)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** v1.25 Pre-Season Intelligence — Phase 128 executing
+**Current focus:** v1.25 Pre-Season Intelligence — Phase 129 next
 
 ## Current Position
 
-Phase: 128 — Pre-Season Auto-Activation (Executing)
-Plan: 3/4 done (Wave 2 automated complete — plan 04 at human checkpoint)
-Status: Awaiting human verification
-Last activity: 2026-05-20 -- Phase 128 Wave 2 automated tasks complete
+Phase: 128 — Pre-Season Auto-Activation (Complete)
+Plan: 4/4 done
+Status: Complete
+Last activity: 2026-05-20 -- Phase 128 complete
 
 Progress: [░░░░░░░░░░] 0%
 

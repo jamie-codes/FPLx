@@ -1888,7 +1888,7 @@ Plans:
 **Milestone Goal:** Extend the Next Season Planner with auto-activation when FPL publishes next-season data, a transfer target watchlist, and an interactive squad cost simulator — keeping the app useful through the off-season and ready to light up the moment pre-season data lands.
 
 - [x] **Phase 127: Squad Health Diagnostics & Transfer Watchlist** — GREEDY-NULL pipeline sweep + diagnoseBuildPreSeasonSquad() + health API field; useWatchlist() hook + pin toggle in GemTable + dedicated Watchlist sub-tab. *(Complete 2026-05-19, 5 human UAT items pending)*
-- [ ] **Phase 128: Pre-Season Auto-Activation** — Tri-state PRE_SEASON_ACTIVE gate + pre_season_active.json artifact + suggest_squad.py force=True; usePreSeasonActive() hook + NextSeasonPlannerTab status pill + first-activation banner.
+- [x] **Phase 128: Pre-Season Auto-Activation** — Tri-state PRE_SEASON_ACTIVE gate + pre_season_active.json artifact + suggest_squad.py force=True; usePreSeasonActive() hook + NextSeasonPlannerTab status pill + first-activation banner. *(Complete 2026-05-20)*
 - [ ] **Phase 129: Squad Cost Simulator** — Budget slider in NextSeasonPlannerTab via useDeferredValue + commit-on-release; /api/pre-season-squad?include=inputs API refactor; infeasibility messaging using health.min_feasible_budget_greedy.
 
 ### Phase 127: Squad Health Diagnostics & Transfer Watchlist
@@ -1922,7 +1922,7 @@ Plans:
   - [x] 128-01-PLAN.md — pipeline/suggest_squad.py force-parameter refactor + Phase 128 activation-predicate regression tests
   - [x] 128-02-PLAN.md — pipeline/run.py activation block (predicate + idempotent artifact write + suggest_squad force-recompute)
   - [x] 128-03-PLAN.md — PreSeasonActiveResponse type + /api/pre-season-active route handler
-  - [ ] 128-04-PLAN.md — usePreSeasonActive hook + tests + NextSeasonPlannerTab status pill + first-activation banner
+  - [x] 128-04-PLAN.md — usePreSeasonActive hook + tests + NextSeasonPlannerTab status pill + first-activation banner
 **UI hint**: yes
 
 ### Phase 129: Squad Cost Simulator
@@ -1943,5 +1943,5 @@ Plans:
 | 125 | v1.24 | 3/3 | Complete    | 2026-05-19 |
 | 126 | v1.24 | 4/4 | Complete    | 2026-05-19 |
 | 127 | v1.25 | 4/4 | Complete    | 2026-05-19 |
-| 128 | v1.25 | 3/4 | Executing   | -          |
+| 128 | v1.25 | 4/4 | Complete    | 2026-05-20 |
 | 129 | v1.25 | 0 | Not started | - |
