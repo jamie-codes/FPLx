@@ -2,8 +2,9 @@
 // Phase 126 (NSP-03, NSP-04): NextSeasonPlannerTab RTL integration tests.
 // Phase 127 (127-04): Updated mocks to use PreSeasonSquadResponse envelope shape;
 //   added health indicator and solver badge tests.
+// Phase 128 (128-04): Added activation pill and first-activation banner tests (WR-03).
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render } from '@testing-library/react'
+import { render, fireEvent } from '@testing-library/react'
 import type { PreSeasonSquad, PreSeasonPlayer, SquadHealth, PreSeasonSquadResponse } from '@/lib/types'
 
 // Mock usePreSeasonSquad hook
@@ -175,5 +176,63 @@ describe('NextSeasonPlannerTab', () => {
     expect(container.textContent).not.toContain('ILP')
     expect(container.textContent).not.toContain('Greedy')
     expect(container.textContent).not.toMatch(/Greedy success rate/i)
+  })
+
+  // Phase 128 AUTO-03: activation pill and first-activation banner tests (WR-03)
+
+  it('renders "Live" pill when usePreSeasonActive returns non-null data', () => {
+    usePreSeasonSquadMock.mockReturnValue({ data: null, isLoading: false, isError: false })
+    usePreSeasonActiveMock.mockReturnValue({
+      data: { activated_at: '2026-08-01T04:12:33Z', season_id: '2526' },
+      isLoading: false,
+      isSuccess: true,
+    })
+    const { container } = render(<NextSeasonPlannerTab />)
+    expect(container.textContent).toContain('Live')
+  })
+
+  it('renders activation banner with correct copy when data is non-null and localStorage key absent', () => {
+    usePreSeasonSquadMock.mockReturnValue({ data: null, isLoading: false, isError: false })
+    usePreSeasonActiveMock.mockReturnValue({
+      data: { activated_at: '2026-08-01T04:12:33Z', season_id: '2526' },
+      isLoading: false,
+      isSuccess: true,
+    })
+    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue(null)
+    const { container } = render(<NextSeasonPlannerTab />)
+    expect(container.textContent).toContain(
+      '🏆 Pre-season is live — your squad has been re-optimised against the new FPL prices.'
+    )
+  })
+
+  it('calls localStorage.setItem with correct key when dismiss button is clicked', () => {
+    usePreSeasonSquadMock.mockReturnValue({ data: null, isLoading: false, isError: false })
+    usePreSeasonActiveMock.mockReturnValue({
+      data: { activated_at: '2026-08-01T04:12:33Z', season_id: '2526' },
+      isLoading: false,
+      isSuccess: true,
+    })
+    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue(null)
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem')
+    const { getByLabelText } = render(<NextSeasonPlannerTab />)
+    const dismissBtn = getByLabelText('Dismiss activation banner')
+    fireEvent.click(dismissBtn)
+    expect(setItemSpy).toHaveBeenCalledWith('fplx_nsp_activation_seen_2526', 'true')
+  })
+
+  it('suppresses banner when localStorage returns "true" for the activation seen key', () => {
+    usePreSeasonSquadMock.mockReturnValue({ data: null, isLoading: false, isError: false })
+    usePreSeasonActiveMock.mockReturnValue({
+      data: { activated_at: '2026-08-01T04:12:33Z', season_id: '2526' },
+      isLoading: false,
+      isSuccess: true,
+    })
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key: string) =>
+      key === 'fplx_nsp_activation_seen_2526' ? 'true' : null
+    )
+    const { container } = render(<NextSeasonPlannerTab />)
+    expect(container.textContent).not.toContain(
+      '🏆 Pre-season is live — your squad has been re-optimised against the new FPL prices.'
+    )
   })
 })
