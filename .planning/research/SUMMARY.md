@@ -1,77 +1,130 @@
-# Research Summary — v1.25 Pre-Season Intelligence
+# Research Summary - v1.26 Off-Season Intelligence
 
-**Synthesised:** 2026-05-19
-**Overall confidence:** HIGH on codebase wiring; MEDIUM on FPL off-season API behaviour (undocumented).
+**Project:** FPL Analyst
+**Domain:** FPL analytics web app - off-season feature set
+**Researched:** 2026-05-20
+**Confidence:** HIGH
 
 ---
 
 ## Stack additions
 
-**No new dependencies.** All four features build on existing v1.24 primitives.
+Only one new npm dependency for the entire milestone:
 
-- **AUTO-01** reuses the existing `bootstrap-static` fetch in `run.py` + 4×-daily GitHub Actions cron.
-- **WATCH-01/04** reuses the localStorage simple-JSON pattern + TanStack Query + React 19 `useSyncExternalStore`.
-- **COST-01** reuses `buildPreSeasonSquad()` (already accepts `budget`) + React 19 `useDeferredValue` + native `<input type="range">`.
-- **GREEDY-NULL** is a pure refactor adding a sibling `diagnoseBuildPreSeasonSquad()` function.
+- **web-push@3.6.7** + **@types/web-push@3.3.5** - VAPID-based browser push dispatch; Node.js runtime only (no Edge).
 
-Rejected: `use-local-storage-state`, `lodash.debounce`, `@radix-ui/react-slider`, `idb-keyval`, `zustand`, `jotai`.
+All other features are code changes against the existing stack:
+- Source reliability scoring: Python stdlib only (math, datetime, email.utils)
+- Price reset analysis: new Python script using existing fpl_client and upload.save(); no new libraries
+- Auth 502 fix: code change in one route handler - users.premierleague.com credential-login endpoint is dead (FPL migrated to OAuth 2.0 PKCE); return { ok: false, code: ENDPOINT_GONE } immediately
+- Pipeline scheduling: existing dense cron + refresh_gate.py is sufficient; widen PIPELINE_DEADLINE_WINDOW_MINUTES from 90 to 360 and add a notify.py dispatch step after run.py
 
----
-
-## Key feature findings
-
-### AUTO-01 — Next-season detection
-- Binary `IS_OFF_SEASON` is insufficient. Introduce **tri-state**: `PRE_SEASON_ACTIVE` requires `IS_OFF_SEASON && len(events)>=38 && !any(e.finished) && events[0].deadline_time present`.
-- New artifact: `pre_season_active.json` (Blob) → `/api/pre-season-active` → `usePreSeasonActive()` hook.
-- `suggest_squad.py` idempotency gate (lines 263-278) needs `force=False` parameter; AUTO-01 calls `force=True` on new-season bootstrap.
-- UI: status pill on NextSeasonPlannerTab (zinc "Awaiting" → green "Live") + first-activation banner.
-
-### WATCH-01/04 — Transfer Target Watchlist
-- `localStorage['fplx_watchlist']` = `{version: 1, ids: number[], added: {id: iso}}`. **Store IDs only** — rehydrate `now_cost`, `team`, `element_type` from `/api/players` each render (fields drift between seasons).
-- `useWatchlist()` backed by `useSyncExternalStore` — shared by GemTable, WatchlistTab, NSP without prop-drilling.
-- GemTable: star/pin toggle in existing expand-row action cluster.
-- Differentiators: squad-overlap badge (intersect with `usePreSeasonSquad`), amber border for news <48h.
-
-### COST-01 — Squad Cost Simulator
-- **Critical correction:** no Python bridge exists in `src/`; Vercel cannot run PuLP at request time. **Slider drives client-side `buildPreSeasonSquad()` greedy (<5ms on 700 players)**, not a Python subprocess.
-- Pattern: `useDeferredValue` + commit-on-release (onPointerUp OR 300ms). `useMemo` re-runs greedy on `committedBudget`.
-- API refactor: `/api/pre-season-squad?include=inputs` returns `{ squad, inputs: { players, scoreMap, budget_default }, health }`.
-- Range: £80m–£120m, step £0.5m, default £100m. Null → "Infeasible at £X.Xm — try £Y.Ym+" using `health.min_feasible_budget_greedy`.
-
-### GREEDY-NULL — Null-rate instrumentation
-- Reframed: not a localStorage counter (vanity metric, confounded by COST-01 slider). Actionable metric = algorithmic gap: "% of (budget, archive) inputs where greedy null but ILP feasible".
-- New `pipeline/squad_health.py`: sweeps £80–£120 in £0.5m steps, Python-port greedy + PuLP cross-check, writes `pre_season_squad_health.json` with `greedy_null_rate`, `min_feasible_budget_greedy`, `min_feasible_budget_ilp`, `greedy_optimality_gap_avg`.
-- Surface as `health` field on `/api/pre-season-squad` response.
-- Add `diagnoseBuildPreSeasonSquad()` in TS returning reason codes without breaking existing tests.
+Do NOT add: next-pwa, serwist, Firebase/FCM, any push-as-a-service, nltk/spaCy, or new cron schedules.
 
 ---
 
-## Architecture decisions
+## Feature table stakes
 
-| Decision | Rationale |
-|----------|-----------|
-| COST-01 drives client-side greedy only | No Python bridge in `src/`; Vercel can't run PuLP; greedy is <5ms in-process |
-| AUTO-01 writes `pre_season_active.json` flag | Single source of truth; mirrors `mc_enabled` flag pattern from v1.18 |
-| WATCH-01 uses `useSyncExternalStore` | 3 consumers; React 19 native; no new deps; no prop-drilling |
-| GREEDY-NULL measured server-side via budget sweep | Client null counter is confounded by deliberate infeasibility from COST-01 slider |
-| Slider state scoped to `NextSeasonPlannerTab` only | Lifting to `page.tsx` causes GemTable re-render storms |
+**Auth 502 fix (P0 - unblocks authenticated testing):**
+- POST /api/auth/login must succeed without a 502 in production
+- Token-paste flow preserved; no change to user-facing auth UX
+- fpl-login/route.ts must return a clean ENDPOINT_GONE error so the UI falls back to manual token entry
+
+**Transfer speculation scoring (P1):**
+- Source tier badge (Official / Reliable / Speculative) displayed inline on each Summer Window article card
+- confidence_score at scrape time: score = max(0, 1 - age_days/7) * TIER_MULTIPLIER - additive optional fields on existing TransferArticle type, no breaking change
+- Sky Sports and BBC are both Reliable tier; Official tier reserved for direct FPL/club feeds
+- Off-season decay half-life must be 21 days (not 7) to avoid false staleness during long transfer-window silences
+- Do NOT produce a single transfer-probability percentage; tiered badges are the honest display
+
+**Price reset analysis (P2):**
+- Show who rose/fell vs season-end baseline once FPL publishes next-season prices (historically mid-to-late July)
+- Baseline = now_cost from season_archive_gw38.json - verify archive_season.py captures all 700+ elements, not just squad players (open question 1)
+- Price delta as coloured pill (green/red) in +/-X.Xm format; raw API values are integer tenths, always divide by 10
+- Completeness heuristic: only surface comparison when more than 50% of players have changed now_cost vs baseline; show partial data warning below that threshold
+- Seasonal feature - activate only when _pre_season_predicate is true; empty state otherwise
+
+**Deadline Day mode (P1 - low complexity, high value):**
+- Persistent countdown to next GW deadline from events[].deadline_time; displayed in the user local timezone
+- Three urgency states: more than 24h (neutral zinc), 2-24h (amber), less than 2h (red/sticky banner)
+- Dismissible banner above section nav; dismiss stored per-GW in localStorage - no new tab
+- Do NOT confuse FPL gameweek deadlines with the football transfer window closing date
+
+**ALERT-01 push notifications (P3 - highest complexity):**
+- Four trigger types: price change (watched/owned), injury status change (owned), deadline reminders (24h and 2h), captain recommendation change
+- Pipeline-triggered only - notify.py POSTs to /api/push/send; no client-side polling
+- Single Enable notifications toggle; permission prompt gated behind explicit user action, never on page load
+- Per-type opt-in stored in localStorage
+
+**REFRESH-01 pre-deadline pipeline (P2):**
+- Existing dense cron is sufficient; no new cron entries needed
+- notify.py is a standalone post-pipeline GitHub Actions step (does NOT import from run.py)
+- Pre-deadline runs skip heavy steps (Understat, Monte Carlo, batch AI); only bootstrap + transfer_news refresh
 
 ---
 
-## Watch out for
+## Architecture highlights
 
-1. **Binary `IS_OFF_SEASON` misses armed-pre-season** → tri-state predicate (`len(events)>=38 && !any(finished) && deadline_time present`).
-2. **Slider driving Python per tick → Vercel timeout** → client-side greedy via `useDeferredValue`; never spawn Python from a route handler.
-3. **Element `element_type` drifts season-to-season** → store IDs only; rehydrate from `/api/players`; show "Departed" pill for missing IDs.
-4. **GREEDY-NULL as localStorage counter = vanity metric** → server-side sweep with PuLP cross-check.
-5. **`suggest_squad.py` idempotency gate blocks pre-season re-runs** → add `force=False`; AUTO-01 calls `force=True`.
+**Build order:**
+1. Auth fix - unblocks authenticated testing of all other features
+2. Transfer speculation scoring - pipeline-only, no new infrastructure, immediate Summer Window value
+3. Price reset analysis - depends on season_archive_gw38.json (available); new PriceResetTab in Analyse section
+4. Deadline Day banner - pure frontend, no backend changes, uses existing bootstrap proxy
+5. Web push (ALERT-01) - last; requires new VAPID infra, service worker, notify.py, and pipeline wiring
+
+**Key integration points:**
+- public/sw.js must be served from the root (not src/app/api/) to get root scope for push events
+- /api/push/send must declare export const runtime = nodejs - web-push uses Node crypto APIs unavailable on Edge
+- Push subscriptions: per-device individual Blob files keyed by hash of endpoint URL - never a single aggregated list (eliminates read-modify-write races)
+- notify.py reads FPL bootstrap and Blob directly; never imports from run.py (mirrors refresh_gate.py isolation pattern)
+- Price reset data flow: price_reset.py writes price_reset.json to Blob -> /api/price-reset route (clone of price-changes route) -> usePriceReset() hook -> PriceResetTab
+- Deadline countdown: client-side only from existing bootstrap proxy; no new API route needed
+- transfer_news.py enrichment is additive - source_tier and confidence_score are optional fields; existing consumers unaffected
+
+**New env vars required (Vercel dashboard + GitHub Actions secrets):**
+- NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, PIPELINE_NOTIFY_SECRET, VERCEL_PRODUCTION_URL
 
 ---
 
-## Recommended phase order
+## Watch Out For
 
-| Phase | Feature(s) | Key dependency |
-|-------|------------|----------------|
-| 127 | GREEDY-NULL + WATCH-01/04 | GREEDY-NULL stabilises API response shape; WATCH is fully independent |
-| 128 | AUTO-01 | Establishes `pre_season_active.json` + `suggest_squad.py force=True` re-run path |
-| 129 | COST-01 | Depends on Phase 127 `inputs`+`health` fields and Phase 128 freshness signal |
+**1. Service worker scope (WP-01, Risk: High)**
+Place sw.js in /public/sw.js only. Register with scope / and updateViaCache: none.
+A SW served from /api/sw.js gets scope /api/ and will never receive push events.
+Add Cache-Control: no-cache header for /sw.js in next.config.ts.
+
+**2. VAPID private key naming (WP-02, Risk: High)**
+The private key must be VAPID_PRIVATE_KEY with no NEXT_PUBLIC_ prefix. Any NEXT_PUBLIC_ variable is inlined into the client bundle at build time. Add CI guard: grep -r NEXT_PUBLIC_VAPID_PRIVATE src/ must return empty.
+
+**3. Price baseline capture timing (PR-01, Risk: High)**
+FPL resets cost_change_start to 0 when a new season launches. The cross-season price delta depends entirely on the season_archive_gw38.json snapshot taken before FPL overwrites prices. Write must be idempotent - check for existence before writing so re-runs do not overwrite with later prices.
+
+**4. Auth 502 - do not use redirect: manual with native fetch (AF-01/AF-02, Risk: High)**
+Node.js 25 undici returns an opaque response for redirect: manual and may silently filter Set-Cookie as a forbidden header. The correct fix is to deprecate the fpl-login credential path entirely (the endpoint is dead), return ENDPOINT_GONE immediately, and always show the token-paste flow.
+
+**5. Notification rate limiting (WP-08, Risk: Medium)**
+The pipeline runs up to 4x daily. Without throttling, users receive 20+ notifications per day during busy transfer windows. Store last_notified_price.json in Blob; only notify when |delta| >= 0.2; enforce a 24h per-player cooldown; cap total notifications per pipeline run at 3.
+
+**Bonus: FPL deadline timing is not static (PS-01/PS-02)**
+Never hardcode deadline times in pipeline.yml. BGWs, DGWs, and postponements shift deadlines with little notice. The deadline proximity gate must read events[next].deadline_time from bootstrap at runtime.
+
+---
+
+## Open questions
+
+1. **Does archive_season.py capture all 700+ bootstrap elements or only squad players?**
+   Price reset analysis requires a full-player baseline. Highest-priority question before starting the price reset phase.
+
+2. **iOS push in scope?** The app has no manifest.json; iOS 16.4+ requires PWA installation for push.
+   Decision: add a minimal PWA manifest in v1.26, or scope iOS push as a post-v1.26 enhancement.
+
+3. **Notification deduplication** - Does notify.py need to track which deadline reminders have already fired for a given GW? A sent_notifications.json Blob file is likely; schema needs to be decided before implementation.
+
+4. **price_reset.py gate condition** - Confirm the exact _pre_season_predicate expression in run.py before writing price_reset.py to avoid double-triggering on FPL incremental price-batch releases.
+
+5. **Auth: undici.request() vs redirect: follow** - Research gives two viable approaches for capturing the FPL session cookie. Inspect actual 302 behaviour in the current deployment before committing to either.
+
+---
+
+*Research completed: 2026-05-20*
+*Ready for roadmap: yes*

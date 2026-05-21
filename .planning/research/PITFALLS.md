@@ -1,348 +1,470 @@
-# v1.25 Pre-Season Intelligence — Integration Pitfalls
+# Pitfalls Research — v1.26 Off-Season Intelligence
 
-**Milestone:** v1.25 Pre-Season Intelligence (adding 4 features to existing FPL Analyst)
-**Researched:** 2026-05-19
-**Scope:** Integration pitfalls specific to wiring AUTO-01 (pipeline polling), WATCH-01/04 (watchlist), COST-01 (budget slider), and GREEDY-NULL (null-rate instrumentation) into the live codebase.
-**Confidence:** HIGH for codebase-specific items (verified by reading `run.py`, `suggest_squad.py`, `pre-season-squad/route.ts`, `pre-season-squad.ts`, `NextSeasonPlannerTab.tsx`, `manual-plan.ts`, `pipeline.yml`); MEDIUM for FPL off-season API behaviour (undocumented, community-reported).
+**Milestone:** v1.26 Off-Season Intelligence (adding ALERT-01 push notifications, REFRESH-01 pre-deadline scheduling, transfer speculation scoring, price reset analysis, and auth 502 fix to existing FPL Analyst)
+**Researched:** 2026-05-20
+**Scope:** Integration pitfalls specific to this stack: Next.js 16 / Vercel serverless / GitHub Actions / Vercel Blob / Python pipeline. No database. Single user.
+**Confidence:** HIGH for areas verified against official docs and known issues; MEDIUM for FPL API behaviour (undocumented); LOW where only community reports available.
 
 ---
 
 ## How to read each pitfall
 
-Each entry has: **Risk** (High / Medium / Low), **Description** (what goes wrong and why this codebase is vulnerable), **Prevention** (concrete guard to put in code or tests), **Phase** (which v1.25 phase plan should own the fix).
+Each entry has: **Risk** (High / Medium / Low), **What goes wrong** (description + why this stack is vulnerable), **Prevention** (concrete code guard), **Phase** (which v1.26 phase owns the fix).
 
 ---
 
-# Critical Pitfalls (Risk: High)
+## Web Push Pitfalls
 
-## 1. AUTO-01: Bootstrap "looks normal" mid-July but events[] are stale or partial
+### WP-01: Service worker scope mismatch blocks push reception entirely (Risk: High)
 
-**Risk:** High
+**What goes wrong:** The service worker file must be served from `/public/sw.js` to get root scope (`/`). If it is placed anywhere else — or served through a Next.js API route without a `Service-Worker-Allowed: /` response header — the browser limits its scope to the path prefix it was loaded from. A service worker at `/api/sw.js` gets scope `/api/`, meaning it will never intercept push events directed at the root origin. The notification simply never arrives; no error is thrown at registration time on modern Chrome.
 
-**Description:** The existing `IS_OFF_SEASON = not any(e.get('is_current') for e in events)` (`pipeline/run.py:148`) is binary — but the off-season has at least four sub-states the gate cannot distinguish:
-
-1. **True off-season** — `events[]` is the *old* 38-GW array, all `finished: true`, no `is_current`. The current logic handles this.
-2. **Empty/stub bootstrap** — between seasons FPL has historically served an `events: []` (or near-empty) response for hours-to-days. `IS_OFF_SEASON` becomes True (correct), but downstream code that does `max(e['id'] for e in events)` (`run.py:201`) will return the default `0`, which collapses GW38 detection silently.
-3. **Pre-season armed** — new `events[]` published with all `finished: false` and `is_current: false` for the new season. **The current gate still reports True**, even though next-season data has landed. This is exactly the state AUTO-01 must detect.
-4. **GW1 deadline crossed, `is_current` lag** — community reports indicate FPL can be slow to flip `is_current` on the first GW of a new season; the gate flips back to True briefly.
-
-Polling alone (every 24h) does not solve detection — the *predicate* is the bug. If AUTO-01 uses `not IS_OFF_SEASON` as the activation signal, the heatmap and squad planner will *not* light up when next-season bootstrap arms, and will only flip on at the GW1 deadline (~weeks after fixtures are useful).
+This stack is vulnerable because Next.js app-router serves files from `src/app/api/` for route handlers and has no native mechanism to serve a `.js` file with arbitrary response headers except through a route handler — which puts you back in the `/api/` scope problem.
 
 **Prevention:**
-- Introduce a tri-state in `run.py`: `NEXT_SEASON_DATA_AVAILABLE = (len(events) > 0 and all(not e.get('finished') for e in events) and not any(e.get('is_current') for e in events))`. This is the AUTO-01 activation gate; it sits *between* off-season and live-season states.
-- Persist `last_known_first_event_id` to Blob. When `events[0]['id']` rises above last-known, treat it as a season rollover signal independent of `is_current`.
-- Add a `fixtures.json` health check in the gate predicate: AUTO-01 should only declare "next-season data has landed" when **both** `bootstrap.events[]` is fresh **and** `/api/fixtures` returns ≥38 fixtures with future kickoff dates. Either alone is insufficient (FPL has shipped bootstrap before fixtures and vice versa).
-- Tests: snapshot-fixture replay for each of the four states (true off-season, empty events, armed pre-season, GW1 live) — assert which features turn on in each state.
+- Place `sw.js` in `/public/sw.js` (served as a static asset at `/sw.js`).
+- Register with explicit scope: `navigator.serviceWorker.register('/sw.js', { scope: '/' })`.
+- The `updateViaCache: 'none'` option is mandatory — without it, the browser may serve a stale SW from HTTP cache indefinitely after deployments.
+- Do not attempt to serve the service worker through a Route Handler. The scope limitation is not configurable without a server-level `Service-Worker-Allowed` header, which Vercel does not support on serverless responses.
 
-**Phase:** AUTO-01 (the polling/activation phase). Write the gate predicate first; the polling cron is the trivial part.
+**Phase:** ALERT-01 (service worker setup is the first step before any push subscription code).
 
 ---
 
-## 2. COST-01: Budget slider fires PuLP ILP on every tick → UI freeze + Vercel timeout cascade
+### WP-02: VAPID private key exposure via environment variable leakage (Risk: High)
 
-**Risk:** High
-
-**Description:** `suggest_squad.py` is run as a Python subprocess inside the pipeline (`run.py:213-236`); it takes ~0.5-2 s for the CBC solver on a ~600-player pool, longer on cold starts. The existing `/api/pre-season-squad` route currently **does not** call PuLP — it serves the pre-computed `pre_season_squad.json` from Blob or falls back to the TS greedy builder (`route.ts:36-44, 125`). COST-01 changes that contract: the slider must re-run ILP/greedy *with a new budget*.
-
-Three things break the moment a user moves the slider:
-
-1. **Naive `onChange={(v) => mutate(v)}`** — fires 30-60 events per drag. Each call spawns a Python subprocess if ILP is used. CBC has a documented cold-start issue (`coin-or/pulp#167` cites `cbc -stop` taking >1s after idle); subprocess spawn + solver + JSON write/read will trip Vercel's 60s Pro timeout under load and starve the function pool.
-2. **TanStack Query refetch cascade** — if COST-01 reuses `usePreSeasonSquad()`, every slider value mutation invalidates the query, causing `NextSeasonPlannerTab` (heavy formation grid + 8-GW heatmap rows) to re-render. With `GemTable` mounted in adjacent tabs, an unmemoized prop on the slider's parent will cascade re-renders into TanStack Table (TanStack Table has a documented infinite-re-render trap when columns/data aren't stably memoised, per github.com/TanStack/table#4227).
-3. **Optimistic UX impossible** — debounced mutations don't compose with optimistic updates (TanStack Query discussion #2292) — so the slider will feel laggy regardless.
+**What goes wrong:** VAPID requires two env vars — `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (intentionally client-visible) and `VAPID_PRIVATE_KEY` (must be server-only). The `NEXT_PUBLIC_` prefix convention in Next.js causes any env var with that prefix to be inlined into the client bundle at build time. A developer copying the VAPID generation snippet that names both keys `NEXT_PUBLIC_*` will expose the private key in the JS bundle, permanently compromising all subscriptions signed by that key.
 
 **Prevention:**
-- **Default to TS greedy on slider drag, ILP only on release.** `buildPreSeasonSquad()` is pure TS and <50 ms on 600 players (verified by reading the implementation — single sort + single pass). Run greedy locally on every `onValueChange`; run ILP only on `onValueCommit` (Radix slider) or `onChange` final-debounced (300-400 ms after drag end).
-- Wrap the slider's debounced state in `useDebouncedValue` (custom hook) — *do not* try to debounce the mutation function (`useCallback` + debounce creates a new instance per render unless wrapped in `useRef`, classic React debounce trap).
-- Add `targetBudget` as a query key dimension: `useQuery({ queryKey: ['pre-season-squad', targetBudget] })`. This avoids re-fetching for already-computed budgets (user nudges back to 100m → cache hit).
-- If ILP must run server-side per budget, add `maxDuration = 30` to the route handler, return 408 on solver timeout, and surface a "Solver busy — showing approximate squad" badge.
-- Add a perf test: simulate 60 slider events in 1s, assert <5 mutations fired, P95 mutation latency <200 ms.
+- Name the private key `VAPID_PRIVATE_KEY` (no `NEXT_PUBLIC_` prefix). It is only used in the server-side push sender Route Handler.
+- Name the public key `NEXT_PUBLIC_VAPID_PUBLIC_KEY`. It is needed in the client service worker for `pushManager.subscribe({ applicationServerKey: ... })`.
+- Add a CI check: `grep -r "NEXT_PUBLIC_VAPID_PRIVATE" src/` must return empty. A one-character naming error is catastrophic.
+- Generate keys once via `web-push generate-vapid-keys`, store in Vercel environment variables, never regenerate (changing the key invalidates all existing subscriptions).
 
-**Phase:** COST-01. Greedy-on-drag + ILP-on-release is the cheapest architecture; specifying it in the plan prevents the obvious naive implementation.
+**Phase:** ALERT-01.
 
 ---
 
-## 3. AUTO-01 → COST-01: Player IDs are reused across seasons but element_type/team change
+### WP-03: iOS/Safari push only works from installed PWA — not browser tab (Risk: High)
 
-**Risk:** High
+**What goes wrong:** Apple requires Web Push to be triggered only when the app is installed as a PWA (Add to Home Screen). When the user opens the site in Safari directly — the most common mode for a personal web tool like this one — `window.Notification` is defined but `navigator.serviceWorker` is not available, and `PushManager` is undefined. Calling `pushManager.subscribe()` throws immediately.
 
-**Description:** FPL element IDs (the `id` field on `bootstrap.elements`) are **assigned sequentially across all seasons and not reset**. Player Y's id `351` last season may be re-used (same player) — but new players added pre-season get fresh IDs *after* last season's max, and players who left the league still appear in bootstrap with `status: 'u'` (unavailable) until ~early August. Two specific failure modes for v1.25:
+Additionally, on iOS 16.4+, the permission prompt **must** be triggered by a direct user gesture (a button tap). Calling `requestPermission()` from a `useEffect`, `setTimeout`, or on page load is silently rejected — no prompt appears, no error is thrown, `Notification.permission` remains `'default'`.
 
-1. **WATCH-01 watchlist becomes a graveyard.** A watchlist persisted in localStorage as `[{id: 351, ...}, ...]` from last season will:
-   - Show players who left the league as "current squad candidates" until FPL purges them
-   - Display *stale* `now_cost`, `team`, `element_type` from the time of pinning
-   - If FPL re-uses an internal squad slot, `element_type` can change (e.g., a player reclassified from MID to FWD; happens 1-3 times per season). The watchlist will render them in the wrong position group.
-2. **Pre-season squad uses old IDs against new prices.** `pre_season_squad.json` is computed at GW38 with last-season `now_cost`. If COST-01 re-runs with a new budget *after* FPL publishes new-season prices but before the archive is regenerated, the squad costs in the UI will mismatch reality (e.g., Saka was 9.5m archived, FPL listed at 10.5m for new season). Budget slider says "£100m budget, used £99.5m" but the real wallet view at FPL says £101m used.
+The existing app has no manifest.json or PWA metadata, meaning iOS push is blocked until a full PWA setup is complete.
 
 **Prevention:**
-- WATCH-01 storage: persist `{id, web_name, pinned_at_iso}` *only*. Re-hydrate `now_cost`, `team`, `element_type`, `status` from current `/api/players` on every render. Treat the watchlist as a **set of IDs**, not a denormalised record.
-- WATCH-01 needs a "Player no longer in FPL" empty pill — when an id isn't in current `elements[]`, render a zinc badge `Departed (last seen GW38)` rather than silently dropping or crashing.
-- Add `element_type_drift_check` in the hook: if `last_seen_element_type !== current.element_type`, log + show amber `Reclassified` badge so user notices position changes.
-- COST-01 needs a `prices_basis` field on the response (`'archive_gw38'` vs `'live_bootstrap'`) and a banner in the UI when the slider is operating on archive prices. Once `now_cost` for the new season lands in bootstrap, prefer it.
-- Tests: feed a fixture where element 351's element_type flips between snapshots — assert the watchlist UI handles re-classification without throwing.
+- Gate the push opt-in UI behind a feature-detection check: `'PushManager' in window && 'serviceWorker' in navigator`. Show a "Push not available in this browser — install the app for alerts" fallback on iOS Safari tab.
+- Add a `manifest.json` to `/public/` with `display: "standalone"` — this is required before any iOS push testing is possible.
+- Call `Notification.requestPermission()` only from an explicit button click handler, never from lifecycle hooks.
+- Scope iOS as explicitly "install-only" in the feature spec and do not block the release on iOS push working in-browser.
+- Test matrix: Chrome desktop, Firefox desktop, Chrome Android, Safari iOS (installed PWA). Safari iOS (browser tab) is explicitly a non-target.
 
-**Phase:** WATCH-01 owns the watchlist storage contract; COST-01 owns the prices_basis surfacing. Both depend on AUTO-01 establishing the price source detection.
+**Phase:** ALERT-01. The manifest.json and feature-detection gate must be in place before the opt-in UI is designed.
 
 ---
 
-## 4. GREEDY-NULL: Instrumentation as logging-only is useless without a reproducible fixture corpus
+### WP-04: Subscription storage in Vercel Blob — concurrent read-modify-write corrupts the list (Risk: High)
 
-**Risk:** High
+**What goes wrong:** This app has no database. The natural choice for persisting push subscriptions is Vercel Blob (already used for pipeline cache). The pattern `read subscriptions.json → append → write back` is a classic read-modify-write race condition: if two browser sessions subscribe simultaneously, both read the same old list, both append their own subscription, and the later write silently overwrites the earlier one — losing a subscription permanently. In a single-user personal tool this is rare, but it happens when the user has push enabled on their phone and their laptop.
 
-**Description:** `buildPreSeasonSquad()` returns `null` when (a) <15 eligible players, (b) any MIN_SLOTS unmet, or (c) the greedy can't fit 15 within budget (`pre-season-squad.ts:54-57`). The route already has *a* console.error on null (`route.ts:128-129`). The deferred GREEDY-NULL item asks for "null rate measurement and UI reporting."
-
-The obvious-but-wrong implementation:
-- Increment a counter in localStorage each time greedy returns null. Display "Greedy null rate: 12%" in the UI.
-
-This fails because:
-1. **Sample size is tiny.** A single user's localStorage will see this function called maybe 1-2x per session. n=50 over a season is not statistical.
-2. **Confounded by budget slider input.** Once COST-01 lands, the user will deliberately push the slider to absurd values (£60m budget) and observe nulls. localStorage cannot distinguish "intentional infeasibility" from "algorithm shortcoming."
-3. **No remediation path.** If you measure that greedy nulls at 12%, what do you do? Without a fixture set of the *inputs* that caused null, you cannot tune the algorithm. The point of instrumentation is to enable algorithm improvement, not to display a vanity metric.
+Additionally, Vercel Blob is an object store, not a key-value store with atomic update semantics. There is no equivalent of a database transaction or compare-and-swap.
 
 **Prevention:**
-- Instrument GREEDY-NULL **server-side, not client-side**. In the API route, when greedy returns null, capture `{score_map_size, budget, position_counts_pre_constraint, team_distribution}` and POST it to a Blob path `greedy_null_log/{iso_date}_{hash}.json`. Logs are durable, comparable, and can drive a fixture corpus.
-- The "null rate" UI surface should be a **debug page** (or behind a `?debug=greedy` query param), not a primary user surface. Surfacing null rate to typical users without explanatory context is anti-feature noise.
-- Add a `greedy_null_reason` enum to the response: `'insufficient_eligible' | 'budget_infeasible' | 'min_slot_unmet:GK' | ...`. This is what makes the data actionable — null with a reason converts to a test fixture immediately.
-- Tests: assert greedy returns null with the right reason for each of 5 hand-crafted infeasibility fixtures, before measuring anything in production.
+- Since this is a single-user personal tool, the subscription list will rarely exceed 2-3 entries (phone, laptop, possibly tablet). Use a simpler pattern: each device writes its subscription to a unique Blob path keyed by a stable device identifier derived from the subscription's `endpoint` URL (e.g., `push_subscriptions/{sha256(endpoint).slice(0,16)}.json`). Never maintain a single aggregated list file.
+- The sender Route Handler lists blobs with `list({ prefix: 'push_subscriptions/' })` and sends to all. No read-modify-write needed.
+- On subscription expiry (410 response from push service), delete the individual blob file.
+- This pattern eliminates the race condition entirely at the cost of a Blob list() call on every send. With 1-3 subscriptions, this is negligible.
 
-**Phase:** GREEDY-NULL. Pair the instrumentation work with at least 5 fixture cases derived from real archive snapshots.
+**Phase:** ALERT-01.
 
 ---
 
-# Moderate Pitfalls (Risk: Medium)
+### WP-05: Stale/expired subscriptions cause silent send failures (Risk: Medium)
 
-## 5. WATCH-01/04: localStorage namespace collision and missing migration with 4+ existing consumers
+**What goes wrong:** Browser push subscriptions expire or become invalid when: the user clears browser data, the browser is uninstalled, the VAPID keys change, or the push service rotates the endpoint. When you attempt to send to a stale subscription, the push service returns HTTP 410 Gone (subscription no longer valid) or HTTP 404. The `web-push` library throws an error with `statusCode: 410`.
 
-**Risk:** Medium
-
-**Description:** localStorage is used in 23+ files (verified via grep), including `manual-plan.ts` (`MANUAL_PLAN_KEY`), `useChipHistory`, `useDecisionHistory` (ring buffer), `useGwReview`, `usePlayerInsight` (`playerInsight:{id}:gw{N}`), `useRivals`, theme toggle. There is **no unified abstraction** — each module rolls its own key, version field, validation, and try/catch (`manual-plan.ts:221-264` is the canonical pattern).
-
-Failure modes when WATCH-01/04 lands:
-1. **Key collision** — naming `watchlist` or `targets` without a `fplx:` prefix risks colliding with a future feature or a browser extension. Several existing keys lack prefix (`manual-plan`, `theme`).
-2. **No schema versioning** — `manual-plan.ts` has `if (p.version !== 1) return null` (line 239). If WATCH-01 ships without a `version` field, the next iteration that adds `pinned_priority` or `notes` will silently discard all existing watchlists.
-3. **Quota cap** — localStorage is 5-10 MB per origin. The combined existing footprint is small (~50-200 KB), but `useDecisionHistory` is a 38-entry ring buffer and `usePlayerInsight` caches up to ~30 KB per insight. A user with 200 pinned players × full denormalised payload × 600-byte JSON = 120 KB; multiplied by stale GW snapshots in `useGwReview`, you can land in `QuotaExceededError` on Safari (lower effective limit).
-4. **`window` undefined during SSR** — `NextSeasonPlannerTab` is a client component (`'use client'`), but `usePreSeasonSquad` is consumed in a tab that may not always be mounted. If WATCH-01's hook reads localStorage *outside* a `useEffect`, Next.js 16 (which has tighter hydration assertions than 14/15) will warn or throw mismatch.
+If the sender swallows this error or only logs it, the dead subscription accumulates in Blob storage and clutters the list. On a personal tool that users might stop using over the summer and resume in August, this is likely.
 
 **Prevention:**
-- Extract a `useLocalStorageState<T>(key, initial, schema)` utility in `src/lib/hooks/useLocalStorageState.ts`. Use Zod for the schema (Zod is already a dependency for FPL adapter). All new features (and ideally a migration of existing ones, out of scope for v1.25) go through this.
-- Mandatory `{version: 1, ...}` envelope on every persisted blob. Increment on schema change; the hook returns `null` if version mismatches and clears the slot.
-- Mandatory `fplx:` prefix on every key. Audit existing keys in a follow-up; for v1.25 *new* keys, enforce.
-- Always read inside `useEffect` (or `useSyncExternalStore` with SSR-safe snapshot). Initial render must return `null` or `[]` to avoid hydration mismatch.
-- Catch `QuotaExceededError` specifically and show a toast: "Watchlist storage full — unpin some players or clear old data." Don't silently drop writes (the existing `manual-plan.ts` swallow-catch pattern hides quota issues).
+- In the push sender Route Handler, catch the error from `webpush.sendNotification()` and check `err.statusCode`.
+- On 410 or 404: delete the corresponding Blob file immediately and log `[push] subscription ${endpoint_fragment} expired — deleted`.
+- On 429 (rate limit from push service): back off and do not retry in the same function invocation. Log and surface as a monitoring signal.
+- Add the `pushsubscriptionchange` event listener in the service worker to handle browser-initiated subscription renewal: re-register and POST the new subscription to `/api/push/subscribe`.
 
-**Phase:** WATCH-01. Land the `useLocalStorageState` utility in WATCH-01's plan; WATCH-04 reuses it.
+**Phase:** ALERT-01.
 
 ---
 
-## 6. COST-01: GemTable / OpportunityCostTable re-render storm from unmemoized prop drilling
+### WP-06: Vercel Hobby plan serverless timeout with notification fan-out (Risk: Medium)
 
-**Risk:** Medium
-
-**Description:** `NextSeasonPlannerTab` is currently a leaf consumer (`usePreSeasonSquad` → render). Adding the budget slider creates state at the tab level. If that state is propagated as a raw value through any component tree that includes `GemTable`, `OpportunityCostTable`, or even another `HeatMapRow`, every slider tick causes their parents to re-render. TanStack Table specifically penalises this — per the FAQ, columns/data without stable references will re-render the full table, not just the slider's locale.
-
-The existing codebase is *generally* good at this (use of `useImmer`, memoised columns in `GemTable`), but the v1.25 plan adds:
-- COST-01 budget slider state
-- A "Recompute" button (likely)
-- A `prices_basis` banner
-- WATCH-04 squad-overlap highlight (cross-references watchlist to a player set)
-
-Each of these is a new piece of state in the Plan-section tree. Without explicit memoization of the slider's container and an isolated `BudgetSliderProvider` context, the prop chain back into `PlannerTab` / `RouteTreeTab` / `ManualPlanTab` (all sibling Plan-section components sharing `planHorizon`) can re-render on every slider event.
+**What goes wrong:** The push sender runs as a Vercel serverless function (Node.js Route Handler). Sending to each subscription is a sequential network call to an external push service (FCM, APNs, Mozilla). With 3 subscriptions × ~200ms per call = 600ms — fine. But if the sender is also triggered by the pipeline (GitHub Actions webhook), cold start latency of 100-2000ms can push total execution time over the Hobby plan's 10-second default timeout. The Pro plan extends this to 60 seconds, but the default timeout trap is a common deployment surprise.
 
 **Prevention:**
-- Co-locate slider state in a dedicated `BudgetContext` (React context) scoped to `NextSeasonPlannerTab` only — do not lift to `page.tsx` alongside `planHorizon`. The contexts are unrelated.
-- Wrap `FormationGrid`, `HeatmapSection`, and `WatchlistSection` in `React.memo` with shallow-equal prop check. Pass the *resolved* squad object, not the slider value, so memo can stop the re-render at the section boundary.
-- Use `useDeferredValue(budgetValue)` for any expensive derived display (e.g., a "£X.Xm remaining" sub-headline that reads from the recomputed squad). Lets React keep the slider thumb responsive while the table recomputes.
-- Test: add a re-render counter component (Profiler API) inside `GemTable` and assert it does *not* increment when the v1.25 budget slider moves on a different tab. CI guard.
+- Add `export const maxDuration = 30;` to the push sender Route Handler (Pro plan required for >10s; document this as a Pro-plan dependency).
+- Use `Promise.allSettled()` to fan out to multiple subscriptions in parallel rather than sequential `await` in a loop.
+- Keep the push sender lean: no Python subprocess calls, no Blob reads beyond the subscription list, no FPL API calls inside the sender. Pre-compute the notification payload in the pipeline or in a separate Route Handler call.
 
-**Phase:** COST-01. State architecture decision is in the plan, before any UI code.
+**Phase:** ALERT-01.
 
 ---
 
-## 7. AUTO-01: Daily cron may miss a 4-hour FPL window — and a missed window has compounding effect
+### WP-07: Notification permission UX — asking too early causes permanent deny (Risk: Medium)
 
-**Risk:** Medium
-
-**Description:** The existing cron is "4x daily baseline + dense weekend deadlines" (`.github/workflows/pipeline.yml:13-16`). For mid-season, this is fine — GW deadlines are predictable. For AUTO-01 in the off-season:
-
-- FPL typically publishes next-season bootstrap **once**, often overnight UK time in mid-July with no advance warning.
-- If the cron next runs 4-6 hours later, that's fine for data freshness — but the activation window (when the heatmap "lights up") is delayed by up to 6 hours.
-- More problematic: `refresh_gate.py` was built for *mid-season* deadline-window logic. It probably doesn't know about off-season events and may *suppress* off-season runs entirely (need to verify). If so, AUTO-01's polling cron is gated by a predicate that doesn't apply.
-- The 4x-daily baseline does run unconditionally (line 58 — `'0 6,12,18,0 * * *'` runs even without gate), so the 6h worst case is the bound. But a user opening the app at 9am UK time, the morning bootstrap published at 5am, won't see fixtures until the 12pm cron lands them.
+**What goes wrong:** Browser permission models are sticky. If the user dismisses or denies the notification permission prompt, re-requesting it does nothing — `Notification.requestPermission()` returns `'denied'` immediately. On Chrome, a denied permission can only be re-enabled through browser settings (three-click sequence most users never find). Once denied, the push feature is effectively dead for that user permanently.
 
 **Prevention:**
-- Verify `refresh_gate.py` allows off-season runs. If not, add an explicit `is_off_season_or_pre_season` clause that always returns `run=true` once `NEXT_SEASON_DATA_AVAILABLE` is suspected.
-- Add a tighter polling cron *only* during the suspected pre-season window (mid-June to mid-August): `0 */2 * * *` (every 2 hours) inside the gate, gated by date range. This is a 6-week intensification, not a permanent change.
-- Add a "Last bootstrap check: X min ago" debug surface on the planner tab; if next-season data is expected and stale, the user sees an honest staleness indicator instead of "Fixtures not yet published" when they actually are.
-- Don't put activation polling on the client (browser fetch every N seconds) — it duplicates work and complicates Vercel Blob cache invalidation. The pipeline cron is the source of truth.
+- Never call `requestPermission()` on page load or from any automatic trigger.
+- Build a two-step opt-in: (1) show a custom in-app prompt explaining the value ("Get notified when your watchlist player has a price change"); (2) only call the browser API when the user clicks "Enable". This is called a "permission request gating pattern."
+- After permission is denied, show a persistent contextual message: "Push notifications are disabled — re-enable in browser settings" with a link to instructions.
+- Store the user's permission preference in localStorage so the opt-in prompt is not shown repeatedly.
 
-**Phase:** AUTO-01. Cron-config change is small; the gate-predicate verification is the work.
+**Phase:** ALERT-01.
 
 ---
 
-## 8. AUTO-01: archive_season.py + suggest_squad.py idempotency assumptions break when bootstrap shape changes
+### WP-08: Notification rate limiting / spam — no throttle on price change alerts (Risk: Medium)
 
-**Risk:** Medium
-
-**Description:** `archive_season.py` has a 50%-success guard, and `suggest_squad.py` has an idempotency skip (`suggest_squad.py:263-278` — skips if `pre_season_squad.json` already exists). These were designed for a one-shot GW38 window.
-
-In the v1.25 world:
-- A user changes the budget via COST-01 → the route handler reads `pre_season_squad.json`, but it was computed for £100m. The slider's request for £95m has no pre-computed file.
-- AUTO-01 detects new bootstrap mid-July → should `suggest_squad.py` re-run with the new player pool and new prices? Currently it would **skip** because `pre_season_squad.json` already exists from GW38.
-- The skip key is filename-only; it has no notion of "computed against archive A vs archive B."
+**What goes wrong:** The pipeline runs up to 4× daily. If price change notifications are sent on every pipeline run where any price moved, the user will receive up to 4 notifications per day for every player with active price movement. During busy transfer windows (late July–early August when FPL updates prices before season launch), this can mean 20+ notifications per day — the user turns off push and never re-enables it.
 
 **Prevention:**
-- Version the artifact name: `pre_season_squad_v{bootstrap_hash}.json` where `bootstrap_hash` is a short hash of `(events[0].id, len(elements), sum(now_cost))`. Different bootstrap → different filename → no skip.
-- Or, *delete* the artifact when bootstrap freshness check fails (i.e., when AUTO-01 detects new-season data). Add a `force_recompute` env var for the cron to set when the bootstrap-hash changes.
-- For COST-01 budget variations, **do not** persist every budget's squad to Blob — that explodes the artifact set. Use the route handler's in-memory ILP call (with greedy-on-drag, ILP-on-release per Pitfall 2) and cache in-memory via the Next.js `unstable_cache` for `s-maxage=3600` only on the default £100m path.
-- Tests: assert `suggest_squad` recomputes when the bootstrap hash differs, even if `pre_season_squad.json` exists.
+- Persist a `last_notified_price.json` in Vercel Blob that records `{element_id: last_notified_price}`.
+- Only send a notification when `abs(current_price - last_notified_price) >= 0.2` (two price steps), or when a player moves from "no price change" to "rising/falling confirmed".
+- Add a minimum cooldown per-player: never notify for the same player twice within 24 hours.
+- Limit total notifications per pipeline run to 3 (cap by significance score — biggest changes first).
 
-**Phase:** AUTO-01 (artifact versioning) and COST-01 (slider path doesn't write to Blob).
+**Phase:** ALERT-01.
 
 ---
 
-## 9. WATCH-01: News badge integration with NewsBanner and ConfirmedSigningBadge — staleness pipeline isn't unified
+## Pipeline Scheduling Pitfalls
 
-**Risk:** Medium
+### PS-01: GitHub Actions cron has no guaranteed timing — 10-30 minute drift is normal (Risk: High)
 
-**Description:** Existing badges on player rows include `NewsBanner` (14-day staleness suppression, `NEWS-01`), `ConfirmedSigningBadge` (green pill, `WIN-02`), `MinsRiskBadge`, `StatusLabelBadge`. Each has its own staleness rule:
+**What goes wrong:** GitHub cron schedules are UTC-only and silently delay by 10-30 minutes during peak runner availability. GitHub's documentation states explicitly that scheduled workflows are not guaranteed to run at exact times. This makes "REFRESH-01: run at 2h before GW deadline" unreliable as an absolute time target — if the deadline is 11:30 GMT and the cron fires at 11:02 instead of 09:30, the pre-deadline pipeline window is missed entirely.
 
-- `NewsBanner`: zinc badges suppressed >14 days; red/amber never suppressed.
-- `ConfirmedSigningBadge`: rendered from `transfer_news.json` 5-class classification; no explicit staleness gate.
-- WATCH-01 will request "news badge" on watched players. If it naively reuses `NewsBanner`, it inherits the 14-day rule — but in the **off-season**, the most valuable news is *more than 14 days old* (a confirmed signing from 3 weeks ago is still the canonical fact). The 14-day rule was a mid-season decision (`NEWS-01` rationale).
+Additionally, the minimum cron interval is 5 minutes, but GitHub recommends public repos use no shorter than 15-minute intervals. GitHub will silently fail to run workflows on repos that are inactive for 60 days.
 
 **Prevention:**
-- Make `staleness_threshold_days` a prop on `NewsBanner`, default 14, allow `Infinity` (or a sentinel) for off-season use cases.
-- WATCH-01 watchlist row uses `NewsBanner` with `stalenessDays={null}` (no suppression) when `IS_OFF_SEASON` is detected. Mid-season, default suppression applies.
-- Document this in `NewsBanner.tsx` JSDoc so the next consumer doesn't re-derive the rationale.
-- Test: snapshot a 30-day-old confirmed-signing news item; assert it renders in the watchlist row but not in the captain-picks row (which retains 14-day suppression).
+- Do not rely on absolute cron timing for deadline-proximate runs. Instead: add a `deadline_proximity` gate in the Python pipeline itself. At the start of `run.py`, compute `minutes_until_deadline = (next_deadline - now).total_seconds() / 60`. Run the full pipeline only if `minutes_until_deadline < REFRESH_THRESHOLD` (e.g., 360 = 6h). This makes any run within the correct window execute the refresh, regardless of which cron schedule triggered it.
+- Run the pre-deadline cron every 30 minutes (`*/30 * * * *`) rather than trying to hit exact offsets. The gate logic handles the "is this close enough to deadline?" check.
+- Store `last_pre_deadline_run` timestamp in Blob to prevent double-execution if two cron instances overlap.
+- Do not use GitHub Actions cron for anything requiring sub-5-minute precision.
 
-**Phase:** WATCH-01. The `NewsBanner` prop extension is a 10-line change but easy to overlook.
+**Phase:** REFRESH-01.
 
 ---
 
-## 10. GREEDY-NULL: Sample bias from users who never click the planner tab
+### PS-02: FPL deadline times are not static — BGW/postponements shift them unpredictably (Risk: High)
 
-**Risk:** Medium
+**What goes wrong:** FPL GW deadlines are not at a fixed day/time each week. Standard deadlines are typically Saturday 11:30 GMT, but Blank Gameweeks (BGW), Double Gameweeks (DGW), cup ties, and postponed matches cause FPL to adjust deadlines — sometimes with only 48-72 hours notice. A hardcoded cron offset relative to an assumed deadline time will fire at the wrong relative position for irregular gameweeks.
 
-**Description:** `NextSeasonPlannerTab` is a Plan-section sub-tab — most users won't visit it daily. The greedy null observation only happens when:
-1. User opens the Plan section
-2. Selects "Next Season" sub-tab
-3. `usePreSeasonSquad()` fetches `/api/pre-season-squad`
-4. Server tries greedy if no pre-computed ILP exists
-
-In the **production happy path**, the pipeline pre-computes `pre_season_squad.json` via `suggest_squad.py` (ILP) at GW38. The route hits Resolution 1 (`route.ts:36-44`) and never invokes the TS greedy. Greedy is only used when the ILP file is missing — which is exactly the pathological state the instrumentation wants to measure.
-
-So the deployed null rate will be: "How often does the route hit Resolution 2 + greedy fails?" — which is a *function of pipeline reliability*, not algorithm quality. The instrumentation is measuring the wrong thing.
+The existing project already handles `IS_OFF_SEASON` and BGW/DGW in transfer scoring. But the pre-deadline pipeline cron schedule in `pipeline.yml` is currently a fixed set of times — it does not know about deadline shifts.
 
 **Prevention:**
-- Run a **shadow ILP-vs-greedy A/B** in the route: when ILP file exists, run greedy *also* (on the same inputs), compare squads, log delta. This measures algorithmic quality directly.
-- Alternatively, run greedy nightly in the pipeline against synthetic budget perturbations (`£90m`, `£95m`, `£100m`, `£105m`) and log nulls.
-- Define the actual metric clearly in the plan: "% of (archive, budget) inputs for which greedy returns null while ILP returns a feasible squad." This is the algorithmic gap, which is what GREEDY-NULL was deferred to measure.
+- At pipeline startup, fetch `bootstrap-static` and read `events[current_or_next].deadline_time` (ISO 8601 timestamp). Compute how many minutes remain. Use that as the `minutes_until_deadline` gate described in PS-01.
+- Never hardcode deadline times in `pipeline.yml` cron expressions. The cron schedule is just a "try running me at these intervals"; the pipeline gate is the actual timing logic.
+- Add a `next_deadline` field to `pipeline_meta.json` written to Blob at the end of each run. The UI can display a countdown using this without a separate FPL API call.
+- Handle the case where `deadline_time` is in the past (missed deadline): the gate should be `minutes_since_deadline < 60` for post-deadline runs (to capture match-started data), not just pre-deadline.
 
-**Phase:** GREEDY-NULL. Plan must reframe the metric definition before any code is written.
-
----
-
-# Minor Pitfalls (Risk: Low)
-
-## 11. COST-01: Budget slider UX granularity — £0.1m steps vs £0.5m steps
-
-**Risk:** Low
-
-**Description:** FPL prices are in tenths of millions (`now_cost: 95 = £9.5m`). A naive slider with `step={1}` over `min=600, max=1100` (£60m-£110m) gives 500 ticks — overly granular and wastes solver budget. £0.5m steps (`step=5`) is 100 ticks; £1m steps (`step=10`) is 50 ticks.
-
-**Prevention:** Use `step={5}` (£0.5m). Bounds: `min={800}` (£80m, below which no FPL squad is feasible) to `max={1200}` (£120m, far above reality but allows "what if I had a bigger budget" exploration). Default value: `1000` (£100m).
-
-**Phase:** COST-01.
-
-## 12. AUTO-01: Mid-season BGW false-positive on activation gate
-
-**Risk:** Low
-
-**Description:** The existing `IS_OFF_SEASON` predicate uses `not any(e.get('is_current'))` (correct — handles BGW). The AUTO-01 `NEXT_SEASON_DATA_AVAILABLE` predicate proposed in Pitfall 1 must not false-positive on a mid-season BGW. The check `all(not e.get('finished') for e in events)` is sufficient — in a BGW, prior events are still finished. Document this in the predicate; add a test.
-
-**Prevention:** Pure unit test for the gate: BGW fixture (some events finished, some not, no is_current) → must return False.
-
-**Phase:** AUTO-01.
-
-## 13. WATCH-01: Default sort order — pinned-time vs ownership
-
-**Risk:** Low
-
-**Description:** Watchlist will likely default to "most recently pinned" order. Users with 10+ pins typically prefer ownership/price-trend sort. The decision should be deliberate, not accidental.
-
-**Prevention:** Ship with `useLocalStorageState<{sort: 'recency' | 'ownership' | 'price' | 'xpts'}>` and a column-header sort affordance. Default: `'recency'`. Persist user choice.
-
-**Phase:** WATCH-01.
-
-## 14. AUTO-01: Vercel Blob list() pagination missing for legacy artifacts
-
-**Risk:** Low
-
-**Description:** `route.ts:17` uses `list({ prefix: filename, limit: 1 })` — assumes a single matching blob. If a previous deploy wrote multiple artifact versions (e.g., GREEDY-NULL adds debug logs at `greedy_null_log/*`), and AUTO-01 introduces hash-versioned artifact names (Pitfall 8), the route will pick the first lexicographically, not the latest.
-
-**Prevention:** When versioned artifacts exist, sort blobs by `uploadedAt` descending and pick the newest. Add a unit test for "two versions exist" fixture.
-
-**Phase:** AUTO-01 (if hash-versioning lands).
-
-## 15. COST-01: Budget validation — slider value below £80m makes no FPL squad feasible
-
-**Risk:** Low
-
-**Description:** A FPL squad of 15 players at the absolute floor (4.0m × 15 = £60m, but realistic min is closer to £80m due to position quotas and 2 GKs) is infeasible below ~£80m. ILP will return `Infeasible`, greedy returns null. UX should pre-validate.
-
-**Prevention:** Disable slider range below £80m, or show inline "No FPL squad is feasible below £80m" warning. Don't burn solver time on infeasible budgets.
-
-**Phase:** COST-01.
+**Phase:** REFRESH-01.
 
 ---
 
-# Phase-Specific Warning Summary
+### PS-03: Off-season cron runs waste Actions minutes when there are no deadlines (Risk: Medium)
 
-| Phase | Likely Pitfalls (refs) | Most Critical Guard |
-|-------|------------------------|---------------------|
-| **AUTO-01** Pipeline polling | 1, 7, 8, 12, 14 | Tri-state gate (off / armed / live) — not the binary `IS_OFF_SEASON`. |
-| **WATCH-01** Watchlist core | 3, 5, 9, 13 | Store IDs only; rehydrate from current `/api/players` every render. |
-| **WATCH-04** Squad overlap | 5, 6 | Reuse `useLocalStorageState` from WATCH-01; do not invent a parallel storage layer. |
-| **COST-01** Budget slider | 2, 3, 6, 8, 11, 15 | Greedy on drag, ILP on release. Never spawn Python subprocess on every tick. |
-| **GREEDY-NULL** Instrumentation | 4, 10 | Server-side logging with reason codes; shadow A/B against ILP. The user-facing % is a vanity metric. |
+**What goes wrong:** With REFRESH-01 adding extra cron runs (e.g., every 30 minutes around deadlines), the pipeline.yml schedule grows. Off-season (typically June through early August), there are no GW deadlines and no meaningful FPL data to refresh. But the cron schedule still fires, and each run costs ~2-3 GitHub Actions minutes even if it exits immediately. On the free tier (2,000 minutes/month), a 30-minute interval schedule burns ~1,440 minutes/month — 72% of the free quota — even if the pipeline does nothing.
 
----
+**Prevention:**
+- Add an early-exit guard at the top of `run.py` for off-season cron runs: if `IS_OFF_SEASON` and `minutes_until_deadline` is undefined (no upcoming deadline), write a brief log and exit 0 within 5 seconds.
+- Use GitHub Actions `if:` conditions on step groups to skip expensive steps (Understat scraping, MC simulation) when not needed.
+- Consider reducing the dense pre-deadline cron schedule to active only during the season (September–May) via a date-range conditional in the workflow.
+- The existing `IS_OFF_SEASON` gate in `run.py` (which wraps 12 GW-dependent steps) is already a good model. Extend it to also skip the cron-expensive operations.
 
-# What to Test First
-
-For the Planner: these are the 5 highest-value test fixtures to commission *before* any feature code is written. They convert "unknown FPL API behaviour" into deterministic CI guards.
-
-1. **Off-season bootstrap states fixture set** — 4 JSON files representing (true off-season, empty events, armed pre-season, GW1 live). Drives Pitfalls 1, 7, 12.
-2. **Element ID drift fixture** — two consecutive bootstrap snapshots where element 351 changes `element_type` and element 999 disappears entirely. Drives Pitfall 3.
-3. **Greedy null-reason corpus** — 5 (score_map, budget) inputs that exercise each null reason. Drives Pitfall 4 and 10.
-4. **Re-render counter wrapper around GemTable** — Profiler-based test asserting GemTable does not re-render when COST-01 slider is moved. Drives Pitfall 6.
-5. **localStorage quota fixture** — pre-populate localStorage to ~4.5MB, attempt watchlist write, assert graceful QuotaExceededError handling. Drives Pitfall 5.
+**Phase:** REFRESH-01. The gate logic must be specified before the cron schedule is designed.
 
 ---
 
-# Sources
+### PS-04: Rate limiting from FPL API on more frequent pipeline requests (Risk: Medium)
 
-**Codebase (HIGH confidence):**
-- `pipeline/run.py` lines 141-244 — `IS_OFF_SEASON` gate, GW38 archive trigger
-- `pipeline/suggest_squad.py` — PuLP ILP, idempotency check, 500-min eligibility
-- `src/app/api/pre-season-squad/route.ts` — three-step resolution, greedy fallback
-- `src/lib/pre-season-squad.ts` — pure TS greedy, null conditions
-- `src/components/next-season/NextSeasonPlannerTab.tsx` — current empty-state UX
-- `src/lib/manual-plan.ts` lines 217-264 — canonical localStorage version-validate-catch pattern
-- `.github/workflows/pipeline.yml` — cron schedule and concurrency model
+**What goes wrong:** The FPL API is undocumented and rate-limited by IP. The existing daily pipeline runs fine because GitHub Actions Azure datacenter IPs are not individually rate-limited at once-daily frequency. At 30-minute intervals, the pipeline fetches `bootstrap-static` + `fixtures` + `element-summary` for all players = ~100-600 HTTP requests per run. At 48 runs/day, this could trigger FPL's IP-level throttling — returning 429 or 503 responses.
 
-**External (MEDIUM confidence):**
-- [TanStack Table FAQ — memoization](https://tanstack.com/table/v8/docs/faq) — stable column/data refs to avoid re-render cascades
-- [TanStack/table#4227 — memoization in v8](https://github.com/TanStack/table/issues/4227)
-- [Debounced mutation proposal — TanStack/query#2292](https://github.com/TanStack/query/discussions/2292) — optimistic updates incompatible with debounced mutations
-- [PuLP CBC timeout PR — coin-or/pulp#167](https://github.com/coin-or/pulp/pull/167) — CBC subprocess cold-start delays
-- [Vercel serverless timeout limits](https://vercel.com/kb/guide/what-can-i-do-about-vercel-serverless-functions-timing-out) — 10s free / 60s Pro
-- [Next.js hydration error guide](https://nextjs.org/docs/messages/react-hydration-error) — localStorage in SSR
-- [Frenzel Timothy — FPL API endpoints guide](https://medium.com/@frenzelts/fantasy-premier-league-api-endpoints-a-detailed-guide-acbd5598eb19) — off-season schema change warning
-- [Oliver Looney — FPL APIs Explained](https://www.oliverlooney.com/blogs/FPL-APIs-Explained) — bootstrap-static + events semantics
-- [Vercel cron idempotency guidance](https://vercel.com/docs/cron-jobs/manage-cron-jobs)
+The existing pipeline uses `requests` with no retry logic for FPL API calls. A 429 at the start of the pipeline will silently produce a stale `merged_players.json` or crash entirely depending on which step fails.
 
-**LOW confidence (community-reported, no canonical source):**
-- FPL `is_current` lag on GW1 deadline — community forum chatter; treat as defensive assumption.
-- FPL element re-classification between MID/FWD — observed pattern; no documented FPL policy.
-- Empty `events[]` window between seasons — observed historically; FPL gives no schedule.
+**Prevention:**
+- REFRESH-01's pre-deadline runs should **not** re-run the full pipeline. They should only run the "light" steps: fetch bootstrap, check deadlines, maybe update `transfer_news.py`. Full merge/Understat/MC runs remain on the existing daily schedule.
+- Add `retry` with exponential backoff to all FPL API calls in `run.py`: catch 429/503, wait `min(2^attempt * 5, 60)` seconds, retry up to 3 times.
+- Add `time.sleep(0.5)` between element-summary requests (already needed for Understat; apply consistently to FPL API calls too).
+- The `TRANSFER_NEWS_ENABLED` gate pattern (already in `run.py`) is a good model: only run expensive steps when they're needed. Apply the same gating to pre-deadline runs.
+
+**Phase:** REFRESH-01.
+
+---
+
+## Source Scoring Pitfalls
+
+### SS-01: Source tier conflation — same domain publishes both reliable and tabloid content (Risk: High)
+
+**What goes wrong:** The existing `transfer_news.py` classifies articles by source domain into reliability tiers (Official / Reliable / Tabloid). However, the same domain can publish both types of content: Sky Sports runs both "Confirmed: club signs player" (official/reliable) and "EXCLUSIVE: sources say player wants move" (tabloid speculation). Using a fixed source-tier mapping per domain assigns the same confidence to all articles from that domain regardless of article type.
+
+Additionally, BBC Sport and Sky Sports have different sub-brands (Sky Sports News, Sky Sports Football, etc.) sharing the same RSS domain. An article from `skysports.com/football/transfer` has a different signal weight than one from `skysports.com/football/news`.
+
+**Prevention:**
+- Source tier is a prior; article-level signals should override it. The confidence score formula should be: `confidence = source_prior_weight × article_signal_multiplier`.
+- Article signals: presence of "confirmed", "signs", "official", "announced" → multiply confidence up; presence of "could", "might", "interested in", "linked", "considering" → multiply down; presence of tabloid intensifiers ("SHOCK", "EXCLUSIVE", "sensational") → multiply down further.
+- The 5-class classifier already in `transfer_news.py` (`Confirmed / Likely / Possible / Rumour / Noise`) is the right axis for confidence scoring — use class as the primary signal, source tier as a secondary prior.
+- Test: run the classifier against a fixture set of 20 real articles including known tabloid speculation (The Sun, Daily Star) and known official confirmations (club announcements). Assert class assignments match ground truth.
+
+**Phase:** Transfer speculation scoring phase. The classifier test corpus is the key deliverable.
+
+---
+
+### SS-02: Confidence decay too aggressive during off-season long silences (Risk: Medium)
+
+**What goes wrong:** Time-based confidence decay is correct in-season (a 3-week-old transfer rumour is stale). In the off-season, however, the transfer window can have legitimate silences of 2-4 weeks between credible reports. If the decay function halves confidence every 7 days, a reliable article from 3 weeks ago scores near-zero even though no contradicting news has emerged.
+
+A separate problem: the decay clock should reset when a corroborating source picks up the same story. If Sky Sports reports "Player X to Club Y" on June 1, and BBC picks it up on June 15, the June 15 article should re-anchor the confidence — not be treated as a new independent signal.
+
+**Prevention:**
+- Use a slower decay curve in off-season mode: half-life of 21 days rather than 7 days when `IS_OFF_SEASON` is true.
+- Implement story deduplication: group articles by `(player_name, destination_club)` using the existing `rapidfuzz` fuzzy-match utility (already in `player_matching.py`). When two articles match the same story, use the **most recent** publication date as the anchor, not the original.
+- The confidence score surfaced to the UI should include both the raw score and the `age_days` so the user can judge staleness themselves.
+- Never decay a "Confirmed" article — once a transfer is confirmed, the fact doesn't decay regardless of time.
+
+**Phase:** Transfer speculation scoring phase.
+
+---
+
+### SS-03: False positives from tabloid hyperbolic language in non-transfer contexts (Risk: Medium)
+
+**What goes wrong:** The 5-class keyword classifier in `transfer_news.py` currently uses keyword matching. Sports tabloids routinely use transfer-sounding language in non-transfer contexts: "United WANT Bellingham" in a match preview, "Arsenal KEEN on winning the title", "Liverpool LINKED to Champions League glory". These fire transfer keywords but describe no actual transfer.
+
+The `player_matching.py` rapidfuzz gate (threshold ≥85) helps filter out non-player mentions, but fuzzy matching on short player name fragments is error-prone: "Wood" matches both Chris Wood (player) and Harry Wood (no one). The existing `token_sort_ratio ≥85` threshold is reasonable but not perfect for two-word names.
+
+**Prevention:**
+- Add a negative context filter: require that a transfer-class article also contains a destination club name within 50 tokens of the player name. Pure "wants" or "keen" language without a club destination is noise.
+- Raise the fuzzy match threshold to ≥88 for short names (≤8 characters) to reduce false entity matches. Keep ≥85 for full names (>12 characters).
+- Add a `min_article_length` filter: articles under 100 words are typically breaking news bullets or metadata stubs — exclude them from classification.
+- Monitor the false positive rate by sampling 20 classified articles per week and manually verifying. Target: <10% false positive rate on Confirmed/Likely classes.
+
+**Phase:** Transfer speculation scoring phase.
+
+---
+
+### SS-04: Player name matching fails on new signings not yet in FPL bootstrap (Risk: Low)
+
+**What goes wrong:** `player_matching.py` matches article player names against the FPL player pool from `bootstrap-static`. Pre-season, players who have signed for a PL club but are not yet in FPL's bootstrap (because FPL hasn't published next-season data) will fail to match. This means early pre-season signing articles get discarded or classified as noise.
+
+**Prevention:**
+- Maintain a secondary lookup `known_transfers.json` in Blob that records confirmed signings from previous articles — even before they appear in FPL bootstrap. When an article mentions a player not in FPL, check this secondary list before discarding.
+- Accept unmatched player articles as `class=Confirmed`, `player=None`, `raw_name=article_name` — surface them in the Summer Window tab with a "Not yet in FPL" badge rather than dropping them.
+- This is a low-risk item because the FPL data gap is typically 2-4 weeks in July; the Summer Window tracker already shows articles without strict player matching.
+
+**Phase:** Transfer speculation scoring phase (minor extension to existing scraper).
+
+---
+
+## Price Reset Pitfalls
+
+### PR-01: FPL does not publish historical prices — baseline snapshot must be captured at the right moment (Risk: High)
+
+**What goes wrong:** The FPL API `bootstrap-static` response includes `now_cost` (current price) and `cost_change_start` (change since season start). When a new season begins, `cost_change_start` resets to 0 for all players and `now_cost` reflects the new season's starting prices. There is no API endpoint for "what was this player's price last season" or "what was this player's price when last season ended."
+
+If the baseline snapshot is not captured **before** FPL transitions to the new season (typically the moment GW1 of the new season goes live), the price comparison is impossible — the old prices are gone from the API.
+
+The `archive_season.py` (already shipped in v1.24) captures a GW38 archive, but it stores player data for last-season squad analysis, not a comprehensive price baseline for all 700+ players.
+
+**Prevention:**
+- In the pipeline's off-season path, write a dedicated `price_baseline.json` blob at the **first off-season run** after GW38 completes. This captures `{element_id: now_cost}` for all elements in `bootstrap-static` — the end-of-season prices.
+- The write must be idempotent: check if `price_baseline.json` already exists; if so, do not overwrite (to preserve the GW38 snapshot, not a June or July snapshot after prices may have moved).
+- When next-season prices land in bootstrap (detected by AUTO-01 / NEXT_SEASON_DATA_AVAILABLE gate), compute `{element_id: (new_price, old_price, delta)}` and write `price_reset_analysis.json`.
+- If `price_baseline.json` does not exist when next-season prices land (pipeline was inactive at GW38), surface a "Price comparison unavailable — season baseline not captured" warning instead of showing incorrect deltas.
+
+**Phase:** Price reset analysis phase. The snapshot capture must be in the pipeline *before* next-season data lands, so it should be added to the v1.26 pipeline work as an early step.
+
+---
+
+### PR-02: Pre-season price announcement timing is unpredictable — analysis fires prematurely (Risk: High)
+
+**What goes wrong:** FPL typically releases player prices in batches over several weeks in July (historically: first batch mid-July, full set ~1 week before game launch). Each batch updates `now_cost` for a subset of players. If the price reset analysis runs after the first batch, it will show changes only for that batch — not the full picture. A user might act on "Saka price fell from 10.5 to 10.0" when only forward prices have been published and the comparison is incomplete.
+
+**Prevention:**
+- Add a `price_release_completeness` heuristic: only surface the price reset analysis when `len(elements with new now_cost != baseline now_cost) / total_elements > 0.5`. If fewer than half the players have changed, show "Prices not fully released yet — showing partial data (X/700 players updated)".
+- Track `price_publish_date` in `price_reset_analysis.json` and display it prominently in the UI.
+- Do not trigger push notifications for price reset changes until completeness > 0.8 (80% of players updated), to avoid alert fatigue for partial data.
+
+**Phase:** Price reset analysis phase.
+
+---
+
+### PR-03: Players who left or joined the PL have no comparable price (Risk: Medium)
+
+**What goes wrong:** Players who left Premier League clubs (transferred abroad, retired, or relegated from PL) will appear in the GW38 baseline but not in the new-season bootstrap. Players who newly joined PL clubs (promoted teams, new signings) will appear in the new-season bootstrap with no baseline entry. Attempting to compute a price delta for either case will produce `undefined` or `null` in the comparison.
+
+**Prevention:**
+- New-season players with no baseline: show as "New to FPL — no price comparison available".
+- Baseline players not in new season: mark as `status: 'departed'` in the analysis output; do not include them in any "biggest fallers" ranking.
+- Test: construct a fixture with 3 "new" players and 2 "departed" players; assert the comparison component handles both edge cases without crashing or showing incorrect deltas.
+
+**Phase:** Price reset analysis phase.
+
+---
+
+### PR-04: FPL cost fields use integer tenths of millions (Risk: Low)
+
+**What goes wrong:** FPL stores prices as integers: `now_cost: 95 = £9.5m`. If the delta computation uses naive subtraction without scaling, display will show "£0" for a one-step change (95 - 94 = 1 → displayed as £1 instead of £0.1m). This is a cosmetic bug but makes the entire feature look broken.
+
+**Prevention:**
+- All price display must divide by 10: `displayPrice = (now_cost / 10).toFixed(1) + 'm'`.
+- The existing codebase already has this pattern (search `now_cost` in `GemTable` column definitions) — follow the same convention.
+- Delta display: `(new_cost - old_cost) / 10`, formatted as `+£0.5m` or `-£0.5m` with sign.
+
+**Phase:** Price reset analysis phase.
+
+---
+
+## Auth Fix Pitfalls
+
+### AF-01: `redirect: 'manual'` with undici returns opaque response — body is unreadable (Risk: High)
+
+**What goes wrong:** The POST `/api/auth/login` 502 bug was diagnosed as a `redirect: manual` issue in Node.js's native fetch (backed by undici). The FPL login endpoint returns an HTTP 302 redirect after successful authentication. The intent of `redirect: 'manual'` was to capture the `Set-Cookie` header from that 302 response before the redirect is followed.
+
+The problem: in undici (the Node.js 18+ fetch implementation), `redirect: 'manual'` historically returned an opaque response with no readable body, no status code, and no headers accessible. Undici issue #1193 documents this behaviour; it was partially fixed but behaviour varies across undici/Node.js versions.
+
+In Node.js 25 (current environment), undici has been updated to return the actual response headers when `redirect: 'manual'` is used, but the response `body` stream may still be locked or unavailable for an opaque-redirect typed response. Attempting to call `response.json()` or `response.text()` on the opaque redirect response throws `TypeError: body used already` or returns an empty body.
+
+**Prevention:**
+- Do not use `redirect: 'manual'` with `fetch()`. Instead, use `redirect: 'follow'` (the default) and intercept cookies from the final response's `Set-Cookie` header. If the redirect destination does not re-send the cookies, use a cookie jar approach.
+- Alternative: use the `undici` library directly (not the global `fetch`) with its `RedirectHandler` which provides access to intermediate response headers. This is more verbose but explicit.
+- Alternative: use `node-fetch` v2 (CommonJS, not ESM) which has stable `redirect: 'manual'` support and accessible response headers for 302 responses. However, node-fetch v3 is ESM-only and the v2 cookie behaviour differs.
+- Most reliable for this use case: make the FPL login request with `redirect: 'follow'`, then check the final URL and response headers for `set-cookie`. Extract the `pl_profile` cookie from the cookie string.
+- Test: mock the FPL login endpoint to return a 302 with a `Set-Cookie` header; assert the Route Handler successfully extracts the cookie value.
+
+**Phase:** Auth fix phase.
+
+---
+
+### AF-02: Node.js 25 native fetch drops `Set-Cookie` headers as a "forbidden header" (Risk: High)
+
+**What goes wrong:** The WHATWG Fetch specification classifies `Set-Cookie` as a "forbidden response header name" in certain contexts. Undici (Node.js native fetch backend) has historically filtered `Set-Cookie` from response headers in some scenarios, even on server-side code where there is no browser security model reason to do so.
+
+GitHub issue nodejs/node#52163 documents this: "document differences between Node.js fetch() implementations and the standard." The `set-cookie` header may be present in the raw HTTP response but absent from the `Response.headers` object returned by `fetch()`.
+
+The FPL login flow relies entirely on capturing the `pl_profile` session cookie from the 302 redirect response. If `Set-Cookie` is silently dropped, the login appears to succeed (HTTP 200 or 302) but `response.headers.get('set-cookie')` returns `null`.
+
+**Prevention:**
+- Switch to `undici.request()` (the lower-level undici API, not the WHATWG-compatible `fetch`) which does not apply the forbidden-header filtering. `undici.request()` returns raw headers including all `Set-Cookie` entries.
+- Or use the `fetch-cookie` npm package wrapping undici, which specifically handles cookie jar management and the forbidden-header workaround.
+- In the Route Handler, add explicit logging of **all** response headers on a failed login attempt: `console.log('[auth] response headers:', Object.fromEntries(response.headers.entries()))`. This makes future debugging immediate instead of requiring a local repro.
+- Test: assert that a `set-cookie` header present in a mocked FPL response is accessible in the Route Handler's response processing. If this test fails, the forbidden-header filter is active and the API must switch to `undici.request()`.
+
+**Phase:** Auth fix phase.
+
+---
+
+### AF-03: FPL session cookie has 7-day expiry — silent 401 after expiry (Risk: Medium)
+
+**What goes wrong:** The FPL `pl_profile` cookie expires after approximately 7 days. The app stores this cookie in the browser's localStorage (current auth pattern). After expiry, FPL API calls that require authentication return 401 or redirect to login. The current codebase has no explicit expiry detection — the user will see generic 500 errors or stale data until they notice and re-login.
+
+**Prevention:**
+- Store the cookie acquisition timestamp in localStorage alongside the cookie value: `{ cookie: '...', acquired_at: ISO_timestamp }`.
+- On each authenticated request, check `(Date.now() - acquired_at) > 6 * 24 * 60 * 60 * 1000` (6 days). If close to expiry, show an amber banner: "Your FPL session expires soon — re-login to maintain exact prices."
+- On 401 response from any authenticated FPL API call, clear the stored cookie and show the re-login modal immediately (do not silently retry).
+
+**Phase:** Auth fix phase.
+
+---
+
+### AF-04: Server-side FPL API proxy forwards cookies incorrectly in Next.js 16 (Risk: Medium)
+
+**What goes wrong:** The existing `/api/fpl/[...proxy]` route handler proxies FPL API calls server-side. In Next.js 16, `request.headers.get('cookie')` in a Route Handler returns the browser's cookies sent to the Next.js app, not the FPL session cookies. The FPL session cookie stored in localStorage is not automatically attached to server-side fetch calls — it must be explicitly extracted from localStorage on the client and sent as a request header to the Next.js proxy, which then forwards it to FPL.
+
+If the proxy implementation was written assuming cookies flow automatically (a common mental model from browser-to-server cookie semantics), authenticated FPL calls will succeed in development (where the developer may be testing with their own FPL cookies in their browser) but fail in production for users whose cookies are stored in localStorage rather than httpOnly browser cookies.
+
+**Prevention:**
+- The client must explicitly read the `pl_profile` cookie from localStorage and include it in the request to the Next.js proxy: `fetch('/api/fpl/...', { headers: { 'x-fpl-cookie': storedCookie } })`.
+- The proxy Route Handler reads `request.headers.get('x-fpl-cookie')` and forwards it as `Cookie: ${fplCookie}` to the FPL API.
+- Never attempt to auto-forward `request.headers.get('cookie')` from the browser — it contains Next.js internal cookies (e.g., `__Next_router_state_tree`), not the FPL session cookie.
+- Add a test: mock the proxy handler and assert that when `x-fpl-cookie` is present, it is included in the upstream FPL fetch request.
+
+**Phase:** Auth fix phase.
+
+---
+
+## Mitigation Strategies
+
+### Cross-cutting: Test these specific scenarios before writing feature code
+
+The following test fixtures should be commissioned before any v1.26 feature implementation. Each converts a "unknown behaviour" into a CI-caught regression:
+
+1. **Push subscription lifecycle** — mock a browser-side `PushManager.subscribe()` call; assert the subscription endpoint is stored in the correct Blob path; assert a 410 response deletes the correct Blob file.
+2. **VAPID key environment variable leakage check** — CI script: `grep -r "NEXT_PUBLIC_VAPID_PRIVATE" src/` must exit non-zero (return empty). Gates the build if the private key is accidentally made public.
+3. **FPL deadline proximity gate** — unit test for the `minutes_until_deadline` function with fixtures: deadline in past (post-deadline run), deadline in 3h (pre-deadline run), no upcoming deadline (off-season). Assert correct `run_light_pipeline` / `run_full_pipeline` / `exit_early` decisions.
+4. **Price baseline idempotency** — pipeline fixture where `price_baseline.json` already exists; assert the pipeline does not overwrite it on a second run.
+5. **Auth cookie extraction** — mock the FPL login endpoint returning 302 with `Set-Cookie: pl_profile=xyz`; assert the Route Handler captures `xyz` correctly using whichever undici approach is selected.
+
+### Cross-cutting: Vercel Blob as a concurrency boundary
+
+This app uses Vercel Blob as a poor-man's database. Blob is eventually consistent and has no atomic update semantics. For v1.26:
+- Push subscriptions: use per-device individual files (WP-04) — never a single aggregated list.
+- Price baseline: write-once, idempotent (PR-01) — first write wins.
+- Pipeline meta (last run time, next deadline): accept last-write-wins semantics; collisions are rare and consequence is minor (stale timestamp by one run).
+- Never use Blob for anything requiring transactions. If v1.27+ adds multi-user features, replace Blob with Vercel KV or a proper database.
+
+### Cross-cutting: Feature flag all v1.26 features
+
+Each v1.26 feature should be gated by an env var (following the existing `TRANSFER_NEWS_ENABLED`, `INSIGHT_BATCH_ENABLED`, `MC_ENABLED` pattern):
+- `PUSH_NOTIFICATIONS_ENABLED` — gates ALERT-01 opt-in UI and sender
+- `PRICE_RESET_ENABLED` — gates price reset analysis display
+- `SPECULATION_SCORING_ENABLED` — gates confidence scoring in Summer Window tab
+
+This allows partial deployment (e.g., deploy auth fix and price reset without push notifications) and rollback without code changes.
+
+### Cross-cutting: iOS push is a "nice-to-have" — do not block release
+
+iOS Safari push requires: (1) PWA installation, (2) iOS 16.4+, (3) permission via user gesture. This is a fundamentally different UX flow than desktop Chrome. Do not design the push opt-in flow primarily around iOS, and do not block the ALERT-01 release on iOS support. Ship desktop Chrome/Firefox first; iOS support is an enhancement.
+
+---
+
+## Phase-Specific Warning Summary
+
+| Phase | Likely Pitfalls | Most Critical Guard |
+|-------|-----------------|---------------------|
+| **ALERT-01** Web Push | WP-01, WP-02, WP-03, WP-04, WP-05, WP-07, WP-08 | Service worker in `/public/sw.js` at root scope. VAPID private key never `NEXT_PUBLIC_*`. Per-device Blob files, never a single subscription list. |
+| **REFRESH-01** Pre-deadline pipeline | PS-01, PS-02, PS-03, PS-04 | Deadline proximity gate in Python (not cron timing). Light pipeline on pre-deadline runs only. Off-season early-exit guard. |
+| **Transfer speculation scoring** | SS-01, SS-02, SS-03, SS-04 | Source tier is a prior; article class overrides it. Slower decay (21-day half-life) off-season. Negative context filter (require destination club). |
+| **Price reset analysis** | PR-01, PR-02, PR-03, PR-04 | Capture `price_baseline.json` at GW38 run — before next-season data arrives. Completeness heuristic (50% threshold) before surfacing comparison. |
+| **Auth 502 fix** | AF-01, AF-02, AF-03, AF-04 | Do not use `redirect: 'manual'` with native fetch. Use `undici.request()` for cookie capture. Log all response headers on login failure. |
+
+---
+
+## Sources
+
+**Official documentation (HIGH confidence):**
+- [Next.js PWA Guide — service worker registration](https://nextjs.org/docs/app/guides/progressive-web-apps)
+- [Next.js environment variables — NEXT_PUBLIC_ prefix](https://nextjs.org/docs/app/building-your-application/configuring/environment-variables)
+- [web-push npm library](https://www.npmjs.com/package/web-push) — VAPID key generation and send API
+- [Vercel Blob documentation](https://vercel.com/docs/vercel-blob)
+- [Vercel serverless function timeout limits](https://vercel.com/kb/guide/what-can-i-do-about-vercel-serverless-functions-timing-out)
+- [GitHub Actions cron schedule documentation and limitations](https://cronbuilder.dev/blog/github-actions-cron-schedule.html)
+- [GitHub Actions scheduled workflow delays — community discussion](https://github.com/orgs/community/discussions/156282)
+
+**Bug reports and known issues (MEDIUM confidence):**
+- [undici issue #1193 — redirect:manual opaque response](https://github.com/nodejs/undici/issues/1193) — `redirect: 'manual'` behaviour with undici
+- [nodejs/node#52163 — Set-Cookie forbidden header in Node.js fetch](https://github.com/nodejs/node/issues/52163)
+- [Web Push Error 410 — expired subscription handling](https://pushpad.xyz/blog/web-push-error-410-the-push-subscription-has-expired-or-the-user-has-unsubscribed)
+- [Next.js service worker scope issue #545](https://github.com/vercel/next.js/issues/545)
+
+**Community and ecosystem (MEDIUM confidence):**
+- [iOS Safari web push PWA requirements — Pushpad](https://pushpad.xyz/blog/ios-special-requirements-for-web-push-notifications)
+- [PWA iOS limitations 2025 — Magicbell](https://www.magicbell.com/blog/pwa-ios-limitations-safari-support-complete-guide)
+- [Push notifications in Safari iOS PWAs](https://iwritecodesometimes.net/2024/04/23/push-notifications-in-safari-progressive-web-apps/)
+- [FPL price announcements timing — Fantasy Football Fix](https://www.fantasyfootballfix.com/blog-index/fpl-2025-26-player-price-revealed-update/)
+- [FPL API endpoints guide — Frenzel Timothy](https://medium.com/@frenzelts/fantasy-premier-league-api-endpoints-a-detailed-guide-acbd5598eb19)
+
+**Existing codebase (HIGH confidence — direct code read):**
+- `pipeline/run.py` — IS_OFF_SEASON gate, TRANSFER_NEWS_ENABLED pattern
+- `pipeline/transfer_news.py` — 5-class classifier, player_matching integration
+- `pipeline/player_matching.py` — rapidfuzz token_sort_ratio ≥85
+- `.github/workflows/pipeline.yml` — current cron schedule
+- `src/app/api/auth/login/route.ts` (if exists) — existing auth implementation
