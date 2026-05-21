@@ -1,55 +1,54 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.25
-milestone_name: Pre-Season Intelligence
-status: Awaiting next milestone
-stopped_at: Phase 129 UI-SPEC approved
-last_updated: "2026-05-20T18:33:35.412Z"
-last_activity: 2026-05-20 — Milestone v1.25 completed and archived
+milestone: v1.26
+milestone_name: Off-Season Intelligence
+status: planning
+stopped_at: ""
+last_updated: "2026-05-21T00:00:00.000Z"
+last_activity: 2026-05-21 — Milestone v1.26 started
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 12
-  completed_plans: 12
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-19 — v1.25 Pre-Season Intelligence)
+See: .planning/PROJECT.md (updated 2026-05-21 — v1.26 Off-Season Intelligence)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Phase 129 — squad-cost-simulator
+**Current focus:** Milestone v1.26 — defining requirements
 
 ## Current Position
 
-Phase: Milestone v1.25 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-05-20 — Milestone v1.25 completed and archived
+Status: Defining requirements
+Last activity: 2026-05-21 — Milestone v1.26 started
 
 ## Accumulated Context
 
-### Carry-forwards into v1.25
+### Carry-forwards from v1.25
 
 | ID | Description | Source Phase | Status |
 |----|-------------|-------------|--------|
-| GREEDY-NULL | buildPreSeasonSquad() null rate on 100m full-pool build unmeasured | 126 | In scope for v1.25 |
-| GW1-8-FIXTURES | Next-season fixture data not yet published (expected June/July 2026) | 126 | Auto-activate feature (AUTO-01) will resolve this |
+| GREEDY-NULL | buildPreSeasonSquad() null rate on 100m full-pool build unmeasured | 126 | Monitor in v1.26 |
+| GW1-8-FIXTURES | Next-season fixture data not yet published (expected June/July 2026) | 126 | Will resolve when FPL publishes next-season data |
+| AUTH-502 | POST /api/auth/login throws 502; redirect:manual suspected issue in Next.js 16 | memory | In scope for v1.26 |
 
 ### Deferred Items
 
-Items acknowledged and deferred at milestone close on 2026-05-20:
-
-_All 57 previously deferred UAT and verification gaps cleared on 2026-05-20 — all were human_needed verification tasks with no outstanding code issues. Features are deployed and considered verified._
+None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-05-20T16:58:11.394Z
-Stopped at: Phase 129 UI-SPEC approved
+Last session: 2026-05-21T00:00:00.000Z
+Stopped at: milestone start
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Continue with /gsd-new-milestone to complete requirements + roadmap

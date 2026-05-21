@@ -64,6 +64,18 @@ v1.6 completed the Squad Optimiser: best starting 11 + bench order + auto format
 
 v1.3 added the Gameweek Planner: 1–5 GW transfer sequences, fixture-aware scoring, chip timing, per-GW squad snapshots, and manual edit mode.
 
+## Current Milestone: v1.26 Off-Season Intelligence
+
+**Goal:** Surface high-value off-season signals — rumour quality, price resets, deadline alerts — and fix reliability gaps before the new season arrives.
+
+**Target features:**
+- Transfer speculation scoring — source reliability weighting + confidence decay on Summer Window articles (tiers: Official / Reliable / Tabloid)
+- Price reset analysis — when FPL publishes next-season data, surface who rose/fell vs last season and what it means for squad value
+- Deadline Day mode — countdown + last-minute signing/injury alerts that affect watchlist or pre-season squad
+- ALERT-01 push notifications — price change alerts, injury flag changes, deadline reminders, captain recommendation changes
+- REFRESH-01 pre-deadline pipeline — GH Actions extra cron runs at 6h, 2h, 30m before each GW deadline
+- Auth fix — resolve POST /api/auth/login 502 (redirect:manual Next.js 16 issue)
+
 ## Previous Milestone: v1.25 Pre-Season Intelligence (Complete 2026-05-20)
 
 **Goal:** Extend the Next Season Planner with auto-activation when FPL publishes next-season data, a transfer target watchlist, and an interactive squad cost simulator.
@@ -377,7 +389,7 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 - ✓ **NSP-02**: `buildPreSeasonSquad()` greedy TS builder + PuLP ILP fallback via `suggest_squad.py` — v1.24
 - ✓ **NSP-03/04**: `NextSeasonPlannerTab` (formation grid + GW1-8 FDR heatmap, graceful empty states); 'next-season' sub-tab in Plan — v1.24
 
-### Active (v1.25 — being defined)
+### Active (v1.26 — being defined)
 
 _(Requirements being defined — see `/gsd-new-milestone` in progress)_
 
@@ -492,4 +504,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-20 — v1.25 Pre-Season Intelligence milestone complete. Delivered: squad health diagnostics, transfer watchlist, pre-season auto-activation, squad cost simulator. 57 deferred items acknowledged. Awaiting v1.26 milestone.*
+*Last updated: 2026-05-21 — v1.26 Off-Season Intelligence milestone started. Target: transfer speculation scoring, price reset analysis, deadline day mode, ALERT-01 notifications, REFRESH-01 pre-deadline pipeline, auth 502 fix.*
