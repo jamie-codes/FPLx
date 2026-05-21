@@ -1898,7 +1898,7 @@ See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
 <details>
 <summary>v1.26 Off-Season Intelligence (Phases 130-135) - IN PROGRESS</summary>
 
-- [ ] **Phase 130: Auth Fix** - return ENDPOINT_GONE from fpl-login route; preserve token-paste flow (AUTH-05, AUTH-06)
+- [x] **Phase 130: Auth Fix** - return ENDPOINT_GONE from fpl-login route; preserve token-paste flow (AUTH-05, AUTH-06) ✓ 2026-05-21
 - [ ] **Phase 131: Transfer Speculation Scoring** - source tier badge + confidence decay on Summer Window articles (SPEC-01, SPEC-02, SPEC-03)
 - [ ] **Phase 132: Deadline Day Banner** - countdown to next GW deadline, 3-state urgency, per-GW dismiss (DL-01, DL-02, DL-03)
 - [ ] **Phase 133: Price Reset Analysis** - price_baseline.json pipeline + PriceResetTab with delta pills and Value Targets (PRST-01, PRST-02, PRST-03, PRST-04)
@@ -1967,8 +1967,8 @@ See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
   2. The login UI, on receiving ENDPOINT_GONE, immediately falls back to the token-paste flow with a clear message that the direct login path is no longer available
   3. All existing token-paste and team-ID-only flows continue to work exactly as before - no regression to authenticated squad loading
 **Plans**: 2 plans
-  - [ ] 130-01-PLAN.md - Backend: replace fpl-login route body with ENDPOINT_GONE stub + contract test (AUTH-05)
-  - [ ] 130-02-PLAN.md - Frontend: remove credentials form, mode tabs, and credential state from AuthModal (AUTH-06)
+  - [x] 130-01-PLAN.md - Backend: replace fpl-login route body with ENDPOINT_GONE stub + contract test (AUTH-05)
+  - [x] 130-02-PLAN.md - Frontend: remove credentials form, mode tabs, and credential state from AuthModal (AUTH-06)
 
 ### Phase 131: Transfer Speculation Scoring
 **Goal**: Summer Window articles carry a visible source reliability tier so users can instantly judge how much weight to give each transfer rumour, and stale articles visually signal their age via confidence decay

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.26
 milestone_name: Off-Season Intelligence
-status: planned
-stopped_at: Phase 130 planned
-last_updated: "2026-05-21T09:00:00.000Z"
-last_activity: 2026-05-21 — Phase 130 planned (2 plans)
+status: in_progress
+stopped_at: Phase 130 complete
+last_updated: "2026-05-21T15:30:00.000Z"
+last_activity: 2026-05-21 — Phase 130 complete (AUTH-05, AUTH-06 satisfied; 1539 tests green)
 progress:
   total_phases: 71
-  completed_phases: 42
-  total_plans: 132
-  completed_plans: 203
+  completed_phases: 43
+  total_plans: 134
+  completed_plans: 205
   percent: 100
 ---
 
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md (updated 2026-05-21 — v1.26 Off-Season Intelligence)
 
 ## Current Position
 
-Phase: 130 — Auth Fix (ready to execute)
-Plan: 2 plans (130-01, 130-02), Wave 1
-Status: Planned — ready to execute
-Last activity: 2026-05-21 — Phase 130 planned (2 plans)
+Phase: 131 — Transfer Speculation Scoring (next)
+Plan: 0 plans (not yet planned)
+Status: Phase 130 complete — ready to plan Phase 131
+Last activity: 2026-05-21 — Phase 130 complete (AUTH-05, AUTH-06)
 
 ```
-Phase progress: [ ] [ ] [ ] [ ] [ ] [ ]  0/6
+Phase progress: [x] [ ] [ ] [ ] [ ] [ ]  1/6
                 130 131 132 133 134 135
 ```
 
@@ -76,4 +76,4 @@ Stopped at: Phase 130 planned
 
 ## Operator Next Steps
 
-- Run `/gsd-execute-phase 130` to execute Phase 130: Auth Fix
+- Run `/gsd-discuss-phase 131` to discuss and plan Phase 131: Transfer Speculation Scoring
