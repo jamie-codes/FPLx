@@ -1,4 +1,4 @@
-# Requirements — v1.26 Off-Season Intelligence
+﻿# Requirements — v1.26 Off-Season Intelligence
 
 **Milestone:** v1.26 Off-Season Intelligence
 **Status:** Active
@@ -87,23 +87,23 @@ _(Filled by roadmapper)_
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| AUTH-05 | — | — |
-| AUTH-06 | — | — |
-| SPEC-01 | — | — |
-| SPEC-02 | — | — |
-| SPEC-03 | — | — |
-| PRST-01 | — | — |
-| PRST-02 | — | — |
-| PRST-03 | — | — |
-| PRST-04 | — | — |
-| DL-01 | — | — |
-| DL-02 | — | — |
-| DL-03 | — | — |
-| PUSH-01 | — | — |
-| PUSH-02 | — | — |
-| PUSH-03 | — | — |
-| PUSH-04 | — | — |
-| PUSH-05 | — | — |
-| PIPE-01 | — | — |
-| PIPE-02 | — | — |
-| PIPE-03 | — | — |
+| AUTH-05 | Phase 130 | Pending |
+| AUTH-06 | Phase 130 | Pending |
+| SPEC-01 | Phase 131 | Pending |
+| SPEC-02 | Phase 131 | Pending |
+| SPEC-03 | Phase 131 | Pending |
+| PRST-01 | Phase 133 | Pending |
+| PRST-02 | Phase 133 | Pending |
+| PRST-03 | Phase 133 | Pending |
+| PRST-04 | Phase 133 | Pending |
+| DL-01 | Phase 132 | Pending |
+| DL-02 | Phase 132 | Pending |
+| DL-03 | Phase 132 | Pending |
+| PUSH-01 | Phase 134 | Pending |
+| PUSH-02 | Phase 134 | Pending |
+| PUSH-03 | Phase 134 | Pending |
+| PUSH-04 | Phase 134 | Pending |
+| PUSH-05 | Phase 134 | Pending |
+| PIPE-01 | Phase 135 | Pending |
+| PIPE-02 | Phase 135 | Pending |
+| PIPE-03 | Phase 135 | Pending |

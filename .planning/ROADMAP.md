@@ -1,4 +1,4 @@
-﻿# Roadmap: FPL Analyst
+# Roadmap: FPL Analyst
 
 ## Milestones
 
@@ -27,6 +27,7 @@
 - ✅ **v1.23 Technical Debt & Test Health** — Phases 120-121 (shipped 2026-05-18)
 - ✅ **v1.24 End of Season & Off-Season Intelligence** — Phases 122-126 (shipped 2026-05-19)
 - ✅ **v1.25 Pre-Season Intelligence** — Phases 127-129 (shipped 2026-05-20)
+- **v1.26 Off-Season Intelligence** — Phases 130-135 (active 2026-05-21)
 
 ## Phases
 
@@ -1894,6 +1895,18 @@ See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
 
 </details>
 
+<details>
+<summary>v1.26 Off-Season Intelligence (Phases 130-135) - IN PROGRESS</summary>
+
+- [ ] **Phase 130: Auth Fix** - return ENDPOINT_GONE from fpl-login route; preserve token-paste flow (AUTH-05, AUTH-06)
+- [ ] **Phase 131: Transfer Speculation Scoring** - source tier badge + confidence decay on Summer Window articles (SPEC-01, SPEC-02, SPEC-03)
+- [ ] **Phase 132: Deadline Day Banner** - countdown to next GW deadline, 3-state urgency, per-GW dismiss (DL-01, DL-02, DL-03)
+- [ ] **Phase 133: Price Reset Analysis** - price_baseline.json pipeline + PriceResetTab with delta pills and Value Targets (PRST-01, PRST-02, PRST-03, PRST-04)
+- [ ] **Phase 134: Push Notifications** - VAPID service worker, subscribe/unsubscribe, price/injury/deadline/captain push triggers (PUSH-01, PUSH-02, PUSH-03, PUSH-04, PUSH-05)
+- [ ] **Phase 135: Pre-Deadline Pipeline & Notify** - fast-mode pre-deadline run + standalone notify.py dispatch step (PIPE-01, PIPE-02, PIPE-03)
+
+</details>
+
 ### Phase 127: Squad Health Diagnostics & Transfer Watchlist
 **Goal**: User can see how often the greedy squad builder fails (and at which budget it becomes feasible), and can pin players to a persistent watchlist from any GemTable row and view those picks together on a dedicated Plan sub-tab
 **Depends on**: Phase 126 (v1.24 complete; relies on existing buildPreSeasonSquad(), /api/pre-season-squad, /api/players, GemTable expand-row pattern, lineup_news.json)
@@ -1944,6 +1957,74 @@ See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
   - [x] 129-03-PLAN.md — Wave 2: hook parameterisation (queryKey discriminator) + component slider, useDeferredValue commit pipeline, scoreMapHydrated/clientSquad memos, lastValidSquad/hasCommitted state, API-squad-before-commit render (D-06)
   - [x] 129-04-PLAN.md — Wave 3: infeasibility paragraph (D-08/D-09 variants A+B), dynamic amber slider gradient (D-10) with zinc fallback (D-11), inputs-refetch reset effect for lastValidSquad/hasCommitted
 **UI hint**: yes
+
+### Phase 130: Auth Fix
+**Goal**: The FPL login route handler returns a clean ENDPOINT_GONE error immediately rather than proxying a dead credential endpoint, so users always reach the working token-paste flow without 502 errors
+**Depends on**: Phase 129 (v1.25 complete)
+**Requirements**: AUTH-05, AUTH-06
+**Success Criteria** (what must be TRUE):
+  1. POST /api/auth/fpl-login returns a JSON body with { ok: false, code: "ENDPOINT_GONE" } and a 200 status (not a 502) when the FPL credential endpoint is unavailable
+  2. The login UI, on receiving ENDPOINT_GONE, immediately falls back to the token-paste flow with a clear message that the direct login path is no longer available
+  3. All existing token-paste and team-ID-only flows continue to work exactly as before - no regression to authenticated squad loading
+**Plans**: TBD
+
+### Phase 131: Transfer Speculation Scoring
+**Goal**: Summer Window articles carry a visible source reliability tier so users can instantly judge how much weight to give each transfer rumour, and stale articles visually signal their age via confidence decay
+**Depends on**: Phase 130 (auth fix complete; speculation scoring is independent but sequenced after P0 auth fix)
+**Requirements**: SPEC-01, SPEC-02, SPEC-03
+**Success Criteria** (what must be TRUE):
+  1. Every article card in the Summer Window tab displays a tier badge (Official / Reliable / Speculative) sourced from the article's source_tier field
+  2. Articles older than 21 days show a visible decay indicator (reduced opacity or age label) so users can distinguish fresh rumours from stale ones without reading the timestamp
+  3. The 5-pill classification filter row gains a tier pill filter (Official / Reliable / Speculative) and filtering by tier shows only matching articles, consistent with the existing All/Confirmed/Rumour/Injury/Rotation behaviour
+  4. Existing Summer Window article consumers (ConfirmedSigningBadge, GemTable injections) are unaffected - source_tier and confidence_score are optional additive fields
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 132: Deadline Day Banner
+**Goal**: Users always know how much time remains before the next FPL gameweek deadline, with urgency escalating as the deadline approaches, and the ability to dismiss the banner once noted
+**Depends on**: Phase 130 (auth fix; banner is independent of all other v1.26 features)
+**Requirements**: DL-01, DL-02, DL-03
+**Success Criteria** (what must be TRUE):
+  1. A countdown banner is visible above the section nav showing time remaining to the next FPL gameweek deadline in the user's local timezone (e.g. "GW32 deadline in 14h 22m")
+  2. The banner's visual appearance shifts through three urgency states: zinc neutral (>24h), amber (2-24h), red sticky (< 2h) - transitions happen automatically as time passes without page reload
+  3. User can click a dismiss button on the banner and it disappears for the current gameweek, reappearing automatically when the next gameweek's deadline window opens (state stored per-GW in localStorage)
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 133: Price Reset Analysis
+**Goal**: When FPL publishes next-season prices, users can immediately see which players rose or fell vs the season-end baseline, with a Value Targets section highlighting fallen-price players who still rate well by xPts
+**Depends on**: Phase 132 (DL banner ships first; price reset needs PRST-01 baseline captured before FPL overwrites costs)
+**Requirements**: PRST-01, PRST-02, PRST-03, PRST-04
+**Success Criteria** (what must be TRUE):
+  1. pipeline/price_baseline.py writes price_baseline.json (now_cost per player, all 700+ elements) to Vercel Blob idempotently - once written it is never overwritten by subsequent pipeline runs
+  2. User can open a "Price Reset" tab in the Analyse section and see a table of players with their season-end price, new price, and coloured delta pills (+X.Xm green / -X.Xm red) once FPL publishes next-season prices
+  3. A "Value Targets" section within PriceResetTab lists players whose price fell but whose xPts still rates above their position median - each row shows the price drop pill and the xPts rank
+  4. Before next-season prices are published, the Price Reset tab shows a clear empty state with an estimated availability note ("FPL typically publishes new prices in mid-to-late July")
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 134: Push Notifications
+**Goal**: Users can opt in to browser push notifications and receive timely alerts for price projection changes, injury status changes, deadline reminders, and captain recommendation changes
+**Depends on**: Phase 133 (price reset infra ready; push notifications are the highest-complexity phase and ship last among UI features)
+**Requirements**: PUSH-01, PUSH-02, PUSH-03, PUSH-04, PUSH-05
+**Success Criteria** (what must be TRUE):
+  1. User can enable or disable push notifications via a single toggle in settings - the browser permission prompt appears only after the user explicitly clicks Enable, never on page load
+  2. User receives a push notification when a watched or owned player's price projection changes by 0.2m or more - with a 24h per-player cooldown and a cap of 3 notifications per pipeline run
+  3. User receives a push notification when an owned player's injury or doubt status changes (new flag or change to existing flag) - notification identifies the player and the new status
+  4. User receives deadline reminder push notifications at 24h and 2h before each FPL gameweek deadline - deduplication ensures the 24h reminder fires at most once per gameweek
+  5. User receives a push notification when the top captain recommendation changes for the upcoming gameweek - notification shows who is now recommended
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 135: Pre-Deadline Pipeline & Notify
+**Goal**: Pipeline runs in a fast lightweight mode within 6 hours of each GW deadline, and a standalone notify.py step dispatches push notifications by comparing current output to the previous Blob state
+**Depends on**: Phase 134 (push subscription infrastructure must exist before notify.py can dispatch)
+**Requirements**: PIPE-01, PIPE-02, PIPE-03
+**Success Criteria** (what must be TRUE):
+  1. When PIPELINE_DEADLINE_WINDOW_MINUTES is set to 360 and the pipeline runs within 360 minutes of a GW deadline, it skips Understat scraping, Monte Carlo simulation, and batch AI insight generation - completing in under 5 minutes instead of 15+
+  2. notify.py is a standalone Python script that never imports from run.py; it reads current Blob state, compares to previous state, and POSTs change events to /api/push/send following the refresh_gate.py isolation pattern
+  3. notify.py correctly detects price projection changes and injury flag changes between pipeline runs and dispatches the appropriate push notification payloads to /api/push/send
+**Plans**: TBD
 | 122 | v1.24 | 2/2 | Complete    | 2026-05-18 |
 | 123 | v1.24 | 3/3 | Complete    | 2026-05-18 |
 | 124 | v1.24 | 3/3 | Complete    | 2026-05-19 |
@@ -1952,3 +2033,9 @@ See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
 | 127 | v1.25 | 4/4 | Complete    | 2026-05-19 |
 | 128 | v1.25 | 4/4 | Complete    | 2026-05-20 |
 | 129 | v1.25 | 4/4 | Complete   | 2026-05-20 |
+| 130 | v1.26 | 0/0 | Not started | - |
+| 131 | v1.26 | 0/0 | Not started | - |
+| 132 | v1.26 | 0/0 | Not started | - |
+| 133 | v1.26 | 0/0 | Not started | - |
+| 134 | v1.26 | 0/0 | Not started | - |
+| 135 | v1.26 | 0/0 | Not started | - |
