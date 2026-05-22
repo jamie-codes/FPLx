@@ -95,8 +95,8 @@ describe('PriceResetTab', () => {
     })
     render(<PriceResetTab />)
 
-    expect(screen.getByText('#3 MID')).toBeTruthy()
-    expect(screen.getByText(/LIV · £12\.0m · #3 MID/)).toBeTruthy()
+    // Metadata rendered as a single template-literal string — direct text match
+    expect(screen.getByText('LIV · £12.0m · #3 MID')).toBeTruthy()
 
     const vtSection = screen.getByRole('region', { name: 'Value targets — price fell, xPts above median' })
     expect(vtSection).toBeTruthy()
