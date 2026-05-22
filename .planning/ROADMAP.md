@@ -2041,7 +2041,7 @@ See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
 | 129 | v1.25 | 4/4 | Complete   | 2026-05-20 |
 | 130 | v1.26 | 0/0 | Not started | - |
 | 131 | v1.26 | 0/0 | Not started | - |
-| 132 | v1.26 | 2/2 | Complete   | 2026-05-22 |
+| 132 | v1.26 | 2/2 | Complete    | 2026-05-22 |
 | 133 | v1.26 | 0/0 | Not started | - |
 | 134 | v1.26 | 0/0 | Not started | - |
 | 135 | v1.26 | 0/0 | Not started | - |
