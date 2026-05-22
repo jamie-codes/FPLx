@@ -2009,8 +2009,8 @@ See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
 **Plans**: 3 plans in 2 waves
 
 **Wave 1** *(parallel)*
-- [ ] 133-01-PLAN.md — pipeline/price_baseline.py + run.py integration (PRST-01)
-- [ ] 133-02-PLAN.md — types + /api/price-reset route + usePriceReset hook (PRST-02, PRST-03, PRST-04)
+- [x] 133-01-PLAN.md — pipeline/price_baseline.py + run.py integration (PRST-01)
+- [x] 133-02-PLAN.md — types + /api/price-reset route + usePriceReset hook (PRST-02, PRST-03, PRST-04)
 
 **Wave 2** *(blocked on Wave 1 — Plan 02 types + hook)*
 - [ ] 133-03-PLAN.md — PriceResetTab component + page.tsx sub-tab registration (PRST-02, PRST-03, PRST-04)
