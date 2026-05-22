@@ -35,6 +35,16 @@ const PILLS = [
   { value: 'rotation_signal' as const,    label: 'Rotation'  },
 ] satisfies ReadonlyArray<{ value: TransferClass | 'all'; label: string }>
 
+// Phase 131 SPEC-03: Tier filter pills (D-12/D-13)
+type SourceTierFilter = SourceTier | 'all'
+
+const TIER_PILLS = [
+  { value: 'all' as const,           label: 'All'         },
+  { value: 'Official' as const,      label: 'Official'    },
+  { value: 'Reliable' as const,      label: 'Reliable'    },
+  { value: 'Speculative' as const,   label: 'Speculative' },
+] satisfies ReadonlyArray<{ value: SourceTierFilter; label: string }>
+
 const PILL_LABEL: Record<TransferClass | 'all', string> = {
   all:               'All',
   confirmed_signing: 'Confirmed',
@@ -72,6 +82,7 @@ const TIER_CLS: Record<SourceTier, string> = {
 export function SummerWindowTab(): React.JSX.Element {
   const { data, isLoading, isError } = useTransferNews()
   const [activeFilter, setActiveFilter] = useState<TransferClass | 'all'>('all')
+  const [activeTierFilter, setActiveTierFilter] = useState<SourceTierFilter>('all')
 
   // Loading state: skeleton
   if (isLoading && !data) {
@@ -110,10 +121,17 @@ export function SummerWindowTab(): React.JSX.Element {
   const isStale = isFeedStale(feed.scraped_at)
 
   // Filter + sort articles (never mutate feed.articles — Pitfall 4)
-  const filtered =
+  // Stage 1: classification filter
+  const afterClassification =
     activeFilter === 'all'
       ? [...feed.articles]
       : feed.articles.filter(a => a.classification === activeFilter)
+
+  // Stage 2: tier filter (D-11 AND logic — both filters apply simultaneously)
+  const filtered =
+    activeTierFilter === 'all'
+      ? afterClassification
+      : afterClassification.filter(a => a.source_tier === activeTierFilter)
 
   const sortedArticles = [...filtered].sort((a, b) => {
     const ta = new Date(a.published ?? a.scraped_at).getTime()
@@ -149,6 +167,29 @@ export function SummerWindowTab(): React.JSX.Element {
               role="tab"
               aria-selected={active}
               onClick={() => setActiveFilter(pill.value)}
+              className={`min-h-[44px] sm:min-h-0 px-3 py-1 rounded text-xs font-semibold uppercase tracking-wide transition-colors ${cls}`}
+            >
+              {pill.label}
+            </button>
+          )
+        })}
+
+        {/* Divider between classification and tier pill groups (D-12) */}
+        <span aria-hidden="true" className="self-stretch border-l border-zinc-300 dark:border-zinc-600 mx-1" />
+
+        {/* Phase 131 SPEC-03: Tier filter pills — same button shape as classification pills */}
+        {TIER_PILLS.map((pill) => {
+          const active = pill.value === activeTierFilter
+          const cls = active
+            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+            : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+          return (
+            <button
+              key={`tier-${pill.value}`}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setActiveTierFilter(pill.value)}
               className={`min-h-[44px] sm:min-h-0 px-3 py-1 rounded text-xs font-semibold uppercase tracking-wide transition-colors ${cls}`}
             >
               {pill.label}

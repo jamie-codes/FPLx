@@ -233,23 +233,33 @@ describe('SummerWindowTab — Phase 125 WIN-01', () => {
 
 describe('SummerWindowTab — Phase 131 SPEC-01/02/03', () => {
   // Test 11: tier badge renders (SPEC-01)
+  // Query within article card — the filter row also has a Reliable pill button.
+  // An article card with source_tier='Reliable' has 2 badge spans: [SKY] and Reliable.
   it('Test 11 — tier badge renders with tier label when source_tier present', () => {
     vi.mocked(useTransferNews).mockReturnValue(
       mockFeed([{ title: 'Sky Article', source: 'skysports', source_tier: 'Reliable' }])
     )
-    const { getByText } = render(<SummerWindowTab />)
-    expect(getByText('Reliable')).toBeTruthy()
+    const { container } = render(<SummerWindowTab />)
+    const articleEl = container.querySelector('article')
+    const badgeSpans = articleEl?.querySelectorAll('.flex.items-start.gap-2 > span')
+    expect(badgeSpans?.length ?? 0).toBe(2)
+    const tierBadge = badgeSpans?.[1]
+    expect(tierBadge?.textContent).toBe('Reliable')
   })
 
   // Test 12: no tier badge on old blob (SPEC-01 / SC-4)
+  // Query within article cards only — tier pill buttons in the filter row also render these labels.
+  // An article card with no source_tier has exactly 1 badge span (the source badge).
   it('Test 12 — no tier badge rendered when source_tier absent (old blob)', () => {
     vi.mocked(useTransferNews).mockReturnValue(
       mockFeed([{ title: 'Old Article', source: 'skysports' }])
     )
-    const { queryByText } = render(<SummerWindowTab />)
-    expect(queryByText('Reliable')).toBeNull()
-    expect(queryByText('Official')).toBeNull()
-    expect(queryByText('Speculative')).toBeNull()
+    const { container } = render(<SummerWindowTab />)
+    const articleEl = container.querySelector('article')
+    // Only the [SKY] source badge span should be present — no tier badge span
+    const badgeSpans = articleEl?.querySelectorAll('.flex.items-start.gap-2 > span')
+    expect(badgeSpans?.length ?? 0).toBe(1)
+    expect(badgeSpans?.[0]?.textContent).toBe('[SKY]')
   })
 
   // Test 13: stale opacity applied (SPEC-02)
