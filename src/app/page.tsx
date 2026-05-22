@@ -36,6 +36,7 @@ import { LineupTab } from '@/components/squad/LineupTab'
 import { GwReviewTab } from '@/components/squad/GwReviewTab'
 import { DecisionSummaryTab } from '@/components/squad/DecisionSummaryTab'
 import { useSettledGws } from '@/lib/hooks/useSettledGws'
+import { DeadlineBanner } from '@/components/DeadlineBanner'
 
 class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -196,6 +197,7 @@ export default function Home() {
           </div>
         </div>
 
+        <DeadlineBanner />
         {/* Sticky nav wrapper — section tabs + sub-tabs (D-07, D-08) */}
         <div className="sticky top-0 z-40 bg-surface/95 backdrop-blur-sm border-b border-border -mx-4 px-4">
           {/* Section navigation */}

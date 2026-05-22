@@ -60,6 +60,9 @@ vi.mock('@/components/planner/RankSimTab', () => ({
 vi.mock('@/lib/hooks/useSettledGws', () => ({
   useSettledGws: () => ({ data: [33, 34, 35] }),
 }))
+vi.mock('@/components/DeadlineBanner', () => ({
+  DeadlineBanner: () => null,
+}))
 vi.mock('@/components/squad/GwReviewTab', () => ({
   GwReviewTab: (props: { teamId: string; settledGws: number[] }) => (
     <div data-testid="gw-review-tab-mock" data-settled={JSON.stringify(props.settledGws)} />
