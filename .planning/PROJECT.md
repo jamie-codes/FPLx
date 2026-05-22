@@ -4,6 +4,8 @@
 
 A personal web app for Fantasy Premier League managers that pulls in your squad via FPL Team ID and surfaces actionable intelligence: which players to target, who to sell, hidden gems, DefCon candidates, form analysis, transfer suggestions, and a full lineup optimiser — all grounded in FPL API data plus Understat xG/xA.
 
+v1.26 Phase 132 complete (2026-05-22) — Deadline Day Banner: `useNextDeadline` TanStack Query hook (`queryKey: ['next-deadline']`, `staleTime: 1h`, `retry: 1`) selecting the `is_next` bootstrap event and returning `{ id, deadline_time } | null`. `DeadlineBanner` client component with 60-second countdown (`setInterval`/`clearInterval`), 3-state urgency (zinc ≥24h / amber ≥2h / red+sticky top-0 z-50 <2h), per-GW localStorage dismiss (`deadline-dismissed:GW{id}`, all reads/writes try/catch-guarded), NaN guard (`Number.isNaN(deadlineMs)`), `role="status"` + `aria-live="polite"` a11y. Injected above sticky nav wrapper in `page.tsx`. 4 hook tests + 16 component tests; 127 test files, 1567 GREEN. DL-01 DL-02 DL-03 verified. Last updated: 2026-05-22
+
 v1.26 Phase 131 complete (2026-05-22) — Transfer Speculation Scoring: `SOURCE_TIER` dict + `_get_source_tier()` pure helper in `pipeline/transfer_news.py`; `source_tier` field injected into every article dict from `_scrape_rss_sky` and `_scrape_rss_bbc`. `SourceTier = 'Official' | 'Reliable' | 'Speculative'` type alias + optional `source_tier?` on `TransferNewsArticle` in `src/lib/types.ts`. `SummerWindowTab` gains `TIER_LABEL`/`TIER_CLS` dicts, `TIER_PILLS` (4 pills, `satisfies ReadonlyArray`), `activeTierFilter` state, two-stage AND-logic filter chain, tier badge render (SPEC-01), `isArticleStale` 21-day opacity decay (SPEC-02), divider + tier pill row extension (SPEC-03). 9 new/updated Vitest tests (Test 1 + Tests 11-18); 4 new pytest tests; 18/18 Vitest GREEN, 1547/1547 full suite GREEN. Last updated: 2026-05-22
 
 v1.25 Phase 127 complete (2026-05-19) — Squad Health Diagnostics + Transfer Watchlist: `pipeline/squad_health.py` (81-step greedy sweep £80m-£120m, writes `pre_season_squad_health.json`). `SquadHealth` + `PreSeasonSquadResponse` types; `diagnoseBuildPreSeasonSquad()` (3 reason codes). `/api/pre-season-squad` returns `{squad, health, solver}` envelope. `useWatchlist()` localStorage hook (`fplx_watchlist`, `number[]`). GemTable star button in both expand rows. `WatchlistPlayerCard` (4 visual states) + `WatchlistTab` (2-col/3-col grid, loading/error/empty/departed). `usePreSeasonSquad` migrated to envelope type. `NextSeasonPlannerTab` renders solver badge (ILP/Greedy) + health indicator. `page.tsx` Watchlist sub-tab + `useWatchlist` wiring. 35 new tests; full suite 1505/1539 GREEN. 5 human UAT items pending. Last updated: 2026-05-19
@@ -391,9 +393,15 @@ v1.3 complete — Full Gameweek Planner shipped: "Planner" tab in nav, 1–5 GW 
 - ✓ **NSP-02**: `buildPreSeasonSquad()` greedy TS builder + PuLP ILP fallback via `suggest_squad.py` — v1.24
 - ✓ **NSP-03/04**: `NextSeasonPlannerTab` (formation grid + GW1-8 FDR heatmap, graceful empty states); 'next-season' sub-tab in Plan — v1.24
 
+### Validated (v1.26)
+
+- ✓ **DL-01**: `useNextDeadline` hook returns `{ id, deadline_time } | null` from bootstrap `is_next` event; `queryKey: ['next-deadline']`, `staleTime: 1h`, `retry: 1` — Phase 132
+- ✓ **DL-02**: `DeadlineBanner` 3-state urgency — zinc ≥24h, amber 2–24h, red+sticky top-0 z-50 <2h; auto-escalates on 60-second tick — Phase 132
+- ✓ **DL-03**: Per-GW dismiss via `deadline-dismissed:GW{id}` localStorage key (try/catch-guarded); banner reappears on new GW — Phase 132
+
 ### Active (v1.26 — being defined)
 
-_(Requirements being defined — see `/gsd-new-milestone` in progress)_
+_(Remaining phases: 133 Price Reset Analysis, 134-135 Push Notifications)_
 
 ### Out of Scope
 
@@ -506,4 +514,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-22 — Phase 131 complete (SPEC-01/02/03). Next: Phase 132 Deadline Day Banner.*
+*Last updated: 2026-05-22 — Phase 132 complete (DL-01/DL-02/DL-03). Next: Phase 133 Price Reset Analysis.*
