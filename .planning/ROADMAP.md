@@ -1900,7 +1900,7 @@ See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
 
 - [x] **Phase 130: Auth Fix** - return ENDPOINT_GONE from fpl-login route; preserve token-paste flow (AUTH-05, AUTH-06) ✓ 2026-05-21
 - [x] **Phase 131: Transfer Speculation Scoring** - source tier badge + confidence decay on Summer Window articles (SPEC-01, SPEC-02, SPEC-03) ✓ 2026-05-22
-- [ ] **Phase 132: Deadline Day Banner** - countdown to next GW deadline, 3-state urgency, per-GW dismiss (DL-01, DL-02, DL-03)
+- [x] **Phase 132: Deadline Day Banner** - countdown to next GW deadline, 3-state urgency, per-GW dismiss (DL-01, DL-02, DL-03) (completed 2026-05-22)
 - [ ] **Phase 133: Price Reset Analysis** - price_baseline.json pipeline + PriceResetTab with delta pills and Value Targets (PRST-01, PRST-02, PRST-03, PRST-04)
 - [ ] **Phase 134: Push Notifications** - VAPID service worker, subscribe/unsubscribe, price/injury/deadline/captain push triggers (PUSH-01, PUSH-02, PUSH-03, PUSH-04, PUSH-05)
 - [ ] **Phase 135: Pre-Deadline Pipeline & Notify** - fast-mode pre-deadline run + standalone notify.py dispatch step (PIPE-01, PIPE-02, PIPE-03)
@@ -1994,7 +1994,7 @@ See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
   3. User can click a dismiss button on the banner and it disappears for the current gameweek, reappearing automatically when the next gameweek's deadline window opens (state stored per-GW in localStorage)
 **Plans**: 2 plans
   - [x] 132-01-PLAN.md — useNextDeadline hook (TanStack Query) returning next bootstrap is_next event
-  - [ ] 132-02-PLAN.md — DeadlineBanner component (3-state urgency + per-GW dismiss) wired into page.tsx
+  - [x] 132-02-PLAN.md — DeadlineBanner component (3-state urgency + per-GW dismiss) wired into page.tsx
 **UI hint**: yes
 
 ### Phase 133: Price Reset Analysis
@@ -2041,7 +2041,7 @@ See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
 | 129 | v1.25 | 4/4 | Complete   | 2026-05-20 |
 | 130 | v1.26 | 0/0 | Not started | - |
 | 131 | v1.26 | 0/0 | Not started | - |
-| 132 | v1.26 | 1/2 | In Progress|  |
+| 132 | v1.26 | 2/2 | Complete   | 2026-05-22 |
 | 133 | v1.26 | 0/0 | Not started | - |
 | 134 | v1.26 | 0/0 | Not started | - |
 | 135 | v1.26 | 0/0 | Not started | - |
