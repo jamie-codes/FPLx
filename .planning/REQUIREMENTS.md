@@ -21,10 +21,10 @@
 
 ### Price Reset Analysis
 
-- [ ] **PRST-01**: Pipeline captures a price baseline (`now_cost` per player, all 700+ bootstrap elements) before season-end and stores it as `price_baseline.json` in Vercel Blob — idempotent, write-once
-- [ ] **PRST-02**: User can see a Price Reset tab in the Analyse section showing who rose/fell vs the season-end baseline when FPL publishes next-season prices
-- [ ] **PRST-03**: Price changes display as coloured delta pills (+X.Xm / −X.Xm); a "Value Targets" section highlights players whose price fell but xPts still rates above position median
-- [ ] **PRST-04**: Price Reset tab shows an appropriate empty state before FPL publishes next-season prices, with an estimated availability note
+- [x] **PRST-01**: Pipeline captures a price baseline (`now_cost` per player, all 700+ bootstrap elements) before season-end and stores it as `price_baseline.json` in Vercel Blob — idempotent, write-once
+- [x] **PRST-02**: User can see a Price Reset tab in the Analyse section showing who rose/fell vs the season-end baseline when FPL publishes next-season prices
+- [x] **PRST-03**: Price changes display as coloured delta pills (+X.Xm / −X.Xm); a "Value Targets" section highlights players whose price fell but xPts still rates above position median
+- [x] **PRST-04**: Price Reset tab shows an appropriate empty state before FPL publishes next-season prices, with an estimated availability note
 
 ### Deadline Day Banner
 
@@ -92,10 +92,10 @@ _(Filled by roadmapper)_
 | SPEC-01 | Phase 131 | Pending |
 | SPEC-02 | Phase 131 | Pending |
 | SPEC-03 | Phase 131 | Pending |
-| PRST-01 | Phase 133 | Pending |
-| PRST-02 | Phase 133 | Pending |
-| PRST-03 | Phase 133 | Pending |
-| PRST-04 | Phase 133 | Pending |
+| PRST-01 | Phase 133 | Complete |
+| PRST-02 | Phase 133 | Complete |
+| PRST-03 | Phase 133 | Complete |
+| PRST-04 | Phase 133 | Complete |
 | DL-01 | Phase 132 | Complete |
 | DL-02 | Phase 132 | Complete |
 | DL-03 | Phase 132 | Complete |
