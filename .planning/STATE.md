@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.26
 milestone_name: Off-Season Intelligence
-status: in_progress
-stopped_at: Phase 130 complete
-last_updated: "2026-05-21T15:30:00.000Z"
-last_activity: 2026-05-21 — Phase 130 complete (AUTH-05, AUTH-06 satisfied; 1539 tests green)
+status: planning
+stopped_at: Phase 131 planned — ready to execute
+last_updated: "2026-05-22T06:30:00.000Z"
+last_activity: 2026-05-21 — Phase 130 complete (AUTH-05, AUTH-06)
 progress:
-  total_phases: 71
+  total_phases: 72
   completed_phases: 43
-  total_plans: 134
+  total_plans: 132
   completed_plans: 205
   percent: 100
 ---
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-21 — v1.26 Off-Season Intelligence)
 
 ## Current Position
 
-Phase: 131 — Transfer Speculation Scoring (next)
-Plan: 0 plans (not yet planned)
-Status: Phase 130 complete — ready to plan Phase 131
-Last activity: 2026-05-21 — Phase 130 complete (AUTH-05, AUTH-06)
+Phase: 131 — Transfer Speculation Scoring (ready to execute)
+Plan: 2 plans (131-01 pipeline, 131-02 frontend)
+Status: Planned — ready to execute Phase 131
+Last activity: 2026-05-22 — Phase 131 planned (2 plans, Wave 1 parallel)
 
 ```
 Phase progress: [x] [ ] [ ] [ ] [ ] [ ]  1/6
@@ -71,9 +71,9 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-05-21T09:00:00.000Z
-Stopped at: Phase 130 planned
+Last session: 2026-05-22T05:46:16.895Z
+Stopped at: Phase 131 UI-SPEC approved
 
 ## Operator Next Steps
 
-- Run `/gsd-discuss-phase 131` to discuss and plan Phase 131: Transfer Speculation Scoring
+- Run `/gsd-execute-phase 131` to execute Phase 131: Transfer Speculation Scoring

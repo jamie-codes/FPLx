@@ -503,17 +503,17 @@ describe('SummerWindowTab — Phase 131 SPEC-01/02/03', () => {
 
 **All claims were verified against codebase files read in this session.**
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **`confidence_score` numeric field (SPEC-02 mentions it)**
    - What we know: SPEC-02 references "confidence decay"; D-05 resolves this as binary `opacity-40` at 21 days.
    - What's unclear: Whether a future phase needs a numeric `confidence_score` in the JSON for progressive decay.
-   - Recommendation: Do NOT add `confidence_score` in Phase 131. The binary approach satisfies SPEC-02. If needed later, it's an additive optional field — same pattern as `source_tier?`.
+   - RESOLVED: Do NOT add `confidence_score` in Phase 131. The binary approach satisfies SPEC-02. If needed later, it's an additive optional field — same pattern as `source_tier?`.
 
 2. **Test 1 update: pill count assertion**
    - What we know: `SummerWindowTab.test.tsx` Test 1 asserts `toHaveLength(5)` on `getAllByRole('tab')`.
    - What's unclear: Whether the divider `<span>` between pill groups will accidentally pick up a tab role.
-   - Recommendation: Ensure the divider element has no `role` attribute (it's `aria-hidden="true"` with no role). Update Test 1 to `toHaveLength(9)`.
+   - RESOLVED: Ensure the divider element has no `role` attribute (it's `aria-hidden="true"` with no role). Update Test 1 to `toHaveLength(9)`.
 
 ## Environment Availability
 

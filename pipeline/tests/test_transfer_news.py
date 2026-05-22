@@ -253,3 +253,40 @@ def test_writes_artifact_with_correct_shape(tn):
         assert 'ok' in sh[source_key]
         assert 'last_success' in sh[source_key]
         assert 'last_error' in sh[source_key]
+
+
+# ---------------------------------------------------------------------------
+# Phase 131: source_tier field tests
+# ---------------------------------------------------------------------------
+
+def test_article_dict_contains_source_tier_field(tn):
+    """Every article dict must contain a source_tier key (D-03)."""
+    bootstrap = {'elements': []}
+    sky_entry = _make_entry('Arsenal sign striker', url='https://www.skysports.com/1')
+    bbc_entry = _make_entry('Chelsea linked with midfielder', url='https://www.bbc.co.uk/2')
+
+    def mock_parse(url):
+        if 'skysports' in url:
+            return _make_feed([sky_entry])
+        return _make_feed([bbc_entry])
+
+    with patch('transfer_news.feedparser.parse', side_effect=mock_parse):
+        with patch('transfer_news.save') as mock_save:
+            tn.scrape(bootstrap)
+            payload = mock_save.call_args[0][1]
+
+    for article in payload['articles']:
+        assert 'source_tier' in article
+        assert article['source_tier'] in ('Official', 'Reliable', 'Speculative')
+
+
+def test_skysports_source_tier_is_reliable(tn):
+    assert tn._get_source_tier('skysports') == 'Reliable'
+
+
+def test_bbc_source_tier_is_reliable(tn):
+    assert tn._get_source_tier('bbc') == 'Reliable'
+
+
+def test_unknown_source_falls_back_to_speculative(tn):
+    assert tn._get_source_tier('unknown_tabloid') == 'Speculative'

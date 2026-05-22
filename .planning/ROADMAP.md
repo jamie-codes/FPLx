@@ -1979,7 +1979,9 @@ See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
   2. Articles older than 21 days show a visible decay indicator (reduced opacity or age label) so users can distinguish fresh rumours from stale ones without reading the timestamp
   3. The 5-pill classification filter row gains a tier pill filter (Official / Reliable / Speculative) and filtering by tier shows only matching articles, consistent with the existing All/Confirmed/Rumour/Injury/Rotation behaviour
   4. Existing Summer Window article consumers (ConfirmedSigningBadge, GemTable injections) are unaffected - source_tier and confidence_score are optional additive fields
-**Plans**: TBD
+**Plans:** 2 plans
+- [ ] 131-01-PLAN.md — Pipeline source_tier field (SPEC-01 backend: SOURCE_TIER dict, _get_source_tier helper, field injection, pytest)
+- [ ] 131-02-PLAN.md — Frontend tier badge + 21d decay + tier filter pills (SPEC-01/02/03: SourceTier type, TIER_PILLS, isArticleStale, AND-logic filter chain, Tests 11-18)
 **UI hint**: yes
 
 ### Phase 132: Deadline Day Banner
