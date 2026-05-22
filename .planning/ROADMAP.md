@@ -1992,7 +1992,9 @@ See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
   1. A countdown banner is visible above the section nav showing time remaining to the next FPL gameweek deadline in the user's local timezone (e.g. "GW32 deadline in 14h 22m")
   2. The banner's visual appearance shifts through three urgency states: zinc neutral (>24h), amber (2-24h), red sticky (< 2h) - transitions happen automatically as time passes without page reload
   3. User can click a dismiss button on the banner and it disappears for the current gameweek, reappearing automatically when the next gameweek's deadline window opens (state stored per-GW in localStorage)
-**Plans**: TBD
+**Plans**: 2 plans
+  - [ ] 132-01-PLAN.md — useNextDeadline hook (TanStack Query) returning next bootstrap is_next event
+  - [ ] 132-02-PLAN.md — DeadlineBanner component (3-state urgency + per-GW dismiss) wired into page.tsx
 **UI hint**: yes
 
 ### Phase 133: Price Reset Analysis
