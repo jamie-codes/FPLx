@@ -7,13 +7,7 @@ vi.mock('fs/promises', () => ({ readFile: vi.fn() }))
 vi.mock('@vercel/blob', () => ({ list: vi.fn() }))
 
 import { readFile } from 'fs/promises'
-import { NextRequest } from 'next/server'
 import type { PriceResetResponse } from '@/lib/types'
-
-// Helper: build a minimal NextRequest for the price-reset route
-function makeRequest(): NextRequest {
-  return new NextRequest('http://localhost/api/price-reset')
-}
 
 // Helper: build a minimal FPL bootstrap fixture with the given elements
 function makeBootstrap(
@@ -192,20 +186,9 @@ describe('/api/price-reset contract (Phase 133 PRST-02/03/04)', () => {
   it('value_targets_sorted_by_largest_fall_first', async () => {
     // Two MIDs both qualifying: one delta -3, one delta -1
     // Should be sorted ascending by delta_cost (most negative first)
-    const baseline = { '20': 70, '21': 65, '22': 60 }
-    const bootstrap = makeBootstrap([
-      { id: 20, web_name: 'MidX', element_type: 3, now_cost: 67, team: 1, team_short_name: 'ARS' },
-      { id: 21, web_name: 'MidY', element_type: 3, now_cost: 64, team: 2, team_short_name: 'CHE' },
-      { id: 22, web_name: 'MidZ', element_type: 3, now_cost: 60, team: 3, team_short_name: 'MCI' },
-    ])
-    // Both id=20 (delta=-3, xPts=9.0) and id=21 (delta=-1, xPts=7.0) above median
-    // id=22 (delta=0, excluded from players)
-    // Median of [9.0, 7.0, 6.0] = 7.0; both 9.0 and 7.0 >= median... but ">" required
-    // Use clear above-median: median of 3 values [9.0, 7.0, 5.0] = 7.0
-    // id=20 xPts=9.0 > 7.0 ✓ delta=-3
-    // id=21 xPts=7.0 NOT > 7.0 ✗
-    // Let's use xPts [9.0, 8.0, 5.0] → median 8.0; id=20 (9.0>8.0 ✓), id=21 (8.0 not >8.0 ✗)
-    // Adjust: use 4 players [10.0, 8.0, 6.0, 4.0] → median 7.0; both 10 and 8 qualify
+    // Use 4 players [10.0, 8.0, 6.0, 4.0] → median = (8+6)/2 = 7.0; both 10 and 8 qualify (> 7.0)
+    // id=30: delta=-3, xPts=10.0 > 7.0 ✓  id=31: delta=-1, xPts=8.0 > 7.0 ✓
+    // id=32/33: delta=0, excluded from players
     const baseline2 = { '30': 70, '31': 65, '32': 60, '33': 55 }
     const bootstrap2 = makeBootstrap([
       { id: 30, web_name: 'MidP', element_type: 3, now_cost: 67, team: 1, team_short_name: 'ARS' },
