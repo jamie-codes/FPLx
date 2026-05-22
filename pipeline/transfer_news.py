@@ -33,6 +33,7 @@ Anti-patterns avoided:
 import os
 import sys
 from datetime import datetime, timezone
+from typing import Literal
 
 import feedparser
 
@@ -59,10 +60,25 @@ CLASSIFICATION_KEYWORDS = {
     'rotation_signal':   ['rotation', 'bench', 'rested', 'squad player'],
 }
 
+# D-02: skysports and bbc both map to Reliable. Official/Speculative reserved for future sources.
+SOURCE_TIER: dict[str, Literal['Official', 'Reliable', 'Speculative']] = {
+    'skysports': 'Reliable',
+    'bbc':       'Reliable',
+}
+
 
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
+
+def _get_source_tier(source: str) -> Literal['Official', 'Reliable', 'Speculative']:
+    """Return reliability tier for a given source identifier.
+
+    Mirrors the shape of classify_article(). Falls back to 'Speculative' for
+    unknown sources (D-02 fallback default).
+    """
+    return SOURCE_TIER.get(source, 'Speculative')
+
 
 def _now_iso() -> str:
     """Return current UTC time as ISO 8601 string."""
@@ -98,6 +114,7 @@ def _scrape_rss_sky(articles: list, name_lookup: dict, seen_urls: set, scraped_a
             'source': 'skysports',
             'classification': classification,
             'element_id': element_id,
+            'source_tier': _get_source_tier('skysports'),   # D-01/D-03
             'scraped_at': scraped_at,
         }
         articles.append(article)
@@ -132,6 +149,7 @@ def _scrape_rss_bbc(articles: list, name_lookup: dict, seen_urls: set, scraped_a
             'source': 'bbc',
             'classification': classification,
             'element_id': element_id,
+            'source_tier': _get_source_tier('bbc'),   # D-01/D-03
             'scraped_at': scraped_at,
         }
         articles.append(article)
