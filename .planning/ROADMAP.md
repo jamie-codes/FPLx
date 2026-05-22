@@ -1899,7 +1899,7 @@ See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
 <summary>v1.26 Off-Season Intelligence (Phases 130-135) - IN PROGRESS</summary>
 
 - [x] **Phase 130: Auth Fix** - return ENDPOINT_GONE from fpl-login route; preserve token-paste flow (AUTH-05, AUTH-06) ✓ 2026-05-21
-- [ ] **Phase 131: Transfer Speculation Scoring** - source tier badge + confidence decay on Summer Window articles (SPEC-01, SPEC-02, SPEC-03)
+- [x] **Phase 131: Transfer Speculation Scoring** - source tier badge + confidence decay on Summer Window articles (SPEC-01, SPEC-02, SPEC-03) ✓ 2026-05-22
 - [ ] **Phase 132: Deadline Day Banner** - countdown to next GW deadline, 3-state urgency, per-GW dismiss (DL-01, DL-02, DL-03)
 - [ ] **Phase 133: Price Reset Analysis** - price_baseline.json pipeline + PriceResetTab with delta pills and Value Targets (PRST-01, PRST-02, PRST-03, PRST-04)
 - [ ] **Phase 134: Push Notifications** - VAPID service worker, subscribe/unsubscribe, price/injury/deadline/captain push triggers (PUSH-01, PUSH-02, PUSH-03, PUSH-04, PUSH-05)
@@ -1980,8 +1980,8 @@ See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
   3. The 5-pill classification filter row gains a tier pill filter (Official / Reliable / Speculative) and filtering by tier shows only matching articles, consistent with the existing All/Confirmed/Rumour/Injury/Rotation behaviour
   4. Existing Summer Window article consumers (ConfirmedSigningBadge, GemTable injections) are unaffected - source_tier and confidence_score are optional additive fields
 **Plans:** 2 plans
-- [ ] 131-01-PLAN.md — Pipeline source_tier field (SPEC-01 backend: SOURCE_TIER dict, _get_source_tier helper, field injection, pytest)
-- [ ] 131-02-PLAN.md — Frontend tier badge + 21d decay + tier filter pills (SPEC-01/02/03: SourceTier type, TIER_PILLS, isArticleStale, AND-logic filter chain, Tests 11-18)
+- [x] 131-01-PLAN.md — Pipeline source_tier field (SPEC-01 backend: SOURCE_TIER dict, _get_source_tier helper, field injection, pytest)
+- [x] 131-02-PLAN.md — Frontend tier badge + 21d decay + tier filter pills (SPEC-01/02/03: SourceTier type, TIER_PILLS, isArticleStale, AND-logic filter chain, Tests 11-18)
 **UI hint**: yes
 
 ### Phase 132: Deadline Day Banner

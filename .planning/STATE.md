@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.26
 milestone_name: Off-Season Intelligence
 status: planning
-stopped_at: Phase 131 planned — ready to execute
-last_updated: "2026-05-22T06:30:00.000Z"
-last_activity: 2026-05-21 — Phase 130 complete (AUTH-05, AUTH-06)
+stopped_at: Phase 131 complete — ready to execute Phase 132
+last_updated: "2026-05-22T12:00:00.000Z"
+last_activity: 2026-05-22 — Phase 131 complete (SPEC-01, SPEC-02, SPEC-03)
 progress:
   total_phases: 72
   completed_phases: 43
@@ -21,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-21 — v1.26 Off-Season Intelligence)
 
 **Core value:** Give the manager a clear, prioritised view of who to buy and who to sell this week — backed by data, not gut feel.
-**Current focus:** Milestone v1.26 — Phase 130 (Auth Fix)
+**Current focus:** Milestone v1.26 — Phase 132 (Deadline Day Banner)
 
 ## Current Position
 
-Phase: 131 — Transfer Speculation Scoring (ready to execute)
-Plan: 2 plans (131-01 pipeline, 131-02 frontend)
-Status: Planned — ready to execute Phase 131
-Last activity: 2026-05-22 — Phase 131 planned (2 plans, Wave 1 parallel)
+Phase: 132 — Deadline Day Banner (next to plan)
+Plan: TBD
+Status: Phase 131 complete — ready to plan Phase 132
+Last activity: 2026-05-22 — Phase 131 complete (SPEC-01/02/03, 2 plans, all tests green)
 
 ```
-Phase progress: [x] [ ] [ ] [ ] [ ] [ ]  1/6
+Phase progress: [x] [x] [ ] [ ] [ ] [ ]  2/6
                 130 131 132 133 134 135
 ```
 
@@ -71,9 +71,10 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-05-22T05:46:16.895Z
-Stopped at: Phase 131 UI-SPEC approved
+Last session: 2026-05-22T12:00:00.000Z
+Stopped at: Phase 131 executed — SPEC-01/02/03 complete
 
 ## Operator Next Steps
 
-- Run `/gsd-execute-phase 131` to execute Phase 131: Transfer Speculation Scoring
+- Run `/gsd-discuss-phase 132` to discuss Phase 132: Deadline Day Banner (recommended)
+- Or `/gsd-plan-phase 132` to plan directly
