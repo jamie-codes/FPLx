@@ -141,6 +141,15 @@ def run(dry_run: bool = False):
         bootstrap = get_bootstrap_static()
         save('fpl_bootstrap.json', bootstrap)
 
+        # Phase 133 PRST-01: price baseline capture — write-once idempotent (D-01).
+        # No GW gate, no IS_OFF_SEASON gate — runs every pipeline run, guarded by _blob_exists.
+        try:
+            from price_baseline import capture_price_baseline
+            capture_price_baseline(bootstrap)
+            print("Price baseline step complete.")
+        except Exception as pb_exc:
+            print(f"[price_baseline] non-fatal error: {pb_exc}", file=sys.stderr)
+
         # Phase 123 WIN-03: IS_OFF_SEASON gate (D-05, D-06).
         # Detects end-of-season (no event with is_current=True); wraps GW-dependent
         # pipeline steps so they skip gracefully rather than KeyError on missing current GW.
