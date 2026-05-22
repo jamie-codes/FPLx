@@ -1160,3 +1160,30 @@ export interface PreSeasonActiveResponse {
   activated_at: string  // ISO 8601 timestamp set by pipeline at first activation
   season_id: string     // e.g. "2526" — derived from events[0].deadline_time year
 }
+
+// Price reset analysis (Phase 133 PRST-02/03/04 — pipeline/cache/price_baseline.json)
+
+export interface PriceResetRow {
+  player_id: number
+  name: string                 // web_name
+  team: string                 // team_short_name e.g. "ARS"
+  element_type: PositionCode
+  baseline_cost: number        // tenths of GBP 1m, from price_baseline.json
+  current_cost: number         // tenths of GBP 1m, from current bootstrap
+  delta_cost: number           // current_cost - baseline_cost; positive = rise
+}
+
+export interface ValueTargetRow extends PriceResetRow {
+  // delta_cost is guaranteed < 0 in this collection (D-06 / UI-SPEC).
+  xPts_1gw: number             // from merged_players.json; must exceed position median
+  position_median_xPts: number // median xPts_1gw across all merged_players with same element_type
+  position_rank: number        // 1-indexed rank within element_type, sorted by xPts_1gw desc
+  position_label: 'GK' | 'DEF' | 'MID' | 'FWD'
+}
+
+export interface PriceResetResponse {
+  published: boolean           // false when no baseline or all deltas zero (D-07/D-08)
+  generated_at: string         // ISO 8601 — server timestamp at request time
+  players: PriceResetRow[]     // sorted by Math.abs(delta_cost) DESC; empty when published=false
+  value_targets: ValueTargetRow[]  // fall-only, xPts above position median; sorted by delta_cost ASC (most negative first)
+}
