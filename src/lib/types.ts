@@ -1063,6 +1063,8 @@ export interface LineupNews {
 // Phase 123: Transfer News Artifact (SCR-01..SCR-05, WIN-03)
 // ============================================================================
 
+export type SourceTier = 'Official' | 'Reliable' | 'Speculative'
+
 export type TransferClass =
   | 'confirmed_signing'
   | 'rumour'
@@ -1078,6 +1080,7 @@ export interface TransferNewsArticle {
   source: 'skysports' | 'bbc'
   classification: TransferClass
   element_id: number | null         // null = unmatched player or no player mentioned
+  source_tier?: SourceTier          // optional — absent on pre-Phase-131 cached blobs (D-03)
   scraped_at: string                // ISO 8601 UTC
 }
 

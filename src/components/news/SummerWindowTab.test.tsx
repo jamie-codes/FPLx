@@ -80,13 +80,13 @@ afterEach(() => {
 })
 
 describe('SummerWindowTab — Phase 125 WIN-01', () => {
-  it('Test 1 — renders 5 filter pills with labels in order', () => {
+  it('Test 1 — renders 9 filter pills (5 classification + 4 tier) with labels in order', () => {
     vi.mocked(useTransferNews).mockReturnValue(mockFeed([]))
     const { getAllByRole } = render(<SummerWindowTab />)
     const pills = getAllByRole('tab')
-    expect(pills).toHaveLength(5)
+    expect(pills).toHaveLength(9)
     const labels = pills.map(p => p.textContent)
-    expect(labels).toEqual(['All', 'Confirmed', 'Rumour', 'Injury', 'Rotation'])
+    expect(labels).toEqual(['All', 'Confirmed', 'Rumour', 'Injury', 'Rotation', 'All', 'Official', 'Reliable', 'Speculative'])
   })
 
   it('Test 2 — default active filter is All on mount', () => {
@@ -228,5 +228,102 @@ describe('SummerWindowTab — Phase 125 WIN-01', () => {
       expect(link.getAttribute('target')).toBe('_blank')
       expect(link.getAttribute('rel')).toBe('noopener noreferrer')
     })
+  })
+})
+
+describe('SummerWindowTab — Phase 131 SPEC-01/02/03', () => {
+  // Test 11: tier badge renders (SPEC-01)
+  it('Test 11 — tier badge renders with tier label when source_tier present', () => {
+    vi.mocked(useTransferNews).mockReturnValue(
+      mockFeed([{ title: 'Sky Article', source: 'skysports', source_tier: 'Reliable' }])
+    )
+    const { getByText } = render(<SummerWindowTab />)
+    expect(getByText('Reliable')).toBeTruthy()
+  })
+
+  // Test 12: no tier badge on old blob (SPEC-01 / SC-4)
+  it('Test 12 — no tier badge rendered when source_tier absent (old blob)', () => {
+    vi.mocked(useTransferNews).mockReturnValue(
+      mockFeed([{ title: 'Old Article', source: 'skysports' }])
+    )
+    const { queryByText } = render(<SummerWindowTab />)
+    expect(queryByText('Reliable')).toBeNull()
+    expect(queryByText('Official')).toBeNull()
+    expect(queryByText('Speculative')).toBeNull()
+  })
+
+  // Test 13: stale opacity applied (SPEC-02)
+  it('Test 13 — article >= 21 days old gets opacity-40 class', () => {
+    // System time 2026-05-19T12:00:00Z; 22 days before = 2026-04-27
+    vi.mocked(useTransferNews).mockReturnValue(
+      mockFeed([{ title: 'Stale Article', published: '2026-04-27T10:00:00Z' }])
+    )
+    const { container } = render(<SummerWindowTab />)
+    const article = container.querySelector('article')
+    expect(article?.className).toContain('opacity-40')
+  })
+
+  // Test 14: fresh article no opacity (SPEC-02)
+  it('Test 14 — article < 21 days old does not get opacity-40 class', () => {
+    vi.mocked(useTransferNews).mockReturnValue(
+      mockFeed([{ title: 'Fresh Article', published: '2026-05-18T10:00:00Z' }])
+    )
+    const { container } = render(<SummerWindowTab />)
+    const article = container.querySelector('article')
+    expect(article?.className).not.toContain('opacity-40')
+  })
+
+  // Test 15: pill count (SPEC-03)
+  it('Test 15 — 9 pills total (5 classification + 4 tier) in default render', () => {
+    vi.mocked(useTransferNews).mockReturnValue(mockFeed([]))
+    const { getAllByRole } = render(<SummerWindowTab />)
+    expect(getAllByRole('tab')).toHaveLength(9)
+  })
+
+  // Test 16: tier All shows all (SPEC-03)
+  it('Test 16 — tier filter All shows all articles regardless of source_tier', () => {
+    vi.mocked(useTransferNews).mockReturnValue(
+      mockFeed([
+        { title: 'Reliable Article', source_tier: 'Reliable' },
+        { title: 'Official Article', source_tier: 'Official' },
+        { title: 'No Tier Article' },
+      ])
+    )
+    const { getByText } = render(<SummerWindowTab />)
+    expect(getByText('Reliable Article')).toBeTruthy()
+    expect(getByText('Official Article')).toBeTruthy()
+    expect(getByText('No Tier Article')).toBeTruthy()
+  })
+
+  // Test 17: tier filter click (SPEC-03)
+  it('Test 17 — clicking Reliable tier pill filters to Reliable articles only', () => {
+    vi.mocked(useTransferNews).mockReturnValue(
+      mockFeed([
+        { title: 'Reliable Article', source_tier: 'Reliable' },
+        { title: 'Official Article', source_tier: 'Official' },
+      ])
+    )
+    const { getAllByRole, getByText, queryByText } = render(<SummerWindowTab />)
+    fireEvent.click(getAllByRole('tab')[7]) // index 7 = Reliable tier pill
+    expect(getByText('Reliable Article')).toBeTruthy()
+    expect(queryByText('Official Article')).toBeNull()
+  })
+
+  // Test 18: AND logic (SPEC-03 / D-11)
+  it('Test 18 — classification AND tier filter both apply (AND logic)', () => {
+    vi.mocked(useTransferNews).mockReturnValue(
+      mockFeed([
+        { title: 'Reliable Rumour',    classification: 'rumour',            source_tier: 'Reliable' },
+        { title: 'Official Rumour',    classification: 'rumour',            source_tier: 'Official' },
+        { title: 'Reliable Confirmed', classification: 'confirmed_signing', source_tier: 'Reliable' },
+      ])
+    )
+    const { getAllByRole, getByText, queryByText } = render(<SummerWindowTab />)
+    const pills = getAllByRole('tab')
+    fireEvent.click(pills[2]) // Rumour classification pill
+    fireEvent.click(pills[7]) // Reliable tier pill
+    expect(getByText('Reliable Rumour')).toBeTruthy()
+    expect(queryByText('Official Rumour')).toBeNull()
+    expect(queryByText('Reliable Confirmed')).toBeNull()
   })
 })
