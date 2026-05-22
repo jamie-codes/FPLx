@@ -7,7 +7,7 @@
 import React, { useState } from 'react'
 import { useTransferNews } from '@/lib/hooks/useTransferNews'
 import { formatRelativeTime } from '@/lib/formatRelativeTime'
-import type { TransferClass } from '@/lib/types'
+import type { TransferClass, SourceTier } from '@/lib/types'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -16,6 +16,16 @@ const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000
 // Module-level helper — avoids calling Date.now() directly in render (react-hooks/purity)
 const isFeedStale = (scrapedAt: string): boolean =>
   Date.now() - new Date(scrapedAt).getTime() > STALE_THRESHOLD_MS
+
+// Phase 131 SPEC-02: 21-day article confidence decay (D-05/D-07)
+const STALE_ARTICLE_THRESHOLD_DAYS = 21
+const STALE_ARTICLE_THRESHOLD_MS = STALE_ARTICLE_THRESHOLD_DAYS * 24 * 60 * 60 * 1000
+
+// Module-level helper — mirrors isFeedStale; uses published ?? scraped_at (D-07)
+const isArticleStale = (published: string | null, scrapedAt: string): boolean => {
+  const ts = new Date(published ?? scrapedAt).getTime()
+  return Date.now() - ts > STALE_ARTICLE_THRESHOLD_MS
+}
 
 const PILLS = [
   { value: 'all' as const,                label: 'All'       },
@@ -42,6 +52,19 @@ const SOURCE_LABEL: Record<'skysports' | 'bbc', string> = {
 const SOURCE_CLS: Record<'skysports' | 'bbc', string> = {
   skysports: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
   bbc:       'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+}
+
+// Phase 131 SPEC-01: Tier badge dicts (D-09/D-10)
+const TIER_LABEL: Record<SourceTier, string> = {
+  Official:    'Official',
+  Reliable:    'Reliable',
+  Speculative: 'Speculative',
+}
+
+const TIER_CLS: Record<SourceTier, string> = {
+  Official:    'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200',
+  Reliable:    'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  Speculative: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -141,29 +164,37 @@ export function SummerWindowTab(): React.JSX.Element {
         </div>
       ) : (
         <div className="space-y-2">
-          {sortedArticles.map((article, idx) => (
-            <article
-              key={`${article.url}-${idx}`}
-              className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3"
-            >
-              <div className="flex items-start gap-2">
-                <a
-                  href={article.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 text-sm text-zinc-900 dark:text-zinc-100 hover:underline leading-snug"
-                >
-                  {article.title}
-                </a>
-                <span className={`shrink-0 inline-block text-xs font-semibold rounded px-2 py-0.5 ${SOURCE_CLS[article.source]}`}>
-                  {SOURCE_LABEL[article.source]}
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                {formatRelativeTime(article.published ?? article.scraped_at)}
-              </p>
-            </article>
-          ))}
+          {sortedArticles.map((article, idx) => {
+            const stale = isArticleStale(article.published, article.scraped_at)
+            return (
+              <article
+                key={`${article.url}-${idx}`}
+                className={`rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3${stale ? ' opacity-40' : ''}`}
+              >
+                <div className="flex items-start gap-2">
+                  <a
+                    href={article.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 text-sm text-zinc-900 dark:text-zinc-100 hover:underline leading-snug"
+                  >
+                    {article.title}
+                  </a>
+                  <span className={`shrink-0 inline-block text-xs font-semibold rounded px-2 py-0.5 ${SOURCE_CLS[article.source]}`}>
+                    {SOURCE_LABEL[article.source]}
+                  </span>
+                  {article.source_tier && (
+                    <span className={`shrink-0 inline-block text-xs font-semibold rounded px-2 py-0.5 ${TIER_CLS[article.source_tier]}`}>
+                      {TIER_LABEL[article.source_tier]}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                  {formatRelativeTime(article.published ?? article.scraped_at)}
+                </p>
+              </article>
+            )
+          })}
         </div>
       )}
     </section>
