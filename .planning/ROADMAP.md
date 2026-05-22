@@ -2006,7 +2006,14 @@ See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
   2. User can open a "Price Reset" tab in the Analyse section and see a table of players with their season-end price, new price, and coloured delta pills (+X.Xm green / -X.Xm red) once FPL publishes next-season prices
   3. A "Value Targets" section within PriceResetTab lists players whose price fell but whose xPts still rates above their position median - each row shows the price drop pill and the xPts rank
   4. Before next-season prices are published, the Price Reset tab shows a clear empty state with an estimated availability note ("FPL typically publishes new prices in mid-to-late July")
-**Plans**: TBD
+**Plans**: 3 plans in 2 waves
+
+**Wave 1** *(parallel)*
+- [ ] 133-01-PLAN.md — pipeline/price_baseline.py + run.py integration (PRST-01)
+- [ ] 133-02-PLAN.md — types + /api/price-reset route + usePriceReset hook (PRST-02, PRST-03, PRST-04)
+
+**Wave 2** *(blocked on Wave 1 — Plan 02 types + hook)*
+- [ ] 133-03-PLAN.md — PriceResetTab component + page.tsx sub-tab registration (PRST-02, PRST-03, PRST-04)
 **UI hint**: yes
 
 ### Phase 134: Push Notifications
@@ -2042,6 +2049,6 @@ See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
 | 130 | v1.26 | 0/0 | Not started | - |
 | 131 | v1.26 | 0/0 | Not started | - |
 | 132 | v1.26 | 2/2 | Complete    | 2026-05-22 |
-| 133 | v1.26 | 0/0 | Not started | - |
+| 133 | v1.26 | 0/3 | Planned     | -          |
 | 134 | v1.26 | 0/0 | Not started | - |
 | 135 | v1.26 | 0/0 | Not started | - |
