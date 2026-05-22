@@ -1993,7 +1993,7 @@ See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
   2. The banner's visual appearance shifts through three urgency states: zinc neutral (>24h), amber (2-24h), red sticky (< 2h) - transitions happen automatically as time passes without page reload
   3. User can click a dismiss button on the banner and it disappears for the current gameweek, reappearing automatically when the next gameweek's deadline window opens (state stored per-GW in localStorage)
 **Plans**: 2 plans
-  - [ ] 132-01-PLAN.md — useNextDeadline hook (TanStack Query) returning next bootstrap is_next event
+  - [x] 132-01-PLAN.md — useNextDeadline hook (TanStack Query) returning next bootstrap is_next event
   - [ ] 132-02-PLAN.md — DeadlineBanner component (3-state urgency + per-GW dismiss) wired into page.tsx
 **UI hint**: yes
 
@@ -2041,7 +2041,7 @@ See `.planning/milestones/v1.25-ROADMAP.md` for full phase details.
 | 129 | v1.25 | 4/4 | Complete   | 2026-05-20 |
 | 130 | v1.26 | 0/0 | Not started | - |
 | 131 | v1.26 | 0/0 | Not started | - |
-| 132 | v1.26 | 0/0 | Not started | - |
+| 132 | v1.26 | 1/2 | In Progress|  |
 | 133 | v1.26 | 0/0 | Not started | - |
 | 134 | v1.26 | 0/0 | Not started | - |
 | 135 | v1.26 | 0/0 | Not started | - |

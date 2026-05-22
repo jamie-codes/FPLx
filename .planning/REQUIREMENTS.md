@@ -28,7 +28,7 @@
 
 ### Deadline Day Banner
 
-- [ ] **DL-01**: User sees a persistent countdown banner to the next FPL gameweek deadline displayed in their local timezone
+- [x] **DL-01**: User sees a persistent countdown banner to the next FPL gameweek deadline displayed in their local timezone
 - [ ] **DL-02**: Banner shifts visual urgency through three states: neutral zinc (> 24h), amber (2–24h), red sticky (< 2h)
 - [ ] **DL-03**: User can dismiss the deadline banner per-gameweek (dismiss state stored in localStorage, resets on new GW)
 
@@ -96,7 +96,7 @@ _(Filled by roadmapper)_
 | PRST-02 | Phase 133 | Pending |
 | PRST-03 | Phase 133 | Pending |
 | PRST-04 | Phase 133 | Pending |
-| DL-01 | Phase 132 | Pending |
+| DL-01 | Phase 132 | Complete |
 | DL-02 | Phase 132 | Pending |
 | DL-03 | Phase 132 | Pending |
 | PUSH-01 | Phase 134 | Pending |
