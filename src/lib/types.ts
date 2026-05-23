@@ -1160,3 +1160,32 @@ export interface PreSeasonActiveResponse {
   activated_at: string  // ISO 8601 timestamp set by pipeline at first activation
   season_id: string     // e.g. "2526" — derived from events[0].deadline_time year
 }
+
+// ============================================================================
+// Phase 134: Push Notifications types (PUSH-01..PUSH-05)
+// ============================================================================
+
+export type PushNotificationType = 'price' | 'injury' | 'deadline' | 'captain'
+
+export interface PushNotificationPayload {
+  type: PushNotificationType
+  title: string
+  body: string
+  icon: string
+  data: { url: string }
+  hours_until?: 24 | 2  // deadline type only
+}
+
+// Phase 134 D-09
+export interface PushSubscriptionRecord {
+  endpoint: string
+  keys: {
+    p256dh: string
+    auth: string
+  }
+  sent_reminders: {
+    gw: number
+    fired_24h: boolean
+    fired_2h: boolean
+  }
+}
