@@ -1,6 +1,5 @@
 """Phase 135 — pytest suite for notify.py push notification dispatcher."""
 
-import pytest
 from unittest.mock import patch
 from datetime import datetime, timezone, timedelta
 
@@ -231,7 +230,7 @@ def test_404_does_not_update_state():
 
     with patch.object(notify, '_read_json', side_effect=_all_triggers_read_json), \
          patch.object(notify, '_send', side_effect=mock_send), \
-         patch.object(notify, '_save_state', side_effect=lambda s, **kw: saved.append(s)):
+         patch.object(notify, '_save_state', side_effect=lambda s, d='pipeline/cache': saved.append(s)):
         notify.run_notify(cache_dir='pipeline/cache')
 
     assert saved == []
