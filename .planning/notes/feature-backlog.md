@@ -1,6 +1,6 @@
 # FPL Analyst — Feature Backlog
 
-**Last updated:** 2026-05-03
+**Last updated:** 2026-05-24
 **Source:** Manager-curated feature roadmap document
 **Status:** Backlog — not yet scoped into milestones
 
@@ -67,6 +67,39 @@ Features already shipped or in-progress are excluded. v1.7 (phases 47-51) covers
 ---
 
 ## Priority 2 — Strategic edge features
+
+### LIVE-01: Live GW Score Engine
+**Problem:** After matches finish, the official FPL app doesn't update until the next morning. Managers can't see: their actual live score (including provisional bonus), which bench player has been auto-subbed in, whether the vice-captain gets the 2× multiplier because the captain didn't play, or their live overall rank. livefpl.net solves this — we should too.
+**Scope:**
+- FPL ID input (stored in localStorage; one-time entry)
+- Fetch live player stats: `event/{gw}/live/` (provisional goals/assists/bonus/CS per player)
+- Fetch user picks: `entry/{id}/event/{gw}/picks/` (returns `picks[]`, `automatic_subs[]`, `active_chip`, `entry_history`)
+- Compute live XI:
+  - Apply `automatic_subs` from the API (FPL already computes which subs occurred — display them)
+  - If captain played 0 minutes: show VC with 2× (or 3× if TC chip)
+  - If Bench Boost active: all 15 count, no subs needed
+  - Sum live points for XI after captain multiplier
+- Display:
+  - Live squad grid: starters + bench, with sub-in/sub-out indicators
+  - Live total (pts), captain/VC indicator, chip active
+  - Per-player breakdown: goals/assists/bonus/CS/saves as live provisional values
+  - Live overall rank (from `entry_history.overall_rank` if available, or omit until official)
+  - Autosub log: "Salah (0 min) → Jota (auto-sub)")
+- Note: provisional bonus changes until official processing — label it "provisional"
+**FPL API endpoints (all already proxied via `/api/fpl/[...proxy]`):**
+  - `bootstrap-static/` — player metadata
+  - `event/{gw}/live/` — live stats per player
+  - `entry/{id}/event/{gw}/picks/` — user picks + automatic_subs + chip
+**Key edge cases:**
+  - Captain played 0 mins → VC 2× (or 3× on TC); VC played 0 mins too → no multiplier applied
+  - Bench Boost: no subs; all 15 score normally
+  - Automatic subs come pre-computed from FPL API — display, don't recompute
+  - DGW: players may have 2 fixtures; live endpoint aggregates both
+**Implementation:** New panel in Squad section ("Live GW" tab). Pure client-side calculation from API data. FPL ID stored in localStorage. Polling every 60s while a fixture is live (use bootstrap `events[].finished` to detect).
+**Priority:** High — most requested GW-day experience gap
+**Estimated effort:** Medium
+
+---
 
 ### ML-01: Mini-League Rival Tracker
 **Problem:** Best FPL move depends on context: protecting rank, chasing rank, or winning a mini-league. App has no rival awareness.
@@ -398,7 +431,7 @@ Features already shipped or in-progress are excluded. v1.7 (phases 47-51) covers
 | Milestone | Theme | Core features |
 |-----------|-------|---------------|
 | v1.8 | Predictive Intelligence | MIN-01 (xMins), BPS-01 (bonus), PRC-01 (price changes), BENCH-01 (bench order) |
-| v1.9 | Competitive Intelligence | ML-01 (mini-league), EO-01 (effective ownership), TREE-01 (transfer tree) |
+| v1.9 | Competitive Intelligence | LIVE-01 (live GW score), ML-01 (mini-league), EO-01 (effective ownership), TREE-01 (transfer tree) |
 | v1.10 | Advanced Planning | FH-01 (free hit), WC-01 (wildcard), BB-01 (bench boost), TC-01 (triple captain) |
 | v1.11 | Modelling & Trust | MC-01 (Monte Carlo), VER-01 (versioning), CAL-01 (calibration), SENS-01, WHY-01 |
 | v1.12 | UX & Infrastructure | NLP-01 (LLM prose), ALERT-01, HEAT-01, REFRESH-01, DQ-01 |
