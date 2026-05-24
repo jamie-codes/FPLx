@@ -648,6 +648,13 @@ def run(dry_run: bool = False):
         except Exception as dh_exc:
             print(f"[data_health] non-fatal error: {dh_exc}", file=sys.stderr)
 
+        # Phase 135: push notifications (non-fatal — never break the pipeline)
+        try:
+            from notify import run_notify  # noqa: PLC0415
+            run_notify()
+        except Exception as _notify_exc:
+            print(f'[notify] non-fatal error: {_notify_exc}', file=sys.stderr)
+
     except Exception as exc:
         # Stale-cache fallback (per D-06): preserve prior cache, mark as stale
         print(f"Pipeline error: {exc}", file=sys.stderr)
