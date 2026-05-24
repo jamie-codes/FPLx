@@ -290,7 +290,10 @@ def run_notify(cache_dir: str = 'pipeline/cache') -> None:
             print(f'[notify] /api/push/send returned {status} — state not updated', file=sys.stderr)
 
     if state_dirty:
-        _save_state(state, cache_dir)
+        try:
+            _save_state(state, cache_dir)
+        except Exception as exc:
+            print(f'[notify] failed to persist state: {exc}', file=sys.stderr)
 
 
 if __name__ == '__main__':
