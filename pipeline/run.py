@@ -651,7 +651,7 @@ def run(dry_run: bool = False):
         # Phase 135: push notifications (non-fatal — never break the pipeline)
         try:
             from notify import run_notify  # noqa: PLC0415
-            run_notify()
+            run_notify(cache_dir=cache_dir)
         except Exception as _notify_exc:
             print(f'[notify] non-fatal error: {_notify_exc}', file=sys.stderr)
 
