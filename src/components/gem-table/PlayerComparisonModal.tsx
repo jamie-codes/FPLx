@@ -178,7 +178,7 @@ export function PlayerComparisonModal({ open, playerA, onClose }: PlayerComparis
     <dialog
       ref={dialogRef}
       onClick={handleDialogClick}
-      className="rounded-lg bg-white dark:bg-zinc-900 p-4 max-w-2xl w-full max-h-[85vh] flex flex-col border border-zinc-200 dark:border-zinc-700 shadow-lg"
+      className="hidden open:flex flex-col rounded-lg bg-white dark:bg-zinc-900 p-4 max-w-2xl w-full max-h-[85vh] border border-zinc-200 dark:border-zinc-700 shadow-lg"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
