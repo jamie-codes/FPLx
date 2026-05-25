@@ -1,10 +1,28 @@
 # FPL Analyst — Feature Backlog
 
-**Last updated:** 2026-05-24
+**Last updated:** 2026-05-25
 **Source:** Manager-curated feature roadmap document
 **Status:** Backlog — not yet scoped into milestones
 
 Features already shipped or in-progress are excluded. v1.7 (phases 47-51) covers: Fixture Swing Detector, CS Probability, Explainable xPts, Lifecycle Labels, Transfer Opportunity Cost Simulator, Weekly Decision Summary.
+
+---
+
+## Delivery Roadmap (agreed 2026-05-25)
+
+| Phase | Window | Features |
+|-------|--------|---------|
+| A | Now → end June | PERFECT-01, FLOOR-01, ROUTES-01, STREAK-01, BPS-01 |
+| B | July | HEAT-01, MIN-01, TREE-01 / PLAN-01 |
+| C | Late July (pre-GW1) | PRC-01, BENCH-01 |
+| D | Early season GW1–GW5 | LIVE-01, EO-01, TC-01, BB-01 |
+| E | Mid-season GW6+ | ML-01, BACK-01, FH-01, WC-01 |
+
+**New features added 2026-05-25** (not in original backlog):
+- **PERFECT-01** — Perfect GW Team retrospective (pitch graphic, best XI by position, optimal captain)
+- **FLOOR-01** — Consistent Scorer Profile ("safe bet" players with a reliable points floor)
+- **ROUTES-01** — Multiple Routes to Points (penalty/set-piece/assist flags, route multiplier on xPts)
+- **STREAK-01** — Seasonal Streak / Form Run Detector (identifies players entering a scoring run)
 
 ---
 
