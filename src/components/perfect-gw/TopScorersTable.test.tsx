@@ -47,21 +47,21 @@ describe('TopScorersTable', () => {
   })
 
   it('shows top scorer first in each column', () => {
-    render(<TopScorersTable players={players} livePoints={livePoints} teams={teams} />)
-    // GK top scorer = P1 (6 pts), MID top scorer = P9 (18 pts)
-    const allP1 = screen.getAllByText('P1')
-    expect(allP1.length).toBeGreaterThan(0)
-    const allP9 = screen.getAllByText('P9')
-    expect(allP9.length).toBeGreaterThan(0)
+    const { container } = render(<TopScorersTable players={players} livePoints={livePoints} teams={teams} />)
+    // GK top scorer = P1 (6 pts) — must be the first GK row
+    const firstGkRow = container.querySelector('[data-testid^="gk-row-"]')
+    expect(firstGkRow?.textContent).toContain('P1')
+    // MID top scorer = P9 (18 pts) — must be the first MID row
+    const firstMidRow = container.querySelector('[data-testid^="mid-row-"]')
+    expect(firstMidRow?.textContent).toContain('P9')
   })
 
   it('shows at most 5 players per position column', () => {
-    render(<TopScorersTable players={players} livePoints={livePoints} teams={teams} />)
-    // There are 6 MID players but only top 5 should appear
-    // P14 is ranked 6th (7 pts) — should not appear in MID column
-    // Find all cells and count MID entries — tricky to assert count directly,
-    // so verify the 6th-ranked player is absent
+    const { container } = render(<TopScorersTable players={players} livePoints={livePoints} teams={teams} />)
+    // 6th-ranked MID (P14, 7pts) must be absent
     expect(screen.queryByTestId('mid-row-P14')).toBeNull()
+    // 5th-ranked MID (P13, 8pts) must be present
+    expect(container.querySelector('[data-testid="mid-row-P13"]')).not.toBeNull()
   })
 
   it('displays points for each player row', () => {
