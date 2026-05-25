@@ -81,7 +81,7 @@ export function PerfectGWTab() {
           aria-label="Previous gameweek"
           className="px-3 py-1.5 rounded text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
-          ◀
+          {canGoPrev ? `◀ GW ${settledGws[currentIdx - 1]}` : '◀'}
         </button>
         <span className="font-semibold text-zinc-900 dark:text-zinc-100">
           GW {effectiveGw} — Perfect XI
@@ -92,7 +92,7 @@ export function PerfectGWTab() {
           aria-label="Next gameweek"
           className="px-3 py-1.5 rounded text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
-          ▶
+          {canGoNext ? `GW ${settledGws[currentIdx + 1]} ▶` : '▶'}
         </button>
       </div>
 

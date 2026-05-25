@@ -106,4 +106,13 @@ describe('PerfectGWTab', () => {
     render(<PerfectGWTab />)
     expect(screen.getByRole('button', { name: /next gameweek/i })).toBeDisabled()
   })
+
+  it('shows neighbouring GW numbers in selector buttons', () => {
+    mockSuccess()
+    render(<PerfectGWTab />)
+    // Default is GW38 (latest). Prev button should show GW37.
+    expect(screen.getByRole('button', { name: /previous gameweek/i }).textContent).toContain('GW 37')
+    // Next button is disabled (GW38 is last), so it shows no GW number.
+    expect(screen.getByRole('button', { name: /next gameweek/i }).textContent).not.toContain('GW')
+  })
 })
