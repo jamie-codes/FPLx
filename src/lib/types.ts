@@ -1187,3 +1187,32 @@ export interface PriceResetResponse {
   players: PriceResetRow[]     // sorted by Math.abs(delta_cost) DESC; empty when published=false
   value_targets: ValueTargetRow[]  // fall-only, xPts above position median; sorted by delta_cost ASC (most negative first)
 }
+
+// ============================================================================
+// Phase 134: Push Notifications types (PUSH-01..PUSH-05)
+// ============================================================================
+
+export type PushNotificationType = 'price' | 'injury' | 'deadline' | 'captain'
+
+export interface PushNotificationPayload {
+  type: PushNotificationType
+  title: string
+  body: string
+  icon: string
+  data: { url: string }
+  hours_until?: 24 | 2  // deadline type only
+}
+
+// Phase 134 D-09
+export interface PushSubscriptionRecord {
+  endpoint: string
+  keys: {
+    p256dh: string
+    auth: string
+  }
+  sent_reminders: {
+    gw: number
+    fired_24h: boolean
+    fired_2h: boolean
+  }
+}

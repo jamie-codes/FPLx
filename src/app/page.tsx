@@ -14,6 +14,7 @@ import { TransferPanel } from '@/components/transfers/TransferPanel'
 import { ClubFormTab } from '@/components/club-form/ClubFormTab'
 import { LastUpdated } from '@/components/LastUpdated'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
+import { BellNotificationButton } from '@/components/push/BellNotificationButton'
 import { ValueGemsTable } from '@/components/value-gems/ValueGemsTable'
 import { MobileNav } from '@/components/nav/MobileNav'
 import { PlannerTab } from '@/components/planner/PlannerTab'
@@ -195,6 +196,7 @@ export default function Home() {
         <div className="flex items-center gap-3 mb-2">
           <span className="font-[family-name:var(--font-honk)] text-5xl text-zinc-900 dark:text-white leading-none">FPLx</span>
           <div className="ml-auto flex items-center gap-2">
+            <BellNotificationButton />
             <ThemeToggle />
           </div>
         </div>
@@ -216,6 +218,7 @@ export default function Home() {
             ))}
             <div className="ml-auto flex items-center gap-2">
               <LastUpdated />
+              <BellNotificationButton />
               <ThemeToggle />
             </div>
           </nav>

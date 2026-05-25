@@ -268,6 +268,7 @@ describe('Phase 36: page.tsx state', () => {
       'Accuracy',
       'Season',          // Phase 124 REV-04: Season sub-tab inserted after Accuracy
       'Summer Window',   // Phase 125 WIN-01: Summer Window sub-tab inserted after Season
+      'Price Reset',     // Phase 133 PRST-01: Price Reset sub-tab inserted after Summer Window
       'Price Changes',
     ])
   })

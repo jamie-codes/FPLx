@@ -3,6 +3,7 @@ import type { Viewport } from "next";
 import { Geist, Geist_Mono, Honk } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { PushServiceWorkerRegistrar } from '@/components/push/PushServiceWorkerRegistrar'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,6 +47,7 @@ export default function RootLayout({
       <head><script dangerouslySetInnerHTML={{ __html: themeInitScript }} /></head>
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
+        <PushServiceWorkerRegistrar />
       </body>
     </html>
   );
