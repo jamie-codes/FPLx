@@ -28,6 +28,7 @@ import { AccuracyTab } from '@/components/accuracy/AccuracyTab'
 import { SeasonReviewTab } from '@/components/season-review/SeasonReviewTab'
 import { SummerWindowTab } from '@/components/news/SummerWindowTab'
 import { PriceChangePanel } from '@/components/price-changes/PriceChangePanel'
+import { PerfectGWTab } from '@/components/perfect-gw/PerfectGWTab'
 import { PriceResetTab } from '@/components/price-reset/PriceResetTab'
 import { RivalsTab } from '@/components/rivals/RivalsTab'
 import { NextSeasonPlannerTab } from '@/components/next-season/NextSeasonPlannerTab'
@@ -61,7 +62,7 @@ class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: 
 }
 
 export type Section = 'analyse' | 'plan' | 'squad'
-export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'season' | 'window' | 'decision' | 'transfers' | 'optimiser' | 'price-reset' | 'price-changes' | 'rivals' | 'lineup' | 'review' | 'rank-sim' | 'next-season' | 'watchlist'
+export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'season' | 'window' | 'decision' | 'transfers' | 'optimiser' | 'price-reset' | 'price-changes' | 'rivals' | 'lineup' | 'review' | 'rank-sim' | 'next-season' | 'watchlist' | 'perfect-gw'
 
 export const SECTIONS = [
   {
@@ -78,6 +79,7 @@ export const SECTIONS = [
       { id: 'window' as SubTab,        label: 'Summer Window',   mobileLabel: 'Window'   },
       { id: 'price-reset' as SubTab,   label: 'Price Reset',     mobileLabel: 'Resets'   },
       { id: 'price-changes' as SubTab, label: 'Price Changes',   mobileLabel: 'Prices'   },
+      { id: 'perfect-gw' as SubTab,    label: 'Perfect GW',      mobileLabel: 'Perfect'  },
     ],
     defaultSubTab: 'gems' as SubTab,
   },
@@ -303,6 +305,7 @@ export default function Home() {
         {activeSection !== 'squad' && activeSubTab === 'window' && <SummerWindowTab />}
         {activeSection !== 'squad' && activeSubTab === 'price-reset' && <PriceResetTab />}
         {activeSection !== 'squad' && activeSubTab === 'price-changes' && <PriceChangePanel />}
+        {activeSection !== 'squad' && activeSubTab === 'perfect-gw' && <PerfectGWTab />}
         {activeSection !== 'squad' && activeSubTab === 'value-gems' && <ValueGemsTable />}
         {activeSection === 'plan' && activeSubTab === 'rivals' && (
           <RivalsTab submittedId={submittedId} />
