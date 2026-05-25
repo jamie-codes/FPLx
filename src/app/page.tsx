@@ -195,7 +195,7 @@ export default function Home() {
         {/* Header — scrolls away */}
         <div className="flex items-center gap-3 mb-2">
           <span className="font-[family-name:var(--font-honk)] text-5xl text-zinc-900 dark:text-white leading-none">FPLx</span>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex sm:hidden items-center gap-2">
             <BellNotificationButton />
             <ThemeToggle />
           </div>
