@@ -116,7 +116,7 @@ describe('computePerfectXI', () => {
     players.forEach(p => { points[p.id] = 5 })
     const result = computePerfectXI(players, points)
     expect(result.overBudget).toBe(true)
-    expect(result.overBudgetBy).toBe(result.squadCost - 1000)
+    expect(result.overBudgetBy).toBe(100)
   })
 
   it('treats missing players in livePoints as 0 pts (no crash)', () => {
@@ -125,5 +125,10 @@ describe('computePerfectXI', () => {
     expect(() => computePerfectXI(players, {})).not.toThrow()
     const result = computePerfectXI(players, {})
     expect(result.totalPts).toBe(0)
+  })
+
+  it('throws when no valid formation can be filled (no GKs in pool)', () => {
+    const noGks = buildPool().filter(p => p.element_type !== 1)
+    expect(() => computePerfectXI(noGks, {})).toThrow('computePerfectXI: could not fill any valid formation from provided players')
   })
 })

@@ -10,12 +10,12 @@ export interface PerfectXIResult {
   overBudgetBy: number          // squadCost - 1000, or 0 if not over
 }
 
-// All valid FPL formations as [DEF count, MID count, FWD count].
+// 8 valid FPL formations as [DEF count, MID count, FWD count].
 // Invariant: each row sums to 10 (+ 1 GK = 11).
-// Constraints: min 3 DEF, min 2 MID, min 1 FWD.
+// Constraints: min 3 DEF, min 2 MID, min 1 FWD, max 3 FWD.
 const FORMATIONS: [number, number, number][] = [
   [3, 4, 3], [3, 5, 2], [4, 3, 3], [4, 4, 2],
-  [4, 5, 1], [5, 3, 2], [5, 4, 1], [5, 2, 3], [3, 2, 5],
+  [4, 5, 1], [5, 3, 2], [5, 4, 1], [5, 2, 3],
 ]
 
 /**
@@ -27,7 +27,6 @@ function pickBest(
   candidates: FPLElementRaw[],
   count: number,
   clubCounts: Map<number, number>,
-  livePoints: Record<number, number>,
 ): FPLElementRaw[] {
   const picked: FPLElementRaw[] = []
   for (const player of candidates) {
@@ -60,10 +59,10 @@ export function computePerfectXI(
   for (const [defCount, midCount, fwdCount] of FORMATIONS) {
     const clubCounts = new Map<number, number>()
 
-    const gks  = pickBest(byPosition[1], 1,        clubCounts, livePoints)
-    const defs = pickBest(byPosition[2], defCount,  clubCounts, livePoints)
-    const mids = pickBest(byPosition[3], midCount,  clubCounts, livePoints)
-    const fwds = pickBest(byPosition[4], fwdCount,  clubCounts, livePoints)
+    const gks  = pickBest(byPosition[1], 1,        clubCounts)
+    const defs = pickBest(byPosition[2], defCount,  clubCounts)
+    const mids = pickBest(byPosition[3], midCount,  clubCounts)
+    const fwds = pickBest(byPosition[4], fwdCount,  clubCounts)
 
     // Skip formation if we can't fill every slot
     if (
