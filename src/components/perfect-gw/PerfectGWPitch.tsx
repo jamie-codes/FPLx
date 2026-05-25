@@ -17,7 +17,8 @@ interface PerfectGWPitchProps {
 function parseFormation(formation: string): [number, number, number] {
   const parts = formation.split('-').map(Number)
   if (parts.length !== 3 || parts.some(isNaN)) {
-    throw new Error(`Invalid formation string: ${formation}`)
+    console.warn(`PerfectGWPitch: invalid formation string "${formation}", falling back to 4-4-2`)
+    return [4, 4, 2]
   }
   return [parts[0], parts[1], parts[2]]
 }
