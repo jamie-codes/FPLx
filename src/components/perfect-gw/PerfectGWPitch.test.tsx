@@ -55,9 +55,10 @@ describe('PerfectGWPitch', () => {
     expect(screen.getByText('95')).toBeTruthy()
   })
 
-  it('renders the formation label', () => {
+  it('renders the formation label with squad cost', () => {
     render(<PerfectGWPitch result={mockResult} teams={teams} livePoints={livePoints} />)
-    expect(screen.getByText('4-4-2')).toBeTruthy()
+    // mockResult.squadCost = 660 FPL units = £66.0m
+    expect(screen.getByText(/4-4-2 · £66\.0m/)).toBeTruthy()
   })
 
   it('renders the CAPT badge on the captain', () => {

@@ -78,7 +78,9 @@ export function PerfectGWPitch({ result, teams, livePoints }: PerfectGWPitchProp
 
       {/* Footer: formation + total */}
       <div className="flex items-center justify-between px-1">
-        <span className="text-sm text-zinc-500 dark:text-zinc-400">{result.formation}</span>
+        <span className="text-sm text-zinc-500 dark:text-zinc-400">
+          {result.formation} · £{(result.squadCost / 10).toFixed(1)}m
+        </span>
         <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{result.totalPts}</span>
       </div>
     </div>
