@@ -5,7 +5,9 @@ import type { FPLBootstrap } from '@/lib/fpl-adapter'
 async function fetchBootstrap(): Promise<FPLBootstrap> {
   const res = await fetch('/api/fpl/bootstrap-static/')
   if (!res.ok) {
-    throw new Error(`bootstrap fetch failed: ${res.status}`)
+    const err = new Error(`bootstrap fetch failed: ${res.status}`) as Error & { status?: number }
+    err.status = res.status
+    throw err
   }
   const raw = await res.json()
   const parsed = parseFPLBootstrap(raw)
