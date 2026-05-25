@@ -34,6 +34,15 @@ export function PerfectGWTab() {
     )
   }
 
+  // No settled GWs yet (e.g. start of season or all GWs in progress)
+  if (!bsError && !ptError && bootstrap && effectiveGw === null) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <p className="text-zinc-500 dark:text-zinc-400 text-sm">No completed gameweeks yet.</p>
+      </div>
+    )
+  }
+
   if (bsError || ptError || !bootstrap || !livePoints || effectiveGw === null) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
@@ -97,10 +106,11 @@ export function PerfectGWTab() {
       </div>
 
       {/* Inner tabs */}
-      <div className="flex gap-2 border-b border-zinc-200 dark:border-zinc-700">
+      <div role="tablist" className="flex gap-2 border-b border-zinc-200 dark:border-zinc-700">
         <button
+          role="tab"
           onClick={() => setActiveTab('pitch')}
-          aria-pressed={activeTab === 'pitch'}
+          aria-selected={activeTab === 'pitch'}
           className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
             activeTab === 'pitch'
               ? 'border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100'
@@ -110,8 +120,9 @@ export function PerfectGWTab() {
           ⚽ Perfect XI
         </button>
         <button
+          role="tab"
           onClick={() => setActiveTab('top-scorers')}
-          aria-pressed={activeTab === 'top-scorers'}
+          aria-selected={activeTab === 'top-scorers'}
           className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
             activeTab === 'top-scorers'
               ? 'border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100'

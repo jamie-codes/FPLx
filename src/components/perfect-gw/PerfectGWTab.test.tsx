@@ -79,14 +79,14 @@ describe('PerfectGWTab', () => {
   it('renders inner tabs: Perfect XI and Top Scorers', () => {
     mockSuccess()
     render(<PerfectGWTab />)
-    expect(screen.getByRole('button', { name: /perfect xi/i })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /top scorers/i })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: /perfect xi/i })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: /top scorers/i })).toBeTruthy()
   })
 
   it('switches to Top Scorers tab on click', () => {
     mockSuccess()
     render(<PerfectGWTab />)
-    fireEvent.click(screen.getByRole('button', { name: /top scorers/i }))
+    fireEvent.click(screen.getByRole('tab', { name: /top scorers/i }))
     // TopScorersTable renders position headers
     expect(screen.getByText('GK')).toBeTruthy()
     expect(screen.getByText('DEF')).toBeTruthy()
@@ -114,5 +114,22 @@ describe('PerfectGWTab', () => {
     expect(screen.getByRole('button', { name: /previous gameweek/i }).textContent).toContain('GW 37')
     // Next button is disabled (GW38 is last), so it shows no GW number.
     expect(screen.getByRole('button', { name: /next gameweek/i }).textContent).not.toContain('GW')
+  })
+
+  it('shows empty state when bootstrap has no settled GWs', () => {
+    mockUseBootstrap.mockReturnValue({
+      data: {
+        ...BOOTSTRAP,
+        events: [
+          { id: 1, is_current: true, is_next: false, finished: false, data_checked: false, deadline_time: '2026-08-01T10:00:00Z' },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      error: null,
+    })
+    mockUseLiveGwPoints.mockReturnValue({ data: undefined, isLoading: false, isError: false, error: null })
+    render(<PerfectGWTab />)
+    expect(screen.getByText(/no completed gameweeks/i)).toBeTruthy()
   })
 })
