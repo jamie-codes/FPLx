@@ -247,15 +247,29 @@ describe('Phase 76 RTP-02 — routes_to_points column', () => {
     expect(container.textContent).toContain('Routes')
   })
 
-  it('cell renders the integer routes_to_points value', () => {
-    const cols = createColumns(vi.fn())
+  it('cell renders RoutePillsCell (not integer) for a known player with routes', () => {
+    // ROUTES-01: cell now shows pills via RoutePillsCell, not the raw integer.
+    // Supply the player in allPlayers so routeFlagsMap contains their entry.
+    const playerWithPK = {
+      ...PLAYER_A,
+      id: 1,
+      team: 1,
+      routes_to_points: 4,
+      penalties_order: 1,
+      direct_freekicks_order: null,
+      corners_and_indirect_freekicks_order: null,
+      xg_per90: null,
+      xa_per90: null,
+    } as unknown as ScoredPlayer
+    const cols = createColumns(vi.fn(), null, false, [playerWithPK])
     const col = cols.find(c => (c as any).accessorKey === 'routes_to_points') as any
     const cellNode = col.cell({
       getValue: () => 4,
-      row: { original: { ...PLAYER_A, routes_to_points: 4 } },
+      row: { original: playerWithPK },
     })
     render(<>{cellNode}</>)
-    expect(screen.getByText('4')).toBeTruthy()
+    // PK pill rendered (not the literal "4")
+    expect(screen.getByTitle('Penalty taker')).toBeTruthy()
   })
 
   it('cell renders em-dash when routes_to_points is undefined', () => {
@@ -272,5 +286,33 @@ describe('Phase 76 RTP-02 — routes_to_points column', () => {
   it('column is hidden on mobile via MOBILE_HIDDEN_COLUMNS', () => {
     // The convention is `key: false` ⇒ hidden on mobile. Check the literal mapping.
     expect(MOBILE_HIDDEN_COLUMNS.routes_to_points).toBe(false)
+  })
+})
+
+describe('ROUTES-01 — Routes cell renders RoutePillsCell pills', () => {
+  it('renders PK pill when player has penalties_order === 1', () => {
+    const penTaker = {
+      id: 42,
+      team: 1,
+      penalties_order: 1,
+      direct_freekicks_order: null,
+      corners_and_indirect_freekicks_order: null,
+      xg_per90: null,
+      xa_per90: null,
+    } as unknown as ScoredPlayer
+
+    const cols = createColumns(() => {}, null, false, [penTaker])
+    // Routes column is the one whose accessorKey is 'routes_to_points'
+    const routesCol = cols.find(
+      (c: any) => c.accessorKey === 'routes_to_points'
+    ) as { cell: (ctx: any) => React.ReactNode } | undefined
+
+    expect(routesCol).toBeTruthy()
+    const node = routesCol!.cell({
+      getValue: () => 1,
+      row: { original: penTaker },
+    })
+    render(<>{node}</>)
+    expect(screen.getByTitle('Penalty taker')).toBeTruthy()
   })
 })

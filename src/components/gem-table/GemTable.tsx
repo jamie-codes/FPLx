@@ -168,7 +168,10 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
     onCompare?.(player)
   }, [onCompare])
 
-  const columns = useMemo(() => createColumns(handleCompare, lastGwActualGwN, newsFlagEnabled), [handleCompare, lastGwActualGwN, newsFlagEnabled])
+  const columns = useMemo(
+    () => createColumns(handleCompare, lastGwActualGwN, newsFlagEnabled, scoredPlayers),
+    [handleCompare, lastGwActualGwN, newsFlagEnabled, scoredPlayers],
+  )
 
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'gem_score', desc: true },

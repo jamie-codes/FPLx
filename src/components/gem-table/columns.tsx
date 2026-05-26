@@ -10,6 +10,8 @@ import { RegressionSignalBadge } from '@/components/gem-table/RegressionSignalBa
 import { DifferentialBadge } from '@/components/gem-table/DifferentialBadge'
 import { TeamBadge } from '@/components/shared/TeamBadge'
 import { MCDistributionBar } from '@/components/mc/MCDistributionBar'
+import { computeRouteFlags } from '@/lib/routes'
+import { RoutePillsCell } from '@/components/gem-table/RoutePillsCell'
 
 const col = createColumnHelper<ScoredPlayer>()
 
@@ -166,7 +168,9 @@ export function createColumns(
   onCompare: (player: ScoredPlayer) => void,
   gwN: number | null = null,
   newsFlagEnabled: boolean = false,
+  allPlayers: ScoredPlayer[] = [],
 ) {
+  const routeFlagsMap = computeRouteFlags(allPlayers)
   return [
     col.accessor('web_name', {
       header: 'Player',
@@ -404,17 +408,14 @@ export function createColumns(
     },
     enableSorting: true,
   }),
-  // Phase 76 RTP-02: Routes to points — count of distinct point-scoring routes (0..5).
-  // Cell guard mirrors cs_prob_1gw pattern: null/undefined renders em-dash (stale cache);
-  // 0 renders the literal digit (a meaningful "no routes" signal — UI-SPEC §Empty / Loading / Error).
+  // Phase 76 RTP-02 / ROUTES-01: Routes to points — pill display.
+  // Null/undefined routes_to_points (stale cache) falls back to em-dash via RoutePillsCell.
   col.accessor('routes_to_points', {
-    header: H('Routes', 'Routes to points (0–5): distinct point-scoring routes — penalty taker, direct FK taker, corner taker, above-median xG in team, above-median xA in team. Higher = more ways to score.'),
+    header: H('Routes', 'Point-scoring routes: PK = penalty taker, FK = direct FK taker, CK = corner taker, xG = above-median xG in team, xA = above-median xA in team.'),
     cell: (info) => {
-      const v = info.getValue()
-      if (v === null || v === undefined) {
-        return <span className="text-zinc-400">—</span>
-      }
-      return v.toString()
+      const flags = routeFlagsMap.get(info.row.original.id)
+      if (!flags) return <span className="text-zinc-400">—</span>
+      return <RoutePillsCell flags={flags} />
     },
     enableSorting: true,
   }),
