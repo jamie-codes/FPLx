@@ -123,6 +123,16 @@ describe('computeRouteFlags', () => {
     expect(computeRouteFlags(players).get(2)!.xa).toBe(false)
   })
 
+  it('xa: true when player xa_per90 equals team median (>= not >)', () => {
+    const players = [
+      mkPlayer({ id: 1, team: 1, xa_per90: 0.3 }),
+      mkPlayer({ id: 2, team: 1, xa_per90: 0.3 }),
+    ]
+    // median is 0.3; both are at the median → both true
+    expect(computeRouteFlags(players).get(1)!.xa).toBe(true)
+    expect(computeRouteFlags(players).get(2)!.xa).toBe(true)
+  })
+
   it('xa: false when player xa_per90 is null', () => {
     const players = [
       mkPlayer({ id: 1, team: 1, xa_per90: null }),

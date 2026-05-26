@@ -409,7 +409,8 @@ export function createColumns(
     enableSorting: true,
   }),
   // Phase 76 RTP-02 / ROUTES-01: Routes to points — pill display.
-  // Null/undefined routes_to_points (stale cache) falls back to em-dash via RoutePillsCell.
+  // Player not found in routeFlagsMap (stale cache or allPlayers=[]) → em-dash via guard below.
+  // All-false flags → RoutePillsCell renders its own em-dash fallback.
   col.accessor('routes_to_points', {
     header: H('Routes', 'Point-scoring routes: PK = penalty taker, FK = direct FK taker, CK = corner taker, xG = above-median xG in team, xA = above-median xA in team.'),
     cell: (info) => {
