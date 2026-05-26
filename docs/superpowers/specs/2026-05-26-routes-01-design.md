@@ -20,7 +20,7 @@ The five routes and their derivation:
 
 ## Architecture
 
-Three pieces:
+Four pieces:
 
 1. **`src/lib/routes.ts`** — pure utility. Exports `RouteFlags` interface and `computeRouteFlags(players: ScoredPlayer[]): Map<number, RouteFlags>`.
 2. **`src/components/gem-table/RoutePillsCell.tsx`** — pure display component. Takes `flags: RouteFlags`, renders 0–5 pills.
@@ -76,7 +76,27 @@ export function computeRouteFlags(players: ScoredPlayer[]): Map<number, RouteFla
 }
 ```
 
-Helper `median(values: number[]): number | null` returns the middle value of a sorted array, or `null` for an empty array.
+Two private helpers used inside the file:
+
+```typescript
+// Append val to the array stored at map[key], creating the array if absent.
+function append<K>(map: Map<K, number[]>, key: K, val: number) {
+  const arr = map.get(key)
+  if (arr) arr.push(val)
+  else map.set(key, [val])
+}
+
+// Standard statistical median (average of two middle values for even-length arrays).
+// Returns null for an empty array.
+function median(values: number[]): number | null {
+  if (values.length === 0) return null
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 === 0
+    ? (sorted[mid - 1] + sorted[mid]) / 2
+    : sorted[mid]
+}
+```
 
 ### Edge cases
 
