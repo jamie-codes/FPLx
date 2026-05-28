@@ -47,6 +47,42 @@ def _compute_consistency_rate(
     return qualifying / len(starts)
 
 
+def _compute_streak(history: list, element_type: int) -> int | None:
+    """Count of consecutive most-recent starts returning >= position threshold.
+
+    Returns None when no starts exist in history.
+    Returns 0 when the most recent start missed the threshold.
+    Reuses CONSISTENCY_THRESHOLD from FLOOR-01.
+    """
+    threshold = CONSISTENCY_THRESHOLD.get(element_type, 5)
+    starts = [h for h in history if h.get('starts') == 1]
+    if not starts:
+        return None
+    streak = 0
+    for h in reversed(starts):
+        if h.get('total_points', 0) >= threshold:
+            streak += 1
+        else:
+            break
+    return streak
+
+
+def _compute_form_delta(history: list) -> float | None:
+    """Last-5-starts avg pts minus season avg pts per start.
+
+    Positive = currently above own seasonal baseline (hot streak).
+    Negative = currently below baseline (cold run).
+    Returns None when fewer than 6 starts exist (need at least one
+    start outside the last-5 window for a meaningful comparison).
+    """
+    starts = [h for h in history if h.get('starts') == 1]
+    if len(starts) < 6:
+        return None
+    season_avg = sum(h.get('total_points', 0) for h in starts) / len(starts)
+    last5_avg = sum(h.get('total_points', 0) for h in starts[-5:]) / 5
+    return round(last5_avg - season_avg, 2)
+
+
 # Phase 42 ACC-01: blend coefficient for form-signal-into-xPts. 0.4 means
 # form contributes 40% of the per-90 input. Tunable via merge_players kwarg —
 # pipeline/run.py reads the runtime value from accuracy_backtest.json.summary.blend_alpha_used.
@@ -1090,6 +1126,19 @@ def merge_players(
         else:
             cons_rate = None
         player['cons_rate'] = cons_rate
+
+        # ---- Streak + form delta (STREAK-01) ----
+        # streak: consecutive starts returning >= position threshold (CONSISTENCY_THRESHOLD).
+        # form_delta: last-5-starts avg pts minus season avg pts per start.
+        if summaries and fpl_id in summaries:
+            streak_history = summaries[fpl_id].get('history', [])
+            streak = _compute_streak(streak_history, element['element_type'])
+            form_delta = _compute_form_delta(streak_history)
+        else:
+            streak = None
+            form_delta = None
+        player['streak'] = streak
+        player['form_delta'] = form_delta
 
         # ---- Form signal (Phase 42 ACC-01) ----
         # Recency-weighted xG+xA per-90 over last 3-5 GWs from element-summary history.
