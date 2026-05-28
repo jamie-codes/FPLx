@@ -22,6 +22,31 @@ CS_PTS = {1: 6, 2: 6, 3: 1, 4: 0}
 # See STATE.md blocker + 28-RESEARCH.md Common Pitfalls Pitfall 1.
 BONUS_RATE = {1: 0.30, 2: 0.40, 3: 0.60, 4: 0.70}
 
+# Phase FLOOR-01: historical consistency rate constants.
+# Thresholds: minimum pts a player must score in a start to "return".
+CONSISTENCY_THRESHOLD = {1: 6, 2: 6, 3: 5, 4: 5}  # by position code (GK/DEF >=6, MID/FWD >=5)
+CONSISTENCY_MIN_STARTS = 4   # fewer than 4 qualifying starts in window -> report None
+CONSISTENCY_WINDOW = 10      # look back over last N starts
+
+
+def _compute_consistency_rate(
+    history: list,
+    element_type: int,
+    window: int = CONSISTENCY_WINDOW,
+) -> float | None:
+    """% of recent starts where player returned >= position threshold points.
+
+    Returns None when fewer than CONSISTENCY_MIN_STARTS starts exist in window.
+    Position thresholds: GK/DEF >= 6 pts (CS-level), MID/FWD >= 5 pts (goal-level).
+    """
+    threshold = CONSISTENCY_THRESHOLD.get(element_type, 5)
+    starts = [h for h in history if h.get('starts') == 1][-window:]
+    if len(starts) < CONSISTENCY_MIN_STARTS:
+        return None
+    qualifying = sum(1 for h in starts if h.get('total_points', 0) >= threshold)
+    return qualifying / len(starts)
+
+
 # Phase 42 ACC-01: blend coefficient for form-signal-into-xPts. 0.4 means
 # form contributes 40% of the per-90 input. Tunable via merge_players kwarg —
 # pipeline/run.py reads the runtime value from accuracy_backtest.json.summary.blend_alpha_used.
@@ -1055,6 +1080,16 @@ def merge_players(
         # BPS-01: persist bonus signal so the frontend can surface it per-player.
         player['bonus_ev'] = player_bonus_ev
         player['bonus_source'] = player_bonus_source
+
+        # ---- Consistency rate (FLOOR-01) ----
+        # Historical % of starts where player returned >= position threshold points.
+        # None when fewer than CONSISTENCY_MIN_STARTS starts in last CONSISTENCY_WINDOW GWs.
+        if summaries and fpl_id in summaries:
+            cons_history = summaries[fpl_id].get('history', [])
+            cons_rate = _compute_consistency_rate(cons_history, element['element_type'])
+        else:
+            cons_rate = None
+        player['cons_rate'] = cons_rate
 
         # ---- Form signal (Phase 42 ACC-01) ----
         # Recency-weighted xG+xA per-90 over last 3-5 GWs from element-summary history.
