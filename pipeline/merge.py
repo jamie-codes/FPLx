@@ -1045,11 +1045,16 @@ def merge_players(
         # via Pitfall C1 fallback).
         if bonus_stats and fpl_id in bonus_stats:
             player_bonus_ev = bonus_stats[fpl_id].get('bonus_ev')
+            player_bonus_source = bonus_stats[fpl_id].get('source')
             # When bonus.py marked source='flat_default', the flat rate is identical to
             # POSITION_PRIOR — so passing the prior through is harmless. We still pass it
             # so the gate uses the documented per-player path consistently.
         else:
             player_bonus_ev = None
+            player_bonus_source = None
+        # BPS-01: persist bonus signal so the frontend can surface it per-player.
+        player['bonus_ev'] = player_bonus_ev
+        player['bonus_source'] = player_bonus_source
 
         # ---- Form signal (Phase 42 ACC-01) ----
         # Recency-weighted xG+xA per-90 over last 3-5 GWs from element-summary history.

@@ -90,3 +90,85 @@ def test_compute_xpts_sigma_accepts_bonus_kwargs():
     )
     # Sigma is non-negative; no exception thrown is the primary contract.
     assert sigma >= 0.0
+
+
+# ---- Integration tests: BPS-01 bonus fields written to player dict ----
+from merge import merge_players
+
+
+def _build_minimal_player(player_id: int = 1):
+    """Minimal merge_players input: one MID on team 14 with 900 minutes played."""
+    bootstrap = {
+        'teams': [
+            {'id': 14, 'short_name': 'T14'},
+            {'id': 1, 'short_name': 'T01'},
+        ],
+        'elements': [{
+            'id': player_id,
+            'web_name': 'TestPlayer',
+            'element_type': 3,
+            'team': 14,
+            'now_cost': 70,
+            'selected_by_percent': '5.0',
+            'form': '0',
+            'status': 'a',
+            'minutes': 900,
+            'starts': 10,
+            'total_points': 60,
+            'goals_scored': 5,
+            'assists': 3,
+            'expected_goals': '0.5',
+            'expected_assists': '0.3',
+            'cost_change_event': 0,
+            'cost_change_start': 0,
+            'penalties_text': '',
+            'direct_freekicks_text': '',
+            'corners_and_indirect_freekicks_text': '',
+            'news': '',
+            'defensive_contribution': None,
+            'clearances_blocks_interceptions': None,
+            'direct_freekicks_order': None,
+            'penalties_order': None,
+            'corners_and_indirect_freekicks_order': None,
+        }],
+        'events': [{'id': 33, 'is_next': True, 'is_current': True, 'finished': False}],
+    }
+    return bootstrap, [], {}, {str(player_id): {'understat_id': None}}
+
+
+def test_merge_writes_bonus_ev_when_bonus_stats_provided():
+    """BPS-01: merge_players writes bonus_ev and bonus_source to player dict."""
+    bootstrap, fixtures, understat, id_map = _build_minimal_player(player_id=1)
+    bonus_stats = {1: {'bonus_ev': 0.85, 'n_starts': 15, 'source': 'learned'}}
+    merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                               bonus_stats=bonus_stats)
+    p = merged[0]
+    assert p['bonus_ev'] == pytest.approx(0.85), \
+        f"Expected bonus_ev=0.85, got {p.get('bonus_ev')}"
+    assert p['bonus_source'] == 'learned', \
+        f"Expected bonus_source='learned', got {p.get('bonus_source')}"
+
+
+def test_merge_writes_none_when_bonus_stats_is_none():
+    """BPS-01: bonus_ev and bonus_source are None when bonus_stats is not provided."""
+    bootstrap, fixtures, understat, id_map = _build_minimal_player(player_id=1)
+    merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                               bonus_stats=None)
+    p = merged[0]
+    assert p['bonus_ev'] is None, \
+        f"Expected bonus_ev=None when bonus_stats=None, got {p.get('bonus_ev')}"
+    assert p['bonus_source'] is None, \
+        f"Expected bonus_source=None when bonus_stats=None, got {p.get('bonus_source')}"
+
+
+def test_merge_writes_none_for_player_absent_from_bonus_stats():
+    """BPS-01: bonus_ev and bonus_source are None when player_id not in bonus_stats."""
+    bootstrap, fixtures, understat, id_map = _build_minimal_player(player_id=1)
+    bonus_stats = {99: {'bonus_ev': 0.5, 'n_starts': 10, 'source': 'learned'}}  # player 1 absent
+    merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                               bonus_stats=bonus_stats)
+    p = merged[0]
+    assert p['bonus_ev'] is None, \
+        f"Expected bonus_ev=None for absent player, got {p.get('bonus_ev')}"
+    assert p['bonus_source'] is None, \
+        f"Expected bonus_source=None for absent player, got {p.get('bonus_source')}"
