@@ -12,6 +12,7 @@ import { TeamBadge } from '@/components/shared/TeamBadge'
 import { MCDistributionBar } from '@/components/mc/MCDistributionBar'
 import { computeRouteFlags } from '@/lib/routes'
 import { RoutePillsCell } from '@/components/gem-table/RoutePillsCell'
+import { BonusEvCell } from '@/components/gem-table/BonusEvCell'
 
 const col = createColumnHelper<ScoredPlayer>()
 
@@ -418,6 +419,18 @@ export function createColumns(
       if (!flags) return <span className="text-zinc-400">—</span>
       return <RoutePillsCell flags={flags} />
     },
+    enableSorting: true,
+  }),
+  // Phase 53 BPS-01: per-player bonus EV.
+  // Muted (text-zinc-500) for flat_default players — position prior only, insufficient data.
+  col.accessor('bonus_ev', {
+    header: H('Bonus EV', 'Expected bonus points per game start. Shrinkage-estimated from recent history — muted values use the position prior (insufficient data).'),
+    cell: (info) => (
+      <BonusEvCell
+        value={info.getValue()}
+        source={info.row.original.bonus_source}
+      />
+    ),
     enableSorting: true,
   }),
   col.display({

@@ -316,3 +316,27 @@ describe('ROUTES-01 — Routes cell renders RoutePillsCell pills', () => {
     expect(screen.getByTitle('Penalty taker')).toBeTruthy()
   })
 })
+
+describe('BPS-01: Bonus EV column', () => {
+  it('bonus_ev column renders value to 2 decimal places', () => {
+    const player = {
+      ...PLAYER_A,
+      bonus_ev: 0.85,
+      bonus_source: 'learned' as const,
+    }
+    const cols = createColumns(() => {})
+    const bonusCol = cols.find((c: { id?: string; accessorKey?: string }) =>
+      (c as { accessorKey?: string }).accessorKey === 'bonus_ev'
+    ) as unknown as {
+      cell: (info: {
+        getValue: () => number | null
+        row: { original: typeof player }
+      }) => React.ReactElement
+    }
+    expect(bonusCol).toBeTruthy()
+    const { container } = render(
+      <>{bonusCol.cell({ getValue: () => 0.85, row: { original: player } })}</>
+    )
+    expect(container.textContent).toBe('0.85')
+  })
+})
