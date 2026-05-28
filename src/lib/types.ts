@@ -220,6 +220,9 @@ export interface MergedPlayer {
   // bonus_source: 'learned' when calibrated from history; 'flat_default' when prior only (< 4 starts).
   bonus_ev?: number | null
   bonus_source?: 'learned' | 'flat_default' | null
+  // Phase FLOOR-01: historical consistency rate (% of last 10 starts returning >= position threshold).
+  // None/null when fewer than 4 starts in the last 10 GWs.
+  cons_rate?: number | null
   // Phase 80 GWI-01 (D-04): rotation risk flag — true when team has a European/cup
   // fixture within 3 days of an upcoming PL fixture. Computed in run.py post-merge step
   // by _apply_rotation_risk(). Optional during pipeline rollout; UI defaults to false.
