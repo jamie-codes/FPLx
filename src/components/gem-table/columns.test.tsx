@@ -344,3 +344,74 @@ describe('BPS-01: Bonus EV column', () => {
     expect(MOBILE_HIDDEN_COLUMNS.bonus_ev).toBe(false)
   })
 })
+
+describe('FLOOR-01: Cons% column', () => {
+  it('cons_rate=0.75 renders "75%" with text-emerald-400', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'cons_rate') as any
+    expect(col).toBeTruthy()
+    const { container } = render(
+      <>{col.cell({ getValue: () => 0.75, row: { original: { ...PLAYER_A, cons_rate: 0.75 } } })}</>
+    )
+    const span = container.querySelector('span')
+    expect(span?.textContent).toBe('75%')
+    expect(span?.className).toContain('text-emerald-400')
+  })
+
+  it('cons_rate=0.50 renders "50%" with text-zinc-100', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'cons_rate') as any
+    const { container } = render(
+      <>{col.cell({ getValue: () => 0.50, row: { original: { ...PLAYER_A, cons_rate: 0.50 } } })}</>
+    )
+    const span = container.querySelector('span')
+    expect(span?.textContent).toBe('50%')
+    expect(span?.className).toContain('text-zinc-100')
+  })
+
+  it('cons_rate=0.30 renders "30%" with text-zinc-500', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'cons_rate') as any
+    const { container } = render(
+      <>{col.cell({ getValue: () => 0.30, row: { original: { ...PLAYER_A, cons_rate: 0.30 } } })}</>
+    )
+    const span = container.querySelector('span')
+    expect(span?.textContent).toBe('30%')
+    expect(span?.className).toContain('text-zinc-500')
+  })
+
+  it('cons_rate=null renders em-dash', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'cons_rate') as any
+    const { container } = render(
+      <>{col.cell({ getValue: () => null, row: { original: { ...PLAYER_A } } })}</>
+    )
+    expect(container.textContent).toContain('—')
+  })
+
+  it('cons_rate and p10_pts columns hidden on mobile via MOBILE_HIDDEN_COLUMNS', () => {
+    expect(MOBILE_HIDDEN_COLUMNS.cons_rate).toBe(false)
+    expect(MOBILE_HIDDEN_COLUMNS.p10_pts).toBe(false)
+  })
+})
+
+describe('FLOOR-01: Floor column (p10_pts)', () => {
+  it('p10_pts=4.8 renders "4.8"', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'p10_pts') as any
+    expect(col).toBeTruthy()
+    const { container } = render(
+      <>{col.cell({ getValue: () => 4.8, row: { original: { ...PLAYER_A, p10_pts: 4.8 } } })}</>
+    )
+    expect(container.textContent).toBe('4.8')
+  })
+
+  it('p10_pts=null renders em-dash', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'p10_pts') as any
+    const { container } = render(
+      <>{col.cell({ getValue: () => null, row: { original: { ...PLAYER_A } } })}</>
+    )
+    expect(container.textContent).toContain('—')
+  })
+})

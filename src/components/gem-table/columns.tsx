@@ -433,6 +433,31 @@ export function createColumns(
     ),
     enableSorting: true,
   }),
+  // Phase FLOOR-01: Historical consistency rate.
+  // Colour bands: >=70% emerald (reliable), 40-69% zinc-100 (average), <40% zinc-500 (unreliable).
+  col.accessor('cons_rate', {
+    header: H('Cons%', 'Consistency rate: % of last 10 starts returning ≥ position threshold (GK/DEF ≥ 6 pts, MID/FWD ≥ 5 pts). Blank = fewer than 4 starts on record.'),
+    cell: (info) => {
+      const v = info.getValue()
+      if (v == null) return <span className="text-zinc-400">—</span>
+      const pct = Math.round(v * 100)
+      const cls = pct >= 70 ? 'text-emerald-400' : pct >= 40 ? 'text-zinc-100' : 'text-zinc-500'
+      return <span className={cls}>{pct}%</span>
+    },
+    enableSorting: true,
+  }),
+  // Phase FLOOR-01: Simulated points floor (10th-percentile MC outcome).
+  // p10_pts already exists in player dict from Phase 102 simulate.py — surfaced here as a
+  // dedicated sortable column. No colour coding — raw number is self-interpreting.
+  col.accessor('p10_pts', {
+    header: H('Floor', 'Simulated points floor: 10th-percentile outcome from 10,000 season simulations. Low floor = boom-or-bust; high floor = reliable scorer.'),
+    cell: (info) => {
+      const v = info.getValue()
+      if (v == null) return <span className="text-zinc-400">—</span>
+      return <span className="text-zinc-100">{v.toFixed(1)}</span>
+    },
+    enableSorting: true,
+  }),
   col.display({
     id: 'trend',
     header: H('Trend', 'Price trend: this GW change (↑/↓) and season-to-date change'),
