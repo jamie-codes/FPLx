@@ -353,7 +353,6 @@ def run(dry_run: bool = False):
                 form_signal_enabled = prev_backtest.get('summary', {}).get('form_signal_enabled', False)
                 blend_alpha_used = prev_backtest.get('summary', {}).get('blend_alpha_used', 0.4)
                 xmins_v2_enabled = prev_backtest.get('summary', {}).get('xmins_v2_enabled', False)
-                bonus_predictor_enabled = prev_backtest.get('summary', {}).get('bonus_predictor_enabled', False)
                 save_predictor_enabled = prev_backtest.get('summary', {}).get('save_predictor_enabled', False)
             except (FileNotFoundError, json.JSONDecodeError):
                 pass
