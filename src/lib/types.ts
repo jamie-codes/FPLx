@@ -223,6 +223,11 @@ export interface MergedPlayer {
   // Phase FLOOR-01: historical consistency rate (% of last 10 starts returning >= position threshold).
   // None/null when fewer than 4 starts in the last 10 GWs.
   cons_rate?: number | null
+  // Phase STREAK-01: current scoring streak and form acceleration delta.
+  // streak: consecutive recent starts returning >= position threshold; 0 = streak broken; null = no starts.
+  // form_delta: last-5-starts avg pts minus season avg pts; null when fewer than 6 starts.
+  streak?: number | null
+  form_delta?: number | null
   // Phase 80 GWI-01 (D-04): rotation risk flag — true when team has a European/cup
   // fixture within 3 days of an upcoming PL fixture. Computed in run.py post-merge step
   // by _apply_rotation_risk(). Optional during pipeline rollout; UI defaults to false.
