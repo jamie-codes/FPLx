@@ -342,7 +342,7 @@ def run(dry_run: bool = False):
             form_signal_enabled = False
             blend_alpha_used = 0.4
             xmins_v2_enabled = False  # Phase 52 D-02 — default OFF; flips ON after non-regression shadow run
-            bonus_predictor_enabled = True   # Phase 53 BPS-01 — hard-enabled (BPS-01 implementation)
+            bonus_predictor_enabled = True   # Phase 53 BPS-01 — permanently ON (BPS-01 hard-enable; override block removed; accuracy.py still writes flag for telemetry)
             save_predictor_enabled = False  # Phase 83 GK-03 — default OFF; flips ON after >=5-GW non-regression shadow run
             MC_ENABLED = True  # Phase 102 MC-01 — permanent ON; surfaces 10k-sim MC fields in merged_players.json
             mc_enabled = MC_ENABLED  # Phase 109 CR-02: set before try so corrupt cache never silently disables MC

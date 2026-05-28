@@ -218,8 +218,8 @@ export interface MergedPlayer {
   // Phase 53 BPS-01: per-player bonus EV and source flag.
   // bonus_ev: shrinkage-estimated expected bonus points per game start.
   // bonus_source: 'learned' when calibrated from history; 'flat_default' when prior only (< 4 starts).
-  bonus_ev?: number
-  bonus_source?: 'learned' | 'flat_default'
+  bonus_ev?: number | null
+  bonus_source?: 'learned' | 'flat_default' | null
   // Phase 80 GWI-01 (D-04): rotation risk flag — true when team has a European/cup
   // fixture within 3 days of an upcoming PL fixture. Computed in run.py post-merge step
   // by _apply_rotation_risk(). Optional during pipeline rollout; UI defaults to false.
