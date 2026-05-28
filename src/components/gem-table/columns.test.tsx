@@ -415,3 +415,93 @@ describe('FLOOR-01: Floor column (p10_pts)', () => {
     expect(container.textContent).toContain('—')
   })
 })
+
+describe('STREAK-01: Streak column', () => {
+  it('streak=5 renders "5" with text-emerald-400', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'streak') as any
+    expect(col).toBeTruthy()
+    const { container } = render(
+      <>{col.cell({ getValue: () => 5, row: { original: { ...PLAYER_A, streak: 5 } } })}</>
+    )
+    const span = container.querySelector('span')
+    expect(span?.textContent).toBe('5')
+    expect(span?.className).toContain('text-emerald-400')
+  })
+
+  it('streak=1 renders "1" with text-zinc-100', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'streak') as any
+    const { container } = render(
+      <>{col.cell({ getValue: () => 1, row: { original: { ...PLAYER_A, streak: 1 } } })}</>
+    )
+    const span = container.querySelector('span')
+    expect(span?.textContent).toBe('1')
+    expect(span?.className).toContain('text-zinc-100')
+  })
+
+  it('streak=0 renders "0" with text-zinc-500', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'streak') as any
+    const { container } = render(
+      <>{col.cell({ getValue: () => 0, row: { original: { ...PLAYER_A, streak: 0 } } })}</>
+    )
+    const span = container.querySelector('span')
+    expect(span?.textContent).toBe('0')
+    expect(span?.className).toContain('text-zinc-500')
+  })
+
+  it('streak=null renders em-dash', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'streak') as any
+    const { container } = render(
+      <>{col.cell({ getValue: () => null, row: { original: { ...PLAYER_A } } })}</>
+    )
+    expect(container.textContent).toContain('—')
+  })
+})
+
+describe('STREAK-01: ΔForm column', () => {
+  it('form_delta=2.5 renders "+2.5" with text-emerald-400', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'form_delta') as any
+    expect(col).toBeTruthy()
+    const { container } = render(
+      <>{col.cell({ getValue: () => 2.5, row: { original: { ...PLAYER_A, form_delta: 2.5 } } })}</>
+    )
+    const span = container.querySelector('span')
+    expect(span?.textContent).toBe('+2.5')
+    expect(span?.className).toContain('text-emerald-400')
+  })
+
+  it('form_delta=-1.8 renders "-1.8" with text-red-400', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'form_delta') as any
+    const { container } = render(
+      <>{col.cell({ getValue: () => -1.8, row: { original: { ...PLAYER_A, form_delta: -1.8 } } })}</>
+    )
+    const span = container.querySelector('span')
+    expect(span?.textContent).toBe('-1.8')
+    expect(span?.className).toContain('text-red-400')
+  })
+
+  it('form_delta=0.2 renders "+0.2" with text-zinc-100', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'form_delta') as any
+    const { container } = render(
+      <>{col.cell({ getValue: () => 0.2, row: { original: { ...PLAYER_A, form_delta: 0.2 } } })}</>
+    )
+    const span = container.querySelector('span')
+    expect(span?.textContent).toBe('+0.2')
+    expect(span?.className).toContain('text-zinc-100')
+  })
+
+  it('form_delta=null renders em-dash', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'form_delta') as any
+    const { container } = render(
+      <>{col.cell({ getValue: () => null, row: { original: { ...PLAYER_A } } })}</>
+    )
+    expect(container.textContent).toContain('—')
+  })
+})

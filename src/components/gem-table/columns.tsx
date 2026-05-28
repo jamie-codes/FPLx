@@ -458,6 +458,31 @@ export function createColumns(
     },
     enableSorting: true,
   }),
+  // Phase STREAK-01: Current scoring streak.
+  // Colour bands: >=3 emerald (hot run), 1-2 zinc-100 (active short), 0 zinc-500 (broken).
+  col.accessor('streak', {
+    header: H('Streak', 'Consecutive starts returning ≥ position threshold (GK/DEF ≥ 6 pts, MID/FWD ≥ 5 pts). 0 = streak broken last start. Blank = no starts on record.'),
+    cell: (info) => {
+      const v = info.getValue()
+      if (v == null) return <span className="text-zinc-400">—</span>
+      const cls = v >= 3 ? 'text-emerald-400' : v >= 1 ? 'text-zinc-100' : 'text-zinc-500'
+      return <span className={cls}>{v}</span>
+    },
+    enableSorting: true,
+  }),
+  // Phase STREAK-01: Form acceleration delta (last 5 starts avg vs season avg).
+  // Positive = above own baseline; negative = below. Blank = fewer than 6 starts.
+  col.accessor('form_delta', {
+    header: H('ΔForm', 'Last 5 starts avg pts minus season avg pts per start. Positive = currently above own baseline. Blank = fewer than 6 starts on record.'),
+    cell: (info) => {
+      const v = info.getValue()
+      if (v == null) return <span className="text-zinc-400">—</span>
+      const cls = v > 0.5 ? 'text-emerald-400' : v < -0.5 ? 'text-red-400' : 'text-zinc-100'
+      const sign = v > 0 ? '+' : ''
+      return <span className={cls}>{sign}{v.toFixed(1)}</span>
+    },
+    enableSorting: true,
+  }),
   col.display({
     id: 'trend',
     header: H('Trend', 'Price trend: this GW change (↑/↓) and season-to-date change'),
