@@ -339,4 +339,8 @@ describe('BPS-01: Bonus EV column', () => {
     )
     expect(container.textContent).toBe('0.85')
   })
+
+  it('column is hidden on mobile via MOBILE_HIDDEN_COLUMNS', () => {
+    expect(MOBILE_HIDDEN_COLUMNS.bonus_ev).toBe(false)
+  })
 })

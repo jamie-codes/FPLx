@@ -23,6 +23,7 @@ export const MOBILE_HIDDEN_COLUMNS: Record<string, boolean> = {
   cs_prob_1gw: false,   // Phase 47 D-09: hidden on mobile (consistent with secondary numeric columns)
   routes_to_points: false,   // Phase 76 RTP-02: hidden on mobile per phase spec (D-A4: isMobile-only, no portrait branch)
   rank_trajectory: false,   // Phase 114 SPARK-01: hidden on mobile (secondary analytical column)
+  bonus_ev: false,   // BPS-01: hidden on mobile (secondary analytical column)
 }
 
 export const PRESET_COLUMN_VISIBILITY: Record<ViewPreset, Record<string, boolean>> = {
@@ -47,6 +48,7 @@ export const PRESET_COLUMN_VISIBILITY: Record<ViewPreset, Record<string, boolean
     last_gw_actual_pts: false,   // ACC-05 D-10: hidden in Compact preset only
     cs_prob_1gw: false,   // Phase 47 D-09: hidden in Compact preset
     rank_trajectory: false,   // Phase 114 SPARK-01: hidden in Compact preset
+    bonus_ev: false,   // BPS-01: hidden in Compact preset
   },
   default: {
     fdr_score: false,
