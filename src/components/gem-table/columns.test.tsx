@@ -505,3 +505,75 @@ describe('STREAK-01: ΔForm column', () => {
     expect(container.textContent).toContain('—')
   })
 })
+
+describe('MIN-01: badge column uses sub_risk_label', () => {
+  it('mins_risk column renders "Sub risk" badge when sub_risk_label is sub_risk', () => {
+    const player = {
+      ...PLAYER_A,
+      sub_risk_label: 'sub_risk' as const,
+    }
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.id === 'mins_risk') as any
+    expect(col).toBeTruthy()
+    const { container } = render(
+      <>{col.cell({ row: { original: player } })}</>
+    )
+    expect(container.textContent).toContain('Sub risk')
+  })
+})
+
+describe('MIN-01: Start% column', () => {
+  it('start_prob=0.87 renders "87%"', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'start_prob') as any
+    expect(col).toBeTruthy()
+    const { container } = render(
+      <>{col.cell({ getValue: () => 0.87, row: { original: { ...PLAYER_A } } })}</>
+    )
+    expect(container.textContent).toBe('87%')
+  })
+
+  it('start_prob=0 renders "0%" (not em-dash)', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'start_prob') as any
+    const { container } = render(
+      <>{col.cell({ getValue: () => 0, row: { original: { ...PLAYER_A } } })}</>
+    )
+    expect(container.textContent).toBe('0%')
+  })
+
+  it('start_prob=null renders "—"', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'start_prob') as any
+    const { container } = render(
+      <>{col.cell({ getValue: () => null, row: { original: { ...PLAYER_A } } })}</>
+    )
+    expect(container.textContent).toContain('—')
+  })
+
+  it('start_prob and mins_60_prob hidden on mobile via MOBILE_HIDDEN_COLUMNS', () => {
+    expect(MOBILE_HIDDEN_COLUMNS.start_prob).toBe(false)
+    expect(MOBILE_HIDDEN_COLUMNS.mins_60_prob).toBe(false)
+  })
+})
+
+describe('MIN-01: 60+% column', () => {
+  it('mins_60_prob=0.72 renders "72%"', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'mins_60_prob') as any
+    expect(col).toBeTruthy()
+    const { container } = render(
+      <>{col.cell({ getValue: () => 0.72, row: { original: { ...PLAYER_A } } })}</>
+    )
+    expect(container.textContent).toBe('72%')
+  })
+
+  it('mins_60_prob=null renders "—"', () => {
+    const cols = createColumns(vi.fn())
+    const col = cols.find((c: any) => c.accessorKey === 'mins_60_prob') as any
+    const { container } = render(
+      <>{col.cell({ getValue: () => null, row: { original: { ...PLAYER_A } } })}</>
+    )
+    expect(container.textContent).toContain('—')
+  })
+})

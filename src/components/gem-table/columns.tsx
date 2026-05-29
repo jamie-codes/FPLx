@@ -279,6 +279,26 @@ export function createColumns(
     enableSorting: false,
     cell: ({ row }) => <MinsRiskBadge minsRisk={row.original.sub_risk_label} />,
   }),
+  // Phase MIN-01: Start probability — sortable numeric.
+  col.accessor('start_prob', {
+    header: H('Start%', 'Probability of starting the next match (0–100%). Based on last 10 GW start rate × availability.'),
+    cell: (info) => {
+      const v = info.getValue()
+      if (v == null) return <span className="text-zinc-400">—</span>
+      return <span className="text-zinc-100">{Math.round(v * 100)}%</span>
+    },
+    enableSorting: true,
+  }),
+  // Phase MIN-01: 60+ minute probability — sortable numeric.
+  col.accessor('mins_60_prob', {
+    header: H('60+%', 'Probability of playing 60+ minutes when starting. Low = sub risk even when named in XI.'),
+    cell: (info) => {
+      const v = info.getValue()
+      if (v == null) return <span className="text-zinc-400">—</span>
+      return <span className="text-zinc-100">{Math.round(v * 100)}%</span>
+    },
+    enableSorting: true,
+  }),
   col.accessor('xPts_1gw', {
     header: H('xPts', 'Expected FPL points next gameweek (Poisson goals/assists, Bernoulli CS/minutes; FDR++ adjusted). Blank GW or no fixture = 0.'),
     cell: (info) => (

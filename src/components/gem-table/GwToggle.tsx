@@ -28,6 +28,8 @@ export const MOBILE_HIDDEN_COLUMNS: Record<string, boolean> = {
   p10_pts: false,     // FLOOR-01: hidden on mobile (secondary analytical column)
   streak: false,      // STREAK-01: hidden on mobile (secondary analytical column)
   form_delta: false,  // STREAK-01: hidden on mobile (secondary analytical column)
+  start_prob: false,   // MIN-01: hidden on mobile (secondary analytical column)
+  mins_60_prob: false, // MIN-01: hidden on mobile (secondary analytical column)
 }
 
 export const PRESET_COLUMN_VISIBILITY: Record<ViewPreset, Record<string, boolean>> = {
@@ -57,6 +59,8 @@ export const PRESET_COLUMN_VISIBILITY: Record<ViewPreset, Record<string, boolean
     p10_pts: false,     // FLOOR-01: hidden in Compact preset
     streak: false,      // STREAK-01: hidden in Compact preset
     form_delta: false,  // STREAK-01: hidden in Compact preset
+    start_prob: false,   // MIN-01: hidden in Compact preset
+    mins_60_prob: false, // MIN-01: hidden in Compact preset
   },
   default: {
     fdr_score: false,
