@@ -1,4 +1,4 @@
-import type { MinsRisk } from '@/lib/types'
+import type { MinsRisk, SubRiskLabel } from '@/lib/types'
 
 interface Config {
   bg: string
@@ -7,18 +7,18 @@ interface Config {
   title: string
 }
 
-const BADGE_MAP: Record<Exclude<MinsRisk, 'injured'>, Config> = {
+const BADGE_MAP: Record<Exclude<MinsRisk | SubRiskLabel, 'injured'>, Config> = {
   nailed: {
     bg: 'bg-green-100 dark:bg-green-900',
     text: 'text-green-800 dark:text-green-200',
     label: 'Nailed',
-    title: 'Nailed: high start probability (\u226585%)',
+    title: 'Nailed: high start probability (≥85%)',
   },
   likely_start: {
     bg: 'bg-blue-100 dark:bg-blue-900',
     text: 'text-blue-800 dark:text-blue-200',
     label: 'Likely start',
-    title: 'Likely start: moderate start probability (65\u201384%)',
+    title: 'Likely start: moderate start probability (65–84%)',
   },
   rotation_risk: {
     bg: 'bg-amber-100 dark:bg-amber-900',
@@ -32,9 +32,15 @@ const BADGE_MAP: Record<Exclude<MinsRisk, 'injured'>, Config> = {
     label: 'Cameo',
     title: 'Cameo: low minutes expected',
   },
+  sub_risk: {
+    bg: 'bg-orange-100 dark:bg-orange-900',
+    text: 'text-orange-800 dark:text-orange-200',
+    label: 'Sub risk',
+    title: 'Sub risk: likely to start but exits before 60 min',
+  },
 }
 
-export function getMinsRiskConfig(minsRisk: MinsRisk | undefined): Config | null {
+export function getMinsRiskConfig(minsRisk: MinsRisk | SubRiskLabel | undefined): Config | null {
   if (!minsRisk || minsRisk === 'injured') return null
   return BADGE_MAP[minsRisk] ?? null
 }
@@ -43,7 +49,7 @@ export function MinsRiskBadge({
   minsRisk,
   mins60Prob,
 }: {
-  minsRisk: MinsRisk | undefined
+  minsRisk: MinsRisk | SubRiskLabel | undefined
   mins60Prob?: number
 }) {
   const config = getMinsRiskConfig(minsRisk)

@@ -66,3 +66,30 @@ describe('MinsRiskBadge — Phase 52 MIN-01 tooltip upgrade', () => {
     expect(container.firstChild).toBeNull()
   })
 })
+
+describe('MIN-01 — sub_risk badge', () => {
+  it('sub_risk renders label "Sub risk" with orange text class', () => {
+    const { container } = render(
+      <MinsRiskBadge minsRisk="sub_risk" />
+    )
+    const span = container.querySelector('span')
+    expect(span).not.toBeNull()
+    expect(span?.textContent).toBe('Sub risk')
+    expect(span?.className).toContain('text-orange-800')
+  })
+
+  it('sub_risk with mins60Prob=0.45 renders tooltip "Sub risk — 45% chance 60+ min"', () => {
+    const { container } = render(
+      <MinsRiskBadge minsRisk="sub_risk" mins60Prob={0.45} />
+    )
+    const span = container.querySelector('span')
+    expect(span?.getAttribute('title')).toBe('Sub risk — 45% chance 60+ min')
+  })
+
+  it('existing nailed badge still works after widening type (no regression)', () => {
+    const { container } = render(<MinsRiskBadge minsRisk="nailed" />)
+    const span = container.querySelector('span')
+    expect(span?.textContent).toBe('Nailed')
+    expect(span?.className).toContain('text-green-800')
+  })
+})

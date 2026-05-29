@@ -275,9 +275,9 @@ export function createColumns(
   }),
   col.display({
     id: 'mins_risk',
-    header: H('Risk', 'Minutes risk: Nailed (>85% start prob) · Likely (65–85%) · Rotation (40–65%) · Bench risk (<40%)'),
+    header: H('Risk', 'Minutes risk: Nailed · Sub risk (starts but exits early) · Rotation · Cameo. Based on start probability and 60-min rate.'),
     enableSorting: false,
-    cell: ({ row }) => <MinsRiskBadge minsRisk={row.original.mins_risk} />,
+    cell: ({ row }) => <MinsRiskBadge minsRisk={row.original.sub_risk_label} />,
   }),
   col.accessor('xPts_1gw', {
     header: H('xPts', 'Expected FPL points next gameweek (Poisson goals/assists, Bernoulli CS/minutes; FDR++ adjusted). Blank GW or no fixture = 0.'),
