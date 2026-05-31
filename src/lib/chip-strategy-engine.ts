@@ -297,6 +297,60 @@ export function computeTCCandidates(
   return candidates.sort((a, b) => b.tc_rating - a.tc_rating).slice(0, 5)
 }
 
+// ── BB-01: Readiness score ────────────────────────────────────────────────────
+
+export const GOOD_BENCH_XPTS_THRESHOLD = 12.0
+
+export interface BBReadiness {
+  score: number             // 0–100 weighted composite, rounded
+  bench_xpts: number        // sum of xPts_1gw for bench picks (position ≥ 12)
+  bench_xpts_score: number  // min(100, bench_xpts / GOOD_BENCH_XPTS_THRESHOLD × 100)
+  avg_start_prob: number    // mean start_prob of bench picks
+  start_prob_score: number  // avg_start_prob × 100
+  doublers: number          // bench picks whose team has ≥ 2 fixtures at startGw
+  doublers_score: number    // (doublers / 4) × 100
+}
+
+/**
+ * Computes BB readiness from bench picks (position ≥ 12).
+ * benchPicks may include all 15 picks — positions < 12 are silently ignored.
+ */
+export function computeBBReadiness(
+  benchPicks: SquadPick[],
+  players: ScoredPlayer[],
+  clubFormMap: Map<number, ClubFormFixture[]>,
+  startGw: number,
+): BBReadiness {
+  const empty: BBReadiness = { score: 0, bench_xpts: 0, bench_xpts_score: 0, avg_start_prob: 0, start_prob_score: 0, doublers: 0, doublers_score: 0 }
+  const bench = benchPicks.filter(p => p.position >= 12)
+  if (bench.length === 0 || players.length === 0) return empty
+
+  const playerMap = new Map<number, ScoredPlayer>(players.map(p => [p.id, p]))
+  let totalXpts = 0, totalStartProb = 0, doublerCount = 0, counted = 0
+
+  for (const pick of bench) {
+    const player = playerMap.get(pick.element)
+    if (!player) continue
+    counted++
+    totalXpts += player.xPts_1gw ?? 0
+    totalStartProb += player.start_prob
+    const gwFx = (clubFormMap.get(player.team) ?? []).filter(f => f.event_id === startGw)
+    if (gwFx.length >= 2) doublerCount++
+  }
+
+  if (counted === 0) return empty
+
+  const bench_xpts = totalXpts
+  const bench_xpts_score = Math.min(100, (bench_xpts / GOOD_BENCH_XPTS_THRESHOLD) * 100)
+  const avg_start_prob = totalStartProb / counted
+  const start_prob_score = avg_start_prob * 100
+  const doublers = doublerCount
+  const doublers_score = (doublers / 4) * 100
+  const score = Math.round(bench_xpts_score * 0.4 + start_prob_score * 0.3 + doublers_score * 0.3)
+
+  return { score, bench_xpts, bench_xpts_score, avg_start_prob, start_prob_score, doublers, doublers_score }
+}
+
 // ---------------------------------------------------------------------------
 // computeFHResult (CHIP-03) — D-06/D-07/D-08
 // ---------------------------------------------------------------------------

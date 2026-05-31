@@ -6,6 +6,8 @@ import {
   computeTCScore,
   computeFHResult,
   computeTCCandidates,
+  computeBBReadiness,
+  GOOD_BENCH_XPTS_THRESHOLD,
   BGW_NEUTRAL_EASE,
   TC_CANDIDATE_COUNT,
 } from './chip-strategy-engine'
@@ -432,6 +434,84 @@ describe('Phase 34: chip-strategy-engine', () => {
       const result = computeFHResult([], map, 1000, undefined, undefined, 35)
       expect(result.suggestedSquad).toEqual([])
       expect(result.bestGw).toBe(35)
+    })
+  })
+
+  describe('computeBBReadiness (BB-01)', () => {
+    it('score is weighted sum: bench_xpts_score×0.4 + start_prob_score×0.3 + doublers_score×0.3', () => {
+      const gw = 35
+      // bench_xpts = 12.0 → bench_xpts_score = 100 (at threshold)
+      // avg_start_prob = 1.0 → start_prob_score = 100
+      // doublers = 0 → doublers_score = 0
+      // score = 100×0.4 + 100×0.3 + 0×0.3 = 70
+      const map = buildClubFormMap([makeClubForm(1, [makeFx({ event_id: gw, attacking_difficulty: 0.3 })])])
+      const players = [12,13,14,15].map(pos =>
+        makePlayer({ id: pos, element_type: 3, team: 1, xPts_1gw: 3.0, start_prob: 1.0 })
+      )
+      const bench = [12,13,14,15].map(pos => makeBenchPick(pos, pos as 12|13|14|15))
+      const result = computeBBReadiness(bench, players, map, gw)
+      expect(result.score).toBe(70)
+      expect(result.bench_xpts).toBeCloseTo(12.0)
+      expect(result.avg_start_prob).toBeCloseTo(1.0)
+      expect(result.doublers).toBe(0)
+    })
+
+    it('bench_xpts_score is capped at 100 when bench exceeds GOOD_BENCH_XPTS_THRESHOLD', () => {
+      const gw = 35
+      const map = buildClubFormMap([makeClubForm(1, [makeFx({ event_id: gw, attacking_difficulty: 0.3 })])])
+      const players = [12,13,14,15].map(pos =>
+        makePlayer({ id: pos, element_type: 3, team: 1, xPts_1gw: 10.0, start_prob: 1.0 }) // 40 total >> 12
+      )
+      const bench = [12,13,14,15].map(pos => makeBenchPick(pos, pos as 12|13|14|15))
+      const result = computeBBReadiness(bench, players, map, gw)
+      expect(result.bench_xpts_score).toBe(100)
+    })
+
+    it('doublers_score > 0 when bench player has DGW fixture', () => {
+      const gw = 35
+      const dgwFx = [
+        makeFx({ event_id: gw, attacking_difficulty: 0.3 }),
+        makeFx({ event_id: gw, attacking_difficulty: 0.3, opponent_team: 'CHE' }),
+      ]
+      const singleFx = [makeFx({ event_id: gw, attacking_difficulty: 0.3 })]
+      const map = buildClubFormMap([
+        makeClubForm(1, dgwFx),   // team 1 has DGW
+        makeClubForm(2, singleFx),
+      ])
+      const players = [
+        makePlayer({ id: 12, element_type: 3, team: 1 }), // doubler
+        makePlayer({ id: 13, element_type: 3, team: 2 }),
+        makePlayer({ id: 14, element_type: 3, team: 2 }),
+        makePlayer({ id: 15, element_type: 3, team: 2 }),
+      ]
+      const bench = [12,13,14,15].map(pos => makeBenchPick(pos, pos as 12|13|14|15))
+      const result = computeBBReadiness(bench, players, map, gw)
+      expect(result.doublers).toBe(1)
+      expect(result.doublers_score).toBeCloseTo(25) // (1/4) × 100
+    })
+
+    it('returns zero readiness when bench is empty', () => {
+      const gw = 35
+      const map = buildClubFormMap([makeClubForm(1, [makeFx({ event_id: gw, attacking_difficulty: 0.3 })])])
+      const result = computeBBReadiness([], [], map, gw)
+      expect(result.score).toBe(0)
+      expect(result.bench_xpts).toBe(0)
+      expect(result.doublers).toBe(0)
+    })
+
+    it('ignores picks with position < 12 (starters)', () => {
+      const gw = 35
+      const map = buildClubFormMap([makeClubForm(1, [makeFx({ event_id: gw, attacking_difficulty: 0.3 })])])
+      const players = [1,12].map(id =>
+        makePlayer({ id, element_type: 3, team: 1, xPts_1gw: 5.0, start_prob: 1.0 })
+      )
+      const allPicks: SquadPick[] = [
+        makeBenchPick(12, 12),
+        { element: 1, position: 1, multiplier: 1, is_captain: true, is_vice_captain: false }, // starter — should be ignored
+      ]
+      // Only position >= 12 should count
+      const result = computeBBReadiness(allPicks, players, map, gw)
+      expect(result.bench_xpts).toBeCloseTo(5.0) // only element 12 (pos 12) counts
     })
   })
 
