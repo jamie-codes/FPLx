@@ -100,4 +100,22 @@ describe('useLiveGw', () => {
     expect(result.current.picksData).toBeNull()
     expect(result.current.isLoading).toBe(true)
   })
+
+  it('isError true when picks response fails validation', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('/live/')) {
+        return new Response(
+          JSON.stringify(makeLivePayload([{ id: 1, stats: { total_points: 6, goals_scored: 1, assists: 0, bonus: 0, clean_sheets: 0, saves: 0, minutes: 90, yellow_cards: 0, red_cards: 0 } }])),
+          { status: 200 }
+        )
+      }
+      // Invalid picks: missing required fields
+      return new Response(JSON.stringify({ invalid: true }), { status: 200 })
+    }))
+    const { result } = renderHook(
+      () => useLiveGw(12345, 38, false),
+      { wrapper: makeWrapper() },
+    )
+    await waitFor(() => expect(result.current.isError).toBe(true))
+  })
 })

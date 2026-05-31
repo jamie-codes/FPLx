@@ -1,23 +1,30 @@
 import { useQueries } from '@tanstack/react-query'
+import { z } from 'zod'
 import { LivePicksResponseSchema } from '@/lib/live-gw'
 import type { LivePlayerStats, LivePicksResponse } from '@/lib/live-gw'
 
 // ── Fetch helpers ─────────────────────────────────────────────────────────────
 
-interface FPLLiveElement {
-  id: number
-  stats: {
-    total_points:  number
-    goals_scored:  number
-    assists:       number
-    bonus:         number
-    clean_sheets:  number
-    saves:         number
-    minutes:       number
-    yellow_cards:  number
-    red_cards:     number
-  }
-}
+const FPLLiveStatsSchema = z.object({
+  goals_scored:  z.number(),
+  assists:       z.number(),
+  bonus:         z.number(),
+  clean_sheets:  z.number(),
+  saves:         z.number(),
+  minutes:       z.number(),
+  total_points:  z.number(),
+  yellow_cards:  z.number(),
+  red_cards:     z.number(),
+})
+
+const FPLLiveElementSchema = z.object({
+  id:    z.number(),
+  stats: FPLLiveStatsSchema,
+})
+
+const FPLLiveResponseSchema = z.object({
+  elements: z.array(FPLLiveElementSchema),
+})
 
 async function fetchLiveStats(gw: number): Promise<Map<number, LivePlayerStats>> {
   const res = await fetch(`/api/fpl/event/${gw}/live/`)
@@ -26,9 +33,13 @@ async function fetchLiveStats(gw: number): Promise<Map<number, LivePlayerStats>>
     err.status = res.status
     throw err
   }
-  const raw = (await res.json()) as { elements: FPLLiveElement[] }
+  const raw = await res.json()
+  const parsed = FPLLiveResponseSchema.safeParse(raw)
+  if (!parsed.success) {
+    throw new Error('live stats parse failed: invalid shape')
+  }
   const map = new Map<number, LivePlayerStats>()
-  for (const el of raw.elements) {
+  for (const el of parsed.data.elements) {
     map.set(el.id, {
       goals_scored:  el.stats.goals_scored,
       assists:       el.stats.assists,
