@@ -294,7 +294,7 @@ export default function Home() {
           <GwReviewTab teamId={submittedId ?? ''} settledGws={settledGws} />
         )}
         {activeSection === 'squad' && activeSubTab === 'live' && (
-          <LiveGwTab teamId={submittedId ? parseInt(submittedId, 10) : null} />
+          <LiveGwTab teamId={submittedId != null && /^\d+$/.test(submittedId) ? parseInt(submittedId, 10) : null} />
         )}
         {activeSection !== 'squad' && activeSubTab === 'gems' && (
           <GemTable preset={gemPreset} onPresetChange={setGemPreset} onCompare={handleCompare} watchlistIds={watchlistIds} toggleWatchlist={toggleWatchlist} />
