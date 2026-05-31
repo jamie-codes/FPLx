@@ -6,10 +6,14 @@ import {
   computeBBScore,
   computeTCScore,
   computeFHResult,
+  computeTCCandidates,
+  computeBBReadiness,
   type GWEaseScore,
   type FHResult,
   type FHSquadPlayer,
 } from '@/lib/chip-strategy-engine'
+import { TCDetailPanel } from './TCDetailPanel'
+import { BBDetailPanel } from './BBDetailPanel'
 import { useChipHistory, type ChipHistoryEntry } from '@/lib/hooks/useChipHistory'
 import { CHIP_LABELS } from './plan-helpers'
 import type { ScoredPlayer, ClubForm } from '@/lib/types'
@@ -73,35 +77,70 @@ interface ChipRowProps {
   chip: ChipCode
   scores: GWEaseScore[]
   usedAtGw?: number
+  // Optional expand slot — when provided (and chip not yet used), row becomes interactive
+  detailPanel?: React.ReactNode
+  isExpanded?: boolean
+  onToggle?: () => void
 }
 
-function ChipRow({ chip, scores, usedAtGw }: ChipRowProps) {
+function ChipRow({ chip, scores, usedAtGw, detailPanel, isExpanded, onToggle }: ChipRowProps) {
   const isUsed = usedAtGw !== undefined
-  const bestGw = scores.find(s => s.isBest)?.gw
+  const isExpandable = !isUsed && detailPanel !== undefined
+
   const badgeClasses = isUsed
     ? 'inline-block text-xs font-normal rounded px-2 py-1 bg-zinc-200 dark:bg-zinc-700 text-zinc-400 dark:text-zinc-500 w-24'
     : 'inline-block text-xs font-normal rounded px-2 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 w-24'
+  const bestGw = scores.find(s => s.isBest)?.gw
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (!isExpandable) return
+    if (e.key === 'Enter' || e.key === ' ') {
+      if (e.key === ' ') e.preventDefault()
+      onToggle?.()
+    }
+  }
+
   return (
-    <li
-      className={`flex items-center gap-2 text-sm min-h-[44px]${isUsed ? ' opacity-40' : ''}`}
-      data-testid={`chip-row-${chip}`}
-      {...(isUsed ? { 'aria-disabled': true } : {})}
-    >
-      <span className={badgeClasses}>{CHIP_LABELS[chip]}</span>
-      {isUsed ? (
-        <span className="text-xs text-zinc-400 dark:text-zinc-500">Used GW{usedAtGw}</span>
-      ) : bestGw !== undefined ? (
-        <span className="text-sm text-zinc-700 dark:text-zinc-300">Best: GW{bestGw}</span>
-      ) : (
-        <span className="text-xs text-zinc-400 dark:text-zinc-500">—</span>
+    <React.Fragment>
+      <li
+        className={`flex items-center gap-2 text-sm min-h-[44px]${isUsed ? ' opacity-40' : ''}${isExpandable ? ' cursor-pointer' : ''}`}
+        data-testid={`chip-row-${chip}`}
+        onClick={isExpandable ? onToggle : undefined}
+        onKeyDown={isExpandable ? handleKeyDown : undefined}
+        role={isExpandable ? 'button' : undefined}
+        tabIndex={isExpandable ? 0 : undefined}
+        aria-expanded={isExpandable ? isExpanded : undefined}
+        {...(isUsed ? { 'aria-disabled': true } : {})}
+      >
+        <span className={badgeClasses}>{CHIP_LABELS[chip]}</span>
+        {isUsed ? (
+          <span className="text-xs text-zinc-400 dark:text-zinc-500">Used GW{usedAtGw}</span>
+        ) : bestGw !== undefined ? (
+          <span className="text-sm text-zinc-700 dark:text-zinc-300">Best: GW{bestGw}</span>
+        ) : (
+          <span className="text-xs text-zinc-400 dark:text-zinc-500">—</span>
+        )}
+        <EaseCellBar
+          chip={chip}
+          scores={scores}
+          ariaLabelPrefix={`${CHIP_LABELS[chip]} ease across next 5 GWs`}
+          forceMuted={isUsed}
+        />
+        {isExpandable && (
+          <span
+            className={`ml-auto text-zinc-400 dark:text-zinc-500 transition-transform duration-150 ${isExpanded ? 'rotate-180' : ''}`}
+            aria-hidden="true"
+          >
+            ▾
+          </span>
+        )}
+      </li>
+      {isExpandable && isExpanded && (
+        <li className="px-1 pb-2" aria-label={`${CHIP_LABELS[chip]} detail`}>
+          {detailPanel}
+        </li>
       )}
-      <EaseCellBar
-        chip={chip}
-        scores={scores}
-        ariaLabelPrefix={`${CHIP_LABELS[chip]} ease across next 5 GWs`}
-        forceMuted={isUsed}
-      />
-    </li>
+    </React.Fragment>
   )
 }
 
@@ -234,6 +273,18 @@ export function ChipStrategyPanel({
     [picks],
   )
 
+  const [expandedChip, setExpandedChip] = useState<'bboost' | '3xc' | null>(null)
+
+  const tcCandidates = useMemo(
+    () => computeTCCandidates(scoredPlayers, clubFormMap, startingGw ?? 0),
+    [scoredPlayers, clubFormMap, startingGw],
+  )
+
+  const bbReadiness = useMemo(
+    () => computeBBReadiness(benchPicks, scoredPlayers, clubFormMap, startingGw ?? 0),
+    [benchPicks, scoredPlayers, clubFormMap, startingGw],
+  )
+
   const bbScores = useMemo(
     () => computeBBScore(benchPicks, scoredPlayers, clubFormMap, startingGw ?? 0),
     [benchPicks, scoredPlayers, clubFormMap, startingGw],
@@ -299,8 +350,22 @@ export function ChipStrategyPanel({
           </p>
         </div>
         <ul className="space-y-1">
-          <ChipRow chip="bboost" scores={bbScores} usedAtGw={usedChips.get('bboost')} />
-          <ChipRow chip="3xc" scores={tcScores} usedAtGw={usedChips.get('3xc')} />
+          <ChipRow
+            chip="bboost"
+            scores={bbScores}
+            usedAtGw={usedChips.get('bboost')}
+            detailPanel={<BBDetailPanel readiness={bbReadiness} />}
+            isExpanded={expandedChip === 'bboost'}
+            onToggle={() => setExpandedChip(prev => prev === 'bboost' ? null : 'bboost')}
+          />
+          <ChipRow
+            chip="3xc"
+            scores={tcScores}
+            usedAtGw={usedChips.get('3xc')}
+            detailPanel={<TCDetailPanel candidates={tcCandidates} />}
+            isExpanded={expandedChip === '3xc'}
+            onToggle={() => setExpandedChip(prev => prev === '3xc' ? null : '3xc')}
+          />
           {/* bestGw > 0: FPL GW numbers are always >= 1; 0 only if engine received no fixture data */}
           <FHChipRow
             scores={fhResult.scores}
