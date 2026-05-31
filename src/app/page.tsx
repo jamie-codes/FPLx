@@ -38,6 +38,7 @@ import { OptimiserPanel } from '@/components/optimiser/OptimiserPanel'
 import { LineupTab } from '@/components/squad/LineupTab'
 import { GwReviewTab } from '@/components/squad/GwReviewTab'
 import { DecisionSummaryTab } from '@/components/squad/DecisionSummaryTab'
+import { LiveGwTab } from '@/components/squad/LiveGwTab'
 import { useSettledGws } from '@/lib/hooks/useSettledGws'
 import { DeadlineBanner } from '@/components/DeadlineBanner'
 
@@ -62,7 +63,7 @@ class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: 
 }
 
 export type Section = 'analyse' | 'plan' | 'squad'
-export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'season' | 'window' | 'decision' | 'transfers' | 'optimiser' | 'price-reset' | 'price-changes' | 'rivals' | 'lineup' | 'review' | 'rank-sim' | 'next-season' | 'watchlist' | 'perfect-gw'
+export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'season' | 'window' | 'decision' | 'transfers' | 'optimiser' | 'price-reset' | 'price-changes' | 'rivals' | 'lineup' | 'review' | 'rank-sim' | 'next-season' | 'watchlist' | 'perfect-gw' | 'live'
 
 export const SECTIONS = [
   {
@@ -107,6 +108,7 @@ export const SECTIONS = [
       { id: 'optimiser' as SubTab, label: 'Optimiser', mobileLabel: 'Optimiser' },
       { id: 'lineup' as SubTab,    label: 'Lineup',    mobileLabel: 'Lineup'    },
       { id: 'review' as SubTab,    label: 'Review',    mobileLabel: 'Review'    },
+      { id: 'live' as SubTab,      label: 'Live',      mobileLabel: 'Live'      },
     ],
     defaultSubTab: 'decision' as SubTab,
   },
@@ -290,6 +292,9 @@ export default function Home() {
         )}
         {activeSection === 'squad' && activeSubTab === 'review' && (
           <GwReviewTab teamId={submittedId ?? ''} settledGws={settledGws} />
+        )}
+        {activeSection === 'squad' && activeSubTab === 'live' && (
+          <LiveGwTab teamId={submittedId ? parseInt(submittedId, 10) : null} />
         )}
         {activeSection !== 'squad' && activeSubTab === 'gems' && (
           <GemTable preset={gemPreset} onPresetChange={setGemPreset} onCompare={handleCompare} watchlistIds={watchlistIds} toggleWatchlist={toggleWatchlist} />

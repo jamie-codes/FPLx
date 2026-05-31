@@ -68,6 +68,9 @@ vi.mock('@/components/squad/GwReviewTab', () => ({
     <div data-testid="gw-review-tab-mock" data-settled={JSON.stringify(props.settledGws)} />
   ),
 }))
+vi.mock('@/components/squad/LiveGwTab', () => ({
+  LiveGwTab: (_props: { teamId: number | null }) => <div data-testid="live-gw-tab" />,
+}))
 vi.mock('@/components/news/SummerWindowTab', () => ({
   SummerWindowTab: () => <div data-testid="summer-window-tab" />,
 }))
@@ -186,7 +189,7 @@ describe('Phase 36: page.tsx state', () => {
     // Sub-tab nav contains Decision, Transfers, Optimiser buttons in that order
     const subTabs = container.querySelector('nav[aria-label="Squad sub-tabs"]')
     const subTabBtns = Array.from(subTabs!.querySelectorAll('button')).map(b => b.textContent)
-    expect(subTabBtns).toEqual(['Decision', 'Transfers', 'Optimiser', 'Lineup', 'Review'])
+    expect(subTabBtns).toEqual(['Decision', 'Transfers', 'Optimiser', 'Lineup', 'Review', 'Live'])
   })
 
   it('Squad Optimiser sub-tab shows OptimiserPanel and hides TransferPanel (NAV-01, D-09)', () => {
@@ -340,6 +343,16 @@ describe('Phase 36: page.tsx state', () => {
     // Other Plan tabs are NOT rendered
     expect(container.querySelector('[data-testid="route-tree-tab"]')).toBeNull()
     expect(container.querySelector('[data-testid="planner"]')).toBeNull()
+  })
+
+  it('Squad > Live sub-tab renders LiveGwTab (LIVE-01)', () => {
+    const { container } = render(<Home />)
+    const squadBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Squad')
+    fireEvent.click(squadBtn!)
+    const liveBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent === 'Live')
+    expect(liveBtn).toBeDefined()
+    fireEvent.click(liveBtn!)
+    expect(container.querySelector('[data-testid="live-gw-tab"]')).not.toBeNull()
   })
 })
 

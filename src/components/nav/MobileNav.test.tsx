@@ -81,27 +81,29 @@ describe('Phase 36: MobileNav component', () => {
     expect(formBtn).toBeUndefined()
   })
 
-  it('Squad active: pill row shows 5 pills Decision, Transfers, Optimiser, Lineup, Review; total 8 buttons in DOM (NAV-04 / NAV-01, updated Phase73)', () => {
+  it('Squad active: pill row shows 6 pills Decision, Transfers, Optimiser, Lineup, Review, Live; total 10 buttons in DOM (NAV-04 / NAV-01, LIVE-01)', () => {
     const { container } = render(
       <MobileNav {...makeProps({ activeSection: 'squad' as Section, activeSubTab: 'transfers' as SubTab })} />,
       { wrapper: makeWrapper() }
     )
     const allButtons = Array.from(container.querySelectorAll('button'))
-    // 1 ThemeToggle + 3 section buttons + 5 Squad pills (Decision/Transfers/Optimiser/Lineup/Review) = 9 total
-    expect(allButtons).toHaveLength(9)
-    const pillButtons = allButtons.filter(b => ['Decision', 'Transfers', 'Optimiser', 'Lineup', 'Review'].includes(b.textContent ?? ''))
-    expect(pillButtons).toHaveLength(5)
+    // 1 ThemeToggle + 3 section buttons + 6 Squad pills (Decision/Transfers/Optimiser/Lineup/Review/Live) = 10 total
+    expect(allButtons).toHaveLength(10)
+    const pillButtons = allButtons.filter(b => ['Decision', 'Transfers', 'Optimiser', 'Lineup', 'Review', 'Live'].includes(b.textContent ?? ''))
+    expect(pillButtons).toHaveLength(6)
     expect(pillButtons[0].textContent).toBe('Decision')
     expect(pillButtons[1].textContent).toBe('Transfers')
     expect(pillButtons[2].textContent).toBe('Optimiser')
     expect(pillButtons[3].textContent).toBe('Lineup')
     expect(pillButtons[4].textContent).toBe('Review')
+    expect(pillButtons[5].textContent).toBe('Live')
     // Active sub-tab pill (Transfers) has aria-current; others do not
     expect(pillButtons[0].getAttribute('aria-current')).not.toBe('page')
     expect(pillButtons[1].getAttribute('aria-current')).toBe('page')
     expect(pillButtons[2].getAttribute('aria-current')).not.toBe('page')
     expect(pillButtons[3].getAttribute('aria-current')).not.toBe('page')
     expect(pillButtons[4].getAttribute('aria-current')).not.toBe('page')
+    expect(pillButtons[5].getAttribute('aria-current')).not.toBe('page')
   })
 
   it('Phase 62: Plan active includes Rank Sim pill; Phase 97 D-02: Form pill absent from Plan (MC-03, HEAT-01)', () => {
