@@ -18,6 +18,7 @@
 // The RED test file (src/lib/hooks/useDecisionHistory.test.ts) calls
 // `window.localStorage.clear()` which throws on Node 25 without this patch.
 
+import '@testing-library/jest-dom'
 import { beforeEach } from 'vitest'
 
 beforeEach(() => {
