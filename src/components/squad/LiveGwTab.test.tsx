@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createElement } from 'react'
 import type { ReactNode } from 'react'
@@ -161,7 +161,9 @@ describe('LiveGwTab', () => {
       isLoading: false, isError: false, refetch: vi.fn(),
     })
     render(<LiveGwTab teamId={12345} />, { wrapper: makeWrapper() })
-    expect(screen.getByText(/auto.sub/i)).toBeInTheDocument()
+    expect(screen.getByText(/Auto-subs/i)).toBeInTheDocument()
+    // Verify the actual sub line content renders
+    expect(screen.getByText(/Player5.*Player12/s)).toBeInTheDocument()
   })
 
   it('T7: provisional bonus disclaimer always rendered', () => {
@@ -185,5 +187,28 @@ describe('LiveGwTab', () => {
     expect(screen.queryByText('Player1')).not.toBeInTheDocument()
     const skeletons = document.querySelectorAll('[data-testid="skeleton-row"]')
     expect(skeletons.length).toBeGreaterThan(0)
+  })
+
+  it('T9: error state — shows error message and Retry button', () => {
+    vi.mocked(useBootstrap).mockReturnValue(makeBootstrap() as any)
+    vi.mocked(useLiveGw).mockReturnValue({
+      liveStats: null, picksData: null,
+      isLoading: false, isError: true, refetch: vi.fn(),
+    })
+    render(<LiveGwTab teamId={12345} />, { wrapper: makeWrapper() })
+    expect(screen.getByText(/couldn't load live data/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument()
+  })
+
+  it('T10: clicking Retry calls refetch', async () => {
+    const refetch = vi.fn()
+    vi.mocked(useBootstrap).mockReturnValue(makeBootstrap() as any)
+    vi.mocked(useLiveGw).mockReturnValue({
+      liveStats: null, picksData: null,
+      isLoading: false, isError: true, refetch,
+    })
+    render(<LiveGwTab teamId={12345} />, { wrapper: makeWrapper() })
+    fireEvent.click(screen.getByRole('button', { name: /retry/i }))
+    expect(refetch).toHaveBeenCalledTimes(1)
   })
 })

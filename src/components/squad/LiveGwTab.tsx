@@ -145,7 +145,7 @@ export function LiveGwTab({ teamId }: LiveGwTabProps) {
       <div className="py-8 text-center space-y-3">
         <p className="text-zinc-500 dark:text-zinc-400">Couldn&apos;t load live data — will retry</p>
         <button
-          onClick={refetch}
+          onClick={() => refetch()}
           className="px-4 py-2 text-sm font-medium rounded-lg bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
         >
           Retry
@@ -233,8 +233,8 @@ export function LiveGwTab({ teamId }: LiveGwTabProps) {
             Auto-subs
           </h3>
           <ul className="divide-y divide-border rounded-xl border border-border bg-surface px-4">
-            {liveScore.auto_subs.map((sub, i) => (
-              <li key={i} className="py-2 text-sm text-zinc-600 dark:text-zinc-400">
+            {liveScore.auto_subs.map((sub) => (
+              <li key={`${sub.player_out}-${sub.player_in}`} className="py-2 text-sm text-zinc-600 dark:text-zinc-400">
                 {sub.player_out} ({sub.minutes_played_by_out} min) → {sub.player_in}
               </li>
             ))}
