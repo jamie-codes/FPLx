@@ -244,6 +244,59 @@ export function computeTCScore(
   return scores
 }
 
+// ── TC-01: Candidate table ────────────────────────────────────────────────────
+
+export const DGW_TC_MULTIPLIER = 1.3
+
+export interface TCCandidate {
+  player: ScoredPlayer
+  fixture_label: string       // e.g. "ARS (H)" or "ARS (H) + CHE (A)"
+  is_dgw: boolean
+  tc_xpts: number             // xPts_1gw × (is_dgw ? 2 : 1)
+  ceiling: number             // (xPts_90th_1gw ?? xPts_1gw ?? 0) × (is_dgw ? 2 : 1)
+  start_risk: 'low' | 'medium' | 'high'
+  tc_rating: number           // tc_xpts × start_prob × (is_dgw ? DGW_TC_MULTIPLIER : 1)
+}
+
+function buildFixtureLabel(fixtures: ClubFormFixture[], gw: number): string {
+  const gwFx = fixtures.filter(f => f.event_id === gw)
+  if (gwFx.length === 0) return 'No fixture'
+  return gwFx.map(f => `${f.opponent_team} (${f.is_home ? 'H' : 'A'})`).join(' + ')
+}
+
+/**
+ * Returns the top-5 TC candidates for startGw, sorted by tc_rating descending.
+ * DGW players naturally float to the top due to DGW_TC_MULTIPLIER.
+ * GKs and injured players are excluded. Unavailable (status !== 'a') players excluded.
+ */
+export function computeTCCandidates(
+  players: ScoredPlayer[],
+  clubFormMap: Map<number, ClubFormFixture[]>,
+  startGw: number,
+): TCCandidate[] {
+  const eligible = players.filter(
+    p => p.status === 'a' && p.element_type !== 1 && p.mins_risk !== 'injured',
+  )
+
+  const candidates: TCCandidate[] = eligible.map(player => {
+    const fixtures = clubFormMap.get(player.team) ?? []
+    const gwFx = fixtures.filter(f => f.event_id === startGw)
+    const is_dgw = gwFx.length >= 2
+    const fixture_label = buildFixtureLabel(fixtures, startGw)
+    const mult = is_dgw ? 2 : 1
+    const tc_xpts = (player.xPts_1gw ?? 0) * mult
+    const ceiling = (player.xPts_90th_1gw ?? player.xPts_1gw ?? 0) * mult
+    const start_risk: TCCandidate['start_risk'] =
+      player.start_prob >= 0.85 ? 'low'
+      : player.start_prob >= 0.65 ? 'medium'
+      : 'high'
+    const tc_rating = tc_xpts * player.start_prob * (is_dgw ? DGW_TC_MULTIPLIER : 1)
+    return { player, fixture_label, is_dgw, tc_xpts, ceiling, start_risk, tc_rating }
+  })
+
+  return candidates.sort((a, b) => b.tc_rating - a.tc_rating).slice(0, 5)
+}
+
 // ---------------------------------------------------------------------------
 // computeFHResult (CHIP-03) — D-06/D-07/D-08
 // ---------------------------------------------------------------------------

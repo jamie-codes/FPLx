@@ -5,10 +5,11 @@ import {
   computeBBScore,
   computeTCScore,
   computeFHResult,
+  computeTCCandidates,
   BGW_NEUTRAL_EASE,
   TC_CANDIDATE_COUNT,
 } from './chip-strategy-engine'
-import type { ScoredPlayer, ClubForm, ClubFormFixture } from './types'
+import type { ScoredPlayer, ClubForm, ClubFormFixture, MinsRisk } from './types'
 import type { SquadPick } from './squad-adapter'
 
 function makeFx(overrides: Partial<ClubFormFixture> & { event_id: number; attacking_difficulty: number }): ClubFormFixture {
@@ -431,6 +432,103 @@ describe('Phase 34: chip-strategy-engine', () => {
       const result = computeFHResult([], map, 1000, undefined, undefined, 35)
       expect(result.suggestedSquad).toEqual([])
       expect(result.bestGw).toBe(35)
+    })
+  })
+
+  describe('computeTCCandidates (TC-01)', () => {
+    it('returns top 5 candidates sorted by tc_rating descending', () => {
+      const gw = 35
+      const fixtures = [makeFx({ event_id: gw, attacking_difficulty: 0.3 })]
+      const map = buildClubFormMap([makeClubForm(1, fixtures)])
+      const players = [1,2,3,4,5,6].map(i =>
+        makePlayer({ id: i, element_type: 3, team: 1, xPts_1gw: i * 1.0, start_prob: 1.0 })
+      )
+      const result = computeTCCandidates(players, map, gw)
+      expect(result.length).toBe(5)
+      expect(result[0].player.id).toBe(6) // highest xPts
+      expect(result[4].player.id).toBe(2) // 5th highest (player 1 dropped)
+    })
+
+    it('DGW player floats above non-DGW player with same base xPts', () => {
+      const gw = 35
+      const dgwFx = [
+        makeFx({ event_id: gw, attacking_difficulty: 0.3 }),
+        makeFx({ event_id: gw, attacking_difficulty: 0.3, opponent_team: 'CHE' }),
+      ]
+      const singleFx = [makeFx({ event_id: gw, attacking_difficulty: 0.3 })]
+      const map = buildClubFormMap([
+        makeClubForm(1, dgwFx),
+        makeClubForm(2, singleFx),
+      ])
+      const dgwPlayer = makePlayer({ id: 10, element_type: 3, team: 1, xPts_1gw: 5.0, start_prob: 1.0 })
+      const singlePlayer = makePlayer({ id: 20, element_type: 3, team: 2, xPts_1gw: 5.0, start_prob: 1.0 })
+      const result = computeTCCandidates([dgwPlayer, singlePlayer], map, gw)
+      expect(result[0].player.id).toBe(10)
+      expect(result[0].is_dgw).toBe(true)
+      expect(result[0].tc_xpts).toBe(10.0) // 5.0 × 2
+      expect(result[1].is_dgw).toBe(false)
+    })
+
+    it('excludes GKs (element_type === 1)', () => {
+      const gw = 35
+      const map = buildClubFormMap([makeClubForm(1, [makeFx({ event_id: gw, attacking_difficulty: 0.3 })])])
+      const gk = makePlayer({ id: 1, element_type: 1, team: 1 })
+      const mid = makePlayer({ id: 2, element_type: 3, team: 1 })
+      const result = computeTCCandidates([gk, mid], map, gw)
+      expect(result.every(c => c.player.element_type !== 1)).toBe(true)
+      expect(result.some(c => c.player.id === 2)).toBe(true)
+    })
+
+    it('excludes injured players (mins_risk === "injured")', () => {
+      const gw = 35
+      const map = buildClubFormMap([makeClubForm(1, [makeFx({ event_id: gw, attacking_difficulty: 0.3 })])])
+      const injured = makePlayer({ id: 1, element_type: 3, team: 1, mins_risk: 'injured' as MinsRisk })
+      const fit = makePlayer({ id: 2, element_type: 3, team: 1 })
+      const result = computeTCCandidates([injured, fit], map, gw)
+      expect(result.every(c => c.player.id !== 1)).toBe(true)
+    })
+
+    it('start_risk: low when start_prob >= 0.85', () => {
+      const gw = 35
+      const map = buildClubFormMap([makeClubForm(1, [makeFx({ event_id: gw, attacking_difficulty: 0.3 })])])
+      const p = makePlayer({ id: 1, element_type: 3, team: 1, start_prob: 0.9 })
+      const result = computeTCCandidates([p], map, gw)
+      expect(result[0].start_risk).toBe('low')
+    })
+
+    it('start_risk: medium when start_prob in [0.65, 0.85)', () => {
+      const gw = 35
+      const map = buildClubFormMap([makeClubForm(1, [makeFx({ event_id: gw, attacking_difficulty: 0.3 })])])
+      const p = makePlayer({ id: 1, element_type: 3, team: 1, start_prob: 0.7 })
+      const result = computeTCCandidates([p], map, gw)
+      expect(result[0].start_risk).toBe('medium')
+    })
+
+    it('start_risk: high when start_prob < 0.65', () => {
+      const gw = 35
+      const map = buildClubFormMap([makeClubForm(1, [makeFx({ event_id: gw, attacking_difficulty: 0.3 })])])
+      const p = makePlayer({ id: 1, element_type: 3, team: 1, start_prob: 0.5 })
+      const result = computeTCCandidates([p], map, gw)
+      expect(result[0].start_risk).toBe('high')
+    })
+
+    it('fixture_label format: "ARS (H)" for single fixture', () => {
+      const gw = 35
+      const fx = makeFx({ event_id: gw, attacking_difficulty: 0.3, opponent_team: 'ARS', is_home: true })
+      const map = buildClubFormMap([makeClubForm(1, [fx])])
+      const p = makePlayer({ id: 1, element_type: 3, team: 1 })
+      const result = computeTCCandidates([p], map, gw)
+      expect(result[0].fixture_label).toBe('ARS (H)')
+    })
+
+    it('fixture_label format: "ARS (H) + CHE (A)" for DGW', () => {
+      const gw = 35
+      const fx1 = makeFx({ event_id: gw, attacking_difficulty: 0.3, opponent_team: 'ARS', is_home: true })
+      const fx2 = makeFx({ event_id: gw, attacking_difficulty: 0.4, opponent_team: 'CHE', is_home: false })
+      const map = buildClubFormMap([makeClubForm(1, [fx1, fx2])])
+      const p = makePlayer({ id: 1, element_type: 3, team: 1 })
+      const result = computeTCCandidates([p], map, gw)
+      expect(result[0].fixture_label).toBe('ARS (H) + CHE (A)')
     })
   })
 })
