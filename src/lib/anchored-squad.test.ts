@@ -142,18 +142,15 @@ describe('buildAnchoredSquad', () => {
 
   it('anchor filling 3rd GK → position_cap conflict', () => {
     const pool = makePool()
-    // There are max 2 GK slots. Anchor 2 GKs from different teams, then try a 3rd.
-    const gks = pool.filter(p => p.element_type === 1)
-    const [gk1, gk2] = gks  // gk1/team1, gk2/team1
-    // gk1 and gk2 are from team1 — only use gk1 (team1) and gk_team3 (team3) to avoid team_cap
-    const gk_team3 = pool.find(p => p.element_type === 1 && p.team === 3)!
-    const result = buildAnchoredSquad([gk1.id, gk_team3.id, gk2.id], pool, BUDGET, 1)
+    // Each from a distinct team → no team_cap possible; 3rd GK must hit position_cap
+    const gk_t1 = pool.find(p => p.element_type === 1 && p.team === 1)!
+    const gk_t2 = pool.find(p => p.element_type === 1 && p.team === 2)!
+    const gk_t3 = pool.find(p => p.element_type === 1 && p.team === 3)!
+    const result = buildAnchoredSquad([gk_t1.id, gk_t2.id, gk_t3.id], pool, BUDGET, 1)
     expect(result).not.toBeNull()
     const conflicts = result!.anchorConflicts
-    // gk1 (team1 GK) + gk_team3 (team3 GK) fill 2 slots; gk2 (team1 again) → team_cap OR position_cap
-    // Either conflict reason is acceptable here; what matters is gk2 is skipped
-    expect(conflicts.length).toBeGreaterThanOrEqual(1)
-    expect(conflicts.some(c => c.playerId === gk2.id)).toBe(true)
+    expect(conflicts).toHaveLength(1)
+    expect(conflicts[0]).toEqual({ playerId: gk_t3.id, reason: 'position_cap' })
   })
 
   it('anchor over budget → over_budget conflict', () => {
@@ -176,6 +173,10 @@ describe('buildAnchoredSquad', () => {
     const playerMap = new Map(pool.map(p => [p.id, p]))
     const expectedXPts1 = bestXI.reduce((s, id) => s + (playerMap.get(id)?.xPts_1gw ?? 0), 0)
     expect(result!.xPts1gw).toBeCloseTo(expectedXPts1, 5)
+    const expectedXPts3 = bestXI.reduce((s, id) => s + ((playerMap.get(id)?.xPts_3gw as number | undefined) ?? 0), 0)
+    expect(result!.xPts3gw).toBeCloseTo(expectedXPts3, 5)
+    const expectedXPts5 = bestXI.reduce((s, id) => s + ((playerMap.get(id)?.xPts_5gw as number | undefined) ?? 0), 0)
+    expect(result!.xPts5gw).toBeCloseTo(expectedXPts5, 5)
     // Must be less than sum of all 15
     const allXPts1 = squad.reduce((s, p) => s + (playerMap.get(p.id)?.xPts_1gw ?? 0), 0)
     expect(result!.xPts1gw).toBeLessThan(allXPts1)

@@ -1,6 +1,7 @@
 // WC-01: pure anchor-squad builder.
 // No 'use client', no React, no side effects. @vitest-environment node tests.
 import type { MergedPlayer, OptimiserHorizon, ChipSquadPlayer } from './types'
+// Used by implementation (Task 2):
 import { HORIZON_FIELD, optimiseLineup } from './optimise-lineup'
 import type { SquadPick } from './squad-adapter'
 
