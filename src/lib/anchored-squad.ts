@@ -51,6 +51,7 @@ export function buildAnchoredSquad(
 
   // Step 1: Validate and pre-seat anchor players in order.
   for (const anchorId of anchors) {
+    if (seatedIds.has(anchorId)) continue  // skip duplicate anchor IDs
     const player = playerMap.get(anchorId)
     if (!player) {
       anchorConflicts.push({ playerId: anchorId, reason: 'not_found' })
@@ -61,12 +62,12 @@ export function buildAnchoredSquad(
       continue
     }
     const pos = player.element_type
-    if ((teamCount.get(player.team) ?? 0) >= 3) {
-      anchorConflicts.push({ playerId: anchorId, reason: 'team_cap' })
-      continue
-    }
     if ((filledSlots[pos] ?? 0) >= MAX_SLOTS[pos]) {
       anchorConflicts.push({ playerId: anchorId, reason: 'position_cap' })
+      continue
+    }
+    if ((teamCount.get(player.team) ?? 0) >= 3) {
+      anchorConflicts.push({ playerId: anchorId, reason: 'team_cap' })
       continue
     }
     if (runningCost + player.now_cost > budget) {

@@ -219,4 +219,16 @@ describe('buildAnchoredSquad', () => {
     })
     expect(team1Gks.length).toBeLessThanOrEqual(1)
   })
+
+  it('duplicate anchor ID is seated only once, no conflict recorded', () => {
+    const pool = makePool()
+    const mid = pool.find(p => p.element_type === 3 && p.team === 1)!
+    const result = buildAnchoredSquad([mid.id, mid.id], pool, BUDGET, 1)
+    expect(result).not.toBeNull()
+    // Player appears exactly once in squad
+    const occurrences = result!.squad.filter(p => p.id === mid.id).length
+    expect(occurrences).toBe(1)
+    // No conflict recorded for the duplicate
+    expect(result!.anchorConflicts).toHaveLength(0)
+  })
 })
