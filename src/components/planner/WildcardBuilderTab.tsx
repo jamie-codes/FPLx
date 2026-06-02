@@ -4,10 +4,11 @@ import { useMemo, useState } from 'react'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useSquad } from '@/lib/hooks/useSquad'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
+import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
 import { buildAnchoredSquad } from '@/lib/anchored-squad'
 import { PlayerSearchInput } from '@/components/shared/PlayerSearchInput'
 import { CHIP_DEFAULT_BUDGET_TENTHS } from '@/lib/chip-modes'
-import type { PlannerHorizon, OptimiserHorizon, ScoredPlayer } from '@/lib/types'
+import type { PlannerHorizon, OptimiserHorizon, ScoredPlayer, MergedPlayer } from '@/lib/types'
 import type { AnchoredSquadResult } from '@/lib/anchored-squad'
 
 interface WildcardBuilderTabProps {
@@ -32,11 +33,11 @@ function formatPounds(tenths: number): string {
 
 interface StructurePanelProps {
   label: string
-  selected: ScoredPlayer[]
+  selected: MergedPlayer[]
   onAdd: (p: ScoredPlayer) => void
   onRemove: (id: number) => void
   result: AnchoredSquadResult | null
-  allPlayers: ScoredPlayer[]
+  allPlayers: MergedPlayer[]
   searchKey: number
 }
 
@@ -90,7 +91,7 @@ function StructurePanel({
         {selected.length < 3 && (
           <PlayerSearchInput
             key={searchKey}
-            players={searchPool}
+            players={searchPool as unknown as ScoredPlayer[]}
             onSelect={p => { if (p) onAdd(p) }}
             placeholder="+ Add anchor player…"
           />
@@ -254,9 +255,10 @@ export function WildcardBuilderTab({ submittedId, horizon }: WildcardBuilderTabP
   const [searchKeyA, setSearchKeyA] = useState(0)
   const [searchKeyB, setSearchKeyB] = useState(0)
 
+  const { isAuthenticated } = useAuthStatus()
   const { data: playersData, isLoading: playersLoading, error: playersError } = usePlayers()
   const { data: squadData } = useSquad(submittedId)
-  const { data: myTeamData } = useMyTeam(!!submittedId)
+  const { data: myTeamData } = useMyTeam(isAuthenticated && !!submittedId)
 
   const playerMap = useMemo(
     () => new Map((playersData ?? []).map(p => [p.id, p])),

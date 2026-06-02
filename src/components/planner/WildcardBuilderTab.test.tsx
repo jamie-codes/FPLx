@@ -14,6 +14,9 @@ vi.mock('@/lib/hooks/useSquad', () => ({ useSquad: () => mockUseSquad() }))
 const mockUseMyTeam = vi.fn()
 vi.mock('@/lib/hooks/useMyTeam', () => ({ useMyTeam: () => mockUseMyTeam() }))
 
+const mockUseAuthStatus = vi.fn()
+vi.mock('@/lib/hooks/useAuthStatus', () => ({ useAuthStatus: () => mockUseAuthStatus() }))
+
 // --- Mock buildAnchoredSquad ---
 const mockBuildAnchoredSquad = vi.fn()
 vi.mock('@/lib/anchored-squad', () => ({
@@ -69,11 +72,13 @@ beforeEach(() => {
   mockUsePlayers.mockReset()
   mockUseSquad.mockReset()
   mockUseMyTeam.mockReset()
+  mockUseAuthStatus.mockReset()
   mockBuildAnchoredSquad.mockReset()
 
   mockUsePlayers.mockReturnValue({ data: DEFAULT_PLAYERS, isLoading: false, error: null })
   mockUseSquad.mockReturnValue({ data: null, isLoading: false, error: null })
   mockUseMyTeam.mockReturnValue({ data: null, isLoading: false, error: null })
+  mockUseAuthStatus.mockReturnValue({ isAuthenticated: false, isLoading: false })
   // Default: return a valid result for both structures
   mockBuildAnchoredSquad.mockReturnValue(makeResult())
 })
