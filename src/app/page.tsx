@@ -33,6 +33,7 @@ import { PriceResetTab } from '@/components/price-reset/PriceResetTab'
 import { RivalsTab } from '@/components/rivals/RivalsTab'
 import { NextSeasonPlannerTab } from '@/components/next-season/NextSeasonPlannerTab'
 import { WatchlistTab } from '@/components/watchlist/WatchlistTab'
+import { WildcardBuilderTab } from '@/components/planner/WildcardBuilderTab'
 import { useWatchlist } from '@/lib/hooks/useWatchlist'
 import { OptimiserPanel } from '@/components/optimiser/OptimiserPanel'
 import { LineupTab } from '@/components/squad/LineupTab'
@@ -63,7 +64,7 @@ class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: 
 }
 
 export type Section = 'analyse' | 'plan' | 'squad'
-export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'season' | 'window' | 'decision' | 'transfers' | 'optimiser' | 'price-reset' | 'price-changes' | 'rivals' | 'lineup' | 'review' | 'rank-sim' | 'next-season' | 'watchlist' | 'perfect-gw' | 'live'
+export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'season' | 'window' | 'decision' | 'transfers' | 'optimiser' | 'price-reset' | 'price-changes' | 'rivals' | 'lineup' | 'review' | 'rank-sim' | 'next-season' | 'watchlist' | 'perfect-gw' | 'live' | 'wildcard'
 
 export const SECTIONS = [
   {
@@ -96,6 +97,7 @@ export const SECTIONS = [
       { id: 'rivals' as SubTab,     label: 'Rivals',     mobileLabel: 'Rivals'  },
       { id: 'next-season' as SubTab, label: 'Next Season', mobileLabel: 'Pre-Season' },
       { id: 'watchlist' as SubTab,   label: 'Watchlist',   mobileLabel: 'Watchlist' },
+      { id: 'wildcard' as SubTab,    label: 'Wildcard',    mobileLabel: 'Wildcard' },
     ],
     defaultSubTab: 'planner' as SubTab,
   },
@@ -335,6 +337,9 @@ export default function Home() {
             <PlannerTab horizon={planHorizon} />
             <CaptainPicksPanel submittedId={submittedId} />
           </>
+        )}
+        {activeSection === 'plan' && activeSubTab === 'wildcard' && (
+          <WildcardBuilderTab submittedId={submittedId} horizon={planHorizon} />
         )}
       </main>
       {comparePlayer && (
