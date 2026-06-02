@@ -276,14 +276,18 @@ export function WildcardBuilderTab({ submittedId, horizon }: WildcardBuilderTabP
   }, [myTeamData])
 
   const budget = useMemo(() => {
-    if (!squadData || !playersData) return CHIP_DEFAULT_BUDGET_TENTHS
-    const sellSum = squadData.picks.reduce(
-      (s: number, pick: { element: number }) =>
-        s + (exactSellPrices.get(pick.element) ?? playerMap.get(pick.element)?.now_cost ?? 0),
-      0,
-    )
-    return sellSum + squadData.entry_history.bank
-  }, [squadData, playersData, exactSellPrices, playerMap])
+    // D-11: Auth budget = sell prices + bank; unauth = CHIP_DEFAULT_BUDGET_TENTHS (£100m)
+    let b = CHIP_DEFAULT_BUDGET_TENTHS
+    if (squadData && myTeamData) {
+      const sellSum = squadData.picks.reduce(
+        (s: number, pick: { element: number }) =>
+          s + (exactSellPrices.get(pick.element) ?? (playerMap.get(pick.element)?.now_cost ?? 0)),
+        0,
+      )
+      b = sellSum + squadData.entry_history.bank
+    }
+    return b
+  }, [squadData, myTeamData, exactSellPrices, playerMap])
 
   const effectiveHorizon = toOptimiserHorizon(horizon)
 
