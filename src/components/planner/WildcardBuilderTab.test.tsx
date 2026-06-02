@@ -118,6 +118,7 @@ describe('WildcardBuilderTab', () => {
       .mockReturnValueOnce(makeResult())   // Structure A
       .mockReturnValueOnce(null)           // Structure B
     render(<WildcardBuilderTab submittedId={null} horizon={1} />)
+    expect(screen.getByText('Structure A')).toBeTruthy()  // component rendered
     expect(screen.queryByText(/xPts next GW/i)).toBeNull()
   })
 
@@ -140,6 +141,7 @@ describe('WildcardBuilderTab', () => {
     const { container } = render(<WildcardBuilderTab submittedId={null} horizon={1} />)
     const rows = container.querySelectorAll('tbody tr')
     const xptsRow = Array.from(rows).find(r => r.textContent?.includes('xPts next GW'))
+    expect(xptsRow).not.toBeNull()
     const cells = xptsRow!.querySelectorAll('td')
     expect(cells[1].className).not.toMatch(/bg-green-50/)
     expect(cells[2].className).not.toMatch(/bg-green-50/)
@@ -168,7 +170,7 @@ describe('WildcardBuilderTab', () => {
         ],
       }))
     render(<WildcardBuilderTab submittedId={null} horizon={1} />)
-    expect(screen.getByText(/Salah/)).toBeTruthy()
-    expect(screen.getByText(/Mbeumo/)).toBeTruthy()
+    expect(screen.getAllByText(/Salah/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Mbeumo/).length).toBeGreaterThan(0)
   })
 })
