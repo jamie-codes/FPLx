@@ -1,12 +1,352 @@
 'use client'
 
-import type { PlannerHorizon } from '@/lib/types'
+import { useMemo, useState } from 'react'
+import { usePlayers } from '@/lib/hooks/usePlayers'
+import { useSquad } from '@/lib/hooks/useSquad'
+import { useMyTeam } from '@/lib/hooks/useMyTeam'
+import { buildAnchoredSquad } from '@/lib/anchored-squad'
+import { PlayerSearchInput } from '@/components/shared/PlayerSearchInput'
+import { CHIP_DEFAULT_BUDGET_TENTHS } from '@/lib/chip-modes'
+import type { PlannerHorizon, OptimiserHorizon, ScoredPlayer } from '@/lib/types'
+import type { AnchoredSquadResult } from '@/lib/anchored-squad'
 
 interface WildcardBuilderTabProps {
   submittedId: string | null
   horizon: PlannerHorizon
 }
 
-export function WildcardBuilderTab(_props: WildcardBuilderTabProps) {
-  return <div>not implemented</div>
+// Map PlannerHorizon (1|2|3|4|5) to OptimiserHorizon (1|3|5).
+function toOptimiserHorizon(h: PlannerHorizon): OptimiserHorizon {
+  if (h <= 1) return 1
+  if (h <= 3) return 3
+  return 5
+}
+
+function formatPounds(tenths: number): string {
+  return `£${(tenths / 10).toFixed(1)}m`
+}
+
+// ---------------------------------------------------------------------------
+// StructurePanel
+// ---------------------------------------------------------------------------
+
+interface StructurePanelProps {
+  label: string
+  selected: ScoredPlayer[]
+  onAdd: (p: ScoredPlayer) => void
+  onRemove: (id: number) => void
+  result: AnchoredSquadResult | null
+  allPlayers: ScoredPlayer[]
+  searchKey: number
+}
+
+const POS_LABEL: Record<number, string> = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' }
+
+function StructurePanel({
+  label, selected, onAdd, onRemove, result, allPlayers, searchKey,
+}: StructurePanelProps) {
+  const selectedIds = new Set(selected.map(p => p.id))
+  // Filter out already-selected players from the search pool.
+  const searchPool = allPlayers.filter(p => !selectedIds.has(p.id))
+
+  const positionGroups = result
+    ? ([1, 2, 3, 4] as const).map(pos => ({
+        label: POS_LABEL[pos],
+        players: result.squad.filter(p => p.element_type === pos),
+      }))
+    : []
+
+  return (
+    <div className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3">
+      <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+        {label}
+        {result && (
+          <span className="ml-2 text-xs font-normal text-zinc-500 dark:text-zinc-400">
+            {result.formation}
+          </span>
+        )}
+      </h2>
+
+      {/* Anchor badges */}
+      <div className="space-y-1.5">
+        {selected.map(p => (
+          <div
+            key={p.id}
+            className="flex items-center gap-2 rounded bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 px-2 py-1"
+          >
+            <span className="text-xs font-medium text-blue-900 dark:text-blue-100 flex-1 truncate">
+              📌 {p.web_name}
+            </span>
+            <button
+              type="button"
+              aria-label={`Remove ${p.web_name}`}
+              onClick={() => onRemove(p.id)}
+              className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-200 text-sm leading-none"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+        {selected.length < 3 && (
+          <PlayerSearchInput
+            key={searchKey}
+            players={searchPool}
+            onSelect={p => { if (p) onAdd(p) }}
+            placeholder="+ Add anchor player…"
+          />
+        )}
+      </div>
+
+      {/* Conflict callouts */}
+      {result?.anchorConflicts.map(c => (
+        <p
+          key={c.playerId}
+          className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded px-2 py-1"
+        >
+          Player {c.playerId} skipped — {c.reason.replace('_', ' ')}
+        </p>
+      ))}
+
+      {/* Null result */}
+      {result === null && (
+        <p className="text-sm text-amber-600 dark:text-amber-400">
+          Could not build a valid squad — try removing an anchor or checking budget.
+        </p>
+      )}
+
+      {/* Squad display */}
+      {result && (
+        <div className="space-y-2 pt-1">
+          {positionGroups.map(group => (
+            <div key={group.label}>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-0.5">
+                {group.label}
+              </p>
+              <div className="space-y-0.5">
+                {group.players.map(p => (
+                  <div key={p.id} className="flex items-center justify-between gap-2">
+                    <span className={`text-xs truncate ${selectedIds.has(p.id) ? 'font-semibold text-blue-700 dark:text-blue-300' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                      {p.web_name}
+                      {selectedIds.has(p.id) && <span className="ml-1 text-[9px]">📌</span>}
+                    </span>
+                    <span className="text-xs text-zinc-400 dark:text-zinc-500 shrink-0">
+                      {p.xPts.toFixed(1)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+          <p className="text-xs text-zinc-400 dark:text-zinc-500 pt-1">
+            {formatPounds(result.budgetRemaining)} remaining
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// ComparisonTable
+// ---------------------------------------------------------------------------
+
+function ComparisonTable({
+  resultA,
+  resultB,
+}: {
+  resultA: AnchoredSquadResult
+  resultB: AnchoredSquadResult
+}) {
+  type Row = { label: string; a: string; b: string; aWins: boolean | null }
+  const numericRows: Row[] = [
+    {
+      label: 'xPts next GW',
+      a: resultA.xPts1gw.toFixed(1),
+      b: resultB.xPts1gw.toFixed(1),
+      aWins:
+        resultA.xPts1gw === resultB.xPts1gw
+          ? null
+          : resultA.xPts1gw > resultB.xPts1gw,
+    },
+    {
+      label: 'xPts next 3 GWs',
+      a: resultA.xPts3gw.toFixed(1),
+      b: resultB.xPts3gw.toFixed(1),
+      aWins:
+        resultA.xPts3gw === resultB.xPts3gw
+          ? null
+          : resultA.xPts3gw > resultB.xPts3gw,
+    },
+    {
+      label: 'xPts next 5 GWs',
+      a: resultA.xPts5gw.toFixed(1),
+      b: resultB.xPts5gw.toFixed(1),
+      aWins:
+        resultA.xPts5gw === resultB.xPts5gw
+          ? null
+          : resultA.xPts5gw > resultB.xPts5gw,
+    },
+    {
+      label: 'Budget remaining',
+      a: formatPounds(resultA.budgetRemaining),
+      b: formatPounds(resultB.budgetRemaining),
+      aWins:
+        resultA.budgetRemaining === resultB.budgetRemaining
+          ? null
+          : resultA.budgetRemaining > resultB.budgetRemaining,
+    },
+  ]
+
+  const TH = 'text-left text-xs font-semibold text-zinc-600 dark:text-zinc-400 pb-1 border-b border-zinc-200 dark:border-zinc-700'
+  const TD = 'py-1 px-2 text-sm'
+  const WIN = 'bg-green-50 dark:bg-green-950'
+
+  return (
+    <section className="mt-6">
+      <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
+        Comparison
+      </h2>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr>
+              <th className={TH}>Metric</th>
+              <th className={`${TH} text-right`}>Plan A</th>
+              <th className={`${TH} text-right`}>Plan B</th>
+            </tr>
+          </thead>
+          <tbody>
+            {numericRows.map(row => (
+              <tr key={row.label}>
+                <td className={`${TD} text-zinc-700 dark:text-zinc-300`}>{row.label}</td>
+                <td className={`${TD} text-right ${row.aWins === true ? WIN : ''}`}>
+                  {row.a}
+                </td>
+                <td className={`${TD} text-right ${row.aWins === false ? WIN : ''}`}>
+                  {row.b}
+                </td>
+              </tr>
+            ))}
+            <tr>
+              <td className={`${TD} text-zinc-700 dark:text-zinc-300`}>Captain options</td>
+              <td className={`${TD} text-right text-zinc-600 dark:text-zinc-400`}>
+                {resultA.captainCandidates.map(c => c.web_name).join(', ')}
+              </td>
+              <td className={`${TD} text-right text-zinc-600 dark:text-zinc-400`}>
+                {resultB.captainCandidates.map(c => c.web_name).join(', ')}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// WildcardBuilderTab
+// ---------------------------------------------------------------------------
+
+export function WildcardBuilderTab({ submittedId, horizon }: WildcardBuilderTabProps) {
+  const [selectedA, setSelectedA] = useState<ScoredPlayer[]>([])
+  const [selectedB, setSelectedB] = useState<ScoredPlayer[]>([])
+  // searchKey forces PlayerSearchInput to remount (reset its query) after each anchor add.
+  const [searchKeyA, setSearchKeyA] = useState(0)
+  const [searchKeyB, setSearchKeyB] = useState(0)
+
+  const { data: playersData, isLoading: playersLoading, error: playersError } = usePlayers()
+  const { data: squadData } = useSquad(submittedId)
+  const { data: myTeamData } = useMyTeam(!!submittedId)
+
+  const playerMap = useMemo(
+    () => new Map((playersData ?? []).map(p => [p.id, p])),
+    [playersData],
+  )
+
+  const exactSellPrices = useMemo(() => {
+    if (!myTeamData) return new Map<number, number>()
+    return new Map<number, number>(
+      myTeamData.picks.map((p: { element: number; selling_price: number }) => [
+        p.element,
+        p.selling_price,
+      ]),
+    )
+  }, [myTeamData])
+
+  const budget = useMemo(() => {
+    if (!squadData || !playersData) return CHIP_DEFAULT_BUDGET_TENTHS
+    const sellSum = squadData.picks.reduce(
+      (s: number, pick: { element: number }) =>
+        s + (exactSellPrices.get(pick.element) ?? playerMap.get(pick.element)?.now_cost ?? 0),
+      0,
+    )
+    return sellSum + squadData.entry_history.bank
+  }, [squadData, playersData, exactSellPrices, playerMap])
+
+  const effectiveHorizon = toOptimiserHorizon(horizon)
+
+  const resultA = useMemo(
+    () =>
+      playersData
+        ? buildAnchoredSquad(selectedA.map(p => p.id), playersData, budget, effectiveHorizon)
+        : null,
+    [selectedA, playersData, budget, effectiveHorizon],
+  )
+
+  const resultB = useMemo(
+    () =>
+      playersData
+        ? buildAnchoredSquad(selectedB.map(p => p.id), playersData, budget, effectiveHorizon)
+        : null,
+    [selectedB, playersData, budget, effectiveHorizon],
+  )
+
+  if (playersLoading) {
+    return (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">
+        Loading player data…
+      </p>
+    )
+  }
+  if (playersError) {
+    return (
+      <p className="text-sm text-red-600 dark:text-red-400 py-4">
+        Failed to load player data. Check your connection and refresh.
+      </p>
+    )
+  }
+
+  return (
+    <div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        <StructurePanel
+          label="Structure A"
+          selected={selectedA}
+          onAdd={p => {
+            setSelectedA(prev => prev.length < 3 ? [...prev, p] : prev)
+            setSearchKeyA(k => k + 1)
+          }}
+          onRemove={id => setSelectedA(prev => prev.filter(p => p.id !== id))}
+          result={resultA}
+          allPlayers={playersData ?? []}
+          searchKey={searchKeyA}
+        />
+        <StructurePanel
+          label="Structure B"
+          selected={selectedB}
+          onAdd={p => {
+            setSelectedB(prev => prev.length < 3 ? [...prev, p] : prev)
+            setSearchKeyB(k => k + 1)
+          }}
+          onRemove={id => setSelectedB(prev => prev.filter(p => p.id !== id))}
+          result={resultB}
+          allPlayers={playersData ?? []}
+          searchKey={searchKeyB}
+        />
+      </div>
+      {resultA !== null && resultB !== null && (
+        <ComparisonTable resultA={resultA} resultB={resultB} />
+      )}
+    </div>
+  )
 }
