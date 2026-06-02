@@ -85,8 +85,8 @@ beforeEach(() => {
 describe('WildcardBuilderTab', () => {
   it('renders two structure panel headers', () => {
     render(<WildcardBuilderTab submittedId={null} horizon={1} />)
-    expect(screen.getByText('Structure A')).toBeTruthy()
-    expect(screen.getByText('Structure B')).toBeTruthy()
+    expect(screen.getAllByText('Structure A').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Structure B').length).toBeGreaterThan(0)
   })
 
   it('shows loading copy when usePlayers is loading', () => {

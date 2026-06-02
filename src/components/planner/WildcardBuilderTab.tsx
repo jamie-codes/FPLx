@@ -103,7 +103,7 @@ function StructurePanel({
           key={c.playerId}
           className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded px-2 py-1"
         >
-          Player {c.playerId} skipped — {c.reason.replace('_', ' ')}
+          Player {c.playerId} skipped — {c.reason.replace(/_/g, ' ')}
         </p>
       ))}
 
@@ -211,8 +211,8 @@ function ComparisonTable({
           <thead>
             <tr>
               <th className={TH}>Metric</th>
-              <th className={`${TH} text-right`}>Plan A</th>
-              <th className={`${TH} text-right`}>Plan B</th>
+              <th className={`${TH} text-right`}>Structure A</th>
+              <th className={`${TH} text-right`}>Structure B</th>
             </tr>
           </thead>
           <tbody>
