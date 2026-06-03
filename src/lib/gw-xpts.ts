@@ -64,3 +64,25 @@ export function computeGwXpts(player: MergedPlayer, targetGw: number): number {
     0,
   )
 }
+
+/** Classify a buy candidate's hold horizon when the Transfer Panel is in Target GW mode.
+ *
+ * Returns null when the player has no fixture in targetGw (BGW / not in action) —
+ * the caller should not render a chip.
+ *
+ * Labels:
+ *   "GW{N}+"       — avgAfter >= 70% of gwScore: sustained hold, keep beyond targetGw.
+ *   "GW{N} mainly" — 0 < avgAfter < 70%: spike with some residual value.
+ *   "GW{N} only"   — avgAfter === 0: pure rental, sell next week.
+ *
+ * avgAfter = mean of computeGwXpts for targetGw+1 and targetGw+2.
+ * End-of-season (no fixtures at +1 or +2) naturally returns 0 for each → "GW{N} only".
+ */
+export function computeHoldLabel(player: MergedPlayer, targetGw: number): string | null {
+  const gwScore = computeGwXpts(player, targetGw)
+  if (gwScore === 0) return null
+  const avg = (computeGwXpts(player, targetGw + 1) + computeGwXpts(player, targetGw + 2)) / 2
+  if (avg >= 0.7 * gwScore) return `GW${targetGw}+`
+  if (avg > 0)              return `GW${targetGw} mainly`
+  return `GW${targetGw} only`
+}
