@@ -443,3 +443,81 @@ describe('OpportunityCostTable — Phase 115 NEWS-03 staleness suppression', () 
     expect(container.querySelectorAll('[data-testid="news-banner"]').length).toBe(0)
   })
 })
+
+describe('OpportunityCostTable hold horizon label (GWT-01)', () => {
+  // Helper: ScoredPlayer with full MergedPlayer fields needed by computeHoldLabel.
+  function makeBuyPlayer(id: number, fixtureGws: number[]): ScoredPlayer {
+    return {
+      ...makeScoredPlayer({ id, web_name: `Buy${id}`, start_prob: 0.9 }),
+      xmins: 80,
+      fixtures: fixtureGws.map(gw => ({
+        event_id: gw,
+        difficulty_tier: 'easy' as const,
+        is_home: true,
+        opponent_team: 'MCI',
+        difficulty_score: 0.3,
+        defensive_difficulty: 0.3,
+      })),
+    } as unknown as ScoredPlayer
+  }
+
+  it('renders hold-label chip with "GW33+" when targetGw=33 and buy has fixtures at 33,34,35', () => {
+    const sell = makeScoredPlayer({ id: 300, web_name: 'Sell' })
+    const buy  = makeBuyPlayer(301, [33, 34, 35])   // sustained: same fixture all 3 GWs
+    const rows = [makeRollRow(), makeSingleFreeRow(sell, buy)]
+
+    const { container } = withQueryClient(
+      <OpportunityCostTable
+        rows={rows}
+        horizon={1}
+        targetGw={33}
+        gw={33}
+        allPlayers={[sell, buy]}
+        lifecycleLabels={new Map()}
+      />
+    )
+    const chip = container.querySelector('[data-testid="hold-label-301"]')
+    expect(chip).not.toBeNull()
+    expect(chip?.textContent).toBe('GW33+')
+  })
+
+  it('renders "GW33 only" chip when buy has only a GW33 fixture (no post-target)', () => {
+    const sell = makeScoredPlayer({ id: 302, web_name: 'Sell2' })
+    const buy  = makeBuyPlayer(303, [33])   // no fixtures at 34 or 35
+    const rows = [makeRollRow(), makeSingleFreeRow(sell, buy)]
+
+    const { container } = withQueryClient(
+      <OpportunityCostTable
+        rows={rows}
+        horizon={1}
+        targetGw={33}
+        gw={33}
+        allPlayers={[sell, buy]}
+        lifecycleLabels={new Map()}
+      />
+    )
+    const chip = container.querySelector('[data-testid="hold-label-303"]')
+    expect(chip).not.toBeNull()
+    expect(chip?.textContent).toBe('GW33 only')
+  })
+
+  it('renders NO hold-label chips when targetGw is undefined (horizon mode)', () => {
+    const sell = makeScoredPlayer({ id: 304, web_name: 'Sell3' })
+    const buy  = makeBuyPlayer(305, [33, 34, 35])
+    const rows = [makeRollRow(), makeSingleFreeRow(sell, buy)]
+
+    const { container } = withQueryClient(
+      <OpportunityCostTable
+        rows={rows}
+        horizon={1}
+        targetGw={undefined}
+        gw={33}
+        allPlayers={[sell, buy]}
+        lifecycleLabels={new Map()}
+      />
+    )
+    // data-testid pattern is hold-label-{id} — none should exist
+    const chips = container.querySelectorAll('[data-testid^="hold-label-"]')
+    expect(chips.length).toBe(0)
+  })
+})

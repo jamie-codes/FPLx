@@ -17,6 +17,7 @@ import { PlayerInsightSection } from '@/components/shared/PlayerInsightSection'
 import { StatusLabelBadge } from '@/components/shared/StatusLabelBadge'
 import { MinsRiskBadge } from '@/components/shared/MinsRiskBadge'
 import { ConfirmedSigningBadge } from '@/components/shared/ConfirmedSigningBadge'
+import { computeHoldLabel } from '@/lib/gw-xpts'
 
 interface OpportunityCostTableProps {
   rows: OCSRow[]
@@ -116,6 +117,7 @@ function PlayerMoveCell({
   lifecycleLabels,
   lineupNewsMap,
   confirmedSigningMap,
+  targetGw,
 }: {
   row: OCSRow
   gw: number
@@ -123,6 +125,7 @@ function PlayerMoveCell({
   lifecycleLabels: Map<number, LifecycleLabel>
   lineupNewsMap?: Map<number, LineupNewsPlayer>
   confirmedSigningMap?: Map<number, string>
+  targetGw?: number
 }) {
   if (row.kind === 'roll' || !row.transfers || row.transfers.length === 0) {
     return <span className="text-zinc-400 dark:text-zinc-500">—</span>
@@ -153,6 +156,27 @@ function PlayerMoveCell({
               {confirmedSigningMap?.has(t.buy.id) && (
                 <ConfirmedSigningBadge tooltipText={confirmedSigningMap.get(t.buy.id)} />
               )}
+              {/* GWT-01: hold horizon label — "GW{N}+" / "GW{N} mainly" / "GW{N} only" */}
+              {targetGw !== undefined && (() => {
+                const holdLabel = computeHoldLabel(t.buy, targetGw)
+                if (!holdLabel) return null
+                const isPlus = holdLabel.endsWith('+')
+                const isOnly = holdLabel.endsWith('only')
+                return (
+                  <span
+                    data-testid={`hold-label-${t.buy.id}`}
+                    className={`text-xs font-medium rounded px-1.5 py-0.5 ${
+                      isPlus
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                        : isOnly
+                        ? 'bg-zinc-100 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400'
+                        : 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300'
+                    }`}
+                  >
+                    {holdLabel}
+                  </span>
+                )
+              })()}
               {/* Phase 88 SCRAPER-01: news banner for buy candidate (D-07) */}
               <NewsBanner
                 news={t.buy.news ?? ''}
@@ -220,7 +244,7 @@ export function OpportunityCostTable({ rows, horizon, targetGw, gw, allPlayers, 
                   {row.label}
                 </td>
                 <td className="py-2 align-top">
-                  <PlayerMoveCell row={row} gw={gw} allPlayers={allPlayers} lifecycleLabels={lifecycleLabels} lineupNewsMap={lineupNewsMap} confirmedSigningMap={confirmedSigningMap} />
+                  <PlayerMoveCell row={row} gw={gw} allPlayers={allPlayers} lifecycleLabels={lifecycleLabels} lineupNewsMap={lineupNewsMap} confirmedSigningMap={confirmedSigningMap} targetGw={targetGw} />
                 </td>
                 <td className="py-2 text-right align-top text-zinc-900 dark:text-zinc-100">
                   <div className={isDisabled ? 'line-through text-zinc-400 dark:text-zinc-600' : ''}>
