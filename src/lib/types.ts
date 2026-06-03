@@ -425,6 +425,8 @@ export type SanityCheckId =
   | 'missing_player_delta'
   | 'understat_null_pct'
   | 'pipeline_stale'
+  | 'sp_unmatched_ids'  // Phase 84 SPQ-01: set-piece delivery quality unmatched IDs
+  | 'xpts_max'          // DQ-01: model output sanity — highest xPts_1gw across all players
 
 export type SanityCheckStatus = 'ok' | 'warn' | 'error'
 
@@ -444,6 +446,7 @@ export interface DataHealth {
   understat_id_null_count: number
   fpl_proxy_fallback_count: number
   xg_per90_null_count: number
+  xpts_max?: number                         // DQ-01: highest xPts_1gw; optional for backward compat with pre-DQ-01 cache
   sanity_checks: SanityCheck[]
   history?: HistoryEntry[]                  // Phase 92 DH-04 — optional; absent on legacy cache (pre-Phase-92)
 }

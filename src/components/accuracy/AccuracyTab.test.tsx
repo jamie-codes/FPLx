@@ -690,3 +690,89 @@ describe('Phase 116 VER-02: Versions sub-tab', () => {
     expect(getByText('No version history yet.')).toBeTruthy()
   })
 })
+
+// ============================================================================
+// DQ-01: DataHealthPanel expanded content (timestamps, null counts, generated_at)
+// ============================================================================
+
+describe('DQ-01: DataHealthPanel expanded content', () => {
+  const fullDataHealth: DataHealth = {
+    generated_at: '2026-06-01T12:00:00+00:00',
+    timestamps: {
+      'merged_players.json':   '2026-06-01T10:00:00+00:00',
+      'insights.json':         '2026-06-01T09:30:00+00:00',
+    },
+    total_player_count: 800,
+    prev_player_count: 798,
+    missing_player_delta: 2,
+    understat_id_null_count: 43,
+    fpl_proxy_fallback_count: 12,
+    xg_per90_null_count: 5,
+    xpts_max: 18.75,
+    sanity_checks: [
+      { id: 'player_count', status: 'ok', value: 800, threshold: '>= 700' },
+      { id: 'missing_player_delta', status: 'ok', value: 2, threshold: '<= 5' },
+      { id: 'understat_null_pct', status: 'ok', value: 5.0, threshold: '< 15%' },
+      { id: 'pipeline_stale', status: 'ok', value: false, threshold: 'false' },
+      { id: 'xpts_max', status: 'ok', value: 18.75, threshold: '<= 25' },
+    ],
+  }
+
+  beforeEach(() => {
+    mockedUseAccuracy.mockReturnValue({ data: fixtureBacktest, isLoading: false, error: null } as never)
+    mockedUseDataHealth.mockReturnValue({ data: fullDataHealth, isLoading: false, error: null } as never)
+  })
+
+  function expandPanel(container: HTMLElement) {
+    const btn = container.querySelector('[data-testid="data-health-panel"] button') as HTMLElement
+    fireEvent.click(btn)
+  }
+
+  it('shows generated_at timestamp in expanded panel', () => {
+    const { container } = render(<AccuracyTab />)
+    expandPanel(container)
+    // generated_at should appear somewhere in the panel after expansion
+    expect(container.querySelector('[data-testid="data-health-panel"]')!.textContent).toMatch(/Generated:/i)
+  })
+
+  it('shows raw null counts (understat_id_null_count, xg_per90_null_count) in expanded panel', () => {
+    const { container } = render(<AccuracyTab />)
+    expandPanel(container)
+    const panel = container.querySelector('[data-testid="data-health-panel"]')!.textContent!
+    expect(panel).toContain('43')   // understat_id_null_count
+    expect(panel).toContain('5')    // xg_per90_null_count
+    expect(panel).toContain('Understat ID null')
+    expect(panel).toContain('xG/90 null')
+  })
+
+  it('shows artifact timestamp rows in expanded panel', () => {
+    const { container } = render(<AccuracyTab />)
+    expandPanel(container)
+    const panel = container.querySelector('[data-testid="data-health-panel"]')!.textContent!
+    // Human-readable artifact labels should appear
+    expect(panel).toContain('Player data')
+    expect(panel).toContain('Match insights')
+  })
+
+  it('renders xpts_max check row with formatted value', () => {
+    const { container } = render(<AccuracyTab />)
+    expandPanel(container)
+    const panel = container.querySelector('[data-testid="data-health-panel"]')!.textContent!
+    expect(panel).toContain('xPts max')
+    expect(panel).toContain('18.75')
+  })
+
+  it('renders sp_unmatched_ids label when check is present', () => {
+    const healthWithSp: DataHealth = {
+      ...fullDataHealth,
+      sanity_checks: [
+        ...fullDataHealth.sanity_checks,
+        { id: 'sp_unmatched_ids', status: 'warn', value: 12, threshold: '<= 5' },
+      ],
+    }
+    mockedUseDataHealth.mockReturnValue({ data: healthWithSp, isLoading: false, error: null } as never)
+    const { container } = render(<AccuracyTab />)
+    expandPanel(container)
+    expect(container.querySelector('[data-testid="data-health-panel"]')!.textContent).toContain('Set-piece unmatched IDs')
+  })
+})

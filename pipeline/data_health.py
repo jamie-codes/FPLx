@@ -71,6 +71,20 @@ def _check_pipeline_stale(stale: bool) -> dict:
     }
 
 
+def _check_xpts_max(xpts_max: float) -> dict:
+    """DQ-01: model output sanity check — highest xPts_1gw across all merged players.
+    ok if <= 25, warn if 25 < value <= 40, error if > 40.
+    A value > 40 indicates a computation bug or data error (even a DGW top player rarely exceeds 30).
+    """
+    if xpts_max <= 25.0:
+        status = 'ok'
+    elif xpts_max <= 40.0:
+        status = 'warn'
+    else:
+        status = 'error'
+    return {'id': 'xpts_max', 'status': status, 'value': round(xpts_max, 2), 'threshold': '<= 25'}
+
+
 def _check_sp_unmatched(count: int) -> dict:
     """Phase 84 D-04: ok if count <= 5, warn if 5 < count <= 20, error if > 20.
 
@@ -163,6 +177,9 @@ def compute_data_health(
     else:
         delta = abs(total - int(prev_count))
 
+    # DQ-01: model output sanity check — max xPts_1gw (stored and checked).
+    xpts_max = max((p.get('xPts_1gw') or 0.0 for p in merged), default=0.0)
+
     # D-06: raw null-xG counts — stored but NOT included as sanity checks.
     understat_null = sum(1 for p in merged if p.get('understat_id') is None)
     # Pitfall 2 (RESEARCH.md Open Question #2): fpl_proxy_fallback is the subset of understat_null
@@ -181,6 +198,7 @@ def compute_data_health(
         _check_missing_delta(delta),
         _check_understat_null_pct(understat_pct),
         _check_pipeline_stale(pipeline_stale),
+        _check_xpts_max(xpts_max),
     ]
     # Phase 84 D-04: append sp_unmatched_ids check only when caller passed an int.
     # When None (failure case from run_sp_quality), entry is omitted (D-05 / Pitfall 6).
@@ -196,6 +214,7 @@ def compute_data_health(
         'understat_id_null_count': understat_null,
         'fpl_proxy_fallback_count': fpl_proxy_fallback,
         'xg_per90_null_count': xg_per90_null,
+        'xpts_max': round(xpts_max, 2),   # DQ-01: raw value for UI display
         'sanity_checks': sanity_checks,
     }
 

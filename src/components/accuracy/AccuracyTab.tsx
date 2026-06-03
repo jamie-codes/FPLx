@@ -94,6 +94,17 @@ const SANITY_CHECK_LABELS: Record<SanityCheck['id'], string> = {
   missing_player_delta: 'Missing player delta',
   understat_null_pct:   'Understat null %',
   pipeline_stale:       'Pipeline stale',
+  sp_unmatched_ids:     'Set-piece unmatched IDs',  // Phase 84 SPQ-01
+  xpts_max:             'xPts max',                 // DQ-01: model output sanity
+}
+
+// DQ-01: human-readable labels for known pipeline artifact filenames.
+const ARTIFACT_LABELS: Record<string, string> = {
+  'merged_players.json':   'Player data',
+  'insights.json':         'Match insights',
+  'gw_intel.json':         'GW intelligence',
+  'accuracy_backtest.json':'Accuracy backtest',
+  'last_updated.json':     'Last pipeline run',
 }
 
 const RED_PILL_CLS = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
@@ -106,7 +117,8 @@ function rollUpStatus(checks: SanityCheck[]): 'ok' | 'warn' | 'error' {
 
 function formatSanityValue(check: SanityCheck): string {
   if (typeof check.value === 'boolean') return check.value ? 'true' : 'false'
-  if (check.id === 'understat_null_pct') return `${check.value.toFixed(2)}%`
+  if (check.id === 'understat_null_pct') return `${(check.value as number).toFixed(2)}%`
+  if (check.id === 'xpts_max') return `${(check.value as number).toFixed(2)}`
   return String(check.value)
 }
 
@@ -1026,26 +1038,75 @@ function DataHealthPanel() {
       {data?.history && <DataHealthSparkline history={data.history} />}
 
       {isExpanded && data && (
-        <table className={TABLE_CLS}>
-          <thead>
-            <tr>
-              <th scope="col" className={TH_CLS}>Check</th>
-              <th scope="col" className={TH_CLS}>Status</th>
-              <th scope="col" className={TH_CLS}>Value</th>
-              <th scope="col" className={TH_CLS}>Threshold</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(data.sanity_checks ?? []).map(check => (
-              <tr key={check.id} className={TR_CLS}>
-                <td className={TD_CLS}>{SANITY_CHECK_LABELS[check.id]}</td>
-                <td className={TD_CLS}><SanityIcon status={check.status} /></td>
-                <td className={TD_CLS}>{formatSanityValue(check)}</td>
-                <td className={TD_CLS}>{check.threshold}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="space-y-4 pt-1">
+          {/* DQ-01: data freshness line */}
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Generated: {new Date(data.generated_at).toLocaleString()}
+          </p>
+
+          {/* Sanity checks table */}
+          <div>
+            <p className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400 mb-1">Checks</p>
+            <table className={TABLE_CLS}>
+              <thead>
+                <tr>
+                  <th scope="col" className={TH_CLS}>Check</th>
+                  <th scope="col" className={TH_CLS}>Status</th>
+                  <th scope="col" className={TH_CLS}>Value</th>
+                  <th scope="col" className={TH_CLS}>Threshold</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(data.sanity_checks ?? []).map(check => (
+                  <tr key={check.id} className={TR_CLS}>
+                    <td className={TD_CLS}>{SANITY_CHECK_LABELS[check.id] ?? check.id}</td>
+                    <td className={TD_CLS}><SanityIcon status={check.status} /></td>
+                    <td className={TD_CLS}>{formatSanityValue(check)}</td>
+                    <td className={TD_CLS}>{check.threshold}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* DQ-01: null counts */}
+          <div>
+            <p className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400 mb-1">Null counts</p>
+            <table className={TABLE_CLS}>
+              <tbody>
+                <tr className={TR_CLS}>
+                  <td className={TD_CLS}>Understat ID null</td>
+                  <td className={`${TD_CLS} tabular-nums`}>{data.understat_id_null_count}</td>
+                </tr>
+                <tr className={TR_CLS}>
+                  <td className={TD_CLS}>xG/90 null</td>
+                  <td className={`${TD_CLS} tabular-nums`}>{data.xg_per90_null_count}</td>
+                </tr>
+                <tr className={TR_CLS}>
+                  <td className={TD_CLS}>FPL proxy fallback</td>
+                  <td className={`${TD_CLS} tabular-nums`}>{data.fpl_proxy_fallback_count}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* DQ-01: artifact timestamps */}
+          {Object.keys(data.timestamps).length > 0 && (
+            <div>
+              <p className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400 mb-1">Artifact timestamps</p>
+              <table className={TABLE_CLS}>
+                <tbody>
+                  {Object.entries(data.timestamps).map(([name, ts]) => (
+                    <tr key={name} className={TR_CLS}>
+                      <td className={TD_CLS}>{ARTIFACT_LABELS[name] ?? name}</td>
+                      <td className={`${TD_CLS} tabular-nums text-xs`}>{new Date(ts).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       )}
     </div>
   )

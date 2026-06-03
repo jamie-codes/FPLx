@@ -47,7 +47,7 @@ def test_compute_data_health_shape(tmp_path):
         assert key in result, f"missing top-level key: {key}"
 
     assert isinstance(result['sanity_checks'], list)
-    assert len(result['sanity_checks']) == 4
+    assert len(result['sanity_checks']) == 5   # DQ-01: xpts_max is always the 5th check
     for check in result['sanity_checks']:
         for subkey in ('id', 'status', 'value', 'threshold'):
             assert subkey in check, f"sanity check missing key: {subkey}"
@@ -180,26 +180,27 @@ def test_pipeline_stale_check(tmp_path):
 # ------------------------------------------------------------------ Phase 84 SPQ-02 / D-04 / D-05
 
 def test_sp_unmatched_check_omitted_when_none(tmp_path):
-    """D-05: sp_unmatched_count omitted (default None) -> sanity_checks remains 4 entries.
+    """D-05: sp_unmatched_count omitted (default None) -> sp_unmatched_ids absent; 5 checks (xpts_max always present).
 
     Preserves backward compatibility: existing callers that don't pass the new kwarg
     see no behavioral change. RESEARCH Pitfall 6.
     """
     merged = [_make_player() for _ in range(800)]
     result = compute_data_health(merged, _make_timestamps(), str(tmp_path))
-    assert len(result['sanity_checks']) == 4
+    assert len(result['sanity_checks']) == 5  # player_count, missing_delta, understat_null_pct, pipeline_stale, xpts_max
     ids = [c['id'] for c in result['sanity_checks']]
     assert 'sp_unmatched_ids' not in ids
+    assert 'xpts_max' in ids
 
 
 def test_sp_unmatched_check_appended_when_int(tmp_path):
-    """D-04: sp_unmatched_count=25 -> 5th sanity_check appended with status='error'."""
+    """D-04: sp_unmatched_count=25 -> 6th sanity_check appended (xpts_max is always 5th) with status='error'."""
     merged = [_make_player() for _ in range(800)]
     result = compute_data_health(
         merged, _make_timestamps(), str(tmp_path),
         sp_unmatched_count=25,
     )
-    assert len(result['sanity_checks']) == 5
+    assert len(result['sanity_checks']) == 6  # DQ-01: xpts_max is always 5th; sp_unmatched_ids is 6th
     check = next(c for c in result['sanity_checks'] if c['id'] == 'sp_unmatched_ids')
     assert check['status'] == 'error'
     assert check['value'] == 25
@@ -240,3 +241,61 @@ def test_sp_unmatched_threshold_error_boundary(tmp_path):
     check = next(c for c in result['sanity_checks'] if c['id'] == 'sp_unmatched_ids')
     assert check['status'] == 'error'
     assert check['value'] == 21
+
+
+# ------------------------------------------------------------------ DQ-01: xpts_max check
+
+def test_xpts_max_check_ok_no_xpts_field(tmp_path):
+    """DQ-01: merged players with no xPts_1gw field -> xpts_max=0.0 -> status='ok'."""
+    # _make_player() creates players without xPts_1gw; max defaults to 0.0
+    merged = [_make_player() for _ in range(800)]
+    result = compute_data_health(merged, _make_timestamps(), str(tmp_path))
+    check = next(c for c in result['sanity_checks'] if c['id'] == 'xpts_max')
+    assert check['status'] == 'ok'
+    assert check['value'] == 0.0
+    assert check['threshold'] == '<= 25'
+
+
+def test_xpts_max_check_ok_normal_values(tmp_path):
+    """DQ-01: normal xPts_1gw values (max 12.5) -> status='ok'."""
+    merged = [
+        {**_make_player(), 'xPts_1gw': 8.0},
+        {**_make_player(), 'xPts_1gw': 12.5},
+        {**_make_player(), 'xPts_1gw': 5.0},
+    ]
+    result = compute_data_health(merged, _make_timestamps(), str(tmp_path))
+    check = next(c for c in result['sanity_checks'] if c['id'] == 'xpts_max')
+    assert check['status'] == 'ok'
+    assert check['value'] == 12.5
+
+
+def test_xpts_max_check_warn_boundary(tmp_path):
+    """DQ-01: max xPts_1gw just above 25 (e.g. DGW top player) -> status='warn'."""
+    merged = [
+        {**_make_player(), 'xPts_1gw': 7.0},
+        {**_make_player(), 'xPts_1gw': 26.0},   # just above warn threshold
+    ]
+    result = compute_data_health(merged, _make_timestamps(), str(tmp_path))
+    check = next(c for c in result['sanity_checks'] if c['id'] == 'xpts_max')
+    assert check['status'] == 'warn'
+    assert check['value'] == 26.0
+
+
+def test_xpts_max_check_error_boundary(tmp_path):
+    """DQ-01: max xPts_1gw > 40 indicates computation bug -> status='error'."""
+    merged = [
+        {**_make_player(), 'xPts_1gw': 10.0},
+        {**_make_player(), 'xPts_1gw': 55.0},   # clearly wrong
+    ]
+    result = compute_data_health(merged, _make_timestamps(), str(tmp_path))
+    check = next(c for c in result['sanity_checks'] if c['id'] == 'xpts_max')
+    assert check['status'] == 'error'
+    assert check['value'] == 55.0
+
+
+def test_xpts_max_raw_value_in_result(tmp_path):
+    """DQ-01: xpts_max raw value stored as top-level key in result dict."""
+    merged = [{**_make_player(), 'xPts_1gw': 18.75}]
+    result = compute_data_health(merged, _make_timestamps(), str(tmp_path))
+    assert 'xpts_max' in result
+    assert result['xpts_max'] == pytest.approx(18.75, abs=0.01)
