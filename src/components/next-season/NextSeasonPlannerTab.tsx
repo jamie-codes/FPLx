@@ -124,7 +124,7 @@ function HealthIndicator({ health }: { health: SquadHealth }) {
 }
 
 export function NextSeasonPlannerTab() {
-  const { data, isLoading, isError } = usePreSeasonSquad({ includeInputs: true })
+  const { data, isLoading, isError, error } = usePreSeasonSquad({ includeInputs: true })
 
   // Phase 128 AUTO-03: Activation status hook — 404→null (Awaiting), 200→Live.
   // Silent fallback: non-404 errors also return null (per UI-SPEC Interaction Contract).
@@ -205,9 +205,10 @@ export function NextSeasonPlannerTab() {
       <p className="text-sm text-zinc-500 dark:text-zinc-400 py-4">Loading pre-season squad...</p>
     )
   } else if (isError) {
+    // GREEDY-NULL: surface reason code when hook throws with infeasibility message.
     squadSection = (
       <p className="text-sm text-red-600 dark:text-red-400 py-4">
-        Failed to load pre-season squad. Check the pipeline output and refresh.
+        {error?.message ?? 'Failed to load pre-season squad'}. Check the pipeline output and refresh.
       </p>
     )
   } else if (data === null || data === undefined || squad === null) {

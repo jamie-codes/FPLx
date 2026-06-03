@@ -114,6 +114,25 @@ function makeBootstrapFixture() {
   return { elements, teams }
 }
 
+// Fixture: archive with only 1 GK (ID 1; ID 2 omitted).
+// With the standard bootstrap (2 GKs), loadSquadInputs produces 19 eligible players (1 GK only).
+// buildPreSeasonSquad cannot fill MIN_SLOTS[1]=2 → returns null.
+// diagnoseBuildPreSeasonSquad returns { reason: 'unmet_min_slots' }.
+function makeOneGkArchiveFixture(): Record<string, { history: Array<{ total_points: number; minutes: number; element: number }> }> {
+  const archive: Record<string, { history: Array<{ total_points: number; minutes: number; element: number }> }> = {}
+  for (let id = 1; id <= 20; id++) {
+    if (id === 2) continue  // omit second GK so only 1 GK is eligible
+    archive[String(id)] = {
+      history: Array.from({ length: 6 }, () => ({
+        element: id,
+        total_points: 5,
+        minutes: 90,
+      })),
+    }
+  }
+  return archive
+}
+
 // Helper: wire readFile mock dispatch by path substring
 interface SetupMocksOpts {
   archive?: object | null
@@ -273,5 +292,18 @@ describe('Phase 129 (COST-02): /api/pre-season-squad ?include=inputs query-param
     expect(body.solver).toBe('ilp')
     // inputs field absent when archive/bootstrap missing (graceful degradation)
     expect(body.inputs).toBeUndefined()
+  })
+
+  it('returns 503 with reason field when greedy buildPreSeasonSquad returns null (GREEDY-NULL)', async () => {
+    // Archive has only 1 GK (ID 2 omitted) → greedy cannot fill MIN_SLOTS[1]=2 → null
+    // diagnoseBuildPreSeasonSquad classifies this as unmet_min_slots
+    setupMocks({ preSquad: null, archive: makeOneGkArchiveFixture() })
+    const { GET } = await import('./route')
+    const res = await GET(makeRequest(false))
+    expect(res.status).toBe(503)
+    const body = await res.json() as { error: string; reason: string }
+    expect(body.error).toBe('Squad infeasible — ILP fallback pending')
+    // Reason code included in response body — surfaced from diagnoseBuildPreSeasonSquad
+    expect(body.reason).toBe('unmet_min_slots')
   })
 })

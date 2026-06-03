@@ -14,6 +14,12 @@ export function usePreSeasonSquad(options?: { includeInputs?: boolean }) {
       const url = includeInputs ? '/api/pre-season-squad?include=inputs' : '/api/pre-season-squad'
       const res = await fetch(url)
       if (res.status === 404) return null  // archive absent → "Prices pending"
+      if (res.status === 503) {
+        // GREEDY-NULL: parse reason code from response body so UI can surface it.
+        const body = await res.json().catch(() => null)
+        const reason = (body as { reason?: string } | null)?.reason ?? 'unknown'
+        throw new Error(`Squad infeasible — ILP fallback pending (${reason})`)
+      }
       if (!res.ok) throw new Error('Failed to fetch pre-season squad')
       return res.json()
     },

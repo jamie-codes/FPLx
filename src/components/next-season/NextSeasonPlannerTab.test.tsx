@@ -167,6 +167,18 @@ describe('NextSeasonPlannerTab', () => {
     expect(container.textContent).toMatch(/failed to load pre-season squad/i)
   })
 
+  it('surfaces reason code in error paragraph when error has infeasible message (GREEDY-NULL)', () => {
+    // Hook throws with reason when 503 body includes reason code
+    usePreSeasonSquadMock.mockReturnValue({
+      data: null,
+      isLoading: false,
+      isError: true,
+      error: new Error('Squad infeasible — ILP fallback pending (unmet_min_slots)'),
+    })
+    const { container } = render(<NextSeasonPlannerTab />)
+    expect(container.textContent).toContain('unmet_min_slots')
+  })
+
   // Phase 127 Task 2: new tests for health indicator and solver badge
 
   it('renders ILP pill and no health paragraph when solver=ilp and health=null', () => {

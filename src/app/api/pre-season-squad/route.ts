@@ -9,7 +9,7 @@ import { list } from '@vercel/blob'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
 import type { NextRequest } from 'next/server'
-import { buildPreSeasonSquad } from '@/lib/pre-season-squad'
+import { buildPreSeasonSquad, diagnoseBuildPreSeasonSquad } from '@/lib/pre-season-squad'
 import type { PreSeasonPlayer, PreSeasonSquadInputs, SeasonArchiveEntry, SquadHealth, PreSeasonSquadResponse } from '@/lib/types'
 
 async function readBlobOrLocal(filename: string): Promise<string | null> {
@@ -182,10 +182,12 @@ export async function GET(request: NextRequest) {
     const squad = buildPreSeasonSquad(players, scoreMap)
 
     if (squad === null) {
-      // Greedy returned null — ILP fallback pending from pipeline
-      console.error('[pre-season-squad] Greedy buildPreSeasonSquad returned null — ILP fallback pending')
+      // Greedy returned null — classify why and include reason in 503 body (GREEDY-NULL).
+      const diagnosis = diagnoseBuildPreSeasonSquad(players, scoreMap)
+      const reason = diagnosis?.reason ?? 'unknown'
+      console.error('[pre-season-squad] Greedy returned null —', reason, '— ILP fallback pending')
       return Response.json(
-        { error: 'Squad infeasible — ILP fallback pending' },
+        { error: 'Squad infeasible — ILP fallback pending', reason },
         { status: 503 },
       )
     }
