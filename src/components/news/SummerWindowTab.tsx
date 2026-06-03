@@ -80,7 +80,7 @@ const TIER_CLS: Record<SourceTier, string> = {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function SummerWindowTab(): React.JSX.Element {
-  const { data, isLoading, isError } = useTransferNews()
+  const { data, isLoading, isError, isNotAvailable } = useTransferNews()
   const [activeFilter, setActiveFilter] = useState<TransferClass | 'all'>('all')
   const [activeTierFilter, setActiveTierFilter] = useState<SourceTierFilter>('all')
 
@@ -109,8 +109,14 @@ export function SummerWindowTab(): React.JSX.Element {
   if (isError || !data) {
     return (
       <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
-        <p className="text-sm text-zinc-700 dark:text-zinc-300 font-medium">Failed to load transfer news.</p>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Refresh the page or try again later.</p>
+        <p className="text-sm text-zinc-700 dark:text-zinc-300 font-medium">
+          {isNotAvailable ? 'Transfer news feed is not yet active.' : 'Failed to load transfer news.'}
+        </p>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+          {isNotAvailable
+            ? 'The pipeline will populate this feed on its next scheduled run.'
+            : 'Refresh the page or try again later.'}
+        </p>
       </div>
     )
   }

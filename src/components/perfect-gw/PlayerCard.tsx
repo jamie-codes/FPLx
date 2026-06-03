@@ -8,8 +8,18 @@ interface PlayerCardProps {
   isCapt: boolean
 }
 
+// FPL CDN shirt URLs — same source as the official FPL game pitch view.
+// Outfield: shirt_{team.code}-66.png  GK: shirt_{team.code}_1-66.png
+function shirtUrl(teamCode: number, isGk: boolean): string {
+  return isGk
+    ? `https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_${teamCode}_1-66.png`
+    : `https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_${teamCode}-66.png`
+}
+
 export function PlayerCard({ player, points, team, isCapt }: PlayerCardProps) {
   const priceLabel = `£${(player.now_cost / 10).toFixed(1)}m`
+  const isGk = player.element_type === 1
+  const shirt = shirtUrl(team.code, isGk)
 
   return (
     <div className="relative flex flex-col items-center">
@@ -25,6 +35,15 @@ export function PlayerCard({ player, points, team, isCapt }: PlayerCardProps) {
             : 'border border-zinc-600 dark:border-zinc-500'
         }`}
       >
+        {/* Club shirt — FPL CDN, 33×45px matches the standard -66 sprite */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={shirt}
+          alt={`${team.short_name} kit`}
+          width={33}
+          height={45}
+          className="mx-auto mb-1 object-contain"
+        />
         <div className="flex items-center justify-between mb-0.5">
           <span className="bg-zinc-700 text-zinc-200 text-[9px] font-bold px-1 rounded">
             {team.short_name}

@@ -59,6 +59,19 @@ describe('useTransferNews', () => {
     expect((result.current.error as Error).message).toBe('Failed to fetch transfer news')
   })
 
+  it('404 response sets isNotAvailable=true with locked message', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('Not Found', { status: 404 }))
+    )
+
+    const { result } = renderHook(() => useTransferNews(), { wrapper: makeWrapper() })
+    await waitFor(() => expect(result.current.isError).toBe(true))
+
+    expect(result.current.isNotAvailable).toBe(true)
+    expect((result.current.error as Error).message).toBe('Transfer news not available')
+  })
+
   it('hook fetches from /api/transfer-news exactly once on initial render', async () => {
     const fetchMock = vi.fn(
       async () => new Response(JSON.stringify(MOCK_FEED), { status: 200 })

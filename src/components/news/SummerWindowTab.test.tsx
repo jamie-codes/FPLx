@@ -319,6 +319,33 @@ describe('SummerWindowTab — Phase 131 SPEC-01/02/03', () => {
     expect(queryByText('Official Article')).toBeNull()
   })
 
+  it('shows "not yet active" message when isNotAvailable=true (404 from pipeline)', () => {
+    vi.mocked(useTransferNews).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      isNotAvailable: true,
+      error: new Error('Transfer news not available'),
+    } as unknown as ReturnType<typeof useTransferNews>)
+    const { container } = render(<SummerWindowTab />)
+    expect(container.textContent).toContain('Transfer news feed is not yet active.')
+    expect(container.textContent).toContain('pipeline will populate')
+    expect(container.textContent).not.toContain('Refresh the page')
+  })
+
+  it('shows generic error message when isError=true and isNotAvailable=false (server error)', () => {
+    vi.mocked(useTransferNews).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      isNotAvailable: false,
+      error: new Error('Failed to fetch transfer news'),
+    } as unknown as ReturnType<typeof useTransferNews>)
+    const { container } = render(<SummerWindowTab />)
+    expect(container.textContent).toContain('Failed to load transfer news.')
+    expect(container.textContent).toContain('Refresh the page')
+  })
+
   // Test 18: AND logic (SPEC-03 / D-11)
   it('Test 18 — classification AND tier filter both apply (AND logic)', () => {
     vi.mocked(useTransferNews).mockReturnValue(

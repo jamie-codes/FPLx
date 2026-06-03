@@ -61,4 +61,25 @@ describe('PlayerCard', () => {
     )
     expect(screen.getByText('£4.5m')).toBeTruthy()
   })
+
+  it('renders outfield shirt image with FPL CDN src using team code', () => {
+    render(
+      <PlayerCard player={salah} points={18} team={liverpool} isCapt={false} />
+    )
+    // salah element_type=3 (MID) → outfield shirt URL with code 14
+    const img = document.querySelector('img[alt="LIV kit"]') as HTMLImageElement
+    expect(img).toBeTruthy()
+    expect(img.src).toContain('shirt_14-66.png')
+    expect(img.src).not.toContain('shirt_14_1-66.png')
+  })
+
+  it('renders GK shirt URL when element_type=1', () => {
+    const gk = { ...salah, element_type: 1 }
+    render(
+      <PlayerCard player={gk} points={6} team={liverpool} isCapt={false} />
+    )
+    const img = document.querySelector('img[alt="LIV kit"]') as HTMLImageElement
+    expect(img).toBeTruthy()
+    expect(img.src).toContain('shirt_14_1-66.png')
+  })
 })
