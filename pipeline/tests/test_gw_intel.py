@@ -198,3 +198,16 @@ def test_narrative_template():
     assert len(run_cards) == 1
     # Easy difficulty (avg 0.4 <= 2.0), all home, prime hold
     assert run_cards[0]['narrative'] == 'Salah: 3 easy home fixtures — prime hold'
+
+
+def test_compute_gw_intel_accepts_cs_prob_kwargs():
+    """compute_gw_intel must accept cs_prob kwargs without raising."""
+    from gw_intel import compute_gw_intel
+    # Minimal inputs — just verify the call doesn't raise with non-default kwargs
+    result = compute_gw_intel(
+        merged=[], bootstrap={'elements': [], 'teams': [], 'events': []},
+        fixtures=[], summaries={}, finished_gws=10,
+        european_cup_dates={},
+        cs_prob_base=0.50, cs_prob_slope=0.25,
+    )
+    assert 'cards' in result

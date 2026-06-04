@@ -315,3 +315,27 @@ def test_accuracy_mc_enabled_cold_start(tmp_path):
         if 'gate_flags' in last_version:
             assert 'mc_enabled' in last_version['gate_flags'], \
                 "mc_enabled missing from version-record gate_flags (parity bug)"
+
+
+def test_cs_prob_sim_uses_kwargs():
+    """_cs_prob_sim must use cs_prob_base / cs_prob_slope kwargs, not hardcoded constants."""
+    from simulate import _cs_prob_sim
+    default = _cs_prob_sim(0.5, 90.0, None)
+    high_base = _cs_prob_sim(0.5, 90.0, None, cs_prob_base=0.55)
+    low_base = _cs_prob_sim(0.5, 90.0, None, cs_prob_base=0.25)
+    assert high_base > default > low_base
+
+
+def test_compute_simulations_cs_prob_kwargs_dont_raise():
+    """compute_simulations must accept and forward cs_prob kwargs without error."""
+    from simulate import compute_simulations
+    p = {
+        'id': 1, 'element_type': 3, 'xg_per90': 0.3, 'xa_per90': 0.1,
+        'start_prob': 0.9, 'xmins': 80.0, 'mins_60_prob': 0.85,
+        'fixtures': [{'event_id': 1, 'defensive_difficulty': 0.4,
+                      'opponent_xg_per_game': 1.2}],
+    }
+    result = compute_simulations([p], xmins_v2_enabled=False,
+                                  cs_prob_base=0.50, cs_prob_slope=0.25)
+    assert len(result) == 1
+    assert 'haul_prob' in result[0]

@@ -55,18 +55,20 @@ CS_PTS = {1: 6, 2: 6, 3: 1, 4: 0}
 BONUS_RATE = {1: 0.30, 2: 0.40, 3: 0.60, 4: 0.70}
 
 
-def _cs_prob_sim(dd: float, xmins: float, mins_60_prob: float | None) -> float:
+def _cs_prob_sim(dd: float, xmins: float, mins_60_prob: float | None,
+                 cs_prob_base: float = 0.40, cs_prob_slope: float = 0.30) -> float:
     """Bernoulli CS probability per fixture (mirrors merge.py:_cs_prob lines 141-146).
 
     D-02: inline re-implementation, no import from merge.py.
     D-03: xmins_v2_enabled gate handled by caller (passes mins_60_prob or None).
     """
-    cs_prob_raw = max(0.10, min(0.65, 0.40 - dd * 0.30))
+    cs_prob_raw = max(0.10, min(0.65, cs_prob_base - dd * cs_prob_slope))
     mins_factor = mins_60_prob if mins_60_prob is not None else min(1.0, xmins / 60.0)
     return cs_prob_raw * mins_factor
 
 
-def _simulate_player(p: dict, xmins_v2_enabled: bool, rng) -> dict:
+def _simulate_player(p: dict, xmins_v2_enabled: bool, rng,
+                     cs_prob_base: float = 0.40, cs_prob_slope: float = 0.30) -> dict:
     """Run N_SIMS Monte Carlo iterations for a single player over up to 5 GWs.
 
     Phase 61: returns 4 GW-1-only fields (`blank_prob`, `haul_prob`, `p10_pts`, `p90_pts`).
@@ -136,7 +138,7 @@ def _simulate_player(p: dict, xmins_v2_enabled: bool, rng) -> dict:
         gw_pts = np.zeros(N_SIMS)
         for fix in gw_fixtures:
             dd = fix.get('defensive_difficulty', 0.5)
-            cs_prob = _cs_prob_sim(dd, xmins, m60)
+            cs_prob = _cs_prob_sim(dd, xmins, m60, cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope)
             goals = rng.poisson(lam_g, size=N_SIMS)
             assists = rng.poisson(lam_a, size=N_SIMS)
             cs = rng.binomial(1, cs_prob, size=N_SIMS)
@@ -175,7 +177,8 @@ def _simulate_player(p: dict, xmins_v2_enabled: bool, rng) -> dict:
     }
 
 
-def compute_simulations(merged: list, xmins_v2_enabled: bool) -> list:
+def compute_simulations(merged: list, xmins_v2_enabled: bool,
+                        cs_prob_base: float = 0.40, cs_prob_slope: float = 0.30) -> list:
     """Run Monte Carlo simulations over the merged player list (Phase 61 / Phase 90 MC-01).
 
     Args:
@@ -184,6 +187,8 @@ def compute_simulations(merged: list, xmins_v2_enabled: bool) -> list:
                           summary at line 199). When True, _cs_prob_sim uses
                           mins_60_prob as the cs_prob mins_factor; when False,
                           falls back to xmins/60 ratio.
+        cs_prob_base: Intercept of the CS probability model (TUNE-01 tuned param; default 0.40).
+        cs_prob_slope: Slope of the CS probability model (TUNE-01 tuned param; default 0.30).
 
     Returns:
         Enriched copy of `merged`. Each player dict gains:
@@ -202,7 +207,7 @@ def compute_simulations(merged: list, xmins_v2_enabled: bool) -> list:
     active_count = 0
     for player in merged:
         p = dict(player)
-        sim = _simulate_player(p, xmins_v2_enabled, rng)
+        sim = _simulate_player(p, xmins_v2_enabled, rng, cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope)
         p.update(sim)
         # D-05: overwrite analytical sigma-derived ceiling with MC-derived p90
         p['xPts_90th_1gw'] = sim['p90_pts']

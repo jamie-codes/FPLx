@@ -160,6 +160,8 @@ def _build_fixture_run_card(
     next_gw: int,
     in_top30_by_3gw: bool,
     max_xpts_3gw: float,
+    cs_prob_base: float = 0.40,
+    cs_prob_slope: float = 0.30,
 ) -> dict:
     """FixtureRunCard per D-09/D-10/D-12."""
     fixtures_3 = (player.get('fixtures') or [])[:3]
@@ -172,6 +174,8 @@ def _build_fixture_run_card(
         int(player.get('element_type') or 0),
         player.get('fixtures') or [],
         3,
+        cs_prob_base=cs_prob_base,
+        cs_prob_slope=cs_prob_slope,
     )
     # gw_numbers: distinct event_ids of first 3 GW groups
     gw_numbers: list[int] = []
@@ -221,6 +225,8 @@ def compute_gw_intel(
     summaries: dict,
     finished_gws: int,
     european_cup_dates: dict[int, list[str]],
+    cs_prob_base: float = 0.40,
+    cs_prob_slope: float = 0.30,
 ) -> dict:
     """Phase 80 GWI-02/GWI-03/GWI-04. ZERO HTTP calls.
 
@@ -301,7 +307,8 @@ def compute_gw_intel(
         if pid in seen_ids:
             continue
         seen_ids.add(pid)
-        run_cards.append(_build_fixture_run_card(p, next_gw, pid in top30_ids, max_xpts_3gw))
+        run_cards.append(_build_fixture_run_card(p, next_gw, pid in top30_ids, max_xpts_3gw,
+                                                  cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope))
         if len(run_cards) >= 15:
             break
     cards.extend(run_cards)

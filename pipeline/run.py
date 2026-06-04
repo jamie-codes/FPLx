@@ -384,7 +384,9 @@ def run(dry_run: bool = False):
                 form_window_gws=form_window_gws_used,  # TUNE-01
             )
             if mc_enabled:
-                merged = compute_simulations(merged, xmins_v2_enabled)
+                merged = compute_simulations(merged, xmins_v2_enabled,
+                                             cs_prob_base=cs_prob_base_used,
+                                             cs_prob_slope=cs_prob_slope_used)
             save('merged_players.json', merged)
             timestamps['merged_players.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
             save('captain_picks.json', captain_picks)  # Phase 31 CAP-03/CAP-04
@@ -419,7 +421,9 @@ def run(dry_run: bool = False):
 
             # Phase 80 GWI-02/GWI-03/GWI-04 (D-05): GW-specific intelligence cards
             gw_intel = compute_gw_intel(
-                merged, bootstrap, fixtures, summaries, finished_gws, EUROPEAN_CUP_DATES
+                merged, bootstrap, fixtures, summaries, finished_gws, EUROPEAN_CUP_DATES,
+                cs_prob_base=cs_prob_base_used,
+                cs_prob_slope=cs_prob_slope_used,
             )
             save('gw_intel.json', gw_intel)
             timestamps['gw_intel.json'] = _dt_dh.now(_tz_dh.utc).isoformat()

@@ -1257,7 +1257,6 @@ def merge_players(
                 player['actual_vs_xg_delta'] = reg_delta
 
         # Sigma per window (used for ceiling classification post-loop)
-        # TODO(TUNE-01): gw_intel._build_fixture_run_card does not receive tuned cs_prob params
         player['_sigma_1gw'] = _compute_xpts_sigma(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 1,
