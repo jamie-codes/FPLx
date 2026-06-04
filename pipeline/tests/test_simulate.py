@@ -325,6 +325,11 @@ def test_cs_prob_sim_uses_kwargs():
     low_base = _cs_prob_sim(0.5, 90.0, None, cs_prob_base=0.25)
     assert high_base > default > low_base
 
+    # Also verify slope forwarding: higher slope = more sensitive to difficulty
+    steep = _cs_prob_sim(0.5, 90.0, None, cs_prob_slope=0.60)
+    flat  = _cs_prob_sim(0.5, 90.0, None, cs_prob_slope=0.10)
+    assert flat > steep  # flat slope: dd=0.5 hurts less → higher cs_prob
+
 
 def test_compute_simulations_cs_prob_kwargs_dont_raise():
     """compute_simulations must accept and forward cs_prob kwargs without error."""

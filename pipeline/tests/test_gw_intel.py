@@ -200,14 +200,38 @@ def test_narrative_template():
     assert run_cards[0]['narrative'] == 'Salah: 3 easy home fixtures — prime hold'
 
 
-def test_compute_gw_intel_accepts_cs_prob_kwargs():
-    """compute_gw_intel must accept cs_prob kwargs without raising."""
+def test_compute_gw_intel_forwards_cs_prob_kwargs():
+    """compute_gw_intel must forward cs_prob kwargs to _build_fixture_run_card.
+    Uses a minimal player with a fixture so _build_fixture_run_card is actually called."""
     from gw_intel import compute_gw_intel
-    # Minimal inputs — just verify the call doesn't raise with non-default kwargs
+    player = {
+        'id': 1, 'web_name': 'Tester', 'element_type': 2,
+        'team': 1, 'xg_per90': 0.05, 'xa_per90': 0.03,
+        'start_prob': 0.9, 'xmins': 80.0,
+        'xPts_3gw': 4.5, 'xPts_1gw': 1.5,
+        'selected_by_percent': 10.0,
+        'fixtures': [
+            {'event_id': 11, 'defensive_difficulty': 0.4,
+             'opponent_xg_per_game': 1.1, 'is_home': True},
+        ],
+        'haul_prob': 0.1, 'form': 5.0,
+    }
+    bootstrap = {
+        'elements': [player],
+        'teams': [{'id': 1, 'short_name': 'TST'}],
+        'events': [{'id': 10, 'finished': True}, {'id': 11, 'finished': False}],
+    }
+    # Should not raise with non-default kwargs; _build_fixture_run_card called for this player
     result = compute_gw_intel(
-        merged=[], bootstrap={'elements': [], 'teams': [], 'events': []},
-        fixtures=[], summaries={}, finished_gws=10,
+        merged=[player],
+        bootstrap=bootstrap,
+        fixtures=[{'event': 11, 'team_h': 1, 'team_a': 2,
+                   'team_h_difficulty': 3, 'team_a_difficulty': 4,
+                   'finished': False, 'kickoff_time': '2026-11-01T15:00:00Z'}],
+        summaries={},
+        finished_gws=10,
         european_cup_dates={},
-        cs_prob_base=0.50, cs_prob_slope=0.25,
+        cs_prob_base=0.50,
+        cs_prob_slope=0.25,
     )
     assert 'cards' in result
