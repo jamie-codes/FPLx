@@ -14,11 +14,22 @@ function makeWrapper(retries = 0) {
 }
 
 const MOCK_FEED: TransferNewsFeed = {
+  enabled: true,
   scraped_at: '2026-05-18T12:00:00Z',
   articles: [],
   source_health: {
     skysports: { ok: true, last_success: '2026-05-18T12:00:00Z', last_error: null },
     bbc: { ok: true, last_success: '2026-05-18T12:00:00Z', last_error: null },
+  },
+}
+
+const DISABLED_FEED: TransferNewsFeed = {
+  enabled: false,
+  scraped_at: '',
+  articles: [],
+  source_health: {
+    skysports: { ok: false, last_success: null, last_error: null },
+    bbc: { ok: false, last_success: null, last_error: null },
   },
 }
 
@@ -59,17 +70,19 @@ describe('useTransferNews', () => {
     expect((result.current.error as Error).message).toBe('Failed to fetch transfer news')
   })
 
-  it('404 response sets isNotAvailable=true with locked message', async () => {
+  it('200 enabled:false response sets isNotAvailable=true without error state', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => new Response('Not Found', { status: 404 }))
+      vi.fn(async () => new Response(JSON.stringify(DISABLED_FEED), { status: 200 }))
     )
 
     const { result } = renderHook(() => useTransferNews(), { wrapper: makeWrapper() })
-    await waitFor(() => expect(result.current.isError).toBe(true))
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     expect(result.current.isNotAvailable).toBe(true)
-    expect((result.current.error as Error).message).toBe('Transfer news not available')
+    expect(result.current.isError).toBe(false)
+    expect(result.current.data?.enabled).toBe(false)
+    expect(result.current.data?.articles).toEqual([])
   })
 
   it('hook fetches from /api/transfer-news exactly once on initial render', async () => {

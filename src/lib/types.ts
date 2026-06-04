@@ -1101,7 +1101,8 @@ export interface TransferNewsArticle {
 }
 
 export interface TransferNewsFeed {
-  scraped_at: string                // ISO 8601 UTC — pipeline run timestamp
+  enabled?: boolean                 // false = pipeline not yet activated; absent on pre-fix blobs = implicitly active
+  scraped_at: string                // ISO 8601 UTC — pipeline run timestamp; '' when enabled: false
   articles: TransferNewsArticle[]
   source_health: {
     skysports: SourceHealth         // reuses SourceHealth defined at line 1016

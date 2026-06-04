@@ -319,13 +319,23 @@ describe('SummerWindowTab — Phase 131 SPEC-01/02/03', () => {
     expect(queryByText('Official Article')).toBeNull()
   })
 
-  it('shows "not yet active" message when isNotAvailable=true (404 from pipeline)', () => {
+  it('shows "not yet active" message when isNotAvailable=true (pipeline not active)', () => {
     vi.mocked(useTransferNews).mockReturnValue({
-      data: undefined,
+      data: {
+        enabled: false,
+        scraped_at: '',
+        articles: [],
+        source_health: {
+          skysports: { ok: false, last_success: null, last_error: null },
+          bbc: { ok: false, last_success: null, last_error: null },
+        },
+      },
       isLoading: false,
-      isError: true,
+      isError: false,
+      isSuccess: true,
+      isPending: false,
       isNotAvailable: true,
-      error: new Error('Transfer news not available'),
+      error: null,
     } as unknown as ReturnType<typeof useTransferNews>)
     const { container } = render(<SummerWindowTab />)
     expect(container.textContent).toContain('Transfer news feed is not yet active.')

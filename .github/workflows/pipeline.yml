@@ -33,6 +33,7 @@ jobs:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       MC_ITERATIONS: 10000
       MC_SEED: 42
+      TRANSFER_NEWS_ENABLED: 'true'
 
     steps:
       - name: Checkout repository

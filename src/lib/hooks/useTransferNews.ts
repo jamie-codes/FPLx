@@ -6,17 +6,17 @@ export function useTransferNews() {
     queryKey: ['transfer-news'],
     queryFn: async () => {
       const res = await fetch('/api/transfer-news')
-      // 404 = pipeline hasn't written the artifact yet (TRANSFER_NEWS_ENABLED not active)
-      if (res.status === 404) throw new Error('Transfer news not available')
       if (!res.ok) throw new Error('Failed to fetch transfer news')
       return res.json()
     },
     staleTime: 6 * 60 * 60 * 1000, // 6h — D-07, matches pipeline run cadence
+    retry: false,                   // 200 envelope means no retriable errors; belt-and-suspenders
   })
 
-  // Convenience flag: 404 response → feed not yet populated by pipeline
-  const isNotAvailable =
-    query.isError && (query.error as Error)?.message === 'Transfer news not available'
+  // Convenience flag: enabled:false → pipeline hasn't written the artifact yet.
+  // Derived from data (not error state) because the route now returns 200 + envelope
+  // instead of 404, eliminating browser console noise and React Query retries.
+  const isNotAvailable = query.data?.enabled === false
 
   return { ...query, isNotAvailable }
 }

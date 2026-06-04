@@ -105,8 +105,8 @@ export function SummerWindowTab(): React.JSX.Element {
     )
   }
 
-  // Error state (or missing data after loading)
-  if (isError || !data) {
+  // Error state, unavailable (pipeline not active), or missing data after loading
+  if (isError || !data || isNotAvailable) {
     return (
       <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
         <p className="text-sm text-zinc-700 dark:text-zinc-300 font-medium">
