@@ -377,3 +377,28 @@ class TestMergePlayersTunedParams:
         lo_xpts = next(p['xPts_1gw'] for p in lo if p['id'] == 1)
         hi_xpts = next(p['xPts_1gw'] for p in hi if p['id'] == 1)
         assert hi_xpts > lo_xpts
+
+    def test_form_window_gws_affects_form_signal(self):
+        """Shorter form_window_gws with a recent hot streak should change form_xgxa_per90."""
+        # Build player with low form early, high form recently
+        early = [_hist(r, 90, 2, xg=0.1, xa=0.05) for r in range(1, 6)]
+        recent = [_hist(r, 90, 8, xg=0.8, xa=0.4) for r in range(6, 11)]
+        history = early + recent
+        bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_minimal_inputs({1: history})
+
+        # Narrow window (3 GWs) captures only the hot recent form
+        merged_narrow, _ = merge_players(
+            bootstrap, fixtures, understat, id_map,
+            xmins_stats=xmins_stats, summaries=summaries,
+            form_signal_enabled=True, form_window_gws=3,
+        )
+        # Wide window (8 GWs) averages in the cold early games
+        merged_wide, _ = merge_players(
+            bootstrap, fixtures, understat, id_map,
+            xmins_stats=xmins_stats, summaries=summaries,
+            form_signal_enabled=True, form_window_gws=8,
+        )
+        p_narrow = next(p for p in merged_narrow if p['id'] == 1)
+        p_wide   = next(p for p in merged_wide   if p['id'] == 1)
+        # The narrow window should give higher form signal (only sees the hot streak)
+        assert p_narrow['form_xgxa_per90'] > p_wide['form_xgxa_per90']

@@ -484,6 +484,8 @@ def _compute_xpts_sigma(
     bonus_predictor_enabled: bool = False,
     bonus_ev: float | None = None,
     save_predictor_enabled: bool = False,   # Phase 83 GK-01
+    cs_prob_base: float = 0.40,
+    cs_prob_slope: float = 0.30,
 ) -> float:
     """Analytical sigma for xPts across an N-GW window (Phase 28 XPTS-02 D-09).
 
@@ -512,7 +514,11 @@ def _compute_xpts_sigma(
     for _event_id, gw_fixtures in grouped[:n_gws]:
         for fix in gw_fixtures:
             dd = fix.get('defensive_difficulty', 0.5)
-            cs_prob = _cs_prob(dd, xmins, mins_60_prob=mins_60_prob if xmins_v2_enabled else None)
+            cs_prob = _cs_prob(
+                dd, xmins,
+                mins_60_prob=mins_60_prob if xmins_v2_enabled else None,
+                cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,
+            )
 
             lam_g = xg * (xmins / 90.0)
             lam_a = xa * (xmins / 90.0)
@@ -1251,12 +1257,14 @@ def merge_players(
                 player['actual_vs_xg_delta'] = reg_delta
 
         # Sigma per window (used for ceiling classification post-loop)
+        # TODO(TUNE-01): gw_intel._build_fixture_run_card does not receive tuned cs_prob params
         player['_sigma_1gw'] = _compute_xpts_sigma(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 1,
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
             bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
             save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
+            cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,
         )
         player['_sigma_3gw'] = _compute_xpts_sigma(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
@@ -1264,6 +1272,7 @@ def merge_players(
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
             bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
             save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
+            cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,
         )
         player['_sigma_5gw'] = _compute_xpts_sigma(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
@@ -1271,6 +1280,7 @@ def merge_players(
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
             bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
             save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
+            cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,
         )
 
         result.append(player)
