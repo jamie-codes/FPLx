@@ -38,6 +38,173 @@ FORM_MIN_MINUTES = 270       # Phase 42 ACC-01: same minutes floor as merge._com
 FORMULA_VERSION = 'v1.12-a'  # Phase 63 D-01 / VER-01: bumped manually when prediction formula changes; pattern v{milestone}-{letter}
 
 
+def build_fixture_difficulty_lookup(fixtures: list) -> dict:
+    """Build (gw, team_id) -> difficulty_score lookup from the fixtures list.
+
+    Extracted from compute_accuracy_backtest inner setup so tune.py can reuse it
+    without calling the full backtest. Identical mapping to the original inline block.
+
+    difficulty_score = (raw_difficulty - 1) / 4.0  (1=easiest → 0.0, 5=hardest → 1.0)
+    """
+    lookup: dict = {}
+    for fix in fixtures:
+        gw = fix.get('event')
+        if gw is None:
+            continue
+        lookup[(gw, fix['team_h'])] = (fix.get('team_h_difficulty', 3) - 1) / 4.0
+        lookup[(gw, fix['team_a'])] = (fix.get('team_a_difficulty', 3) - 1) / 4.0
+    return lookup
+
+
+def compute_metrics_for_gws(per_gw_rows: dict, gws: list) -> dict:
+    """Compute haul hit rate, xPts RMSE, and captain hit rate over the given GWs.
+
+    Args:
+        per_gw_rows: dict mapping gw (int) -> list of player-row dicts. Each row must
+                     have: player_id, actual_pts, xpts_blended_predicted, element_type.
+        gws:         List of GW numbers to include in the metric computation.
+
+    Returns:
+        {'haul_hit_rate': float, 'rmse': float, 'captain_hit_rate': float}
+        All values are rounded to 4 decimal places. Returns all-zero dict for empty input.
+    """
+    import math as _math
+    total_haulters = 0
+    total_flagged = 0
+    squared_errors: list = []
+    captain_hits = 0
+    captain_gws = 0
+
+    for gw in gws:
+        rows = per_gw_rows.get(gw, [])
+        if not rows:
+            continue
+
+        # Rank all players by blended xPts descending for this GW
+        ranked = sorted(rows, key=lambda r: r['xpts_blended_predicted'], reverse=True)
+        rank_by_id = {r['player_id']: i + 1 for i, r in enumerate(ranked)}
+
+        # Haul hit rate: haulters (≥10 actual pts) ranked in top TOP_N_PREDICTED
+        # Note: effective ceiling is the smaller of TOP_N_PREDICTED and pool size,
+        # using floor(pool_size / 2) as a proportional cut when pool is small.
+        effective_top_n = min(TOP_N_PREDICTED, max(1, len(rows) // 2))
+        gw_haulters = [r for r in rows if r['actual_pts'] >= HAULTER_THRESHOLD]
+        total_haulters += len(gw_haulters)
+        total_flagged += sum(
+            1 for r in gw_haulters
+            if rank_by_id.get(r['player_id'], 9999) <= effective_top_n
+        )
+
+        # RMSE: all players in this GW
+        for r in rows:
+            err = r['xpts_blended_predicted'] - r['actual_pts']
+            squared_errors.append(err * err)
+
+        # Captain hit rate: did rank-1 player score the highest actual pts?
+        if ranked:
+            captain_id = ranked[0]['player_id']
+            max_actual = max(r['actual_pts'] for r in rows)
+            captain_actual = next(
+                r['actual_pts'] for r in rows if r['player_id'] == captain_id
+            )
+            captain_hits += 1 if captain_actual >= max_actual else 0
+            captain_gws += 1
+
+    haul_hit_rate = total_flagged / total_haulters if total_haulters > 0 else 0.0
+    rmse = _math.sqrt(sum(squared_errors) / len(squared_errors)) if squared_errors else 0.0
+    captain_hit_rate = captain_hits / captain_gws if captain_gws > 0 else 0.0
+
+    return {
+        'haul_hit_rate': round(haul_hit_rate, 4),
+        'rmse': round(rmse, 4),
+        'captain_hit_rate': round(captain_hit_rate, 4),
+    }
+
+
+def build_per_gw_rows(
+    summaries: dict,
+    target_gws: list,
+    bootstrap: dict,
+    fixture_difficulty: dict,
+    teams_by_id: dict,
+    blend_alpha: float = BLEND_ALPHA,
+    form_window_gws: int = FORM_WINDOW_GWS,
+    cs_prob_base: float = 0.40,
+    cs_prob_slope: float = 0.30,
+) -> dict:
+    """Build per-GW player rows with reconstructed xPts for the given target_gws.
+
+    Extracted from compute_accuracy_backtest so tune.py can call it with
+    different parameter values without running the full backtest pipeline.
+
+    Args:
+        summaries:         dict mapping player_id (int) -> element-summary dict.
+        target_gws:        list of GW numbers to build rows for.
+        bootstrap:         FPL bootstrap-static JSON (elements, teams).
+        fixture_difficulty: dict from build_fixture_difficulty_lookup().
+        teams_by_id:       dict mapping team_id (int) -> team dict.
+        blend_alpha:       form signal blend weight (TUNE-01).
+        form_window_gws:   recency window for form signal (TUNE-01).
+        cs_prob_base:      base CS probability (TUNE-01).
+        cs_prob_slope:     CS probability difficulty slope (TUNE-01).
+
+    Returns:
+        dict mapping gw -> list of player-row dicts (same shape as compute_accuracy_backtest
+        internal per_gw_rows; each row has player_id, player_name, team_short, element_type,
+        actual_pts, xpts_predicted, xpts_blended_predicted).
+    """
+    per_gw_rows: dict = {gw: [] for gw in target_gws}
+
+    for element in bootstrap.get('elements', []):
+        element_id = element['id']
+        if element.get('starts', 0) == 0:
+            continue
+        summary = summaries.get(element_id)
+        if summary is None:
+            continue
+
+        history = summary.get('history', []) or []
+        grouped = _group_history_by_gw(history)
+        element_type = element.get('element_type', 3)
+        player_team_id = element['team']
+        player_name = element.get('web_name', f'P{element_id}')
+        team_short = teams_by_id.get(player_team_id, {}).get('short_name', '')
+
+        for gw in target_gws:
+            entry = grouped.get(gw)
+            if entry is None:
+                continue
+            if entry['minutes'] < MIN_MINUTES:
+                continue
+
+            actual_pts = entry['total_points']
+            difficulty_score = fixture_difficulty.get((gw, player_team_id), 0.5)
+
+            xpts_predicted = _reconstruct_xpts(
+                entry, element_type, difficulty_score,
+                cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,
+            )
+            form_per90_at_gw = _reconstruct_form_signal(grouped, gw, window_gws=form_window_gws)
+            xpts_blended_predicted = _reconstruct_xpts_with_form(
+                entry, element_type, difficulty_score, form_per90_at_gw,
+                blend_alpha=blend_alpha,
+                cs_prob_base=cs_prob_base,
+                cs_prob_slope=cs_prob_slope,
+            )
+
+            per_gw_rows[gw].append({
+                'player_id': element_id,
+                'player_name': player_name,
+                'team_short': team_short,
+                'element_type': element_type,
+                'actual_pts': actual_pts,
+                'xpts_predicted': xpts_predicted,
+                'xpts_blended_predicted': xpts_blended_predicted,
+            })
+
+    return per_gw_rows
+
+
 def _read_existing_xmins_v2_flag(cache_dir: str) -> bool:
     """Phase 52 D-02: preserve xmins_v2_enabled across backtest runs.
 
@@ -126,6 +293,10 @@ def compute_accuracy_backtest(
     fixtures: list,
     cache_dir: str = '',
     merged_haul_lookup: Optional[dict] = None,
+    blend_alpha: float = BLEND_ALPHA,
+    form_window_gws: int = FORM_WINDOW_GWS,
+    cs_prob_base: float = 0.40,
+    cs_prob_slope: float = 0.30,
 ) -> dict:
     """Compute pre-aggregated accuracy backtest for the last 5 finished GWs.
 
@@ -154,71 +325,21 @@ def compute_accuracy_backtest(
     target_gws = list(range(max(1, finished_gws - BACKTEST_GWS + 1), finished_gws + 1))
     target_gws_desc = sorted(target_gws, reverse=True)
 
-    # Pitfall 1: build fixture_difficulty lookup keyed by (gw, OWN team_id)
-    # team_h_difficulty IS the difficulty rating shown for the home team — i.e. the away team's strength
-    # team_a_difficulty IS the difficulty rating shown for the away team — i.e. the home team's strength
-    fixture_difficulty: dict = {}
-    for fix in fixtures:
-        gw = fix.get('event')
-        if gw is None:
-            continue
-        # Linear (d-1)/4.0 map: 1->0.0 (easiest), 5->1.0 (hardest)
-        fixture_difficulty[(gw, fix['team_h'])] = (fix.get('team_h_difficulty', 3) - 1) / 4.0
-        fixture_difficulty[(gw, fix['team_a'])] = (fix.get('team_a_difficulty', 3) - 1) / 4.0
-
+    # Build lookup dicts and per-GW rows (extracted to build_per_gw_rows for tune.py reuse)
+    fixture_difficulty = build_fixture_difficulty_lookup(fixtures)
     teams_by_id = {t['id']: t for t in bootstrap.get('teams', [])}
 
-    # First pass: build per-player, per-GW reconstructed predictions.
-    # We need this BEFORE ranking because ranking happens per-GW across all players.
-    # Structure: per_gw_rows[gw] -> list of dicts { player_id, name, team_short,
-    #     element_type, actual_pts, xpts_predicted, xpts_blended_predicted }
-    per_gw_rows: dict = {gw: [] for gw in target_gws}
-
-    for element in bootstrap.get('elements', []):
-        element_id = element['id']
-        if element.get('starts', 0) == 0:
-            continue  # Pitfall 2: zero-start players have no summary entry
-        summary = summaries.get(element_id)
-        if summary is None:
-            continue  # Pitfall 2: guard against missing summaries
-
-        history = summary.get('history', []) or []
-        grouped = _group_history_by_gw(history)  # Pattern 4: DGW aggregation
-
-        element_type = element.get('element_type', 3)
-        player_team_id = element['team']
-        player_name = element.get('web_name', f'P{element_id}')
-        team_short = teams_by_id.get(player_team_id, {}).get('short_name', '')
-
-        for gw in target_gws:
-            entry = grouped.get(gw)
-            if entry is None:
-                continue
-            if entry['minutes'] < MIN_MINUTES:
-                continue  # Claude's Discretion: skip DNP / cameo entries
-
-            actual_pts = entry['total_points']
-
-            # D-03: difficulty score for THIS player's team in THIS GW
-            difficulty_score = fixture_difficulty.get((gw, player_team_id), 0.5)
-
-            xpts_predicted = _reconstruct_xpts(entry, element_type, difficulty_score)
-
-            # Phase 42 ACC-02: blended xPts using strictly prior-GW form signal (no leak)
-            form_per90_at_gw = _reconstruct_form_signal(grouped, gw)
-            xpts_blended_predicted = _reconstruct_xpts_with_form(
-                entry, element_type, difficulty_score, form_per90_at_gw,
-            )
-
-            per_gw_rows[gw].append({
-                'player_id': element_id,
-                'player_name': player_name,
-                'team_short': team_short,
-                'element_type': element_type,
-                'actual_pts': actual_pts,
-                'xpts_predicted': xpts_predicted,
-                'xpts_blended_predicted': xpts_blended_predicted,    # Phase 42
-            })
+    per_gw_rows = build_per_gw_rows(
+        summaries=summaries,
+        target_gws=target_gws,
+        bootstrap=bootstrap,
+        fixture_difficulty=fixture_difficulty,
+        teams_by_id=teams_by_id,
+        blend_alpha=blend_alpha,
+        form_window_gws=form_window_gws,
+        cs_prob_base=cs_prob_base,
+        cs_prob_slope=cs_prob_slope,
+    )
 
     # Second pass: per-GW ranking and haulter flagging
     haulters: list = []
@@ -654,7 +775,8 @@ def _group_history_by_gw(history: list) -> dict:
     return dict(by_round)
 
 
-def _reconstruct_xpts(entry: dict, element_type: int, difficulty_score: float) -> float:
+def _reconstruct_xpts(entry: dict, element_type: int, difficulty_score: float,
+                       cs_prob_base: float = 0.40, cs_prob_slope: float = 0.30) -> float:
     """Reconstruct xPts for a single GW history entry (D-02, D-03, D-04).
 
     Calls merge._compute_xpts_fixture with reconstructed historical inputs.
@@ -687,6 +809,8 @@ def _reconstruct_xpts(entry: dict, element_type: int, difficulty_score: float) -
         xmins=xmins,
         element_type=element_type,
         defensive_difficulty=difficulty_score,
+        cs_prob_base=cs_prob_base,
+        cs_prob_slope=cs_prob_slope,
     )
     return round(result['total'], 2)
 
@@ -736,6 +860,8 @@ def _reconstruct_xpts_with_form(
     difficulty_score: float,
     form_per90: 'float | None',
     blend_alpha: float = BLEND_ALPHA,
+    cs_prob_base: float = 0.40,
+    cs_prob_slope: float = 0.30,
 ) -> float:
     """Reconstruct xPts with optional form blend (Phase 42 ACC-02).
 
@@ -748,7 +874,8 @@ def _reconstruct_xpts_with_form(
     and vice versa (Pitfall 2).
     """
     if form_per90 is None:
-        return _reconstruct_xpts(entry, element_type, difficulty_score)
+        return _reconstruct_xpts(entry, element_type, difficulty_score,
+                                  cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope)
 
     from merge import _compute_xpts_fixture
 
@@ -782,5 +909,7 @@ def _reconstruct_xpts_with_form(
         xmins=xmins,
         element_type=element_type,
         defensive_difficulty=difficulty_score,
+        cs_prob_base=cs_prob_base,
+        cs_prob_slope=cs_prob_slope,
     )
     return round(result['total'], 2)

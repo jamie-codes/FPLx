@@ -18,7 +18,11 @@ import pytest
 
 # This import will FAIL until Plan 02 creates pipeline/accuracy.py.
 # Wave 0 RED: collection error is the explicit failure mode.
-from accuracy import compute_accuracy_backtest, build_predictions_snapshot, FORMULA_VERSION
+from accuracy import (
+    compute_accuracy_backtest, build_predictions_snapshot, FORMULA_VERSION,
+    build_fixture_difficulty_lookup, build_per_gw_rows, compute_metrics_for_gws,
+)
+import math
 
 
 # ------------------------------------------------------------------ helpers
@@ -1099,3 +1103,99 @@ def test_legacy_version_records_without_sample_gws_are_preserved(tmp_path):
     assert new_entry['sample_gws'] == _BGWS, (
         f"Expected sample_gws == {_BGWS} but got {new_entry['sample_gws']}"
     )
+
+
+# ============================================================================
+# TUNE-01 — build_fixture_difficulty_lookup and compute_metrics_for_gws
+# ============================================================================
+
+class TestBuildFixtureDifficultyLookup:
+    def test_maps_team_and_gw_to_difficulty(self):
+        fixtures = [
+            {'event': 1, 'team_h': 10, 'team_a': 5, 'team_h_difficulty': 3, 'team_a_difficulty': 5},
+        ]
+        lookup = build_fixture_difficulty_lookup(fixtures)
+        # team_h difficulty for team 10 in GW1: (3-1)/4.0 = 0.5
+        assert abs(lookup[(1, 10)] - 0.5) < 1e-9
+        # team_a difficulty for team 5 in GW1: (5-1)/4.0 = 1.0
+        assert abs(lookup[(1, 5)] - 1.0) < 1e-9
+
+    def test_skips_fixtures_without_event(self):
+        fixtures = [{'team_h': 1, 'team_a': 2, 'team_h_difficulty': 3, 'team_a_difficulty': 3}]
+        lookup = build_fixture_difficulty_lookup(fixtures)
+        assert len(lookup) == 0
+
+
+class TestComputeMetricsForGws:
+    """compute_metrics_for_gws must return haul_hit_rate, rmse, captain_hit_rate."""
+
+    def _make_rows(self, player_specs):
+        """player_specs: list of (player_id, actual_pts, xpts_blended_predicted)."""
+        rows = []
+        for pid, actual, xpred in player_specs:
+            rows.append({
+                'player_id': pid,
+                'player_name': f'P{pid}',
+                'team_short': 'TST',
+                'element_type': 3,
+                'actual_pts': actual,
+                'xpts_predicted': xpred,
+                'xpts_blended_predicted': xpred,
+            })
+        return rows
+
+    def test_haul_hit_rate_perfect(self):
+        """Haulter is ranked #1 → haul_hit_rate = 1.0."""
+        rows = self._make_rows([(1, 12, 8.0), (2, 4, 3.0)])  # P1 hauls + is rank-1
+        per_gw_rows = {1: rows}
+        metrics = compute_metrics_for_gws(per_gw_rows, [1])
+        assert metrics['haul_hit_rate'] == 1.0
+
+    def test_haul_hit_rate_zero(self):
+        """Haulter ranked outside top 10 → haul_hit_rate = 0.0."""
+        # Build 11 players with higher xpts_blended, 1 haulter ranked last
+        rows = [{'player_id': i, 'player_name': f'P{i}', 'team_short': 'T',
+                 'element_type': 3, 'actual_pts': 2, 'xpts_predicted': 10.0 - i * 0.5,
+                 'xpts_blended_predicted': 10.0 - i * 0.5} for i in range(1, 12)]
+        rows.append({'player_id': 99, 'player_name': 'Haulter', 'team_short': 'T',
+                     'element_type': 3, 'actual_pts': 15, 'xpts_predicted': 0.1,
+                     'xpts_blended_predicted': 0.1})  # ranked last
+        per_gw_rows = {1: rows}
+        metrics = compute_metrics_for_gws(per_gw_rows, [1])
+        assert metrics['haul_hit_rate'] == 0.0
+
+    def test_rmse_exact(self):
+        """RMSE = sqrt(mean((pred - actual)^2))."""
+        rows = self._make_rows([(1, 4.0, 6.0), (2, 8.0, 6.0)])  # both 2pt error
+        per_gw_rows = {1: rows}
+        metrics = compute_metrics_for_gws(per_gw_rows, [1])
+        expected_rmse = math.sqrt((4.0 + 4.0) / 2)  # = 2.0
+        assert abs(metrics['rmse'] - expected_rmse) < 0.001
+
+    def test_captain_hit_rate_win(self):
+        """Rank-1 player scores most points → captain_hit_rate = 1.0."""
+        rows = self._make_rows([(1, 14, 9.0), (2, 6, 5.0)])  # P1 highest xpts AND highest actual
+        per_gw_rows = {1: rows}
+        metrics = compute_metrics_for_gws(per_gw_rows, [1])
+        assert metrics['captain_hit_rate'] == 1.0
+
+    def test_captain_hit_rate_miss(self):
+        """Rank-1 player doesn't score most → captain_hit_rate = 0.0."""
+        rows = self._make_rows([(1, 4, 9.0), (2, 14, 5.0)])  # P1 top xpts but P2 scores more
+        per_gw_rows = {1: rows}
+        metrics = compute_metrics_for_gws(per_gw_rows, [1])
+        assert metrics['captain_hit_rate'] == 0.0
+
+    def test_empty_gws_returns_zeros(self):
+        per_gw_rows = {1: []}
+        metrics = compute_metrics_for_gws(per_gw_rows, [1])
+        assert metrics == {'haul_hit_rate': 0.0, 'rmse': 0.0, 'captain_hit_rate': 0.0}
+
+    def test_multi_gw_aggregation(self):
+        """Metrics aggregate correctly over multiple GWs."""
+        gw1 = self._make_rows([(1, 12, 9.0), (2, 4, 5.0)])  # haul hit, captain hit
+        gw2 = self._make_rows([(1, 4, 9.0), (2, 14, 5.0)])  # haul miss, captain miss
+        per_gw_rows = {1: gw1, 2: gw2}
+        metrics = compute_metrics_for_gws(per_gw_rows, [1, 2])
+        assert abs(metrics['haul_hit_rate'] - 0.5) < 0.001
+        assert abs(metrics['captain_hit_rate'] - 0.5) < 0.001
