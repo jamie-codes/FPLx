@@ -331,7 +331,9 @@ def compute_accuracy_backtest(
         merged_haul_lookup = {}
     # D-01: identify last 5 finished GWs
     if finished_gws < 1:
-        return _empty_backtest(cache_dir)
+        return _empty_backtest(cache_dir, blend_alpha=blend_alpha,
+                               form_window_gws=form_window_gws,
+                               cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope)
     target_gws = list(range(max(1, finished_gws - BACKTEST_GWS + 1), finished_gws + 1))
     target_gws_desc = sorted(target_gws, reverse=True)
 
@@ -555,7 +557,10 @@ def compute_accuracy_backtest(
             'mc_enabled': mc_enabled,                                            # Phase 90 MC-01 / D-01: gate for 5-GW MC simulation; preserved across runs once flipped
             'calibration_mode': calibration_mode,                                # Phase 109 MC-CAL-01: 'mc' when MC coverage >= 80%; 'analytical' otherwise
             'news_flag_enabled': True,                                           # Phase 88 SCRAPER-01: always on; kill switch in UI gate
-            'blend_alpha_used': BLEND_ALPHA,                                     # Phase 42 ACC-03
+            'blend_alpha_used': blend_alpha,                                      # Phase 42 ACC-03 / TUNE-01: use runtime arg so prior tuning is not overwritten on tuner skip
+            'form_window_gws_used': form_window_gws,                             # TUNE-01
+            'cs_prob_base_used': cs_prob_base,                                   # TUNE-01
+            'cs_prob_slope_used': cs_prob_slope,                                 # TUNE-01
             'mid_tier_hit_rate': round(overall_mid_tier_hit, 4),                 # Phase 42 ACC-04
             'mid_tier_blended_hit_rate': round(overall_mid_tier_blended_hit, 4), # Phase 42 ACC-04
             'gws': gw_summaries,
@@ -594,7 +599,11 @@ def build_predictions_snapshot(merged: list, current_gw: int) -> dict:
 # Private helpers
 # ============================================================================
 
-def _empty_backtest(cache_dir: str = '') -> dict:
+def _empty_backtest(cache_dir: str = '',
+                    blend_alpha: float = BLEND_ALPHA,
+                    form_window_gws: int = FORM_WINDOW_GWS,
+                    cs_prob_base: float = CS_PROB_BASE,
+                    cs_prob_slope: float = CS_PROB_SLOPE) -> dict:
     """Return an empty but well-shaped backtest (used when no GWs are finished).
 
     Reads existing flag values from cache_dir so manually-flipped True values
@@ -639,7 +648,10 @@ def _empty_backtest(cache_dir: str = '') -> dict:
             'mc_enabled': mc_enabled,                            # Phase 90 MC-01
             'calibration_mode': 'analytical',                    # Phase 109 MC-CAL-01: no merged data in empty path, default analytical
             'news_flag_enabled': True,                            # Phase 88 SCRAPER-01: always on; kill switch in UI gate
-            'blend_alpha_used': BLEND_ALPHA,          # Phase 42
+            'blend_alpha_used': blend_alpha,           # Phase 42 ACC-03 / TUNE-01: use runtime arg so prior tuning is not overwritten on tuner skip
+            'form_window_gws_used': form_window_gws,  # TUNE-01
+            'cs_prob_base_used': cs_prob_base,        # TUNE-01
+            'cs_prob_slope_used': cs_prob_slope,      # TUNE-01
             'mid_tier_hit_rate': 0.0,                 # Phase 42
             'mid_tier_blended_hit_rate': 0.0,         # Phase 42
             'gws': [],
