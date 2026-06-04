@@ -35,6 +35,8 @@ GATE_MARGIN_PP = 0.02        # Phase 42 ACC-03 / Pitfall 3: require 2pp margin t
 BLEND_ALPHA = 0.4            # Phase 42 ACC-01: form-signal blend coefficient (matches merge.BLEND_ALPHA)
 FORM_WINDOW_GWS = 5          # Phase 42 ACC-01: same window as merge._compute_form_signal default
 FORM_MIN_MINUTES = 270       # Phase 42 ACC-01: same minutes floor as merge._compute_form_signal default
+CS_PROB_BASE = 0.40          # TUNE-01: default base CS probability vs average opposition
+CS_PROB_SLOPE = 0.30         # TUNE-01: default CS probability sensitivity to opponent strength
 FORMULA_VERSION = 'v1.12-a'  # Phase 63 D-01 / VER-01: bumped manually when prediction formula changes; pattern v{milestone}-{letter}
 
 
@@ -67,6 +69,9 @@ def compute_metrics_for_gws(per_gw_rows: dict, gws: list) -> dict:
     Returns:
         {'haul_hit_rate': float, 'rmse': float, 'captain_hit_rate': float}
         All values are rounded to 4 decimal places. Returns all-zero dict for empty input.
+
+    Note: Ranking for haul_hit_rate and captain_hit_rate is by ``xpts_blended_predicted``.
+    This corresponds to ``xpts_blended_hit_rate`` in the backtest output, not ``xpts_hit_rate``.
     """
     import math as _math
     total_haulters = 0
@@ -126,8 +131,8 @@ def build_per_gw_rows(
     teams_by_id: dict,
     blend_alpha: float = BLEND_ALPHA,
     form_window_gws: int = FORM_WINDOW_GWS,
-    cs_prob_base: float = 0.40,
-    cs_prob_slope: float = 0.30,
+    cs_prob_base: float = CS_PROB_BASE,
+    cs_prob_slope: float = CS_PROB_SLOPE,
 ) -> dict:
     """Build per-GW player rows with reconstructed xPts for the given target_gws.
 
@@ -292,8 +297,8 @@ def compute_accuracy_backtest(
     merged_haul_lookup: Optional[dict] = None,
     blend_alpha: float = BLEND_ALPHA,
     form_window_gws: int = FORM_WINDOW_GWS,
-    cs_prob_base: float = 0.40,
-    cs_prob_slope: float = 0.30,
+    cs_prob_base: float = CS_PROB_BASE,
+    cs_prob_slope: float = CS_PROB_SLOPE,
 ) -> dict:
     """Compute pre-aggregated accuracy backtest for the last 5 finished GWs.
 
@@ -310,6 +315,14 @@ def compute_accuracy_backtest(
         merged_haul_lookup: optional dict mapping player_id (int) -> haul_prob (float).
                             Built by run.py from the current merged list after MC simulation.
                             None (default) produces the analytical calibration path.
+        blend_alpha: Form signal blend coefficient (default BLEND_ALPHA). Passed
+                     to build_per_gw_rows and used by TUNE-01 sweep.
+        form_window_gws: Recency window for form signal in GWs (default FORM_WINDOW_GWS).
+                         Passed to build_per_gw_rows. Tunable via TUNE-01.
+        cs_prob_base: Base CS probability vs average opposition (default 0.40).
+                      Passed to build_per_gw_rows. Tunable via TUNE-01.
+        cs_prob_slope: Sensitivity of CS prob to opponent attacking strength (default 0.30).
+                       Passed to build_per_gw_rows. Tunable via TUNE-01.
 
     Returns:
         Dict matching accuracy_backtest.json structure (D-08).
@@ -773,7 +786,7 @@ def _group_history_by_gw(history: list) -> dict:
 
 
 def _reconstruct_xpts(entry: dict, element_type: int, difficulty_score: float,
-                       cs_prob_base: float = 0.40, cs_prob_slope: float = 0.30) -> float:
+                       cs_prob_base: float = CS_PROB_BASE, cs_prob_slope: float = CS_PROB_SLOPE) -> float:
     """Reconstruct xPts for a single GW history entry (D-02, D-03, D-04).
 
     Calls merge._compute_xpts_fixture with reconstructed historical inputs.
@@ -857,8 +870,8 @@ def _reconstruct_xpts_with_form(
     difficulty_score: float,
     form_per90: 'float | None',
     blend_alpha: float = BLEND_ALPHA,
-    cs_prob_base: float = 0.40,
-    cs_prob_slope: float = 0.30,
+    cs_prob_base: float = CS_PROB_BASE,
+    cs_prob_slope: float = CS_PROB_SLOPE,
 ) -> float:
     """Reconstruct xPts with optional form blend (Phase 42 ACC-02).
 
