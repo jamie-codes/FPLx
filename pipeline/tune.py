@@ -116,8 +116,175 @@ def _combined_score(current_metrics: dict, candidate_metrics: dict) -> float:
     return delta_haul + rmse_improvement + delta_captain
 
 
-def run_tuner(summaries, finished_gws, bootstrap, fixtures, cache_dir=''):
-    """Stub — full implementation added in Task 5."""
+def _sweep_param(
+    param_name: str,
+    candidates: list,
+    current_val,
+    params: dict,
+    summaries: dict,
+    all_gws: list,
+    bootstrap: dict,
+    fixture_difficulty: dict,
+    teams_by_id: dict,
+    gws_train: list,
+    gws_validate: list,
+) -> dict:
+    """Sweep one parameter over all candidates. Returns result dict.
+
+    Args:
+        param_name:         key in params dict being swept (e.g. 'blend_alpha').
+        candidates:         list of candidate values to evaluate.
+        current_val:        current production value (read from prior backtest).
+        params:             current locked-in values for all four parameters.
+        summaries:          element-summary dict from run.py.
+        all_gws:            all finished GW numbers (train + validate combined).
+        bootstrap:          FPL bootstrap-static JSON.
+        fixture_difficulty: lookup built by build_fixture_difficulty_lookup().
+        teams_by_id:        dict mapping team_id (int) -> team dict.
+        gws_train:          GW numbers for training set.
+        gws_validate:       GW numbers for validation set.
+
+    Returns:
+        dict with keys: current, best, promoted, and (when promoted=True) per-metric
+        train/validate values.
+    """
+    # Baseline: current production metrics using current params
+    baseline_rows = build_per_gw_rows(
+        summaries=summaries,
+        target_gws=all_gws,
+        bootstrap=bootstrap,
+        fixture_difficulty=fixture_difficulty,
+        teams_by_id=teams_by_id,
+        blend_alpha=params['blend_alpha'],
+        form_window_gws=params['form_window_gws'],
+        cs_prob_base=params['cs_prob_base'],
+        cs_prob_slope=params['cs_prob_slope'],
+    )
+    current_train    = compute_metrics_for_gws(baseline_rows, gws_train)
+    current_validate = compute_metrics_for_gws(baseline_rows, gws_validate)
+
+    best_val = current_val
+    best_combined: float | None = None
+    best_train = current_train
+    best_validate = current_validate
+    promoted = False
+
+    for candidate in candidates:
+        if candidate == current_val:
+            continue
+        candidate_params = {**params, param_name: candidate}
+        candidate_rows = build_per_gw_rows(
+            summaries=summaries,
+            target_gws=all_gws,
+            bootstrap=bootstrap,
+            fixture_difficulty=fixture_difficulty,
+            teams_by_id=teams_by_id,
+            blend_alpha=candidate_params['blend_alpha'],
+            form_window_gws=candidate_params['form_window_gws'],
+            cs_prob_base=candidate_params['cs_prob_base'],
+            cs_prob_slope=candidate_params['cs_prob_slope'],
+        )
+        train_metrics    = compute_metrics_for_gws(candidate_rows, gws_train)
+        validate_metrics = compute_metrics_for_gws(candidate_rows, gws_validate)
+
+        if not _promotion_gates(current_train, train_metrics, current_validate, validate_metrics):
+            continue
+
+        combined = _combined_score(current_validate, validate_metrics)
+        if best_combined is None or combined > best_combined:
+            best_combined    = combined
+            best_val         = candidate
+            best_train       = train_metrics
+            best_validate    = validate_metrics
+            promoted         = True
+
+    result: dict = {'current': current_val, 'best': best_val, 'promoted': promoted}
+    if promoted:
+        result.update({
+            'train_haul_hit_rate':       best_train['haul_hit_rate'],
+            'train_rmse':                best_train['rmse'],
+            'train_captain_hit_rate':    best_train['captain_hit_rate'],
+            'validate_haul_hit_rate':    best_validate['haul_hit_rate'],
+            'validate_rmse':             best_validate['rmse'],
+            'validate_captain_hit_rate': best_validate['captain_hit_rate'],
+        })
+    return result
+
+
+def run_tuner(
+    summaries: dict,
+    finished_gws: int,
+    bootstrap: dict,
+    fixtures: list,
+    cache_dir: str = '',
+) -> dict:
+    """Run coordinate descent parameter tuner over all four tunable parameters.
+
+    Skips when finished_gws < MIN_FINISHED_GWS (not enough data for a hold-out split).
+    Non-fatal: all exceptions should be caught by the caller (run.py).
+
+    Returns a dict suitable for merging into accuracy_backtest.json under the 'tuner' key.
+    Includes a 'promoted_params' sub-dict with the final locked-in values for all four
+    parameters; run.py writes these into the summary for next-run consumption.
+    """
     if finished_gws < MIN_FINISHED_GWS:
-        return {'skipped': True, 'reason': f'finished_gws={finished_gws} < {MIN_FINISHED_GWS}'}
-    return {}  # stub — Task 5 replaces this
+        return {
+            'skipped': True,
+            'reason': f'finished_gws={finished_gws} < MIN_FINISHED_GWS={MIN_FINISHED_GWS}',
+        }
+
+    prior = _read_prior_params(cache_dir)
+
+    # Hold-out split: last ⌊N/3⌋ GWs for validation, remainder for training
+    all_gws = list(range(1, finished_gws + 1))
+    n_validate = max(1, finished_gws // 3)
+    gws_validate = all_gws[-n_validate:]
+    gws_train    = all_gws[:-n_validate]
+
+    fixture_difficulty = build_fixture_difficulty_lookup(fixtures)
+    teams_by_id = {t['id']: t for t in bootstrap.get('teams', [])}
+
+    # Active params: updated after each sweep locks in the best value
+    params = {
+        'blend_alpha':     prior['blend_alpha'],
+        'form_window_gws': prior['form_window_gws'],
+        'cs_prob_base':    prior['cs_prob_base'],
+        'cs_prob_slope':   prior['cs_prob_slope'],
+    }
+
+    sweep_results: dict = {}
+
+    # Coordinate descent: sweep each parameter in order
+    sweep_order = [
+        ('blend_alpha',     BLEND_ALPHA_CANDIDATES,     prior['blend_alpha']),
+        ('form_window_gws', FORM_WINDOW_CANDIDATES,     prior['form_window_gws']),
+        ('cs_prob_base',    CS_PROB_BASE_CANDIDATES,    prior['cs_prob_base']),
+        ('cs_prob_slope',   CS_PROB_SLOPE_CANDIDATES,   prior['cs_prob_slope']),
+    ]
+
+    for param_name, candidates, current_val in sweep_order:
+        result = _sweep_param(
+            param_name=param_name,
+            candidates=candidates,
+            current_val=current_val,
+            params=params,
+            summaries=summaries,
+            all_gws=all_gws,
+            bootstrap=bootstrap,
+            fixture_difficulty=fixture_difficulty,
+            teams_by_id=teams_by_id,
+            gws_train=gws_train,
+            gws_validate=gws_validate,
+        )
+        sweep_results[param_name] = result
+        if result['promoted']:
+            params[param_name] = result['best']  # lock in for next sweep
+
+    return {
+        'last_run_at':     datetime.now(timezone.utc).isoformat(),
+        'finished_gws':    finished_gws,
+        'gws_train':       gws_train,
+        'gws_validate':    gws_validate,
+        'sweep':           sweep_results,
+        'promoted_params': dict(params),  # copy of final locked-in values
+    }

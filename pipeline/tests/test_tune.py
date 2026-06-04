@@ -16,6 +16,43 @@ from tune import (
     CS_PROB_BASE_CANDIDATES,
     CS_PROB_SLOPE_CANDIDATES,
 )
+from tune import _sweep_param
+from accuracy import build_fixture_difficulty_lookup
+
+
+def _make_summaries_and_bootstrap(n_players=5, n_gws=20, xg=0.3, xa=0.1, actual_pts_fn=None):
+    """Build minimal summaries + bootstrap for tuner testing.
+
+    actual_pts_fn: callable(player_id, gw) -> int. Defaults to 5 for all.
+    """
+    if actual_pts_fn is None:
+        actual_pts_fn = lambda pid, gw: 5
+
+    elements = []
+    summaries = {}
+    for pid in range(1, n_players + 1):
+        elements.append({
+            'id': pid, 'web_name': f'P{pid}',
+            'element_type': 3, 'team': 14, 'starts': n_gws,
+        })
+        history = []
+        for gw in range(1, n_gws + 1):
+            history.append({
+                'round': gw, 'minutes': 90,
+                'total_points': actual_pts_fn(pid, gw),
+                'expected_goals': xg, 'expected_assists': xa,
+                'starts': 1,
+            })
+        summaries[pid] = {'history': history}
+
+    teams = [{'id': 14, 'short_name': 'TST'}]
+    bootstrap = {'elements': elements, 'teams': teams}
+    fixtures = [
+        {'event': gw, 'team_h': 14, 'team_a': 1,
+         'team_h_difficulty': 3, 'team_a_difficulty': 3}
+        for gw in range(1, n_gws + 1)
+    ]
+    return summaries, bootstrap, fixtures
 
 
 # ── Promotion gate tests ─────────────────────────────────────────────────────
@@ -162,3 +199,94 @@ class TestRunTunerGates:
     def test_skips_at_zero_gws(self, tmp_path):
         result = run_tuner({}, 0, {}, [], str(tmp_path))
         assert result.get('skipped') is True
+
+
+class TestSweepParam:
+    def test_no_promotion_when_all_candidates_equal(self, tmp_path):
+        """If no candidate improves over current, promoted=False and best=current."""
+        summaries, bootstrap, fixtures = _make_summaries_and_bootstrap()
+        fixture_difficulty = build_fixture_difficulty_lookup(fixtures)
+        teams_by_id = {14: {'short_name': 'TST'}}
+        all_gws = list(range(1, 21))
+        gws_train = all_gws[:13]
+        gws_val = all_gws[13:]
+        params = {'blend_alpha': 0.4, 'form_window_gws': 5,
+                  'cs_prob_base': 0.40, 'cs_prob_slope': 0.30}
+
+        result = _sweep_param(
+            param_name='blend_alpha',
+            candidates=[0.4],   # only the current value — nothing to improve
+            current_val=0.4,
+            params=params,
+            summaries=summaries,
+            all_gws=all_gws,
+            bootstrap=bootstrap,
+            fixture_difficulty=fixture_difficulty,
+            teams_by_id=teams_by_id,
+            gws_train=gws_train,
+            gws_validate=gws_val,
+        )
+        assert result['promoted'] is False
+        assert result['best'] == 0.4
+
+    def test_result_has_required_keys(self):
+        summaries, bootstrap, fixtures = _make_summaries_and_bootstrap()
+        fixture_difficulty = build_fixture_difficulty_lookup(fixtures)
+        all_gws = list(range(1, 21))
+        params = {'blend_alpha': 0.4, 'form_window_gws': 5,
+                  'cs_prob_base': 0.40, 'cs_prob_slope': 0.30}
+        result = _sweep_param(
+            'blend_alpha', [0.4], 0.4, params,
+            summaries, all_gws, bootstrap, fixture_difficulty,
+            {14: {'short_name': 'TST'}}, all_gws[:13], all_gws[13:],
+        )
+        assert 'current' in result
+        assert 'best' in result
+        assert 'promoted' in result
+
+
+class TestRunTunerFull:
+    def test_run_tuner_returns_expected_keys(self, tmp_path):
+        """run_tuner must return a dict with tuner metadata keys."""
+        summaries, bootstrap, fixtures = _make_summaries_and_bootstrap(n_gws=20)
+        result = run_tuner(summaries, 20, bootstrap, fixtures, str(tmp_path))
+        assert 'last_run_at' in result
+        assert 'gws_train' in result
+        assert 'gws_validate' in result
+        assert 'sweep' in result
+        assert 'promoted_params' in result
+
+    def test_run_tuner_sweep_covers_all_parameters(self, tmp_path):
+        summaries, bootstrap, fixtures = _make_summaries_and_bootstrap(n_gws=20)
+        result = run_tuner(summaries, 20, bootstrap, fixtures, str(tmp_path))
+        sweep = result['sweep']
+        assert 'blend_alpha' in sweep
+        assert 'form_window_gws' in sweep
+        assert 'cs_prob_base' in sweep
+        assert 'cs_prob_slope' in sweep
+
+    def test_run_tuner_promoted_params_contains_all_four(self, tmp_path):
+        summaries, bootstrap, fixtures = _make_summaries_and_bootstrap(n_gws=20)
+        result = run_tuner(summaries, 20, bootstrap, fixtures, str(tmp_path))
+        pp = result['promoted_params']
+        assert 'blend_alpha' in pp
+        assert 'form_window_gws' in pp
+        assert 'cs_prob_base' in pp
+        assert 'cs_prob_slope' in pp
+
+    def test_run_tuner_train_validate_split_correct(self, tmp_path):
+        """Train + validate together must cover all finished GWs with no gaps or overlap."""
+        summaries, bootstrap, fixtures = _make_summaries_and_bootstrap(n_gws=20)
+        result = run_tuner(summaries, 20, bootstrap, fixtures, str(tmp_path))
+        train = result['gws_train']
+        validate = result['gws_validate']
+        assert set(train) | set(validate) == set(range(1, 21))
+        assert set(train) & set(validate) == set()
+
+    def test_coordinate_locking_uses_prior_sweep_value(self, tmp_path):
+        """promoted_params must reflect the locked-in values from all four sweeps."""
+        summaries, bootstrap, fixtures = _make_summaries_and_bootstrap(n_gws=20)
+        result = run_tuner(summaries, 20, bootstrap, fixtures, str(tmp_path))
+        # promoted_params['blend_alpha'] must equal sweep['blend_alpha']['best']
+        assert result['promoted_params']['blend_alpha'] == result['sweep']['blend_alpha']['best']
+        assert result['promoted_params']['cs_prob_base'] == result['sweep']['cs_prob_base']['best']
