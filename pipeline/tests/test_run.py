@@ -383,3 +383,56 @@ def test_batch_block_passes_current_gw():
     # The batch call must pass current_gw (as a positional or keyword arg)
     assert "generate_batch_insights(top20, corpus, current_gw)" in src, \
         "run.py must call generate_batch_insights(top20, corpus, current_gw)"
+
+
+# ---------------------------------------------------------------------------
+# TUNE-01: tuner param read contract tests
+# ---------------------------------------------------------------------------
+
+def _read_tuner_params(cache_dir: str) -> dict:
+    """Replica of the run.py tuner-param read pattern (TUNE-01 contract test).
+    Production code in run.py MUST use this exact shape.
+    """
+    import json, os
+    backtest_path = os.path.join(cache_dir, 'accuracy_backtest.json')
+    form_window_gws_used = 5
+    cs_prob_base_used    = 0.40
+    cs_prob_slope_used   = 0.30
+    try:
+        with open(backtest_path, 'r', encoding='utf-8') as f:
+            prev = json.load(f)
+        summary = prev.get('summary', {})
+        form_window_gws_used = int(summary.get('form_window_gws_used', 5))
+        cs_prob_base_used    = float(summary.get('cs_prob_base_used',    0.40))
+        cs_prob_slope_used   = float(summary.get('cs_prob_slope_used',   0.30))
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+    return {
+        'form_window_gws_used': form_window_gws_used,
+        'cs_prob_base_used':    cs_prob_base_used,
+        'cs_prob_slope_used':   cs_prob_slope_used,
+    }
+
+
+def test_read_tuner_params_defaults_on_missing_file():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        params = _read_tuner_params(tmpdir)
+        assert params['form_window_gws_used'] == 5
+        assert abs(params['cs_prob_base_used']  - 0.40) < 1e-9
+        assert abs(params['cs_prob_slope_used'] - 0.30) < 1e-9
+
+
+def test_read_tuner_params_reads_promoted_values():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        data = {'summary': {
+            'form_window_gws_used': 4,
+            'cs_prob_base_used': 0.45,
+            'cs_prob_slope_used': 0.25,
+        }}
+        path = os.path.join(tmpdir, 'accuracy_backtest.json')
+        with open(path, 'w') as f:
+            json.dump(data, f)
+        params = _read_tuner_params(tmpdir)
+        assert params['form_window_gws_used'] == 4
+        assert abs(params['cs_prob_base_used']  - 0.45) < 1e-9
+        assert abs(params['cs_prob_slope_used'] - 0.25) < 1e-9

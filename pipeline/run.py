@@ -346,6 +346,9 @@ def run(dry_run: bool = False):
             save_predictor_enabled = False  # Phase 83 GK-03 — default OFF; flips ON after >=5-GW non-regression shadow run
             MC_ENABLED = True  # Phase 102 MC-01 — permanent ON; surfaces 10k-sim MC fields in merged_players.json
             mc_enabled = MC_ENABLED  # Phase 109 CR-02: set before try so corrupt cache never silently disables MC
+            form_window_gws_used = 5       # TUNE-01: default
+            cs_prob_base_used    = 0.40    # TUNE-01: default
+            cs_prob_slope_used   = 0.30    # TUNE-01: default
             backtest_path = os.path.join(cache_dir, 'accuracy_backtest.json')
             try:
                 with open(backtest_path, 'r', encoding='utf-8') as f:
@@ -354,6 +357,9 @@ def run(dry_run: bool = False):
                 blend_alpha_used = prev_backtest.get('summary', {}).get('blend_alpha_used', 0.4)
                 xmins_v2_enabled = prev_backtest.get('summary', {}).get('xmins_v2_enabled', False)
                 save_predictor_enabled = prev_backtest.get('summary', {}).get('save_predictor_enabled', False)
+                form_window_gws_used = int(prev_backtest.get('summary', {}).get('form_window_gws_used', 5))
+                cs_prob_base_used    = float(prev_backtest.get('summary', {}).get('cs_prob_base_used', 0.40))
+                cs_prob_slope_used   = float(prev_backtest.get('summary', {}).get('cs_prob_slope_used', 0.30))
             except (FileNotFoundError, json.JSONDecodeError):
                 pass
 
@@ -362,6 +368,7 @@ def run(dry_run: bool = False):
             print(f"Bonus predictor (per-player EV): {'ENABLED' if bonus_predictor_enabled else 'DISABLED'}")
             print(f"Save predictor (GK Poisson-floor): {'ENABLED' if save_predictor_enabled else 'DISABLED'}")
             print(f"MC simulation (5-GW uncertainty bands): {'ENABLED' if mc_enabled else 'DISABLED'}")
+            print(f"TUNE-01 params: form_window={form_window_gws_used}, cs_prob_base={cs_prob_base_used}, cs_prob_slope={cs_prob_slope_used}")
 
             merged, captain_picks = merge_players(
                 bootstrap, fixtures, understat, id_map,
@@ -372,6 +379,9 @@ def run(dry_run: bool = False):
                 bonus_stats=bonus_stats,
                 bonus_predictor_enabled=bonus_predictor_enabled,
                 save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01 / GK-03
+                cs_prob_base=cs_prob_base_used,        # TUNE-01
+                cs_prob_slope=cs_prob_slope_used,      # TUNE-01
+                form_window_gws=form_window_gws_used,  # TUNE-01
             )
             if mc_enabled:
                 merged = compute_simulations(merged, xmins_v2_enabled)
@@ -462,7 +472,35 @@ def run(dry_run: bool = False):
             # merged already has haul_prob populated (MC_ENABLED=True since Phase 102).
             haul_lookup = {p['id']: p['haul_prob'] for p in merged if p.get('haul_prob') is not None}
             print(f"MC haul_prob coverage: {len(haul_lookup)}/{len(merged)} players ({100*len(haul_lookup)//max(len(merged),1)}%)")
-            backtest_data = compute_accuracy_backtest(summaries, finished_gws, bootstrap, fixtures, cache_dir=cache_dir, merged_haul_lookup=haul_lookup)
+            backtest_data = compute_accuracy_backtest(
+                summaries, finished_gws, bootstrap, fixtures,
+                cache_dir=cache_dir,
+                merged_haul_lookup=haul_lookup,
+                blend_alpha=blend_alpha_used,
+                form_window_gws=form_window_gws_used,  # TUNE-01
+                cs_prob_base=cs_prob_base_used,        # TUNE-01
+                cs_prob_slope=cs_prob_slope_used,      # TUNE-01
+            )
+            # TUNE-01: run coordinate descent tuner and merge result into backtest
+            try:
+                from tune import run_tuner
+                tuner_result = run_tuner(
+                    summaries, finished_gws, bootstrap, fixtures, cache_dir=cache_dir
+                )
+                backtest_data['tuner'] = tuner_result
+                # Promote any improved parameters into summary for next run
+                if not tuner_result.get('skipped') and 'promoted_params' in tuner_result:
+                    pp = tuner_result['promoted_params']
+                    backtest_data['summary']['blend_alpha_used']     = pp['blend_alpha']
+                    backtest_data['summary']['form_window_gws_used'] = pp['form_window_gws']
+                    backtest_data['summary']['cs_prob_base_used']    = pp['cs_prob_base']
+                    backtest_data['summary']['cs_prob_slope_used']   = pp['cs_prob_slope']
+                    print(f"[tune] params: blend_alpha={pp['blend_alpha']}, "
+                          f"form_window={pp['form_window_gws']}, "
+                          f"cs_prob_base={pp['cs_prob_base']}, "
+                          f"cs_prob_slope={pp['cs_prob_slope']}")
+            except Exception as tune_exc:
+                print(f'[tune] non-fatal error: {tune_exc}', file=sys.stderr)
             save('accuracy_backtest.json', backtest_data)
             timestamps['accuracy_backtest.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
             print(f"Accuracy backtest: {len(backtest_data.get('gws_covered', []))} GWs covered, "
