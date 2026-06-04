@@ -43,6 +43,14 @@ class TestCsProbKwargs:
         result = _compute_xpts_fixture(0.3, 0.1, 1.0, 90.0, 3, 0.4)
         assert result['total'] > 0  # sanity; exact value comes from existing tests
 
+    def test_cs_prob_1gw_for_fixtures_forwards_kwargs(self):
+        """cs_prob_1gw_for_fixtures must forward cs_prob_base/slope to _cs_prob."""
+        # Build a minimal fixtures list: one GW, one fixture
+        fixtures = [{'event_id': 1, 'defensive_difficulty': 0.0}]
+        lo = _cs_prob_1gw_for_fixtures(fixtures, 90.0, cs_prob_base=0.25)
+        hi = _cs_prob_1gw_for_fixtures(fixtures, 90.0, cs_prob_base=0.55)
+        assert hi > lo
+
 
 def _hist(round_, minutes, total_points, xg=0.0, xa=0.0):
     return {
