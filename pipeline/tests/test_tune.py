@@ -284,9 +284,19 @@ class TestRunTunerFull:
         assert set(train) & set(validate) == set()
 
     def test_coordinate_locking_uses_prior_sweep_value(self, tmp_path):
-        """promoted_params must reflect the locked-in values from all four sweeps."""
+        """promoted_params must reflect locked-in values from all four sweeps in order.
+
+        Note: this is a structural consistency test — it verifies that promoted_params
+        is built from the locked-in values, not that locking actually changed a later
+        sweep's outcome (which would require engineering a parameter interaction fixture).
+        The implementation-level locking (params[param_name] = result['best']) is verified
+        by reading the code; this test catches any regression where promoted_params diverges
+        from sweep results.
+        """
         summaries, bootstrap, fixtures = _make_summaries_and_bootstrap(n_gws=20)
         result = run_tuner(summaries, 20, bootstrap, fixtures, str(tmp_path))
-        # promoted_params['blend_alpha'] must equal sweep['blend_alpha']['best']
-        assert result['promoted_params']['blend_alpha'] == result['sweep']['blend_alpha']['best']
-        assert result['promoted_params']['cs_prob_base'] == result['sweep']['cs_prob_base']['best']
+        # All four params in promoted_params must match their sweep's best value
+        assert result['promoted_params']['blend_alpha']     == result['sweep']['blend_alpha']['best']
+        assert result['promoted_params']['form_window_gws'] == result['sweep']['form_window_gws']['best']
+        assert result['promoted_params']['cs_prob_base']    == result['sweep']['cs_prob_base']['best']
+        assert result['promoted_params']['cs_prob_slope']   == result['sweep']['cs_prob_slope']['best']

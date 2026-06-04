@@ -148,6 +148,12 @@ def _sweep_param(
         dict with keys: current, best, promoted, and (when promoted=True) per-metric
         train/validate values.
     """
+    # Invariant: current_val must match what params currently holds for this param.
+    # If they diverge, the skip guard and result['current'] will be inconsistent.
+    assert params.get(param_name) == current_val, (
+        f"_sweep_param invariant: params['{param_name}']={params.get(param_name)} "
+        f"!= current_val={current_val}"
+    )
     # Baseline: current production metrics using current params
     baseline_rows = build_per_gw_rows(
         summaries=summaries,
