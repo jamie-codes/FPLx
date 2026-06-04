@@ -84,15 +84,12 @@ def compute_metrics_for_gws(per_gw_rows: dict, gws: list) -> dict:
         ranked = sorted(rows, key=lambda r: r['xpts_blended_predicted'], reverse=True)
         rank_by_id = {r['player_id']: i + 1 for i, r in enumerate(ranked)}
 
-        # Haul hit rate: haulters (≥10 actual pts) ranked in top TOP_N_PREDICTED
-        # Note: effective ceiling is the smaller of TOP_N_PREDICTED and pool size,
-        # using floor(pool_size / 2) as a proportional cut when pool is small.
-        effective_top_n = min(TOP_N_PREDICTED, max(1, len(rows) // 2))
+        # Haul hit rate: haulters (≥10 actual pts) ranked in top 10
         gw_haulters = [r for r in rows if r['actual_pts'] >= HAULTER_THRESHOLD]
         total_haulters += len(gw_haulters)
         total_flagged += sum(
             1 for r in gw_haulters
-            if rank_by_id.get(r['player_id'], 9999) <= effective_top_n
+            if rank_by_id.get(r['player_id'], 9999) <= TOP_N_PREDICTED
         )
 
         # RMSE: all players in this GW

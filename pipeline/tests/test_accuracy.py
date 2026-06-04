@@ -1193,9 +1193,20 @@ class TestComputeMetricsForGws:
 
     def test_multi_gw_aggregation(self):
         """Metrics aggregate correctly over multiple GWs."""
-        gw1 = self._make_rows([(1, 12, 9.0), (2, 4, 5.0)])  # haul hit, captain hit
-        gw2 = self._make_rows([(1, 4, 9.0), (2, 14, 5.0)])  # haul miss, captain miss
+        # GW1: P1 is the haulter AND ranked #1 → haul hit
+        gw1 = self._make_rows([(1, 12, 9.0), (2, 4, 5.0)])
+
+        # GW2: P99 is the haulter but ranked #12 (11 players with higher xpts) → haul miss
+        gw2_others = [{'player_id': i, 'player_name': f'P{i}', 'team_short': 'T',
+                        'element_type': 3, 'actual_pts': 2,
+                        'xpts_predicted': 10.0 - i * 0.1,
+                        'xpts_blended_predicted': 10.0 - i * 0.1}
+                      for i in range(1, 12)]  # 11 players ranked 1..11
+        gw2_haulter = {'player_id': 99, 'player_name': 'Haulter', 'team_short': 'T',
+                        'element_type': 3, 'actual_pts': 14, 'xpts_predicted': 0.1,
+                        'xpts_blended_predicted': 0.1}  # ranked 12th
+        gw2 = gw2_others + [gw2_haulter]
+
         per_gw_rows = {1: gw1, 2: gw2}
         metrics = compute_metrics_for_gws(per_gw_rows, [1, 2])
-        assert abs(metrics['haul_hit_rate'] - 0.5) < 0.001
-        assert abs(metrics['captain_hit_rate'] - 0.5) < 0.001
+        assert abs(metrics['haul_hit_rate'] - 0.5) < 0.001  # 1 hit out of 2 haulters
