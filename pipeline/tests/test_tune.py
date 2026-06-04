@@ -80,6 +80,14 @@ class TestPromotionGates:
         candidate_val    = self._metrics(haul=0.58, rmse=3.1, captain=0.48)   # -2pp exactly
         assert _promotion_gates(current_train, candidate_train, current_val, candidate_val) is True
 
+    def test_fails_when_current_rmse_zero_and_candidate_nonzero(self):
+        """When current RMSE is 0, any positive candidate RMSE must fail gate 3."""
+        current_train    = self._metrics(haul=0.55, rmse=0.0, captain=0.48)
+        candidate_train  = self._metrics(haul=0.62, rmse=0.0, captain=0.52)
+        current_val      = self._metrics(haul=0.54, rmse=0.0, captain=0.47)
+        candidate_val    = self._metrics(haul=0.58, rmse=1.0,  captain=0.49)
+        assert _promotion_gates(current_train, candidate_train, current_val, candidate_val) is False
+
 
 # ── Combined score tests ─────────────────────────────────────────────────────
 
@@ -132,6 +140,13 @@ class TestReadPriorParams:
 
     def test_returns_defaults_on_malformed_json(self, tmp_path):
         (tmp_path / 'accuracy_backtest.json').write_text('not json')
+        params = _read_prior_params(str(tmp_path))
+        assert params['blend_alpha'] == 0.4
+
+    def test_returns_defaults_on_wrong_type(self, tmp_path):
+        """Non-numeric blend_alpha_used triggers ValueError -> falls back to defaults."""
+        data = {'summary': {'blend_alpha_used': 'not_a_float'}}
+        (tmp_path / 'accuracy_backtest.json').write_text(json.dumps(data))
         params = _read_prior_params(str(tmp_path))
         assert params['blend_alpha'] == 0.4
 

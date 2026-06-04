@@ -45,6 +45,10 @@ def _read_prior_params(cache_dir: str) -> dict:
     Falls back to defaults when the file is missing or malformed (cold start).
     Returns dict with keys: blend_alpha, form_window_gws, cs_prob_base, cs_prob_slope.
     """
+    # Note: blend_alpha_used is written by accuracy.py (summary block).
+    # form_window_gws_used, cs_prob_base_used, cs_prob_slope_used are written
+    # by run.py after tune.run_tuner() promotes values (Task 6). On the first
+    # cold-start run these keys won't exist; defaults are used until Task 6 writes them.
     path = os.path.join(cache_dir, 'accuracy_backtest.json')
     try:
         with open(path, 'r', encoding='utf-8') as f:
@@ -89,6 +93,9 @@ def _promotion_gates(
         rmse_change = (candidate_val['rmse'] - current_val['rmse']) / current_val['rmse']
         if rmse_change > RMSE_REGRESSION_THRESHOLD:
             return False
+    elif candidate_val['rmse'] > 0:
+        # Base RMSE is zero but candidate is non-zero — reject (cannot be better)
+        return False
     # Gate 4: validation captain hit rate must not drop >2pp (epsilon for float safety)
     if current_val['captain_hit_rate'] - candidate_val['captain_hit_rate'] > CAPTAIN_REGRESSION_PP + 1e-9:
         return False
