@@ -359,6 +359,8 @@ def _xpts_ngw(
     bonus_predictor_enabled: bool = False,
     bonus_ev: float | None = None,
     save_predictor_enabled: bool = False,   # Phase 83 GK-01
+    cs_prob_base: float = 0.40,             # TUNE-01: tunable via accuracy_backtest.json.summary
+    cs_prob_slope: float = 0.30,            # TUNE-01: tunable via accuracy_backtest.json.summary
 ) -> tuple:
     """Project xPts across N upcoming GWs, DGW-aware (Phase 28 DATA-02 D-04, D-06).
 
@@ -397,6 +399,8 @@ def _xpts_ngw(
                 bonus_ev=bonus_ev,
                 save_predictor_enabled=save_predictor_enabled,                          # Phase 83 GK-01
                 opponent_xg_per_game=fix.get('opponent_xg_per_game', 0.0),               # Phase 83 GK-01 / D-02
+                cs_prob_base=cs_prob_base,                                               # TUNE-01
+                cs_prob_slope=cs_prob_slope,                                             # TUNE-01
             )
             total += result['total']
             if gw_idx == 0 and n_gws == 1:
@@ -423,6 +427,8 @@ def _xpts_per_gw(
     bonus_predictor_enabled: bool = False,
     bonus_ev: float | None = None,
     save_predictor_enabled: bool = False,   # Phase 83 GK-01
+    cs_prob_base: float = 0.40,             # TUNE-01: tunable via accuracy_backtest.json.summary
+    cs_prob_slope: float = 0.30,            # TUNE-01: tunable via accuracy_backtest.json.summary
 ) -> list[float]:
     """Return list of xPts per GW group (Phase 80 GWI-04, D-12).
 
@@ -457,6 +463,8 @@ def _xpts_per_gw(
                 bonus_ev=bonus_ev,
                 save_predictor_enabled=save_predictor_enabled,                          # Phase 83 GK-01
                 opponent_xg_per_game=fix.get('opponent_xg_per_game', 0.0),               # Phase 83 GK-01 / D-02
+                cs_prob_base=cs_prob_base,                                               # TUNE-01
+                cs_prob_slope=cs_prob_slope,                                             # TUNE-01
             )
             gw_total += comp['total']
         result.append(round(gw_total, 2))
@@ -760,6 +768,9 @@ def merge_players(
     bonus_stats: dict | None = None,
     bonus_predictor_enabled: bool = False,
     save_predictor_enabled: bool = False,   # Phase 83 GK-01 / GK-03
+    cs_prob_base: float = 0.40,             # TUNE-01: tunable via accuracy_backtest.json.summary
+    cs_prob_slope: float = 0.30,            # TUNE-01: tunable via accuracy_backtest.json.summary
+    form_window_gws: int = 5,               # TUNE-01: tunable via accuracy_backtest.json.summary
 ) -> tuple[list, dict]:
     """Merge FPL bootstrap + Understat xG/xA into a unified player list.
 
@@ -1161,7 +1172,8 @@ def merge_players(
         # `form_per90` as a local variable inside the engine block to drive the blend.
         if summaries and fpl_id in summaries:
             form_per90, form_n_gws = _compute_form_signal(
-                summaries[fpl_id].get('history', [])
+                summaries[fpl_id].get('history', []),
+                window_gws=form_window_gws,
             )
         else:
             form_per90, form_n_gws = None, 0
@@ -1194,6 +1206,7 @@ def merge_players(
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
             bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
             save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
+            cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,  # TUNE-01
         )
         xpts_3gw, _ = _xpts_ngw(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
@@ -1201,6 +1214,7 @@ def merge_players(
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
             bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
             save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
+            cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,  # TUNE-01
         )
         xpts_5gw, _ = _xpts_ngw(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
@@ -1208,6 +1222,7 @@ def merge_players(
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
             bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
             save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
+            cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,  # TUNE-01
         )
         player['xPts_1gw'] = xpts_1gw
         player['xPts_3gw'] = xpts_3gw
@@ -1218,6 +1233,7 @@ def merge_players(
         player['cs_prob_1gw'] = _cs_prob_1gw_for_fixtures(
             player_fixtures, player_xmins,
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
+            cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,  # TUNE-01
         )
 
         # ---- Regression signal (Phase 29 DATA-03, REG-01, REG-02) ----

@@ -65,14 +65,14 @@ def _hist(round_, minutes, total_points, xg=0.0, xa=0.0):
     }
 
 
-def _build_minimal_inputs(player_history_by_id, finished_gws=10):
+def _build_minimal_inputs(player_history_by_id, finished_gws=10, element_type=3):
     """Build (bootstrap, fixtures, understat, id_map, xmins_stats, summaries)."""
     elements = []
     for pid in player_history_by_id:
         elements.append({
             'id': pid,
             'web_name': f'Player{pid}',
-            'element_type': 3,
+            'element_type': element_type,
             'team': 14,
             'now_cost': 70,
             'selected_by_percent': '5.0',
@@ -342,3 +342,38 @@ def test_fixture_lookahead_no_padding_below_32():
     assert len(liv_player['fixtures']) == 10, (
         f"Expected LIV fixtures=10, got {len(liv_player['fixtures'])}"
     )
+
+
+class TestMergePlayersTunedParams:
+    """merge_players must accept and apply cs_prob_base, cs_prob_slope, form_window_gws."""
+
+    def test_merge_players_accepts_cs_prob_kwargs(self):
+        """merge_players must not raise when passed cs_prob_base and cs_prob_slope."""
+        history = [_hist(r, 90, 6, xg=0.3, xa=0.1) for r in range(1, 11)]
+        bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_minimal_inputs({1: history})
+        # Should not raise:
+        merged, _ = merge_players(
+            bootstrap, fixtures, understat, id_map,
+            xmins_stats=xmins_stats, summaries=summaries,
+            cs_prob_base=0.50, cs_prob_slope=0.25, form_window_gws=4,
+        )
+        assert len(merged) > 0
+
+    def test_cs_prob_base_affects_xpts_for_defender(self):
+        """Higher cs_prob_base should increase xPts_1gw for defenders (element_type=2)."""
+        history = [_hist(r, 90, 6, xg=0.05, xa=0.05) for r in range(1, 11)]
+        bootstrap_lo, fixtures, understat, id_map, xmins_stats, summaries = _build_minimal_inputs(
+            {1: history}, element_type=2
+        )
+        bootstrap_hi, _, _, _, _, _ = _build_minimal_inputs(
+            {1: history}, element_type=2
+        )
+        lo, _ = merge_players(bootstrap_lo, fixtures, understat, id_map,
+                              xmins_stats=xmins_stats, summaries=summaries,
+                              cs_prob_base=0.25)
+        hi, _ = merge_players(bootstrap_hi, fixtures, understat, id_map,
+                              xmins_stats=xmins_stats, summaries=summaries,
+                              cs_prob_base=0.55)
+        lo_xpts = next(p['xPts_1gw'] for p in lo if p['id'] == 1)
+        hi_xpts = next(p['xPts_1gw'] for p in hi if p['id'] == 1)
+        assert hi_xpts > lo_xpts
