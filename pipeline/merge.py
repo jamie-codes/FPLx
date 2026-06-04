@@ -181,7 +181,8 @@ def _compute_difficulty_scores(bootstrap: dict, fixtures: list) -> dict[int, flo
 
 
 
-def _cs_prob(defensive_difficulty: float, xmins: float, mins_60_prob: float | None = None) -> float:
+def _cs_prob(defensive_difficulty: float, xmins: float, mins_60_prob: float | None = None,
+             cs_prob_base: float = 0.40, cs_prob_slope: float = 0.30) -> float:
     """Compute effective CS probability for a fixture (Phase 28 CR-01, WR-01).
 
     defensive_difficulty — opponent's attacking threat (0.0=weak attacker, 1.0=strong).
@@ -199,8 +200,11 @@ def _cs_prob(defensive_difficulty: float, xmins: float, mins_60_prob: float | No
     mins_factor (semantically correct — mins_60_prob IS P(player earns CS pts)). When None
     or omitted, the existing xmins-based formula is used unchanged (backward compatible).
     The decision to pass mins_60_prob lives at the call site (Plan 03).
+
+    cs_prob_base: base CS probability vs average opposition (default 0.40; tunable via TUNE-01).
+    cs_prob_slope: sensitivity to defensive_difficulty (default 0.30; tunable via TUNE-01).
     """
-    cs_prob_raw = max(0.10, min(0.65, 0.40 - defensive_difficulty * 0.30))
+    cs_prob_raw = max(0.10, min(0.65, cs_prob_base - defensive_difficulty * cs_prob_slope))
     if mins_60_prob is not None:
         mins_factor = mins_60_prob
     else:
@@ -210,7 +214,9 @@ def _cs_prob(defensive_difficulty: float, xmins: float, mins_60_prob: float | No
 
 def _cs_prob_1gw_for_fixtures(fixtures: list, xmins: float,
                                xmins_v2_enabled: bool = False,
-                               mins_60_prob: float | None = None) -> float:
+                               mins_60_prob: float | None = None,
+                               cs_prob_base: float = 0.40,
+                               cs_prob_slope: float = 0.30) -> float:
     """Aggregate clean-sheet probability for the next 1 GW (Phase 47 CS-01, CS-02).
 
     Mirrors _xpts_ngw groupby semantics so DGW handling is consistent:
@@ -240,7 +246,10 @@ def _cs_prob_1gw_for_fixtures(fixtures: list, xmins: float,
     prob_no_cs = 1.0
     for fix in first_group:
         dd = fix.get('defensive_difficulty', 0.5)
-        p = _cs_prob(dd, xmins, mins_60_prob=mins_60_prob if xmins_v2_enabled else None)
+        p = _cs_prob(dd, xmins,
+                     mins_60_prob=mins_60_prob if xmins_v2_enabled else None,
+                     cs_prob_base=cs_prob_base,
+                     cs_prob_slope=cs_prob_slope)
         prob_no_cs *= (1.0 - p)
     return round(1.0 - prob_no_cs, 6)
 
@@ -258,6 +267,8 @@ def _compute_xpts_fixture(
     bonus_ev: float | None = None,
     save_predictor_enabled: bool = False,           # Phase 83 GK-01
     opponent_xg_per_game: float = 0.0,              # Phase 83 GK-01 / D-02 (lambda for poisson_floor_save_pts)
+    cs_prob_base: float = 0.40,
+    cs_prob_slope: float = 0.30,
 ) -> dict:
     """Compute expected FPL points for a single fixture (Phase 28 DATA-02).
 
@@ -296,7 +307,9 @@ def _compute_xpts_fixture(
     # CS probability: Bernoulli, parameterised from defensive_difficulty via helper.
     # See _cs_prob() docstring for direction rationale (CR-01 fix).
     effective_cs_prob = _cs_prob(defensive_difficulty, xmins,
-                                 mins_60_prob=mins_60_prob if xmins_v2_enabled else None)
+                                 mins_60_prob=mins_60_prob if xmins_v2_enabled else None,
+                                 cs_prob_base=cs_prob_base,
+                                 cs_prob_slope=cs_prob_slope)
     cs_pts = effective_cs_prob * CS_PTS[element_type]
 
     # Bonus: flat position-average rate, scaled by expected minutes only.

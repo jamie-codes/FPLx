@@ -5,7 +5,43 @@ and Task 4 wires the blend into _xpts_ngw inputs.
 """
 
 import pytest
-from merge import merge_players
+from merge import merge_players, _cs_prob, _compute_xpts_fixture, _cs_prob_1gw_for_fixtures
+
+
+class TestCsProbKwargs:
+    def test_default_values_unchanged(self):
+        """Default call must produce same result as before — backward compat."""
+        result = _cs_prob(0.5, 60.0)
+        # cs_prob_raw = max(0.10, min(0.65, 0.40 - 0.5*0.30)) = 0.25; mins_factor = 1.0
+        assert abs(result - 0.25) < 1e-9
+
+    def test_custom_base_raises_cs_prob(self):
+        """Higher cs_prob_base → higher cs_prob output."""
+        default = _cs_prob(0.0, 90.0)
+        custom  = _cs_prob(0.0, 90.0, cs_prob_base=0.55)
+        assert custom > default
+
+    def test_custom_slope_changes_sensitivity(self):
+        """Lower cs_prob_slope → less sensitive to difficulty."""
+        low_slope  = _cs_prob(1.0, 90.0, cs_prob_slope=0.15)
+        high_slope = _cs_prob(1.0, 90.0, cs_prob_slope=0.40)
+        assert low_slope > high_slope
+
+    def test_clamp_still_applies_with_custom_params(self):
+        """Result must stay in [0.10, 0.65] regardless of params."""
+        result = _cs_prob(1.0, 90.0, cs_prob_base=0.10, cs_prob_slope=0.40)
+        assert result >= 0.10
+
+    def test_compute_xpts_fixture_forwards_cs_prob_kwargs(self):
+        """Different cs_prob_base values must produce different cs_pts."""
+        low  = _compute_xpts_fixture(0.2, 0.1, 1.0, 90.0, 2, 0.5, cs_prob_base=0.25)
+        high = _compute_xpts_fixture(0.2, 0.1, 1.0, 90.0, 2, 0.5, cs_prob_base=0.55)
+        assert high['cs_pts'] > low['cs_pts']
+
+    def test_compute_xpts_fixture_default_unchanged(self):
+        """Calling without kwargs must produce identical result to before."""
+        result = _compute_xpts_fixture(0.3, 0.1, 1.0, 90.0, 3, 0.4)
+        assert result['total'] > 0  # sanity; exact value comes from existing tests
 
 
 def _hist(round_, minutes, total_points, xg=0.0, xa=0.0):
