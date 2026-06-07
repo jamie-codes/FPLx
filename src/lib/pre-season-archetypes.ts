@@ -21,7 +21,7 @@ export interface ArchetypeSquad {
  *   Value         — no anchors; pure ppm-per-£ greedy (same as default buildPreSeasonSquad).
  *
  * All three respect the same 3-per-club cap and 100m budget.
- * Scoring for topCaptains uses total_points from last season (ppm proxy for quality).
+ * topCaptains are ranked by last-season total_points (a proxy for overall quality).
  * When buildPreSeasonSquad returns null for an archetype, squad is null and topCaptains is [].
  */
 export function buildPreSeasonArchetypes(
@@ -52,7 +52,7 @@ export function buildPreSeasonArchetypes(
   ]
 
   return archetypeConfigs.map(({ label, anchorIds }) => {
-    const squad = buildPreSeasonSquad(players, scoreMap, budget, 3, anchorIds)
+    const squad = buildPreSeasonSquad(eligible, scoreMap, budget, 3, anchorIds)
     const topCaptains = squad === null
       ? []
       : [...squad.starters]

@@ -128,11 +128,10 @@ describe('buildPreSeasonArchetypes', () => {
     players.forEach(p => { p.now_cost = 200 })
     const scoreMap = new Map<number, number>(players.map(p => [p.id, p.ppm]))
     const results = buildPreSeasonArchetypes(players, scoreMap, 1000)
-    // At least some (probably all) archetypes should have squad=null
-    // (we only assert the shape is correct, not that all are null — budget sensitivity varies)
     expect(results).toHaveLength(3)
     for (const r of results) {
-      expect(r.topCaptains).toEqual([])  // null squad → empty captains
+      expect(r.squad).toBeNull()
+      expect(r.topCaptains).toEqual([])
     }
   })
 })
