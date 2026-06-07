@@ -151,7 +151,11 @@ function PlayerMoveCell({
               {/* Phase 119 UI-02: StatusLabelBadge for buy candidate (D-09): after RotationRiskBadge, before NewsBanner */}
               <StatusLabelBadge statusLabel={lineupNewsMap?.get(t.buy.id)?.status_label} />
               {/* Phase 122 POL-04: MinsRiskBadge for buy candidate — minutes confidence signal */}
-              <MinsRiskBadge minsRisk={t.buy.mins_risk} />
+              <MinsRiskBadge
+                minsRisk={t.buy.mins_risk}
+                difficultyRotationRisk={t.buy.difficulty_rotation_risk}
+                availabilityRisk={t.buy.availability_risk}
+              />
               {/* Phase 125 WIN-02 (D-14, D-15, D-16): Confirmed Signing badge for buy candidate only */}
               {confirmedSigningMap?.has(t.buy.id) && (
                 <ConfirmedSigningBadge tooltipText={confirmedSigningMap.get(t.buy.id)} />

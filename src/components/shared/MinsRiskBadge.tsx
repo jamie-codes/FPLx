@@ -1,4 +1,6 @@
 import type { MinsRisk, SubRiskLabel } from '@/lib/types'
+import { RiskChip } from './RiskChip'
+import type { RiskChipProps } from './RiskChip'
 
 interface Config {
   bg: string
@@ -48,24 +50,37 @@ export function getMinsRiskConfig(minsRisk: MinsRisk | SubRiskLabel | undefined)
 export function MinsRiskBadge({
   minsRisk,
   mins60Prob,
+  difficultyRotationRisk,
+  availabilityRisk,
 }: {
   minsRisk: MinsRisk | SubRiskLabel | undefined
   mins60Prob?: number
+  difficultyRotationRisk?: RiskChipProps['difficultyRotationRisk']
+  availabilityRisk?: RiskChipProps['availabilityRisk']
 }) {
   const config = getMinsRiskConfig(minsRisk)
-  if (!config) return null
+  const hasRiskChip =
+    (difficultyRotationRisk === 'high' || difficultyRotationRisk === 'medium') ||
+    (availabilityRisk === 'out' || availabilityRisk === 'doubt')
+  if (!config && !hasRiskChip) return null
   // Phase 52 D-09: tooltip shows label + 60-min probability when prop provided.
   // Format per UI-SPEC.md: "<Label> — <X>% chance 60+ min" (em-dash with surrounding spaces, integer percentage).
-  const titleText =
-    mins60Prob !== undefined
+  const titleText = config
+    ? mins60Prob !== undefined
       ? `${config.label} — ${Math.round(mins60Prob * 100)}% chance 60+ min`
       : config.title
+    : undefined
   return (
-    <span
-      className={`inline-block text-xs font-normal ${config.text} ${config.bg} rounded px-2 py-1`}
-      title={titleText}
-    >
-      {config.label}
-    </span>
+    <div className="inline-flex flex-col gap-1 items-start">
+      {config && (
+        <span
+          className={`inline-block text-xs font-normal ${config.text} ${config.bg} rounded px-2 py-1`}
+          title={titleText}
+        >
+          {config.label}
+        </span>
+      )}
+      <RiskChip difficultyRotationRisk={difficultyRotationRisk} availabilityRisk={availabilityRisk} />
+    </div>
   )
 }

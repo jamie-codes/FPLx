@@ -9,6 +9,7 @@ import { buildAnchoredSquad } from '@/lib/anchored-squad'
 import { PlayerSearchInput } from '@/components/shared/PlayerSearchInput'
 import { CHIP_DEFAULT_BUDGET_TENTHS } from '@/lib/chip-modes'
 import type { PlannerHorizon, OptimiserHorizon, ScoredPlayer, MergedPlayer } from '@/lib/types'
+import { RiskChip } from '@/components/shared/RiskChip'
 import type { AnchoredSquadResult } from '@/lib/anchored-squad'
 
 interface WildcardBuilderTabProps {
@@ -126,10 +127,16 @@ function StructurePanel({
               <div className="space-y-0.5">
                 {group.players.map(p => (
                   <div key={p.id} className="flex items-center justify-between gap-2">
-                    <span className={`text-xs truncate ${selectedIds.has(p.id) ? 'font-semibold text-blue-700 dark:text-blue-300' : 'text-zinc-700 dark:text-zinc-300'}`}>
-                      {p.web_name}
-                      {selectedIds.has(p.id) && <span className="ml-1 text-[9px]">📌</span>}
-                    </span>
+                    <div className="flex items-center gap-1 min-w-0">
+                      <span className={`text-xs truncate ${selectedIds.has(p.id) ? 'font-semibold text-blue-700 dark:text-blue-300' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                        {p.web_name}
+                        {selectedIds.has(p.id) && <span className="ml-1 text-[9px]">📌</span>}
+                      </span>
+                      <RiskChip
+                        difficultyRotationRisk={(p as unknown as MergedPlayer).difficulty_rotation_risk}
+                        availabilityRisk={(p as unknown as MergedPlayer).availability_risk}
+                      />
+                    </div>
                     <span className="text-xs text-zinc-400 dark:text-zinc-500 shrink-0">
                       {p.xPts.toFixed(1)}
                     </span>

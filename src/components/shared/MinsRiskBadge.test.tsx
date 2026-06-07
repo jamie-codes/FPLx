@@ -93,3 +93,35 @@ describe('MIN-01 — sub_risk badge', () => {
     expect(span?.className).toContain('text-green-800')
   })
 })
+
+describe('MinsRiskBadge — MIN-02 RiskChip integration', () => {
+  it('renders ↻ HIGH chip when difficultyRotationRisk=high', () => {
+    const { container } = render(
+      <MinsRiskBadge minsRisk="nailed" difficultyRotationRisk="high" />
+    )
+    expect(container.textContent).toContain('↻ HIGH')
+  })
+
+  it('renders ⚠ DOUBT chip when availabilityRisk=doubt', () => {
+    const { container } = render(
+      <MinsRiskBadge minsRisk="nailed" availabilityRisk="doubt" />
+    )
+    expect(container.textContent).toContain('⚠ DOUBT')
+  })
+
+  it('does not render risk chips when both are low and fit', () => {
+    const { container } = render(
+      <MinsRiskBadge minsRisk="nailed" difficultyRotationRisk="low" availabilityRisk="fit" />
+    )
+    expect(container.textContent).not.toContain('↻')
+    expect(container.textContent).not.toContain('⚠')
+    expect(container.textContent).not.toContain('✕')
+  })
+
+  it('renders nothing when minsRisk is undefined and both risk signals are low/unknown', () => {
+    const { container } = render(
+      <MinsRiskBadge minsRisk={undefined} difficultyRotationRisk="low" availabilityRisk="unknown" />
+    )
+    expect(container.firstChild).toBeNull()
+  })
+})
