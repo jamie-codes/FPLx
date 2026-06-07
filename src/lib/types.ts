@@ -292,6 +292,8 @@ export interface ChipSquadPlayer {
   team: number
   now_cost: number      // tenths of £1m
   xPts: number          // scored by the active horizon at build time
+  difficulty_rotation_risk?: 'low' | 'medium' | 'high' | 'unknown'  // MIN-02
+  availability_risk?: 'out' | 'doubt' | 'fit' | 'unknown'           // MIN-02
 }
 
 // Result returned by buildOptimalSquad() in src/lib/chip-modes.ts (D-10).

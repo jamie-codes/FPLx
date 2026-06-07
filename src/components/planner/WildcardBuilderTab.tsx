@@ -133,8 +133,8 @@ function StructurePanel({
                         {selectedIds.has(p.id) && <span className="ml-1 text-[9px]">📌</span>}
                       </span>
                       <RiskChip
-                        difficultyRotationRisk={(p as unknown as MergedPlayer).difficulty_rotation_risk}
-                        availabilityRisk={(p as unknown as MergedPlayer).availability_risk}
+                        difficultyRotationRisk={p.difficulty_rotation_risk}
+                        availabilityRisk={p.availability_risk}
                       />
                     </div>
                     <span className="text-xs text-zinc-400 dark:text-zinc-500 shrink-0">
