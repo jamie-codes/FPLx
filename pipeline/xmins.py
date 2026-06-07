@@ -114,13 +114,18 @@ def compute_xmins_stats(
     Compute xmins, start_prob, mins_risk for every player.
 
     Args:
-        bootstrap: FPL bootstrap-static JSON (elements list).
-        summaries: dict mapping player_id (int) -> element-summary dict.
-                   Pre-fetched by run.py shared cache.
+        bootstrap:    FPL bootstrap-static JSON (elements list).
+        summaries:    dict mapping player_id (int) -> element-summary dict.
+                      Pre-fetched by run.py shared cache.
         finished_gws: Number of completed gameweeks (for season start_rate fallback).
+        fixtures:     FPL fixture list (optional). Passed for MIN-02 rotation risk.
+                      If None, rotation_risk defaults to 'unknown' for all players.
+        next_gw_id:   FPL event id of the next gameweek (optional). Required with fixtures.
 
     Returns:
-        dict mapping player_id (int) -> {xmins: float, start_prob: float, mins_risk: str}
+        dict mapping player_id (int) -> per-player stats dict with keys:
+            xmins, xmins_adjusted, start_prob, mins_risk, mins_60_prob, sub_risk_label,
+            rotation_risk, rotation_factor, availability_risk, availability_factor.
         Every player in bootstrap['elements'] gets an entry (including GKs and 0-start players).
     """
     # Build next-GW team FDR map for rotation risk computation (MIN-02).
@@ -220,6 +225,8 @@ def _compute_player_xmins(
         sub_risk_label = 'rotation_risk'
 
     # MIN-02: Rotation risk (fixture-difficulty-aware).
+    # Re-fetch history here (works for both branches above — the if-branch sets a
+    # local `history` var inside its scope; this fetch handles the else-branch too).
     history = (summary or {}).get('history', [])
     rotation_result = compute_rotation_risk(history, next_fixture_difficulty)
 
@@ -231,8 +238,22 @@ def _compute_player_xmins(
     )
 
     # Combined xmins adjustment.
+    # Guard against double-penalty: start_prob already incorporates chance_of_playing via
+    # the `availability = chance/100` multiplier above. When chance is set and > 0, use
+    # adjustment_availability_factor=1.0 to avoid discounting twice. The availability_risk
+    # label is still preserved in the return dict for display purposes.
+    # availability_factor is only applied when:
+    #   - status is i/u/s (outright unavailable, no chance set)
+    #   - chance is null and keywords indicate doubt/out
+    #   - chance == 0 (already gives xmins ≈ 0 via start_prob=0, factor enforces it)
+    _chance = element.get('chance_of_playing_next_round')
+    if _chance is not None and _chance > 0:
+        # start_prob already reflects this chance — no additional factor needed.
+        adjustment_availability_factor = 1.0
+    else:
+        adjustment_availability_factor = availability_result['availability_factor']
     xmins_adjusted = round(
-        xmins * rotation_result['rotation_factor'] * availability_result['availability_factor'],
+        xmins * rotation_result['rotation_factor'] * adjustment_availability_factor,
         1,
     )
 

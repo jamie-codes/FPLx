@@ -338,6 +338,7 @@ def test_xmins_adjusted_equals_xmins_times_both_factors():
     expected_adjusted = round(player['xmins'] * player['rotation_factor'] * 1.0, 1)
     assert player['xmins_adjusted'] == expected_adjusted
     assert player['rotation_risk'] == 'high'
+    assert player['rotation_factor'] == 0.75  # high risk factor
     assert player['availability_risk'] == 'unknown'
 
 
