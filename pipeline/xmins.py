@@ -2,8 +2,101 @@
 
 import statistics
 
+from news_classifier import classify_availability
+
 # Phase 52 D-06: position-prior fallback for new signings / post-injury return
 POSITION_PRIOR = {1: 0.90, 2: 0.75, 3: 0.65, 4: 0.60}
+
+
+def build_next_gw_team_fdr(fixtures: list, next_gw_id: int) -> dict:
+    """Build a mapping of team_id → fixture_difficulty for the given gameweek.
+
+    Args:
+        fixtures:    FPL fixture dicts from /fixtures/ endpoint. Each must have
+                     'event', 'team_h', 'team_a', 'team_h_difficulty', 'team_a_difficulty'.
+        next_gw_id:  FPL event id (gameweek number) to look up.
+
+    Returns:
+        dict mapping team_id (int) → difficulty (int 1–5).
+        Teams with a blank GW are absent from the dict.
+    """
+    team_fdr: dict = {}
+    for fixture in fixtures:
+        if fixture.get('event') != next_gw_id:
+            continue
+        home_team = fixture.get('team_h')
+        away_team = fixture.get('team_a')
+        home_diff = fixture.get('team_h_difficulty')
+        away_diff = fixture.get('team_a_difficulty')
+        if home_team and home_diff:
+            team_fdr[int(home_team)] = int(home_diff)
+        if away_team and away_diff:
+            team_fdr[int(away_team)] = int(away_diff)
+    return team_fdr
+
+
+def compute_rotation_risk(history: list, next_fixture_difficulty: int | None) -> dict:
+    """Compute fixture-difficulty-aware rotation risk for a player.
+
+    Bins historical games into easy (FDR 1–2) / medium (FDR 3) / hard (FDR 4–5)
+    using the 'difficulty' field from element-summary history. Computes average
+    minutes per bucket vs. player unconditional average, then classifies the next
+    fixture's bucket as low / medium / high rotation risk.
+
+    Args:
+        history:                  Per-GW history list from element-summary/{id}/,
+                                  each dict with 'minutes' (int) and 'difficulty' (int 1–5).
+        next_fixture_difficulty:  FPL difficulty (1–5) for next GW fixture;
+                                  None when player has a blank GW or data is unavailable.
+
+    Returns:
+        dict with keys:
+            rotation_risk:   'low' | 'medium' | 'high' | 'unknown'
+            rotation_factor: float  (1.0, 0.87, or 0.75)
+    """
+    UNKNOWN = {'rotation_risk': 'unknown', 'rotation_factor': 1.0}
+
+    if not history or next_fixture_difficulty is None or len(history) < 5:
+        return UNKNOWN
+
+    def _bucket(diff: int) -> str:
+        if diff <= 2:
+            return 'easy'
+        if diff == 3:
+            return 'medium'
+        return 'hard'
+
+    next_bucket = _bucket(int(next_fixture_difficulty))
+
+    bucket_minutes: dict[str, list] = {'easy': [], 'medium': [], 'hard': []}
+    all_minutes: list = []
+
+    for game in history:
+        diff = game.get('difficulty')
+        mins = int(game.get('minutes', 0))
+        all_minutes.append(mins)
+        if diff is not None:
+            bucket_minutes[_bucket(int(diff))].append(mins)
+
+    if not all_minutes:
+        return UNKNOWN
+
+    avg_all = sum(all_minutes) / len(all_minutes)
+    if avg_all == 0:
+        return UNKNOWN
+
+    bucket_games = bucket_minutes.get(next_bucket, [])
+    if len(bucket_games) < 3:
+        return UNKNOWN  # sparse bucket — no reliable signal
+
+    avg_bucket = sum(bucket_games) / len(bucket_games)
+    ratio = avg_bucket / avg_all
+
+    if ratio >= 0.90:
+        return {'rotation_risk': 'low', 'rotation_factor': 1.0}
+    if ratio >= 0.75:
+        return {'rotation_risk': 'medium', 'rotation_factor': 0.87}
+    return {'rotation_risk': 'high', 'rotation_factor': 0.75}
 
 
 def compute_xmins_stats(bootstrap: dict, summaries: dict, finished_gws: int) -> dict:

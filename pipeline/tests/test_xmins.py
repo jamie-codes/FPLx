@@ -188,3 +188,100 @@ def test_mins_risk_unchanged():
     assert result['sub_risk_label'] == 'sub_risk', (
         f"sub_risk_label should be 'sub_risk', got {result['sub_risk_label']}"
     )
+
+
+# ---------------------------------------------------------------------------
+# MIN-02: compute_rotation_risk and build_next_gw_team_fdr
+# ---------------------------------------------------------------------------
+from xmins import compute_rotation_risk, build_next_gw_team_fdr
+
+
+def make_history(difficulties: list, minutes: list) -> list:
+    """Build minimal history list from parallel difficulty/minutes lists."""
+    return [
+        {'difficulty': d, 'minutes': m, 'was_home': True, 'opponent_team': 1}
+        for d, m in zip(difficulties, minutes)
+    ]
+
+
+class TestComputeRotationRisk:
+    def test_high_risk_for_easy_fixtures_when_historically_rested(self):
+        # Easy bucket avg=30, hard bucket avg=80 → overall avg=55
+        # ratio = 30/55 ≈ 0.545 < 0.75 → high
+        history = (
+            make_history([1, 1, 1, 1, 1], [30, 30, 30, 30, 30]) +
+            make_history([5, 5, 5, 5, 5], [80, 80, 80, 80, 80])
+        )
+        result = compute_rotation_risk(history, next_fixture_difficulty=1)
+        assert result['rotation_risk'] == 'high'
+        assert result['rotation_factor'] == 0.75
+
+    def test_low_risk_when_minutes_consistent_across_difficulty(self):
+        # All difficulty=1, all 90 min → avg_bucket = avg_all = 90 → ratio=1.0 → low
+        history = make_history([1] * 10, [90] * 10)
+        result = compute_rotation_risk(history, next_fixture_difficulty=1)
+        assert result['rotation_risk'] == 'low'
+        assert result['rotation_factor'] == 1.0
+
+    def test_medium_risk_when_ratio_in_0_75_to_0_90(self):
+        # Easy avg=70, hard avg=90 → overall avg=80
+        # ratio = 70/80 = 0.875 → 0.75 ≤ ratio < 0.90 → medium
+        history = (
+            make_history([1, 1, 1, 1, 1], [70, 70, 70, 70, 70]) +
+            make_history([5, 5, 5, 5, 5], [90, 90, 90, 90, 90])
+        )
+        result = compute_rotation_risk(history, next_fixture_difficulty=1)
+        assert result['rotation_risk'] == 'medium'
+        assert result['rotation_factor'] == 0.87
+
+    def test_fewer_than_5_total_games_returns_unknown(self):
+        history = make_history([1, 1, 2], [90, 90, 90])  # only 3 games
+        result = compute_rotation_risk(history, next_fixture_difficulty=1)
+        assert result['rotation_risk'] == 'unknown'
+        assert result['rotation_factor'] == 1.0
+
+    def test_fewer_than_3_games_in_bucket_falls_back_to_unknown(self):
+        # Only 2 easy fixtures — sparse bucket → unknown
+        history = (
+            make_history([1, 1], [30, 30]) +
+            make_history([5, 5, 5, 5, 5], [90, 90, 90, 90, 90])
+        )
+        result = compute_rotation_risk(history, next_fixture_difficulty=1)
+        assert result['rotation_risk'] == 'unknown'
+        assert result['rotation_factor'] == 1.0
+
+    def test_no_next_fixture_returns_unknown(self):
+        history = make_history([1] * 10, [90] * 10)
+        result = compute_rotation_risk(history, next_fixture_difficulty=None)
+        assert result['rotation_risk'] == 'unknown'
+        assert result['rotation_factor'] == 1.0
+
+    def test_empty_history_returns_unknown(self):
+        result = compute_rotation_risk([], next_fixture_difficulty=3)
+        assert result['rotation_risk'] == 'unknown'
+        assert result['rotation_factor'] == 1.0
+
+
+class TestBuildNextGwTeamFdr:
+    def test_returns_correct_difficulties_for_target_gw(self):
+        fixtures = [
+            {'event': 38, 'team_h': 1, 'team_a': 2, 'team_h_difficulty': 3, 'team_a_difficulty': 4},
+            {'event': 38, 'team_h': 3, 'team_a': 4, 'team_h_difficulty': 2, 'team_a_difficulty': 5},
+            {'event': 37, 'team_h': 5, 'team_a': 6, 'team_h_difficulty': 1, 'team_a_difficulty': 1},
+        ]
+        result = build_next_gw_team_fdr(fixtures, next_gw_id=38)
+        assert result[1] == 3   # team 1 home difficulty
+        assert result[2] == 4   # team 2 away difficulty
+        assert result[3] == 2   # team 3 home difficulty
+        assert result[4] == 5   # team 4 away difficulty
+        assert 5 not in result  # GW37 not included
+        assert 6 not in result  # GW37 not included
+
+    def test_empty_fixtures_returns_empty_dict(self):
+        assert build_next_gw_team_fdr([], next_gw_id=38) == {}
+
+    def test_no_fixtures_for_target_gw_returns_empty_dict(self):
+        fixtures = [
+            {'event': 37, 'team_h': 1, 'team_a': 2, 'team_h_difficulty': 3, 'team_a_difficulty': 4},
+        ]
+        assert build_next_gw_team_fdr(fixtures, next_gw_id=38) == {}
