@@ -1,7 +1,4 @@
 """Tests for pipeline/news_classifier.py (MIN-02 — availability classifier)."""
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 import pytest
 from news_classifier import classify_availability
 
@@ -44,6 +41,13 @@ def test_chance_50_returns_doubt():
 
 def test_chance_0_returns_out():
     result = classify_availability(status='a', chance=0, news_text='')
+    assert result['availability_risk'] == 'out'
+    assert result['availability_factor'] == 0.0
+
+
+def test_chance_low_returns_out():
+    # chance > 0 but < 25 — too low to expect meaningful minutes
+    result = classify_availability(status='a', chance=10, news_text='')
     assert result['availability_risk'] == 'out'
     assert result['availability_factor'] == 0.0
 

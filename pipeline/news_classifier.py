@@ -11,12 +11,12 @@ Pure functions, no side effects, no API calls.
 
 _OUT_KEYWORDS = ['ruled out', 'unavailable', 'will miss', 'withdrawn']
 _DOUBT_KEYWORDS = ['doubt', '50/50', 'fitness test', 'assessed', 'knock', 'slight concern']
-_FIT_KEYWORDS = ['fit', 'available', 'returned to training', 'fully fit']
+_FIT_KEYWORDS = ['fully fit', 'fit', 'available', 'returned to training']
 
 
 def classify_availability(
     status: str,
-    chance: int | None,
+    chance: int | float | None,
     news_text: str = '',
 ) -> dict:
     """Classify a player's availability risk.
@@ -42,7 +42,7 @@ def classify_availability(
             return {'availability_risk': 'fit', 'availability_factor': 1.0}
         if chance >= 25:
             return {'availability_risk': 'doubt', 'availability_factor': 0.5}
-        # chance > 0 but < 25 — very unlikely to play
+        # chance > 0 but < 25 — too low to expect meaningful minutes
         return {'availability_risk': 'out', 'availability_factor': 0.0}
 
     # Priority 3: keyword scan of news text (first match wins).
