@@ -2,7 +2,7 @@
 
 import statistics
 
-from news_classifier import classify_availability
+from news_classifier import classify_availability  # noqa: F401 — used in _compute_player_xmins (MIN-02 Task 3)
 
 # Phase 52 D-06: position-prior fallback for new signings / post-injury return
 POSITION_PRIOR = {1: 0.90, 2: 0.75, 3: 0.65, 4: 0.60}
@@ -19,6 +19,10 @@ def build_next_gw_team_fdr(fixtures: list, next_gw_id: int) -> dict:
     Returns:
         dict mapping team_id (int) → difficulty (int 1–5).
         Teams with a blank GW are absent from the dict.
+
+        For double-gameweek teams, the last fixture processed overwrites the first
+        (dict key collision). This is acceptable because DGW rotation risk is
+        indeterminate; both fixtures' difficulties are reasonable inputs.
     """
     team_fdr: dict = {}
     for fixture in fixtures:

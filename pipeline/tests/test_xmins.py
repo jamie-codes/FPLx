@@ -285,3 +285,13 @@ class TestBuildNextGwTeamFdr:
             {'event': 37, 'team_h': 1, 'team_a': 2, 'team_h_difficulty': 3, 'team_a_difficulty': 4},
         ]
         assert build_next_gw_team_fdr(fixtures, next_gw_id=38) == {}
+
+    def test_dgw_team_second_fixture_difficulty_wins(self):
+        # Team 1 has two fixtures in GW38 — last one processed wins
+        fixtures = [
+            {'event': 38, 'team_h': 1, 'team_a': 2, 'team_h_difficulty': 2, 'team_a_difficulty': 4},
+            {'event': 38, 'team_h': 3, 'team_a': 1, 'team_h_difficulty': 5, 'team_a_difficulty': 3},
+        ]
+        result = build_next_gw_team_fdr(fixtures, next_gw_id=38)
+        # Team 1 appears as away in the second fixture → away_diff=3 wins
+        assert result[1] == 3
