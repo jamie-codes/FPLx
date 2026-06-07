@@ -1107,7 +1107,9 @@ def merge_players(
         # ---- Minutes risk fields (MINS-01) ----
         if xmins_stats and fpl_id in xmins_stats:
             xm = xmins_stats[fpl_id]
-            player_xmins = xm['xmins']
+            # MIN-02: use xmins_adjusted (rotation + availability factors applied).
+            # Fallback to xmins for backward compat if running against old cache.
+            player_xmins = xm.get('xmins_adjusted', xm['xmins'])
             player_start_prob = xm['start_prob']
             player_mins_risk = xm['mins_risk']
         else:
@@ -1125,6 +1127,8 @@ def merge_players(
             xm = xmins_stats[fpl_id]
             player['mins_60_prob'] = xm.get('mins_60_prob', 0.0)
             player['sub_risk_label'] = xm.get('sub_risk_label', 'injured')
+            player['difficulty_rotation_risk'] = xm.get('difficulty_rotation_risk', 'unknown')  # MIN-02
+            player['availability_risk'] = xm.get('availability_risk', 'unknown')                  # MIN-02
         else:
             player['mins_60_prob'] = 0.0
             player['sub_risk_label'] = 'injured'

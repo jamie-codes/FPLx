@@ -326,7 +326,16 @@ def run(dry_run: bool = False):
 
             # Compute xmins stats (Phase 7 — MINS-01)
             print("Computing xmins stats...")
-            xmins_stats = compute_xmins_stats(bootstrap, summaries, finished_gws)
+            # MIN-02: pass fixtures and next GW id for fixture-aware rotation risk.
+            _next_gw_id = next(
+                (e['id'] for e in bootstrap.get('events', []) if e.get('is_next')),
+                None,
+            )
+            xmins_stats = compute_xmins_stats(
+                bootstrap, summaries, finished_gws,
+                fixtures=fixtures,
+                next_gw_id=_next_gw_id,
+            )
             print(f"xmins stats: {len(xmins_stats)} players")
 
             # Compute bonus EV stats (Phase 53 BPS-01) — same shared summaries cache, no new HTTP calls
