@@ -28,7 +28,7 @@ def test_returns_mins_60_prob_and_sub_risk_label():
     history = [_hist(90, 1)] * 10
     result = _compute_player_xmins(_element(), _summary(history), 10)
     assert {'xmins', 'start_prob', 'mins_risk', 'mins_60_prob', 'sub_risk_label'}.issubset(result.keys())
-    assert {'xmins_adjusted', 'rotation_risk', 'rotation_factor', 'availability_risk', 'availability_factor'}.issubset(result.keys())
+    assert {'xmins_adjusted', 'difficulty_rotation_risk', 'difficulty_rotation_factor', 'availability_risk', 'availability_factor'}.issubset(result.keys())
 
 
 def test_new_signing_fallback_uses_position_prior():
@@ -335,10 +335,10 @@ def test_xmins_adjusted_equals_xmins_times_both_factors():
     result = compute_xmins_stats(bootstrap, summaries, finished_gws=10, fixtures=fixtures, next_gw_id=38)
     player = result[1]
     # rotation_factor=0.75 (high risk), availability_factor=1.0 (status='a', no chance, no news)
-    expected_adjusted = round(player['xmins'] * player['rotation_factor'] * 1.0, 1)
+    expected_adjusted = round(player['xmins'] * player['difficulty_rotation_factor'] * 1.0, 1)
     assert player['xmins_adjusted'] == expected_adjusted
-    assert player['rotation_risk'] == 'high'
-    assert player['rotation_factor'] == 0.75  # high risk factor
+    assert player['difficulty_rotation_risk'] == 'high'
+    assert player['difficulty_rotation_factor'] == 0.75  # high risk factor
     assert player['availability_risk'] == 'unknown'
 
 
@@ -358,5 +358,5 @@ def test_no_fixtures_passed_gives_unknown_rotation_risk():
     summaries = {1: {'history': make_history([1] * 10, [90] * 10)}}
     bootstrap = _make_bootstrap([_make_bootstrap_element(player_id=1)])
     result = compute_xmins_stats(bootstrap, summaries, finished_gws=10)
-    assert result[1]['rotation_risk'] == 'unknown'
-    assert result[1]['rotation_factor'] == 1.0
+    assert result[1]['difficulty_rotation_risk'] == 'unknown'
+    assert result[1]['difficulty_rotation_factor'] == 1.0

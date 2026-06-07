@@ -125,7 +125,7 @@ def compute_xmins_stats(
     Returns:
         dict mapping player_id (int) -> per-player stats dict with keys:
             xmins, xmins_adjusted, start_prob, mins_risk, mins_60_prob, sub_risk_label,
-            rotation_risk, rotation_factor, availability_risk, availability_factor.
+            difficulty_rotation_risk, difficulty_rotation_factor, availability_risk, availability_factor.
         Every player in bootstrap['elements'] gets an entry (including GKs and 0-start players).
     """
     # Build next-GW team FDR map for rotation risk computation (MIN-02).
@@ -259,13 +259,13 @@ def _compute_player_xmins(
 
     return {
         'xmins': xmins,
-        'xmins_adjusted': xmins_adjusted,                               # MIN-02
+        'xmins_adjusted': xmins_adjusted,                                          # MIN-02
         'start_prob': start_prob,
         'mins_risk': mins_risk,
         'mins_60_prob': mins_60_prob,
         'sub_risk_label': sub_risk_label,
-        'rotation_risk': rotation_result['rotation_risk'],              # MIN-02
-        'rotation_factor': rotation_result['rotation_factor'],          # MIN-02
-        'availability_risk': availability_result['availability_risk'],  # MIN-02
-        'availability_factor': availability_result['availability_factor'],  # MIN-02
+        'difficulty_rotation_risk': rotation_result['rotation_risk'],              # MIN-02
+        'difficulty_rotation_factor': rotation_result['rotation_factor'],          # MIN-02
+        'availability_risk': availability_result['availability_risk'],              # MIN-02
+        'availability_factor': availability_result['availability_factor'],          # MIN-02
     }
