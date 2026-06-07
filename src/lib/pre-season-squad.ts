@@ -16,6 +16,7 @@ const MAX_SLOTS: Record<number, number> = { 1: 2, 2: 5, 3: 5, 4: 3 }
  * Slot constraints: MIN_SLOTS / MAX_SLOTS per position.
  * Team cap: max teamCap (default 3) players per FPL club.
  * Budget guard: runningCost + player.now_cost <= budget.
+ * Anchors: optional anchorIds array — players forced into squad before greedy fill (silently skipped on constraint violation).
  *
  * Returns null when fewer than 15 eligible players can be selected, or any MIN_SLOTS position is unmet.
  */
@@ -24,22 +25,43 @@ export function buildPreSeasonSquad(
   scoreMap: Map<number, number>,
   budget = 1000,
   teamCap = 3,
+  anchorIds: number[] = [],   // pre-seat these players before greedy fill
 ): PreSeasonSquad | null {
   // Eligibility: present in scoreMap only (D-02 — no status check)
   const eligible = players.filter(p => scoreMap.has(p.id))
-
-  // Sort: score desc; tie-break: cheaper wins (better budget utilisation)
-  const sorted = [...eligible].sort((a, b) => {
-    const diff = (scoreMap.get(b.id) ?? 0) - (scoreMap.get(a.id) ?? 0)
-    return diff !== 0 ? diff : a.now_cost - b.now_cost
-  })
+  const playerMap = new Map<number, PreSeasonPlayer>(eligible.map(p => [p.id, p]))
 
   const filledSlots: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0 }
   const teamCount = new Map<number, number>()
   const squad: PreSeasonPlayer[] = []
   let runningCost = 0
+  const seatedIds = new Set<number>()
 
-  for (const player of sorted) {
+  // Step 1: Pre-seat anchor players in order. Skip silently on any violation.
+  for (const anchorId of anchorIds) {
+    if (seatedIds.has(anchorId)) continue           // duplicate
+    const player = playerMap.get(anchorId)
+    if (!player) continue                           // not in scoreMap / pool
+    const pos = player.element_type
+    if ((filledSlots[pos] ?? 0) >= MAX_SLOTS[pos]) continue   // position_cap
+    if ((teamCount.get(player.team) ?? 0) >= teamCap) continue // team_cap
+    if (runningCost + player.now_cost > budget) continue       // over_budget
+    squad.push(player)
+    filledSlots[pos] = (filledSlots[pos] ?? 0) + 1
+    teamCount.set(player.team, (teamCount.get(player.team) ?? 0) + 1)
+    runningCost += player.now_cost
+    seatedIds.add(anchorId)
+  }
+
+  // Step 2: Greedy fill — sort eligible non-seated players by score desc, cost asc
+  const remainingEligible = eligible
+    .filter(p => !seatedIds.has(p.id))
+    .sort((a, b) => {
+      const diff = (scoreMap.get(b.id) ?? 0) - (scoreMap.get(a.id) ?? 0)
+      return diff !== 0 ? diff : a.now_cost - b.now_cost
+    })
+
+  for (const player of remainingEligible) {
     if (squad.length >= 15) break
     const pos = player.element_type
     if ((filledSlots[pos] ?? 0) >= MAX_SLOTS[pos]) continue

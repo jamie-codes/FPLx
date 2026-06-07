@@ -125,6 +125,69 @@ describe('buildPreSeasonSquad', () => {
   })
 })
 
+describe('buildPreSeasonSquad — anchor support', () => {
+  it('seats an anchor player regardless of ppm rank', () => {
+    const players = makePool()
+    // Assign a very LOW ppm to player id=5 (a DEF) so greedy would skip it
+    const lowPpmPlayer = players.find(p => p.id === 5)!
+    lowPpmPlayer.ppm = 0.01
+    const scoreMap = new Map<number, number>(players.map(p => [p.id, p.ppm]))
+
+    const withoutAnchor = buildPreSeasonSquad(players, scoreMap, 1000, 3, [])
+    const withAnchor    = buildPreSeasonSquad(players, scoreMap, 1000, 3, [5])
+
+    // Without anchor: player 5 (lowest ppm DEF) likely NOT in squad
+    // With anchor: player 5 MUST be in squad
+    const withoutIds = new Set([
+      ...(withoutAnchor?.starters.map(p => p.id) ?? []),
+      ...(withoutAnchor?.bench.map(p => p.id)    ?? []),
+    ])
+    const withIds = new Set([
+      ...(withAnchor?.starters.map(p => p.id) ?? []),
+      ...(withAnchor?.bench.map(p => p.id)    ?? []),
+    ])
+    expect(withoutIds.has(5)).toBe(false)
+    expect(withIds.has(5)).toBe(true)
+  })
+
+  it('empty anchorIds produces same result as calling without anchorIds', () => {
+    const players = makePool()
+    const scoreMap = new Map<number, number>(players.map(p => [p.id, p.ppm]))
+    const noParam  = buildPreSeasonSquad(players, scoreMap, 1000)
+    const emptyArr = buildPreSeasonSquad(players, scoreMap, 1000, 3, [])
+    expect(noParam?.starters.map(p => p.id)).toEqual(emptyArr?.starters.map(p => p.id))
+    expect(noParam?.bench.map(p => p.id)).toEqual(emptyArr?.bench.map(p => p.id))
+  })
+
+  it('silently skips an anchor that violates position_cap (MAX_SLOTS)', () => {
+    const players = makePool()
+    const scoreMap = new Map<number, number>(players.map(p => [p.id, p.ppm]))
+    // GK ids from makePool are 1,2,3,4 — anchor 3 GKs (MAX_SLOTS[1]=2, so id=3 should be skipped)
+    const result = buildPreSeasonSquad(players, scoreMap, 1000, 3, [1, 2, 3])
+    expect(result).not.toBeNull()
+    const allIds = new Set([
+      ...(result?.starters.map(p => p.id) ?? []),
+      ...(result?.bench.map(p => p.id)    ?? []),
+    ])
+    // id=1 and id=2 present (2 GK slots filled), id=3 skipped
+    expect(allIds.has(1)).toBe(true)
+    expect(allIds.has(2)).toBe(true)
+    expect(allIds.has(3)).toBe(false)
+    expect(result?.starters.length).toBe(11)
+    expect(result?.bench.length).toBe(4)
+  })
+
+  it('silently skips an anchor not present in scoreMap', () => {
+    const players = makePool()
+    const scoreMap = new Map<number, number>(players.map(p => [p.id, p.ppm]))
+    // anchorId 9999 does not exist
+    const result = buildPreSeasonSquad(players, scoreMap, 1000, 3, [9999])
+    expect(result).not.toBeNull()
+    expect(result?.starters.length).toBe(11)
+    expect(result?.bench.length).toBe(4)
+  })
+})
+
 describe('diagnoseBuildPreSeasonSquad', () => {
   it('returns null for a normal feasible input (mirrors happy-path buildPreSeasonSquad)', () => {
     const players = makePool()
