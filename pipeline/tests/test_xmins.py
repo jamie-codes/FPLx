@@ -323,8 +323,9 @@ def _make_bootstrap(elements):
 
 def test_xmins_adjusted_equals_xmins_times_both_factors():
     """xmins_adjusted = xmins_base * rotation_factor * availability_factor."""
-    # Player history: 10 hard games @ 90 min each → high rotation risk when next fixture is easy
-    history_data = make_history([5] * 10, [90] * 10)
+    # 3 easy games at 30 min, 7 hard games at 90 min
+    # Easy avg=30, overall avg=(30*3 + 90*7)/10=72 → ratio=30/72≈0.417 < 0.75 → high rotation risk
+    history_data = make_history([1, 1, 1, 5, 5, 5, 5, 5, 5, 5], [30, 30, 30, 90, 90, 90, 90, 90, 90, 90])
     summaries = {1: {'history': history_data}}
     bootstrap = _make_bootstrap([_make_bootstrap_element(player_id=1, team=1)])
     # next GW fixture has difficulty=1 (easy) for team 1 → high rotation risk
