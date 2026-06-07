@@ -20,7 +20,9 @@ import { usePreSeasonActive } from '@/lib/hooks/usePreSeasonActive'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { HeatMapRow } from '@/components/club-form/FixtureHeatMap'
 import { buildPreSeasonSquad } from '@/lib/pre-season-squad'
+import { buildPreSeasonArchetypes } from '@/lib/pre-season-archetypes'
 import type { PreSeasonPlayer, PreSeasonSquad, SquadHealth } from '@/lib/types'
+import type { ArchetypeSquad } from '@/lib/pre-season-archetypes'
 
 const POSITION_LABELS: Record<number, string> = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' }
 const POSITION_ORDER = [1, 2, 3, 4]
@@ -97,6 +99,78 @@ function FormationGrid({ squad, solver }: { squad: PreSeasonSquad; solver?: 'ilp
   )
 }
 
+// ---------------------------------------------------------------------------
+// ArchetypeCard — renders one of the three pre-season squad archetypes
+// ---------------------------------------------------------------------------
+function ArchetypeCard({ archetype }: { archetype: ArchetypeSquad }) {
+  const { label, squad, topCaptains } = archetype
+  const ARCHETYPE_POSITION_LABELS: Record<number, string> = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' }
+  const ARCHETYPE_POSITION_ORDER = [1, 2, 3, 4] as const
+
+  return (
+    <div
+      className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3"
+      data-testid="archetype-card"
+    >
+      <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{label}</h4>
+
+      {squad === null ? (
+        <p className="text-xs text-amber-600 dark:text-amber-400">
+          Could not build squad — try adjusting the budget.
+        </p>
+      ) : (
+        <>
+          <div className="text-xs text-zinc-500 dark:text-zinc-400 flex flex-wrap gap-2">
+            <span><span className="font-semibold">Formation:</span> {squad.formation}</span>
+            <span>│</span>
+            <span><span className="font-semibold">Cost:</span> £{(squad.budgetUsed / 10).toFixed(1)}m</span>
+          </div>
+
+          {topCaptains.length > 0 && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase text-zinc-400 dark:text-zinc-500 mb-1">
+                Captain options
+              </p>
+              {topCaptains.map((c, i) => (
+                <div key={c.id} className="flex items-center justify-between text-xs py-0.5">
+                  <span className={i === 0 ? 'font-semibold text-zinc-800 dark:text-zinc-200' : 'text-zinc-600 dark:text-zinc-400'}>
+                    {c.web_name}
+                  </span>
+                  <span className="text-zinc-400 dark:text-zinc-500">{c.total_points}pts</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {ARCHETYPE_POSITION_ORDER.map(pos => {
+            const group = [...squad.starters, ...squad.bench].filter(p => p.element_type === pos)
+            const starterIds = new Set(squad.starters.map(p => p.id))
+            if (group.length === 0) return null
+            return (
+              <div key={pos}>
+                <p className="text-[10px] font-semibold uppercase text-zinc-400 dark:text-zinc-500 mb-0.5">
+                  {ARCHETYPE_POSITION_LABELS[pos]}
+                </p>
+                {group.map(p => (
+                  <div
+                    key={p.id}
+                    className={`flex items-center justify-between text-xs py-0.5 border-b border-zinc-100 dark:border-zinc-800 ${!starterIds.has(p.id) ? 'opacity-50' : ''}`}
+                  >
+                    <span className="text-zinc-700 dark:text-zinc-300 truncate">{p.web_name}</span>
+                    <span className="text-zinc-400 dark:text-zinc-500 shrink-0 ml-2">
+                      {p.team_short_name} £{(p.now_cost / 10).toFixed(1)}m
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )
+          })}
+        </>
+      )}
+    </div>
+  )
+}
+
 // Health indicator — rendered after squadSection inside Section A (GREEDY-03).
 // Three text variants per CONTEXT.md D-08 and UI-SPEC Copywriting Contract.
 function HealthIndicator({ health }: { health: SquadHealth }) {
@@ -161,6 +235,15 @@ export function NextSeasonPlannerTab() {
     if (!inputs || !scoreMapHydrated) return null
     return buildPreSeasonSquad(inputs.players, scoreMapHydrated, Math.round(deferredBudget * 10))
   }, [inputs, scoreMapHydrated, deferredBudget])
+
+  const archetypes = useMemo(() => {
+    if (!data?.inputs || !scoreMapHydrated || squad === null) return null
+    return buildPreSeasonArchetypes(
+      data.inputs.players,
+      scoreMapHydrated,
+      data.inputs.budget_default,
+    )
+  }, [data?.inputs, scoreMapHydrated, squad])
 
   useEffect(() => { if (clientSquad) setLastValidSquad(clientSquad) }, [clientSquad])
   useEffect(() => {
@@ -325,6 +408,22 @@ export function NextSeasonPlannerTab() {
         {/* Health indicator rendered after squadSection (GREEDY-03), not inside FormationGrid */}
         {health !== null && <HealthIndicator health={health} />}
       </div>
+
+      {/* Section A2: Squad Archetypes — only when inputs and a valid API squad exist */}
+      {archetypes && (
+        <div>
+          <h3 className="text-xl font-semibold mb-3">Squad Archetypes</h3>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+            Three squad structures built from the same £{(data!.inputs!.budget_default / 10).toFixed(0)}m budget.
+            Captain options ranked by last-season points.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {archetypes.map(archetype => (
+              <ArchetypeCard key={archetype.label} archetype={archetype} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Section B: GW1-8 FDR Heatmap */}
       <div>

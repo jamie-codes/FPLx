@@ -511,4 +511,20 @@ describe('NextSeasonPlannerTab', () => {
     // Empty state copy appears
     expect(container.textContent).toMatch(/pre-season squad not yet available/i)
   })
+
+  // PSB-01: Squad Archetypes section
+  it('renders three archetype cards when inputs are present', () => {
+    const envelope = makeEnvelope({ inputs: makeInputs() })
+    usePreSeasonSquadMock.mockReturnValue({ data: envelope, isLoading: false, isError: false })
+    const { getAllByTestId } = render(<NextSeasonPlannerTab />)
+    const cards = getAllByTestId('archetype-card')
+    expect(cards).toHaveLength(3)
+  })
+
+  it('does not render archetype section when inputs are absent', () => {
+    const envelope = makeEnvelope()  // no inputs field
+    usePreSeasonSquadMock.mockReturnValue({ data: envelope, isLoading: false, isError: false })
+    const { queryAllByTestId } = render(<NextSeasonPlannerTab />)
+    expect(queryAllByTestId('archetype-card')).toHaveLength(0)
+  })
 })
