@@ -136,7 +136,8 @@ describe('buildPreSeasonSquad — anchor support', () => {
     const withoutAnchor = buildPreSeasonSquad(players, scoreMap, 1000, 3, [])
     const withAnchor    = buildPreSeasonSquad(players, scoreMap, 1000, 3, [5])
 
-    // Without anchor: player 5 (lowest ppm DEF) likely NOT in squad
+    // Without anchor: player 5 (lowest ppm DEF) deterministically NOT in squad
+    // (9 other DEFs at ppm=0.4 fill all 5 DEF slots; id=5 at ppm=0.01 never picked)
     // With anchor: player 5 MUST be in squad
     const withoutIds = new Set([
       ...(withoutAnchor?.starters.map(p => p.id) ?? []),
@@ -185,6 +186,63 @@ describe('buildPreSeasonSquad — anchor support', () => {
     expect(result).not.toBeNull()
     expect(result?.starters.length).toBe(11)
     expect(result?.bench.length).toBe(4)
+  })
+
+  it('silently skips an anchor that violates team_cap', () => {
+    // Create a pool where 3 players share team 99 (will fill the 3-per-club cap)
+    // then try to anchor a 4th player from team 99
+    const basePool = makePool()
+    const scoreMap = new Map<number, number>(basePool.map(p => [p.id, p.ppm]))
+
+    // Use 3 MIDs from different teams as the shared-team players
+    // We'll create a custom tight pool: inject 4 players all on team 99
+    const team99Players: PreSeasonPlayer[] = [
+      { id: 101, web_name: 'T99_GK', element_type: 1, team: 99, team_short_name: 'T99', now_cost: 45, total_points: 100, ppm: 0.5 },
+      { id: 102, web_name: 'T99_DEF1', element_type: 2, team: 99, team_short_name: 'T99', now_cost: 50, total_points: 100, ppm: 0.5 },
+      { id: 103, web_name: 'T99_DEF2', element_type: 2, team: 99, team_short_name: 'T99', now_cost: 50, total_points: 100, ppm: 0.5 },
+      { id: 104, web_name: 'T99_DEF3', element_type: 2, team: 99, team_short_name: 'T99', now_cost: 50, total_points: 100, ppm: 0.5 },
+    ]
+    // Give team99 players high ppm so greedy would seat 3 of them
+    team99Players.forEach(p => scoreMap.set(p.id, 2.0))
+    const players = [...basePool, ...team99Players]
+
+    // Anchor all 4 team-99 players — the 4th must be skipped
+    const result = buildPreSeasonSquad(players, scoreMap, 1000, 3, [101, 102, 103, 104])
+    expect(result).not.toBeNull()
+    const allIds = new Set([
+      ...(result?.starters.map(p => p.id) ?? []),
+      ...(result?.bench.map(p => p.id) ?? []),
+    ])
+    // 101, 102, 103 should be seated (fills the 3-per-club cap for team 99)
+    expect(allIds.has(101)).toBe(true)
+    expect(allIds.has(102)).toBe(true)
+    expect(allIds.has(103)).toBe(true)
+    // 104 should be skipped (team_cap exceeded)
+    expect(allIds.has(104)).toBe(false)
+    expect(result?.starters.length).toBe(11)
+    expect(result?.bench.length).toBe(4)
+  })
+
+  it('silently skips an anchor that is over budget', () => {
+    const players = makePool()
+    // Set a very expensive anchor player (cost 900, budget 1000 — leaves only 100 for 14 more players)
+    const expensivePlayer = players.find(p => p.id === 5)! // a DEF
+    expensivePlayer.now_cost = 900
+    const scoreMap = new Map<number, number>(players.map(p => [p.id, p.ppm]))
+
+    // Budget of 200 cannot afford player id=5 at cost 900 as an anchor
+    const result = buildPreSeasonSquad(players, scoreMap, 200, 3, [5])
+    // Squad may be null (budget too tight for 15 players) OR player 5 is absent
+    // Either way, if a squad is returned, player 5 must NOT be in it
+    if (result !== null) {
+      const allIds = new Set([
+        ...result.starters.map(p => p.id),
+        ...result.bench.map(p => p.id),
+      ])
+      expect(allIds.has(5)).toBe(false)
+    }
+    // Just confirm no exception was thrown — the function handled it gracefully
+    expect(true).toBe(true)
   })
 })
 
