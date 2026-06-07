@@ -27,7 +27,8 @@ def test_returns_mins_60_prob_and_sub_risk_label():
     """Return dict has keys {'xmins','start_prob','mins_risk','mins_60_prob','sub_risk_label'}."""
     history = [_hist(90, 1)] * 10
     result = _compute_player_xmins(_element(), _summary(history), 10)
-    assert set(result.keys()) == {'xmins', 'start_prob', 'mins_risk', 'mins_60_prob', 'sub_risk_label'}
+    assert {'xmins', 'start_prob', 'mins_risk', 'mins_60_prob', 'sub_risk_label'}.issubset(result.keys())
+    assert {'xmins_adjusted', 'rotation_risk', 'rotation_factor', 'availability_risk', 'availability_factor'}.issubset(result.keys())
 
 
 def test_new_signing_fallback_uses_position_prior():
@@ -295,3 +296,65 @@ class TestBuildNextGwTeamFdr:
         result = build_next_gw_team_fdr(fixtures, next_gw_id=38)
         # Team 1 appears as away in the second fixture → away_diff=3 wins
         assert result[1] == 3
+
+
+# ---------------------------------------------------------------------------
+# MIN-02: Integration tests — xmins_adjusted, rotation_risk, availability_risk
+# ---------------------------------------------------------------------------
+from xmins import compute_xmins_stats
+
+
+def _make_bootstrap_element(player_id=1, team=1, status='a', chance=None, news=''):
+    return {
+        'id': player_id,
+        'team': team,
+        'element_type': 3,
+        'status': status,
+        'news': news,
+        'chance_of_playing_next_round': chance,
+        'starts': 10,
+        'minutes': 800,
+    }
+
+
+def _make_bootstrap(elements):
+    return {'elements': elements}
+
+
+def test_xmins_adjusted_equals_xmins_times_both_factors():
+    """xmins_adjusted = xmins_base * rotation_factor * availability_factor."""
+    # Player history: 10 hard games @ 90 min each → high rotation risk when next fixture is easy
+    history_data = make_history([5] * 10, [90] * 10)
+    summaries = {1: {'history': history_data}}
+    bootstrap = _make_bootstrap([_make_bootstrap_element(player_id=1, team=1)])
+    # next GW fixture has difficulty=1 (easy) for team 1 → high rotation risk
+    fixtures = [
+        {'event': 38, 'team_h': 1, 'team_a': 2, 'team_h_difficulty': 1, 'team_a_difficulty': 3},
+    ]
+    result = compute_xmins_stats(bootstrap, summaries, finished_gws=10, fixtures=fixtures, next_gw_id=38)
+    player = result[1]
+    # rotation_factor=0.75 (high risk), availability_factor=1.0 (status='a', no chance, no news)
+    expected_adjusted = round(player['xmins'] * player['rotation_factor'] * 1.0, 1)
+    assert player['xmins_adjusted'] == expected_adjusted
+    assert player['rotation_risk'] == 'high'
+    assert player['availability_risk'] == 'unknown'
+
+
+def test_availability_factor_zero_gives_zero_xmins_adjusted():
+    """An injured player (status='i') has xmins_adjusted=0 regardless of rotation."""
+    history_data = make_history([3] * 10, [90] * 10)
+    summaries = {1: {'history': history_data}}
+    bootstrap = _make_bootstrap([_make_bootstrap_element(player_id=1, status='i')])
+    result = compute_xmins_stats(bootstrap, summaries, finished_gws=10)
+    player = result[1]
+    assert player['xmins_adjusted'] == 0.0
+    assert player['availability_risk'] == 'out'
+
+
+def test_no_fixtures_passed_gives_unknown_rotation_risk():
+    """When fixtures/next_gw_id are not provided, rotation_risk defaults to unknown."""
+    summaries = {1: {'history': make_history([1] * 10, [90] * 10)}}
+    bootstrap = _make_bootstrap([_make_bootstrap_element(player_id=1)])
+    result = compute_xmins_stats(bootstrap, summaries, finished_gws=10)
+    assert result[1]['rotation_risk'] == 'unknown'
+    assert result[1]['rotation_factor'] == 1.0

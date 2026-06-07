@@ -2,7 +2,7 @@
 
 import statistics
 
-from news_classifier import classify_availability  # noqa: F401 — used in _compute_player_xmins (MIN-02 Task 3)
+from news_classifier import classify_availability
 
 # Phase 52 D-06: position-prior fallback for new signings / post-injury return
 POSITION_PRIOR = {1: 0.90, 2: 0.75, 3: 0.65, 4: 0.60}
@@ -103,7 +103,13 @@ def compute_rotation_risk(history: list, next_fixture_difficulty: int | None) ->
     return {'rotation_risk': 'high', 'rotation_factor': 0.75}
 
 
-def compute_xmins_stats(bootstrap: dict, summaries: dict, finished_gws: int) -> dict:
+def compute_xmins_stats(
+    bootstrap: dict,
+    summaries: dict,
+    finished_gws: int,
+    fixtures: list | None = None,    # MIN-02: for rotation risk (optional, backward-compat)
+    next_gw_id: int | None = None,   # MIN-02: for rotation risk (optional, backward-compat)
+) -> dict:
     """
     Compute xmins, start_prob, mins_risk for every player.
 
@@ -117,16 +123,30 @@ def compute_xmins_stats(bootstrap: dict, summaries: dict, finished_gws: int) -> 
         dict mapping player_id (int) -> {xmins: float, start_prob: float, mins_risk: str}
         Every player in bootstrap['elements'] gets an entry (including GKs and 0-start players).
     """
+    # Build next-GW team FDR map for rotation risk computation (MIN-02).
+    # Empty dict when fixtures/next_gw_id not provided — rotation risk defaults to unknown.
+    team_fdr: dict = {}
+    if fixtures and next_gw_id:
+        team_fdr = build_next_gw_team_fdr(fixtures, next_gw_id)
+
     results = {}
 
     for element in bootstrap.get('elements', []):
         player_id = element['id']
-        results[player_id] = _compute_player_xmins(element, summaries.get(player_id), finished_gws)
+        next_fixture_difficulty = team_fdr.get(element.get('team'))
+        results[player_id] = _compute_player_xmins(
+            element, summaries.get(player_id), finished_gws, next_fixture_difficulty,
+        )
 
     return results
 
 
-def _compute_player_xmins(element: dict, summary: dict | None, finished_gws: int) -> dict:
+def _compute_player_xmins(
+    element: dict,
+    summary: dict | None,
+    finished_gws: int,
+    next_fixture_difficulty: int | None = None,   # MIN-02: for rotation risk
+) -> dict:
     """Compute xmins stats for a single player."""
     starts = element.get('starts', 0)
     minutes = element.get('minutes', 0)
@@ -199,10 +219,32 @@ def _compute_player_xmins(element: dict, summary: dict | None, finished_gws: int
     else:
         sub_risk_label = 'rotation_risk'
 
+    # MIN-02: Rotation risk (fixture-difficulty-aware).
+    history = (summary or {}).get('history', [])
+    rotation_result = compute_rotation_risk(history, next_fixture_difficulty)
+
+    # MIN-02: Availability classification (FPL status → chance → keyword fallback).
+    availability_result = classify_availability(
+        status=element.get('status', 'a'),
+        chance=element.get('chance_of_playing_next_round'),
+        news_text=element.get('news', ''),
+    )
+
+    # Combined xmins adjustment.
+    xmins_adjusted = round(
+        xmins * rotation_result['rotation_factor'] * availability_result['availability_factor'],
+        1,
+    )
+
     return {
         'xmins': xmins,
+        'xmins_adjusted': xmins_adjusted,                               # MIN-02
         'start_prob': start_prob,
         'mins_risk': mins_risk,
         'mins_60_prob': mins_60_prob,
         'sub_risk_label': sub_risk_label,
+        'rotation_risk': rotation_result['rotation_risk'],              # MIN-02
+        'rotation_factor': rotation_result['rotation_factor'],          # MIN-02
+        'availability_risk': availability_result['availability_risk'],  # MIN-02
+        'availability_factor': availability_result['availability_factor'],  # MIN-02
     }
