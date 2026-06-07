@@ -1,0 +1,79 @@
+"""Tests for pipeline/news_classifier.py (MIN-02 — availability classifier)."""
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+import pytest
+from news_classifier import classify_availability
+
+
+def test_status_i_returns_out():
+    result = classify_availability(status='i', chance=None, news_text='')
+    assert result['availability_risk'] == 'out'
+    assert result['availability_factor'] == 0.0
+
+
+def test_status_u_returns_out():
+    result = classify_availability(status='u', chance=None, news_text='')
+    assert result['availability_risk'] == 'out'
+    assert result['availability_factor'] == 0.0
+
+
+def test_status_s_returns_out():
+    result = classify_availability(status='s', chance=None, news_text='')
+    assert result['availability_risk'] == 'out'
+    assert result['availability_factor'] == 0.0
+
+
+def test_chance_100_returns_fit():
+    result = classify_availability(status='a', chance=100, news_text='')
+    assert result['availability_risk'] == 'fit'
+    assert result['availability_factor'] == 1.0
+
+
+def test_chance_75_returns_fit():
+    result = classify_availability(status='a', chance=75, news_text='')
+    assert result['availability_risk'] == 'fit'
+    assert result['availability_factor'] == 1.0
+
+
+def test_chance_50_returns_doubt():
+    result = classify_availability(status='a', chance=50, news_text='')
+    assert result['availability_risk'] == 'doubt'
+    assert result['availability_factor'] == 0.5
+
+
+def test_chance_0_returns_out():
+    result = classify_availability(status='a', chance=0, news_text='')
+    assert result['availability_risk'] == 'out'
+    assert result['availability_factor'] == 0.0
+
+
+def test_chance_null_news_ruled_out():
+    result = classify_availability(status='a', chance=None, news_text='Player ruled out for six weeks.')
+    assert result['availability_risk'] == 'out'
+    assert result['availability_factor'] == 0.0
+
+
+def test_chance_null_news_doubt():
+    result = classify_availability(status='a', chance=None, news_text='Manager says player is a doubt for the weekend.')
+    assert result['availability_risk'] == 'doubt'
+    assert result['availability_factor'] == 0.5
+
+
+def test_chance_null_news_fit():
+    result = classify_availability(status='a', chance=None, news_text='Fully fit and available for selection.')
+    assert result['availability_risk'] == 'fit'
+    assert result['availability_factor'] == 1.0
+
+
+def test_chance_null_no_news_returns_unknown():
+    result = classify_availability(status='a', chance=None, news_text='')
+    assert result['availability_risk'] == 'unknown'
+    assert result['availability_factor'] == 1.0
+
+
+def test_chance_overrides_contradicting_keyword():
+    # chance=100 (fit) but news says "doubt" — chance wins
+    result = classify_availability(status='a', chance=100, news_text='Player is a doubt for the next match.')
+    assert result['availability_risk'] == 'fit'
+    assert result['availability_factor'] == 1.0
