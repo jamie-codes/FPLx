@@ -150,6 +150,8 @@ export interface MergedPlayer {
   mins_risk: MinsRisk         // rotation risk classification
   mins_60_prob?: number          // Phase 52 MIN-01 — Bernoulli P(>=60 min | starts); optional during pipeline rollout
   sub_risk_label?: SubRiskLabel  // Phase 52 MIN-01 — probability-derived; additive; mins_risk preserved
+  difficulty_rotation_risk?: 'low' | 'medium' | 'high' | 'unknown'  // MIN-02: next-GW fixture-difficulty rotation risk
+  availability_risk?: 'out' | 'doubt' | 'fit' | 'unknown'            // MIN-02: FPL status + news availability
   // xPts engine (Phase 28 DATA-02, XPTS-01, XPTS-02 — D-01..D-09).
   // Optional during pipeline rollout — same convention as Phase 27 attacking_difficulty.
   xPts_1gw?: number           // expected pts next 1 GW (Poisson goals/assists, Bernoulli CS, flat bonus)
