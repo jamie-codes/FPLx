@@ -527,4 +527,20 @@ describe('NextSeasonPlannerTab', () => {
     const { queryAllByTestId } = render(<NextSeasonPlannerTab />)
     expect(queryAllByTestId('archetype-card')).toHaveLength(0)
   })
+
+  it('renders amber error copy for archetype card when squad cannot be built', () => {
+    // Give all input players cost=200 so buildPreSeasonArchetypes returns null squads
+    const tightInputs = makeInputs()
+    tightInputs.players.forEach(p => { p.now_cost = 200 })
+    // Rebuild scoreMap from updated players (ppm unchanged)
+    tightInputs.scoreMap = Object.fromEntries(tightInputs.players.map(p => [String(p.id), p.ppm]))
+    const envelope = makeEnvelope({ inputs: tightInputs })
+    usePreSeasonSquadMock.mockReturnValue({ data: envelope, isLoading: false, isError: false })
+    const { getAllByTestId, getAllByText } = render(<NextSeasonPlannerTab />)
+    // 3 archetype cards still render (cards always render, even with null squad)
+    expect(getAllByTestId('archetype-card')).toHaveLength(3)
+    // Each null-squad card shows the amber error copy
+    const errorMessages = getAllByText(/Could not build squad/)
+    expect(errorMessages).toHaveLength(3)
+  })
 })

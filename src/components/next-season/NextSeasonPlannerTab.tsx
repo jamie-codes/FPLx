@@ -104,8 +104,6 @@ function FormationGrid({ squad, solver }: { squad: PreSeasonSquad; solver?: 'ilp
 // ---------------------------------------------------------------------------
 function ArchetypeCard({ archetype }: { archetype: ArchetypeSquad }) {
   const { label, squad, topCaptains } = archetype
-  const ARCHETYPE_POSITION_LABELS: Record<number, string> = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' }
-  const ARCHETYPE_POSITION_ORDER = [1, 2, 3, 4] as const
 
   return (
     <div
@@ -142,14 +140,16 @@ function ArchetypeCard({ archetype }: { archetype: ArchetypeSquad }) {
             </div>
           )}
 
-          {ARCHETYPE_POSITION_ORDER.map(pos => {
-            const group = [...squad.starters, ...squad.bench].filter(p => p.element_type === pos)
+          {(() => {
+            const allSquadPlayers = [...squad.starters, ...squad.bench]
             const starterIds = new Set(squad.starters.map(p => p.id))
+            return POSITION_ORDER.map(pos => {
+              const group = allSquadPlayers.filter(p => p.element_type === pos)
             if (group.length === 0) return null
             return (
               <div key={pos}>
                 <p className="text-[10px] font-semibold uppercase text-zinc-400 dark:text-zinc-500 mb-0.5">
-                  {ARCHETYPE_POSITION_LABELS[pos]}
+                  {POSITION_LABELS[pos]}
                 </p>
                 {group.map(p => (
                   <div
@@ -164,7 +164,8 @@ function ArchetypeCard({ archetype }: { archetype: ArchetypeSquad }) {
                 ))}
               </div>
             )
-          })}
+            })
+          })()}
         </>
       )}
     </div>
@@ -414,7 +415,7 @@ export function NextSeasonPlannerTab() {
         <div>
           <h3 className="text-xl font-semibold mb-3">Squad Archetypes</h3>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-            Three squad structures built from the same £{(data!.inputs!.budget_default / 10).toFixed(0)}m budget.
+            Three squad structures built from the same £{((data?.inputs?.budget_default ?? 1000) / 10).toFixed(0)}m budget.
             Captain options ranked by last-season points.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
