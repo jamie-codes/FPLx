@@ -14,11 +14,11 @@ Improve bonus point EV accuracy and stability by replacing the direct position-p
 
 ## Architecture
 
-The change is entirely inside `pipeline/bonus.py`. No changes to `run.py`, `merge.py` (beyond one new field), or the frontend — `bonus_ev` remains the output field, same type, same units.
+The change is entirely inside `pipeline/bonus.py`. No changes to `run.py` (it already calls `compute_bonus_predictions(bootstrap, summaries, finished_gws)` as a batch), `merge.py` (beyond one new field), or the frontend — `bonus_ev` remains the output field, same type, same units.
 
-Two-pass computation:
-- **Pass 1:** `build_bps_calibration(summaries, bootstrap)` → `(slope, intercept) | None`
-- **Pass 2:** `_compute_player_bonus_ev(element, summary, calibration)` → `{bonus_ev, avg_bps, n_starts, source}`
+Two-pass computation inside `compute_bonus_predictions`:
+- **Pass 1:** `build_bps_calibration(summaries, bootstrap)` → `(slope, intercept) | None` — called once at the top of `compute_bonus_predictions`
+- **Pass 2:** `_compute_player_bonus_ev(element, summary, calibration)` → `{bonus_ev, avg_bps, n_starts, source}` — called per player, receiving the calibration tuple from Pass 1
 
 New field: `avg_bps` (float) — raw pre-shrinkage average BPS per start, for observability.
 
