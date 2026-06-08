@@ -197,17 +197,24 @@ def test_gamma_one_hard_fixture_higher_weight():
 
 
 def test_gamma_half_is_between_zero_and_one():
-    """FRM-02: gamma=0.5 result is between gamma=0.0 and gamma=1.0 results."""
+    """FRM-02: gamma=0.5 result is strictly between gamma=0.0 and gamma=1.0 results.
+
+    Difficulty correlates with xG: hard GWs (difficulty=5) have high xG,
+    easy GWs (difficulty=1) have low xG. This ensures gamma changes the weighted
+    average, so the three gamma values produce genuinely distinct results.
+    """
     history = [
-        {'round': i, 'minutes': 90, 'expected_goals': 0.5, 'expected_assists': 0.0,
-         'difficulty': 5 if i % 2 == 1 else 1}
-        for i in range(1, 6)
+        {'round': 1, 'minutes': 90, 'expected_goals': 0.7, 'expected_assists': 0.0, 'difficulty': 5},
+        {'round': 2, 'minutes': 90, 'expected_goals': 0.2, 'expected_assists': 0.0, 'difficulty': 1},
+        {'round': 3, 'minutes': 90, 'expected_goals': 0.7, 'expected_assists': 0.0, 'difficulty': 5},
+        {'round': 4, 'minutes': 90, 'expected_goals': 0.2, 'expected_assists': 0.0, 'difficulty': 1},
+        {'round': 5, 'minutes': 90, 'expected_goals': 0.7, 'expected_assists': 0.0, 'difficulty': 5},
     ]
     form_0, _ = _compute_form_signal(history, gamma=0.0)
     form_1, _ = _compute_form_signal(history, gamma=1.0)
     form_half, _ = _compute_form_signal(history, gamma=0.5)
     assert form_half is not None
-    assert min(form_0, form_1) <= form_half <= max(form_0, form_1)
+    assert min(form_0, form_1) < form_half < max(form_0, form_1)
 
 
 def test_hard_fixture_scorer_higher_with_positive_gamma():

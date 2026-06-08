@@ -547,7 +547,7 @@ def _difficulty_factor(agg: dict, gamma: float) -> float:
 
     Args:
         agg:   aggregated GW dict with 'difficulty_sum' and 'difficulty_n' keys.
-               Uses .get() so old test fixtures lacking these keys are safe.
+               Uses .get() defaults; missing/zero difficulty_n returns 1.0 (neutral).
         gamma: difficulty scaling factor; 0.0 = no-op.
 
     Returns:
@@ -555,7 +555,10 @@ def _difficulty_factor(agg: dict, gamma: float) -> float:
     """
     if gamma == 0.0:
         return 1.0
-    avg_diff = agg.get('difficulty_sum', 0.0) / max(agg.get('difficulty_n', 0), 1)
+    n = agg.get('difficulty_n', 0)
+    if n == 0:
+        return 1.0
+    avg_diff = agg.get('difficulty_sum', 0.0) / n
     norm = (avg_diff - 1) / 4   # FDR 1–5 → 0.0–1.0
     return 1.0 + gamma * (norm - 0.5)
 
