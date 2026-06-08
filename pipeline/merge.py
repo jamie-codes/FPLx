@@ -542,8 +542,14 @@ def _compute_form_signal(
     history: list,
     window_gws: int = 5,
     min_minutes: int = 270,
+    beta: float = 0.0,   # FRM-01: actual G+A blend weight; 0.0 = pure xG+xA (backward-compatible)
 ) -> tuple:
-    """Compute recency-weighted xG+xA per-90 over the last window_gws unique rounds (Phase 42 ACC-01).
+    """Compute recency-weighted form per-90 over the last window_gws unique rounds (Phase 42 ACC-01).
+
+    FRM-01: When beta > 0, blends actual goals+assists per-90 into the form signal:
+        form = (1 - beta) * xg_xa_per90 + beta * actual_ga_per90
+    beta=0.0 (default) is the arithmetic identity for the pre-FRM-01 behaviour.
+    beta is tuned by TUNE-01 coordinate descent; see pipeline/tune.py.
 
     Returns (form_xgxa_per90, gws_used) or (None, 0) when insufficient data.
 
@@ -555,8 +561,8 @@ def _compute_form_signal(
     Recency weight: linear from 1.0 (most recent round in window) to 0.5 (oldest in window).
     Linear is inspectable; no backtest evidence supports exotic decay (RESEARCH.md Pitfall 8).
 
-    DGW handling: entries sharing a round are summed (minutes + xG + xA), not double-counted,
-    so n == unique rounds played, not number of history entries.
+    DGW handling: entries sharing a round are summed (minutes + xG + xA + goals + assists), not
+    double-counted, so n == unique rounds played, not number of history entries.
     """
     if not history:
         return None, 0
@@ -571,10 +577,15 @@ def _compute_form_signal(
         r = entry.get('round')
         if r is None or r not in last_rounds:
             continue
-        agg = by_round.setdefault(r, {'minutes': 0, 'expected_goals': 0.0, 'expected_assists': 0.0})
+        agg = by_round.setdefault(r, {
+            'minutes': 0, 'expected_goals': 0.0, 'expected_assists': 0.0,
+            'goals_scored': 0, 'assists': 0,   # FRM-01
+        })
         agg['minutes'] += entry.get('minutes', 0) or 0
         agg['expected_goals'] += float(entry.get('expected_goals', 0) or 0)
         agg['expected_assists'] += float(entry.get('expected_assists', 0) or 0)
+        agg['goals_scored'] += int(entry.get('goals_scored', 0) or 0)   # FRM-01
+        agg['assists'] += int(entry.get('assists', 0) or 0)              # FRM-01
 
     played = [by_round[r] for r in sorted(by_round.keys()) if by_round[r]['minutes'] > 0]
     total_mins = sum(p['minutes'] for p in played)
@@ -589,12 +600,20 @@ def _compute_form_signal(
         (p['expected_goals'] + p['expected_assists']) * w
         for p, w in zip(played, weights)
     )
+    weighted_actual = sum(
+        (p['goals_scored'] + p['assists']) * w      # FRM-01
+        for p, w in zip(played, weights)
+    )
     weighted_mins = sum(p['minutes'] * w for p, w in zip(played, weights))
 
     if weighted_mins <= 0:
         return None, 0
 
-    form_per90 = round((weighted_xgxa / weighted_mins) * 90, 4)
+    xg_xa_per90     = (weighted_xgxa   / weighted_mins) * 90
+    actual_ga_per90 = (weighted_actual / weighted_mins) * 90  # FRM-01
+    blended         = (1.0 - beta) * xg_xa_per90 + beta * actual_ga_per90  # FRM-01
+
+    form_per90 = round(blended, 4)
     return form_per90, len(played)
 
 
@@ -777,6 +796,7 @@ def merge_players(
     cs_prob_base: float = 0.40,             # TUNE-01: tunable via accuracy_backtest.json.summary
     cs_prob_slope: float = 0.30,            # TUNE-01: tunable via accuracy_backtest.json.summary
     form_window_gws: int = 5,               # TUNE-01: tunable via accuracy_backtest.json.summary
+    form_actual_beta: float = 0.0,          # FRM-01: actual G+A blend weight, tunable via TUNE-01
 ) -> tuple[list, dict]:
     """Merge FPL bootstrap + Understat xG/xA into a unified player list.
 
@@ -1187,6 +1207,7 @@ def merge_players(
             form_per90, form_n_gws = _compute_form_signal(
                 summaries[fpl_id].get('history', []),
                 window_gws=form_window_gws,
+                beta=form_actual_beta,   # FRM-01
             )
         else:
             form_per90, form_n_gws = None, 0

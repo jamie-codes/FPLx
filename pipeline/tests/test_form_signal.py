@@ -69,3 +69,98 @@ def test_form_signal_handles_string_expected_goals():
     form, n = _compute_form_signal(history)
     assert form is not None
     assert n == 5
+
+
+# ── FRM-01: actual G+A blend tests ──────────────────────────────────────────
+
+def test_beta_zero_backward_compatible():
+    """FRM-01: beta=0.0 (default) produces identical result when goals_scored absent."""
+    history = [
+        {'round': i, 'minutes': 90, 'expected_goals': 0.3, 'expected_assists': 0.1}
+        for i in range(1, 6)
+    ]
+    result_default, n1 = _compute_form_signal(history)
+    result_explicit, n2 = _compute_form_signal(history, beta=0.0)
+    assert result_default == result_explicit
+    assert n1 == n2 == 5
+
+
+def test_beta_one_returns_pure_actual_ga():
+    """FRM-01: beta=1.0 returns recency-weighted actual G+A per-90 only.
+
+    5 GWs × 90 min × (1 goal + 1 assist) → actual_ga_per90 = 2.0 exactly.
+    (Recency weights cancel out: every entry has same G+A per minute.)
+    """
+    history = [
+        {'round': i, 'minutes': 90, 'expected_goals': 0.2, 'expected_assists': 0.1,
+         'goals_scored': 1, 'assists': 1}
+        for i in range(1, 6)
+    ]
+    form, n = _compute_form_signal(history, beta=1.0)
+    assert form is not None
+    assert abs(form - 2.0) < 0.01
+    assert n == 5
+
+
+def test_beta_half_is_blend():
+    """FRM-01: beta=0.5 result is between pure xG+xA and pure actual."""
+    history = [
+        {'round': i, 'minutes': 90, 'expected_goals': 0.3, 'expected_assists': 0.1,
+         'goals_scored': 1, 'assists': 1}
+        for i in range(1, 6)
+    ]
+    pure_xgxa, _ = _compute_form_signal(history, beta=0.0)
+    pure_actual, _ = _compute_form_signal(history, beta=1.0)
+    blend, _ = _compute_form_signal(history, beta=0.5)
+    assert blend is not None
+    assert min(pure_xgxa, pure_actual) <= blend <= max(pure_xgxa, pure_actual)
+
+
+def test_outperformer_higher_with_positive_beta():
+    """FRM-01: player scoring more than xG (outperformer) gets higher form when beta>0."""
+    # xG+xA = 0.3 per 90; actual = 1.0 per 90 (outperforming)
+    history = [
+        {'round': i, 'minutes': 90, 'expected_goals': 0.2, 'expected_assists': 0.1,
+         'goals_scored': 1, 'assists': 0}
+        for i in range(1, 6)
+    ]
+    form_no_actual, _ = _compute_form_signal(history, beta=0.0)
+    form_with_actual, _ = _compute_form_signal(history, beta=0.3)
+    assert form_with_actual > form_no_actual
+
+
+def test_underperformer_lower_with_positive_beta():
+    """FRM-01: player scoring less than xG (underperformer) gets lower form when beta>0."""
+    # xG+xA = 1.1 per 90; actual = 0.0 per 90 (underperforming)
+    history = [
+        {'round': i, 'minutes': 90, 'expected_goals': 0.8, 'expected_assists': 0.3,
+         'goals_scored': 0, 'assists': 0}
+        for i in range(1, 6)
+    ]
+    form_no_actual, _ = _compute_form_signal(history, beta=0.0)
+    form_with_actual, _ = _compute_form_signal(history, beta=0.3)
+    assert form_with_actual < form_no_actual
+
+
+def test_dgw_aggregates_goals_and_assists():
+    """FRM-01: DGW round sums goals_scored and assists across both entries."""
+    history = [
+        {'round': 1, 'minutes': 90, 'expected_goals': 0.3, 'expected_assists': 0.1,
+         'goals_scored': 0, 'assists': 0},
+        {'round': 2, 'minutes': 90, 'expected_goals': 0.2, 'expected_assists': 0.1,
+         'goals_scored': 0, 'assists': 0},
+        {'round': 3, 'minutes': 60, 'expected_goals': 0.2, 'expected_assists': 0.1,
+         'goals_scored': 1, 'assists': 0},   # DGW match 1
+        {'round': 3, 'minutes': 90, 'expected_goals': 0.3, 'expected_assists': 0.1,
+         'goals_scored': 1, 'assists': 1},   # DGW match 2 — same round
+    ]
+    # With beta=1.0: only actual G+A matters.
+    # Round 3 total: 2 goals + 1 assist = 3 G+A in 150 min.
+    # weights (n=3): [0.5, 0.75, 1.0]
+    # weighted_actual = 0*0.5 + 0*0.75 + 3*1.0 = 3.0
+    # weighted_mins   = 90*0.5 + 90*0.75 + 150*1.0 = 262.5
+    # actual_ga_per90 = 3.0/262.5 * 90 ≈ 1.0286
+    form_actual, n = _compute_form_signal(history, beta=1.0)
+    assert n == 3   # 3 unique rounds, not 4 entries
+    assert form_actual is not None
+    assert abs(form_actual - round(3.0 / 262.5 * 90, 4)) < 0.001
