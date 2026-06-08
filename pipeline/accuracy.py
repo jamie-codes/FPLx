@@ -35,6 +35,7 @@ GATE_MARGIN_PP = 0.02        # Phase 42 ACC-03 / Pitfall 3: require 2pp margin t
 BLEND_ALPHA = 0.4            # Phase 42 ACC-01: form-signal blend coefficient (matches merge.BLEND_ALPHA)
 FORM_WINDOW_GWS = 5          # Phase 42 ACC-01: same window as merge._compute_form_signal default
 FORM_MIN_MINUTES = 270       # Phase 42 ACC-01: same minutes floor as merge._compute_form_signal default
+FORM_ACTUAL_BETA = 0.0       # FRM-01: actual G+A blend weight (default 0.0 = pure xG+xA)
 CS_PROB_BASE = 0.40          # TUNE-01: default base CS probability vs average opposition
 CS_PROB_SLOPE = 0.30         # TUNE-01: default CS probability sensitivity to opponent strength
 FORMULA_VERSION = 'v1.12-a'  # Phase 63 D-01 / VER-01: bumped manually when prediction formula changes; pattern v{milestone}-{letter}
@@ -133,6 +134,7 @@ def build_per_gw_rows(
     form_window_gws: int = FORM_WINDOW_GWS,
     cs_prob_base: float = CS_PROB_BASE,
     cs_prob_slope: float = CS_PROB_SLOPE,
+    form_actual_beta: float = FORM_ACTUAL_BETA,   # FRM-01
 ) -> dict:
     """Build per-GW player rows with reconstructed xPts for the given target_gws.
 
@@ -149,6 +151,7 @@ def build_per_gw_rows(
         form_window_gws:   recency window for form signal (TUNE-01).
         cs_prob_base:      base CS probability (TUNE-01).
         cs_prob_slope:     CS probability difficulty slope (TUNE-01).
+        form_actual_beta:  actual G+A blend weight for form signal (FRM-01).
 
     Returns:
         dict mapping gw -> list of player-row dicts (same shape as compute_accuracy_backtest
@@ -186,7 +189,9 @@ def build_per_gw_rows(
                 entry, element_type, difficulty_score,
                 cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,
             )
-            form_per90_at_gw = _reconstruct_form_signal(grouped, gw, window_gws=form_window_gws)
+            form_per90_at_gw = _reconstruct_form_signal(
+                grouped, gw, window_gws=form_window_gws, beta=form_actual_beta,   # FRM-01
+            )
             xpts_blended_predicted = _reconstruct_xpts_with_form(
                 entry, element_type, difficulty_score, form_per90_at_gw,
                 blend_alpha=blend_alpha,
@@ -777,12 +782,13 @@ def _compute_calibration_data(
 def _group_history_by_gw(history: list) -> dict:
     """Aggregate DGW entries (same `round`) into one entry per GW (Pattern 4).
 
-    Sums minutes, total_points, expected_goals, expected_assists.
+    Sums minutes, total_points, expected_goals, expected_assists, goals_scored, assists.
     Captures the player's own team_id from the first entry encountered for that round.
     """
     by_round: dict = defaultdict(lambda: {
         'round': 0, 'minutes': 0, 'total_points': 0,
         'expected_goals': 0.0, 'expected_assists': 0.0,
+        'goals_scored': 0, 'assists': 0,   # FRM-01
     })
     for entry in history:
         r = entry.get('round')
@@ -794,6 +800,8 @@ def _group_history_by_gw(history: list) -> dict:
         agg['total_points'] += int(entry.get('total_points', 0) or 0)
         agg['expected_goals'] += float(entry.get('expected_goals', 0) or 0)
         agg['expected_assists'] += float(entry.get('expected_assists', 0) or 0)
+        agg['goals_scored'] += int(entry.get('goals_scored', 0) or 0)   # FRM-01
+        agg['assists'] += int(entry.get('assists', 0) or 0)              # FRM-01
     return dict(by_round)
 
 
@@ -842,15 +850,19 @@ def _reconstruct_form_signal(
     current_gw: int,
     window_gws: int = FORM_WINDOW_GWS,
     min_minutes: int = FORM_MIN_MINUTES,
+    beta: float = 0.0,   # FRM-01: actual G+A blend weight
 ) -> 'float | None':
     """Reconstruct the form signal at GW `current_gw` from STRICTLY PRIOR rounds (Phase 42 ACC-02).
+
+    FRM-01: When beta > 0, blends actual G+A per-90 into the form signal — mirrors
+    merge._compute_form_signal(beta=beta). beta=0.0 (default) is backward-compatible.
 
     `grouped` is the output of _group_history_by_gw — DGW already aggregated.
     We must NOT include `current_gw` itself: the player's GW-N actuals are the
     thing we are predicting; including them is a leak (Pitfall 6).
 
     Returns None when fewer than 3 prior played GWs exist in the window or
-    total minutes < min_minutes. Otherwise returns recency-weighted xG+xA
+    total minutes < min_minutes. Otherwise returns recency-weighted blended
     per-90 (linear weights 0.5..1.0, oldest..most recent).
 
     Mirrors merge._compute_form_signal but operates on grouped dict + GW filter.
@@ -870,10 +882,16 @@ def _reconstruct_form_signal(
         (p['expected_goals'] + p['expected_assists']) * w
         for p, w in zip(played, weights)
     )
+    weighted_actual = sum(
+        (p.get('goals_scored', 0) + p.get('assists', 0)) * w   # FRM-01
+        for p, w in zip(played, weights)
+    )
     weighted_mins = sum(p['minutes'] * w for p, w in zip(played, weights))
     if weighted_mins <= 0:
         return None
-    return round((weighted_xgxa / weighted_mins) * 90, 4)
+    xg_xa_per90     = (weighted_xgxa   / weighted_mins) * 90
+    actual_ga_per90 = (weighted_actual / weighted_mins) * 90   # FRM-01
+    return round((1.0 - beta) * xg_xa_per90 + beta * actual_ga_per90, 4)
 
 
 def _reconstruct_xpts_with_form(
