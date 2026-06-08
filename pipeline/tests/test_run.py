@@ -399,6 +399,7 @@ def _read_tuner_params(cache_dir: str) -> dict:
     cs_prob_base_used    = 0.40
     cs_prob_slope_used   = 0.30
     form_actual_beta_used = 0.0
+    form_difficulty_gamma_used = 0.0
     try:
         with open(backtest_path, 'r', encoding='utf-8') as f:
             prev = json.load(f)
@@ -407,6 +408,7 @@ def _read_tuner_params(cache_dir: str) -> dict:
         cs_prob_base_used    = float(summary.get('cs_prob_base_used',    0.40))
         cs_prob_slope_used   = float(summary.get('cs_prob_slope_used',   0.30))
         form_actual_beta_used = float(summary.get('form_actual_beta_used', 0.0))
+        form_difficulty_gamma_used = float(summary.get('form_difficulty_gamma_used', 0.0))  # FRM-02
     except (FileNotFoundError, json.JSONDecodeError):
         pass
     return {
@@ -414,6 +416,7 @@ def _read_tuner_params(cache_dir: str) -> dict:
         'cs_prob_base_used':    cs_prob_base_used,
         'cs_prob_slope_used':   cs_prob_slope_used,
         'form_actual_beta_used': form_actual_beta_used,
+        'form_difficulty_gamma_used': form_difficulty_gamma_used,
     }
 
 
@@ -424,6 +427,7 @@ def test_read_tuner_params_defaults_on_missing_file():
         assert abs(params['cs_prob_base_used']  - 0.40) < 1e-9
         assert abs(params['cs_prob_slope_used'] - 0.30) < 1e-9
         assert abs(params['form_actual_beta_used'] - 0.0) < 1e-9
+        assert abs(params['form_difficulty_gamma_used'] - 0.0) < 1e-9
 
 
 def test_read_tuner_params_reads_promoted_values():
@@ -433,6 +437,7 @@ def test_read_tuner_params_reads_promoted_values():
             'cs_prob_base_used': 0.45,
             'cs_prob_slope_used': 0.25,
             'form_actual_beta_used': 0.3,
+            'form_difficulty_gamma_used': 0.4,
         }}
         path = os.path.join(tmpdir, 'accuracy_backtest.json')
         with open(path, 'w') as f:
@@ -442,3 +447,4 @@ def test_read_tuner_params_reads_promoted_values():
         assert abs(params['cs_prob_base_used']  - 0.45) < 1e-9
         assert abs(params['cs_prob_slope_used'] - 0.25) < 1e-9
         assert abs(params['form_actual_beta_used'] - 0.3) < 1e-9
+        assert abs(params['form_difficulty_gamma_used'] - 0.4) < 1e-9
