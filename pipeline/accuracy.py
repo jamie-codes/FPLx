@@ -36,6 +36,7 @@ BLEND_ALPHA = 0.4            # Phase 42 ACC-01: form-signal blend coefficient (m
 FORM_WINDOW_GWS = 5          # Phase 42 ACC-01: same window as merge._compute_form_signal default
 FORM_MIN_MINUTES = 270       # Phase 42 ACC-01: same minutes floor as merge._compute_form_signal default
 FORM_ACTUAL_BETA = 0.0       # FRM-01: actual G+A blend weight (default 0.0 = pure xG+xA)
+FORM_DIFFICULTY_GAMMA = 0.0  # FRM-02: difficulty weight scaling (default 0.0 = no-op)
 CS_PROB_BASE = 0.40          # TUNE-01: default base CS probability vs average opposition
 CS_PROB_SLOPE = 0.30         # TUNE-01: default CS probability sensitivity to opponent strength
 FORMULA_VERSION = 'v1.12-a'  # Phase 63 D-01 / VER-01: bumped manually when prediction formula changes; pattern v{milestone}-{letter}
@@ -134,7 +135,8 @@ def build_per_gw_rows(
     form_window_gws: int = FORM_WINDOW_GWS,
     cs_prob_base: float = CS_PROB_BASE,
     cs_prob_slope: float = CS_PROB_SLOPE,
-    form_actual_beta: float = FORM_ACTUAL_BETA,   # FRM-01
+    form_actual_beta: float = FORM_ACTUAL_BETA,              # FRM-01
+    form_difficulty_gamma: float = FORM_DIFFICULTY_GAMMA,    # FRM-02
 ) -> dict:
     """Build per-GW player rows with reconstructed xPts for the given target_gws.
 
@@ -190,7 +192,9 @@ def build_per_gw_rows(
                 cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,
             )
             form_per90_at_gw = _reconstruct_form_signal(
-                grouped, gw, window_gws=form_window_gws, beta=form_actual_beta,   # FRM-01
+                grouped, gw, window_gws=form_window_gws,
+                beta=form_actual_beta,           # FRM-01
+                gamma=form_difficulty_gamma,     # FRM-02
             )
             xpts_blended_predicted = _reconstruct_xpts_with_form(
                 entry, element_type, difficulty_score, form_per90_at_gw,
@@ -788,7 +792,8 @@ def _group_history_by_gw(history: list) -> dict:
     by_round: dict = defaultdict(lambda: {
         'round': 0, 'minutes': 0, 'total_points': 0,
         'expected_goals': 0.0, 'expected_assists': 0.0,
-        'goals_scored': 0, 'assists': 0,   # FRM-01
+        'goals_scored': 0, 'assists': 0,           # FRM-01
+        'difficulty_sum': 0.0, 'difficulty_n': 0,  # FRM-02
     })
     for entry in history:
         r = entry.get('round')
@@ -802,6 +807,8 @@ def _group_history_by_gw(history: list) -> dict:
         agg['expected_assists'] += float(entry.get('expected_assists', 0) or 0)
         agg['goals_scored'] += int(entry.get('goals_scored', 0) or 0)   # FRM-01
         agg['assists'] += int(entry.get('assists', 0) or 0)              # FRM-01
+        agg['difficulty_sum'] += float(entry.get('difficulty', 3) or 3)   # FRM-02
+        agg['difficulty_n']   += 1                                          # FRM-02
     return dict(by_round)
 
 
@@ -850,7 +857,8 @@ def _reconstruct_form_signal(
     current_gw: int,
     window_gws: int = FORM_WINDOW_GWS,
     min_minutes: int = FORM_MIN_MINUTES,
-    beta: float = 0.0,   # FRM-01: actual G+A blend weight
+    beta: float = 0.0,    # FRM-01: actual G+A blend weight
+    gamma: float = 0.0,   # FRM-02: difficulty weight scaling
 ) -> 'float | None':
     """Reconstruct the form signal at GW `current_gw` from STRICTLY PRIOR rounds (Phase 42 ACC-02).
 
@@ -877,7 +885,17 @@ def _reconstruct_form_signal(
         return None
 
     n = len(played)
-    weights = [0.5 + 0.5 * (i / max(n - 1, 1)) for i in range(n)]
+    recency_weights = [0.5 + 0.5 * (i / max(n - 1, 1)) for i in range(n)]
+    # FRM-02: difficulty factor (duplicated from merge._difficulty_factor to avoid cross-module import)
+    def _diff_factor(agg: dict, g: float) -> float:
+        if g == 0.0:
+            return 1.0
+        dn = agg.get('difficulty_n', 0)
+        if dn == 0:
+            return 1.0
+        avg_d = agg.get('difficulty_sum', 0.0) / dn
+        return 1.0 + g * ((avg_d - 1) / 4 - 0.5)
+    weights = [rw * _diff_factor(p, gamma) for rw, p in zip(recency_weights, played)]
     weighted_xgxa = sum(
         (p['expected_goals'] + p['expected_assists']) * w
         for p, w in zip(played, weights)
