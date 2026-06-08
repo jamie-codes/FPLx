@@ -538,11 +538,34 @@ def _compute_xpts_sigma(
     return math.sqrt(total_var)
 
 
+def _difficulty_factor(agg: dict, gamma: float) -> float:
+    """FRM-02: compute difficulty weight multiplier for one aggregated GW.
+
+    gamma=0.0 fast-path returns 1.0 (no-op — backward-compatible with pre-FRM-02).
+    avg_diff defaults to 3.0 (mid-range, FDR=3) when no difficulty data is present,
+    giving a factor of exactly 1.0 regardless of gamma.
+
+    Args:
+        agg:   aggregated GW dict with 'difficulty_sum' and 'difficulty_n' keys.
+               Uses .get() so old test fixtures lacking these keys are safe.
+        gamma: difficulty scaling factor; 0.0 = no-op.
+
+    Returns:
+        float multiplier in range [1 - 0.5*gamma, 1 + 0.5*gamma].
+    """
+    if gamma == 0.0:
+        return 1.0
+    avg_diff = agg.get('difficulty_sum', 0.0) / max(agg.get('difficulty_n', 0), 1)
+    norm = (avg_diff - 1) / 4   # FDR 1–5 → 0.0–1.0
+    return 1.0 + gamma * (norm - 0.5)
+
+
 def _compute_form_signal(
     history: list,
     window_gws: int = 5,
     min_minutes: int = 270,
-    beta: float = 0.0,   # FRM-01: actual G+A blend weight; 0.0 = pure xG+xA (backward-compatible)
+    beta: float = 0.0,    # FRM-01: actual G+A blend weight; 0.0 = pure xG+xA (backward-compatible)
+    gamma: float = 0.0,   # FRM-02: difficulty weight scaling; 0.0 = current behaviour (backward-compatible)
 ) -> tuple:
     """Compute recency-weighted form per-90 over the last window_gws unique rounds (Phase 42 ACC-01).
 
@@ -550,6 +573,10 @@ def _compute_form_signal(
         form = (1 - beta) * xg_xa_per90 + beta * actual_ga_per90
     beta=0.0 (default) is the arithmetic identity for the pre-FRM-01 behaviour.
     beta is tuned by TUNE-01 coordinate descent; see pipeline/tune.py.
+
+    FRM-02: When gamma > 0, each GW weight is multiplied by _difficulty_factor(agg, gamma),
+    which up-weights performances against tough opponents (high FDR) and down-weights
+    easy-fixture output. gamma=0.0 (default) is the arithmetic identity.
 
     Returns (form_per90, gws_used) or (None, 0) when insufficient data.
     form_per90 is a blend of xG+xA per-90 and actual G+A per-90 weighted by beta.
@@ -580,13 +607,16 @@ def _compute_form_signal(
             continue
         agg = by_round.setdefault(r, {
             'minutes': 0, 'expected_goals': 0.0, 'expected_assists': 0.0,
-            'goals_scored': 0, 'assists': 0,   # FRM-01
+            'goals_scored': 0, 'assists': 0,           # FRM-01
+            'difficulty_sum': 0.0, 'difficulty_n': 0,  # FRM-02
         })
         agg['minutes'] += entry.get('minutes', 0) or 0
         agg['expected_goals'] += float(entry.get('expected_goals', 0) or 0)
         agg['expected_assists'] += float(entry.get('expected_assists', 0) or 0)
-        agg['goals_scored'] += int(entry.get('goals_scored', 0) or 0)   # FRM-01
-        agg['assists'] += int(entry.get('assists', 0) or 0)              # FRM-01
+        agg['goals_scored'] += int(entry.get('goals_scored', 0) or 0)    # FRM-01
+        agg['assists']      += int(entry.get('assists', 0) or 0)         # FRM-01
+        agg['difficulty_sum'] += float(entry.get('difficulty', 3) or 3)  # FRM-02
+        agg['difficulty_n']   += 1                                        # FRM-02
 
     played = [by_round[r] for r in sorted(by_round.keys()) if by_round[r]['minutes'] > 0]
     total_mins = sum(p['minutes'] for p in played)
@@ -595,7 +625,12 @@ def _compute_form_signal(
 
     # Linear recency weights: oldest=0.5, most recent=1.0
     n = len(played)
-    weights = [0.5 + 0.5 * (i / max(n - 1, 1)) for i in range(n)]
+    recency_weights = [0.5 + 0.5 * (i / max(n - 1, 1)) for i in range(n)]
+    # FRM-02: multiply by difficulty factor (no-op when gamma=0.0)
+    weights = [
+        rw * _difficulty_factor(p, gamma)
+        for rw, p in zip(recency_weights, played)
+    ]
 
     weighted_xgxa = sum(
         (p['expected_goals'] + p['expected_assists']) * w
@@ -798,6 +833,7 @@ def merge_players(
     cs_prob_slope: float = 0.30,            # TUNE-01: tunable via accuracy_backtest.json.summary
     form_window_gws: int = 5,               # TUNE-01: tunable via accuracy_backtest.json.summary
     form_actual_beta: float = 0.0,          # FRM-01: actual G+A blend weight, tunable via TUNE-01
+    form_difficulty_gamma: float = 0.0,     # FRM-02: difficulty weight scaling, tunable via TUNE-01
 ) -> tuple[list, dict]:
     """Merge FPL bootstrap + Understat xG/xA into a unified player list.
 
@@ -835,6 +871,11 @@ def merge_players(
                              signal: form = (1-beta)*xg_xa_per90 + beta*actual_ga_per90.
                              Default 0.0 = pure xG+xA (backward-compatible). Tunable via
                              TUNE-01 coordinate descent.
+        form_difficulty_gamma: FRM-02. Difficulty weight scaling for form signal.
+                             Each GW weight is multiplied by
+                             1 + gamma * (norm_fdr - 0.5), where norm_fdr normalises
+                             FDR 1–5 to 0–1. Default 0.0 = no scaling (backward-compatible).
+                             Tunable via TUNE-01 coordinate descent.
 
     Returns:
         List of merged player dicts with all D-01 through D-06 fields plus
@@ -1212,7 +1253,8 @@ def merge_players(
             form_per90, form_n_gws = _compute_form_signal(
                 summaries[fpl_id].get('history', []),
                 window_gws=form_window_gws,
-                beta=form_actual_beta,   # FRM-01
+                beta=form_actual_beta,       # FRM-01
+                gamma=form_difficulty_gamma, # FRM-02
             )
         else:
             form_per90, form_n_gws = None, 0

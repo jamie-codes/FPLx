@@ -164,3 +164,109 @@ def test_dgw_aggregates_goals_and_assists():
     assert n == 3   # 3 unique rounds, not 4 entries
     assert form_actual is not None
     assert abs(form_actual - round(3.0 / 262.5 * 90, 4)) < 0.001
+
+
+# ── FRM-02: fixture-difficulty-weighted form tests ───────────────────────────
+
+def test_gamma_zero_backward_compatible():
+    """FRM-02: gamma=0.0 (default) produces identical result when difficulty absent."""
+    history = [
+        {'round': i, 'minutes': 90, 'expected_goals': 0.3, 'expected_assists': 0.1}
+        for i in range(1, 6)
+    ]
+    result_default, n1 = _compute_form_signal(history)
+    result_explicit, n2 = _compute_form_signal(history, gamma=0.0)
+    assert result_default == result_explicit
+    assert n1 == n2 == 5
+
+
+def test_gamma_one_hard_fixture_higher_weight():
+    """FRM-02: at gamma=1.0, hard-fixture rounds with higher xG+xA contribute more weight."""
+    history = [
+        {'round': 1, 'minutes': 90, 'expected_goals': 0.3, 'expected_assists': 0.0, 'difficulty': 1},
+        {'round': 2, 'minutes': 90, 'expected_goals': 0.3, 'expected_assists': 0.0, 'difficulty': 1},
+        {'round': 3, 'minutes': 90, 'expected_goals': 0.3, 'expected_assists': 0.0, 'difficulty': 1},
+        {'round': 4, 'minutes': 90, 'expected_goals': 0.8, 'expected_assists': 0.0, 'difficulty': 5},
+        {'round': 5, 'minutes': 90, 'expected_goals': 0.8, 'expected_assists': 0.0, 'difficulty': 5},
+    ]
+    form_no_weight, _ = _compute_form_signal(history, gamma=0.0)
+    form_weighted, _ = _compute_form_signal(history, gamma=1.0)
+    assert form_no_weight is not None
+    assert form_weighted is not None
+    assert form_weighted > form_no_weight
+
+
+def test_gamma_half_is_between_zero_and_one():
+    """FRM-02: gamma=0.5 result is between gamma=0.0 and gamma=1.0 results."""
+    history = [
+        {'round': i, 'minutes': 90, 'expected_goals': 0.5, 'expected_assists': 0.0,
+         'difficulty': 5 if i % 2 == 1 else 1}
+        for i in range(1, 6)
+    ]
+    form_0, _ = _compute_form_signal(history, gamma=0.0)
+    form_1, _ = _compute_form_signal(history, gamma=1.0)
+    form_half, _ = _compute_form_signal(history, gamma=0.5)
+    assert form_half is not None
+    assert min(form_0, form_1) <= form_half <= max(form_0, form_1)
+
+
+def test_hard_fixture_scorer_higher_with_positive_gamma():
+    """FRM-02: player whose xG+xA came in difficulty-5 GWs gets higher form at gamma>0."""
+    history = [
+        {'round': 1, 'minutes': 90, 'expected_goals': 0.1, 'expected_assists': 0.0, 'difficulty': 1},
+        {'round': 2, 'minutes': 90, 'expected_goals': 0.1, 'expected_assists': 0.0, 'difficulty': 1},
+        {'round': 3, 'minutes': 90, 'expected_goals': 0.1, 'expected_assists': 0.0, 'difficulty': 1},
+        {'round': 4, 'minutes': 90, 'expected_goals': 0.8, 'expected_assists': 0.0, 'difficulty': 5},
+        {'round': 5, 'minutes': 90, 'expected_goals': 0.8, 'expected_assists': 0.0, 'difficulty': 5},
+    ]
+    form_base, _ = _compute_form_signal(history, gamma=0.0)
+    form_diff, _ = _compute_form_signal(history, gamma=0.4)
+    assert form_diff > form_base
+
+
+def test_easy_fixture_scorer_lower_with_positive_gamma():
+    """FRM-02: player whose xG+xA came in difficulty-1 GWs gets lower form at gamma>0."""
+    history = [
+        {'round': 1, 'minutes': 90, 'expected_goals': 0.8, 'expected_assists': 0.0, 'difficulty': 1},
+        {'round': 2, 'minutes': 90, 'expected_goals': 0.8, 'expected_assists': 0.0, 'difficulty': 1},
+        {'round': 3, 'minutes': 90, 'expected_goals': 0.8, 'expected_assists': 0.0, 'difficulty': 1},
+        {'round': 4, 'minutes': 90, 'expected_goals': 0.1, 'expected_assists': 0.0, 'difficulty': 5},
+        {'round': 5, 'minutes': 90, 'expected_goals': 0.1, 'expected_assists': 0.0, 'difficulty': 5},
+    ]
+    form_base, _ = _compute_form_signal(history, gamma=0.0)
+    form_diff, _ = _compute_form_signal(history, gamma=0.4)
+    assert form_diff < form_base
+
+
+def test_missing_difficulty_defaults_to_midrange():
+    """FRM-02: history entries without 'difficulty' key treated as difficulty=3 (factor=1.0)."""
+    history_no_diff = [
+        {'round': i, 'minutes': 90, 'expected_goals': 0.3, 'expected_assists': 0.1}
+        for i in range(1, 6)
+    ]
+    history_mid_diff = [
+        {'round': i, 'minutes': 90, 'expected_goals': 0.3, 'expected_assists': 0.1,
+         'difficulty': 3}
+        for i in range(1, 6)
+    ]
+    form_no, n1 = _compute_form_signal(history_no_diff, gamma=0.8)
+    form_mid, n2 = _compute_form_signal(history_mid_diff, gamma=0.8)
+    assert form_no == form_mid
+    assert n1 == n2 == 5
+
+
+def test_dgw_difficulty_averaged():
+    """FRM-02: DGW round averages difficulty across both entries.
+
+    Round 3 has two entries with difficulty=2 and difficulty=4 → avg=3 → factor=1.0 at any gamma.
+    """
+    history = [
+        {'round': 1, 'minutes': 90, 'expected_goals': 0.3, 'expected_assists': 0.1, 'difficulty': 3},
+        {'round': 2, 'minutes': 90, 'expected_goals': 0.3, 'expected_assists': 0.1, 'difficulty': 3},
+        {'round': 3, 'minutes': 60, 'expected_goals': 0.3, 'expected_assists': 0.1, 'difficulty': 2},
+        {'round': 3, 'minutes': 90, 'expected_goals': 0.3, 'expected_assists': 0.1, 'difficulty': 4},
+    ]
+    form_0, n0 = _compute_form_signal(history, gamma=0.0)
+    form_1, n1 = _compute_form_signal(history, gamma=1.0)
+    assert n0 == n1 == 3
+    assert form_0 == form_1
