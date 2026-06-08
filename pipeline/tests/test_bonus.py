@@ -313,18 +313,28 @@ def test_calibrated_path_floors_at_zero_for_attacker():
 
 
 def test_compute_bonus_predictions_calibrated_when_enough_players():
-    """≥ 20 qualifying players → calibration built → source='learned_calibrated'."""
+    """≥ 20 qualifying players → calibration built (non-zero slope) → source='learned_calibrated'.
+
+    Uses bonus proportional to bps so OLS produces a non-degenerate (slope>0) curve.
+    Also verifies the curve's influence: the player with highest BPS gets the highest bonus_ev.
+    """
     bootstrap = {'elements': [{'id': i, 'element_type': 3} for i in range(1, 26)]}
     summaries = {
         i: {'history': [
-            {'starts': 1, 'bps': 18.0 + i * 0.5, 'bonus': 1.0, 'minutes': 90, 'clean_sheets': 0}
+            # bps varies 18.5–30.5; bonus = 0.05 * bps so OLS slope ≈ 0.05
+            {'starts': 1, 'bps': 18.0 + i * 0.5, 'bonus': 0.05 * (18.0 + i * 0.5),
+             'minutes': 90, 'clean_sheets': 0}
         ] * 10}
         for i in range(1, 26)
     }
     result = compute_bonus_predictions(bootstrap, summaries, finished_gws=25)
+    # All 25 players should use the calibrated path
     for player_id in range(1, 26):
         assert result[player_id]['source'] == 'learned_calibrated', \
             f"player {player_id}: expected learned_calibrated, got {result[player_id]['source']}"
+    # Higher BPS → higher bonus_ev (curve has positive slope)
+    assert result[25]['bonus_ev'] > result[1]['bonus_ev'], \
+        "Player with highest BPS should have highest bonus_ev on calibrated path"
 
 
 def test_compute_bonus_predictions_uncalibrated_when_few_players():
