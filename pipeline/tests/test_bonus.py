@@ -307,3 +307,35 @@ def test_calibrated_path_floors_at_zero_for_attacker():
     )
     assert result['bonus_ev'] >= 0.0, "bonus_ev must be non-negative even on calibrated path"
     assert result['source'] == 'learned_calibrated'
+
+
+# ── Task 3: compute_bonus_predictions wiring ───────────────────────────────
+
+
+def test_compute_bonus_predictions_calibrated_when_enough_players():
+    """≥ 20 qualifying players → calibration built → source='learned_calibrated'."""
+    bootstrap = {'elements': [{'id': i, 'element_type': 3} for i in range(1, 26)]}
+    summaries = {
+        i: {'history': [
+            {'starts': 1, 'bps': 18.0 + i * 0.5, 'bonus': 1.0, 'minutes': 90, 'clean_sheets': 0}
+        ] * 10}
+        for i in range(1, 26)
+    }
+    result = compute_bonus_predictions(bootstrap, summaries, finished_gws=25)
+    for player_id in range(1, 26):
+        assert result[player_id]['source'] == 'learned_calibrated', \
+            f"player {player_id}: expected learned_calibrated, got {result[player_id]['source']}"
+
+
+def test_compute_bonus_predictions_uncalibrated_when_few_players():
+    """< 20 qualifying players → calibration=None → learned players get source='learned_uncalibrated'."""
+    bootstrap = {'elements': [{'id': i, 'element_type': 3} for i in range(1, 6)]}
+    summaries = {
+        i: {'history': [
+            {'starts': 1, 'bps': 20.0, 'bonus': 1.0, 'minutes': 90, 'clean_sheets': 0}
+        ] * 10}
+        for i in range(1, 6)
+    }
+    result = compute_bonus_predictions(bootstrap, summaries, finished_gws=5)
+    for player_id in range(1, 6):
+        assert result[player_id]['source'] == 'learned_uncalibrated'

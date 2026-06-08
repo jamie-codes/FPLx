@@ -87,23 +87,28 @@ def compute_bonus_predictions(bootstrap: dict, summaries: dict, finished_gws: in
     """Compute per-player bonus EV from rolling BPS history.
 
     Args:
-        bootstrap: FPL bootstrap-static JSON (elements list).
-        summaries: dict mapping player_id (int) -> element-summary dict.
-                   Pre-fetched by run.py shared cache. Players absent from this dict
-                   (e.g. 0-starts promoted-team players) receive the flat position prior.
-        finished_gws: Number of completed gameweeks. Accepted for signature parity
-                      with compute_xmins_stats but currently unused — bonus EV is
-                      derived from the recent window of element-summary history alone.
+        bootstrap:    FPL bootstrap-static JSON (elements list).
+        summaries:    dict mapping player_id (int) -> element-summary dict.
+                      Pre-fetched by run.py shared cache. Players absent from this dict
+                      (e.g. 0-starts promoted-team players) receive the flat position prior.
+        finished_gws: Accepted for signature parity with compute_xmins_stats (unused here —
+                      bonus EV is derived from the recent window of element-summary history).
 
     Returns:
-        dict mapping player_id (int) -> {bonus_ev: float (4dp), n_starts: int,
-        source: 'learned_calibrated' | 'learned_uncalibrated' | 'prior'}. Every player in bootstrap['elements']
-        gets an entry.
+        dict mapping player_id (int) -> {bonus_ev: float (4dp), avg_bps: float|None,
+        n_starts: int, source: 'learned_calibrated'|'learned_uncalibrated'|'prior'}.
+        Every player in bootstrap['elements'] gets an entry.
     """
+    # BPS-02 Pass 1: fit global calibration curve once. Returns None early in the season
+    # when fewer than 20 players have enough history.
+    calibration = build_bps_calibration(summaries, bootstrap)
+
     results = {}
     for element in bootstrap.get('elements', []):
         player_id = element['id']
-        results[player_id] = _compute_player_bonus_ev(element, summaries.get(player_id))
+        results[player_id] = _compute_player_bonus_ev(
+            element, summaries.get(player_id), calibration
+        )
     return results
 
 
