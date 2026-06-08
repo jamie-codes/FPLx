@@ -602,7 +602,7 @@ def _compute_form_signal(
         for p, w in zip(played, weights)
     )
     weighted_actual = sum(
-        (p['goals_scored'] + p['assists']) * w      # FRM-01
+        (p.get('goals_scored', 0) + p.get('assists', 0)) * w      # FRM-01
         for p, w in zip(played, weights)
     )
     weighted_mins = sum(p['minutes'] * w for p, w in zip(played, weights))
