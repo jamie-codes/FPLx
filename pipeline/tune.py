@@ -47,7 +47,8 @@ def _read_prior_params(cache_dir: str) -> dict:
     """Read current production parameter values from accuracy_backtest.json summary.
 
     Falls back to defaults when the file is missing or malformed (cold start).
-    Returns dict with keys: blend_alpha, form_window_gws, cs_prob_base, cs_prob_slope.
+    Returns dict with keys: blend_alpha, form_window_gws, cs_prob_base, cs_prob_slope,
+    form_actual_beta, form_difficulty_gamma.
     """
     # Note: blend_alpha_used is written by accuracy.py (summary block).
     # form_window_gws_used, cs_prob_base_used, cs_prob_slope_used are written
