@@ -297,7 +297,7 @@ class TestRunTunerFull:
         assert set(train) & set(validate) == set()
 
     def test_coordinate_locking_uses_prior_sweep_value(self, tmp_path):
-        """promoted_params must reflect locked-in values from all four sweeps in order.
+        """promoted_params must reflect locked-in values from all five sweeps in order.
 
         Note: this is a structural consistency test — it verifies that promoted_params
         is built from the locked-in values, not that locking actually changed a later
@@ -308,11 +308,12 @@ class TestRunTunerFull:
         """
         summaries, bootstrap, fixtures = _make_summaries_and_bootstrap(n_gws=20)
         result = run_tuner(summaries, 20, bootstrap, fixtures, str(tmp_path))
-        # All four params in promoted_params must match their sweep's best value
+        # All five params in promoted_params must match their sweep's best value
         assert result['promoted_params']['blend_alpha']     == result['sweep']['blend_alpha']['best']
         assert result['promoted_params']['form_window_gws'] == result['sweep']['form_window_gws']['best']
         assert result['promoted_params']['cs_prob_base']    == result['sweep']['cs_prob_base']['best']
         assert result['promoted_params']['cs_prob_slope']   == result['sweep']['cs_prob_slope']['best']
+        assert result['promoted_params']['form_actual_beta'] == result['sweep']['form_actual_beta']['best']
 
     def test_form_actual_beta_in_promoted_params(self, tmp_path):
         """promoted_params dict contains form_actual_beta key."""
