@@ -26,6 +26,59 @@ SHRINKAGE_K = 12          # smoothing constant; w = min(1.0, n_starts / SHRINKAG
 # BPS-CS double-counting mitigation (Pitfall M3) — applied to GK and DEF only
 BONUS_CS_RESIDUAL_FACTOR = 0.5
 
+# BPS-02: position-prior average BPS per start (empirical, used for BPS shrinkage)
+BPS_POSITION_PRIOR = {1: 18, 2: 20, 3: 22, 4: 24}
+
+
+def build_bps_calibration(summaries: dict, bootstrap: dict) -> tuple | None:
+    """Fit a global BPS→bonus OLS calibration curve from all qualifying players.
+
+    Collects one (avg_bps, avg_bonus) data point per player with ≥ MIN_STARTS_GATE
+    starts across their full history. Uses ALL history entries (not the recent window)
+    to maximise calibration data.
+
+    Args:
+        summaries: dict mapping player_id (int) → element-summary dict.
+        bootstrap: FPL bootstrap-static JSON (elements list).
+
+    Returns:
+        (slope, intercept) tuple such that bonus_ev ≈ slope * bps + intercept,
+        or None when fewer than 20 players qualify (early season / sparse data).
+    """
+    data_points: list[tuple[float, float]] = []
+    for element in bootstrap.get('elements', []):
+        player_id = element['id']
+        summary = summaries.get(player_id)
+        if not summary:
+            continue
+        history = summary.get('history', [])
+        starts = [m for m in history if m.get('starts') == 1]
+        if len(starts) < MIN_STARTS_GATE:
+            continue
+        avg_bps = statistics.mean(m.get('bps', 0) for m in starts)
+        avg_bonus = statistics.mean(m.get('bonus', 0) for m in starts)
+        data_points.append((avg_bps, avg_bonus))
+
+    if len(data_points) < 20:
+        return None
+
+    bps_vals = [p[0] for p in data_points]
+    bonus_vals = [p[1] for p in data_points]
+    bps_mean = statistics.mean(bps_vals)
+    bonus_mean = statistics.mean(bonus_vals)
+
+    numerator = sum(
+        (b - bps_mean) * (bn - bonus_mean) for b, bn in zip(bps_vals, bonus_vals)
+    )
+    denominator = sum((b - bps_mean) ** 2 for b in bps_vals)
+
+    if denominator == 0:
+        return None
+
+    slope = numerator / denominator
+    intercept = bonus_mean - slope * bps_mean
+    return (slope, intercept)
+
 
 def compute_bonus_predictions(bootstrap: dict, summaries: dict, finished_gws: int) -> dict:
     """Compute per-player bonus EV from rolling BPS history.

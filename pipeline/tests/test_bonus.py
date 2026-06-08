@@ -2,7 +2,7 @@
 
 import pytest
 
-from bonus import _compute_player_bonus_ev, compute_bonus_predictions
+from bonus import _compute_player_bonus_ev, compute_bonus_predictions, build_bps_calibration
 
 
 def _element(element_type=3, player_id=1):
@@ -155,3 +155,60 @@ def test_top_level_returns_dict_keyed_by_player_id():
     # Player 200: no summary -> FWD prior 0.70
     assert result[200]['bonus_ev'] == 0.70
     assert result[200]['source'] == 'flat_default'
+
+
+# ── Task 1: build_bps_calibration ──────────────────────────────────────────
+
+
+def _calibration_data(n_players: int, slope: float = 0.05, intercept: float = 0.10) -> tuple:
+    """Generate (summaries, bootstrap) where avg_bonus = slope * avg_bps + intercept exactly."""
+    elements = []
+    summaries: dict = {}
+    for i in range(1, n_players + 1):
+        avg_bps = 15.0 + i * 0.5          # spread: 15.5, 16.0, 16.5, …
+        avg_bonus = slope * avg_bps + intercept
+        history = [
+            {'starts': 1, 'bps': avg_bps, 'bonus': avg_bonus, 'minutes': 90, 'clean_sheets': 0}
+            for _ in range(4)              # exactly MIN_STARTS_GATE starts each
+        ]
+        summaries[i] = {'history': history}
+        elements.append({'id': i, 'element_type': 3})
+    return summaries, {'elements': elements}
+
+
+def test_build_bps_calibration_ols():
+    """25 players with exact linear BPS→bonus → slope and intercept match OLS."""
+    slope_true, intercept_true = 0.05, 0.10
+    summaries, bootstrap = _calibration_data(25, slope=slope_true, intercept=intercept_true)
+    result = build_bps_calibration(summaries, bootstrap)
+    assert result is not None
+    slope, intercept = result
+    assert slope == pytest.approx(slope_true, rel=1e-6)
+    assert intercept == pytest.approx(intercept_true, rel=1e-6)
+
+
+def test_build_bps_calibration_fewer_than_20_returns_none():
+    """Fewer than 20 qualifying players → returns None."""
+    summaries, bootstrap = _calibration_data(15)
+    assert build_bps_calibration(summaries, bootstrap) is None
+
+
+def test_build_bps_calibration_excludes_low_starts():
+    """Players with < MIN_STARTS_GATE (4) starts do not count toward the 20-player threshold.
+
+    19 qualifying players + 10 with only 3 starts each = 29 total elements.
+    Because only 19 qualify, the function must return None (below 20 threshold).
+    """
+    elements = []
+    summaries: dict = {}
+    for i in range(1, 30):
+        n_starts = 4 if i <= 19 else 3
+        avg_bps = 15.0 + i * 0.5
+        avg_bonus = 0.05 * avg_bps + 0.10
+        history = [
+            {'starts': 1, 'bps': avg_bps, 'bonus': avg_bonus, 'minutes': 90, 'clean_sheets': 0}
+        ] * n_starts
+        summaries[i] = {'history': history}
+        elements.append({'id': i, 'element_type': 3})
+    bootstrap = {'elements': elements}
+    assert build_bps_calibration(summaries, bootstrap) is None
