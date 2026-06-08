@@ -802,7 +802,7 @@ def merge_players(
                              value persisted by accuracy.compute_accuracy_backtest
                              (which is whatever Plan 02 ships — currently a fixed 0.4).
         bonus_stats:         Phase 53 BPS-01. Optional dict from bonus.py mapping
-                             player_id (int) -> {bonus_ev, n_starts, source}. Per-player
+                             player_id (int) -> {bonus_ev, avg_bps, n_starts, source}. Per-player
                              learned EV used in place of BONUS_RATE[element_type] when
                              bonus_predictor_enabled is True. Default None preserves baseline.
         bonus_predictor_enabled: Phase 53 BPS-01 gate. When True AND a sample-sufficient
