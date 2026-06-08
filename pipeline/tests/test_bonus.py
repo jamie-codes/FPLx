@@ -212,3 +212,18 @@ def test_build_bps_calibration_excludes_low_starts():
         elements.append({'id': i, 'element_type': 3})
     bootstrap = {'elements': elements}
     assert build_bps_calibration(summaries, bootstrap) is None
+
+
+def test_build_bps_calibration_zero_variance_returns_none():
+    """All players with identical avg_bps → denominator = 0 → returns None."""
+    elements = []
+    summaries: dict = {}
+    for i in range(1, 26):
+        # All players have same avg_bps=20.0, different bonus — zero BPS variance
+        history = [
+            {'starts': 1, 'bps': 20.0, 'bonus': float(i), 'minutes': 90, 'clean_sheets': 0}
+        ] * 4
+        summaries[i] = {'history': history}
+        elements.append({'id': i, 'element_type': 3})
+    bootstrap = {'elements': elements}
+    assert build_bps_calibration(summaries, bootstrap) is None

@@ -26,11 +26,12 @@ SHRINKAGE_K = 12          # smoothing constant; w = min(1.0, n_starts / SHRINKAG
 # BPS-CS double-counting mitigation (Pitfall M3) — applied to GK and DEF only
 BONUS_CS_RESIDUAL_FACTOR = 0.5
 
-# BPS-02: position-prior average BPS per start (empirical, used for BPS shrinkage)
+# BPS-02: position-prior average BPS per start (empirical, used for BPS shrinkage).
+# Consumed by _compute_player_bonus_ev() in Task 2 when that function is rewritten.
 BPS_POSITION_PRIOR = {1: 18, 2: 20, 3: 22, 4: 24}
 
 
-def build_bps_calibration(summaries: dict, bootstrap: dict) -> tuple | None:
+def build_bps_calibration(summaries: dict, bootstrap: dict) -> tuple[float, float] | None:
     """Fit a global BPS→bonus OLS calibration curve from all qualifying players.
 
     Collects one (avg_bps, avg_bonus) data point per player with ≥ MIN_STARTS_GATE
