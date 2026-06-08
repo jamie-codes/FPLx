@@ -442,7 +442,7 @@ export function createColumns(
     enableSorting: true,
   }),
   // Phase 53 BPS-01: per-player bonus EV.
-  // Muted (text-zinc-500) for flat_default players — position prior only, insufficient data.
+  // Muted (text-zinc-500) for 'prior' players — position prior only, insufficient data.
   col.accessor('bonus_ev', {
     header: H('Bonus EV', 'Expected bonus points per game start. Shrinkage-estimated from recent history — muted values use the position prior (insufficient data).'),
     cell: (info) => (

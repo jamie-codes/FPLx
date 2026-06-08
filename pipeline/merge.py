@@ -1136,21 +1136,23 @@ def merge_players(
 
         # Phase 53 BPS-01: per-player bonus EV unpacking. Falls back to None when
         # bonus_stats is absent OR the player is missing OR the bonus.py guard returned
-        # source='flat_default' for low-sample players (handled at _compute_xpts_fixture
+        # source='prior' for low-sample players (handled at _compute_xpts_fixture
         # via Pitfall C1 fallback).
         if bonus_stats and fpl_id in bonus_stats:
             player_bonus_ev = bonus_stats[fpl_id].get('bonus_ev')
             player_bonus_source = bonus_stats[fpl_id].get('source')
-            # When bonus.py marked source='flat_default', the flat rate is identical to
+            player_avg_bps = bonus_stats[fpl_id].get('avg_bps')   # BPS-02
+            # When bonus.py marked source='prior', the flat rate is identical to
             # POSITION_PRIOR — so passing the prior through is harmless. We still pass it
             # so the gate uses the documented per-player path consistently.
         else:
             player_bonus_ev = None
             player_bonus_source = None
-        # BPS-01: persist bonus signal so the frontend can surface it per-player.
+            player_avg_bps = None                                   # BPS-02
+        # BPS-01/BPS-02: persist bonus signals so the frontend can surface them per-player.
         player['bonus_ev'] = player_bonus_ev
         player['bonus_source'] = player_bonus_source
-        player['avg_bps'] = bonus_stats[fpl_id].get('avg_bps') if bonus_stats and fpl_id in bonus_stats else None  # BPS-02
+        player['avg_bps'] = player_avg_bps                          # BPS-02
 
         # ---- Consistency rate (FLOOR-01) ----
         # Historical % of starts where player returned >= position threshold points.

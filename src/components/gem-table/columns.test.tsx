@@ -322,7 +322,7 @@ describe('BPS-01: Bonus EV column', () => {
     const player = {
       ...PLAYER_A,
       bonus_ev: 0.85,
-      bonus_source: 'learned' as const,
+      bonus_source: 'learned_calibrated' as const,
     }
     const cols = createColumns(() => {})
     const bonusCol = cols.find((c: { id?: string; accessorKey?: string }) =>

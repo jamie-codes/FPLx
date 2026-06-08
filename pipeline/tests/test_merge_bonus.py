@@ -139,14 +139,14 @@ def _build_minimal_player(player_id: int = 1):
 def test_merge_writes_bonus_ev_when_bonus_stats_provided():
     """BPS-01: merge_players writes bonus_ev and bonus_source to player dict."""
     bootstrap, fixtures, understat, id_map = _build_minimal_player(player_id=1)
-    bonus_stats = {1: {'bonus_ev': 0.85, 'n_starts': 15, 'source': 'learned'}}
+    bonus_stats = {1: {'bonus_ev': 0.85, 'n_starts': 15, 'source': 'learned_calibrated'}}
     merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
                                bonus_stats=bonus_stats)
     p = merged[0]
     assert p['bonus_ev'] == pytest.approx(0.85), \
         f"Expected bonus_ev=0.85, got {p.get('bonus_ev')}"
-    assert p['bonus_source'] == 'learned', \
-        f"Expected bonus_source='learned', got {p.get('bonus_source')}"
+    assert p['bonus_source'] == 'learned_calibrated', \
+        f"Expected bonus_source='learned_calibrated', got {p.get('bonus_source')}"
 
 
 def test_merge_writes_none_when_bonus_stats_is_none():
@@ -164,7 +164,7 @@ def test_merge_writes_none_when_bonus_stats_is_none():
 def test_merge_writes_none_for_player_absent_from_bonus_stats():
     """BPS-01: bonus_ev and bonus_source are None when player_id not in bonus_stats."""
     bootstrap, fixtures, understat, id_map = _build_minimal_player(player_id=1)
-    bonus_stats = {99: {'bonus_ev': 0.5, 'n_starts': 10, 'source': 'learned'}}  # player 1 absent
+    bonus_stats = {99: {'bonus_ev': 0.5, 'n_starts': 10, 'source': 'learned_calibrated'}}  # player 1 absent
     merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
                                bonus_stats=bonus_stats)
     p = merged[0]
@@ -172,3 +172,32 @@ def test_merge_writes_none_for_player_absent_from_bonus_stats():
         f"Expected bonus_ev=None for absent player, got {p.get('bonus_ev')}"
     assert p['bonus_source'] is None, \
         f"Expected bonus_source=None for absent player, got {p.get('bonus_source')}"
+
+
+def test_merge_bonus_avg_bps_written_to_player():
+    """BPS-02: avg_bps from bonus_stats is written to the player dict."""
+    # Case 1: bonus_stats contains avg_bps for the player — it should appear in merged player.
+    bootstrap, fixtures, understat, id_map = _build_minimal_player(player_id=1)
+    bonus_stats = {1: {'bonus_ev': 0.85, 'n_starts': 15, 'source': 'learned_calibrated', 'avg_bps': 24.7}}
+    merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                               bonus_stats=bonus_stats)
+    p = merged[0]
+    assert p['avg_bps'] == pytest.approx(24.7), \
+        f"Expected avg_bps=24.7, got {p.get('avg_bps')}"
+
+    # Case 2: bonus_stats is None — avg_bps should be None.
+    bootstrap2, fixtures2, understat2, id_map2 = _build_minimal_player(player_id=1)
+    merged2, _ = merge_players(bootstrap2, fixtures2, understat2, id_map2,
+                                bonus_stats=None)
+    p2 = merged2[0]
+    assert p2['avg_bps'] is None, \
+        f"Expected avg_bps=None when bonus_stats=None, got {p2.get('avg_bps')}"
+
+    # Case 3: player not in bonus_stats — avg_bps should be None.
+    bootstrap3, fixtures3, understat3, id_map3 = _build_minimal_player(player_id=1)
+    bonus_stats3 = {99: {'bonus_ev': 0.5, 'n_starts': 10, 'source': 'learned_calibrated', 'avg_bps': 18.0}}
+    merged3, _ = merge_players(bootstrap3, fixtures3, understat3, id_map3,
+                                bonus_stats=bonus_stats3)
+    p3 = merged3[0]
+    assert p3['avg_bps'] is None, \
+        f"Expected avg_bps=None for absent player, got {p3.get('avg_bps')}"
