@@ -551,7 +551,8 @@ def _compute_form_signal(
     beta=0.0 (default) is the arithmetic identity for the pre-FRM-01 behaviour.
     beta is tuned by TUNE-01 coordinate descent; see pipeline/tune.py.
 
-    Returns (form_xgxa_per90, gws_used) or (None, 0) when insufficient data.
+    Returns (form_per90, gws_used) or (None, 0) when insufficient data.
+    form_per90 is a blend of xG+xA per-90 and actual G+A per-90 weighted by beta.
 
     Insufficient = fewer than 3 played rounds in window, OR sum(minutes) < min_minutes.
     Rationale: form requires at least 3 GWs of signal; <270 min total is too noisy.
@@ -830,6 +831,10 @@ def merge_players(
                              BONUS_RATE in _compute_xpts_fixture. Default False preserves
                              baseline behaviour. Manually flipped after non-regression
                              shadow run (Phase 52 D-02 mirror).
+        form_actual_beta:    FRM-01. Weight of actual G+A per-90 blended into the form
+                             signal: form = (1-beta)*xg_xa_per90 + beta*actual_ga_per90.
+                             Default 0.0 = pure xG+xA (backward-compatible). Tunable via
+                             TUNE-01 coordinate descent.
 
     Returns:
         List of merged player dicts with all D-01 through D-06 fields plus
