@@ -15,9 +15,10 @@ from tune import (
     FORM_WINDOW_CANDIDATES,
     CS_PROB_BASE_CANDIDATES,
     CS_PROB_SLOPE_CANDIDATES,
+    FORM_ACTUAL_BETA_CANDIDATES,
 )
 from tune import _sweep_param
-from accuracy import build_fixture_difficulty_lookup
+from accuracy import build_fixture_difficulty_lookup, FORM_ACTUAL_BETA
 
 
 def _make_summaries_and_bootstrap(n_players=5, n_gws=20, xg=0.3, xa=0.1, actual_pts_fn=None):
@@ -187,6 +188,14 @@ class TestReadPriorParams:
         params = _read_prior_params(str(tmp_path))
         assert params['blend_alpha'] == 0.4
 
+    def test_form_actual_beta_default_in_read_prior_params(self, tmp_path):
+        """Missing form_actual_beta_used in summary → returns FORM_ACTUAL_BETA (0.0)."""
+        # Write a cache file with no form_actual_beta_used key
+        data = {'summary': {}}
+        (tmp_path / 'accuracy_backtest.json').write_text(json.dumps(data))
+        params = _read_prior_params(str(tmp_path))
+        assert abs(params['form_actual_beta'] - FORM_ACTUAL_BETA) < 1e-9
+
 
 # ── run_tuner gate tests ─────────────────────────────────────────────────────
 
@@ -211,7 +220,8 @@ class TestSweepParam:
         gws_train = all_gws[:13]
         gws_val = all_gws[13:]
         params = {'blend_alpha': 0.4, 'form_window_gws': 5,
-                  'cs_prob_base': 0.40, 'cs_prob_slope': 0.30}
+                  'cs_prob_base': 0.40, 'cs_prob_slope': 0.30,
+                  'form_actual_beta': 0.0}
 
         result = _sweep_param(
             param_name='blend_alpha',
@@ -234,7 +244,8 @@ class TestSweepParam:
         fixture_difficulty = build_fixture_difficulty_lookup(fixtures)
         all_gws = list(range(1, 21))
         params = {'blend_alpha': 0.4, 'form_window_gws': 5,
-                  'cs_prob_base': 0.40, 'cs_prob_slope': 0.30}
+                  'cs_prob_base': 0.40, 'cs_prob_slope': 0.30,
+                  'form_actual_beta': 0.0}
         result = _sweep_param(
             'blend_alpha', [0.4], 0.4, params,
             summaries, all_gws, bootstrap, fixture_difficulty,
@@ -264,8 +275,9 @@ class TestRunTunerFull:
         assert 'form_window_gws' in sweep
         assert 'cs_prob_base' in sweep
         assert 'cs_prob_slope' in sweep
+        assert 'form_actual_beta' in sweep
 
-    def test_run_tuner_promoted_params_contains_all_four(self, tmp_path):
+    def test_run_tuner_promoted_params_contains_all_params(self, tmp_path):
         summaries, bootstrap, fixtures = _make_summaries_and_bootstrap(n_gws=20)
         result = run_tuner(summaries, 20, bootstrap, fixtures, str(tmp_path))
         pp = result['promoted_params']
@@ -273,6 +285,7 @@ class TestRunTunerFull:
         assert 'form_window_gws' in pp
         assert 'cs_prob_base' in pp
         assert 'cs_prob_slope' in pp
+        assert 'form_actual_beta' in pp
 
     def test_run_tuner_train_validate_split_correct(self, tmp_path):
         """Train + validate together must cover all finished GWs with no gaps or overlap."""
@@ -300,3 +313,12 @@ class TestRunTunerFull:
         assert result['promoted_params']['form_window_gws'] == result['sweep']['form_window_gws']['best']
         assert result['promoted_params']['cs_prob_base']    == result['sweep']['cs_prob_base']['best']
         assert result['promoted_params']['cs_prob_slope']   == result['sweep']['cs_prob_slope']['best']
+
+    def test_form_actual_beta_in_promoted_params(self, tmp_path):
+        """promoted_params dict contains form_actual_beta key."""
+        summaries, bootstrap, fixtures = _make_summaries_and_bootstrap(n_gws=20)
+        result = run_tuner(summaries, 20, bootstrap, fixtures, str(tmp_path))
+        pp = result['promoted_params']
+        assert 'form_actual_beta' in pp
+        assert pp['form_actual_beta'] >= 0.0
+        assert pp['form_actual_beta'] <= 0.5
