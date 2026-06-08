@@ -1150,6 +1150,7 @@ def merge_players(
         # BPS-01: persist bonus signal so the frontend can surface it per-player.
         player['bonus_ev'] = player_bonus_ev
         player['bonus_source'] = player_bonus_source
+        player['avg_bps'] = bonus_stats[fpl_id].get('avg_bps') if bonus_stats and fpl_id in bonus_stats else None  # BPS-02
 
         # ---- Consistency rate (FLOOR-01) ----
         # Historical % of starts where player returned >= position threshold points.

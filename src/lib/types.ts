@@ -218,10 +218,13 @@ export interface MergedPlayer {
   // above-median xA/90 in team. Optional during pipeline rollout; absent on pre-Phase-76 cache.
   routes_to_points?: number
   // Phase 53 BPS-01: per-player bonus EV and source flag.
-  // bonus_ev: shrinkage-estimated expected bonus points per game start.
-  // bonus_source: 'learned' when calibrated from history; 'flat_default' when prior only (< 4 starts).
+  // bonus_source: source of the bonus EV estimate (BPS-02).
+  // 'learned_calibrated': BPS shrinkage + global calibration curve applied.
+  // 'learned_uncalibrated': BPS shrinkage only (early season, < 20 qualifying players).
+  // 'prior': position-prior only (< 4 starts in recent window).
   bonus_ev?: number | null
-  bonus_source?: 'learned' | 'flat_default' | null
+  bonus_source?: 'learned_calibrated' | 'learned_uncalibrated' | 'prior' | null
+  avg_bps?: number | null  // BPS-02: raw avg BPS per start (pre-shrinkage), null for prior-path players
   // Phase FLOOR-01: historical consistency rate (% of last 10 starts returning >= position threshold).
   // None/null when fewer than 4 starts in the last 10 GWs.
   cons_rate?: number | null
