@@ -296,3 +296,14 @@ def test_high_bps_player_higher_bonus_ev():
     result_high = _compute_player_bonus_ev(_element(element_type=3), _summary(history_high))
     result_low  = _compute_player_bonus_ev(_element(element_type=3), _summary(history_low))
     assert result_high['bonus_ev'] > result_low['bonus_ev']
+
+
+def test_calibrated_path_floors_at_zero_for_attacker():
+    """Calibrated path with negative raw result → bonus_ev floored at 0.0 for MID/FWD."""
+    history = [_hist(1, bps=5)] * 10   # low BPS player
+    # slope=0.01, intercept=-5.0 → bonus_ev_raw will be negative for bps≈5
+    result = _compute_player_bonus_ev(
+        _element(element_type=3), _summary(history), calibration=(0.01, -5.0)
+    )
+    assert result['bonus_ev'] >= 0.0, "bonus_ev must be non-negative even on calibrated path"
+    assert result['source'] == 'learned_calibrated'

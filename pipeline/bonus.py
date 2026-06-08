@@ -1,16 +1,19 @@
-"""Compute per-player bonus EV from rolling BPS history (Phase 53 BPS-01).
+"""Compute per-player bonus EV from BPS-calibrated history (BPS-02).
 
 Mirrors pipeline/xmins.py shape: pre-merge module that reads the shared
 element-summary cache and returns a dict keyed by FPL player_id. Output is
-consumed by pipeline/merge.py via the bonus_predictor_enabled gate (Plan 02).
+consumed by pipeline/merge.py via the bonus_predictor_enabled gate.
 
-Algorithm:
-  - Recent[-10:] window over history[i] entries with starts == 1
-  - n_starts < 4 -> flat position prior (POSITION_PRIOR[element_type])
-  - n_starts >= 4 -> shrinkage: w * empirical_mean + (1-w) * prior, w = min(1, n/12)
-  - GK/DEF (element_type in {1, 2}) -> residualise against historical CS rate to
+Algorithm (two-pass BPS-02):
+  Pass 1 — build_bps_calibration(): fit a global OLS curve (avg_bps → avg_bonus)
+    from all players with ≥ MIN_STARTS_GATE starts. Returns None early in the
+    season when fewer than 20 players qualify.
+  Pass 2 — _compute_player_bonus_ev(): shrink per-player avg_bps toward
+    BPS_POSITION_PRIOR, then project through the calibration curve. Falls back to a
+    position-prior ratio when calibration is None.
+  GK/DEF (element_type in {1, 2}): residualise against historical CS rate to
     mitigate BPS-CS double-counting (Pitfall M3): bonus_ev = max(0, raw - 0.5 * cs_rate)
-  - MID/FWD (element_type in {3, 4}) -> plain shrinkage (no residualisation)
+  MID/FWD (element_type in {3, 4}): bonus_ev = max(0, raw) (no residualisation)
 """
 
 import statistics
@@ -27,7 +30,6 @@ SHRINKAGE_K = 12          # smoothing constant; w = min(1.0, n_starts / SHRINKAG
 BONUS_CS_RESIDUAL_FACTOR = 0.5
 
 # BPS-02: position-prior average BPS per start (empirical, used for BPS shrinkage).
-# Consumed by _compute_player_bonus_ev() in Task 2 when that function is rewritten.
 BPS_POSITION_PRIOR = {1: 18, 2: 20, 3: 22, 4: 24}
 
 
@@ -95,7 +97,7 @@ def compute_bonus_predictions(bootstrap: dict, summaries: dict, finished_gws: in
 
     Returns:
         dict mapping player_id (int) -> {bonus_ev: float (4dp), n_starts: int,
-        source: 'learned' | 'flat_default'}. Every player in bootstrap['elements']
+        source: 'learned_calibrated' | 'learned_uncalibrated' | 'prior'}. Every player in bootstrap['elements']
         gets an entry.
     """
     results = {}
@@ -163,7 +165,7 @@ def _compute_player_bonus_ev(
         cs_rate = cs_count / n_starts
         bonus_ev = max(0.0, bonus_ev_raw - BONUS_CS_RESIDUAL_FACTOR * cs_rate)
     else:
-        bonus_ev = bonus_ev_raw
+        bonus_ev = max(0.0, bonus_ev_raw)
 
     return {
         'bonus_ev': round(bonus_ev, 4),
