@@ -105,36 +105,59 @@ def compute_bonus_predictions(bootstrap: dict, summaries: dict, finished_gws: in
     return results
 
 
-def _compute_player_bonus_ev(element: dict, summary: dict | None) -> dict:
-    """Compute bonus EV for a single player using shrinkage estimator.
+def _compute_player_bonus_ev(
+    element: dict,
+    summary: dict | None,
+    calibration: tuple[float, float] | None = None,
+) -> dict:
+    """Compute bonus EV for a single player using BPS-calibrated shrinkage.
 
-    Returns {bonus_ev, n_starts, source}. source is 'flat_default' for guard
-    fallbacks (no summary OR n_starts < gate) and 'learned' for shrunk EVs.
+    Two-pass algorithm (BPS-02):
+      1. Shrink per-player avg BPS toward BPS_POSITION_PRIOR.
+      2. Project smoothed BPS through the calibration curve (or ratio fallback).
+
+    Args:
+        element:     FPL element dict (needs 'element_type').
+        summary:     element-summary dict with 'history' list; None for no-data players.
+        calibration: (slope, intercept) tuple from build_bps_calibration(), or None when
+                     fewer than 20 qualifying players exist (early season).
+
+    Returns:
+        dict with keys: bonus_ev (float, 4dp), avg_bps (float|None), n_starts (int),
+        source ('learned_calibrated' | 'learned_uncalibrated' | 'prior').
     """
     element_type = element.get('element_type', 3)
     prior = POSITION_PRIOR[element_type]
+    bps_prior = BPS_POSITION_PRIOR[element_type]
 
     # Guard 1: no element-summary at all (e.g. promoted-team player, 0 starts)
     if not summary:
-        return {'bonus_ev': prior, 'n_starts': 0, 'source': 'flat_default'}
+        return {'bonus_ev': prior, 'avg_bps': None, 'n_starts': 0, 'source': 'prior'}
 
     history = summary.get('history', [])
     recent = history[-RECENT_WINDOW:]
     starts_in_recent = [m for m in recent if m.get('starts') == 1]
     n_starts = len(starts_in_recent)
 
-    # Guard 2: insufficient sample -> flat fallback
+    # Guard 2: insufficient sample → flat fallback
     if n_starts < MIN_STARTS_GATE:
-        return {'bonus_ev': prior, 'n_starts': n_starts, 'source': 'flat_default'}
+        return {'bonus_ev': prior, 'avg_bps': None, 'n_starts': n_starts, 'source': 'prior'}
 
-    # Shrinkage estimator
-    empirical_mean = statistics.mean(m.get('bonus', 0) for m in starts_in_recent)
+    # BPS-based shrinkage estimator
+    avg_bps = statistics.mean(m.get('bps', 0) for m in starts_in_recent)
     w = min(1.0, n_starts / SHRINKAGE_K)
-    bonus_ev_raw = w * empirical_mean + (1.0 - w) * prior
+    smoothed_bps = w * avg_bps + (1.0 - w) * bps_prior
+
+    # Calibration curve or uncalibrated ratio fallback
+    if calibration is not None:
+        slope, intercept = calibration
+        bonus_ev_raw = slope * smoothed_bps + intercept
+        source = 'learned_calibrated'
+    else:
+        bonus_ev_raw = smoothed_bps * (prior / bps_prior)
+        source = 'learned_uncalibrated'
 
     # BPS-CS double-counting mitigation for GK/DEF only (Pitfall M3).
-    # For attackers, raw bonus is mostly attacking-action driven (key passes,
-    # shots, goals/assists) — no double-counting risk vs cs_pts component.
     if element_type in (1, 2):
         cs_count = sum(1 for m in starts_in_recent if m.get('clean_sheets', 0) == 1)
         cs_rate = cs_count / n_starts
@@ -144,6 +167,7 @@ def _compute_player_bonus_ev(element: dict, summary: dict | None) -> dict:
 
     return {
         'bonus_ev': round(bonus_ev, 4),
+        'avg_bps': round(avg_bps, 2),
         'n_starts': n_starts,
-        'source': 'learned',
+        'source': source,
     }

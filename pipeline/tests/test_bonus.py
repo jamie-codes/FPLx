@@ -9,19 +9,21 @@ def _element(element_type=3, player_id=1):
     return {'id': player_id, 'element_type': element_type}
 
 
-def _hist(bonus_pts, starts_field=1, minutes=90, clean_sheet=0):
+def _hist(bonus_pts, starts_field=1, minutes=90, clean_sheet=0, bps=20):
     """One element-summary history row.
 
     bonus_pts: 0/1/2/3
     starts_field: 0 or 1 (history[i].starts)
     minutes: ignored by bonus.py but required by schema
     clean_sheet: 0 or 1 (history[i].clean_sheets) — used for GK/DEF residualisation only
+    bps: raw BPS score — used by BPS-02 calibration path (default 20)
     """
     return {
         'minutes': minutes,
         'starts': starts_field,
         'bonus': bonus_pts,
         'clean_sheets': clean_sheet,
+        'bps': bps,
         'round': 1,
     }
 
@@ -31,110 +33,128 @@ def _summary(entries):
 
 
 def test_returns_per_player_dict():
-    """Return dict has keys {'bonus_ev', 'n_starts', 'source'}."""
-    history = [_hist(1)] * 10
+    """Return dict has keys {'bonus_ev', 'avg_bps', 'n_starts', 'source'}."""
+    history = [_hist(1, bps=22)] * 10
     result = _compute_player_bonus_ev(_element(), _summary(history))
-    assert set(result.keys()) == {'bonus_ev', 'n_starts', 'source'}
+    assert set(result.keys()) == {'bonus_ev', 'avg_bps', 'n_starts', 'source'}
 
 
 def test_missing_summary_falls_back():
-    """No element-summary -> flat position prior, source='flat_default'."""
+    """No element-summary -> flat position prior, source='prior', avg_bps=None."""
     for element_type, prior in [(1, 0.30), (2, 0.40), (3, 0.60), (4, 0.70)]:
         result = _compute_player_bonus_ev(_element(element_type=element_type), None)
         assert result['bonus_ev'] == prior, f"element_type={element_type} expected {prior}, got {result['bonus_ev']}"
         assert result['n_starts'] == 0
-        assert result['source'] == 'flat_default'
+        assert result['source'] == 'prior'
+        assert result['avg_bps'] is None
 
 
 def test_low_sample_falls_back():
-    """n_starts < 4 in recent[-10:] -> flat position prior."""
-    # 3 starts, 7 non-starts -> below MIN_STARTS_GATE=4
-    history = [_hist(1)] * 3 + [_hist(0, starts_field=0)] * 7
+    """n_starts < 4 in recent[-10:] -> flat position prior, source='prior', avg_bps=None."""
+    history = [_hist(1, bps=22)] * 3 + [_hist(0, starts_field=0)] * 7
     for element_type, prior in [(1, 0.30), (2, 0.40), (3, 0.60), (4, 0.70)]:
         result = _compute_player_bonus_ev(_element(element_type=element_type), _summary(history))
         assert result['bonus_ev'] == prior, f"element_type={element_type} expected {prior}, got {result['bonus_ev']}"
-        assert result['source'] == 'flat_default'
+        assert result['source'] == 'prior'
         assert result['n_starts'] == 3
+        assert result['avg_bps'] is None
 
 
-def test_sufficient_sample_blends():
-    """n_starts=10, MID, bonus=[3,3,2,3,1,2,3,3,2,3] -> blended EV."""
-    bonuses = [3, 3, 2, 3, 1, 2, 3, 3, 2, 3]
-    history = [_hist(b) for b in bonuses]
+def test_sufficient_sample_bps_shrinkage():
+    """n_starts=10, MID, bps=25, calibration=None -> uncalibrated BPS shrinkage formula."""
+    # BPS_POSITION_PRIOR[3]=22, POSITION_PRIOR[3]=0.60
+    # w = 10/12; smoothed_bps = w*25 + (1-w)*22
+    # bonus_ev = smoothed_bps * (0.60 / 22)
+    bps_val = 25
+    history = [_hist(1, bps=bps_val)] * 10
     result = _compute_player_bonus_ev(_element(element_type=3), _summary(history))
-    empirical_mean = sum(bonuses) / len(bonuses)  # 2.5
+    bps_prior = 22
     w = min(1.0, 10 / 12.0)
-    expected = w * empirical_mean + (1.0 - w) * 0.60
+    smoothed_bps = w * bps_val + (1.0 - w) * bps_prior
+    expected = smoothed_bps * (0.60 / bps_prior)
     assert result['bonus_ev'] == pytest.approx(round(expected, 4), abs=0.0001)
-    assert result['source'] == 'learned'
+    assert result['source'] == 'learned_uncalibrated'
     assert result['n_starts'] == 10
+    assert result['avg_bps'] == pytest.approx(float(bps_val), abs=0.01)
 
 
-def test_shrinkage_formula():
-    """n_starts=4 (gate boundary) with empirical mean=1.0, MID -> w=4/12, blended."""
-    history = [_hist(1)] * 4 + [_hist(0, starts_field=0)] * 6
+def test_shrinkage_formula_at_gate_boundary():
+    """n_starts=4 (gate boundary), MID, bps=20.0, calibration=None -> w=4/12."""
+    bps_val = 20
+    history = [_hist(1, bps=bps_val)] * 4 + [_hist(0, starts_field=0)] * 6
     result = _compute_player_bonus_ev(_element(element_type=3), _summary(history))
+    bps_prior = 22
     w = 4 / 12.0
-    expected = w * 1.0 + (1.0 - w) * 0.60
+    smoothed_bps = w * bps_val + (1.0 - w) * bps_prior
+    expected = smoothed_bps * (0.60 / bps_prior)
     assert result['bonus_ev'] == pytest.approx(round(expected, 4), abs=0.0001)
-    assert result['source'] == 'learned'
+    assert result['source'] == 'learned_uncalibrated'
     assert result['n_starts'] == 4
 
 
-def test_shrinkage_full_weight_at_n12():
-    """n_starts=12 -> w=1.0 -> bonus_ev equals empirical mean."""
-    bonuses = [2] * 12
-    history = [_hist(b) for b in bonuses]
-    # Only recent[-10:] count -> 10 starts, w = min(1, 10/12) = 0.833
+def test_shrinkage_uses_recent_10_window():
+    """n_starts=12 → only last 10 contribute (window=10); w = 10/12."""
+    bps_val = 30
+    history = [_hist(2, bps=bps_val)] * 12
     result = _compute_player_bonus_ev(_element(element_type=3), _summary(history))
-    # window is last 10, all bonus=2; empirical_mean=2.0; w=10/12
+    # last 10 all have bps=30; avg_bps=30; w=10/12
+    bps_prior = 22
     w = 10 / 12.0
-    expected = w * 2.0 + (1.0 - w) * 0.60
+    smoothed_bps = w * bps_val + (1.0 - w) * bps_prior
+    expected = smoothed_bps * (0.60 / bps_prior)
     assert result['bonus_ev'] == pytest.approx(round(expected, 4), abs=0.0001)
 
 
 def test_window_uses_recent_10_only():
-    """15 history entries — bonus_ev computed on recent[-10:] only."""
-    # First 5: bonus=3 (outside window); last 10: bonus=0 (inside window)
-    history = [_hist(3)] * 5 + [_hist(0)] * 10
+    """15 history entries: first 5 have bps=40, last 10 have bps=15 — only last 10 used."""
+    history = [_hist(3, bps=40)] * 5 + [_hist(0, bps=15)] * 10
     result = _compute_player_bonus_ev(_element(element_type=3), _summary(history))
-    # empirical_mean over last 10 = 0.0; w = min(1, 10/12); prior MID = 0.60
+    # avg_bps from last 10 = 15.0 (all starts=1 by default)
+    bps_prior = 22
     w = 10 / 12.0
-    expected = w * 0.0 + (1.0 - w) * 0.60
+    smoothed_bps = w * 15.0 + (1.0 - w) * bps_prior
+    expected = smoothed_bps * (0.60 / bps_prior)
     assert result['bonus_ev'] == pytest.approx(round(expected, 4), abs=0.0001)
 
 
 def test_defender_bonus_residualised_against_cs():
-    """GK/DEF: bonus_ev_raw - 0.5 * cs_prob_estimate, max 0.0."""
-    # GK (element_type=1) prior=0.30. 10 starts, 8 with CS, all bonus=1.
-    # cs_prob_estimate = 8/10 = 0.8
-    # empirical_mean = 1.0
-    # w = 10/12 ≈ 0.833; bonus_ev_raw = 0.833*1.0 + 0.167*0.30 = 0.883
-    # bonus_ev = max(0, 0.883 - 0.5*0.8) = max(0, 0.483) = 0.483
-    history = [_hist(1, clean_sheet=1)] * 8 + [_hist(1, clean_sheet=0)] * 2
+    """GK/DEF: BPS-based bonus_ev_raw reduced by 0.5 * cs_rate, floored at 0."""
+    # GK (element_type=1): 10 starts, 8 with CS, bps=25
+    # BPS_PRIOR[1]=18, POSITION_PRIOR[1]=0.30
+    # cs_rate = 8/10 = 0.8
+    # w=10/12; smoothed_bps=(10/12)*25+(2/12)*18
+    # bonus_ev_raw = smoothed_bps * (0.30/18)
+    # bonus_ev = max(0, bonus_ev_raw - 0.5*0.8)
+    bps_val = 25
+    history = [_hist(1, clean_sheet=1, bps=bps_val)] * 8 + [_hist(1, clean_sheet=0, bps=bps_val)] * 2
     result = _compute_player_bonus_ev(_element(element_type=1), _summary(history))
+    bps_prior = 18
     w = 10 / 12.0
-    raw = w * 1.0 + (1.0 - w) * 0.30
-    expected = max(0.0, raw - 0.5 * 0.8)
+    smoothed_bps = w * bps_val + (1.0 - w) * bps_prior
+    bonus_ev_raw = smoothed_bps * (0.30 / bps_prior)
+    expected = max(0.0, bonus_ev_raw - 0.5 * 0.8)
     assert result['bonus_ev'] == pytest.approx(round(expected, 4), abs=0.0001)
-    assert result['source'] == 'learned'
+    assert result['source'] == 'learned_uncalibrated'
 
 
 def test_attacker_bonus_not_residualised():
-    """MID (element_type=3): no residualisation, plain shrinkage even with high CS rate."""
-    # 10 starts, all bonus=1, all CS=1. If residualisation were applied,
-    # bonus_ev would drop. Verify it does NOT drop.
-    history = [_hist(1, clean_sheet=1)] * 10
+    """MID (element_type=3): no residualisation even with high CS rate."""
+    bps_val = 22
+    history = [_hist(1, clean_sheet=1, bps=bps_val)] * 10
     result = _compute_player_bonus_ev(_element(element_type=3), _summary(history))
+    bps_prior = 22
     w = 10 / 12.0
-    expected = w * 1.0 + (1.0 - w) * 0.60
-    # Plain shrinkage value, NOT reduced by 0.5 * cs_prob
+    smoothed_bps = w * bps_val + (1.0 - w) * bps_prior
+    expected = smoothed_bps * (0.60 / bps_prior)
+    # Plain BPS shrinkage value, NOT reduced by CS penalty
     assert result['bonus_ev'] == pytest.approx(round(expected, 4), abs=0.0001), \
         "MID/FWD must NOT be residualised against CS — only GK (1) and DEF (2)."
 
 
 def test_top_level_returns_dict_keyed_by_player_id():
-    """compute_bonus_predictions returns dict[player_id] -> per-player dict."""
+    """compute_bonus_predictions returns dict[player_id] -> per-player dict.
+    2-player bootstrap: only 1 qualifying player → calibration=None → learned_uncalibrated.
+    """
     bootstrap = {
         'elements': [
             {'id': 100, 'element_type': 3},
@@ -142,19 +162,18 @@ def test_top_level_returns_dict_keyed_by_player_id():
         ],
     }
     summaries = {
-        100: _summary([_hist(2)] * 10),
-        # 200 absent — should fall back
+        100: _summary([_hist(2, bps=22)] * 10),
+        # 200 absent — should fall back to prior
     }
     result = compute_bonus_predictions(bootstrap, summaries, finished_gws=10)
     assert set(result.keys()) == {100, 200}
-    # Player 100: 10 starts, mean=2.0, MID prior=0.60, w=10/12
-    w = 10 / 12.0
-    expected_100 = w * 2.0 + (1.0 - w) * 0.60
-    assert result[100]['bonus_ev'] == pytest.approx(round(expected_100, 4), abs=0.0001)
-    assert result[100]['source'] == 'learned'
-    # Player 200: no summary -> FWD prior 0.70
+    # Player 100: learned path, calibration=None (only 1 qualifying player < 20 threshold)
+    assert result[100]['source'] == 'learned_uncalibrated'
+    assert result[100]['avg_bps'] == pytest.approx(22.0, abs=0.01)
+    # Player 200: no summary → FWD prior 0.70
     assert result[200]['bonus_ev'] == 0.70
-    assert result[200]['source'] == 'flat_default'
+    assert result[200]['source'] == 'prior'
+    assert result[200]['avg_bps'] is None
 
 
 # ── Task 1: build_bps_calibration ──────────────────────────────────────────
@@ -227,3 +246,53 @@ def test_build_bps_calibration_zero_variance_returns_none():
         elements.append({'id': i, 'element_type': 3})
     bootstrap = {'elements': elements}
     assert build_bps_calibration(summaries, bootstrap) is None
+
+
+# ── Task 2 new tests ────────────────────────────────────────────────────────
+
+
+def test_calibrated_path_uses_curve():
+    """When calibration=(slope, intercept), bonus_ev = slope*smoothed_bps + intercept."""
+    bps_val = 22
+    history = [_hist(1, bps=bps_val)] * 10
+    slope, intercept = 0.05, 0.10
+    result = _compute_player_bonus_ev(
+        _element(element_type=3), _summary(history), calibration=(slope, intercept)
+    )
+    bps_prior = 22
+    w = 10 / 12.0
+    smoothed_bps = w * bps_val + (1.0 - w) * bps_prior
+    expected = slope * smoothed_bps + intercept
+    assert result['bonus_ev'] == pytest.approx(round(expected, 4), abs=0.0001)
+    assert result['source'] == 'learned_calibrated'
+
+
+def test_partial_shrinkage_smoothed_bps_between_extremes():
+    """n_starts=6 → smoothed_bps is between avg_bps and BPS_PRIOR (w=0.5)."""
+    bps_val = 30          # above BPS_PRIOR[3]=22
+    history = [_hist(1, bps=bps_val)] * 6 + [_hist(0, starts_field=0)] * 4
+    result = _compute_player_bonus_ev(_element(element_type=3), _summary(history))
+    bps_prior = 22
+    w = 6 / 12.0
+    smoothed_bps = w * bps_val + (1.0 - w) * bps_prior   # = 26.0
+    expected = smoothed_bps * (0.60 / bps_prior)
+    assert result['bonus_ev'] == pytest.approx(round(expected, 4), abs=0.0001)
+    # smoothed_bps lies strictly between avg_bps and BPS_PRIOR
+    assert bps_prior < smoothed_bps < bps_val
+
+
+def test_avg_bps_populated_for_learned_players():
+    """avg_bps field is populated (not None) when n_starts >= MIN_STARTS_GATE."""
+    history = [_hist(1, bps=24)] * 8
+    result = _compute_player_bonus_ev(_element(element_type=3), _summary(history))
+    assert result['avg_bps'] is not None
+    assert result['avg_bps'] == pytest.approx(24.0, abs=0.01)
+
+
+def test_high_bps_player_higher_bonus_ev():
+    """Higher avg BPS → higher bonus_ev (monotone calibration-curve behaviour)."""
+    history_high = [_hist(1, bps=35)] * 10
+    history_low  = [_hist(1, bps=15)] * 10
+    result_high = _compute_player_bonus_ev(_element(element_type=3), _summary(history_high))
+    result_low  = _compute_player_bonus_ev(_element(element_type=3), _summary(history_low))
+    assert result_high['bonus_ev'] > result_low['bonus_ev']
