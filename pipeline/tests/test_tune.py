@@ -16,9 +16,10 @@ from tune import (
     CS_PROB_BASE_CANDIDATES,
     CS_PROB_SLOPE_CANDIDATES,
     FORM_ACTUAL_BETA_CANDIDATES,
+    FORM_DIFFICULTY_GAMMA_CANDIDATES,   # FRM-02
 )
 from tune import _sweep_param
-from accuracy import build_fixture_difficulty_lookup, FORM_ACTUAL_BETA
+from accuracy import build_fixture_difficulty_lookup, FORM_ACTUAL_BETA, FORM_DIFFICULTY_GAMMA  # FRM-02
 
 
 def _make_summaries_and_bootstrap(n_players=5, n_gws=20, xg=0.3, xa=0.1, actual_pts_fn=None):
@@ -196,6 +197,13 @@ class TestReadPriorParams:
         params = _read_prior_params(str(tmp_path))
         assert abs(params['form_actual_beta'] - FORM_ACTUAL_BETA) < 1e-9
 
+    def test_form_difficulty_gamma_default_in_read_prior_params(self, tmp_path):
+        """Missing form_difficulty_gamma_used in summary → returns FORM_DIFFICULTY_GAMMA (0.0)."""
+        data = {'summary': {}}
+        (tmp_path / 'accuracy_backtest.json').write_text(json.dumps(data))
+        params = _read_prior_params(str(tmp_path))
+        assert abs(params['form_difficulty_gamma'] - FORM_DIFFICULTY_GAMMA) < 1e-9
+
 
 # ── run_tuner gate tests ─────────────────────────────────────────────────────
 
@@ -221,7 +229,7 @@ class TestSweepParam:
         gws_val = all_gws[13:]
         params = {'blend_alpha': 0.4, 'form_window_gws': 5,
                   'cs_prob_base': 0.40, 'cs_prob_slope': 0.30,
-                  'form_actual_beta': 0.0}
+                  'form_actual_beta': 0.0, 'form_difficulty_gamma': 0.0}
 
         result = _sweep_param(
             param_name='blend_alpha',
@@ -245,7 +253,7 @@ class TestSweepParam:
         all_gws = list(range(1, 21))
         params = {'blend_alpha': 0.4, 'form_window_gws': 5,
                   'cs_prob_base': 0.40, 'cs_prob_slope': 0.30,
-                  'form_actual_beta': 0.0}
+                  'form_actual_beta': 0.0, 'form_difficulty_gamma': 0.0}
         result = _sweep_param(
             'blend_alpha', [0.4], 0.4, params,
             summaries, all_gws, bootstrap, fixture_difficulty,
@@ -276,6 +284,7 @@ class TestRunTunerFull:
         assert 'cs_prob_base' in sweep
         assert 'cs_prob_slope' in sweep
         assert 'form_actual_beta' in sweep
+        assert 'form_difficulty_gamma' in sweep
 
     def test_run_tuner_promoted_params_contains_all_params(self, tmp_path):
         summaries, bootstrap, fixtures = _make_summaries_and_bootstrap(n_gws=20)
@@ -286,6 +295,7 @@ class TestRunTunerFull:
         assert 'cs_prob_base' in pp
         assert 'cs_prob_slope' in pp
         assert 'form_actual_beta' in pp
+        assert 'form_difficulty_gamma' in pp
 
     def test_run_tuner_train_validate_split_correct(self, tmp_path):
         """Train + validate together must cover all finished GWs with no gaps or overlap."""
@@ -314,6 +324,7 @@ class TestRunTunerFull:
         assert result['promoted_params']['cs_prob_base']    == result['sweep']['cs_prob_base']['best']
         assert result['promoted_params']['cs_prob_slope']   == result['sweep']['cs_prob_slope']['best']
         assert result['promoted_params']['form_actual_beta'] == result['sweep']['form_actual_beta']['best']
+        assert result['promoted_params']['form_difficulty_gamma'] == result['sweep']['form_difficulty_gamma']['best']
 
     def test_form_actual_beta_in_promoted_params(self, tmp_path):
         """promoted_params dict contains form_actual_beta key."""
@@ -323,3 +334,12 @@ class TestRunTunerFull:
         assert 'form_actual_beta' in pp
         assert pp['form_actual_beta'] >= 0.0
         assert pp['form_actual_beta'] <= 0.5
+
+    def test_form_difficulty_gamma_in_promoted_params(self, tmp_path):
+        """promoted_params dict contains form_difficulty_gamma key with value in [0.0, 1.0]."""
+        summaries, bootstrap, fixtures = _make_summaries_and_bootstrap(n_gws=20)
+        result = run_tuner(summaries, 20, bootstrap, fixtures, str(tmp_path))
+        pp = result['promoted_params']
+        assert 'form_difficulty_gamma' in pp
+        assert pp['form_difficulty_gamma'] >= 0.0
+        assert pp['form_difficulty_gamma'] <= 1.0
