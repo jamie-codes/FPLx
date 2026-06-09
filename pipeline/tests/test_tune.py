@@ -17,9 +17,10 @@ from tune import (
     CS_PROB_SLOPE_CANDIDATES,
     FORM_ACTUAL_BETA_CANDIDATES,
     FORM_DIFFICULTY_GAMMA_CANDIDATES,   # FRM-02
+    SUB_APPEAR_WINDOW_CANDIDATES,   # APM-01
 )
 from tune import _sweep_param
-from accuracy import build_fixture_difficulty_lookup, FORM_ACTUAL_BETA, FORM_DIFFICULTY_GAMMA  # FRM-02
+from accuracy import build_fixture_difficulty_lookup, FORM_ACTUAL_BETA, FORM_DIFFICULTY_GAMMA, SUB_APPEAR_WINDOW_GWS  # APM-01
 
 
 def _make_summaries_and_bootstrap(n_players=5, n_gws=20, xg=0.3, xa=0.1, actual_pts_fn=None):
@@ -204,6 +205,13 @@ class TestReadPriorParams:
         params = _read_prior_params(str(tmp_path))
         assert abs(params['form_difficulty_gamma'] - FORM_DIFFICULTY_GAMMA) < 1e-9
 
+    def test_sub_appear_window_default_in_read_prior_params(self, tmp_path):
+        """Missing sub_appear_window_gws_used in summary → returns SUB_APPEAR_WINDOW_GWS (15)."""
+        data = {'summary': {}}
+        (tmp_path / 'accuracy_backtest.json').write_text(json.dumps(data))
+        params = _read_prior_params(str(tmp_path))
+        assert params['sub_appear_window_gws'] == SUB_APPEAR_WINDOW_GWS
+
 
 # ── run_tuner gate tests ─────────────────────────────────────────────────────
 
@@ -229,7 +237,8 @@ class TestSweepParam:
         gws_val = all_gws[13:]
         params = {'blend_alpha': 0.4, 'form_window_gws': 5,
                   'cs_prob_base': 0.40, 'cs_prob_slope': 0.30,
-                  'form_actual_beta': 0.0, 'form_difficulty_gamma': 0.0}
+                  'form_actual_beta': 0.0, 'form_difficulty_gamma': 0.0,
+                  'sub_appear_window_gws': 15}
 
         result = _sweep_param(
             param_name='blend_alpha',
@@ -253,7 +262,8 @@ class TestSweepParam:
         all_gws = list(range(1, 21))
         params = {'blend_alpha': 0.4, 'form_window_gws': 5,
                   'cs_prob_base': 0.40, 'cs_prob_slope': 0.30,
-                  'form_actual_beta': 0.0, 'form_difficulty_gamma': 0.0}
+                  'form_actual_beta': 0.0, 'form_difficulty_gamma': 0.0,
+                  'sub_appear_window_gws': 15}
         result = _sweep_param(
             'blend_alpha', [0.4], 0.4, params,
             summaries, all_gws, bootstrap, fixture_difficulty,
@@ -285,6 +295,7 @@ class TestRunTunerFull:
         assert 'cs_prob_slope' in sweep
         assert 'form_actual_beta' in sweep
         assert 'form_difficulty_gamma' in sweep
+        assert 'sub_appear_window_gws' in sweep
 
     def test_run_tuner_promoted_params_contains_all_params(self, tmp_path):
         summaries, bootstrap, fixtures = _make_summaries_and_bootstrap(n_gws=20)
@@ -296,6 +307,7 @@ class TestRunTunerFull:
         assert 'cs_prob_slope' in pp
         assert 'form_actual_beta' in pp
         assert 'form_difficulty_gamma' in pp
+        assert 'sub_appear_window_gws' in pp
 
     def test_run_tuner_train_validate_split_correct(self, tmp_path):
         """Train + validate together must cover all finished GWs with no gaps or overlap."""
@@ -307,7 +319,7 @@ class TestRunTunerFull:
         assert set(train) & set(validate) == set()
 
     def test_coordinate_locking_uses_prior_sweep_value(self, tmp_path):
-        """promoted_params must reflect locked-in values from all six sweeps in order.
+        """promoted_params must reflect locked-in values from all seven sweeps in order.
 
         Note: this is a structural consistency test — it verifies that promoted_params
         is built from the locked-in values, not that locking actually changed a later
@@ -318,13 +330,14 @@ class TestRunTunerFull:
         """
         summaries, bootstrap, fixtures = _make_summaries_and_bootstrap(n_gws=20)
         result = run_tuner(summaries, 20, bootstrap, fixtures, str(tmp_path))
-        # All six params in promoted_params must match their sweep's best value
+        # All seven params in promoted_params must match their sweep's best value
         assert result['promoted_params']['blend_alpha']     == result['sweep']['blend_alpha']['best']
         assert result['promoted_params']['form_window_gws'] == result['sweep']['form_window_gws']['best']
         assert result['promoted_params']['cs_prob_base']    == result['sweep']['cs_prob_base']['best']
         assert result['promoted_params']['cs_prob_slope']   == result['sweep']['cs_prob_slope']['best']
         assert result['promoted_params']['form_actual_beta'] == result['sweep']['form_actual_beta']['best']
         assert result['promoted_params']['form_difficulty_gamma'] == result['sweep']['form_difficulty_gamma']['best']
+        assert result['promoted_params']['sub_appear_window_gws'] == result['sweep']['sub_appear_window_gws']['best']
 
     def test_form_actual_beta_in_promoted_params(self, tmp_path):
         """promoted_params dict contains form_actual_beta key."""
@@ -343,3 +356,11 @@ class TestRunTunerFull:
         assert 'form_difficulty_gamma' in pp
         assert pp['form_difficulty_gamma'] >= 0.0
         assert pp['form_difficulty_gamma'] <= 1.0
+
+    def test_sub_appear_window_in_promoted_params(self, tmp_path):
+        """promoted_params dict contains sub_appear_window_gws key with value in [10, 20]."""
+        summaries, bootstrap, fixtures = _make_summaries_and_bootstrap(n_gws=20)
+        result = run_tuner(summaries, 20, bootstrap, fixtures, str(tmp_path))
+        pp = result['promoted_params']
+        assert 'sub_appear_window_gws' in pp
+        assert pp['sub_appear_window_gws'] in [10, 12, 15, 18, 20]

@@ -25,6 +25,7 @@ from accuracy import (
     CS_PROB_SLOPE,
     FORM_ACTUAL_BETA,
     FORM_DIFFICULTY_GAMMA,   # FRM-02
+    SUB_APPEAR_WINDOW_GWS,   # APM-01
 )
 
 # ── Candidate sweep grids ────────────────────────────────────────────────────
@@ -34,6 +35,7 @@ CS_PROB_BASE_CANDIDATES = [0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55]
 CS_PROB_SLOPE_CANDIDATES = [0.15, 0.20, 0.25, 0.30, 0.35, 0.40]
 FORM_ACTUAL_BETA_CANDIDATES = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
 FORM_DIFFICULTY_GAMMA_CANDIDATES = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]  # FRM-02
+SUB_APPEAR_WINDOW_CANDIDATES = [10, 12, 15, 18, 20]                  # APM-01
 
 # ── Safety thresholds ────────────────────────────────────────────────────────
 MIN_FINISHED_GWS = 13             # need at least this many GWs for a meaningful split
@@ -48,7 +50,7 @@ def _read_prior_params(cache_dir: str) -> dict:
 
     Falls back to defaults when the file is missing or malformed (cold start).
     Returns dict with keys: blend_alpha, form_window_gws, cs_prob_base, cs_prob_slope,
-    form_actual_beta, form_difficulty_gamma.
+    form_actual_beta, form_difficulty_gamma, sub_appear_window_gws.
     """
     # Note: blend_alpha_used is written by accuracy.py (summary block).
     # form_window_gws_used, cs_prob_base_used, cs_prob_slope_used are written
@@ -66,6 +68,7 @@ def _read_prior_params(cache_dir: str) -> dict:
             'cs_prob_slope':     float(summary.get('cs_prob_slope_used', CS_PROB_SLOPE)),
             'form_actual_beta':  float(summary.get('form_actual_beta_used', FORM_ACTUAL_BETA)),
             'form_difficulty_gamma':  float(summary.get('form_difficulty_gamma_used', FORM_DIFFICULTY_GAMMA)),  # FRM-02
+            'sub_appear_window_gws':  int(summary.get('sub_appear_window_gws_used', SUB_APPEAR_WINDOW_GWS)),  # APM-01
         }
     except (FileNotFoundError, json.JSONDecodeError, OSError, KeyError, ValueError):
         return {
@@ -75,6 +78,7 @@ def _read_prior_params(cache_dir: str) -> dict:
             'cs_prob_slope':    CS_PROB_SLOPE,
             'form_actual_beta': FORM_ACTUAL_BETA,
             'form_difficulty_gamma': FORM_DIFFICULTY_GAMMA,   # FRM-02
+            'sub_appear_window_gws': SUB_APPEAR_WINDOW_GWS,   # APM-01
         }
 
 
@@ -176,6 +180,7 @@ def _sweep_param(
         cs_prob_slope=params['cs_prob_slope'],
         form_actual_beta=params['form_actual_beta'],
         form_difficulty_gamma=params['form_difficulty_gamma'],   # FRM-02
+        sub_appear_window_gws=params['sub_appear_window_gws'],   # APM-01
     )
     current_train    = compute_metrics_for_gws(baseline_rows, gws_train)
     current_validate = compute_metrics_for_gws(baseline_rows, gws_validate)
@@ -202,6 +207,7 @@ def _sweep_param(
             cs_prob_slope=candidate_params['cs_prob_slope'],
             form_actual_beta=candidate_params['form_actual_beta'],
             form_difficulty_gamma=candidate_params['form_difficulty_gamma'],   # FRM-02
+            sub_appear_window_gws=candidate_params['sub_appear_window_gws'],   # APM-01
         )
         train_metrics    = compute_metrics_for_gws(candidate_rows, gws_train)
         validate_metrics = compute_metrics_for_gws(candidate_rows, gws_validate)
@@ -271,6 +277,7 @@ def run_tuner(
         'cs_prob_slope':    prior['cs_prob_slope'],
         'form_actual_beta': prior['form_actual_beta'],
         'form_difficulty_gamma': prior['form_difficulty_gamma'],   # FRM-02
+        'sub_appear_window_gws': prior['sub_appear_window_gws'],   # APM-01
     }
 
     sweep_results: dict = {}
@@ -283,6 +290,7 @@ def run_tuner(
         ('cs_prob_slope',    CS_PROB_SLOPE_CANDIDATES,      prior['cs_prob_slope']),
         ('form_actual_beta', FORM_ACTUAL_BETA_CANDIDATES,   prior['form_actual_beta']),
         ('form_difficulty_gamma', FORM_DIFFICULTY_GAMMA_CANDIDATES,  prior['form_difficulty_gamma']),  # FRM-02
+        ('sub_appear_window_gws', SUB_APPEAR_WINDOW_CANDIDATES, prior['sub_appear_window_gws']),  # APM-01
     ]
 
     for param_name, candidates, current_val in sweep_order:
