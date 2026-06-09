@@ -360,6 +360,7 @@ def run(dry_run: bool = False):
             cs_prob_slope_used   = 0.30    # TUNE-01: default
             form_actual_beta_used = accuracy.FORM_ACTUAL_BETA  # FRM-01: default
             form_difficulty_gamma_used = accuracy.FORM_DIFFICULTY_GAMMA  # FRM-02: default
+            sub_appear_window_gws_used = accuracy.SUB_APPEAR_WINDOW_GWS  # APM-01: default
             backtest_path = os.path.join(cache_dir, 'accuracy_backtest.json')
             try:
                 with open(backtest_path, 'r', encoding='utf-8') as f:
@@ -373,6 +374,7 @@ def run(dry_run: bool = False):
                 cs_prob_slope_used   = float(prev_backtest.get('summary', {}).get('cs_prob_slope_used', 0.30))
                 form_actual_beta_used = float(prev_backtest.get('summary', {}).get('form_actual_beta_used', accuracy.FORM_ACTUAL_BETA))
                 form_difficulty_gamma_used = float(prev_backtest.get('summary', {}).get('form_difficulty_gamma_used', accuracy.FORM_DIFFICULTY_GAMMA))  # FRM-02
+                sub_appear_window_gws_used = int(prev_backtest.get('summary', {}).get('sub_appear_window_gws_used', accuracy.SUB_APPEAR_WINDOW_GWS))  # APM-01
             except (FileNotFoundError, json.JSONDecodeError):
                 pass
 
@@ -381,7 +383,7 @@ def run(dry_run: bool = False):
             print(f"Bonus predictor (per-player EV): {'ENABLED' if bonus_predictor_enabled else 'DISABLED'}")
             print(f"Save predictor (GK Poisson-floor): {'ENABLED' if save_predictor_enabled else 'DISABLED'}")
             print(f"MC simulation (5-GW uncertainty bands): {'ENABLED' if mc_enabled else 'DISABLED'}")
-            print(f"TUNE-01 params: form_window={form_window_gws_used}, cs_prob_base={cs_prob_base_used}, cs_prob_slope={cs_prob_slope_used}, form_actual_beta={form_actual_beta_used}, form_difficulty_gamma={form_difficulty_gamma_used}")
+            print(f"TUNE-01 params: form_window={form_window_gws_used}, cs_prob_base={cs_prob_base_used}, cs_prob_slope={cs_prob_slope_used}, form_actual_beta={form_actual_beta_used}, form_difficulty_gamma={form_difficulty_gamma_used}, sub_appear_window_gws={sub_appear_window_gws_used}")
 
             merged, captain_picks = merge_players(
                 bootstrap, fixtures, understat, id_map,
@@ -397,6 +399,7 @@ def run(dry_run: bool = False):
                 form_window_gws=form_window_gws_used,  # TUNE-01
                 form_actual_beta=form_actual_beta_used,  # FRM-01
                 form_difficulty_gamma=form_difficulty_gamma_used, # FRM-02
+                sub_appear_window_gws=sub_appear_window_gws_used,  # APM-01
             )
             if mc_enabled:
                 merged = compute_simulations(merged, xmins_v2_enabled,
@@ -516,12 +519,14 @@ def run(dry_run: bool = False):
                     backtest_data['summary']['cs_prob_slope_used']   = pp['cs_prob_slope']
                     backtest_data['summary']['form_actual_beta_used'] = pp['form_actual_beta']
                     backtest_data['summary']['form_difficulty_gamma_used'] = pp['form_difficulty_gamma']  # FRM-02
+                    backtest_data['summary']['sub_appear_window_gws_used'] = pp['sub_appear_window_gws']  # APM-01
                     print(f"[tune] params: blend_alpha={pp['blend_alpha']}, "
                           f"form_window={pp['form_window_gws']}, "
                           f"cs_prob_base={pp['cs_prob_base']}, "
                           f"cs_prob_slope={pp['cs_prob_slope']}, "
                           f"form_actual_beta={pp['form_actual_beta']}, "
-                          f"form_difficulty_gamma={pp['form_difficulty_gamma']}")
+                          f"form_difficulty_gamma={pp['form_difficulty_gamma']}, "
+                          f"sub_appear_window_gws={pp['sub_appear_window_gws']}")
             except Exception as tune_exc:
                 print(f'[tune] non-fatal error: {tune_exc}', file=sys.stderr)
             save('accuracy_backtest.json', backtest_data)
