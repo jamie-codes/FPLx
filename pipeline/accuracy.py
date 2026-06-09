@@ -908,7 +908,8 @@ def _reconstruct_xpts(entry: dict, element_type: int, difficulty_score: float,
         defensive_difficulty=difficulty_score,
         cs_prob_base=cs_prob_base,
         cs_prob_slope=cs_prob_slope,
-        mins_60_prob=mins_60_prob,   # APM-01: use prior mins_60_prob for appearance formula
+        mins_60_prob=mins_60_prob,       # APM-01: use prior mins_60_prob for appearance formula
+        sub_appear_prob=sub_appear_prob, # APM-01: include sub contribution in starter prediction
     )
     return round(result['total'], 2)
 
@@ -1034,6 +1035,7 @@ def _reconstruct_xpts_with_form(
         defensive_difficulty=difficulty_score,
         cs_prob_base=cs_prob_base,
         cs_prob_slope=cs_prob_slope,
-        mins_60_prob=mins_60_prob,   # APM-01
+        mins_60_prob=mins_60_prob,        # APM-01
+        sub_appear_prob=sub_appear_prob,  # APM-01
     )
     return round(result['total'], 2)
