@@ -269,6 +269,7 @@ def _compute_xpts_fixture(
     opponent_xg_per_game: float = 0.0,              # Phase 83 GK-01 / D-02 (lambda for poisson_floor_save_pts)
     cs_prob_base: float = 0.40,
     cs_prob_slope: float = 0.30,
+    sub_appear_prob: float = 0.0,                   # APM-01: P(sub appearance); adds 1pt contribution
 ) -> dict:
     """Compute expected FPL points for a single fixture (Phase 28 DATA-02).
 
@@ -323,9 +324,10 @@ def _compute_xpts_fixture(
         rate = BONUS_RATE[element_type]
     bonus_pts = rate * (xmins / 90.0)
 
-    # Appearance: FPL awards 2pts for starting; D-01 Phase 48. NOT scaled by xmins/90 —
-    # appearance points are per game started, not per minute.
-    appearance_pts = start_prob * 2
+    # Appearance: APM-01. FPL awards 2pts for ≥60 min, 1pt for <60 min, 1pt for sub appearance.
+    # mins_60_prob=None defaults to 1.0 (backward-compatible: start_prob × 2).
+    _mins_60 = mins_60_prob if mins_60_prob is not None else 1.0
+    appearance_pts = start_prob * (1 + _mins_60) + sub_appear_prob
 
     # Phase 83 GK-01: save points for GKs when gate ON. element_type guard lives
     # here, NOT in saves.poisson_floor_save_pts (CONTEXT.md D-03 / Pitfall 3).
@@ -361,6 +363,7 @@ def _xpts_ngw(
     save_predictor_enabled: bool = False,   # Phase 83 GK-01
     cs_prob_base: float = 0.40,             # TUNE-01: tunable via accuracy_backtest.json.summary
     cs_prob_slope: float = 0.30,            # TUNE-01: tunable via accuracy_backtest.json.summary
+    sub_appear_prob: float = 0.0,           # APM-01
 ) -> tuple:
     """Project xPts across N upcoming GWs, DGW-aware (Phase 28 DATA-02 D-04, D-06).
 
@@ -401,6 +404,7 @@ def _xpts_ngw(
                 opponent_xg_per_game=fix.get('opponent_xg_per_game', 0.0),               # Phase 83 GK-01 / D-02
                 cs_prob_base=cs_prob_base,                                               # TUNE-01
                 cs_prob_slope=cs_prob_slope,                                             # TUNE-01
+                sub_appear_prob=sub_appear_prob,                                         # APM-01
             )
             total += result['total']
             if gw_idx == 0 and n_gws == 1:
@@ -429,6 +433,7 @@ def _xpts_per_gw(
     save_predictor_enabled: bool = False,   # Phase 83 GK-01
     cs_prob_base: float = 0.40,             # TUNE-01: tunable via accuracy_backtest.json.summary
     cs_prob_slope: float = 0.30,            # TUNE-01: tunable via accuracy_backtest.json.summary
+    sub_appear_prob: float = 0.0,           # APM-01
 ) -> list[float]:
     """Return list of xPts per GW group (Phase 80 GWI-04, D-12).
 
@@ -465,6 +470,7 @@ def _xpts_per_gw(
                 opponent_xg_per_game=fix.get('opponent_xg_per_game', 0.0),               # Phase 83 GK-01 / D-02
                 cs_prob_base=cs_prob_base,                                               # TUNE-01
                 cs_prob_slope=cs_prob_slope,                                             # TUNE-01
+                sub_appear_prob=sub_appear_prob,                                         # APM-01
             )
             gw_total += comp['total']
         result.append(round(gw_total, 2))
@@ -837,6 +843,7 @@ def merge_players(
     form_window_gws: int = 5,               # TUNE-01: tunable via accuracy_backtest.json.summary
     form_actual_beta: float = 0.0,          # FRM-01: actual G+A blend weight, tunable via TUNE-01
     form_difficulty_gamma: float = 0.0,     # FRM-02: difficulty weight scaling, tunable via TUNE-01
+    sub_appear_window_gws: int = 15,        # APM-01: sub appearance history window, tunable via TUNE-01
 ) -> tuple[list, dict]:
     """Merge FPL bootstrap + Understat xG/xA into a unified player list.
 
@@ -1202,6 +1209,7 @@ def merge_players(
             player['mins_60_prob'] = 0.0
             player['sub_risk_label'] = 'injured'
         player_mins_60_prob = player['mins_60_prob']
+        player_sub_appear_prob = xmins_stats[fpl_id].get('sub_appear_prob', 0.0) if (xmins_stats and fpl_id in xmins_stats) else 0.0   # APM-01
 
         # Phase 53 BPS-01: per-player bonus EV unpacking. Falls back to None when
         # bonus_stats is absent OR the player is missing OR the bonus.py guard returned
@@ -1291,6 +1299,7 @@ def merge_players(
             bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
             save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
             cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,  # TUNE-01
+            sub_appear_prob=player_sub_appear_prob,  # APM-01
         )
         xpts_3gw, _ = _xpts_ngw(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
@@ -1299,6 +1308,7 @@ def merge_players(
             bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
             save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
             cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,  # TUNE-01
+            sub_appear_prob=player_sub_appear_prob,  # APM-01
         )
         xpts_5gw, _ = _xpts_ngw(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
@@ -1307,6 +1317,7 @@ def merge_players(
             bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
             save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
             cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,  # TUNE-01
+            sub_appear_prob=player_sub_appear_prob,  # APM-01
         )
         player['xPts_1gw'] = xpts_1gw
         player['xPts_3gw'] = xpts_3gw

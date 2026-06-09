@@ -232,3 +232,51 @@ def test_merge_players_writes_xpts_components_1gw():
     assert abs(component_sum - xpts_1gw) < 0.01, (
         f"Component sum {component_sum:.4f} != xPts_1gw {xpts_1gw:.4f} (delta > 0.01)"
     )
+
+
+# ── APM-01: appearance point model tests ──────────────────────────────────────
+
+def test_appearance_pts_full_game_equivalence():
+    """APM-01: mins_60_prob=1.0, sub_appear_prob=0.0 → appearance_pts = start_prob × 2 (old formula)."""
+    result = _compute_xpts_fixture(
+        xg_per90=0.0,
+        xa_per90=0.0,
+        start_prob=0.8,
+        xmins=72.0,
+        element_type=3,
+        defensive_difficulty=0.5,
+        mins_60_prob=1.0,
+        sub_appear_prob=0.0,
+    )
+    assert result['appearance_pts'] == pytest.approx(0.8 * 2, abs=0.001)
+
+
+def test_appearance_pts_partial_game():
+    """APM-01: mins_60_prob=0.5 → appearance_pts = start_prob × (1 + 0.5) = 1.5."""
+    result = _compute_xpts_fixture(
+        xg_per90=0.0,
+        xa_per90=0.0,
+        start_prob=1.0,
+        xmins=90.0,
+        element_type=3,
+        defensive_difficulty=0.5,
+        mins_60_prob=0.5,
+        sub_appear_prob=0.0,
+    )
+    assert result['appearance_pts'] == pytest.approx(1.5, abs=0.001)
+
+
+def test_appearance_pts_sub_contribution():
+    """APM-01: sub_appear_prob=0.3, start_prob=0.1 → appearance_pts = 0.1*(1+0.0) + 0.3 = 0.4."""
+    result = _compute_xpts_fixture(
+        xg_per90=0.0,
+        xa_per90=0.0,
+        start_prob=0.1,
+        xmins=9.0,
+        element_type=3,
+        defensive_difficulty=0.5,
+        mins_60_prob=0.0,
+        sub_appear_prob=0.3,
+    )
+    # start contribution: 0.1 × (1 + 0.0) = 0.1; sub contribution: 0.3
+    assert result['appearance_pts'] == pytest.approx(0.1 + 0.3, abs=0.001)
