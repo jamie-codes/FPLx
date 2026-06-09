@@ -1285,3 +1285,59 @@ class TestBuildPerGwRows:
         # This at least confirms the param is passed through without error
         assert len(rows_zero[10]) > 0
         assert len(rows_full[10]) > 0
+
+
+# ── APM-01: sub appearance tests ──────────────────────────────────────────────
+
+class TestComputeSubAppearProb:
+    """Tests for _compute_sub_appear_prob helper."""
+
+    def _make_grouped(self, rounds_data):
+        """Build a minimal grouped dict. rounds_data: list of (round, minutes, sub_appear_n, difficulty_n)."""
+        grouped = {}
+        for r, mins, sub_n, diff_n in rounds_data:
+            grouped[r] = {
+                'round': r, 'minutes': mins, 'total_points': 0,
+                'expected_goals': 0.0, 'expected_assists': 0.0,
+                'goals_scored': 0, 'assists': 0,
+                'difficulty_sum': 3.0 * diff_n, 'difficulty_n': diff_n,
+                'sub_appear_n': sub_n,
+            }
+        return grouped
+
+    def test_basic(self):
+        """2 sub appearances across 10 entries (SGW rounds), window=15 → 2/10 = 0.2."""
+        from accuracy import _compute_sub_appear_prob
+        grouped = self._make_grouped(
+            [(r, 90, 0, 1) for r in range(1, 9)]   # 8 starts, no subs
+            + [(9, 30, 1, 1), (10, 25, 1, 1)]       # 2 sub appearances
+        )
+        # current_gw=11 → all 10 rounds are prior
+        result = _compute_sub_appear_prob(grouped, current_gw=11, window_gws=15)
+        assert abs(result - 2/10) < 1e-6
+
+    def test_empty_history(self):
+        """No rounds before current_gw → 0.0."""
+        from accuracy import _compute_sub_appear_prob
+        grouped = self._make_grouped([(5, 90, 0, 1)])
+        result = _compute_sub_appear_prob(grouped, current_gw=3, window_gws=15)
+        assert result == 0.0
+
+    def test_window_cap(self):
+        """Only 5 rounds before current_gw, window=15 → uses those 5, denominator = 5."""
+        from accuracy import _compute_sub_appear_prob
+        grouped = self._make_grouped(
+            [(r, 90, 0, 1) for r in range(1, 4)]   # 3 starts
+            + [(4, 20, 1, 1), (5, 35, 1, 1)]        # 2 sub appearances
+        )
+        result = _compute_sub_appear_prob(grouped, current_gw=6, window_gws=15)
+        assert abs(result - 2/5) < 1e-6
+
+    def test_reconstruct_xpts_sub_appearance_returns_sub_appear_prob(self):
+        """APM-01: entry with minutes=30 (< 45) → _reconstruct_xpts returns sub_appear_prob."""
+        from accuracy import _reconstruct_xpts
+        entry = {'minutes': 30, 'total_points': 1,
+                 'expected_goals': 0.0, 'expected_assists': 0.0}
+        result = _reconstruct_xpts(entry, element_type=3, difficulty_score=0.5,
+                                    sub_appear_prob=0.25)
+        assert abs(result - 0.25) < 0.001

@@ -37,6 +37,7 @@ FORM_WINDOW_GWS = 5          # Phase 42 ACC-01: same window as merge._compute_fo
 FORM_MIN_MINUTES = 270       # Phase 42 ACC-01: same minutes floor as merge._compute_form_signal default
 FORM_ACTUAL_BETA = 0.0       # FRM-01: actual G+A blend weight (default 0.0 = pure xG+xA)
 FORM_DIFFICULTY_GAMMA = 0.0  # FRM-02: difficulty weight scaling (default 0.0 = no-op)
+SUB_APPEAR_WINDOW_GWS = 15   # APM-01: sub appearance history window (default)
 CS_PROB_BASE = 0.40          # TUNE-01: default base CS probability vs average opposition
 CS_PROB_SLOPE = 0.30         # TUNE-01: default CS probability sensitivity to opponent strength
 FORMULA_VERSION = 'v1.12-a'  # Phase 63 D-01 / VER-01: bumped manually when prediction formula changes; pattern v{milestone}-{letter}
@@ -137,6 +138,7 @@ def build_per_gw_rows(
     cs_prob_slope: float = CS_PROB_SLOPE,
     form_actual_beta: float = FORM_ACTUAL_BETA,              # FRM-01
     form_difficulty_gamma: float = FORM_DIFFICULTY_GAMMA,    # FRM-02
+    sub_appear_window_gws: int = SUB_APPEAR_WINDOW_GWS,      # APM-01
 ) -> dict:
     """Build per-GW player rows with reconstructed xPts for the given target_gws.
 
@@ -154,6 +156,8 @@ def build_per_gw_rows(
         cs_prob_base:      base CS probability (TUNE-01).
         cs_prob_slope:     CS probability difficulty slope (TUNE-01).
         form_actual_beta:  actual G+A blend weight for form signal (FRM-01).
+        form_difficulty_gamma: difficulty weight scaling for form signal (FRM-02).
+        sub_appear_window_gws: sub appearance history window (APM-01).
 
     Returns:
         dict mapping gw -> list of player-row dicts (same shape as compute_accuracy_backtest
@@ -187,9 +191,27 @@ def build_per_gw_rows(
             actual_pts = entry['total_points']
             difficulty_score = fixture_difficulty.get((gw, player_team_id), 0.5)
 
+            # APM-01: compute sub appearance prob from prior history
+            sub_appear_prob_at_gw = _compute_sub_appear_prob(grouped, gw, sub_appear_window_gws)
+
+            # APM-01: compute mins_60_prob from prior starts
+            prior_starts = sorted(
+                [agg for r, agg in grouped.items() if r < gw and agg['minutes'] >= 45],
+                key=lambda a: a['round'],
+            )
+            recent_starts = prior_starts[-10:]
+            if recent_starts:
+                mins_60_prob_at_gw: float | None = (
+                    sum(1 for a in recent_starts if a['minutes'] >= 60) / len(recent_starts)
+                )
+            else:
+                mins_60_prob_at_gw = None   # no prior starts → _reconstruct_xpts defaults to 1.0
+
             xpts_predicted = _reconstruct_xpts(
                 entry, element_type, difficulty_score,
                 cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,
+                mins_60_prob=mins_60_prob_at_gw,          # APM-01
+                sub_appear_prob=sub_appear_prob_at_gw,    # APM-01
             )
             form_per90_at_gw = _reconstruct_form_signal(
                 grouped, gw, window_gws=form_window_gws,
@@ -201,6 +223,8 @@ def build_per_gw_rows(
                 blend_alpha=blend_alpha,
                 cs_prob_base=cs_prob_base,
                 cs_prob_slope=cs_prob_slope,
+                mins_60_prob=mins_60_prob_at_gw,          # APM-01
+                sub_appear_prob=sub_appear_prob_at_gw,    # APM-01
             )
 
             per_gw_rows[gw].append({
@@ -794,6 +818,7 @@ def _group_history_by_gw(history: list) -> dict:
         'expected_goals': 0.0, 'expected_assists': 0.0,
         'goals_scored': 0, 'assists': 0,           # FRM-01
         'difficulty_sum': 0.0, 'difficulty_n': 0,  # FRM-02
+        'sub_appear_n': 0,                          # APM-01
     })
     for entry in history:
         r = entry.get('round')
@@ -809,15 +834,49 @@ def _group_history_by_gw(history: list) -> dict:
         agg['assists'] += int(entry.get('assists', 0) or 0)              # FRM-01
         agg['difficulty_sum'] += float(entry.get('difficulty', 3) or 3)   # FRM-02
         agg['difficulty_n']   += 1                                          # FRM-02
+        raw_mins = entry.get('minutes') or 0
+        if 0 < raw_mins < 45:
+            agg['sub_appear_n'] += 1   # APM-01
     return dict(by_round)
 
 
+def _compute_sub_appear_prob(
+    grouped: dict,
+    current_gw: int,
+    window_gws: int = SUB_APPEAR_WINDOW_GWS,
+) -> float:
+    """APM-01: compute sub appearance probability from grouped history before current_gw.
+
+    Counts entries where 0 < minutes < 45 (tracked in sub_appear_n) across the most
+    recent window_gws fixture entries before current_gw. Uses difficulty_n (FRM-02)
+    as the total-entries-per-round counter (handles DGW correctly).
+    Denominator = actual entries seen — matches xmins.py computation.
+    Returns 0.0 if no prior history.
+    """
+    prior_rounds = sorted((r for r in grouped if r < current_gw), reverse=True)
+    total_entries = 0
+    sub_n = 0
+    for r in prior_rounds:
+        if total_entries >= window_gws:
+            break
+        agg = grouped[r]
+        n = agg.get('difficulty_n', 1)
+        sub_n += agg.get('sub_appear_n', 0)
+        total_entries += n
+    if total_entries == 0:
+        return 0.0
+    return sub_n / total_entries
+
+
 def _reconstruct_xpts(entry: dict, element_type: int, difficulty_score: float,
-                       cs_prob_base: float = CS_PROB_BASE, cs_prob_slope: float = CS_PROB_SLOPE) -> float:
+                       cs_prob_base: float = CS_PROB_BASE, cs_prob_slope: float = CS_PROB_SLOPE,
+                       mins_60_prob: float | None = None,   # APM-01
+                       sub_appear_prob: float = 0.0,        # APM-01
+                       ) -> float:
     """Reconstruct xPts for a single GW history entry (D-02, D-03, D-04).
 
     Calls merge._compute_xpts_fixture with reconstructed historical inputs.
-    Returns 0.0 if minutes < 45 (binary start_prob proxy says "didn't start").
+    Returns sub_appear_prob if minutes < 45 (APM-01: sub appearance scenario).
     """
     from merge import _compute_xpts_fixture  # deferred — matches run.py style; avoids ModuleNotFoundError at import time
     minutes = entry.get('minutes', 0) or 0
@@ -827,7 +886,8 @@ def _reconstruct_xpts(entry: dict, element_type: int, difficulty_score: float,
     # D-04: binary start_prob proxy
     start_prob = 1.0 if minutes >= 45 else 0.0
     if start_prob == 0.0:
-        return 0.0
+        # APM-01: sub appearance — return the prior prediction for this scenario
+        return round(sub_appear_prob, 2)
 
     # D-02: per-90 rates from history's expected_goals / expected_assists
     xg = float(entry.get('expected_goals', 0) or 0)
@@ -848,6 +908,7 @@ def _reconstruct_xpts(entry: dict, element_type: int, difficulty_score: float,
         defensive_difficulty=difficulty_score,
         cs_prob_base=cs_prob_base,
         cs_prob_slope=cs_prob_slope,
+        mins_60_prob=mins_60_prob,   # APM-01: use prior mins_60_prob for appearance formula
     )
     return round(result['total'], 2)
 
@@ -920,6 +981,8 @@ def _reconstruct_xpts_with_form(
     blend_alpha: float = BLEND_ALPHA,
     cs_prob_base: float = CS_PROB_BASE,
     cs_prob_slope: float = CS_PROB_SLOPE,
+    mins_60_prob: float | None = None,   # APM-01
+    sub_appear_prob: float = 0.0,        # APM-01
 ) -> float:
     """Reconstruct xPts with optional form blend (Phase 42 ACC-02).
 
@@ -933,7 +996,9 @@ def _reconstruct_xpts_with_form(
     """
     if form_per90 is None:
         return _reconstruct_xpts(entry, element_type, difficulty_score,
-                                  cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope)
+                                  cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,
+                                  mins_60_prob=mins_60_prob,        # APM-01
+                                  sub_appear_prob=sub_appear_prob)  # APM-01
 
     from merge import _compute_xpts_fixture
 
@@ -942,7 +1007,7 @@ def _reconstruct_xpts_with_form(
         return 0.0
     start_prob = 1.0 if minutes >= 45 else 0.0
     if start_prob == 0.0:
-        return 0.0
+        return round(sub_appear_prob, 2)   # APM-01
 
     xg = float(entry.get('expected_goals', 0) or 0)
     xa = float(entry.get('expected_assists', 0) or 0)
@@ -969,5 +1034,6 @@ def _reconstruct_xpts_with_form(
         defensive_difficulty=difficulty_score,
         cs_prob_base=cs_prob_base,
         cs_prob_slope=cs_prob_slope,
+        mins_60_prob=mins_60_prob,   # APM-01
     )
     return round(result['total'], 2)
