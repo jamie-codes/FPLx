@@ -109,6 +109,7 @@ def compute_xmins_stats(
     finished_gws: int,
     fixtures: list | None = None,    # MIN-02: for rotation risk (optional, backward-compat)
     next_gw_id: int | None = None,   # MIN-02: for rotation risk (optional, backward-compat)
+    sub_appear_window_gws: int = 15,   # APM-01: sub appearance history window
 ) -> dict:
     """
     Compute xmins, start_prob, mins_risk for every player.
@@ -121,11 +122,13 @@ def compute_xmins_stats(
         fixtures:     FPL fixture list (optional). Passed for MIN-02 rotation risk.
                       If None, rotation_risk defaults to 'unknown' for all players.
         next_gw_id:   FPL event id of the next gameweek (optional). Required with fixtures.
+        sub_appear_window_gws: Window size for sub appearance probability (optional, default 15).
 
     Returns:
         dict mapping player_id (int) -> per-player stats dict with keys:
             xmins, xmins_adjusted, start_prob, mins_risk, mins_60_prob, sub_risk_label,
-            difficulty_rotation_risk, difficulty_rotation_factor, availability_risk, availability_factor.
+            difficulty_rotation_risk, difficulty_rotation_factor, availability_risk, availability_factor,
+            sub_appear_prob.
         Every player in bootstrap['elements'] gets an entry (including GKs and 0-start players).
     """
     # Build next-GW team FDR map for rotation risk computation (MIN-02).
@@ -141,6 +144,7 @@ def compute_xmins_stats(
         next_fixture_difficulty = team_fdr.get(element.get('team'))
         results[player_id] = _compute_player_xmins(
             element, summaries.get(player_id), finished_gws, next_fixture_difficulty,
+            sub_appear_window_gws=sub_appear_window_gws,   # APM-01
         )
 
     return results
@@ -151,6 +155,7 @@ def _compute_player_xmins(
     summary: dict | None,
     finished_gws: int,
     next_fixture_difficulty: int | None = None,   # MIN-02: for rotation risk
+    sub_appear_window_gws: int = 15,              # APM-01: sub appearance history window
 ) -> dict:
     """Compute xmins stats for a single player."""
     starts = element.get('starts', 0)
@@ -230,6 +235,11 @@ def _compute_player_xmins(
     history = (summary or {}).get('history', [])
     rotation_result = compute_rotation_risk(history, next_fixture_difficulty)
 
+    # APM-01: sub appearance probability — P(0 < minutes < 45) in last sub_appear_window_gws entries
+    _sub_window = history[-sub_appear_window_gws:]
+    _sub_n = sum(1 for e in _sub_window if 0 < (e.get('minutes') or 0) < 45)
+    sub_appear_prob = _sub_n / max(len(_sub_window), 1)
+
     # MIN-02: Availability classification (FPL status → chance → keyword fallback).
     availability_result = classify_availability(
         status=element.get('status', 'a'),
@@ -268,4 +278,5 @@ def _compute_player_xmins(
         'difficulty_rotation_factor': rotation_result['rotation_factor'],          # MIN-02
         'availability_risk': availability_result['availability_risk'],              # MIN-02
         'availability_factor': availability_result['availability_factor'],          # MIN-02
+        'sub_appear_prob': round(sub_appear_prob, 4),   # APM-01
     }

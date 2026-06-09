@@ -360,3 +360,47 @@ def test_no_fixtures_passed_gives_unknown_rotation_risk():
     result = compute_xmins_stats(bootstrap, summaries, finished_gws=10)
     assert result[1]['difficulty_rotation_risk'] == 'unknown'
     assert result[1]['difficulty_rotation_factor'] == 1.0
+
+
+# ── APM-01: sub_appear_prob tests ─────────────────────────────────────────────
+
+def test_sub_appear_prob_in_return_dict():
+    """APM-01: _compute_player_xmins must return 'sub_appear_prob' key."""
+    history = [_hist(90, 1)] * 10
+    result = _compute_player_xmins(_element(), _summary(history), 10)
+    assert 'sub_appear_prob' in result
+
+
+def test_sub_appear_prob_consistent_sub():
+    """APM-01: player with 3 sub appearances in 15 entries → sub_appear_prob = 3/15 = 0.2."""
+    # 12 full starts + 3 sub appearances (0 < minutes < 45)
+    history = [_hist(90, 1)] * 12 + [_hist(30, 0)] * 3
+    result = _compute_player_xmins(_element(starts=12, minutes=1080), _summary(history), 15,
+                                    sub_appear_window_gws=15)
+    assert abs(result['sub_appear_prob'] - round(3/15, 4)) < 1e-4
+
+
+def test_sub_appear_prob_full_starters():
+    """APM-01: player whose all entries are >= 45 minutes → sub_appear_prob == 0.0."""
+    history = [_hist(90, 1)] * 15
+    result = _compute_player_xmins(_element(starts=15, minutes=1350), _summary(history), 15,
+                                    sub_appear_window_gws=15)
+    assert result['sub_appear_prob'] == 0.0
+
+
+def test_sub_appear_prob_sparse_history():
+    """APM-01: player with only 5 history entries, window=15 → denominator = 5 (actual entries)."""
+    # 3 full starts + 2 sub appearances in only 5 entries total
+    history = [_hist(90, 1)] * 3 + [_hist(25, 0)] * 2
+    result = _compute_player_xmins(_element(starts=3, minutes=270), _summary(history), 5,
+                                    sub_appear_window_gws=15)
+    assert abs(result['sub_appear_prob'] - round(2/5, 4)) < 1e-4
+
+
+def test_sub_appear_prob_dgw_counts_two():
+    """APM-01: window containing two sub-appearance entries (e.g. from same DGW) counts both."""
+    # 10 full starts + 2 sub-appearance entries
+    history = [_hist(90, 1)] * 10 + [_hist(20, 0), _hist(30, 0)]
+    result = _compute_player_xmins(_element(starts=10, minutes=900), _summary(history), 12,
+                                    sub_appear_window_gws=12)
+    assert abs(result['sub_appear_prob'] - round(2/12, 4)) < 1e-4
