@@ -324,25 +324,6 @@ def run(dry_run: bool = False):
             # Count finished gameweeks for xmins start_rate fallback
             finished_gws = sum(1 for e in bootstrap.get('events', []) if e.get('finished'))
 
-            # Compute xmins stats (Phase 7 — MINS-01)
-            print("Computing xmins stats...")
-            # MIN-02: pass fixtures and next GW id for fixture-aware rotation risk.
-            _next_gw_id = next(
-                (e['id'] for e in bootstrap.get('events', []) if e.get('is_next')),
-                None,
-            )
-            xmins_stats = compute_xmins_stats(
-                bootstrap, summaries, finished_gws,
-                fixtures=fixtures,
-                next_gw_id=_next_gw_id,
-            )
-            print(f"xmins stats: {len(xmins_stats)} players")
-
-            # Compute bonus EV stats (Phase 53 BPS-01) — same shared summaries cache, no new HTTP calls
-            print("Computing bonus EV stats...")
-            bonus_stats = compute_bonus_predictions(bootstrap, summaries, finished_gws)
-            print(f"bonus stats: {len(bonus_stats)} players")
-
             # Merge FPL + Understat data (per-90 normalisation, custom FDR, fixtures)
             # Phase 31: merge_players now returns a tuple — (player list, captain picks dict).
 
@@ -384,6 +365,26 @@ def run(dry_run: bool = False):
             print(f"Save predictor (GK Poisson-floor): {'ENABLED' if save_predictor_enabled else 'DISABLED'}")
             print(f"MC simulation (5-GW uncertainty bands): {'ENABLED' if mc_enabled else 'DISABLED'}")
             print(f"TUNE-01 params: form_window={form_window_gws_used}, cs_prob_base={cs_prob_base_used}, cs_prob_slope={cs_prob_slope_used}, form_actual_beta={form_actual_beta_used}, form_difficulty_gamma={form_difficulty_gamma_used}, sub_appear_window_gws={sub_appear_window_gws_used}")
+
+            # Compute xmins stats (Phase 7 — MINS-01)
+            print("Computing xmins stats...")
+            # MIN-02: pass fixtures and next GW id for fixture-aware rotation risk.
+            _next_gw_id = next(
+                (e['id'] for e in bootstrap.get('events', []) if e.get('is_next')),
+                None,
+            )
+            xmins_stats = compute_xmins_stats(
+                bootstrap, summaries, finished_gws,
+                fixtures=fixtures,
+                next_gw_id=_next_gw_id,
+                sub_appear_window_gws=sub_appear_window_gws_used,   # APM-01
+            )
+            print(f"xmins stats: {len(xmins_stats)} players")
+
+            # Compute bonus EV stats (Phase 53 BPS-01) — same shared summaries cache, no new HTTP calls
+            print("Computing bonus EV stats...")
+            bonus_stats = compute_bonus_predictions(bootstrap, summaries, finished_gws)
+            print(f"bonus stats: {len(bonus_stats)} players")
 
             merged, captain_picks = merge_players(
                 bootstrap, fixtures, understat, id_map,
