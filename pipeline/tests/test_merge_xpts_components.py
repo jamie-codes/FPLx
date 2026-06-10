@@ -280,3 +280,35 @@ def test_appearance_pts_sub_contribution():
     )
     # start contribution: 0.1 × (1 + 0.0) = 0.1; sub contribution: 0.3
     assert result['appearance_pts'] == pytest.approx(0.1 + 0.3, abs=0.001)
+
+
+# ── CSF-01: CS defensive team form ──────────────────────────────────────────
+
+def test_cs_prob_form_slope_zero_no_change():
+    """CSF-01: cs_team_form_slope=0.0 → additive term vanishes → identical to old formula."""
+    from merge import _cs_prob
+    old = _cs_prob(defensive_difficulty=0.5, xmins=90.0)
+    new = _cs_prob(defensive_difficulty=0.5, xmins=90.0,
+                   norm_concede_rate=0.99, cs_team_form_slope=0.0)
+    assert abs(new - old) < 1e-9
+
+
+def test_cs_prob_leaky_defence_reduces_prob():
+    """CSF-01: leaky defence (norm_concede_rate=1.0) + slope > 0 → lower cs_prob than baseline."""
+    from merge import _cs_prob
+    baseline = _cs_prob(defensive_difficulty=0.3, xmins=90.0, cs_team_form_slope=0.0)
+    leaky   = _cs_prob(defensive_difficulty=0.3, xmins=90.0,
+                       norm_concede_rate=1.0, cs_team_form_slope=0.20)
+    assert leaky < baseline
+
+
+def test_cs_prob_solid_defence_no_penalty():
+    """CSF-01: solid defence (norm_concede_rate=0.0) + slope > 0 → same cs_prob as baseline.
+
+    Term = 0.0 × slope = 0. No bonus for solidity, no penalty — additive term is zero.
+    """
+    from merge import _cs_prob
+    baseline = _cs_prob(defensive_difficulty=0.3, xmins=90.0, cs_team_form_slope=0.0)
+    solid    = _cs_prob(defensive_difficulty=0.3, xmins=90.0,
+                        norm_concede_rate=0.0, cs_team_form_slope=0.20)
+    assert abs(solid - baseline) < 1e-9

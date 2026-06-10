@@ -182,7 +182,10 @@ def _compute_difficulty_scores(bootstrap: dict, fixtures: list) -> dict[int, flo
 
 
 def _cs_prob(defensive_difficulty: float, xmins: float, mins_60_prob: float | None = None,
-             cs_prob_base: float = 0.40, cs_prob_slope: float = 0.30) -> float:
+             cs_prob_base: float = 0.40, cs_prob_slope: float = 0.30,
+             norm_concede_rate: float = 0.5,   # CSF-01: own team's goals-conceded rate (normalised)
+             cs_team_form_slope: float = 0.0,  # CSF-01: weight for team defensive form
+             ) -> float:
     """Compute effective CS probability for a fixture (Phase 28 CR-01, WR-01).
 
     defensive_difficulty — opponent's attacking threat (0.0=weak attacker, 1.0=strong).
@@ -204,7 +207,11 @@ def _cs_prob(defensive_difficulty: float, xmins: float, mins_60_prob: float | No
     cs_prob_base: base CS probability vs average opposition (default 0.40; tunable via TUNE-01).
     cs_prob_slope: sensitivity to defensive_difficulty (default 0.30; tunable via TUNE-01).
     """
-    cs_prob_raw = max(0.10, min(0.65, cs_prob_base - defensive_difficulty * cs_prob_slope))
+    cs_prob_raw = max(0.10, min(0.65,
+        cs_prob_base
+        - defensive_difficulty * cs_prob_slope
+        - norm_concede_rate * cs_team_form_slope   # CSF-01
+    ))
     if mins_60_prob is not None:
         mins_factor = mins_60_prob
     else:
@@ -216,7 +223,9 @@ def _cs_prob_1gw_for_fixtures(fixtures: list, xmins: float,
                                xmins_v2_enabled: bool = False,
                                mins_60_prob: float | None = None,
                                cs_prob_base: float = 0.40,
-                               cs_prob_slope: float = 0.30) -> float:
+                               cs_prob_slope: float = 0.30,
+                               cs_team_form_slope: float = 0.0,  # CSF-01
+                               ) -> float:
     """Aggregate clean-sheet probability for the next 1 GW (Phase 47 CS-01, CS-02).
 
     Mirrors _xpts_ngw groupby semantics so DGW handling is consistent:
@@ -246,10 +255,13 @@ def _cs_prob_1gw_for_fixtures(fixtures: list, xmins: float,
     prob_no_cs = 1.0
     for fix in first_group:
         dd = fix.get('defensive_difficulty', 0.5)
+        norm_concede_rate = fix.get('team_def_form', 0.5)   # CSF-01
         p = _cs_prob(dd, xmins,
                      mins_60_prob=mins_60_prob if xmins_v2_enabled else None,
                      cs_prob_base=cs_prob_base,
-                     cs_prob_slope=cs_prob_slope)
+                     cs_prob_slope=cs_prob_slope,
+                     norm_concede_rate=norm_concede_rate,         # CSF-01
+                     cs_team_form_slope=cs_team_form_slope)       # CSF-01
         prob_no_cs *= (1.0 - p)
     return round(1.0 - prob_no_cs, 6)
 
@@ -270,6 +282,8 @@ def _compute_xpts_fixture(
     cs_prob_base: float = 0.40,
     cs_prob_slope: float = 0.30,
     sub_appear_prob: float = 0.0,                   # APM-01: P(sub appearance); adds 1pt contribution
+    norm_concede_rate: float = 0.5,                 # CSF-01: own team's goals-conceded rate (normalised)
+    cs_team_form_slope: float = 0.0,                # CSF-01: weight for team defensive form
 ) -> dict:
     """Compute expected FPL points for a single fixture (Phase 28 DATA-02).
 
@@ -310,7 +324,9 @@ def _compute_xpts_fixture(
     effective_cs_prob = _cs_prob(defensive_difficulty, xmins,
                                  mins_60_prob=mins_60_prob if xmins_v2_enabled else None,
                                  cs_prob_base=cs_prob_base,
-                                 cs_prob_slope=cs_prob_slope)
+                                 cs_prob_slope=cs_prob_slope,
+                                 norm_concede_rate=norm_concede_rate,        # CSF-01
+                                 cs_team_form_slope=cs_team_form_slope)      # CSF-01
     cs_pts = effective_cs_prob * CS_PTS[element_type]
 
     # Bonus: flat position-average rate, scaled by expected minutes only.
@@ -364,6 +380,7 @@ def _xpts_ngw(
     cs_prob_base: float = 0.40,             # TUNE-01: tunable via accuracy_backtest.json.summary
     cs_prob_slope: float = 0.30,            # TUNE-01: tunable via accuracy_backtest.json.summary
     sub_appear_prob: float = 0.0,           # APM-01
+    cs_team_form_slope: float = 0.0,        # CSF-01
 ) -> tuple:
     """Project xPts across N upcoming GWs, DGW-aware (Phase 28 DATA-02 D-04, D-06).
 
@@ -389,6 +406,7 @@ def _xpts_ngw(
 
     for gw_idx, (_event_id, gw_fixtures) in enumerate(grouped[:n_gws]):
         for fix in gw_fixtures:
+            norm_concede_rate = fix.get('team_def_form', 0.5)   # CSF-01
             result = _compute_xpts_fixture(
                 xg_per90 if xg_per90 is not None else 0.0,
                 xa_per90 if xa_per90 is not None else 0.0,
@@ -405,6 +423,8 @@ def _xpts_ngw(
                 cs_prob_base=cs_prob_base,                                               # TUNE-01
                 cs_prob_slope=cs_prob_slope,                                             # TUNE-01
                 sub_appear_prob=sub_appear_prob,                                         # APM-01
+                norm_concede_rate=norm_concede_rate,                                     # CSF-01
+                cs_team_form_slope=cs_team_form_slope,                                   # CSF-01
             )
             total += result['total']
             if gw_idx == 0 and n_gws == 1:
@@ -434,6 +454,7 @@ def _xpts_per_gw(
     cs_prob_base: float = 0.40,             # TUNE-01: tunable via accuracy_backtest.json.summary
     cs_prob_slope: float = 0.30,            # TUNE-01: tunable via accuracy_backtest.json.summary
     sub_appear_prob: float = 0.0,           # APM-01
+    cs_team_form_slope: float = 0.0,        # CSF-01
 ) -> list[float]:
     """Return list of xPts per GW group (Phase 80 GWI-04, D-12).
 
@@ -455,6 +476,7 @@ def _xpts_per_gw(
     for _event_id, gw_fixtures in grouped[:n_gws]:
         gw_total = 0.0
         for fix in gw_fixtures:
+            norm_concede_rate = fix.get('team_def_form', 0.5)   # CSF-01
             comp = _compute_xpts_fixture(
                 xg_per90 if xg_per90 is not None else 0.0,
                 xa_per90 if xa_per90 is not None else 0.0,
@@ -471,6 +493,8 @@ def _xpts_per_gw(
                 cs_prob_base=cs_prob_base,                                               # TUNE-01
                 cs_prob_slope=cs_prob_slope,                                             # TUNE-01
                 sub_appear_prob=sub_appear_prob,                                         # APM-01
+                norm_concede_rate=norm_concede_rate,                                     # CSF-01
+                cs_team_form_slope=cs_team_form_slope,                                   # CSF-01
             )
             gw_total += comp['total']
         result.append(round(gw_total, 2))
@@ -844,6 +868,8 @@ def merge_players(
     form_actual_beta: float = 0.0,          # FRM-01: actual G+A blend weight, tunable via TUNE-01
     form_difficulty_gamma: float = 0.0,     # FRM-02: difficulty weight scaling, tunable via TUNE-01
     sub_appear_window_gws: int = 15,        # APM-01: sub appearance history window, tunable via TUNE-01
+    cs_team_form_slope: float = 0.0,        # CSF-01: weight for team defensive form, tunable via TUNE-01
+    cs_def_form_window_gws: int = 6,        # CSF-01: rolling window for goals-conceded average
 ) -> tuple[list, dict]:
     """Merge FPL bootstrap + Understat xG/xA into a unified player list.
 
@@ -976,6 +1002,22 @@ def merge_players(
         xgs = team_xgs.get(t_id, 0.0)
         defensive_difficulty_scores[t_id] = _compute_offensive_difficulty_score(xgs, min_xgs, max_xgs)
 
+    # ── CSF-01: own-team goals-conceded form (normalised) ──────────────── #
+    team_xgc: dict[int, float] = {}
+    for t_id, conceded_list in team_goals_conceded.items():
+        last_n = conceded_list[-cs_def_form_window_gws:]
+        team_xgc[t_id] = sum(last_n) / len(last_n) if last_n else 0.0
+
+    xgc_values = list(team_xgc.values())
+    min_xgc = min(xgc_values) if xgc_values else 0.0
+    max_xgc = max(xgc_values) if xgc_values else 1.0
+    norm_def_form: dict[int, float] = {}
+    for t_id, xgc in team_xgc.items():
+        if max_xgc - min_xgc > 1e-6:
+            norm_def_form[t_id] = (xgc - min_xgc) / (max_xgc - min_xgc)
+        else:
+            norm_def_form[t_id] = 0.5  # all equal → neutral (cold-start guard)
+
     # ------------------------------------------------------------------ #
     # 4. Compute difficulty tiers (D-05) via percentile thresholds
     # ------------------------------------------------------------------ #
@@ -1041,6 +1083,7 @@ def merge_players(
                 'attacking_difficulty': difficulty_scores.get(opp_id, 0.5),                  # NEW (DATA-01, D-01) — same as difficulty_score
                 'defensive_difficulty': defensive_difficulty_scores.get(opp_id, 0.5),        # NEW (DATA-01, D-02)
                 'opponent_xg_per_game': round(team_xgs.get(opp_id, 0.0) * AWAY_FACTOR, 4),  # Phase 83 GK-01 / D-02 — opponent is traveling (is_home=True for our team)
+                'team_def_form': norm_def_form.get(h_id, 0.5),                              # CSF-01
             })
 
         # Away team perspective
@@ -1055,6 +1098,7 @@ def merge_players(
                 'attacking_difficulty': difficulty_scores.get(opp_id, 0.5),                  # NEW
                 'defensive_difficulty': defensive_difficulty_scores.get(opp_id, 0.5),        # NEW
                 'opponent_xg_per_game': round(team_xgs.get(opp_id, 0.0) * HOME_FACTOR, 4),  # Phase 83 GK-01 / D-02 — opponent is at home (is_home=False for our team)
+                'team_def_form': norm_def_form.get(a_id, 0.5),                              # CSF-01
             })
 
     # ------------------------------------------------------------------ #
@@ -1300,6 +1344,7 @@ def merge_players(
             save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
             cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,  # TUNE-01
             sub_appear_prob=player_sub_appear_prob,  # APM-01
+            cs_team_form_slope=cs_team_form_slope,  # CSF-01
         )
         xpts_3gw, _ = _xpts_ngw(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
@@ -1309,6 +1354,7 @@ def merge_players(
             save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
             cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,  # TUNE-01
             sub_appear_prob=player_sub_appear_prob,  # APM-01
+            cs_team_form_slope=cs_team_form_slope,  # CSF-01
         )
         xpts_5gw, _ = _xpts_ngw(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
@@ -1318,6 +1364,7 @@ def merge_players(
             save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
             cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,  # TUNE-01
             sub_appear_prob=player_sub_appear_prob,  # APM-01
+            cs_team_form_slope=cs_team_form_slope,  # CSF-01
         )
         player['xPts_1gw'] = xpts_1gw
         player['xPts_3gw'] = xpts_3gw
@@ -1329,6 +1376,7 @@ def merge_players(
             player_fixtures, player_xmins,
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
             cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,  # TUNE-01
+            cs_team_form_slope=cs_team_form_slope,  # CSF-01
         )
 
         # ---- Regression signal (Phase 29 DATA-03, REG-01, REG-02) ----
