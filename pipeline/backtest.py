@@ -107,3 +107,239 @@ def build_asof_signals(history: list, gw: int, params: dict):
         'mins_60_prob': mins_60_prob,
         'sub_appear_prob': sub_appear_prob,
     }
+
+
+def _spearman(xs: list, ys: list) -> float:
+    """Spearman rank correlation with average ranks for ties. Stdlib only."""
+    def _rank(v):
+        order = sorted(range(len(v)), key=lambda i: v[i])
+        ranks = [0.0] * len(v)
+        i = 0
+        while i < len(order):
+            j = i
+            while j + 1 < len(order) and v[order[j + 1]] == v[order[i]]:
+                j += 1
+            avg = (i + j) / 2.0 + 1.0
+            for k in range(i, j + 1):
+                ranks[order[k]] = avg
+            i = j + 1
+        return ranks
+
+    if len(xs) < 2:
+        return 0.0
+    rx, ry = _rank(xs), _rank(ys)
+    n = len(xs)
+    mx, my = sum(rx) / n, sum(ry) / n
+    num = sum((a - mx) * (b - my) for a, b in zip(rx, ry))
+    den = math.sqrt(sum((a - mx) ** 2 for a in rx)
+                    * sum((b - my) ** 2 for b in ry))
+    return num / den if den > 0 else 0.0
+
+
+def compute_metrics(rows: list):
+    """Aggregate picks-focused metrics. Returns (metrics, per_gw)."""
+    by_gw = defaultdict(list)
+    for r in rows:
+        by_gw[r['gw']].append(r)
+
+    per_gw = []
+    total_haulers = total_haul_hits = total_haul_hits20 = 0
+    total_mid = total_mid_hits = 0
+    captain_hits = captain_returns = 0
+    spearmans = []
+    top10_means = []
+
+    for gw in sorted(by_gw):
+        rws = sorted(by_gw[gw], key=lambda r: -r['xpts_pred'])
+        top10_ids = {r['player_id'] for r in rws[:TOP_N]}
+        top20_ids = {r['player_id'] for r in rws[:TOP_N_CAPTURE]}
+        top30_ids = {r['player_id'] for r in rws[:MID_TOP_N]}
+
+        haulers = [r for r in rws if r['actual_pts'] >= HAUL_THRESHOLD]
+        hits = sum(1 for r in haulers if r['player_id'] in top10_ids)
+        hits20 = sum(1 for r in haulers if r['player_id'] in top20_ids)
+        mid = [r for r in rws if 6 <= r['actual_pts'] <= 9]
+        mid_hits = sum(1 for r in mid if r['player_id'] in top30_ids)
+
+        max_actual = max(r['actual_pts'] for r in rws)
+        cap = rws[0]
+        cap_hit = 1 if cap['actual_pts'] == max_actual else 0
+        cap_ret = 1 if cap['actual_pts'] >= 6 else 0
+
+        sp = _spearman([r['xpts_pred'] for r in rws],
+                       [r['actual_pts'] for r in rws])
+        t10_mean = (sum(r['actual_pts'] for r in rws[:TOP_N])
+                    / min(TOP_N, len(rws)))
+
+        total_haulers += len(haulers)
+        total_haul_hits += hits
+        total_haul_hits20 += hits20
+        total_mid += len(mid)
+        total_mid_hits += mid_hits
+        captain_hits += cap_hit
+        captain_returns += cap_ret
+        spearmans.append(sp)
+        top10_means.append(t10_mean)
+
+        per_gw.append({
+            'gw': gw, 'n_rows': len(rws), 'n_haulers': len(haulers),
+            'haul_hits': hits, 'haul_hit_rate':
+                hits / len(haulers) if haulers else None,
+            'captain_actual': cap['actual_pts'], 'captain_name':
+                cap.get('web_name', ''),
+            'spearman': round(sp, 4), 'top10_mean_pts': round(t10_mean, 2),
+        })
+
+    n_gws = len(per_gw)
+    sq_err = [(r['xpts_pred'] - r['actual_pts']) ** 2 for r in rows]
+    abs_err = [abs(r['xpts_pred'] - r['actual_pts']) for r in rows]
+
+    by_pos = {}
+    for et, name in [(1, 'GKP'), (2, 'DEF'), (3, 'MID'), (4, 'FWD')]:
+        pr = [r for r in rows if r['element_type'] == et]
+        if not pr:
+            continue
+        pe = [(r['xpts_pred'] - r['actual_pts']) ** 2 for r in pr]
+        by_pos[name] = {
+            'n': len(pr),
+            'rmse': round(math.sqrt(sum(pe) / len(pe)), 4),
+            'n_haulers': sum(1 for r in pr
+                             if r['actual_pts'] >= HAUL_THRESHOLD),
+        }
+
+    metrics = {
+        'n_rows': len(rows),
+        'n_gws': n_gws,
+        'haul_hit_rate': (total_haul_hits / total_haulers
+                          if total_haulers else None),
+        'haul_capture_20': (total_haul_hits20 / total_haulers
+                            if total_haulers else None),
+        'mid_tier_hit_rate': (total_mid_hits / total_mid
+                              if total_mid else None),
+        'captain_hit_rate': captain_hits / n_gws if n_gws else None,
+        'captain_return_rate': captain_returns / n_gws if n_gws else None,
+        'top10_mean_pts': (sum(top10_means) / n_gws if n_gws else None),
+        'rmse': (round(math.sqrt(sum(sq_err) / len(sq_err)), 4)
+                 if rows else None),
+        'mae': (round(sum(abs_err) / len(abs_err), 4) if rows else None),
+        'spearman': (round(sum(spearmans) / n_gws, 4) if n_gws else None),
+        'by_position': by_pos,
+        'n_haulers_total': total_haulers,
+    }
+    return metrics, per_gw
+
+
+def run_backtest(archive: dict | None = None, params: dict | None = None,
+                 mode: str = 'deploy', first_gw: int = 7,
+                 last_gw: int = 38) -> dict:
+    """Leakage-free backtest over the season archive. See module docstring."""
+    from accuracy import build_team_def_form_lookup, build_team_atf_lookup
+    from merge import _compute_xpts_fixture
+
+    if archive is None:
+        from capture_season import load_season_archive
+        archive = load_season_archive()
+    p = dict(DEFAULT_PARAMS)
+    p.update(params or {})
+
+    fixtures = archive['fixtures']
+    fixtures_by_id = {f['id']: f for f in fixtures}
+    def_form = build_team_def_form_lookup(fixtures, p['cs_def_form_window_gws'])
+    atf_form = build_team_atf_lookup(fixtures, p['atf_window_gws'])
+    elements_by_id = {e['id']: e for e in archive['bootstrap']['elements']}
+
+    rows = []
+    for pid, summary in archive['summaries'].items():
+        el = elements_by_id.get(pid)
+        if el is None:
+            continue
+        et = el['element_type']
+        history = summary.get('history', [])
+        by_gw = defaultdict(list)
+        for e in history:
+            by_gw[e.get('round')].append(e)
+
+        for gw in range(first_gw, last_gw + 1):
+            entries = by_gw.get(gw)
+            if not entries:
+                continue  # blank GW or not registered
+            sig = build_asof_signals(history, gw, p)
+            if sig is None or sig['cum_minutes'] < p['min_prior_minutes']:
+                continue
+
+            actual_pts = sum(e.get('total_points', 0) or 0 for e in entries)
+            actual_minutes = sum(e.get('minutes', 0) or 0 for e in entries)
+
+            if mode == 'deploy':
+                if sig['xmins'] <= 0:
+                    continue
+            else:
+                if actual_minutes < 10:
+                    continue
+
+            pred = 0.0
+            for e in entries:
+                fix = fixtures_by_id.get(e.get('fixture'))
+                if fix is None:
+                    continue
+                was_home = bool(e.get('was_home'))
+                team_id = fix['team_h'] if was_home else fix['team_a']
+                diff_raw = (fix.get('team_h_difficulty', 3) if was_home
+                            else fix.get('team_a_difficulty', 3))
+                difficulty = (diff_raw - 1) / 4.0
+                ncr = def_form.get((gw, team_id), 0.5)
+                nar = atf_form.get((gw, team_id), 0.5)
+
+                if mode == 'deploy':
+                    # DGW note: same predicted xmins per fixture — a player
+                    # genuinely can play full minutes twice in a DGW; refining
+                    # per-fixture minutes is future work.
+                    xm, sp_ = sig['xmins'], sig['start_prob']
+                else:
+                    m = e.get('minutes', 0) or 0
+                    if m < 45:
+                        # sub cameo / DNP scenario — prior-derived sub value
+                        pred += sig['sub_appear_prob'] if m > 0 else 0.0
+                        continue
+                    xm, sp_ = float(m), 1.0
+
+                result = _compute_xpts_fixture(
+                    xg_per90=sig['xg_per90'],
+                    xa_per90=sig['xa_per90'],
+                    start_prob=sp_,
+                    xmins=xm,
+                    element_type=et,
+                    defensive_difficulty=difficulty,
+                    mins_60_prob=sig['mins_60_prob'],
+                    sub_appear_prob=sig['sub_appear_prob'],
+                    cs_prob_base=p['cs_prob_base'],
+                    cs_prob_slope=p['cs_prob_slope'],
+                    norm_concede_rate=ncr,
+                    cs_team_form_slope=p['cs_team_form_slope'],
+                    norm_attack_rate=nar,
+                    atf_slope=p['atf_slope'],
+                )
+                pred += result['total']
+
+            rows.append({
+                'player_id': pid,
+                'web_name': el.get('web_name', str(pid)),
+                'element_type': et,
+                'gw': gw,
+                'xpts_pred': round(pred, 3),
+                'actual_pts': actual_pts,
+                'actual_minutes': actual_minutes,
+                'xmins_used': round(sig['xmins'], 1),
+                'xg_per90': round(sig['xg_per90'], 3),
+                'xa_per90': round(sig['xa_per90'], 3),
+                'n_fixtures': len(entries),
+            })
+
+    metrics, per_gw = compute_metrics(rows)
+    return {
+        'metrics': metrics,
+        'per_gw': per_gw,
+        'rows': rows,
+        'config': {'mode': mode, 'first_gw': first_gw, 'last_gw': last_gw,
+                   'params': p},
+    }
