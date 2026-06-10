@@ -220,8 +220,8 @@ def test_merge_players_writes_xpts_components_1gw():
     )
     components = player['xPts_components_1gw']
 
-    # All six required keys must be present (save_pts added in Phase 83 GK-01 as always-present sixth component)
-    required_keys = {'appearance_pts', 'goal_pts', 'assist_pts', 'cs_pts', 'bonus_pts', 'save_pts'}
+    # All seven required keys must be present (save_pts added in Phase 83 GK-01; defcon added in DC-01)
+    required_keys = {'appearance_pts', 'goal_pts', 'assist_pts', 'cs_pts', 'bonus_pts', 'save_pts', 'defcon'}
     assert required_keys == set(components.keys()), (
         f"xPts_components_1gw has unexpected keys: {set(components.keys())}"
     )
@@ -405,3 +405,18 @@ def test_defcon_scaled_by_xmins():
     with_dc = _fx(defcon_rate=0.5, defcon_scale=1.0, xmins=45.0)
     base = _fx(xmins=45.0)
     assert with_dc['total'] - base['total'] == pytest.approx(0.5)  # 2*0.5*1*0.5
+
+
+# ── Task 2 integration: FAS threading through _xpts_ngw ──────────────────── #
+
+def test_fas_threading_through_xpts_ngw():
+    """attacking_difficulty in fixture dicts changes xpts when fas_slope > 0."""
+    easy_fixtures = [{'event_id': 1, 'difficulty_score': 0.5,
+                      'defensive_difficulty': 0.5, 'attacking_difficulty': 0.0,
+                      'opponent_team': 'X', 'is_home': True}]
+    hard_fixtures = [{'event_id': 1, 'difficulty_score': 0.5,
+                      'defensive_difficulty': 0.5, 'attacking_difficulty': 1.0,
+                      'opponent_team': 'X', 'is_home': True}]
+    easy = _xpts_ngw(0.5, 0.2, 1.0, 90.0, 4, easy_fixtures, 1, fas_slope=0.4)
+    hard = _xpts_ngw(0.5, 0.2, 1.0, 90.0, 4, hard_fixtures, 1, fas_slope=0.4)
+    assert easy[0] > hard[0]

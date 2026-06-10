@@ -86,7 +86,27 @@ def _compute_form_delta(history: list) -> float | None:
 # Phase 42 ACC-01: blend coefficient for form-signal-into-xPts. 0.4 means
 # form contributes 40% of the per-90 input. Tunable via merge_players kwarg —
 # pipeline/run.py reads the runtime value from accuracy_backtest.json.summary.blend_alpha_used.
-BLEND_ALPHA = 0.4
+BLEND_ALPHA = 0.2
+
+
+DEFCON_THRESHOLD = {2: 10, 3: 12, 4: 12}   # DC-01 (mirrors defcon.py)
+
+
+def _defcon_rate(history: list, element_type: int) -> float:
+    """DC-01: P(defensive_contribution >= positional threshold | minutes >= 60).
+
+    Denominator = prior 60+ minute games. GKP (and unknown types) -> 0.0.
+    """
+    threshold = DEFCON_THRESHOLD.get(element_type)
+    if threshold is None:
+        return 0.0
+    played = [e for e in history
+              if (e.get('minutes', 0) or 0) >= 60]
+    if not played:
+        return 0.0
+    hits = sum(1 for e in played
+               if (e.get('defensive_contribution', 0) or 0) >= threshold)
+    return hits / len(played)
 
 
 def _compute_difficulty_score(team_xga: float, min_xga: float, max_xga: float) -> float:
@@ -405,6 +425,9 @@ def _xpts_ngw(
     sub_appear_prob: float = 0.0,           # APM-01
     cs_team_form_slope: float = 0.0,        # CSF-01
     atf_slope: float = 0.0,                 # ATF-01
+    fas_slope: float = 0.0,                 # FAS-01
+    defcon_rate: float = 0.0,               # DC-01 (player-level, not per-fixture)
+    defcon_scale: float = 0.0,              # DC-01
 ) -> tuple:
     """Project xPts across N upcoming GWs, DGW-aware (Phase 28 DATA-02 D-04, D-06).
 
@@ -426,12 +449,13 @@ def _xpts_ngw(
         grouped.append((event_id, list(group)))
 
     total = 0.0
-    first_gw_components = {'goal_pts': 0.0, 'assist_pts': 0.0, 'cs_pts': 0.0, 'bonus_pts': 0.0, 'appearance_pts': 0.0, 'save_pts': 0.0}
+    first_gw_components = {'goal_pts': 0.0, 'assist_pts': 0.0, 'cs_pts': 0.0, 'bonus_pts': 0.0, 'appearance_pts': 0.0, 'save_pts': 0.0, 'defcon': 0.0}
 
     for gw_idx, (_event_id, gw_fixtures) in enumerate(grouped[:n_gws]):
         for fix in gw_fixtures:
             norm_concede_rate = fix.get('team_def_form', 0.5)   # CSF-01
             norm_attack_rate = fix.get('team_atf_form', 0.5)    # ATF-01
+            attack_difficulty = fix.get('attacking_difficulty', 0.5)   # FAS-01
             result = _compute_xpts_fixture(
                 xg_per90 if xg_per90 is not None else 0.0,
                 xa_per90 if xa_per90 is not None else 0.0,
@@ -452,6 +476,10 @@ def _xpts_ngw(
                 cs_team_form_slope=cs_team_form_slope,                                   # CSF-01
                 norm_attack_rate=norm_attack_rate,                                       # ATF-01
                 atf_slope=atf_slope,                                                     # ATF-01
+                attack_difficulty=attack_difficulty,                                     # FAS-01
+                fas_slope=fas_slope,                                                     # FAS-01
+                defcon_rate=defcon_rate,                                                 # DC-01
+                defcon_scale=defcon_scale,                                               # DC-01
             )
             total += result['total']
             if gw_idx == 0 and n_gws == 1:
@@ -483,6 +511,9 @@ def _xpts_per_gw(
     sub_appear_prob: float = 0.0,           # APM-01
     cs_team_form_slope: float = 0.0,        # CSF-01
     atf_slope: float = 0.0,                 # ATF-01
+    fas_slope: float = 0.0,                 # FAS-01
+    defcon_rate: float = 0.0,               # DC-01 (player-level, not per-fixture)
+    defcon_scale: float = 0.0,              # DC-01
 ) -> list[float]:
     """Return list of xPts per GW group (Phase 80 GWI-04, D-12).
 
@@ -506,6 +537,7 @@ def _xpts_per_gw(
         for fix in gw_fixtures:
             norm_concede_rate = fix.get('team_def_form', 0.5)   # CSF-01
             norm_attack_rate = fix.get('team_atf_form', 0.5)    # ATF-01
+            attack_difficulty = fix.get('attacking_difficulty', 0.5)   # FAS-01
             comp = _compute_xpts_fixture(
                 xg_per90 if xg_per90 is not None else 0.0,
                 xa_per90 if xa_per90 is not None else 0.0,
@@ -526,6 +558,10 @@ def _xpts_per_gw(
                 cs_team_form_slope=cs_team_form_slope,                                   # CSF-01
                 norm_attack_rate=norm_attack_rate,                                       # ATF-01
                 atf_slope=atf_slope,                                                     # ATF-01
+                attack_difficulty=attack_difficulty,                                     # FAS-01
+                fas_slope=fas_slope,                                                     # FAS-01
+                defcon_rate=defcon_rate,                                                 # DC-01
+                defcon_scale=defcon_scale,                                               # DC-01
             )
             gw_total += comp['total']
         result.append(round(gw_total, 2))
@@ -895,7 +931,7 @@ def merge_players(
     save_predictor_enabled: bool = False,   # Phase 83 GK-01 / GK-03
     cs_prob_base: float = 0.40,             # TUNE-01: tunable via accuracy_backtest.json.summary
     cs_prob_slope: float = 0.30,            # TUNE-01: tunable via accuracy_backtest.json.summary
-    form_window_gws: int = 5,               # TUNE-01: tunable via accuracy_backtest.json.summary
+    form_window_gws: int = 4,               # TUNE-01: tunable via accuracy_backtest.json.summary (honest-tuned 2026-06 BT-02)
     form_actual_beta: float = 0.0,          # FRM-01: actual G+A blend weight, tunable via TUNE-01
     form_difficulty_gamma: float = 0.0,     # FRM-02: difficulty weight scaling, tunable via TUNE-01
     sub_appear_window_gws: int = 15,        # APM-01: sub appearance history window, tunable via TUNE-01
@@ -903,6 +939,8 @@ def merge_players(
     cs_def_form_window_gws: int = 6,        # CSF-01: rolling window for goals-conceded average
     atf_slope: float = 0.0,                 # ATF-01: weight for team attack form, tunable via TUNE-01
     atf_window_gws: int = 6,                # ATF-01: rolling window for goals-scored average
+    fas_slope: float = 0.4,                 # FAS-01: default per honest backtest
+    defcon_scale: float = 0.0,              # DC-01: tuner-controlled
 ) -> tuple[list, dict]:
     """Merge FPL bootstrap + Understat xG/xA into a unified player list.
 
@@ -1368,6 +1406,13 @@ def merge_players(
         player['form_xgxa_per90'] = form_per90
         player['form_xgxa_window_gws'] = form_n_gws
 
+        # ---- DC-01: per-player defensive contribution rate ----
+        if summaries and fpl_id in summaries:
+            dc_history = summaries[fpl_id].get('history', [])
+            player_defcon_rate = _defcon_rate(dc_history, element['element_type'])
+        else:
+            player_defcon_rate = 0.0
+
         # ---- xPts engine (Phase 28 DATA-02, XPTS-02, D-01..D-09) ----
         # Phase 42 ACC-01: optionally blend form signal into per-90 inputs before scoring.
         # When form_signal_enabled is False OR form_xgxa_per90 is None, use season per-90 unchanged.
@@ -1398,6 +1443,9 @@ def merge_players(
             sub_appear_prob=player_sub_appear_prob,  # APM-01
             cs_team_form_slope=cs_team_form_slope,  # CSF-01
             atf_slope=atf_slope,  # ATF-01
+            fas_slope=fas_slope,  # FAS-01
+            defcon_rate=player_defcon_rate,  # DC-01
+            defcon_scale=defcon_scale,  # DC-01
         )
         xpts_3gw, _ = _xpts_ngw(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
@@ -1409,6 +1457,9 @@ def merge_players(
             sub_appear_prob=player_sub_appear_prob,  # APM-01
             cs_team_form_slope=cs_team_form_slope,  # CSF-01
             atf_slope=atf_slope,  # ATF-01
+            fas_slope=fas_slope,  # FAS-01
+            defcon_rate=player_defcon_rate,  # DC-01
+            defcon_scale=defcon_scale,  # DC-01
         )
         xpts_5gw, _ = _xpts_ngw(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
@@ -1420,6 +1471,9 @@ def merge_players(
             sub_appear_prob=player_sub_appear_prob,  # APM-01
             cs_team_form_slope=cs_team_form_slope,  # CSF-01
             atf_slope=atf_slope,  # ATF-01
+            fas_slope=fas_slope,  # FAS-01
+            defcon_rate=player_defcon_rate,  # DC-01
+            defcon_scale=defcon_scale,  # DC-01
         )
         player['xPts_1gw'] = xpts_1gw
         player['xPts_3gw'] = xpts_3gw
