@@ -26,6 +26,9 @@ from accuracy import (
     FORM_ACTUAL_BETA,
     FORM_DIFFICULTY_GAMMA,   # FRM-02
     SUB_APPEAR_WINDOW_GWS,   # APM-01
+    CS_TEAM_FORM_SLOPE,      # CSF-01
+    CS_DEF_FORM_WINDOW_GWS,  # CSF-01
+    build_team_def_form_lookup,  # CSF-01
 )
 
 # ── Candidate sweep grids ────────────────────────────────────────────────────
@@ -36,6 +39,8 @@ CS_PROB_SLOPE_CANDIDATES = [0.15, 0.20, 0.25, 0.30, 0.35, 0.40]
 FORM_ACTUAL_BETA_CANDIDATES = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
 FORM_DIFFICULTY_GAMMA_CANDIDATES = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]  # FRM-02
 SUB_APPEAR_WINDOW_CANDIDATES = [10, 12, 15, 18, 20]                  # APM-01
+CS_TEAM_FORM_SLOPE_CANDIDATES  = [0.0, 0.05, 0.10, 0.15, 0.20]  # CSF-01
+CS_DEF_FORM_WINDOW_CANDIDATES  = [3, 5, 6, 8, 10]                # CSF-01
 
 # ── Safety thresholds ────────────────────────────────────────────────────────
 MIN_FINISHED_GWS = 13             # need at least this many GWs for a meaningful split
@@ -69,6 +74,8 @@ def _read_prior_params(cache_dir: str) -> dict:
             'form_actual_beta':  float(summary.get('form_actual_beta_used', FORM_ACTUAL_BETA)),
             'form_difficulty_gamma':  float(summary.get('form_difficulty_gamma_used', FORM_DIFFICULTY_GAMMA)),  # FRM-02
             'sub_appear_window_gws':  int(summary.get('sub_appear_window_gws_used', SUB_APPEAR_WINDOW_GWS)),  # APM-01
+            'cs_team_form_slope':     float(summary.get('cs_team_form_slope_used', CS_TEAM_FORM_SLOPE)),  # CSF-01
+            'cs_def_form_window_gws': int(summary.get('cs_def_form_window_gws_used', CS_DEF_FORM_WINDOW_GWS)),  # CSF-01
         }
     except (FileNotFoundError, json.JSONDecodeError, OSError, KeyError, ValueError):
         return {
@@ -79,6 +86,8 @@ def _read_prior_params(cache_dir: str) -> dict:
             'form_actual_beta': FORM_ACTUAL_BETA,
             'form_difficulty_gamma': FORM_DIFFICULTY_GAMMA,   # FRM-02
             'sub_appear_window_gws': SUB_APPEAR_WINDOW_GWS,   # APM-01
+            'cs_team_form_slope':     CS_TEAM_FORM_SLOPE,     # CSF-01
+            'cs_def_form_window_gws': CS_DEF_FORM_WINDOW_GWS, # CSF-01
         }
 
 
@@ -138,6 +147,7 @@ def _sweep_param(
     all_gws: list,
     bootstrap: dict,
     fixture_difficulty: dict,
+    fixtures: list,          # CSF-01: needed to rebuild team_def_form_lookup per candidate
     teams_by_id: dict,
     gws_train: list,
     gws_validate: list,
@@ -153,6 +163,7 @@ def _sweep_param(
         all_gws:            all finished GW numbers (train + validate combined).
         bootstrap:          FPL bootstrap-static JSON.
         fixture_difficulty: lookup built by build_fixture_difficulty_lookup().
+        fixtures:           raw fixture list; used to rebuild team_def_form_lookup per candidate.
         teams_by_id:        dict mapping team_id (int) -> team dict.
         gws_train:          GW numbers for training set.
         gws_validate:       GW numbers for validation set.
@@ -168,6 +179,9 @@ def _sweep_param(
         f"!= current_val={current_val}"
     )
     # Baseline: current production metrics using current params
+    baseline_team_def_form = build_team_def_form_lookup(
+        fixtures, params['cs_def_form_window_gws']
+    )  # CSF-01
     baseline_rows = build_per_gw_rows(
         summaries=summaries,
         target_gws=all_gws,
@@ -181,6 +195,8 @@ def _sweep_param(
         form_actual_beta=params['form_actual_beta'],
         form_difficulty_gamma=params['form_difficulty_gamma'],   # FRM-02
         sub_appear_window_gws=params['sub_appear_window_gws'],   # APM-01
+        team_def_form_lookup=baseline_team_def_form,             # CSF-01
+        cs_team_form_slope=params['cs_team_form_slope'],         # CSF-01
     )
     current_train    = compute_metrics_for_gws(baseline_rows, gws_train)
     current_validate = compute_metrics_for_gws(baseline_rows, gws_validate)
@@ -195,6 +211,9 @@ def _sweep_param(
         if candidate == current_val:
             continue
         candidate_params = {**params, param_name: candidate}
+        candidate_team_def_form = build_team_def_form_lookup(
+            fixtures, candidate_params['cs_def_form_window_gws']
+        )  # CSF-01
         candidate_rows = build_per_gw_rows(
             summaries=summaries,
             target_gws=all_gws,
@@ -208,6 +227,8 @@ def _sweep_param(
             form_actual_beta=candidate_params['form_actual_beta'],
             form_difficulty_gamma=candidate_params['form_difficulty_gamma'],   # FRM-02
             sub_appear_window_gws=candidate_params['sub_appear_window_gws'],   # APM-01
+            team_def_form_lookup=candidate_team_def_form,                      # CSF-01
+            cs_team_form_slope=candidate_params['cs_team_form_slope'],         # CSF-01
         )
         train_metrics    = compute_metrics_for_gws(candidate_rows, gws_train)
         validate_metrics = compute_metrics_for_gws(candidate_rows, gws_validate)
@@ -278,6 +299,8 @@ def run_tuner(
         'form_actual_beta': prior['form_actual_beta'],
         'form_difficulty_gamma': prior['form_difficulty_gamma'],   # FRM-02
         'sub_appear_window_gws': prior['sub_appear_window_gws'],   # APM-01
+        'cs_team_form_slope':     prior['cs_team_form_slope'],     # CSF-01
+        'cs_def_form_window_gws': prior['cs_def_form_window_gws'], # CSF-01
     }
 
     sweep_results: dict = {}
@@ -291,6 +314,8 @@ def run_tuner(
         ('form_actual_beta', FORM_ACTUAL_BETA_CANDIDATES,   prior['form_actual_beta']),
         ('form_difficulty_gamma', FORM_DIFFICULTY_GAMMA_CANDIDATES,  prior['form_difficulty_gamma']),  # FRM-02
         ('sub_appear_window_gws', SUB_APPEAR_WINDOW_CANDIDATES, prior['sub_appear_window_gws']),  # APM-01
+        ('cs_team_form_slope',     CS_TEAM_FORM_SLOPE_CANDIDATES,    prior['cs_team_form_slope']),     # CSF-01
+        ('cs_def_form_window_gws', CS_DEF_FORM_WINDOW_CANDIDATES,    prior['cs_def_form_window_gws']), # CSF-01
     ]
 
     for param_name, candidates, current_val in sweep_order:
@@ -303,6 +328,7 @@ def run_tuner(
             all_gws=all_gws,
             bootstrap=bootstrap,
             fixture_difficulty=fixture_difficulty,
+            fixtures=fixtures,         # CSF-01
             teams_by_id=teams_by_id,
             gws_train=gws_train,
             gws_validate=gws_validate,
