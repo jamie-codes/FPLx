@@ -1,0 +1,63 @@
+{
+  "generated_at": "2026-06-10T22:15:13.974097+00:00",
+  "timestamps": {
+    "merged_players.json": "2026-01-01T00:00:00+00:00",
+    "insights.json": "2026-01-01T00:00:00+00:00",
+    "gw_intel.json": "2026-01-01T00:00:00+00:00",
+    "accuracy_backtest.json": "2026-01-01T00:00:00+00:00",
+    "last_updated.json": "2026-01-01T00:00:00+00:00"
+  },
+  "total_player_count": 800,
+  "prev_player_count": 800,
+  "missing_player_delta": 0,
+  "understat_id_null_count": 0,
+  "fpl_proxy_fallback_count": 0,
+  "xg_per90_null_count": 0,
+  "xpts_max": 0.0,
+  "sanity_checks": [
+    {
+      "id": "player_count",
+      "status": "ok",
+      "value": 800,
+      "threshold": ">= 700"
+    },
+    {
+      "id": "missing_player_delta",
+      "status": "ok",
+      "value": 0,
+      "threshold": "<= 5"
+    },
+    {
+      "id": "understat_null_pct",
+      "status": "ok",
+      "value": 0.0,
+      "threshold": "< 15%"
+    },
+    {
+      "id": "pipeline_stale",
+      "status": "ok",
+      "value": false,
+      "threshold": "false"
+    },
+    {
+      "id": "xpts_max",
+      "status": "ok",
+      "value": 0.0,
+      "threshold": "<= 25"
+    }
+  ],
+  "history": [
+    {
+      "timestamp": "2026-06-10T22:15:13.963095+00:00",
+      "overall_status": "ok"
+    },
+    {
+      "timestamp": "2026-06-10T22:15:13.969095+00:00",
+      "overall_status": "ok"
+    },
+    {
+      "timestamp": "2026-06-10T22:15:13.974097+00:00",
+      "overall_status": "ok"
+    }
+  ]
+}
