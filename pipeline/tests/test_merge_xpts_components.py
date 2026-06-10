@@ -361,3 +361,47 @@ def test_atf_worst_attack_decreases_xpts():
         norm_attack_rate=0.0, atf_slope=0.30,
     )
     assert penalised['total'] < baseline['total']
+
+
+# ── FAS-01 + DC-01: fixture attack scaling & DefCon EV ───────────────────── #
+
+def _fx(**over):
+    base = dict(xg_per90=0.4, xa_per90=0.2, start_prob=1.0, xmins=90.0,
+                element_type=4, defensive_difficulty=0.3)
+    base.update(over)
+    from merge import _compute_xpts_fixture
+    return _compute_xpts_fixture(**base)
+
+
+def test_fas_slope_zero_no_change():
+    assert abs(_fx(attack_difficulty=0.9, fas_slope=0.0)['total']
+               - _fx()['total']) < 1e-9
+
+
+def test_fas_easy_opponent_increases_xpts():
+    assert (_fx(attack_difficulty=0.0, fas_slope=0.4)['total']
+            > _fx(fas_slope=0.0)['total'])
+
+
+def test_fas_hard_opponent_decreases_xpts():
+    assert (_fx(attack_difficulty=1.0, fas_slope=0.4)['total']
+            < _fx(fas_slope=0.0)['total'])
+
+
+def test_defcon_scale_zero_no_change():
+    assert abs(_fx(defcon_rate=0.8, defcon_scale=0.0)['total']
+               - _fx()['total']) < 1e-9
+
+
+def test_defcon_adds_exact_ev():
+    base = _fx()
+    with_dc = _fx(defcon_rate=0.5, defcon_scale=1.0)  # xmins=90 -> factor 1.0
+    assert with_dc['total'] - base['total'] == pytest.approx(1.0)  # 2*0.5*1.0*1.0
+    assert with_dc['defcon'] == pytest.approx(1.0)
+    assert base['defcon'] == 0.0
+
+
+def test_defcon_scaled_by_xmins():
+    with_dc = _fx(defcon_rate=0.5, defcon_scale=1.0, xmins=45.0)
+    base = _fx(xmins=45.0)
+    assert with_dc['total'] - base['total'] == pytest.approx(0.5)  # 2*0.5*1*0.5

@@ -286,6 +286,10 @@ def _compute_xpts_fixture(
     cs_team_form_slope: float = 0.0,                # CSF-01: weight for team defensive form
     norm_attack_rate: float = 0.5,                  # ATF-01: own team's goals-scored rate (normalised)
     atf_slope: float = 0.0,                         # ATF-01: weight for team attack form
+    attack_difficulty: float = 0.5,                 # FAS-01: opponent strength (0=easiest, 1=hardest)
+    fas_slope: float = 0.0,                         # FAS-01: weight for fixture attack scaling
+    defcon_rate: float = 0.0,                       # DC-01: prior P(DC threshold | 60+ mins)
+    defcon_scale: float = 0.0,                      # DC-01: weight for DefCon EV
 ) -> dict:
     """Compute expected FPL points for a single fixture (Phase 28 DATA-02).
 
@@ -306,7 +310,7 @@ def _compute_xpts_fixture(
     """
     # Guard against degenerate inputs
     if xmins <= 0 or start_prob <= 0:
-        return {'total': 0.0, 'goal_pts': 0.0, 'assist_pts': 0.0, 'cs_pts': 0.0, 'bonus_pts': 0.0, 'appearance_pts': 0.0, 'save_pts': 0.0}
+        return {'total': 0.0, 'goal_pts': 0.0, 'assist_pts': 0.0, 'cs_pts': 0.0, 'bonus_pts': 0.0, 'appearance_pts': 0.0, 'save_pts': 0.0, 'defcon': 0.0}
 
     xg = xg_per90 if xg_per90 is not None else 0.0
     xa = xa_per90 if xa_per90 is not None else 0.0
@@ -316,6 +320,12 @@ def _compute_xpts_fixture(
     atf_scale = 1.0 + (norm_attack_rate - 0.5) * atf_slope   # ATF-01
     xg = max(0.0, xg * atf_scale)
     xa = max(0.0, xa * atf_scale)
+
+    # FAS-01: opponent-difficulty scaling of attacking EV — symmetric around
+    # the average opponent. Easy fixture boosts xg/xa, hard fixture penalises.
+    fas_scale = max(0.0, 1.0 + (0.5 - attack_difficulty) * fas_slope)   # FAS-01
+    xg = xg * fas_scale
+    xa = xa * fas_scale
 
     # Poisson rates: scale per-90 rate to expected for this fixture's minutes.
     # xmins is unconditional expected minutes — start_prob already embedded.
@@ -360,7 +370,11 @@ def _compute_xpts_fixture(
     else:
         save_pts = 0.0
 
-    total = goal_pts + assist_pts + cs_pts + bonus_pts + appearance_pts + save_pts
+    # DC-01: DefCon expected points — 2 pts at the per-position threshold,
+    # scaled by prior threshold rate and expected minutes share.
+    defcon_pts = 2.0 * defcon_rate * defcon_scale * min(1.0, xmins / 90.0)   # DC-01
+
+    total = goal_pts + assist_pts + cs_pts + bonus_pts + appearance_pts + save_pts + defcon_pts
     return {
         'total': round(total, 3),
         'goal_pts': round(goal_pts, 3),
@@ -369,6 +383,7 @@ def _compute_xpts_fixture(
         'bonus_pts': round(bonus_pts, 3),
         'appearance_pts': round(appearance_pts, 3),
         'save_pts': round(save_pts, 3),  # Phase 83 GK-01 — always present (0.0 for non-GK / gate-OFF)
+        'defcon': round(defcon_pts, 3),  # DC-01 — always present (0.0 when scale=0)
     }
 
 
