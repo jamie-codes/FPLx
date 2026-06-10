@@ -1405,3 +1405,60 @@ def test_build_team_def_form_lookup_all_equal():
     lookup = build_team_def_form_lookup(fixtures, window_gws=6)
     assert lookup.get((3, 5), 0.5) == pytest.approx(0.5)
     assert lookup.get((3, 6), 0.5) == pytest.approx(0.5)
+
+
+# ── ATF-01: build_team_atf_lookup ────────────────────────────────────────── #
+
+def test_build_team_atf_lookup_basic():
+    """Team with more goals scored → higher norm_attack_rate than team with fewer."""
+    from accuracy import build_team_atf_lookup
+    fixtures = [
+        _finished_fix(1, h_id=1, a_id=2, h_score=3, a_score=0),
+        {'event': 2, 'team_h': 1, 'team_a': 2,
+         'team_h_score': None, 'team_a_score': None, 'finished': False},
+    ]
+    lookup = build_team_atf_lookup(fixtures)
+    rate_1 = lookup.get((2, 1), 0.5)
+    rate_2 = lookup.get((2, 2), 0.5)
+    assert rate_1 > rate_2
+
+
+def test_build_team_atf_lookup_cold_start():
+    """No prior finished fixtures → returns 0.5 for all teams."""
+    from accuracy import build_team_atf_lookup
+    fixtures = [
+        {'event': 1, 'team_h': 1, 'team_a': 2,
+         'team_h_score': None, 'team_a_score': None, 'finished': False},
+    ]
+    lookup = build_team_atf_lookup(fixtures)
+    assert lookup.get((1, 1), 0.5) == 0.5
+    assert lookup.get((1, 2), 0.5) == 0.5
+
+
+def test_build_team_atf_lookup_sparse():
+    """Only 2 prior games with window=6 → denominator = 2 (actual entries, sparse-safe)."""
+    from accuracy import build_team_atf_lookup
+    fixtures = [
+        _finished_fix(1, h_id=3, a_id=4, h_score=2, a_score=0),
+        _finished_fix(2, h_id=3, a_id=4, h_score=2, a_score=0),
+        {'event': 3, 'team_h': 3, 'team_a': 4,
+         'team_h_score': None, 'team_a_score': None, 'finished': False},
+    ]
+    lookup = build_team_atf_lookup(fixtures, window_gws=6)
+    rate_3 = lookup.get((3, 3), 0.5)
+    # team 3 scores 2+2=4 over 2 games → avg 2.0 (denominator=2, not 6)
+    # team 4 scores 0+0=0 → avg 0.0; normalised: team 3 = 1.0 > 0.5
+    assert rate_3 > 0.5
+
+
+def test_build_team_atf_lookup_all_equal():
+    """All teams identical scoring rate → returns 0.5 for all (division guard)."""
+    from accuracy import build_team_atf_lookup
+    fixtures = [
+        _finished_fix(1, h_id=1, a_id=2, h_score=1, a_score=1),
+        {'event': 2, 'team_h': 1, 'team_a': 2,
+         'team_h_score': None, 'team_a_score': None, 'finished': False},
+    ]
+    lookup = build_team_atf_lookup(fixtures)
+    assert lookup.get((2, 1), 0.5) == 0.5
+    assert lookup.get((2, 2), 0.5) == 0.5
