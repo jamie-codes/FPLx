@@ -56,6 +56,12 @@ def build_asof_signals(history: list, gw: int, params: dict):
     Uses ONLY history entries with round < gw. Returns None when there are no
     prior entries. Eligibility (min_prior_minutes) is enforced by the caller
     so tests and experiments can inspect sub-threshold signals.
+
+    Ordering assumption: `history` is expected to be in ascending round order.
+    The FPL element-summary endpoint serves entries chronologically, and this
+    has been verified across the real season archive. The xmins-window and
+    form-window logic both rely on `prior[-n:]` selecting the most recent n
+    entries, so out-of-order input would silently produce wrong signals.
     """
     prior = [e for e in history if e.get('round', 0) < gw]
     if not prior:
@@ -298,7 +304,13 @@ def run_backtest(archive: dict | None = None, params: dict | None = None,
                 else:
                     m = e.get('minutes', 0) or 0
                     if m < 45:
-                        # sub cameo / DNP scenario — prior-derived sub value
+                        # Sub cameo (0 < m < 45) or DNP (m == 0).
+                        # Intentional simplification: credit appearance EV only
+                        # (sub_appear_prob, derived from prior rounds). Goal/
+                        # assist/CS EV are omitted — the live model scales
+                        # attacking EV by xmins/90 even for short outings, but
+                        # cameo attacking EV is negligible and sub_appear_prob
+                        # is the honest pre-GW estimate for a cameo player.
                         pred += sig['sub_appear_prob'] if m > 0 else 0.0
                         continue
                     xm, sp_ = float(m), 1.0

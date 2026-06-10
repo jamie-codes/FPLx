@@ -220,6 +220,59 @@ def test_spearman_perfect_and_inverted():
     assert m2['spearman'] == pytest.approx(-1.0)
 
 
+def test_conditional_mode_cameo_branch():
+    """Conditional mode, m < 45 target GW: xpts_pred == sub_appear_prob.
+
+    Variant A: all 10 prior entries have minutes=90 -> sub_appear_prob=0.0
+               -> xpts_pred == 0.0 for a 30-minute target GW.
+    Variant B: 2 of the last 5 prior entries have minutes=30
+               -> sub_appear_prob=0.4 -> xpts_pred == 0.4.
+    Both players have cum_minutes >= 270 (eligibility gate) and
+    target actual_minutes=30 >= 10 (conditional-mode gate).
+    """
+    # ── Variant A: all prior entries are 90-minute full games ────────────────
+    p_a = _std_player(10, n_gws=11)  # GW 1-11 history; target = GW 11
+    # Override all 11 entries to minutes=90, starts=1
+    for e in p_a['history']:
+        e['minutes'] = 90
+        e['starts'] = 1
+    # Target GW is GW 11; prior = GW 1-10, all 90 min -> sub_appear_prob=0.0
+    # Give GW 11 minutes=30 (cameo) so the m<45 branch fires
+    p_a['history'][10]['minutes'] = 30  # GW 11 entry
+
+    arch_a = _make_archive(n_gws=11, players=[p_a])
+    r_a = backtest.run_backtest(archive=arch_a, mode='conditional',
+                                first_gw=11, last_gw=11)
+    assert len(r_a['rows']) == 1
+    row_a = r_a['rows'][0]
+    assert row_a['xpts_pred'] == pytest.approx(0.0), (
+        f"Variant A: expected xpts_pred=0.0, got {row_a['xpts_pred']}")
+
+    # ── Variant B: 2 of the last 5 prior entries are cameos (minutes=30) ─────
+    # GW 1-10 prior, GW 11 target (minutes=30)
+    # Make GW 9 and GW 10 cameos so they fall in the last-5 window
+    # Last 5 prior = GW 6-10; set GW 9, 10 to minutes=30
+    p_b = _std_player(11, n_gws=11)
+    for e in p_b['history']:
+        e['minutes'] = 90
+        e['starts'] = 1
+    p_b['history'][8]['minutes'] = 30   # GW 9
+    p_b['history'][8]['starts'] = 0
+    p_b['history'][9]['minutes'] = 30   # GW 10
+    p_b['history'][9]['starts'] = 0
+    # Target GW 11: minutes=30 (cameo)
+    p_b['history'][10]['minutes'] = 30
+
+    arch_b = _make_archive(n_gws=11, players=[p_b])
+    r_b = backtest.run_backtest(archive=arch_b, mode='conditional',
+                                first_gw=11, last_gw=11)
+    assert len(r_b['rows']) == 1
+    row_b = r_b['rows'][0]
+    # last 5 prior entries (GW 6-10): GW 9 and GW 10 have 0<m<45 -> 2/5 = 0.4
+    assert row_b['xpts_pred'] == pytest.approx(0.4), (
+        f"Variant B: expected xpts_pred=0.4, got {row_b['xpts_pred']}")
+
+
 import os
 
 
