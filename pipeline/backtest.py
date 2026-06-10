@@ -44,6 +44,8 @@ DEFAULT_PARAMS = {
     'defcon_scale': 0.0,        # 0.0 = off (backward compat); 1.0 = full 2-pt EV
     'fixture_attack_slope': 0.0,  # BT-02: opponent difficulty scaling of attacking EV
     'use_xgc_def_form': 0.0,    # BT-02: use xGC-based team defence instead of goals-conceded
+    'xmins_halflife': 0.0,      # 0.0 = off; > 0 = exponential weighting halflife (GWs)
+    'gk_saves_scale': 0.0,      # 0.0 = off; > 0 = GKP save-point EV scaling
 }
 
 HAUL_THRESHOLD = 10
@@ -176,12 +178,26 @@ def build_asof_signals(history: list, gw: int, params: dict):
     # Minutes model (deploy mode): last xmins_window prior entries
     last = prior[-params['xmins_window']:]
     n = len(last)
-    xmins = sum(e.get('minutes', 0) or 0 for e in last) / n
-    start_prob = sum(1 for e in last if (e.get('starts', 0) or 0) >= 1) / n
-    mins_60_prob = sum(1 for e in last
-                       if (e.get('minutes', 0) or 0) >= 60) / n
-    sub_appear_prob = sum(1 for e in last
-                          if 0 < (e.get('minutes', 0) or 0) < 45) / n
+    halflife = params.get('xmins_halflife', 0.0) or 0.0
+    if halflife > 0.0:
+        # Exponential weights: age=0 is most recent (last element of `last`)
+        weights = [0.5 ** ((n - 1 - i) / halflife) for i in range(n)]
+        sum_w = sum(weights)
+        xmins = sum((e.get('minutes', 0) or 0) * w
+                    for e, w in zip(last, weights)) / sum_w
+        start_prob = sum(w for e, w in zip(last, weights)
+                         if (e.get('starts', 0) or 0) >= 1) / sum_w
+        mins_60_prob = sum(w for e, w in zip(last, weights)
+                           if (e.get('minutes', 0) or 0) >= 60) / sum_w
+        sub_appear_prob = sum(w for e, w in zip(last, weights)
+                              if 0 < (e.get('minutes', 0) or 0) < 45) / sum_w
+    else:
+        xmins = sum(e.get('minutes', 0) or 0 for e in last) / n
+        start_prob = sum(1 for e in last if (e.get('starts', 0) or 0) >= 1) / n
+        mins_60_prob = sum(1 for e in last
+                           if (e.get('minutes', 0) or 0) >= 60) / n
+        sub_appear_prob = sum(1 for e in last
+                              if 0 < (e.get('minutes', 0) or 0) < 45) / n
 
     # DefCon rates: fraction of prior 60+-minute games where dc >= threshold.
     # Computed without position knowledge; caller selects dc_rate_10 (DEF) or
@@ -199,6 +215,16 @@ def build_asof_signals(history: list, gw: int, params: dict):
     else:
         dc_rate_10 = dc_rate_12 = 0.0
 
+    # saves_per90: cumulative prior saves / cumulative prior minutes * 90
+    # over all prior entries with minutes > 0; 0.0 when no prior minutes.
+    prior_played = [e for e in prior if (e.get('minutes', 0) or 0) > 0]
+    if prior_played:
+        cum_saves = sum(int(e.get('saves', 0) or 0) for e in prior_played)
+        cum_min_played = sum(e.get('minutes', 0) or 0 for e in prior_played)
+        saves_per90 = cum_saves / cum_min_played * 90.0
+    else:
+        saves_per90 = 0.0
+
     return {
         'xg_per90': xg_per90,
         'xa_per90': xa_per90,
@@ -211,6 +237,7 @@ def build_asof_signals(history: list, gw: int, params: dict):
         'sub_appear_prob': sub_appear_prob,
         'dc_rate_10': dc_rate_10,
         'dc_rate_12': dc_rate_12,
+        'saves_per90': saves_per90,
     }
 
 
@@ -461,6 +488,12 @@ def run_backtest(archive: dict | None = None, params: dict | None = None,
                     mins_factor = min(1.0, xm / 90.0)
                     dc_ev = 2.0 * threshold_rate * p['defcon_scale'] * mins_factor
                     pred += dc_ev
+
+                if p['gk_saves_scale'] > 0 and et == 1:
+                    opp_team_id = fix['team_a'] if was_home else fix['team_h']
+                    opp_attack = atf_form.get((gw, opp_team_id), 0.5)
+                    save_ev = (sig['saves_per90'] / 3.0) * (xm / 90.0) * (0.5 + opp_attack) * p['gk_saves_scale']
+                    pred += save_ev
 
             rows.append({
                 'player_id': pid,

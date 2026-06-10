@@ -7,7 +7,7 @@ import backtest
 # ── synthetic archive helpers ─────────────────────────────────────────────── #
 
 def _entry(rnd, fixture_id, minutes=90, xg=0.3, xa=0.1, pts=2, starts=1,
-           was_home=True, dc=0, xgc=0.0):
+           was_home=True, dc=0, xgc=0.0, saves=0):
     return {
         'round': rnd, 'fixture': fixture_id, 'minutes': minutes,
         'expected_goals': str(xg), 'expected_assists': str(xa),
@@ -15,6 +15,7 @@ def _entry(rnd, fixture_id, minutes=90, xg=0.3, xa=0.1, pts=2, starts=1,
         'opponent_team': 2 if was_home else 1,
         'defensive_contribution': dc,
         'expected_goals_conceded': xgc,
+        'saves': saves,
     }
 
 
@@ -592,3 +593,102 @@ def test_use_xgc_def_form_switches_source():
     rows_goals = {r['player_id']: r for r in r_goals['rows']}
     rows_xgc = {r['player_id']: r for r in r_xgc['rows']}
     assert rows_xgc[1]['xpts_pred'] != rows_goals[1]['xpts_pred']
+
+
+# ── xmins_halflife tests ──────────────────────────────────────────────────── #
+
+def test_xmins_halflife_zero_noop():
+    """xmins_halflife absent vs explicitly 0.0 must yield identical signals."""
+    hist = _uniform_history(10)
+    sig_default = backtest.build_asof_signals(hist, 11, _params())
+    sig_explicit = backtest.build_asof_signals(hist, 11, _params(xmins_halflife=0.0))
+    assert sig_default['xmins'] == sig_explicit['xmins']
+    assert sig_default['start_prob'] == sig_explicit['start_prob']
+    assert sig_default['mins_60_prob'] == sig_explicit['mins_60_prob']
+    assert sig_default['sub_appear_prob'] == sig_explicit['sub_appear_prob']
+
+
+def test_xmins_halflife_weights_recent():
+    """Last 5 entries = [90,90,90,0,0] (most recent two are zeros).
+    Plain mean xmins = 54; halflife=2 weights recent more -> xmins < 54.
+    Exact weighted value computed with exponential weights 0.5**(age/halflife)
+    where age=0 is most recent."""
+    import math
+    # Build history: GW 1-10; last five are GW 6-10 minutes = [90,90,90,0,0]
+    hist = []
+    for g in range(1, 11):
+        if g <= 5:
+            m = 90
+        elif g <= 8:
+            m = 90
+        else:
+            m = 0   # GW 9 and 10 are benched
+        hist.append(_entry(g, g, minutes=m, starts=1 if m else 0))
+    # Verify plain mean: last 5 = GW 6-10 = [90,90,90,0,0] -> mean = 54
+    sig_plain = backtest.build_asof_signals(hist, 11, _params(xmins_halflife=0.0))
+    assert sig_plain['xmins'] == pytest.approx(54.0)
+
+    # With halflife=2: ages for most-recent-first [0,90,90,90,90] is wrong.
+    # most-recent-first for last 5 (GW 6-10) = [GW10=0, GW9=0, GW8=90, GW7=90, GW6=90]
+    # ages = [0, 1, 2, 3, 4]
+    halflife = 2.0
+    minutes = [0, 0, 90, 90, 90]  # most-recent-first
+    weights = [0.5 ** (age / halflife) for age in range(5)]
+    # w = [1.0, 0.7071, 0.5, 0.3536, 0.25]
+    sum_w = sum(weights)
+    expected_xmins = sum(m * w for m, w in zip(minutes, weights)) / sum_w
+
+    sig_hl = backtest.build_asof_signals(hist, 11, _params(xmins_halflife=halflife))
+    assert sig_hl['xmins'] < 54.0
+    assert sig_hl['xmins'] == pytest.approx(expected_xmins, rel=1e-3)
+
+
+# ── gk_saves_scale tests ──────────────────────────────────────────────────── #
+
+def test_saves_per90_prior_only():
+    """GK with saves=3 per 90-min game; saves_per90 at target GW == 3.0.
+    Inflating saves in the target GW itself must not change the signal."""
+    # History: GW 1-10 with 90 min, saves=3 each
+    hist = [_entry(g, g, minutes=90, saves=3) for g in range(1, 11)]
+    sig_at_11 = backtest.build_asof_signals(hist, 11, _params())
+    assert sig_at_11['saves_per90'] == pytest.approx(3.0)
+
+    # Inflate GW 11's saves (target GW); signal at GW 11 must be unchanged
+    hist_inflated = [dict(e) for e in hist]
+    hist_inflated.append(_entry(11, 11, minutes=90, saves=99))
+    sig_inflated = backtest.build_asof_signals(hist_inflated, 11, _params())
+    assert sig_inflated['saves_per90'] == pytest.approx(3.0)
+
+
+def test_gk_saves_scale_adds_ev_only_for_gkp():
+    """GKP (et=1) with saves_per90=3, xmins=90, neutral opp (atf_form 0.5):
+    scale=1.0 adds exactly 1.0 to xpts_pred vs scale=0.0.
+    FWD (et=4) with same setup gains nothing."""
+    # Build archive with a GKP and a FWD, both with saves=3 per prior game.
+    # Use neutral fixture difficulty=3 (difficulty=(3-1)/4=0.5).
+    # atf_form will be 0.5 (equal goals scored by both teams).
+    def _player_with_saves(pid, et):
+        hist = [_entry(g, 100 + g, minutes=90, saves=3, was_home=True)
+                for g in range(1, 13)]
+        return {'id': pid, 'element_type': et, 'history': hist}
+
+    arch = _make_archive(players=[
+        _player_with_saves(1, 1),   # GKP
+        _player_with_saves(2, 4),   # FWD
+    ])
+
+    r_base = backtest.run_backtest(archive=arch, first_gw=8, last_gw=8,
+                                   params={'gk_saves_scale': 0.0})
+    r_scale = backtest.run_backtest(archive=arch, first_gw=8, last_gw=8,
+                                    params={'gk_saves_scale': 1.0})
+
+    rows_base = {r['player_id']: r for r in r_base['rows']}
+    rows_scale = {r['player_id']: r for r in r_scale['rows']}
+
+    # GKP: opp_attack = 0.5, save_ev = (3/3) * (90/90) * (0.5 + 0.5) * 1.0 = 1.0
+    assert rows_scale[1]['xpts_pred'] == pytest.approx(
+        rows_base[1]['xpts_pred'] + 1.0, abs=1e-6)
+
+    # FWD: no change
+    assert rows_scale[2]['xpts_pred'] == pytest.approx(
+        rows_base[2]['xpts_pred'], abs=1e-6)
