@@ -7,13 +7,14 @@ import backtest
 # ── synthetic archive helpers ─────────────────────────────────────────────── #
 
 def _entry(rnd, fixture_id, minutes=90, xg=0.3, xa=0.1, pts=2, starts=1,
-           was_home=True, dc=0):
+           was_home=True, dc=0, xgc=0.0):
     return {
         'round': rnd, 'fixture': fixture_id, 'minutes': minutes,
         'expected_goals': str(xg), 'expected_assists': str(xa),
         'total_points': pts, 'starts': starts, 'was_home': was_home,
         'opponent_team': 2 if was_home else 1,
         'defensive_contribution': dc,
+        'expected_goals_conceded': xgc,
     }
 
 
@@ -416,3 +417,178 @@ def test_real_archive_smoke():
     assert m['n_rows'] > 800            # >= ~200 eligible players per GW
     assert 0.0 <= m['haul_hit_rate'] <= 1.0
     assert m['rmse'] > 0
+
+
+# ── fixture_attack_slope tests ────────────────────────────────────────────── #
+
+def test_fixture_attack_slope_zero_noop():
+    """fixture_attack_slope absent vs 0.0 must give identical predictions."""
+    arch = _make_archive(players=[_std_player(1)])
+    r_default = backtest.run_backtest(archive=arch, first_gw=8, last_gw=10)
+    r_explicit = backtest.run_backtest(archive=arch, first_gw=8, last_gw=10,
+                                       params={'fixture_attack_slope': 0.0})
+    rows_d = sorted(r_default['rows'], key=lambda r: (r['gw'], r['player_id']))
+    rows_e = sorted(r_explicit['rows'], key=lambda r: (r['gw'], r['player_id']))
+    assert len(rows_d) == len(rows_e)
+    for rd, re in zip(rows_d, rows_e):
+        assert rd['xpts_pred'] == re['xpts_pred']
+
+
+def test_fixture_attack_slope_direction():
+    """Easy fixture (difficulty=2 -> 0.25 < 0.5) boosts xpts with slope>0;
+    hard fixture (difficulty=5 -> 1.0) penalises it."""
+    # Build an archive with two differently-difficult versions of fixture 108
+    def _arch_with_difficulty(diff):
+        arch = _make_archive(players=[_std_player(1)])
+        for f in arch['fixtures']:
+            if f['event'] == 8:
+                f['team_h_difficulty'] = diff
+                f['team_a_difficulty'] = diff
+        return arch
+
+    arch_easy = _arch_with_difficulty(2)   # difficulty = (2-1)/4 = 0.25
+    arch_hard = _arch_with_difficulty(5)   # difficulty = (5-1)/4 = 1.0
+
+    r_slope0_easy = backtest.run_backtest(archive=arch_easy, first_gw=8, last_gw=8,
+                                          params={'fixture_attack_slope': 0.0})
+    r_slope_easy = backtest.run_backtest(archive=arch_easy, first_gw=8, last_gw=8,
+                                         params={'fixture_attack_slope': 0.4})
+
+    r_slope0_hard = backtest.run_backtest(archive=arch_hard, first_gw=8, last_gw=8,
+                                          params={'fixture_attack_slope': 0.0})
+    r_slope_hard = backtest.run_backtest(archive=arch_hard, first_gw=8, last_gw=8,
+                                         params={'fixture_attack_slope': 0.4})
+
+    # Easy fixture: slope should boost attacking EV
+    assert r_slope_easy['rows'][0]['xpts_pred'] > r_slope0_easy['rows'][0]['xpts_pred']
+    # Hard fixture: slope should penalise attacking EV
+    assert r_slope_hard['rows'][0]['xpts_pred'] < r_slope0_hard['rows'][0]['xpts_pred']
+
+
+# ── build_team_xgc_lookup tests ───────────────────────────────────────────── #
+
+def _make_xgc_archive(n_gws=8):
+    """Two teams (1, 2); team-1 players have xgc=2.0, team-2 players xgc=0.5.
+    fixture id = 100+gw for each GW."""
+    fixtures = []
+    for g in range(1, n_gws + 1):
+        fixtures.append({
+            'id': 100 + g, 'event': g, 'team_h': 1, 'team_a': 2,
+            'team_h_score': 1, 'team_a_score': 1, 'finished': True,
+            'team_h_difficulty': 3, 'team_a_difficulty': 3,
+        })
+
+    # Two players: one for each team. Their entries carry expected_goals_conceded.
+    def _xgc_player(pid, team, xgc_val):
+        hist = []
+        for g in range(1, n_gws + 1):
+            e = _entry(g, 100 + g, was_home=(team == 1), xgc=xgc_val)
+            e['round'] = g
+            e['fixture'] = 100 + g
+            hist.append(e)
+        return {'id': pid, 'element_type': 4, 'team': team, 'history': hist}
+
+    players = [_xgc_player(1, 1, 2.0), _xgc_player(2, 2, 0.5)]
+    elements = [{'id': p['id'], 'element_type': p['element_type'],
+                 'team': p['team'], 'web_name': f"P{p['id']}"}
+                for p in players]
+    summaries = {p['id']: {'history': p['history']} for p in players}
+    return {
+        'bootstrap': {'elements': elements,
+                      'events': [{'id': g, 'finished': True}
+                                 for g in range(1, n_gws + 1)]},
+        'fixtures': fixtures,
+        'understat': {},
+        'summaries': summaries,
+        'manifest': {'season': 'synthetic'},
+    }
+
+
+def test_build_team_xgc_lookup_strictly_prior_and_normalised():
+    """Team 1 has xgc=2.0 each GW; team 2 has xgc=0.5.
+    At GW 5: lookup[(5,1)]==1.0 (worst), lookup[(5,2)]==0.0 (best).
+    Values at GW g are unaffected by inflating GW g's xgc.
+    Cold start (GW 1) returns 0.5."""
+    arch = _make_xgc_archive(n_gws=8)
+
+    lookup = backtest.build_team_xgc_lookup(arch, window_gws=6)
+
+    # GW 5: team 1 worst (2.0 mean), team 2 best (0.5 mean)
+    assert lookup[(5, 1)] == pytest.approx(1.0)
+    assert lookup[(5, 2)] == pytest.approx(0.0)
+
+    # Cold start: GW 1 has no prior data -> 0.5
+    assert lookup[(1, 1)] == pytest.approx(0.5)
+    assert lookup[(1, 2)] == pytest.approx(0.5)
+
+    # Leakage check: inflating GW 5 entries must not change GW 5 lookup values
+    arch2 = _make_xgc_archive(n_gws=8)
+    for pid in [1, 2]:
+        for e in arch2['summaries'][pid]['history']:
+            if e['round'] == 5:
+                e['expected_goals_conceded'] = 99.0
+    lookup2 = backtest.build_team_xgc_lookup(arch2, window_gws=6)
+    assert lookup2[(5, 1)] == pytest.approx(lookup[(5, 1)])
+    assert lookup2[(5, 2)] == pytest.approx(lookup[(5, 2)])
+
+
+def test_use_xgc_def_form_switches_source():
+    """With cs_team_form_slope=0.2, predictions differ between use_xgc_def_form=0
+    and 1 when goals conceded are equal but xGC values differ across teams.
+
+    Uses element_type=2 (DEF) so CS points are included and ncr change is visible.
+    """
+    # Both teams concede exactly 1 goal/game (equal goals -> def_form will be 0.5
+    # for both; but xgc: team 1 = 2.0, team 2 = 0.5).
+    # Player 1 is on team 1 (DEF). With use_xgc_def_form=1, team 1 appears leakier
+    # (xgc 2.0 >> 0.5), which reduces CS prob -> lower xpts_pred.
+    def _make_def_xgc_archive(n_gws=12):
+        """Like _make_xgc_archive but players are element_type=2 (DEF)."""
+        fixtures = []
+        for g in range(1, n_gws + 1):
+            fixtures.append({
+                'id': 100 + g, 'event': g, 'team_h': 1, 'team_a': 2,
+                'team_h_score': 1, 'team_a_score': 1, 'finished': True,
+                'team_h_difficulty': 3, 'team_a_difficulty': 3,
+            })
+
+        def _xgc_player(pid, team, xgc_val):
+            hist = []
+            for g in range(1, n_gws + 1):
+                e = _entry(g, 100 + g, was_home=(team == 1), xgc=xgc_val)
+                e['round'] = g
+                e['fixture'] = 100 + g
+                hist.append(e)
+            return {'id': pid, 'element_type': 2, 'team': team, 'history': hist}
+
+        players = [_xgc_player(1, 1, 2.0), _xgc_player(2, 2, 0.5)]
+        elements = [{'id': p['id'], 'element_type': p['element_type'],
+                     'team': p['team'], 'web_name': f"P{p['id']}"}
+                    for p in players]
+        summaries = {p['id']: {'history': p['history']} for p in players}
+        return {
+            'bootstrap': {'elements': elements,
+                          'events': [{'id': g, 'finished': True}
+                                     for g in range(1, n_gws + 1)]},
+            'fixtures': fixtures,
+            'understat': {},
+            'summaries': summaries,
+            'manifest': {'season': 'synthetic'},
+        }
+
+    arch = _make_def_xgc_archive(n_gws=12)
+    # Goals scores/conceded are equal (1-1 each game); only cs_team_form_slope matters.
+    params_goals = {'cs_team_form_slope': 0.2, 'use_xgc_def_form': 0.0}
+    params_xgc = {'cs_team_form_slope': 0.2, 'use_xgc_def_form': 1.0}
+
+    r_goals = backtest.run_backtest(archive=arch, first_gw=8, last_gw=8,
+                                    params=params_goals)
+    r_xgc = backtest.run_backtest(archive=arch, first_gw=8, last_gw=8,
+                                  params=params_xgc)
+
+    # With equal goal concedes, def_form gives both teams 0.5 (no penalty).
+    # With xgc, team 1 (xgc=2.0) >> team 2 (xgc=0.5): team 1 gets higher ncr,
+    # reducing its CS prob -> lower xpts for team 1's DEF player.
+    rows_goals = {r['player_id']: r for r in r_goals['rows']}
+    rows_xgc = {r['player_id']: r for r in r_xgc['rows']}
+    assert rows_xgc[1]['xpts_pred'] != rows_goals[1]['xpts_pred']

@@ -41,7 +41,9 @@ DEFAULT_PARAMS = {
     # BT-02-local
     'min_prior_minutes': 270,
     'xmins_window': 5,
-    'defcon_scale': 0.0,  # 0.0 = off (backward compat); 1.0 = full 2-pt EV
+    'defcon_scale': 0.0,        # 0.0 = off (backward compat); 1.0 = full 2-pt EV
+    'fixture_attack_slope': 0.0,  # BT-02: opponent difficulty scaling of attacking EV
+    'use_xgc_def_form': 0.0,    # BT-02: use xGC-based team defence instead of goals-conceded
 }
 
 HAUL_THRESHOLD = 10
@@ -49,6 +51,84 @@ TOP_N = 10
 TOP_N_CAPTURE = 20
 MID_TOP_N = 30
 MIN_FORM_MINUTES = 90
+
+
+def build_team_xgc_lookup(archive: dict, window_gws: int = 6) -> dict:
+    """(gw, team_id) -> normalised prior rolling team xGC (0=best defence, 1=worst).
+
+    Team-match xGC = max expected_goals_conceded across that team's players'
+    entries for each (gw, fixture) — the max is carried by a full-match player.
+    Strictly prior (g < gw), min-max normalised per GW, 0.5 cold-start —
+    same conventions as accuracy.build_team_def_form_lookup.
+    """
+    fixtures = archive['fixtures']
+    fixtures_by_id = {f['id']: f for f in fixtures}
+
+    # First pass: collect team_match_xgc[(team_id, gw, fixture_id)] = max xgc
+    team_match_xgc: dict = {}
+    for pid, summary in archive['summaries'].items():
+        for entry in summary.get('history', []):
+            fix_id = entry.get('fixture')
+            fix = fixtures_by_id.get(fix_id)
+            if fix is None:
+                continue
+            gw = entry.get('round')
+            if gw is None:
+                continue
+            was_home = bool(entry.get('was_home'))
+            team_id = fix['team_h'] if was_home else fix['team_a']
+            xgc_val = float(entry.get('expected_goals_conceded') or 0)
+            key = (team_id, gw, fix_id)
+            if key not in team_match_xgc or xgc_val > team_match_xgc[key]:
+                team_match_xgc[key] = xgc_val
+
+    # Build per-team chronological list of (gw, xgc)
+    team_history: dict = defaultdict(list)
+    for (team_id, gw, _fix_id), xgc_val in team_match_xgc.items():
+        team_history[team_id].append((gw, xgc_val))
+    # Sort each team's history by gw
+    for team_id in team_history:
+        team_history[team_id].sort(key=lambda x: x[0])
+
+    # Identify every (gw, team_id) pair from fixtures
+    gw_team_pairs = set()
+    for fix in fixtures:
+        gw = fix.get('event')
+        if gw is None:
+            continue
+        gw_team_pairs.add((gw, fix['team_h']))
+        gw_team_pairs.add((gw, fix['team_a']))
+
+    # Compute raw rolling mean xGC strictly prior to each GW
+    raw_by_gw: dict = defaultdict(dict)
+    for gw, team_id in gw_team_pairs:
+        history = team_history.get(team_id, [])
+        prior = [(g, xgc) for g, xgc in history if g < gw]
+        last_n = prior[-window_gws:]
+        if not last_n:
+            raw_by_gw[gw][team_id] = None  # cold start sentinel
+        else:
+            raw_by_gw[gw][team_id] = sum(xgc for _, xgc in last_n) / len(last_n)
+
+    # Min-max normalise per GW; 0.5 for cold-start and all-equal
+    lookup: dict = {}
+    for gw, team_rates in raw_by_gw.items():
+        known = {t: r for t, r in team_rates.items() if r is not None}
+        if not known:
+            for t in team_rates:
+                lookup[(gw, t)] = 0.5
+            continue
+        min_xgc = min(known.values())
+        max_xgc = max(known.values())
+        denom = max_xgc - min_xgc
+        for t, rate in team_rates.items():
+            if rate is None:
+                lookup[(gw, t)] = 0.5
+            elif denom > 1e-6:
+                lookup[(gw, t)] = (rate - min_xgc) / denom
+            else:
+                lookup[(gw, t)] = 0.5
+    return lookup
 
 
 def build_asof_signals(history: list, gw: int, params: dict):
@@ -273,6 +353,12 @@ def run_backtest(archive: dict | None = None, params: dict | None = None,
     atf_form = build_team_atf_lookup(fixtures, p['atf_window_gws'])
     elements_by_id = {e['id']: e for e in archive['bootstrap']['elements']}
 
+    # BT-02: xGC-based defence form (use instead of def_form when truthy)
+    if p['use_xgc_def_form']:
+        xgc_form = build_team_xgc_lookup(archive, window_gws=int(p['cs_def_form_window_gws']))
+    else:
+        xgc_form = None
+
     rows = []
     for pid, summary in archive['summaries'].items():
         el = elements_by_id.get(pid)
@@ -312,8 +398,21 @@ def run_backtest(archive: dict | None = None, params: dict | None = None,
                 diff_raw = (fix.get('team_h_difficulty', 3) if was_home
                             else fix.get('team_a_difficulty', 3))
                 difficulty = (diff_raw - 1) / 4.0
-                ncr = def_form.get((gw, team_id), 0.5)
+                # BT-02: use xGC-based defence form when enabled
+                if xgc_form is not None:
+                    ncr = xgc_form.get((gw, team_id), 0.5)
+                else:
+                    ncr = def_form.get((gw, team_id), 0.5)
                 nar = atf_form.get((gw, team_id), 0.5)
+
+                # BT-02: fixture_attack_slope — scale attacking EV by opponent difficulty
+                if p['fixture_attack_slope'] > 0.0:
+                    atk_scale = max(0.0, 1.0 + (0.5 - difficulty) * p['fixture_attack_slope'])
+                    xg_used = sig['xg_per90'] * atk_scale
+                    xa_used = sig['xa_per90'] * atk_scale
+                else:
+                    xg_used = sig['xg_per90']
+                    xa_used = sig['xa_per90']
 
                 if mode == 'deploy':
                     # DGW note: same predicted xmins per fixture — a player
@@ -335,8 +434,8 @@ def run_backtest(archive: dict | None = None, params: dict | None = None,
                     xm, sp_ = float(m), 1.0
 
                 result = _compute_xpts_fixture(
-                    xg_per90=sig['xg_per90'],
-                    xa_per90=sig['xa_per90'],
+                    xg_per90=xg_used,
+                    xa_per90=xa_used,
                     start_prob=sp_,
                     xmins=xm,
                     element_type=et,
