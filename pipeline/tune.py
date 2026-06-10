@@ -32,6 +32,9 @@ from accuracy import (
     ATF_SLOPE,               # ATF-01
     ATF_WINDOW_GWS,          # ATF-01
     build_team_atf_lookup,   # ATF-01
+    FAS_SLOPE,               # FAS-01
+    DEFCON_SCALE,            # DC-01
+    build_defcon_rate_lookup,  # DC-01
 )
 
 # ── Candidate sweep grids ────────────────────────────────────────────────────
@@ -46,6 +49,8 @@ CS_TEAM_FORM_SLOPE_CANDIDATES  = [0.0, 0.05, 0.10, 0.15, 0.20]  # CSF-01
 CS_DEF_FORM_WINDOW_CANDIDATES  = [3, 5, 6, 8, 10]                # CSF-01
 ATF_SLOPE_CANDIDATES   = [0.0, 0.10, 0.20, 0.30, 0.40]  # ATF-01
 ATF_WINDOW_CANDIDATES  = [3, 5, 6, 8, 10]                # ATF-01
+FAS_SLOPE_CANDIDATES    = [0.0, 0.2, 0.4, 0.6]          # FAS-01
+DEFCON_SCALE_CANDIDATES = [0.0, 0.25, 0.5, 0.75, 1.0]   # DC-01
 
 # ── Safety thresholds ────────────────────────────────────────────────────────
 MIN_FINISHED_GWS = 13             # need at least this many GWs for a meaningful split
@@ -83,6 +88,8 @@ def _read_prior_params(cache_dir: str) -> dict:
             'cs_def_form_window_gws': int(summary.get('cs_def_form_window_gws_used', CS_DEF_FORM_WINDOW_GWS)),  # CSF-01
             'atf_slope':      float(summary.get('atf_slope_used',      ATF_SLOPE)),      # ATF-01
             'atf_window_gws': int(summary.get('atf_window_gws_used',   ATF_WINDOW_GWS)), # ATF-01
+            'fas_slope':      float(summary.get('fas_slope_used',      FAS_SLOPE)),      # FAS-01
+            'defcon_scale':   float(summary.get('defcon_scale_used',   DEFCON_SCALE)),   # DC-01
         }
     except (FileNotFoundError, json.JSONDecodeError, OSError, KeyError, ValueError):
         return {
@@ -97,6 +104,8 @@ def _read_prior_params(cache_dir: str) -> dict:
             'cs_def_form_window_gws': CS_DEF_FORM_WINDOW_GWS, # CSF-01
             'atf_slope':      ATF_SLOPE,      # ATF-01
             'atf_window_gws': ATF_WINDOW_GWS, # ATF-01
+            'fas_slope':      FAS_SLOPE,      # FAS-01
+            'defcon_scale':   DEFCON_SCALE,   # DC-01
         }
 
 
@@ -187,6 +196,10 @@ def _sweep_param(
         f"_sweep_param invariant: params['{param_name}']={params.get(param_name)} "
         f"!= current_val={current_val}"
     )
+    # DC-01: defcon_lookup has no tunable window — build once for the entire sweep
+    defcon_lookup = build_defcon_rate_lookup(
+        summaries, bootstrap.get('elements', [])
+    )  # DC-01
     # Baseline: current production metrics using current params
     baseline_team_def_form = build_team_def_form_lookup(
         fixtures, params['cs_def_form_window_gws']
@@ -209,6 +222,9 @@ def _sweep_param(
         cs_team_form_slope=params['cs_team_form_slope'],         # CSF-01
         team_atf_lookup=baseline_team_atf,    # ATF-01
         atf_slope=params['atf_slope'],         # ATF-01
+        defcon_lookup=defcon_lookup,           # DC-01
+        fas_slope=params['fas_slope'],         # FAS-01
+        defcon_scale=params['defcon_scale'],   # DC-01
     )
     current_train    = compute_metrics_for_gws(baseline_rows, gws_train)
     current_validate = compute_metrics_for_gws(baseline_rows, gws_validate)
@@ -244,6 +260,9 @@ def _sweep_param(
             cs_team_form_slope=candidate_params['cs_team_form_slope'],         # CSF-01
             team_atf_lookup=candidate_team_atf,                    # ATF-01
             atf_slope=candidate_params['atf_slope'],                # ATF-01
+            defcon_lookup=defcon_lookup,                            # DC-01 (built once)
+            fas_slope=candidate_params['fas_slope'],                # FAS-01
+            defcon_scale=candidate_params['defcon_scale'],          # DC-01
         )
         train_metrics    = compute_metrics_for_gws(candidate_rows, gws_train)
         validate_metrics = compute_metrics_for_gws(candidate_rows, gws_validate)
@@ -318,6 +337,8 @@ def run_tuner(
         'cs_def_form_window_gws': prior['cs_def_form_window_gws'], # CSF-01
         'atf_slope':      prior['atf_slope'],      # ATF-01
         'atf_window_gws': prior['atf_window_gws'], # ATF-01
+        'fas_slope':      prior['fas_slope'],      # FAS-01
+        'defcon_scale':   prior['defcon_scale'],   # DC-01
     }
 
     sweep_results: dict = {}
@@ -335,6 +356,8 @@ def run_tuner(
         ('cs_def_form_window_gws', CS_DEF_FORM_WINDOW_CANDIDATES,    prior['cs_def_form_window_gws']), # CSF-01
         ('atf_slope',      ATF_SLOPE_CANDIDATES,  prior['atf_slope']),      # ATF-01
         ('atf_window_gws', ATF_WINDOW_CANDIDATES, prior['atf_window_gws']), # ATF-01
+        ('fas_slope',      FAS_SLOPE_CANDIDATES,    prior['fas_slope']),     # FAS-01
+        ('defcon_scale',   DEFCON_SCALE_CANDIDATES, prior['defcon_scale']),  # DC-01
     ]
 
     for param_name, candidates, current_val in sweep_order:
