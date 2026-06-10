@@ -1,0 +1,62 @@
+{
+ "train_GW7-28": [
+  {
+   "key": "A_mean",
+   "haul_top10": 0.10472972972972973,
+   "haul_top20": 0.13851351351351351,
+   "top10_mean_pts": 4.754545454545456,
+   "n_haulers": 296
+  },
+  {
+   "key": "B_mean+defcon0.5",
+   "haul_top10": 0.08783783783783784,
+   "haul_top20": 0.13851351351351351,
+   "top10_mean_pts": 4.663636363636363,
+   "n_haulers": 296
+  },
+  {
+   "key": "C_ceiling",
+   "haul_top10": 0.08445945945945946,
+   "haul_top20": 0.14527027027027026,
+   "top10_mean_pts": 4.2272727272727275,
+   "n_haulers": 296
+  },
+  {
+   "key": "D_attacking",
+   "haul_top10": 0.0945945945945946,
+   "haul_top20": 0.14189189189189189,
+   "top10_mean_pts": 4.145454545454546,
+   "n_haulers": 296
+  }
+ ],
+ "val_GW29-38": [
+  {
+   "key": "A_mean",
+   "haul_top10": 0.1111111111111111,
+   "haul_top20": 0.19444444444444445,
+   "top10_mean_pts": 5.450000000000001,
+   "n_haulers": 144
+  },
+  {
+   "key": "B_mean+defcon0.5",
+   "haul_top10": 0.125,
+   "haul_top20": 0.2152777777777778,
+   "top10_mean_pts": 5.5,
+   "n_haulers": 144
+  },
+  {
+   "key": "C_ceiling",
+   "haul_top10": 0.1111111111111111,
+   "haul_top20": 0.2013888888888889,
+   "top10_mean_pts": 4.77,
+   "n_haulers": 144
+  },
+  {
+   "key": "D_attacking",
+   "haul_top10": 0.0763888888888889,
+   "haul_top20": 0.16666666666666666,
+   "top10_mean_pts": 4.380000000000001,
+   "n_haulers": 144
+  }
+ ]
+}
