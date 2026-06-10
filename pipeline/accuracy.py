@@ -63,7 +63,7 @@ def build_fixture_difficulty_lookup(fixtures: list) -> dict:
     return lookup
 
 
-def build_team_def_form_lookup(fixtures: list, window_gws: int = 6) -> dict:
+def build_team_def_form_lookup(fixtures: list, window_gws: int = CS_DEF_FORM_WINDOW_GWS) -> dict:
     """(gw, team_id) → norm_concede_rate for each GW a team plays.
 
     For each (gw, team_id) pair: collects the last window_gws finished fixtures
@@ -73,8 +73,6 @@ def build_team_def_form_lookup(fixtures: list, window_gws: int = 6) -> dict:
     Returns 0.5 for teams with no prior fixtures (neutral/unknown).
     Returns 0.5 for all teams if all have identical concede rates (cold-start guard).
     """
-    from collections import defaultdict
-
     # Collect finished fixtures, sorted by GW
     finished = sorted(
         [f for f in fixtures if f.get('finished') and f.get('event') is not None
