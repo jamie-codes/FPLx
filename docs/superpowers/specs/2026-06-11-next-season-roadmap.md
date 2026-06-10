@@ -59,3 +59,5 @@ The gem/differential logic in the web app has never been backtested. With SA-02'
 | Attacking-only ranking | −1.1 top10 pts vs mean |
 | Penalty-taker xG uplift | takers already caught at 53% vs 15% baseline — their xG already carries it |
 | blend_alpha 0.1 / window 6 (joint re-tune drift) | wins train, loses validation — overfit |
+| Exponentially weighted xmins (halflife 1.5-5) | marginal train gain, val top10 drops 5.66->5.52 |
+| GK save-points EV (saves_per90/3 x opp attack) | worsens GKP RMSE 2.71->3.01; CS+appearance already over-cover GKs |

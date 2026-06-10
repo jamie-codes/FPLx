@@ -1,5 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# Visual brainstorming companion
+.superpowers/
+
 # dependencies
 /node_modules
 /.pnp
@@ -63,3 +66,6 @@ pipeline/__pycache__/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Stray wrong-cwd cache artifacts
+pipeline/pipeline/
