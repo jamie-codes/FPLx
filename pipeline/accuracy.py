@@ -40,6 +40,8 @@ FORM_DIFFICULTY_GAMMA = 0.0  # FRM-02: difficulty weight scaling (default 0.0 = 
 SUB_APPEAR_WINDOW_GWS = 15   # APM-01: sub appearance history window (default)
 CS_PROB_BASE = 0.40          # TUNE-01: default base CS probability vs average opposition
 CS_PROB_SLOPE = 0.30         # TUNE-01: default CS probability sensitivity to opponent strength
+CS_TEAM_FORM_SLOPE   = 0.0  # CSF-01: default no-op; tunable via TUNE-01
+CS_DEF_FORM_WINDOW_GWS = 6  # CSF-01: rolling window for team goals-conceded
 FORMULA_VERSION = 'v1.12-a'  # Phase 63 D-01 / VER-01: bumped manually when prediction formula changes; pattern v{milestone}-{letter}
 
 
@@ -58,6 +60,80 @@ def build_fixture_difficulty_lookup(fixtures: list) -> dict:
             continue
         lookup[(gw, fix['team_h'])] = (fix.get('team_h_difficulty', 3) - 1) / 4.0
         lookup[(gw, fix['team_a'])] = (fix.get('team_a_difficulty', 3) - 1) / 4.0
+    return lookup
+
+
+def build_team_def_form_lookup(fixtures: list, window_gws: int = 6) -> dict:
+    """(gw, team_id) → norm_concede_rate for each GW a team plays.
+
+    For each (gw, team_id) pair: collects the last window_gws finished fixtures
+    for that team STRICTLY BEFORE gw (no leakage), computes mean goals conceded.
+    Denominator = actual entries seen (sparse-safe, matches xmins.py convention).
+    Min-max normalises across all teams for that GW.
+    Returns 0.5 for teams with no prior fixtures (neutral/unknown).
+    Returns 0.5 for all teams if all have identical concede rates (cold-start guard).
+    """
+    from collections import defaultdict
+
+    # Collect finished fixtures, sorted by GW
+    finished = sorted(
+        [f for f in fixtures if f.get('finished') and f.get('event') is not None
+         and f.get('team_h_score') is not None and f.get('team_a_score') is not None],
+        key=lambda f: f['event'],
+    )
+
+    # Per team: list of (gw, goals_conceded) in chronological order
+    team_history: dict[int, list[tuple[int, int]]] = {}
+    for fix in finished:
+        gw    = fix['event']
+        h_id  = fix['team_h']
+        a_id  = fix['team_a']
+        h_score = fix.get('team_h_score') or 0
+        a_score = fix.get('team_a_score') or 0
+        team_history.setdefault(h_id, []).append((gw, a_score))  # home team conceded away goals
+        team_history.setdefault(a_id, []).append((gw, h_score))  # away team conceded home goals
+
+    # Identify every (gw, team_id) pair we need to compute
+    gw_team_pairs: list[tuple[int, int]] = []
+    for fix in fixtures:
+        gw = fix.get('event')
+        if gw is None:
+            continue
+        gw_team_pairs.append((gw, fix['team_h']))
+        gw_team_pairs.append((gw, fix['team_a']))
+    gw_team_pairs = list(set(gw_team_pairs))
+
+    # Group by GW so we can normalise per-GW
+    raw_by_gw: dict[int, dict[int, float]] = defaultdict(dict)
+
+    for gw, team_id in gw_team_pairs:
+        history = team_history.get(team_id, [])
+        # Strictly prior games only (no leakage)
+        prior = [(g, gc) for g, gc in history if g < gw]
+        last_n = prior[-window_gws:]
+        if not last_n:
+            raw_by_gw[gw][team_id] = None  # type: ignore[assignment]  # sentinel for cold start
+        else:
+            raw_by_gw[gw][team_id] = sum(gc for _, gc in last_n) / len(last_n)
+
+    # Min-max normalise per GW; default 0.5 for cold-start and all-equal
+    lookup: dict = {}
+    for gw, team_rates in raw_by_gw.items():
+        known = {t_id: rate for t_id, rate in team_rates.items() if rate is not None}
+        if not known:
+            for t_id in team_rates:
+                lookup[(gw, t_id)] = 0.5
+            continue
+        min_xgc = min(known.values())
+        max_xgc = max(known.values())
+        denom = max_xgc - min_xgc
+        for t_id, rate in team_rates.items():
+            if rate is None:
+                lookup[(gw, t_id)] = 0.5
+            elif denom > 1e-6:
+                lookup[(gw, t_id)] = (rate - min_xgc) / denom
+            else:
+                lookup[(gw, t_id)] = 0.5  # all equal → neutral
     return lookup
 
 

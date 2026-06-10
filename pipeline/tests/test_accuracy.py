@@ -1341,3 +1341,67 @@ class TestComputeSubAppearProb:
         result = _reconstruct_xpts(entry, element_type=3, difficulty_score=0.5,
                                     sub_appear_prob=0.25)
         assert abs(result - 0.25) < 0.001
+
+
+# ── CSF-01: build_team_def_form_lookup ───────────────────────────────────────
+
+from accuracy import build_team_def_form_lookup
+
+
+def _finished_fix(gw: int, h_id: int, a_id: int, h_score: int, a_score: int) -> dict:
+    return {
+        'event': gw, 'team_h': h_id, 'team_a': a_id,
+        'team_h_score': h_score, 'team_a_score': a_score,
+        'finished': True,
+    }
+
+
+def test_build_team_def_form_lookup_basic():
+    """Team with higher goals conceded → higher norm_concede_rate than team with fewer."""
+    fixtures = []
+    # Team 1 concedes 3 per game; team 2 concedes 0 per game (6 prior games before GW 7)
+    for gw in range(1, 7):
+        fixtures.append(_finished_fix(gw, h_id=1, a_id=2, h_score=0, a_score=3))  # team 1 concedes 3, team 2 concedes 0
+
+    # Also add an upcoming fixture at GW 7 for both teams
+    fixtures.append({'event': 7, 'team_h': 1, 'team_a': 2, 'finished': False})
+
+    lookup = build_team_def_form_lookup(fixtures, window_gws=6)
+    rate_leaky = lookup.get((7, 1), 0.5)   # team 1 concedes 3/game
+    rate_solid = lookup.get((7, 2), 0.5)   # team 2 concedes 0/game
+    assert rate_leaky > rate_solid
+
+
+def test_build_team_def_form_lookup_cold_start():
+    """Team with no prior fixtures → returns 0.5."""
+    # GW 1 upcoming fixture — no finished games before it
+    fixtures = [{'event': 1, 'team_h': 10, 'team_a': 11, 'finished': False}]
+    lookup = build_team_def_form_lookup(fixtures, window_gws=6)
+    assert lookup.get((1, 10), 0.5) == pytest.approx(0.5)
+    assert lookup.get((1, 11), 0.5) == pytest.approx(0.5)
+
+
+def test_build_team_def_form_lookup_sparse():
+    """Only 2 prior games with window=6 → denominator = 2 (actual entries, not window)."""
+    # Team 3 played GW 1 and GW 2, conceded 2 each time. Team 4 conceded 0 each time.
+    fixtures = [
+        _finished_fix(1, h_id=3, a_id=4, h_score=0, a_score=2),  # team 3 concedes 2, team 4 concedes 0
+        _finished_fix(2, h_id=4, a_id=3, h_score=2, a_score=0),  # team 3 concedes 2 again, team 4 concedes 0
+        {'event': 3, 'team_h': 3, 'team_a': 4, 'finished': False},
+    ]
+    lookup = build_team_def_form_lookup(fixtures, window_gws=6)
+    # team 3: avg = 2.0 (2 games); team 4: avg = 0.0 → team 3 norm > team 4 norm
+    assert lookup.get((3, 3), 0.5) > lookup.get((3, 4), 0.5)
+
+
+def test_build_team_def_form_lookup_all_equal():
+    """All teams identical concede rate → returns 0.5 for all (division guard)."""
+    # Both teams concede exactly 1 per game
+    fixtures = [
+        _finished_fix(1, h_id=5, a_id=6, h_score=1, a_score=1),
+        _finished_fix(2, h_id=5, a_id=6, h_score=1, a_score=1),
+        {'event': 3, 'team_h': 5, 'team_a': 6, 'finished': False},
+    ]
+    lookup = build_team_def_form_lookup(fixtures, window_gws=6)
+    assert lookup.get((3, 5), 0.5) == pytest.approx(0.5)
+    assert lookup.get((3, 6), 0.5) == pytest.approx(0.5)
