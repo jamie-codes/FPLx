@@ -32,8 +32,8 @@ TOP_N_PREDICTED_MID = 30     # Phase 42 ACC-04: top-30 net for mid-tier (CS defe
 BACKTEST_GWS = 5             # D-01: last 5 finished GWs
 MIN_MINUTES = 10             # Claude's Discretion: skip <10-min entries (filters DNPs and noise from late subs)
 GATE_MARGIN_PP = 0.02        # Phase 42 ACC-03 / Pitfall 3: require 2pp margin to flip gate (anti-flap)
-BLEND_ALPHA = 0.4            # Phase 42 ACC-01: form-signal blend coefficient (matches merge.BLEND_ALPHA)
-FORM_WINDOW_GWS = 5          # Phase 42 ACC-01: same window as merge._compute_form_signal default
+BLEND_ALPHA = 0.2            # Phase 42 ACC-01: form-signal blend coefficient; honest-tuned 2026-06 (BT-02)
+FORM_WINDOW_GWS = 4          # Phase 42 ACC-01: same window as merge._compute_form_signal default; honest-tuned 2026-06 (BT-02)
 FORM_MIN_MINUTES = 270       # Phase 42 ACC-01: same minutes floor as merge._compute_form_signal default
 FORM_ACTUAL_BETA = 0.0       # FRM-01: actual G+A blend weight (default 0.0 = pure xG+xA)
 FORM_DIFFICULTY_GAMMA = 0.0  # FRM-02: difficulty weight scaling (default 0.0 = no-op)
@@ -44,6 +44,8 @@ CS_TEAM_FORM_SLOPE   = 0.0  # CSF-01: default no-op; tunable via TUNE-01
 CS_DEF_FORM_WINDOW_GWS = 6  # CSF-01: rolling window for team goals-conceded
 ATF_SLOPE      = 0.0  # ATF-01: default no-op; tunable via TUNE-01
 ATF_WINDOW_GWS = 6    # ATF-01: rolling window for team goals-scored
+FAS_SLOPE    = 0.4  # FAS-01: fixture attack scaling, validated in BT-02 honest backtest
+DEFCON_SCALE = 0.0  # DC-01: DefCon EV weight; tunable via TUNE-01
 FORMULA_VERSION = 'v1.12-a'  # Phase 63 D-01 / VER-01: bumped manually when prediction formula changes; pattern v{milestone}-{letter}
 
 
@@ -210,6 +212,43 @@ def build_team_atf_lookup(fixtures: list, window_gws: int = ATF_WINDOW_GWS) -> d
     return lookup
 
 
+DEFCON_THRESHOLD = {2: 10, 3: 12, 4: 12}  # DC-01 (mirrors defcon.py)
+
+
+def build_defcon_rate_lookup(summaries: dict, elements: list) -> dict:
+    """(gw, player_id) -> prior P(defensive_contribution >= threshold | 60+ mins).
+
+    Strictly prior: for target GW g uses only history rounds < g (no leakage).
+    Denominator = prior 60+ minute games; no prior such games -> 0.0.
+    GKP -> no entries (rate 0.0 via caller's .get default).
+    """
+    et_by_id = {e['id']: e.get('element_type') for e in elements}
+    lookup: dict = {}
+    for pid, summary in summaries.items():
+        threshold = DEFCON_THRESHOLD.get(et_by_id.get(pid))
+        if threshold is None:
+            continue
+        history = sorted(summary.get('history', []),
+                         key=lambda e: e.get('round', 0))
+        rounds = sorted({e.get('round') for e in history
+                         if e.get('round') is not None})
+        played = 0
+        hits = 0
+        idx = 0
+        entries = history
+        for g in rounds:
+            # accumulate entries with round < g BEFORE recording lookup
+            while idx < len(entries) and entries[idx].get('round', 0) < g:
+                e = entries[idx]
+                if (e.get('minutes', 0) or 0) >= 60:
+                    played += 1
+                    if (e.get('defensive_contribution', 0) or 0) >= threshold:
+                        hits += 1
+                idx += 1
+            lookup[(g, pid)] = hits / played if played else 0.0
+    return lookup
+
+
 def compute_metrics_for_gws(per_gw_rows: dict, gws: list) -> dict:
     """Compute haul hit rate, xPts RMSE, and captain hit rate over the given GWs.
 
@@ -292,6 +331,9 @@ def build_per_gw_rows(
     cs_team_form_slope: float = CS_TEAM_FORM_SLOPE,          # CSF-01
     team_atf_lookup: dict = {},                               # ATF-01: pre-built per (gw, team_id)
     atf_slope: float = ATF_SLOPE,                             # ATF-01
+    defcon_lookup: dict = {},                                 # DC-01: pre-built per (gw, player_id)
+    fas_slope: float = FAS_SLOPE,                             # FAS-01
+    defcon_scale: float = DEFCON_SCALE,                       # DC-01
 ) -> dict:
     """Build per-GW player rows with reconstructed xPts for the given target_gws.
 
@@ -315,6 +357,9 @@ def build_per_gw_rows(
         cs_team_form_slope:    team defensive form slope coefficient (CSF-01).
         team_atf_lookup:       (gw, team_id) -> norm_attack_rate pre-built lookup (ATF-01).
         atf_slope:             team attack form slope coefficient (ATF-01).
+        defcon_lookup:         (gw, player_id) -> prior P(DC threshold | 60+ mins) (DC-01).
+        fas_slope:             fixture attack scaling slope coefficient (FAS-01).
+        defcon_scale:          DefCon EV weight (DC-01).
 
     Returns:
         dict mapping gw -> list of player-row dicts (same shape as compute_accuracy_backtest
@@ -349,6 +394,7 @@ def build_per_gw_rows(
             difficulty_score = fixture_difficulty.get((gw, player_team_id), 0.5)
             norm_concede_rate_at_gw = team_def_form_lookup.get((gw, player_team_id), 0.5)  # CSF-01
             norm_attack_rate_at_gw = team_atf_lookup.get((gw, player_team_id), 0.5)        # ATF-01
+            defcon_rate_at_gw = defcon_lookup.get((gw, element_id), 0.0)                   # DC-01
 
             # APM-01: compute sub appearance prob from prior history
             sub_appear_prob_at_gw = _compute_sub_appear_prob(grouped, gw, sub_appear_window_gws)
@@ -375,6 +421,9 @@ def build_per_gw_rows(
                 cs_team_form_slope=cs_team_form_slope,        # CSF-01
                 norm_attack_rate=norm_attack_rate_at_gw,    # ATF-01
                 atf_slope=atf_slope,                         # ATF-01
+                fas_slope=fas_slope,                         # FAS-01
+                defcon_rate=defcon_rate_at_gw,               # DC-01
+                defcon_scale=defcon_scale,                   # DC-01
             )
             form_per90_at_gw = _reconstruct_form_signal(
                 grouped, gw, window_gws=form_window_gws,
@@ -392,6 +441,9 @@ def build_per_gw_rows(
                 cs_team_form_slope=cs_team_form_slope,        # CSF-01
                 norm_attack_rate=norm_attack_rate_at_gw,    # ATF-01
                 atf_slope=atf_slope,                         # ATF-01
+                fas_slope=fas_slope,                         # FAS-01
+                defcon_rate=defcon_rate_at_gw,               # DC-01
+                defcon_scale=defcon_scale,                   # DC-01
             )
 
             per_gw_rows[gw].append({
@@ -541,6 +593,7 @@ def compute_accuracy_backtest(
     fixture_difficulty = build_fixture_difficulty_lookup(fixtures)
     team_def_form_lookup = build_team_def_form_lookup(fixtures, CS_DEF_FORM_WINDOW_GWS)  # CSF-01
     team_atf_lookup = build_team_atf_lookup(fixtures, ATF_WINDOW_GWS)  # ATF-01
+    defcon_lookup = build_defcon_rate_lookup(summaries, bootstrap.get('elements', []))  # DC-01
     teams_by_id = {t['id']: t for t in bootstrap.get('teams', [])}
 
     per_gw_rows = build_per_gw_rows(
@@ -555,6 +608,7 @@ def compute_accuracy_backtest(
         cs_prob_slope=cs_prob_slope,
         team_def_form_lookup=team_def_form_lookup,  # CSF-01
         team_atf_lookup=team_atf_lookup,    # ATF-01
+        defcon_lookup=defcon_lookup,        # DC-01
     )
 
     # Second pass: per-GW ranking and haulter flagging
@@ -1047,6 +1101,9 @@ def _reconstruct_xpts(entry: dict, element_type: int, difficulty_score: float,
                        cs_team_form_slope: float = 0.0,     # CSF-01
                        norm_attack_rate: float = 0.5,       # ATF-01
                        atf_slope: float = 0.0,              # ATF-01
+                       fas_slope: float = 0.0,              # FAS-01
+                       defcon_rate: float = 0.0,            # DC-01
+                       defcon_scale: float = 0.0,           # DC-01
                        ) -> float:
     """Reconstruct xPts for a single GW history entry (D-02, D-03, D-04).
 
@@ -1089,6 +1146,10 @@ def _reconstruct_xpts(entry: dict, element_type: int, difficulty_score: float,
         cs_team_form_slope=cs_team_form_slope,  # CSF-01
         norm_attack_rate=norm_attack_rate,    # ATF-01
         atf_slope=atf_slope,                   # ATF-01
+        attack_difficulty=difficulty_score,    # FAS-01
+        fas_slope=fas_slope,                   # FAS-01
+        defcon_rate=defcon_rate,               # DC-01
+        defcon_scale=defcon_scale,             # DC-01
     )
     return round(result['total'], 2)
 
@@ -1167,6 +1228,9 @@ def _reconstruct_xpts_with_form(
     cs_team_form_slope: float = 0.0,     # CSF-01
     norm_attack_rate: float = 0.5,       # ATF-01
     atf_slope: float = 0.0,              # ATF-01
+    fas_slope: float = 0.0,              # FAS-01
+    defcon_rate: float = 0.0,            # DC-01
+    defcon_scale: float = 0.0,           # DC-01
 ) -> float:
     """Reconstruct xPts with optional form blend (Phase 42 ACC-02).
 
@@ -1186,7 +1250,10 @@ def _reconstruct_xpts_with_form(
                                   norm_concede_rate=norm_concede_rate,       # CSF-01
                                   cs_team_form_slope=cs_team_form_slope,     # CSF-01
                                   norm_attack_rate=norm_attack_rate,    # ATF-01
-                                  atf_slope=atf_slope)                  # ATF-01
+                                  atf_slope=atf_slope,                  # ATF-01
+                                  fas_slope=fas_slope,                  # FAS-01
+                                  defcon_rate=defcon_rate,              # DC-01
+                                  defcon_scale=defcon_scale)            # DC-01
 
     from merge import _compute_xpts_fixture
 
@@ -1228,5 +1295,9 @@ def _reconstruct_xpts_with_form(
         cs_team_form_slope=cs_team_form_slope,  # CSF-01
         norm_attack_rate=norm_attack_rate,    # ATF-01
         atf_slope=atf_slope,                   # ATF-01
+        attack_difficulty=difficulty_score,    # FAS-01
+        fas_slope=fas_slope,                   # FAS-01
+        defcon_rate=defcon_rate,               # DC-01
+        defcon_scale=defcon_scale,             # DC-01
     )
     return round(result['total'], 2)

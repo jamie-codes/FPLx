@@ -1462,3 +1462,44 @@ def test_build_team_atf_lookup_all_equal():
     lookup = build_team_atf_lookup(fixtures)
     assert lookup.get((2, 1), 0.5) == 0.5
     assert lookup.get((2, 2), 0.5) == 0.5
+
+
+# ── DC-01: build_defcon_rate_lookup ──────────────────────────────────────── #
+
+def _dc_summary(pid, rates):
+    """rates: list of (round, minutes, dc)."""
+    return {pid: {'history': [
+        {'round': r, 'minutes': m, 'defensive_contribution': d}
+        for r, m, d in rates]}}
+
+
+def test_build_defcon_rate_lookup_strictly_prior():
+    from accuracy import build_defcon_rate_lookup
+    summaries = _dc_summary(7, [(1, 90, 12), (2, 90, 12), (3, 90, 0)])
+    elements = [{'id': 7, 'element_type': 3}]
+    lookup = build_defcon_rate_lookup(summaries, elements)
+    assert lookup[(1, 7)] == 0.0          # nothing prior
+    assert lookup[(2, 7)] == 1.0          # 1/1 prior hits
+    assert lookup[(3, 7)] == 1.0          # 2/2
+    # GW3's own miss not visible at GW3; a GW4 key doesn't exist (no GW4 entry)
+
+
+def test_build_defcon_rate_lookup_sixty_minute_denominator():
+    from accuracy import build_defcon_rate_lookup
+    summaries = _dc_summary(8, [(1, 90, 12), (2, 30, 12), (3, 90, 0)])
+    elements = [{'id': 8, 'element_type': 3}]
+    lookup = build_defcon_rate_lookup(summaries, elements)
+    # At GW3: prior 60+ games = GW1 only (GW2 was 30 mins) -> 1/1
+    assert lookup[(3, 8)] == 1.0
+
+
+def test_build_defcon_rate_lookup_def_threshold_and_gkp():
+    from accuracy import build_defcon_rate_lookup
+    summaries = {}
+    summaries.update(_dc_summary(1, [(1, 90, 10), (2, 90, 10)]))
+    summaries.update(_dc_summary(2, [(1, 90, 10), (2, 90, 10)]))
+    elements = [{'id': 1, 'element_type': 2},   # DEF: threshold 10 -> hits
+                {'id': 2, 'element_type': 1}]   # GKP: excluded entirely
+    lookup = build_defcon_rate_lookup(summaries, elements)
+    assert lookup[(2, 1)] == 1.0
+    assert (2, 2) not in lookup

@@ -157,9 +157,10 @@ class TestCombinedScore:
 
 class TestReadPriorParams:
     def test_returns_defaults_when_no_cache_file(self, tmp_path):
+        from accuracy import BLEND_ALPHA, FORM_WINDOW_GWS
         params = _read_prior_params(str(tmp_path))
-        assert params['blend_alpha'] == 0.4
-        assert params['form_window_gws'] == 5
+        assert params['blend_alpha'] == BLEND_ALPHA
+        assert params['form_window_gws'] == FORM_WINDOW_GWS
         assert abs(params['cs_prob_base'] - 0.40) < 1e-9
         assert abs(params['cs_prob_slope'] - 0.30) < 1e-9
 
@@ -181,16 +182,18 @@ class TestReadPriorParams:
         assert abs(params['cs_prob_slope'] - 0.25) < 1e-9
 
     def test_returns_defaults_on_malformed_json(self, tmp_path):
+        from accuracy import BLEND_ALPHA
         (tmp_path / 'accuracy_backtest.json').write_text('not json')
         params = _read_prior_params(str(tmp_path))
-        assert params['blend_alpha'] == 0.4
+        assert params['blend_alpha'] == BLEND_ALPHA
 
     def test_returns_defaults_on_wrong_type(self, tmp_path):
         """Non-numeric blend_alpha_used triggers ValueError -> falls back to defaults."""
+        from accuracy import BLEND_ALPHA
         data = {'summary': {'blend_alpha_used': 'not_a_float'}}
         (tmp_path / 'accuracy_backtest.json').write_text(json.dumps(data))
         params = _read_prior_params(str(tmp_path))
-        assert params['blend_alpha'] == 0.4
+        assert params['blend_alpha'] == BLEND_ALPHA
 
     def test_form_actual_beta_default_in_read_prior_params(self, tmp_path):
         """Missing form_actual_beta_used in summary → returns FORM_ACTUAL_BETA (0.0)."""
