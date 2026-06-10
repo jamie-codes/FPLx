@@ -1,9 +1,19 @@
 """Coordinate descent parameter tuner for the xPts model (TUNE-01).
 
-Sweeps BLEND_ALPHA, FORM_WINDOW_GWS, cs_prob_base, cs_prob_slope in sequence.
-Each parameter is evaluated on three metrics (haul hit rate, xPts RMSE, captain
-hit rate) over a held-out GW window. Promotes a value only when it passes all
-safety gates. Non-fatal: run.py wraps the call in try/except.
+Sweeps 10 parameters in sequence using the leakage-free backtest harness
+(BT-02 `run_backtest` in deploy mode). Each parameter is evaluated on three
+metrics (haul hit rate, xPts RMSE, captain hit rate) over a held-out GW
+window. Promotes a value only when it passes all safety gates.
+Non-fatal: run.py wraps the call in try/except.
+
+BT-03 frozen parameters — excluded from sweep but retained in priors,
+params dict and promoted_params so that the run.py contract is unchanged:
+  • form_actual_beta       — BT-02 v1's simplified form signal does not
+                             expose this knob; honest lab found the effect
+                             minor relative to blend_alpha.
+  • form_difficulty_gamma  — likewise unsupported by BT-02 v1.
+  • sub_appear_window_gws  — BT-02 derives sub appearance from xmins_window;
+                             the per-param sub-appear window is future work.
 
 Public API:
     run_tuner(summaries, finished_gws, bootstrap, fixtures, cache_dir='') -> dict
@@ -15,9 +25,6 @@ import os
 from datetime import datetime, timezone
 
 from accuracy import (
-    build_fixture_difficulty_lookup,
-    build_per_gw_rows,
-    compute_metrics_for_gws,
     GATE_MARGIN_PP,
     BLEND_ALPHA,
     FORM_WINDOW_GWS,
@@ -28,14 +35,13 @@ from accuracy import (
     SUB_APPEAR_WINDOW_GWS,   # APM-01
     CS_TEAM_FORM_SLOPE,      # CSF-01
     CS_DEF_FORM_WINDOW_GWS,  # CSF-01
-    build_team_def_form_lookup,  # CSF-01
     ATF_SLOPE,               # ATF-01
     ATF_WINDOW_GWS,          # ATF-01
-    build_team_atf_lookup,   # ATF-01
     FAS_SLOPE,               # FAS-01
     DEFCON_SCALE,            # DC-01
-    build_defcon_rate_lookup,  # DC-01
 )
+
+from backtest import run_backtest
 
 # ── Candidate sweep grids ────────────────────────────────────────────────────
 BLEND_ALPHA_CANDIDATES = [round(x * 0.1, 1) for x in range(11)]   # 0.0 … 1.0
@@ -57,8 +63,88 @@ MIN_FINISHED_GWS = 13             # need at least this many GWs for a meaningful
 RMSE_REGRESSION_THRESHOLD = 0.05  # max allowed fractional RMSE worsening (5%)
 CAPTAIN_REGRESSION_PP = 0.02      # max allowed captain hit rate drop (2pp)
 
+# Names of the three frozen parameters (not swept; kept at prior values).
+_FROZEN_PARAMS = frozenset({'form_actual_beta', 'form_difficulty_gamma', 'sub_appear_window_gws'})
+
+# ── Sweep order: 10 actively swept parameters (BT-03) ───────────────────────
+# form_actual_beta, form_difficulty_gamma, sub_appear_window_gws are FROZEN
+# (see module docstring). They remain in params/promoted_params at their prior
+# values so the run.py read/write contract is unchanged.
+_SWEEP_ORDER_NAMES = [
+    'blend_alpha',
+    'form_window_gws',
+    'cs_prob_base',
+    'cs_prob_slope',
+    'cs_team_form_slope',
+    'cs_def_form_window_gws',
+    'atf_slope',
+    'atf_window_gws',
+    'fas_slope',
+    'defcon_scale',
+]
+
 
 # ── Public helpers (used in tests) ───────────────────────────────────────────
+
+def _map_tune_to_bt_params(tune_params: dict) -> dict:
+    """Translate TUNE-01 parameter names to BT-02 parameter names.
+
+    All names are identical except:
+      fas_slope  →  fixture_attack_slope
+
+    Returns a new dict suitable for passing to run_backtest(params=...).
+    Only keys that BT-02 knows about are emitted; frozen TUNE-01-only keys
+    (form_actual_beta, form_difficulty_gamma, sub_appear_window_gws) are
+    silently dropped because BT-02 v1 does not support them.
+    """
+    bt_keys = {
+        'blend_alpha', 'form_window_gws',
+        'cs_prob_base', 'cs_prob_slope',
+        'cs_team_form_slope', 'cs_def_form_window_gws',
+        'atf_slope', 'atf_window_gws',
+        'defcon_scale',
+    }
+    out = {k: v for k, v in tune_params.items() if k in bt_keys}
+    # Name translation: fas_slope -> fixture_attack_slope
+    if 'fas_slope' in tune_params:
+        out['fixture_attack_slope'] = tune_params['fas_slope']
+    return out
+
+
+def _safe_haul_hit(metrics: dict) -> float:
+    """Return haul_hit_rate from a metrics dict, treating None as 0.0.
+
+    run_backtest returns None for haul_hit_rate when a GW range contains no
+    haulers (rare in short train windows). Treat as 0.0 for scoring/gates.
+    """
+    v = metrics.get('haul_hit_rate')
+    return 0.0 if v is None else float(v)
+
+
+def _safe_captain(metrics: dict) -> float:
+    """Return captain_hit_rate from a metrics dict, treating None as 0.0."""
+    v = metrics.get('captain_hit_rate')
+    return 0.0 if v is None else float(v)
+
+
+def _safe_rmse(metrics: dict) -> float:
+    """Return rmse from a metrics dict, treating None as 0.0."""
+    v = metrics.get('rmse')
+    return 0.0 if v is None else float(v)
+
+
+def _metrics_from_backtest(bt_result: dict) -> dict:
+    """Extract the three gate/scoring metrics from a run_backtest result dict.
+
+    Normalises None values (no haulers, no GWs) to 0.0.
+    """
+    m = bt_result['metrics']
+    return {
+        'haul_hit_rate':    _safe_haul_hit(m),
+        'rmse':             _safe_rmse(m),
+        'captain_hit_rate': _safe_captain(m),
+    }
+
 
 def _read_prior_params(cache_dir: str) -> dict:
     """Read current production parameter values from accuracy_backtest.json summary.
@@ -121,23 +207,34 @@ def _promotion_gates(
     Gate 2: candidate does not regress on validation haul hit rate.
     Gate 3: validation RMSE does not worsen by more than RMSE_REGRESSION_THRESHOLD (5%).
     Gate 4: validation captain hit rate does not drop by more than CAPTAIN_REGRESSION_PP (2pp).
+
+    haul_hit_rate may be None from run_backtest (no haulers in range); treat as 0.0.
     """
+    cur_train_haul = _safe_haul_hit(current_train)
+    cand_train_haul = _safe_haul_hit(candidate_train)
+    cur_val_haul = _safe_haul_hit(current_val)
+    cand_val_haul = _safe_haul_hit(candidate_val)
+    cur_val_rmse = _safe_rmse(current_val)
+    cand_val_rmse = _safe_rmse(candidate_val)
+    cur_val_cap = _safe_captain(current_val)
+    cand_val_cap = _safe_captain(candidate_val)
+
     # Gate 1: training improvement > 2pp
-    if candidate_train['haul_hit_rate'] - current_train['haul_hit_rate'] <= GATE_MARGIN_PP:
+    if cand_train_haul - cur_train_haul <= GATE_MARGIN_PP:
         return False
     # Gate 2: validation haul hit rate must not regress
-    if candidate_val['haul_hit_rate'] < current_val['haul_hit_rate']:
+    if cand_val_haul < cur_val_haul:
         return False
     # Gate 3: validation RMSE must not worsen by >5%
-    if current_val['rmse'] > 0:
-        rmse_change = (candidate_val['rmse'] - current_val['rmse']) / current_val['rmse']
+    if cur_val_rmse > 0:
+        rmse_change = (cand_val_rmse - cur_val_rmse) / cur_val_rmse
         if rmse_change > RMSE_REGRESSION_THRESHOLD:
             return False
-    elif candidate_val['rmse'] > 0:
+    elif cand_val_rmse > 0:
         # Base RMSE is zero but candidate is non-zero — reject (cannot be better)
         return False
     # Gate 4: validation captain hit rate must not drop >2pp (epsilon for float safety)
-    if current_val['captain_hit_rate'] - candidate_val['captain_hit_rate'] > CAPTAIN_REGRESSION_PP + 1e-9:
+    if cur_val_cap - cand_val_cap > CAPTAIN_REGRESSION_PP + 1e-9:
         return False
     return True
 
@@ -147,12 +244,21 @@ def _combined_score(current_metrics: dict, candidate_metrics: dict) -> float:
 
     All three terms are fractional improvements over current, keeping them on comparable scales.
     Score = Δhaul_hit_rate + (rmse_improvement_fraction) + Δcaptain_hit_rate
+
+    haul_hit_rate / captain_hit_rate may be None; treated as 0.0.
     """
-    delta_haul = candidate_metrics['haul_hit_rate'] - current_metrics['haul_hit_rate']
+    cur_haul = _safe_haul_hit(current_metrics)
+    cand_haul = _safe_haul_hit(candidate_metrics)
+    cur_rmse = _safe_rmse(current_metrics)
+    cand_rmse = _safe_rmse(candidate_metrics)
+    cur_cap = _safe_captain(current_metrics)
+    cand_cap = _safe_captain(candidate_metrics)
+
+    delta_haul = cand_haul - cur_haul
     rmse_improvement = 0.0
-    if current_metrics['rmse'] > 0:
-        rmse_improvement = (current_metrics['rmse'] - candidate_metrics['rmse']) / current_metrics['rmse']
-    delta_captain = candidate_metrics['captain_hit_rate'] - current_metrics['captain_hit_rate']
+    if cur_rmse > 0:
+        rmse_improvement = (cur_rmse - cand_rmse) / cur_rmse
+    delta_captain = cand_cap - cur_cap
     return delta_haul + rmse_improvement + delta_captain
 
 
@@ -161,116 +267,74 @@ def _sweep_param(
     candidates: list,
     current_val,
     params: dict,
-    summaries: dict,
-    all_gws: list,
-    bootstrap: dict,
-    fixture_difficulty: dict,
-    fixtures: list,          # CSF-01: needed to rebuild team_def_form_lookup per candidate
-    teams_by_id: dict,
-    gws_train: list,
-    gws_validate: list,
+    archive: dict,
+    train_first: int,
+    train_last: int,
+    val_first: int,
+    val_last: int,
 ) -> dict:
-    """Sweep one parameter over all candidates. Returns result dict.
+    """Sweep one parameter over all candidates using the honest BT-02 evaluator.
+
+    Evaluates each candidate via run_backtest(archive, mapped_params, mode='deploy')
+    on the training range. Gates on train AND val metrics via _promotion_gates.
+    Selects best promoted candidate by _combined_score on val metrics.
 
     Args:
-        param_name:         key in params dict being swept (e.g. 'blend_alpha').
-        candidates:         list of candidate values to evaluate.
-        current_val:        current production value (read from prior backtest).
-        params:             current locked-in values for all four parameters.
-        summaries:          element-summary dict from run.py.
-        all_gws:            all finished GW numbers (train + validate combined).
-        bootstrap:          FPL bootstrap-static JSON.
-        fixture_difficulty: lookup built by build_fixture_difficulty_lookup().
-        fixtures:           raw fixture list; used to rebuild team_def_form_lookup per candidate.
-        teams_by_id:        dict mapping team_id (int) -> team dict.
-        gws_train:          GW numbers for training set.
-        gws_validate:       GW numbers for validation set.
+        param_name:   key in TUNE-01 params being swept (e.g. 'blend_alpha').
+        candidates:   list of candidate values to evaluate.
+        current_val:  current production value (read from prior backtest).
+        params:       current locked-in TUNE-01 values for all parameters.
+        archive:      archive-shaped dict passed to run_backtest.
+        train_first:  first GW of the training range.
+        train_last:   last GW of the training range.
+        val_first:    first GW of the validation range.
+        val_last:     last GW of the validation range.
 
     Returns:
         dict with keys: current, best, promoted, and (when promoted=True) per-metric
         train/validate values.
     """
     # Invariant: current_val must match what params currently holds for this param.
-    # If they diverge, the skip guard and result['current'] will be inconsistent.
     assert params.get(param_name) == current_val, (
         f"_sweep_param invariant: params['{param_name}']={params.get(param_name)} "
         f"!= current_val={current_val}"
     )
-    # DC-01: defcon_lookup has no tunable window — build once for the entire sweep
-    defcon_lookup = build_defcon_rate_lookup(
-        summaries, bootstrap.get('elements', [])
-    )  # DC-01
+
     # Baseline: current production metrics using current params
-    baseline_team_def_form = build_team_def_form_lookup(
-        fixtures, params['cs_def_form_window_gws']
-    )  # CSF-01
-    baseline_team_atf = build_team_atf_lookup(fixtures, params['atf_window_gws'])  # ATF-01
-    baseline_rows = build_per_gw_rows(
-        summaries=summaries,
-        target_gws=all_gws,
-        bootstrap=bootstrap,
-        fixture_difficulty=fixture_difficulty,
-        teams_by_id=teams_by_id,
-        blend_alpha=params['blend_alpha'],
-        form_window_gws=params['form_window_gws'],
-        cs_prob_base=params['cs_prob_base'],
-        cs_prob_slope=params['cs_prob_slope'],
-        form_actual_beta=params['form_actual_beta'],
-        form_difficulty_gamma=params['form_difficulty_gamma'],   # FRM-02
-        sub_appear_window_gws=params['sub_appear_window_gws'],   # APM-01
-        team_def_form_lookup=baseline_team_def_form,             # CSF-01
-        cs_team_form_slope=params['cs_team_form_slope'],         # CSF-01
-        team_atf_lookup=baseline_team_atf,    # ATF-01
-        atf_slope=params['atf_slope'],         # ATF-01
-        defcon_lookup=defcon_lookup,           # DC-01
-        fas_slope=params['fas_slope'],         # FAS-01
-        defcon_scale=params['defcon_scale'],   # DC-01
+    bt_base = _map_tune_to_bt_params(params)
+    base_train = _metrics_from_backtest(
+        run_backtest(archive=archive, params=bt_base, mode='deploy',
+                     first_gw=train_first, last_gw=train_last)
     )
-    current_train    = compute_metrics_for_gws(baseline_rows, gws_train)
-    current_validate = compute_metrics_for_gws(baseline_rows, gws_validate)
+    base_val = _metrics_from_backtest(
+        run_backtest(archive=archive, params=bt_base, mode='deploy',
+                     first_gw=val_first, last_gw=val_last)
+    )
 
     best_val = current_val
     best_combined: float | None = None
-    best_train = current_train
-    best_validate = current_validate
+    best_train = base_train
+    best_validate = base_val
     promoted = False
 
     for candidate in candidates:
         if candidate == current_val:
             continue
         candidate_params = {**params, param_name: candidate}
-        candidate_team_def_form = build_team_def_form_lookup(
-            fixtures, candidate_params['cs_def_form_window_gws']
-        )  # CSF-01
-        candidate_team_atf = build_team_atf_lookup(fixtures, candidate_params['atf_window_gws'])  # ATF-01
-        candidate_rows = build_per_gw_rows(
-            summaries=summaries,
-            target_gws=all_gws,
-            bootstrap=bootstrap,
-            fixture_difficulty=fixture_difficulty,
-            teams_by_id=teams_by_id,
-            blend_alpha=candidate_params['blend_alpha'],
-            form_window_gws=candidate_params['form_window_gws'],
-            cs_prob_base=candidate_params['cs_prob_base'],
-            cs_prob_slope=candidate_params['cs_prob_slope'],
-            form_actual_beta=candidate_params['form_actual_beta'],
-            form_difficulty_gamma=candidate_params['form_difficulty_gamma'],   # FRM-02
-            sub_appear_window_gws=candidate_params['sub_appear_window_gws'],   # APM-01
-            team_def_form_lookup=candidate_team_def_form,                      # CSF-01
-            cs_team_form_slope=candidate_params['cs_team_form_slope'],         # CSF-01
-            team_atf_lookup=candidate_team_atf,                    # ATF-01
-            atf_slope=candidate_params['atf_slope'],                # ATF-01
-            defcon_lookup=defcon_lookup,                            # DC-01 (built once)
-            fas_slope=candidate_params['fas_slope'],                # FAS-01
-            defcon_scale=candidate_params['defcon_scale'],          # DC-01
+        bt_cand = _map_tune_to_bt_params(candidate_params)
+        train_metrics = _metrics_from_backtest(
+            run_backtest(archive=archive, params=bt_cand, mode='deploy',
+                         first_gw=train_first, last_gw=train_last)
         )
-        train_metrics    = compute_metrics_for_gws(candidate_rows, gws_train)
-        validate_metrics = compute_metrics_for_gws(candidate_rows, gws_validate)
+        validate_metrics = _metrics_from_backtest(
+            run_backtest(archive=archive, params=bt_cand, mode='deploy',
+                         first_gw=val_first, last_gw=val_last)
+        )
 
-        if not _promotion_gates(current_train, train_metrics, current_validate, validate_metrics):
+        if not _promotion_gates(base_train, train_metrics, base_val, validate_metrics):
             continue
 
-        combined = _combined_score(current_validate, validate_metrics)
+        combined = _combined_score(base_val, validate_metrics)
         if best_combined is None or combined > best_combined:
             best_combined    = combined
             best_val         = candidate
@@ -298,13 +362,18 @@ def run_tuner(
     fixtures: list,
     cache_dir: str = '',
 ) -> dict:
-    """Run coordinate descent parameter tuner over all four tunable parameters.
+    """Run coordinate descent parameter tuner over all tunable parameters.
 
     Skips when finished_gws < MIN_FINISHED_GWS (not enough data for a hold-out split).
     Non-fatal: all exceptions should be caught by the caller (run.py).
 
+    Builds an archive-shaped dict from live data and evaluates every candidate via
+    run_backtest(archive, params, mode='deploy') on the training range (BT-03).
+    Three parameters are frozen at their prior values and not swept (see module
+    docstring); they are still written to promoted_params so run.py contract is intact.
+
     Returns a dict suitable for merging into accuracy_backtest.json under the 'tuner' key.
-    Includes a 'promoted_params' sub-dict with the final locked-in values for all four
+    Includes a 'promoted_params' sub-dict with the final locked-in values for all
     parameters; run.py writes these into the summary for next-run consumption.
     """
     if finished_gws < MIN_FINISHED_GWS:
@@ -321,59 +390,70 @@ def run_tuner(
     gws_validate = all_gws[-n_validate:]
     gws_train    = all_gws[:-n_validate]
 
-    fixture_difficulty = build_fixture_difficulty_lookup(fixtures)
-    teams_by_id = {t['id']: t for t in bootstrap.get('teams', [])}
+    # Burn-in floor: BT-02's min_prior_minutes handles player-level cold start;
+    # the floor here avoids degenerate GW1-4 team-form normalisation.
+    train_first = max(gws_train[0], 5)
+    train_last  = gws_train[-1]
+    val_first   = gws_validate[0]
+    val_last    = gws_validate[-1]
 
-    # Active params: updated after each sweep locks in the best value
+    # Build archive-shaped dict from live data — run_backtest consumes this exact shape.
+    archive = {
+        'bootstrap': bootstrap,
+        'fixtures':  fixtures,
+        'understat': {},
+        'summaries': summaries,
+        'manifest':  {'season': 'live'},
+    }
+
+    # Active params: updated after each sweep locks in the best value.
+    # Frozen params start at prior and remain unchanged throughout.
     params = {
         'blend_alpha':      prior['blend_alpha'],
         'form_window_gws':  prior['form_window_gws'],
         'cs_prob_base':     prior['cs_prob_base'],
         'cs_prob_slope':    prior['cs_prob_slope'],
-        'form_actual_beta': prior['form_actual_beta'],
-        'form_difficulty_gamma': prior['form_difficulty_gamma'],   # FRM-02
-        'sub_appear_window_gws': prior['sub_appear_window_gws'],   # APM-01
-        'cs_team_form_slope':     prior['cs_team_form_slope'],     # CSF-01
-        'cs_def_form_window_gws': prior['cs_def_form_window_gws'], # CSF-01
-        'atf_slope':      prior['atf_slope'],      # ATF-01
-        'atf_window_gws': prior['atf_window_gws'], # ATF-01
-        'fas_slope':      prior['fas_slope'],      # FAS-01
-        'defcon_scale':   prior['defcon_scale'],   # DC-01
+        'form_actual_beta': prior['form_actual_beta'],          # frozen
+        'form_difficulty_gamma': prior['form_difficulty_gamma'],  # frozen
+        'sub_appear_window_gws': prior['sub_appear_window_gws'],  # frozen
+        'cs_team_form_slope':     prior['cs_team_form_slope'],
+        'cs_def_form_window_gws': prior['cs_def_form_window_gws'],
+        'atf_slope':      prior['atf_slope'],
+        'atf_window_gws': prior['atf_window_gws'],
+        'fas_slope':      prior['fas_slope'],
+        'defcon_scale':   prior['defcon_scale'],
     }
 
     sweep_results: dict = {}
 
-    # Coordinate descent: sweep each parameter in order
-    sweep_order = [
-        ('blend_alpha',      BLEND_ALPHA_CANDIDATES,        prior['blend_alpha']),
-        ('form_window_gws',  FORM_WINDOW_CANDIDATES,        prior['form_window_gws']),
-        ('cs_prob_base',     CS_PROB_BASE_CANDIDATES,       prior['cs_prob_base']),
-        ('cs_prob_slope',    CS_PROB_SLOPE_CANDIDATES,      prior['cs_prob_slope']),
-        ('form_actual_beta', FORM_ACTUAL_BETA_CANDIDATES,   prior['form_actual_beta']),
-        ('form_difficulty_gamma', FORM_DIFFICULTY_GAMMA_CANDIDATES,  prior['form_difficulty_gamma']),  # FRM-02
-        ('sub_appear_window_gws', SUB_APPEAR_WINDOW_CANDIDATES, prior['sub_appear_window_gws']),  # APM-01
-        ('cs_team_form_slope',     CS_TEAM_FORM_SLOPE_CANDIDATES,    prior['cs_team_form_slope']),     # CSF-01
-        ('cs_def_form_window_gws', CS_DEF_FORM_WINDOW_CANDIDATES,    prior['cs_def_form_window_gws']), # CSF-01
-        ('atf_slope',      ATF_SLOPE_CANDIDATES,  prior['atf_slope']),      # ATF-01
-        ('atf_window_gws', ATF_WINDOW_CANDIDATES, prior['atf_window_gws']), # ATF-01
-        ('fas_slope',      FAS_SLOPE_CANDIDATES,    prior['fas_slope']),     # FAS-01
-        ('defcon_scale',   DEFCON_SCALE_CANDIDATES, prior['defcon_scale']),  # DC-01
-    ]
+    # Candidate grids for the 10 actively swept parameters
+    _candidates = {
+        'blend_alpha':           BLEND_ALPHA_CANDIDATES,
+        'form_window_gws':       FORM_WINDOW_CANDIDATES,
+        'cs_prob_base':          CS_PROB_BASE_CANDIDATES,
+        'cs_prob_slope':         CS_PROB_SLOPE_CANDIDATES,
+        'cs_team_form_slope':    CS_TEAM_FORM_SLOPE_CANDIDATES,
+        'cs_def_form_window_gws': CS_DEF_FORM_WINDOW_CANDIDATES,
+        'atf_slope':             ATF_SLOPE_CANDIDATES,
+        'atf_window_gws':        ATF_WINDOW_CANDIDATES,
+        'fas_slope':             FAS_SLOPE_CANDIDATES,
+        'defcon_scale':          DEFCON_SCALE_CANDIDATES,
+    }
 
-    for param_name, candidates, current_val in sweep_order:
+    # Coordinate descent: sweep each active parameter in order
+    for param_name in _SWEEP_ORDER_NAMES:
+        candidates = _candidates[param_name]
+        current_val = params[param_name]
         result = _sweep_param(
             param_name=param_name,
             candidates=candidates,
             current_val=current_val,
             params=params,
-            summaries=summaries,
-            all_gws=all_gws,
-            bootstrap=bootstrap,
-            fixture_difficulty=fixture_difficulty,
-            fixtures=fixtures,         # CSF-01
-            teams_by_id=teams_by_id,
-            gws_train=gws_train,
-            gws_validate=gws_validate,
+            archive=archive,
+            train_first=train_first,
+            train_last=train_last,
+            val_first=val_first,
+            val_last=val_last,
         )
         sweep_results[param_name] = result
         if result['promoted']:
