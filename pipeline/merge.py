@@ -96,6 +96,11 @@ def _defcon_rate(history: list, element_type: int) -> float:
     """DC-01: P(defensive_contribution >= positional threshold | minutes >= 60).
 
     Denominator = prior 60+ minute games. GKP (and unknown types) -> 0.0.
+
+    NOTE: this function uses ALL available season-to-date history — intentional,
+    as it feeds live next-GW prediction where full context is desirable.
+    The strictly-prior per-GW variant (excludes current GW to avoid leakage) used
+    in backtesting is accuracy.build_defcon_rate_lookup — do not "unify" them.
     """
     threshold = DEFCON_THRESHOLD.get(element_type)
     if threshold is None:
@@ -962,9 +967,9 @@ def merge_players(
                              xPts. Default False — preserves baseline.
         blend_alpha:         Phase 42 ACC-01. Weight of form signal in blended
                              per-90 (0.0=pure season, 1.0=pure form). Default
-                             BLEND_ALPHA=0.4. run.py overrides this with the
+                             accuracy.BLEND_ALPHA. run.py overrides this with the
                              value persisted by accuracy.compute_accuracy_backtest
-                             (which is whatever Plan 02 ships — currently a fixed 0.4).
+                             (honest-tuned via TUNE-01 coordinate descent).
         bonus_stats:         Phase 53 BPS-01. Optional dict from bonus.py mapping
                              player_id (int) -> {bonus_ev, avg_bps, n_starts, source}. Per-player
                              learned EV used in place of BONUS_RATE[element_type] when

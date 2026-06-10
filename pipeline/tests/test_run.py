@@ -8,7 +8,11 @@ contract is documented and regression-checkable.
 
 import json
 import os
+import sys
 import tempfile
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+import accuracy
 
 
 def _read_gate(cache_dir: str) -> tuple[bool, float]:
@@ -16,12 +20,12 @@ def _read_gate(cache_dir: str) -> tuple[bool, float]:
     must use this exact shape so this test is a contract test."""
     backtest_path = os.path.join(cache_dir, 'accuracy_backtest.json')
     form_signal_enabled = False
-    blend_alpha_used = 0.4
+    blend_alpha_used = accuracy.BLEND_ALPHA
     try:
         with open(backtest_path, 'r', encoding='utf-8') as f:
             prev_backtest = json.load(f)
         form_signal_enabled = prev_backtest.get('summary', {}).get('form_signal_enabled', False)
-        blend_alpha_used = prev_backtest.get('summary', {}).get('blend_alpha_used', 0.4)
+        blend_alpha_used = prev_backtest.get('summary', {}).get('blend_alpha_used', accuracy.BLEND_ALPHA)
     except (FileNotFoundError, json.JSONDecodeError):
         pass
     return form_signal_enabled, blend_alpha_used
@@ -45,7 +49,7 @@ def test_form_signal_gate_default_false():
     with tempfile.TemporaryDirectory() as tmpdir:
         enabled, alpha = _read_gate(tmpdir)
         assert enabled is False
-        assert alpha == 0.4
+        assert alpha == accuracy.BLEND_ALPHA
 
 
 def test_form_signal_gate_reads_from_previous_run():
@@ -73,14 +77,14 @@ def test_form_signal_gate_reads_from_previous_run():
 
 
 def test_form_signal_gate_handles_corrupt_json():
-    """ACC-03 / Pattern 5: corrupt JSON falls back to (False, 0.4) — does not raise."""
+    """ACC-03 / Pattern 5: corrupt JSON falls back to (False, accuracy.BLEND_ALPHA) — does not raise."""
     with tempfile.TemporaryDirectory() as tmpdir:
         backtest_path = os.path.join(tmpdir, 'accuracy_backtest.json')
         with open(backtest_path, 'w', encoding='utf-8') as f:
             f.write('{not valid json')
         enabled, alpha = _read_gate(tmpdir)
         assert enabled is False
-        assert alpha == 0.4
+        assert alpha == accuracy.BLEND_ALPHA
 
 
 def test_run_py_uses_gate_read_pattern():
@@ -398,7 +402,7 @@ def _read_tuner_params(cache_dir: str) -> dict:
     _sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
     import accuracy
     backtest_path = os.path.join(cache_dir, 'accuracy_backtest.json')
-    form_window_gws_used = 5
+    form_window_gws_used = accuracy.FORM_WINDOW_GWS
     cs_prob_base_used    = 0.40
     cs_prob_slope_used   = 0.30
     form_actual_beta_used = 0.0
@@ -414,7 +418,7 @@ def _read_tuner_params(cache_dir: str) -> dict:
         with open(backtest_path, 'r', encoding='utf-8') as f:
             prev = json.load(f)
         summary = prev.get('summary', {})
-        form_window_gws_used = int(summary.get('form_window_gws_used', 5))
+        form_window_gws_used = int(summary.get('form_window_gws_used', accuracy.FORM_WINDOW_GWS))
         cs_prob_base_used    = float(summary.get('cs_prob_base_used',    0.40))
         cs_prob_slope_used   = float(summary.get('cs_prob_slope_used',   0.30))
         form_actual_beta_used = float(summary.get('form_actual_beta_used', 0.0))
@@ -451,7 +455,7 @@ def _read_tuner_params(cache_dir: str) -> dict:
 def test_read_tuner_params_defaults_on_missing_file():
     with tempfile.TemporaryDirectory() as tmpdir:
         params = _read_tuner_params(tmpdir)
-        assert params['form_window_gws_used'] == 5
+        assert params['form_window_gws_used'] == accuracy.FORM_WINDOW_GWS
         assert abs(params['cs_prob_base_used']  - 0.40) < 1e-9
         assert abs(params['cs_prob_slope_used'] - 0.30) < 1e-9
         assert abs(params['form_actual_beta_used'] - 0.0) < 1e-9
@@ -459,8 +463,6 @@ def test_read_tuner_params_defaults_on_missing_file():
         assert params['sub_appear_window_gws_used'] == 15
         assert abs(params['cs_team_form_slope_used'] - 0.0) < 1e-9
         assert params['cs_def_form_window_gws_used'] == 6
-        import sys as _s; _s.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-        import accuracy
         assert params['atf_slope_used'] == accuracy.ATF_SLOPE
         assert params['atf_window_gws_used'] == accuracy.ATF_WINDOW_GWS
         assert params['fas_slope_used'] == accuracy.FAS_SLOPE        # FAS-01

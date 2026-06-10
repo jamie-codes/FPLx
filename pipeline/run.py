@@ -330,13 +330,13 @@ def run(dry_run: bool = False):
             # Phase 42 ACC-03: read form-signal gate from previous run's accuracy_backtest.json.
             # Default (False, 0.4) on cold start (file absent) or corrupt JSON — preserves baseline.
             form_signal_enabled = False
-            blend_alpha_used = 0.4
+            blend_alpha_used = accuracy.BLEND_ALPHA
             xmins_v2_enabled = False  # Phase 52 D-02 — default OFF; flips ON after non-regression shadow run
             bonus_predictor_enabled = True   # Phase 53 BPS-01 — permanently ON (BPS-01 hard-enable; override block removed; accuracy.py still writes flag for telemetry)
             save_predictor_enabled = False  # Phase 83 GK-03 — default OFF; flips ON after >=5-GW non-regression shadow run
             MC_ENABLED = True  # Phase 102 MC-01 — permanent ON; surfaces 10k-sim MC fields in merged_players.json
             mc_enabled = MC_ENABLED  # Phase 109 CR-02: set before try so corrupt cache never silently disables MC
-            form_window_gws_used = 5       # TUNE-01: default
+            form_window_gws_used = accuracy.FORM_WINDOW_GWS  # TUNE-01: default
             cs_prob_base_used    = 0.40    # TUNE-01: default
             cs_prob_slope_used   = 0.30    # TUNE-01: default
             form_actual_beta_used = accuracy.FORM_ACTUAL_BETA  # FRM-01: default
@@ -353,10 +353,10 @@ def run(dry_run: bool = False):
                 with open(backtest_path, 'r', encoding='utf-8') as f:
                     prev_backtest = json.load(f)
                 form_signal_enabled = prev_backtest.get('summary', {}).get('form_signal_enabled', False)
-                blend_alpha_used = prev_backtest.get('summary', {}).get('blend_alpha_used', 0.4)
+                blend_alpha_used = prev_backtest.get('summary', {}).get('blend_alpha_used', accuracy.BLEND_ALPHA)
                 xmins_v2_enabled = prev_backtest.get('summary', {}).get('xmins_v2_enabled', False)
                 save_predictor_enabled = prev_backtest.get('summary', {}).get('save_predictor_enabled', False)
-                form_window_gws_used = int(prev_backtest.get('summary', {}).get('form_window_gws_used', 5))
+                form_window_gws_used = int(prev_backtest.get('summary', {}).get('form_window_gws_used', accuracy.FORM_WINDOW_GWS))
                 cs_prob_base_used    = float(prev_backtest.get('summary', {}).get('cs_prob_base_used', 0.40))
                 cs_prob_slope_used   = float(prev_backtest.get('summary', {}).get('cs_prob_slope_used', 0.30))
                 form_actual_beta_used = float(prev_backtest.get('summary', {}).get('form_actual_beta_used', accuracy.FORM_ACTUAL_BETA))
