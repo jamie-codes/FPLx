@@ -7,12 +7,13 @@ import backtest
 # ── synthetic archive helpers ─────────────────────────────────────────────── #
 
 def _entry(rnd, fixture_id, minutes=90, xg=0.3, xa=0.1, pts=2, starts=1,
-           was_home=True):
+           was_home=True, dc=0):
     return {
         'round': rnd, 'fixture': fixture_id, 'minutes': minutes,
         'expected_goals': str(xg), 'expected_assists': str(xa),
         'total_points': pts, 'starts': starts, 'was_home': was_home,
         'opponent_team': 2 if was_home else 1,
+        'defensive_contribution': dc,
     }
 
 
@@ -274,6 +275,119 @@ def test_conditional_mode_cameo_branch():
 
 
 import os
+
+
+# ── DefCon (dc_rate) tests ────────────────────────────────────────────────── #
+
+def test_dc_rates_strictly_prior():
+    """dc_rate_12 at GW 8 uses only GW 1-7; inflating GW 8 changes nothing.
+    Games with minutes < 60 are excluded from the denominator."""
+    # Build 12-GW history: dc=12 for GWs 1-7, dc=0 for GWs 8-12, all 90 min.
+    hist = [_entry(g, g, minutes=90, dc=(12 if g <= 7 else 0))
+            for g in range(1, 13)]
+
+    sig8 = backtest.build_asof_signals(hist, 8, _params())
+    assert sig8['dc_rate_12'] == pytest.approx(1.0)
+    assert sig8['dc_rate_10'] == pytest.approx(1.0)
+
+    # At GW 10, prior is GW 1-9: dc=12 for 1-7, dc=0 for 8-9 → 7/9
+    sig10 = backtest.build_asof_signals(hist, 10, _params())
+    assert sig10['dc_rate_12'] == pytest.approx(7 / 9)
+
+    # Inflating GW 8's dc does NOT change GW-8 signals (leakage check)
+    hist_inflated = [dict(e) for e in hist]
+    hist_inflated[7]['defensive_contribution'] = 99
+    sig8_infl = backtest.build_asof_signals(hist_inflated, 8, _params())
+    assert sig8_infl['dc_rate_12'] == pytest.approx(sig8['dc_rate_12'])
+
+    # Games with minutes < 60 must be excluded from denominator.
+    # Build history where GW 3 has minutes=30 (excluded) and dc=12.
+    hist_short = [_entry(g, g, minutes=(30 if g == 3 else 90),
+                         dc=12) for g in range(1, 9)]
+    sig8_short = backtest.build_asof_signals(hist_short, 8, _params())
+    # Prior GWs 1-7: 6 with >=60 min (GW 3 excluded), all dc=12 → 6/6 = 1.0
+    assert sig8_short['dc_rate_12'] == pytest.approx(1.0)
+
+    # Edge: no prior 60+ min games -> both rates 0.0
+    hist_none = [_entry(g, g, minutes=30, dc=12) for g in range(1, 5)]
+    sig5 = backtest.build_asof_signals(hist_none, 5, _params())
+    assert sig5['dc_rate_10'] == pytest.approx(0.0)
+    assert sig5['dc_rate_12'] == pytest.approx(0.0)
+
+
+def test_defcon_scale_zero_is_noop():
+    """run_backtest with defcon_scale=0.0 (default) must produce identical rows
+    to a run with the key entirely absent from params."""
+    arch = _make_archive(players=[_std_player(1)])
+    r_default = backtest.run_backtest(archive=arch, first_gw=8, last_gw=10)
+    r_explicit = backtest.run_backtest(archive=arch, first_gw=8, last_gw=10,
+                                       params={'defcon_scale': 0.0})
+    # Compare row by row
+    rows_d = sorted(r_default['rows'], key=lambda r: (r['gw'], r['player_id']))
+    rows_e = sorted(r_explicit['rows'], key=lambda r: (r['gw'], r['player_id']))
+    assert len(rows_d) == len(rows_e)
+    for rd, re in zip(rows_d, rows_e):
+        assert rd['xpts_pred'] == re['xpts_pred']
+
+
+def test_defcon_scale_adds_ev_for_def():
+    """A DEF (element_type 2) with all prior games dc=10, 90 min.
+    With defcon_scale=1.0, xpts_pred increases by exactly 2.0 vs scale=0.0
+    (deploy mode, xmins=90 → mins_factor=1.0, dc_rate_10=1.0 for DEF)."""
+    # Build a DEF player with 12 GWs of history, dc=10, 90 min each.
+    hist = [_entry(g, 100 + g, minutes=90, dc=10) for g in range(1, 13)]
+    player = {'id': 42, 'element_type': 2, 'history': hist}
+    arch = _make_archive(players=[player])
+
+    r_base = backtest.run_backtest(archive=arch, first_gw=8, last_gw=8,
+                                   params={'defcon_scale': 0.0})
+    r_dc = backtest.run_backtest(archive=arch, first_gw=8, last_gw=8,
+                                 params={'defcon_scale': 1.0})
+
+    assert len(r_base['rows']) == 1
+    assert len(r_dc['rows']) == 1
+    base_pred = r_base['rows'][0]['xpts_pred']
+    dc_pred = r_dc['rows'][0]['xpts_pred']
+    assert dc_pred == pytest.approx(base_pred + 2.0, abs=1e-9)
+
+
+def test_defcon_thresholds_by_position():
+    """MID threshold is 12 (not 10); GKP gains nothing regardless.
+    MID with all dc=10 (below threshold): no gain.
+    MID with all dc=12 (at threshold): gains exactly 2.0.
+    GKP with all dc=10: no gain (et==1 → 0.0)."""
+    def _player(pid, et, dc_val):
+        hist = [_entry(g, 100 + g, minutes=90, dc=dc_val)
+                for g in range(1, 13)]
+        return {'id': pid, 'element_type': et, 'history': hist}
+
+    # MID dc=10 (below threshold)
+    arch_mid10 = _make_archive(players=[_player(1, 3, 10)])
+    r_mid10_base = backtest.run_backtest(archive=arch_mid10, first_gw=8, last_gw=8,
+                                         params={'defcon_scale': 0.0})
+    r_mid10_dc = backtest.run_backtest(archive=arch_mid10, first_gw=8, last_gw=8,
+                                       params={'defcon_scale': 1.0})
+    assert (r_mid10_dc['rows'][0]['xpts_pred']
+            == pytest.approx(r_mid10_base['rows'][0]['xpts_pred']))
+
+    # MID dc=12 (at threshold → dc_rate_12=1.0 → gains 2.0)
+    arch_mid12 = _make_archive(players=[_player(2, 3, 12)])
+    r_mid12_base = backtest.run_backtest(archive=arch_mid12, first_gw=8, last_gw=8,
+                                         params={'defcon_scale': 0.0})
+    r_mid12_dc = backtest.run_backtest(archive=arch_mid12, first_gw=8, last_gw=8,
+                                       params={'defcon_scale': 1.0})
+    assert (r_mid12_dc['rows'][0]['xpts_pred']
+            == pytest.approx(r_mid12_base['rows'][0]['xpts_pred'] + 2.0,
+                             abs=1e-9))
+
+    # GKP dc=10: no gain (et==1)
+    arch_gkp = _make_archive(players=[_player(3, 1, 10)])
+    r_gkp_base = backtest.run_backtest(archive=arch_gkp, first_gw=8, last_gw=8,
+                                       params={'defcon_scale': 0.0})
+    r_gkp_dc = backtest.run_backtest(archive=arch_gkp, first_gw=8, last_gw=8,
+                                     params={'defcon_scale': 1.0})
+    assert (r_gkp_dc['rows'][0]['xpts_pred']
+            == pytest.approx(r_gkp_base['rows'][0]['xpts_pred']))
 
 
 def test_cli_set_parsing():

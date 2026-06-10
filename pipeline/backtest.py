@@ -41,6 +41,7 @@ DEFAULT_PARAMS = {
     # BT-02-local
     'min_prior_minutes': 270,
     'xmins_window': 5,
+    'defcon_scale': 0.0,  # 0.0 = off (backward compat); 1.0 = full 2-pt EV
 }
 
 HAUL_THRESHOLD = 10
@@ -102,6 +103,22 @@ def build_asof_signals(history: list, gw: int, params: dict):
     sub_appear_prob = sum(1 for e in last
                           if 0 < (e.get('minutes', 0) or 0) < 45) / n
 
+    # DefCon rates: fraction of prior 60+-minute games where dc >= threshold.
+    # Computed without position knowledge; caller selects dc_rate_10 (DEF) or
+    # dc_rate_12 (MID/FWD) based on element_type.
+    prior_60 = [e for e in prior if (e.get('minutes', 0) or 0) >= 60]
+    if prior_60:
+        dc_rate_10 = sum(
+            1 for e in prior_60
+            if (e.get('defensive_contribution', 0) or 0) >= 10
+        ) / len(prior_60)
+        dc_rate_12 = sum(
+            1 for e in prior_60
+            if (e.get('defensive_contribution', 0) or 0) >= 12
+        ) / len(prior_60)
+    else:
+        dc_rate_10 = dc_rate_12 = 0.0
+
     return {
         'xg_per90': xg_per90,
         'xa_per90': xa_per90,
@@ -112,6 +129,8 @@ def build_asof_signals(history: list, gw: int, params: dict):
         'start_prob': start_prob,
         'mins_60_prob': mins_60_prob,
         'sub_appear_prob': sub_appear_prob,
+        'dc_rate_10': dc_rate_10,
+        'dc_rate_12': dc_rate_12,
     }
 
 
@@ -332,6 +351,17 @@ def run_backtest(archive: dict | None = None, params: dict | None = None,
                     atf_slope=p['atf_slope'],
                 )
                 pred += result['total']
+
+                if p['defcon_scale'] > 0:
+                    if et == 1:
+                        threshold_rate = 0.0
+                    elif et == 2:
+                        threshold_rate = sig['dc_rate_10']
+                    else:
+                        threshold_rate = sig['dc_rate_12']
+                    mins_factor = min(1.0, xm / 90.0)
+                    dc_ev = 2.0 * threshold_rate * p['defcon_scale'] * mins_factor
+                    pred += dc_ev
 
             rows.append({
                 'player_id': pid,
