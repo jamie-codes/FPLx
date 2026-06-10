@@ -334,6 +334,10 @@ def _sweep_param(
         if not _promotion_gates(base_train, train_metrics, base_val, validate_metrics):
             continue
 
+        # Val-based tie-breaking among gate survivors is intentional and matches
+        # the pre-BT-03 contract: gates already require train improvement; using
+        # validation metrics here is safe because validation never feeds model
+        # inputs (deploy mode), so this is not leakage.
         combined = _combined_score(base_val, validate_metrics)
         if best_combined is None or combined > best_combined:
             best_combined    = combined
