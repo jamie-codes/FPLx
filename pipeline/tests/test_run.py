@@ -408,6 +408,8 @@ def _read_tuner_params(cache_dir: str) -> dict:
     cs_def_form_window_gws_used = 6   # CSF-01
     atf_slope_used      = accuracy.ATF_SLOPE       # ATF-01: default
     atf_window_gws_used = accuracy.ATF_WINDOW_GWS  # ATF-01: default
+    fas_slope_used      = accuracy.FAS_SLOPE       # FAS-01: default
+    defcon_scale_used   = accuracy.DEFCON_SCALE    # DC-01: default
     try:
         with open(backtest_path, 'r', encoding='utf-8') as f:
             prev = json.load(f)
@@ -424,6 +426,10 @@ def _read_tuner_params(cache_dir: str) -> dict:
             'atf_slope_used', accuracy.ATF_SLOPE))
         atf_window_gws_used = int(prev.get('summary', {}).get(
             'atf_window_gws_used', accuracy.ATF_WINDOW_GWS))
+        fas_slope_used      = float(prev.get('summary', {}).get(
+            'fas_slope_used', accuracy.FAS_SLOPE))         # FAS-01
+        defcon_scale_used   = float(prev.get('summary', {}).get(
+            'defcon_scale_used', accuracy.DEFCON_SCALE))   # DC-01
     except (FileNotFoundError, json.JSONDecodeError):
         pass
     return {
@@ -437,6 +443,8 @@ def _read_tuner_params(cache_dir: str) -> dict:
         'cs_def_form_window_gws_used': cs_def_form_window_gws_used, # CSF-01
         'atf_slope_used':      atf_slope_used,      # ATF-01
         'atf_window_gws_used': atf_window_gws_used, # ATF-01
+        'fas_slope_used':      fas_slope_used,      # FAS-01
+        'defcon_scale_used':   defcon_scale_used,   # DC-01
     }
 
 
@@ -455,6 +463,8 @@ def test_read_tuner_params_defaults_on_missing_file():
         import accuracy
         assert params['atf_slope_used'] == accuracy.ATF_SLOPE
         assert params['atf_window_gws_used'] == accuracy.ATF_WINDOW_GWS
+        assert params['fas_slope_used'] == accuracy.FAS_SLOPE        # FAS-01
+        assert params['defcon_scale_used'] == accuracy.DEFCON_SCALE  # DC-01
 
 
 def test_read_tuner_params_reads_promoted_values():
@@ -470,6 +480,8 @@ def test_read_tuner_params_reads_promoted_values():
             'cs_def_form_window_gws_used': 5,   # CSF-01
             'atf_slope_used':      0.2,         # ATF-01
             'atf_window_gws_used': 5,           # ATF-01
+            'fas_slope_used':      0.6,         # FAS-01
+            'defcon_scale_used':   0.5,         # DC-01
         }}
         path = os.path.join(tmpdir, 'accuracy_backtest.json')
         with open(path, 'w') as f:
@@ -485,3 +497,5 @@ def test_read_tuner_params_reads_promoted_values():
         assert params['cs_def_form_window_gws_used'] == 5              # CSF-01
         assert params['atf_slope_used'] == 0.2                         # ATF-01
         assert params['atf_window_gws_used'] == 5                      # ATF-01
+        assert params['fas_slope_used'] == 0.6                         # FAS-01
+        assert params['defcon_scale_used'] == 0.5                      # DC-01
