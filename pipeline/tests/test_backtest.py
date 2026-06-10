@@ -218,3 +218,34 @@ def test_spearman_perfect_and_inverted():
     m2, _ = backtest.compute_metrics(rows_inverted)
     assert m1['spearman'] == pytest.approx(1.0)
     assert m2['spearman'] == pytest.approx(-1.0)
+
+
+import os
+
+
+def test_cli_set_parsing():
+    args = backtest._parse_args(['--mode', 'conditional', '--first-gw', '10',
+                                 '--set', 'atf_slope=0.2',
+                                 '--set', 'form_window_gws=4'])
+    overrides = backtest._parse_overrides(args.set)
+    assert args.mode == 'conditional'
+    assert args.first_gw == 10
+    assert overrides == {'atf_slope': 0.2, 'form_window_gws': 4}
+
+
+ARCHIVE_EXISTS = os.path.exists(
+    os.path.join(os.path.dirname(__file__), '..', 'data', 'season_2025_26',
+                 'manifest.json'))
+
+
+@pytest.mark.skipif(not ARCHIVE_EXISTS, reason='season archive not present')
+def test_real_archive_smoke():
+    from capture_season import load_season_archive
+    archive = load_season_archive(base_dir=os.path.join(
+        os.path.dirname(__file__), '..', 'data', 'season_2025_26'))
+    result = backtest.run_backtest(archive=archive, first_gw=35, last_gw=38)
+    m = result['metrics']
+    assert m['n_gws'] == 4
+    assert m['n_rows'] > 800            # >= ~200 eligible players per GW
+    assert 0.0 <= m['haul_hit_rate'] <= 1.0
+    assert m['rmse'] > 0

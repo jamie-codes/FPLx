@@ -343,3 +343,58 @@ def run_backtest(archive: dict | None = None, params: dict | None = None,
         'config': {'mode': mode, 'first_gw': first_gw, 'last_gw': last_gw,
                    'params': p},
     }
+
+
+def _parse_args(argv):
+    ap = argparse.ArgumentParser(description='BT-02 leakage-free backtest')
+    ap.add_argument('--mode', choices=['deploy', 'conditional'],
+                    default='deploy')
+    ap.add_argument('--first-gw', type=int, default=7)
+    ap.add_argument('--last-gw', type=int, default=38)
+    ap.add_argument('--set', action='append', default=[],
+                    metavar='KEY=VALUE', help='override a param (repeatable)')
+    ap.add_argument('--json', default=None,
+                    help='write full result (metrics+per_gw+rows) to file')
+    return ap.parse_args(argv)
+
+
+def _parse_overrides(pairs: list) -> dict:
+    out = {}
+    for pair in pairs:
+        key, _, val = pair.partition('=')
+        if not _:
+            raise SystemExit(f'bad --set (expected KEY=VALUE): {pair}')
+        default = DEFAULT_PARAMS.get(key)
+        if isinstance(default, int) and not isinstance(default, bool):
+            out[key] = int(val)
+        else:
+            out[key] = float(val)
+    return out
+
+
+def main(argv=None):
+    args = _parse_args(argv if argv is not None else sys.argv[1:])
+    overrides = _parse_overrides(args.set)
+    result = run_backtest(params=overrides, mode=args.mode,
+                          first_gw=args.first_gw, last_gw=args.last_gw)
+    m = result['metrics']
+    print(f"BT-02 backtest  mode={args.mode}  GW{args.first_gw}-{args.last_gw}"
+          f"  rows={m['n_rows']}  haulers={m['n_haulers_total']}")
+    if overrides:
+        print(f"overrides: {overrides}")
+    for k in ['haul_hit_rate', 'haul_capture_20', 'mid_tier_hit_rate',
+              'captain_hit_rate', 'captain_return_rate', 'top10_mean_pts',
+              'rmse', 'mae', 'spearman']:
+        v = m[k]
+        print(f"  {k:22s} {v:.4f}" if isinstance(v, float)
+              else f"  {k:22s} {v}")
+    for pos, d in m['by_position'].items():
+        print(f"  {pos}: n={d['n']} rmse={d['rmse']} haulers={d['n_haulers']}")
+    if args.json:
+        with open(args.json, 'w', encoding='utf-8') as f:
+            json.dump(result, f)
+        print(f"written: {args.json}")
+
+
+if __name__ == '__main__':
+    main()
