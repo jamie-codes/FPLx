@@ -312,3 +312,52 @@ def test_cs_prob_solid_defence_no_penalty():
     solid    = _cs_prob(defensive_difficulty=0.3, xmins=90.0,
                         norm_concede_rate=0.0, cs_team_form_slope=0.20)
     assert abs(solid - baseline) < 1e-9
+
+
+# ── ATF-01: attack team form ─────────────────────────────────────────────── #
+
+def test_atf_slope_zero_no_change():
+    """atf_slope=0.0 with any norm_attack_rate → identical xpts to baseline."""
+    from merge import _compute_xpts_fixture
+    baseline = _compute_xpts_fixture(
+        xg_per90=0.4, xa_per90=0.2, start_prob=1.0, xmins=90.0,
+        element_type=4, defensive_difficulty=0.3,
+    )
+    with_atf = _compute_xpts_fixture(
+        xg_per90=0.4, xa_per90=0.2, start_prob=1.0, xmins=90.0,
+        element_type=4, defensive_difficulty=0.3,
+        norm_attack_rate=0.99, atf_slope=0.0,
+    )
+    assert abs(with_atf['total'] - baseline['total']) < 1e-9
+
+
+def test_atf_best_attack_increases_xpts():
+    """norm_attack_rate=1.0 + atf_slope=0.30 → higher xpts than slope=0 baseline."""
+    from merge import _compute_xpts_fixture
+    baseline = _compute_xpts_fixture(
+        xg_per90=0.4, xa_per90=0.2, start_prob=1.0, xmins=90.0,
+        element_type=4, defensive_difficulty=0.3,
+        atf_slope=0.0,
+    )
+    boosted = _compute_xpts_fixture(
+        xg_per90=0.4, xa_per90=0.2, start_prob=1.0, xmins=90.0,
+        element_type=4, defensive_difficulty=0.3,
+        norm_attack_rate=1.0, atf_slope=0.30,
+    )
+    assert boosted['total'] > baseline['total']
+
+
+def test_atf_worst_attack_decreases_xpts():
+    """norm_attack_rate=0.0 + atf_slope=0.30 → lower xpts than slope=0 baseline."""
+    from merge import _compute_xpts_fixture
+    baseline = _compute_xpts_fixture(
+        xg_per90=0.4, xa_per90=0.2, start_prob=1.0, xmins=90.0,
+        element_type=4, defensive_difficulty=0.3,
+        atf_slope=0.0,
+    )
+    penalised = _compute_xpts_fixture(
+        xg_per90=0.4, xa_per90=0.2, start_prob=1.0, xmins=90.0,
+        element_type=4, defensive_difficulty=0.3,
+        norm_attack_rate=0.0, atf_slope=0.30,
+    )
+    assert penalised['total'] < baseline['total']
