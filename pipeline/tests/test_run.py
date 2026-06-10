@@ -394,6 +394,9 @@ def _read_tuner_params(cache_dir: str) -> dict:
     Production code in run.py MUST use this exact shape.
     """
     import json, os
+    import sys as _sys
+    _sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+    import accuracy
     backtest_path = os.path.join(cache_dir, 'accuracy_backtest.json')
     form_window_gws_used = 5
     cs_prob_base_used    = 0.40
@@ -403,6 +406,8 @@ def _read_tuner_params(cache_dir: str) -> dict:
     sub_appear_window_gws_used = 15   # APM-01
     cs_team_form_slope_used    = 0.0  # CSF-01
     cs_def_form_window_gws_used = 6   # CSF-01
+    atf_slope_used      = accuracy.ATF_SLOPE       # ATF-01: default
+    atf_window_gws_used = accuracy.ATF_WINDOW_GWS  # ATF-01: default
     try:
         with open(backtest_path, 'r', encoding='utf-8') as f:
             prev = json.load(f)
@@ -415,6 +420,10 @@ def _read_tuner_params(cache_dir: str) -> dict:
         sub_appear_window_gws_used = int(summary.get('sub_appear_window_gws_used', 15))   # APM-01
         cs_team_form_slope_used    = float(summary.get('cs_team_form_slope_used', 0.0))   # CSF-01
         cs_def_form_window_gws_used = int(summary.get('cs_def_form_window_gws_used', 6))  # CSF-01
+        atf_slope_used      = float(prev.get('summary', {}).get(
+            'atf_slope_used', accuracy.ATF_SLOPE))
+        atf_window_gws_used = int(prev.get('summary', {}).get(
+            'atf_window_gws_used', accuracy.ATF_WINDOW_GWS))
     except (FileNotFoundError, json.JSONDecodeError):
         pass
     return {
@@ -426,6 +435,8 @@ def _read_tuner_params(cache_dir: str) -> dict:
         'sub_appear_window_gws_used': sub_appear_window_gws_used,   # APM-01
         'cs_team_form_slope_used':    cs_team_form_slope_used,      # CSF-01
         'cs_def_form_window_gws_used': cs_def_form_window_gws_used, # CSF-01
+        'atf_slope_used':      atf_slope_used,      # ATF-01
+        'atf_window_gws_used': atf_window_gws_used, # ATF-01
     }
 
 
@@ -440,6 +451,10 @@ def test_read_tuner_params_defaults_on_missing_file():
         assert params['sub_appear_window_gws_used'] == 15
         assert abs(params['cs_team_form_slope_used'] - 0.0) < 1e-9
         assert params['cs_def_form_window_gws_used'] == 6
+        import sys as _s; _s.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+        import accuracy
+        assert params['atf_slope_used'] == accuracy.ATF_SLOPE
+        assert params['atf_window_gws_used'] == accuracy.ATF_WINDOW_GWS
 
 
 def test_read_tuner_params_reads_promoted_values():
@@ -453,6 +468,8 @@ def test_read_tuner_params_reads_promoted_values():
             'sub_appear_window_gws_used': 12,   # APM-01
             'cs_team_form_slope_used': 0.10,    # CSF-01
             'cs_def_form_window_gws_used': 5,   # CSF-01
+            'atf_slope_used':      0.2,         # ATF-01
+            'atf_window_gws_used': 5,           # ATF-01
         }}
         path = os.path.join(tmpdir, 'accuracy_backtest.json')
         with open(path, 'w') as f:
@@ -466,3 +483,5 @@ def test_read_tuner_params_reads_promoted_values():
         assert params['sub_appear_window_gws_used'] == 12
         assert abs(params['cs_team_form_slope_used'] - 0.10) < 1e-9   # CSF-01
         assert params['cs_def_form_window_gws_used'] == 5              # CSF-01
+        assert params['atf_slope_used'] == 0.2                         # ATF-01
+        assert params['atf_window_gws_used'] == 5                      # ATF-01
