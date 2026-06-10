@@ -231,6 +231,24 @@ class TestReadPriorParams:
         assert params['cs_def_form_window_gws'] == CS_DEF_FORM_WINDOW_GWS
 
 
+
+
+def test_atf_slope_default_in_read_prior_params():
+    """Missing key in summary → returns ATF_SLOPE default."""
+    from tune import _read_prior_params
+    from accuracy import ATF_SLOPE
+    result = _read_prior_params(cache_dir='nonexistent_dir_xyz')
+    assert result['atf_slope'] == ATF_SLOPE
+
+
+def test_atf_window_default_in_read_prior_params():
+    """Missing key in summary → returns ATF_WINDOW_GWS default."""
+    from tune import _read_prior_params
+    from accuracy import ATF_WINDOW_GWS
+    result = _read_prior_params(cache_dir='nonexistent_dir_xyz')
+    assert result['atf_window_gws'] == ATF_WINDOW_GWS
+
+
 # ── run_tuner gate tests ─────────────────────────────────────────────────────
 
 class TestRunTunerGates:
@@ -257,7 +275,8 @@ class TestSweepParam:
                   'cs_prob_base': 0.40, 'cs_prob_slope': 0.30,
                   'form_actual_beta': 0.0, 'form_difficulty_gamma': 0.0,
                   'sub_appear_window_gws': 15,
-                  'cs_team_form_slope': 0.0, 'cs_def_form_window_gws': 6}  # CSF-01
+                  'cs_team_form_slope': 0.0, 'cs_def_form_window_gws': 6,  # CSF-01
+                  'atf_slope': 0.0, 'atf_window_gws': 6}  # ATF-01
 
         result = _sweep_param(
             param_name='blend_alpha',
@@ -284,7 +303,8 @@ class TestSweepParam:
                   'cs_prob_base': 0.40, 'cs_prob_slope': 0.30,
                   'form_actual_beta': 0.0, 'form_difficulty_gamma': 0.0,
                   'sub_appear_window_gws': 15,
-                  'cs_team_form_slope': 0.0, 'cs_def_form_window_gws': 6}  # CSF-01
+                  'cs_team_form_slope': 0.0, 'cs_def_form_window_gws': 6,  # CSF-01
+                  'atf_slope': 0.0, 'atf_window_gws': 6}  # ATF-01
         result = _sweep_param(
             'blend_alpha', [0.4], 0.4, params,
             summaries, all_gws, bootstrap, fixture_difficulty, fixtures,
@@ -319,6 +339,8 @@ class TestRunTunerFull:
         assert 'sub_appear_window_gws' in sweep
         assert 'cs_team_form_slope' in sweep
         assert 'cs_def_form_window_gws' in sweep
+        assert 'atf_slope' in sweep
+        assert 'atf_window_gws' in sweep
 
     def test_run_tuner_promoted_params_contains_all_params(self, tmp_path):
         summaries, bootstrap, fixtures = _make_summaries_and_bootstrap(n_gws=20)
@@ -333,6 +355,8 @@ class TestRunTunerFull:
         assert 'sub_appear_window_gws' in pp
         assert 'cs_team_form_slope' in pp
         assert 'cs_def_form_window_gws' in pp
+        assert 'atf_slope' in pp
+        assert 'atf_window_gws' in pp
 
     def test_run_tuner_train_validate_split_correct(self, tmp_path):
         """Train + validate together must cover all finished GWs with no gaps or overlap."""
@@ -344,7 +368,7 @@ class TestRunTunerFull:
         assert set(train) & set(validate) == set()
 
     def test_coordinate_locking_uses_prior_sweep_value(self, tmp_path):
-        """promoted_params must reflect locked-in values from all nine sweeps in order.
+        """promoted_params must reflect locked-in values from all eleven sweeps in order.
 
         Note: this is a structural consistency test — it verifies that promoted_params
         is built from the locked-in values, not that locking actually changed a later
@@ -355,7 +379,7 @@ class TestRunTunerFull:
         """
         summaries, bootstrap, fixtures = _make_summaries_and_bootstrap(n_gws=20)
         result = run_tuner(summaries, 20, bootstrap, fixtures, str(tmp_path))
-        # All nine params in promoted_params must match their sweep's best value
+        # All eleven params in promoted_params must match their sweep's best value
         assert result['promoted_params']['blend_alpha']     == result['sweep']['blend_alpha']['best']
         assert result['promoted_params']['form_window_gws'] == result['sweep']['form_window_gws']['best']
         assert result['promoted_params']['cs_prob_base']    == result['sweep']['cs_prob_base']['best']
@@ -365,6 +389,8 @@ class TestRunTunerFull:
         assert result['promoted_params']['sub_appear_window_gws'] == result['sweep']['sub_appear_window_gws']['best']
         assert result['promoted_params']['cs_team_form_slope']     == result['sweep']['cs_team_form_slope']['best']
         assert result['promoted_params']['cs_def_form_window_gws'] == result['sweep']['cs_def_form_window_gws']['best']
+        assert result['promoted_params']['atf_slope'] == 0.0
+        assert result['promoted_params']['atf_window_gws'] == 6
 
     def test_form_actual_beta_in_promoted_params(self, tmp_path):
         """promoted_params dict contains form_actual_beta key."""

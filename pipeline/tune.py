@@ -29,6 +29,9 @@ from accuracy import (
     CS_TEAM_FORM_SLOPE,      # CSF-01
     CS_DEF_FORM_WINDOW_GWS,  # CSF-01
     build_team_def_form_lookup,  # CSF-01
+    ATF_SLOPE,               # ATF-01
+    ATF_WINDOW_GWS,          # ATF-01
+    build_team_atf_lookup,   # ATF-01
 )
 
 # ── Candidate sweep grids ────────────────────────────────────────────────────
@@ -41,6 +44,8 @@ FORM_DIFFICULTY_GAMMA_CANDIDATES = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]  # FRM-02
 SUB_APPEAR_WINDOW_CANDIDATES = [10, 12, 15, 18, 20]                  # APM-01
 CS_TEAM_FORM_SLOPE_CANDIDATES  = [0.0, 0.05, 0.10, 0.15, 0.20]  # CSF-01
 CS_DEF_FORM_WINDOW_CANDIDATES  = [3, 5, 6, 8, 10]                # CSF-01
+ATF_SLOPE_CANDIDATES   = [0.0, 0.10, 0.20, 0.30, 0.40]  # ATF-01
+ATF_WINDOW_CANDIDATES  = [3, 5, 6, 8, 10]                # ATF-01
 
 # ── Safety thresholds ────────────────────────────────────────────────────────
 MIN_FINISHED_GWS = 13             # need at least this many GWs for a meaningful split
@@ -76,6 +81,8 @@ def _read_prior_params(cache_dir: str) -> dict:
             'sub_appear_window_gws':  int(summary.get('sub_appear_window_gws_used', SUB_APPEAR_WINDOW_GWS)),  # APM-01
             'cs_team_form_slope':     float(summary.get('cs_team_form_slope_used', CS_TEAM_FORM_SLOPE)),  # CSF-01
             'cs_def_form_window_gws': int(summary.get('cs_def_form_window_gws_used', CS_DEF_FORM_WINDOW_GWS)),  # CSF-01
+            'atf_slope':      float(summary.get('atf_slope_used',      ATF_SLOPE)),      # ATF-01
+            'atf_window_gws': int(summary.get('atf_window_gws_used',   ATF_WINDOW_GWS)), # ATF-01
         }
     except (FileNotFoundError, json.JSONDecodeError, OSError, KeyError, ValueError):
         return {
@@ -88,6 +95,8 @@ def _read_prior_params(cache_dir: str) -> dict:
             'sub_appear_window_gws': SUB_APPEAR_WINDOW_GWS,   # APM-01
             'cs_team_form_slope':     CS_TEAM_FORM_SLOPE,     # CSF-01
             'cs_def_form_window_gws': CS_DEF_FORM_WINDOW_GWS, # CSF-01
+            'atf_slope':      ATF_SLOPE,      # ATF-01
+            'atf_window_gws': ATF_WINDOW_GWS, # ATF-01
         }
 
 
@@ -182,6 +191,7 @@ def _sweep_param(
     baseline_team_def_form = build_team_def_form_lookup(
         fixtures, params['cs_def_form_window_gws']
     )  # CSF-01
+    baseline_team_atf = build_team_atf_lookup(fixtures, params['atf_window_gws'])  # ATF-01
     baseline_rows = build_per_gw_rows(
         summaries=summaries,
         target_gws=all_gws,
@@ -197,6 +207,8 @@ def _sweep_param(
         sub_appear_window_gws=params['sub_appear_window_gws'],   # APM-01
         team_def_form_lookup=baseline_team_def_form,             # CSF-01
         cs_team_form_slope=params['cs_team_form_slope'],         # CSF-01
+        team_atf_lookup=baseline_team_atf,    # ATF-01
+        atf_slope=params['atf_slope'],         # ATF-01
     )
     current_train    = compute_metrics_for_gws(baseline_rows, gws_train)
     current_validate = compute_metrics_for_gws(baseline_rows, gws_validate)
@@ -214,6 +226,7 @@ def _sweep_param(
         candidate_team_def_form = build_team_def_form_lookup(
             fixtures, candidate_params['cs_def_form_window_gws']
         )  # CSF-01
+        candidate_team_atf = build_team_atf_lookup(fixtures, candidate_params['atf_window_gws'])  # ATF-01
         candidate_rows = build_per_gw_rows(
             summaries=summaries,
             target_gws=all_gws,
@@ -229,6 +242,8 @@ def _sweep_param(
             sub_appear_window_gws=candidate_params['sub_appear_window_gws'],   # APM-01
             team_def_form_lookup=candidate_team_def_form,                      # CSF-01
             cs_team_form_slope=candidate_params['cs_team_form_slope'],         # CSF-01
+            team_atf_lookup=candidate_team_atf,                    # ATF-01
+            atf_slope=candidate_params['atf_slope'],                # ATF-01
         )
         train_metrics    = compute_metrics_for_gws(candidate_rows, gws_train)
         validate_metrics = compute_metrics_for_gws(candidate_rows, gws_validate)
@@ -301,6 +316,8 @@ def run_tuner(
         'sub_appear_window_gws': prior['sub_appear_window_gws'],   # APM-01
         'cs_team_form_slope':     prior['cs_team_form_slope'],     # CSF-01
         'cs_def_form_window_gws': prior['cs_def_form_window_gws'], # CSF-01
+        'atf_slope':      prior['atf_slope'],      # ATF-01
+        'atf_window_gws': prior['atf_window_gws'], # ATF-01
     }
 
     sweep_results: dict = {}
@@ -316,6 +333,8 @@ def run_tuner(
         ('sub_appear_window_gws', SUB_APPEAR_WINDOW_CANDIDATES, prior['sub_appear_window_gws']),  # APM-01
         ('cs_team_form_slope',     CS_TEAM_FORM_SLOPE_CANDIDATES,    prior['cs_team_form_slope']),     # CSF-01
         ('cs_def_form_window_gws', CS_DEF_FORM_WINDOW_CANDIDATES,    prior['cs_def_form_window_gws']), # CSF-01
+        ('atf_slope',      ATF_SLOPE_CANDIDATES,  prior['atf_slope']),      # ATF-01
+        ('atf_window_gws', ATF_WINDOW_CANDIDATES, prior['atf_window_gws']), # ATF-01
     ]
 
     for param_name, candidates, current_val in sweep_order:
