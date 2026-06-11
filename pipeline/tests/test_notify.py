@@ -17,6 +17,10 @@ def _empty_state() -> dict:
         'last_captain_id': None,
         'last_known_injuries': {},
         'gw_deadline_state': {},
+        'last_setpiece_sent_at': None,
+        'seen_setpiece_changes': [],
+        'last_benched_sent_at': None,
+        'benched_fired': {},
     }
 
 
@@ -266,3 +270,61 @@ def test_missing_file_skips_type_continues_others():
     assert 'deadline' not in sent
     assert 'injury' in sent
     assert 'captain' in sent
+
+
+# ---------------------------------------------------------------------------
+# Set-piece change — PUSH-06
+
+SP_CHANGES = {
+    'has_changes': True,
+    'change_count': 1,
+    'teams': [
+        {'team_id': 1, 'team_short_name': 'ARS',
+         'penalty_taker': {'id': 16, 'name': 'Saka', 'changed': False},
+         'fk_taker': {'id': 21, 'name': 'Rice', 'changed': True},
+         'corner_taker': {'id': 21, 'name': 'Rice', 'changed': False}},
+    ],
+}
+
+
+def test_setpiece_fires_on_changed_taker():
+    state = _empty_state()
+    with patch.object(notify, '_read_json', return_value=SP_CHANGES):
+        result = notify._collect_setpiece_candidate(state, 'pipeline/cache')
+    assert result is not None
+    assert result['type'] == 'setpiece'
+    assert 'Rice' in result['body'] and 'free kicks' in result['body'] and 'ARS' in result['body']
+
+
+def test_setpiece_skips_when_no_changes():
+    state = _empty_state()
+    quiet = {'has_changes': False, 'change_count': 0, 'teams': SP_CHANGES['teams']}
+    quiet = {**quiet, 'teams': [{**SP_CHANGES['teams'][0],
+                                 'fk_taker': {'id': 21, 'name': 'Rice', 'changed': False}}]}
+    with patch.object(notify, '_read_json', return_value=quiet):
+        assert notify._collect_setpiece_candidate(state, 'pipeline/cache') is None
+
+
+def test_setpiece_does_not_refire_on_seen_identity():
+    state = _empty_state()
+    state['seen_setpiece_changes'] = ['1:fk_taker:21']
+    with patch.object(notify, '_read_json', return_value=SP_CHANGES):
+        assert notify._collect_setpiece_candidate(state, 'pipeline/cache') is None
+
+
+def test_setpiece_respects_cooldown():
+    state = _empty_state()
+    state['last_setpiece_sent_at'] = _hours_ago(1)
+    with patch.object(notify, '_read_json', return_value=SP_CHANGES):
+        assert notify._collect_setpiece_candidate(state, 'pipeline/cache') is None
+
+
+def test_setpiece_state_capped_at_50():
+    state = _empty_state()
+    state['seen_setpiece_changes'] = [f'x:{i}' for i in range(50)]
+    payload = {'type': 'setpiece', 'title': 'Set-piece update', 'body': 'b',
+               '_sp_identity': '1:fk_taker:21'}
+    notify._update_state(state, payload)
+    assert len(state['seen_setpiece_changes']) == 50
+    assert state['seen_setpiece_changes'][-1] == '1:fk_taker:21'
+    assert state['last_setpiece_sent_at'] is not None

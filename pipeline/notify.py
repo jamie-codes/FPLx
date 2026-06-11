@@ -55,6 +55,10 @@ def _load_state(cache_dir: str = 'pipeline/cache') -> dict:
         'last_captain_id':       None,
         'last_known_injuries':   {},
         'gw_deadline_state':     {},
+        'last_setpiece_sent_at': None,
+        'seen_setpiece_changes': [],
+        'last_benched_sent_at':  None,
+        'benched_fired':         {},
     }
     try:
         stored = _read_json('notify_state.json', cache_dir)
@@ -215,6 +219,41 @@ def _collect_captain_candidate(state: dict, cache_dir: str) -> dict | None:
     }
 
 
+ROLE_LABEL = {'penalty_taker': 'penalties', 'fk_taker': 'free kicks',
+              'corner_taker': 'corners'}
+
+
+def _collect_setpiece_candidate(state: dict, cache_dir: str) -> dict | None:
+    """PUSH-06 (ALERT-01): set-piece taker changed."""
+    if _within_cooldown(state.get('last_setpiece_sent_at')):
+        return None
+    try:
+        changes = _read_json('set_piece_changes.json', cache_dir)
+    except FileNotFoundError:
+        print('[notify] set_piece_changes.json not found — skipping set-piece alert',
+              file=sys.stderr)
+        return None
+    if not changes.get('has_changes'):
+        return None
+    seen = state.get('seen_setpiece_changes', [])
+    for team in changes.get('teams', []):
+        for role, label in ROLE_LABEL.items():
+            taker = team.get(role) or {}
+            if not taker.get('changed'):
+                continue
+            identity = f"{team.get('team_id')}:{role}:{taker.get('id')}"
+            if identity in seen:
+                continue
+            return {
+                'type':         'setpiece',
+                'title':        'Set-piece update',
+                'body':         f"{taker.get('name', 'Unknown')} now on {label} "
+                                f"({team.get('team_short_name', '')})",
+                '_sp_identity': identity,
+            }
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Dispatch
 
@@ -253,6 +292,11 @@ def _update_state(state: dict, payload: dict) -> None:
     elif t == 'captain':
         state['last_captain_sent_at'] = now
         state['last_captain_id'] = payload.get('_captain_id')
+    elif t == 'setpiece':
+        state['last_setpiece_sent_at'] = now
+        seen = state.get('seen_setpiece_changes', [])
+        seen.append(payload['_sp_identity'])
+        state['seen_setpiece_changes'] = seen[-50:]   # cap state growth
 
 
 # ---------------------------------------------------------------------------
@@ -268,6 +312,7 @@ def run_notify(cache_dir: str = 'pipeline/cache') -> None:
         ('injury',   _collect_injury_candidate),
         ('deadline', _collect_deadline_candidate),
         ('captain',  _collect_captain_candidate),
+        ('setpiece', _collect_setpiece_candidate),
     ]
     candidates: list[dict] = []
     for type_name, collector in collectors:
