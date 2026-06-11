@@ -167,6 +167,7 @@ export interface MergedPlayer {
     bonus_pts: number
     appearance_pts: number    // Phase 48 XPT-01/XPT-02: start_prob × 2 per fixture
     save_pts?: number         // Phase 83 GK-01 — GK Poisson-floor save EV; pipeline writes 0.0 for non-GK / gate-OFF, >0 for gate-ON GK only
+    defcon?: number             // PICK-01/DC-02 — DC-01 DefCon EV component; absent pre-rollout
   } | null
   // Regression signal (Phase 29 DATA-03, REG-01, REG-02).
   // Optional — absent when signal cannot be computed (player has <900 min in 5-GW window,
@@ -360,6 +361,15 @@ export interface AccuracyGwSummary {
   mid_tier_blended_hit_rate?: number
 }
 
+// PICK-01: honest pick-quality metrics (BT-02 leakage-free harness, computed in-pipeline)
+export interface HonestMetrics {
+  top10_mean_pts: number | null
+  haul_capture_20: number | null
+  captain_return_rate: number | null
+  haul_hit_rate?: number | null
+  n_gws: number
+}
+
 export interface AccuracySummary {
   xpts_hit_rate: number
   gws: AccuracyGwSummary[]
@@ -376,6 +386,7 @@ export interface AccuracySummary {
   news_flag_enabled?: boolean        // Phase 88 SCRAPER-01 gate (default true; kill switch)
   mc_enabled?: boolean               // Phase 90 MC-01: 5-GW MC simulation gate (default false)
   calibration_mode?: 'mc' | 'analytical'  // Phase 109 MC-CAL-01: written by pipeline; reads as 'mc' when MC_ENABLED AND coverage >= 80%
+  honest_metrics?: HonestMetrics    // PICK-01 — present once the live season has >= 8 finished GWs
 }
 
 export interface AccuracyHaulter {
