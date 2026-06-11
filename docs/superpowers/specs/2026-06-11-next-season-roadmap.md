@@ -21,6 +21,7 @@ Every item below is grounded in measured evidence, not speculation. Backlog stat
 | SA-02 | In-season archive accumulation — pipeline snapshots the full season to `pipeline/data/season_<label>/` on each newly finished GW; CI commits it (contents: write + bot commit step). Same-GW partial snapshots self-heal when a later run fetches more players. | 7 tests; gate logic verified against real archive (write→idempotent) |
 | PICK-01 | Weekly Picks tab (Analyse) — confidence strip (live honest metrics after GW8, else 2025/26 validation), side-by-side 1GW/3GW top-10 tables with expandable component breakdowns, under-the-radar gems row | 19 UI tests + 2 pipeline tests; both suites green |
 | DC-02 | DefCon xPts component surfaced in the UI (expandable picks rows) — delivered inside PICK-01 | — |
+| ALERT-01 | Alert system completed (push-only): web-push install unblocked, PUSH-06 set-piece-change + PUSH-07 lineup-doubt collectors added to the existing 4 (price/injury/deadline/captain). Backlog is now 100% shipped. | 11 new tests; 581 pipeline tests green |
 | EO-01 | Gem validation: DIFF flag recalibrated to p75 xPts gate + <10% ownership (was median + <5%) — exp06: precision 0.482 vs base 0.370, lift +11.2pp, n=1829, season-half consistent. Ownership shown to buy leverage not accuracy. value-gems/PICK-01 already aligned at 10%. | exp06_gem_validation.json; 6 tests |
 
 **Promoted model vs old (validation GW29–38):** top10_mean 5.18→5.66 pts, captain return 0.50→0.60, RMSE 2.955→2.932, Spearman 0.351→0.359.
@@ -35,7 +36,6 @@ GKP haul capture is 11% (worst position). Save points are entirely unmodelled in
 
 ## Priority 3 — polish / infra
 
-- **ALERT-01**: the one unshipped backlog item (push/email infra)
 - **VAR-01**: distribution-aware captaincy — keep mean ranking for picks; for captaincy specifically, test P(haul) from the MC sim against archived DGWs
 - **Lab hygiene**: BT-02's `DEFAULT_PARAMS` intentionally lags live defaults (it's the experimental control); document per-experiment which param set is "current live"
 
