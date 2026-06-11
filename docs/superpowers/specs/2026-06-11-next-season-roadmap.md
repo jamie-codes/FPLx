@@ -33,9 +33,6 @@ Every item below is grounded in measured evidence, not speculation. Backlog stat
 ### GK-02: Goalkeeper modelling
 GKP haul capture is 11% (worst position). Save points are entirely unmodelled in the backtest path and gated off in live. Element-summary has per-GW `saves`; opponent xG proxy exists. Build save-points EV from prior save rates × opponent attack, validate in lab.
 
-### EO-01: Ownership-aware gem validation
-The gem/differential logic in the web app has never been backtested. With SA-02's per-GW `selected` data (and the archive's GW31+ snapshot), validate: do low-ownership model-top-30 picks actually outperform template picks on points-per-pick? Then tune the differential thresholds empirically.
-
 ## Priority 3 — polish / infra
 
 - **ALERT-01**: the one unshipped backlog item (push/email infra)
