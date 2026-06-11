@@ -326,7 +326,7 @@ Features already shipped or in-progress are excluded. v1.7 (phases 47-51) covers
 
 ---
 
-### ALERT-01: Alert System
+### ~~ALERT-01: Alert System~~
 **Problem:** Important FPL information changes close to deadline. No proactive notification system.
 **Scope:**
 - Price rise/fall risk alerts
@@ -335,7 +335,7 @@ Features already shipped or in-progress are excluded. v1.7 (phases 47-51) covers
 - Deadline reminders (2h before)
 - Captain recommendation changed
 - Player benched in predicted lineups
-**Implementation:** Requires web push or email — currently no notification infrastructure.
+**Implementation:** COMPLETE 2026-06-11 — web push (Phases 134/135 infra + PUSH-06/07 collectors). Email descoped. See docs/superpowers/specs/2026-06-11-alert01-completion-design.md.
 **Priority:** Nice-to-have / High UX value
 **Estimated effort:** Medium
 
