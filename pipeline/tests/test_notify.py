@@ -195,17 +195,26 @@ def test_captain_skips_within_cooldown():
 # run_notify — rate limiting, error handling
 
 def _all_triggers_read_json(filename, cache_dir='pipeline/cache'):
-    """Returns data that triggers all 4 notification types."""
+    """Returns data that triggers all 6 notification types."""
     if filename == 'notify_state.json':
         raise FileNotFoundError(filename)  # fresh start
     if filename == 'price_changes.json':
         return [{'id': 1, 'web_name': 'Salah', 'direction': 'rise', 'confidence_pct': 85.0}]
     if filename == 'merged_players.json':
-        return [{'id': 11, 'web_name': 'Kane', 'status': 'd', 'news': 'Hamstring injury'}]
+        return [
+            {'id': 11, 'web_name': 'Kane', 'status': 'd', 'news': 'Hamstring injury'},
+            {'id': 50, 'web_name': 'Bigname', 'status': 'a', 'selected_by_percent': '34.0'},
+        ]
     if filename == 'fpl_bootstrap.json':
-        return _future_deadline(24)
+        deadline = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
+        return {'events': [{'id': 38, 'name': 'Gameweek 38',
+                             'deadline_time': deadline, 'is_next': True}]}
     if filename == 'captain_picks.json':
         return CAPTAIN_PICKS
+    if filename == 'set_piece_changes.json':
+        return SP_CHANGES
+    if filename == 'lineup_news.json':
+        return LINEUP_NEWS
     raise FileNotFoundError(filename)
 
 
@@ -272,6 +281,21 @@ def test_missing_file_skips_type_continues_others():
     assert 'captain' in sent
 
 
+def test_priority_order_six_candidates_top3_sent():
+    sent = []
+
+    def mock_send(payload, base_url):
+        sent.append(payload['type'])
+        return 200
+
+    with patch.object(notify, '_read_json', side_effect=_all_triggers_read_json), \
+         patch.object(notify, '_send', side_effect=mock_send), \
+         patch.object(notify, '_save_state'):
+        notify.run_notify(cache_dir='pipeline/cache')
+
+    assert sent == ['price', 'injury', 'deadline']
+
+
 # ---------------------------------------------------------------------------
 # Set-piece change — PUSH-06
 
@@ -328,3 +352,87 @@ def test_setpiece_state_capped_at_50():
     assert len(state['seen_setpiece_changes']) == 50
     assert state['seen_setpiece_changes'][-1] == '1:fk_taker:21'
     assert state['last_setpiece_sent_at'] is not None
+
+
+# ---------------------------------------------------------------------------
+# Lineup doubt — PUSH-07
+
+LINEUP_NEWS = {
+    'scraped_at': '2026-08-20T10:00:00+00:00',
+    'players': [
+        {'id': 50, 'availability_factor': 0.25, 'status_label': 'doubted',
+         'news_headline': 'Left out of training squad'},
+        {'id': 51, 'availability_factor': 1.0, 'status_label': 'confirmed_start',
+         'news_headline': None},
+    ],
+}
+
+BENCH_MERGED = [
+    {'id': 50, 'web_name': 'Bigname', 'status': 'a', 'selected_by_percent': '34.0'},
+    {'id': 51, 'web_name': 'Starter', 'status': 'a', 'selected_by_percent': '44.0'},
+]
+
+
+def _benched_read_json(filename, cache_dir='pipeline/cache'):
+    if filename == 'lineup_news.json':
+        return LINEUP_NEWS
+    if filename == 'merged_players.json':
+        return BENCH_MERGED
+    if filename == 'fpl_bootstrap.json':
+        return {'events': [{'id': 3, 'is_next': True}]}
+    raise FileNotFoundError(filename)
+
+
+def test_benched_fires_for_prominent_doubt():
+    state = _empty_state()
+    with patch.object(notify, '_read_json', side_effect=_benched_read_json):
+        result = notify._collect_benched_candidate(state, 'pipeline/cache')
+    assert result is not None
+    assert result['type'] == 'benched'
+    assert 'Bigname' in result['body'] and 'doubted' in result['body']
+    assert 'Left out of training squad' in result['body']
+    assert result['_benched_key'] == '3:50'
+
+
+def test_benched_ignores_low_ownership():
+    state = _empty_state()
+    low = [dict(BENCH_MERGED[0], selected_by_percent='19.9')]
+
+    def rj(filename, cache_dir='pipeline/cache'):
+        if filename == 'merged_players.json':
+            return low
+        return _benched_read_json(filename, cache_dir)
+
+    with patch.object(notify, '_read_json', side_effect=rj):
+        assert notify._collect_benched_candidate(state, 'pipeline/cache') is None
+
+
+def test_benched_ignores_fpl_flagged_players():
+    """status != 'a' is the injury collector's territory (no double alerts)."""
+    state = _empty_state()
+    flagged = [dict(BENCH_MERGED[0], status='d')]
+
+    def rj(filename, cache_dir='pipeline/cache'):
+        if filename == 'merged_players.json':
+            return flagged
+        return _benched_read_json(filename, cache_dir)
+
+    with patch.object(notify, '_read_json', side_effect=rj):
+        assert notify._collect_benched_candidate(state, 'pipeline/cache') is None
+
+
+def test_benched_fires_once_per_gw_per_player():
+    state = _empty_state()
+    state['benched_fired'] = {'3:50': True}
+    with patch.object(notify, '_read_json', side_effect=_benched_read_json):
+        assert notify._collect_benched_candidate(state, 'pipeline/cache') is None
+
+
+def test_benched_update_state_prunes_other_gws():
+    state = _empty_state()
+    state['benched_fired'] = {'2:99': True}
+    payload = {'type': 'benched', 'title': 'Lineup alert', 'body': 'b',
+               '_benched_key': '3:50'}
+    notify._update_state(state, payload)
+    assert state['benched_fired'] == {'3:50': True}
+    assert state['last_benched_sent_at'] is not None

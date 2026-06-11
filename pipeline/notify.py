@@ -254,6 +254,58 @@ def _collect_setpiece_candidate(state: dict, cache_dir: str) -> dict | None:
     return None
 
 
+BENCHED_OWNERSHIP_MIN = 20.0
+BENCHED_FACTOR_MAX = 0.5
+
+
+def _collect_benched_candidate(state: dict, cache_dir: str) -> dict | None:
+    """PUSH-07 (ALERT-01): prominent player with FPL status 'a' but lineup-news
+    doubt (availability_factor <= 0.5) — the 'benched in predicted lineups'
+    signal mapped onto the flat lineup_news availability feed."""
+    if _within_cooldown(state.get('last_benched_sent_at')):
+        return None
+    try:
+        lineup = _read_json('lineup_news.json', cache_dir)
+        merged = _read_json('merged_players.json', cache_dir)
+        bootstrap = _read_json('fpl_bootstrap.json', cache_dir)
+    except FileNotFoundError as exc:
+        print(f'[notify] {exc} — skipping benched alert', file=sys.stderr)
+        return None
+    next_gw = next((e.get('id') for e in bootstrap.get('events', [])
+                    if e.get('is_next')), None)
+    if next_gw is None:
+        return None
+    by_id = {p.get('id'): p for p in merged}
+    fired = state.get('benched_fired', {})
+    for entry in lineup.get('players', []):
+        factor = entry.get('availability_factor')
+        if factor is None or factor > BENCHED_FACTOR_MAX:
+            continue
+        p = by_id.get(entry.get('id'))
+        if p is None or p.get('status') != 'a':
+            continue   # FPL-flagged players are the injury collector's territory
+        try:
+            ownership = float(p.get('selected_by_percent', 0) or 0)
+        except (TypeError, ValueError):
+            continue
+        if ownership <= BENCHED_OWNERSHIP_MIN:
+            continue
+        key = f"{next_gw}:{p.get('id')}"
+        if key in fired:
+            continue
+        body = f"{p.get('web_name', 'Unknown')}: lineup doubt ({entry.get('status_label', '')})"
+        headline = entry.get('news_headline')
+        if headline:
+            body += f' — {headline}'
+        return {
+            'type':         'benched',
+            'title':        'Lineup alert',
+            'body':         body,
+            '_benched_key': key,
+        }
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Dispatch
 
@@ -297,6 +349,14 @@ def _update_state(state: dict, payload: dict) -> None:
         seen = state.get('seen_setpiece_changes', [])
         seen.append(payload['_sp_identity'])
         state['seen_setpiece_changes'] = seen[-50:]   # cap state growth
+    elif t == 'benched':
+        state['last_benched_sent_at'] = now
+        key = payload['_benched_key']
+        gw_prefix = key.split(':')[0] + ':'
+        fired = {k: v for k, v in state.get('benched_fired', {}).items()
+                 if k.startswith(gw_prefix)}
+        fired[key] = True
+        state['benched_fired'] = fired
 
 
 # ---------------------------------------------------------------------------
@@ -313,6 +373,7 @@ def run_notify(cache_dir: str = 'pipeline/cache') -> None:
         ('deadline', _collect_deadline_candidate),
         ('captain',  _collect_captain_candidate),
         ('setpiece', _collect_setpiece_candidate),
+        ('benched',  _collect_benched_candidate),
     ]
     candidates: list[dict] = []
     for type_name, collector in collectors:
