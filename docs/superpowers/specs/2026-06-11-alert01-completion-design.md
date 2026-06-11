@@ -31,11 +31,11 @@ Both follow the existing collector pattern exactly (pure function over cache art
 - State: append the seen identity; cap the stored list at the most recent 50 to bound state growth
 - Cooldown: the standard 24h per-type cooldown applies (same mechanism as the other types)
 
-**PUSH-07 — prominent player predicted benched**
-- Input: `lineup_news.json` predicted lineups (read its real shape at plan time) + `merged_players.json` for ownership
-- Fire when a player with `selected_by_percent > 20` is predicted benched (in squad, not in predicted XI) for the upcoming GW and `state['benched_fired']` lacks the `(player_id, gw)` key
-- Payload: `{type: 'benched', title: 'Bench alert', body: '{web_name} predicted benched vs {opponent}'}`
-- State: `benched_fired` dict keyed `"{gw}:{player_id}"`; entries for past GWs pruned on write
+**PUSH-07 — prominent player lineup doubt** *(amended after artefact inspection: `lineup_news.json` is a flat per-player availability feed — `{id, availability_factor 0..1, status_label, news_headline}` — with no XI/bench/opponent/GW representation; the spirit of "benched in predicted lineups" maps to: FPL says available but scraped lineup news says doubt)*
+- Input: `lineup_news.json` + `merged_players.json` (ownership, name, FPL status) + `fpl_bootstrap.json` (next-GW id for the state key)
+- Fire when a player with `selected_by_percent > 20` AND FPL `status == 'a'` (not already injury-flagged — avoids overlap with PUSH-03) has `availability_factor` non-null and ≤ 0.5, and `state['benched_fired']` lacks the `"{gw}:{player_id}"` key
+- Payload: `{type: 'benched', title: 'Lineup alert', body: '{web_name}: lineup doubt ({status_label})'}` — appends `' — {news_headline}'` when a headline is present
+- State: `benched_fired` dict keyed `"{gw}:{player_id}"`; entries for other GWs pruned on write
 - Cooldown: standard 24h per-type cooldown
 
 ### 3. Priority + bookkeeping
