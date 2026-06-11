@@ -3,7 +3,7 @@
 **Date:** 2026-06-11 (overnight session)
 **Basis:** Honest full-season backtesting (BT-02 lab, exp01–exp06) over the archived 2025/26 season.
 
-Every item below is grounded in measured evidence, not speculation. Backlog status: all pre-existing backlog features are shipped except ALERT-01.
+Every item below is grounded in measured evidence, not speculation. Backlog status: ALL pre-existing backlog features are shipped (ALERT-01 completed 2026-06-11).
 
 ---
 
