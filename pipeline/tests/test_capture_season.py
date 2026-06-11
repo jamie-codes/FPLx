@@ -175,6 +175,27 @@ def test_snapshot_idempotent_same_gw(tmp_path, monkeypatch):
     assert open(manifest_path).read() == content_before
 
 
+def test_snapshot_same_gw_rewrites_when_more_players(tmp_path, monkeypatch):
+    """Same finished_gws but more players in summaries -> True, players_fetched increases."""
+    bs = _bootstrap_with_deadline(n_players=5, n_finished=1)
+    snap_dir = str(tmp_path / 'snap')
+    monkeypatch.setattr(capture_season, '_snapshot_dir', lambda label: snap_dir)
+
+    # First call: write snapshot with only 3 players (partial)
+    partial_summaries = {el['id']: _summary(el['id']) for el in bs['elements'][:3]}
+    assert capture_season.snapshot_season(bs, [], {}, partial_summaries) is True
+    manifest_path = os.path.join(snap_dir, 'manifest.json')
+    first_manifest = json.load(open(manifest_path))
+    assert first_manifest['players_fetched'] == 3
+
+    # Second call: same finished GW count but N+2 players (5 total) -> should rewrite
+    full_summaries = _fake_summaries(bs)  # 5 players
+    result = capture_season.snapshot_season(bs, [], {}, full_summaries)
+    assert result is True
+    second_manifest = json.load(open(manifest_path))
+    assert second_manifest['players_fetched'] == 5
+
+
 def test_snapshot_advances_on_new_gw(tmp_path, monkeypatch):
     """finished count 2 > manifest 1 -> True, manifest updated"""
     bs1 = _bootstrap_with_deadline(n_finished=1)

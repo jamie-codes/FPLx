@@ -151,7 +151,11 @@ def snapshot_season(bootstrap: dict, fixtures: list, understat: dict,
         try:
             with open(manifest_path, encoding='utf-8') as f:
                 prior = json.load(f)
-            if prior.get('finished_gws', 0) >= finished_now:
+            prior_gws = prior.get('finished_gws', 0)
+            prior_players = prior.get('players_fetched', 0)
+            if finished_now < prior_gws:
+                return False
+            if finished_now == prior_gws and len(summaries) <= prior_players:
                 return False
         except (json.JSONDecodeError, OSError):
             pass  # corrupt manifest — overwrite
