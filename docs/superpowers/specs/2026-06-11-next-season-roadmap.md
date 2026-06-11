@@ -21,6 +21,7 @@ Every item below is grounded in measured evidence, not speculation. Backlog stat
 | SA-02 | In-season archive accumulation — pipeline snapshots the full season to `pipeline/data/season_<label>/` on each newly finished GW; CI commits it (contents: write + bot commit step). Same-GW partial snapshots self-heal when a later run fetches more players. | 7 tests; gate logic verified against real archive (write→idempotent) |
 | PICK-01 | Weekly Picks tab (Analyse) — confidence strip (live honest metrics after GW8, else 2025/26 validation), side-by-side 1GW/3GW top-10 tables with expandable component breakdowns, under-the-radar gems row | 19 UI tests + 2 pipeline tests; both suites green |
 | DC-02 | DefCon xPts component surfaced in the UI (expandable picks rows) — delivered inside PICK-01 | — |
+| EO-01 | Gem validation: DIFF flag recalibrated to p75 xPts gate + <10% ownership (was median + <5%) — exp06: precision 0.482 vs base 0.370, lift +11.2pp, n=1829, season-half consistent. Ownership shown to buy leverage not accuracy. value-gems/PICK-01 already aligned at 10%. | exp06_gem_validation.json; 6 tests |
 
 **Promoted model vs old (validation GW29–38):** top10_mean 5.18→5.66 pts, captain return 0.50→0.60, RMSE 2.955→2.932, Spearman 0.351→0.359.
 
@@ -53,3 +54,5 @@ The gem/differential logic in the web app has never been backtested. With SA-02'
 | blend_alpha 0.1 / window 6 (joint re-tune drift) | wins train, loses validation — overfit |
 | Exponentially weighted xmins (halflife 1.5-5) | marginal train gain, val top10 drops 5.66->5.52 |
 | GK save-points EV (saves_per90/3 x opp attack) | worsens GKP RMSE 2.71->3.01; CS+appearance already over-cover GKs |
+| TRAP flag removal | exp06: trap success 0.340 vs base 0.370 on n=53 — underpowered, inconclusive; kept pending 2026/27 data |
+| Removing ownership from gem-score (E5 ablation) | directionally supportive (top decile 10.41 vs 10.00, more monotonic) but not decisive — recorded, not acted on |
