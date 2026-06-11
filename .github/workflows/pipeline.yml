@@ -27,6 +27,9 @@ jobs:
   run-pipeline:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+
     env:
       USE_BLOB: 'true'
       BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
@@ -60,3 +63,17 @@ jobs:
           (github.event_name == 'schedule' && github.event.schedule == '0 6,12,18,0 * * *') ||
           steps.gate.outputs.run == 'true'
         run: python pipeline/run.py
+
+      - name: Commit season snapshot
+        if: success()
+        run: |
+          if [ -n "$(git status --porcelain pipeline/data/)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add pipeline/data/
+            git commit -m "data(sa-02): season snapshot $(date -u +%F)"
+            git pull --rebase origin main
+            git push
+          else
+            echo "No snapshot changes."
+          fi

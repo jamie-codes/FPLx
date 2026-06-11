@@ -202,6 +202,13 @@ def run(dry_run: bool = False):
             _time.sleep(0.1)
         print(f"Element summaries fetched: {len(summaries)} players")
 
+        # SA-02: in-season snapshot (non-fatal — never break the pipeline)
+        try:
+            from capture_season import snapshot_season
+            snapshot_season(bootstrap, fixtures, understat, summaries)
+        except Exception as exc:
+            print(f"[pipeline] season snapshot failed (non-fatal): {exc}", file=sys.stderr)
+
         # Phase 126 NSP-01: GW38 gate — archive_season.py and suggest_squad.py.
         # CRITICAL (Pitfall 1 in RESEARCH.md): this block MUST be BEFORE the IS_OFF_SEASON
         # guard below. During GW38, is_current IS set (IS_OFF_SEASON=False). After rollover,
