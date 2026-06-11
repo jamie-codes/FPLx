@@ -5,7 +5,7 @@ and Task 4 wires the blend into _xpts_ngw inputs.
 """
 
 import pytest
-from merge import merge_players, _cs_prob, _compute_xpts_fixture, _cs_prob_1gw_for_fixtures
+from merge import merge_players, _cs_prob, _compute_xpts_fixture, _cs_prob_1gw_for_fixtures, _compute_differential_flag
 
 
 class TestCsProbKwargs:
@@ -402,3 +402,79 @@ class TestMergePlayersTunedParams:
         p_wide   = next(p for p in merged_wide   if p['id'] == 1)
         # The narrow window should give higher form signal (only sees the hot streak)
         assert p_narrow['form_xgxa_per90'] > p_wide['form_xgxa_per90']
+
+
+class TestComputeDifferentialFlag:
+    """EO-01 validated thresholds (exp06: p75 gate + <10% ownership, lift +11.2pp).
+
+    DIFF gate: xpts_1gw > position_p75 AND ownership < 10.0 AND status == 'a'.
+    TRAP gate: xpts_1gw < position_median AND ownership > 15.0 (UNCHANGED).
+    """
+
+    def test_diff_above_p75_low_ownership(self):
+        """Player above p75 with 9.9% ownership and status 'a' → 'diff'."""
+        # median=3.0, p75=5.0; xpts=6.0 > p75=5.0, own=9.9 < 10.0, status='a'
+        result = _compute_differential_flag(
+            xpts_1gw=6.0,
+            selected_by_percent='9.9',
+            status='a',
+            position_median=3.0,
+            position_p75=5.0,
+        )
+        assert result == 'diff'
+
+    def test_diff_above_median_but_below_p75_not_flagged(self):
+        """Player above median but below p75 → None even at 1% ownership (p75 gate required)."""
+        # median=3.0, p75=5.0; xpts=4.0 > median but < p75 → no diff
+        result = _compute_differential_flag(
+            xpts_1gw=4.0,
+            selected_by_percent='1.0',
+            status='a',
+            position_median=3.0,
+            position_p75=5.0,
+        )
+        assert result is None
+
+    def test_diff_ownership_exactly_10_not_flagged(self):
+        """Ownership exactly 10.0% does NOT qualify — gate is strict < 10.0."""
+        result = _compute_differential_flag(
+            xpts_1gw=6.0,
+            selected_by_percent='10.0',
+            status='a',
+            position_median=3.0,
+            position_p75=5.0,
+        )
+        assert result is None
+
+    def test_trap_below_median_high_ownership(self):
+        """TRAP gate unchanged: below median + >15% ownership → 'trap'."""
+        result = _compute_differential_flag(
+            xpts_1gw=2.0,
+            selected_by_percent='20.0',
+            status='a',
+            position_median=3.0,
+            position_p75=5.0,
+        )
+        assert result == 'trap'
+
+    def test_trap_status_exclusion_does_not_apply(self):
+        """TRAP fires even for injured (non-'a') players — D-12 asymmetry preserved."""
+        result = _compute_differential_flag(
+            xpts_1gw=2.0,
+            selected_by_percent='20.0',
+            status='i',
+            position_median=3.0,
+            position_p75=5.0,
+        )
+        assert result == 'trap'
+
+    def test_diff_requires_status_a(self):
+        """DIFF requires status == 'a'; injured player above p75 and low-owned → None."""
+        result = _compute_differential_flag(
+            xpts_1gw=6.0,
+            selected_by_percent='2.0',
+            status='i',
+            position_median=3.0,
+            position_p75=5.0,
+        )
+        assert result is None

@@ -820,10 +820,12 @@ def _compute_differential_flag(
     selected_by_percent: str,
     status: str,
     position_median: float,
+    position_p75: float,
 ) -> str | None:
     """Classify a player as 'diff', 'trap', or None (Phase 30 TMPL-01, TMPL-02).
 
-    DIFF gate (D-03): xpts_1gw > position_median AND ownership < 5.0 AND status == 'a'.
+    DIFF gate (D-03): xpts_1gw > position_p75 AND ownership < 10.0 AND status == 'a'.
+    # EO-01 validated 2026-06 (exp06: p75 gate + <10% own, lift +11.2pp)
     TRAP gate (D-04): xpts_1gw < position_median AND ownership > 15.0.
                       Status exclusion does NOT apply to TRAP (D-12: an injured
                       template player is still a sell-trap signal).
@@ -831,12 +833,15 @@ def _compute_differential_flag(
     D-12 asymmetry: injury/suspension excludes from DIFF only — a 3%-owned injured
     player is not a buy. The same player below median xPts and >15% owned IS a TRAP.
 
+    Both gates are needed: DIFF uses the p75 threshold; TRAP still uses the median.
+
     Returns:
         'diff' | 'trap' | None
     """
     ownership = _safe_float(selected_by_percent, 0.0)
 
-    if xpts_1gw > position_median and ownership < 5.0 and status == 'a':
+    # EO-01 validated 2026-06 (exp06: p75 gate + <10% own, lift +11.2pp)
+    if xpts_1gw > position_p75 and ownership < 10.0 and status == 'a':
         return 'diff'
     if xpts_1gw < position_median and ownership > 15.0:
         return 'trap'
@@ -1539,6 +1544,7 @@ def merge_players(
     # D-01: position-relative median across all players in result.
     # D-05: pre-classify in pipeline; UI reads pre-computed flag (no client-side median).
     # D-12: status='a' gate is enforced inside _compute_differential_flag for DIFF only.
+    # EO-01: DIFF now uses p75 gate; TRAP still uses median — both computed here.
     from statistics import median
     pos_xpts: dict[int, list[float]] = {1: [], 2: [], 3: [], 4: []}
     for p in result:
@@ -1549,6 +1555,11 @@ def merge_players(
         et: median(vals) if vals else 0.0
         for et, vals in pos_xpts.items()
     }
+    # EO-01 validated 2026-06 (exp06: p75 gate + <10% own, lift +11.2pp)
+    pos_p75: dict[int, float] = {
+        et: sorted(vals)[(len(vals) * 3) // 4] if vals else 0.0
+        for et, vals in pos_xpts.items()
+    }
     for p in result:
         if p.get('xPts_1gw') is None or p.get('xPts_1gw') <= 0:  # BGW player — no fixture; skip differential classification
             continue
@@ -1557,6 +1568,7 @@ def merge_players(
             p.get('selected_by_percent', '0'),
             p.get('status', ''),
             pos_median[p['element_type']],
+            pos_p75[p['element_type']],
         )
         if flag is not None:
             p['differential_flag'] = flag
