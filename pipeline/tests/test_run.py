@@ -501,3 +501,31 @@ def test_read_tuner_params_reads_promoted_values():
         assert params['atf_window_gws_used'] == 5                      # ATF-01
         assert params['fas_slope_used'] == 0.6                         # FAS-01
         assert params['defcon_scale_used'] == 0.5                      # DC-01
+
+
+# ---------------------------------------------------------------------------
+# PICK-01: compute_honest_metrics tests
+# ---------------------------------------------------------------------------
+
+
+def test_compute_honest_metrics_gate_below_8_gws():
+    """PICK-01: returns None when fewer than 8 finished GWs (UI falls back to last-season data)."""
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+    import run as run_mod
+    bootstrap = {'events': [{'id': g, 'finished': g <= 5} for g in range(1, 39)]}
+    result = run_mod.compute_honest_metrics(bootstrap, [], {}, {})
+    assert result is None
+
+
+def test_compute_honest_metrics_shape(monkeypatch):
+    """PICK-01: with >= 8 finished GWs, returns rounded metrics dict from _run_backtest_for_picks."""
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+    import run as run_mod
+    bootstrap = {'events': [{'id': g, 'finished': g <= 10} for g in range(1, 39)]}
+    fake_metrics = {'top10_mean_pts': 5.123, 'haul_capture_20': 0.25,
+                    'captain_return_rate': 0.7, 'haul_hit_rate': 0.12, 'n_gws': 6}
+    monkeypatch.setattr(run_mod, '_run_backtest_for_picks',
+                        lambda archive, params, first_gw, last_gw: fake_metrics)
+    result = run_mod.compute_honest_metrics(bootstrap, [], {}, {'fas_slope': 0.4})
+    assert result == {'top10_mean_pts': 5.12, 'haul_capture_20': 0.25,
+                      'captain_return_rate': 0.7, 'haul_hit_rate': 0.12, 'n_gws': 6}

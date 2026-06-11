@@ -118,6 +118,41 @@ def _diff_sp_snapshots(prev: dict, curr: dict, bootstrap: dict) -> dict:
     }
 
 
+def _run_backtest_for_picks(archive: dict, params: dict, first_gw: int, last_gw: int) -> dict:
+    """Seam for tests. Runs the BT-02 honest backtest and returns its metrics."""
+    from backtest import run_backtest
+    return run_backtest(archive=archive, params=params, mode='deploy',
+                        first_gw=first_gw, last_gw=last_gw)['metrics']
+
+
+def compute_honest_metrics(bootstrap: dict, fixtures: list, summaries: dict,
+                           tune_params: dict) -> dict | None:
+    """PICK-01: honest pick-quality metrics for the Weekly Picks confidence strip.
+
+    Returns None until >= 8 finished GWs (UI falls back to last-season constants).
+    """
+    finished = sorted(e['id'] for e in bootstrap.get('events', []) if e.get('finished'))
+    if len(finished) < 8:
+        return None
+    from tune import _map_tune_to_bt_params
+    bt_params = _map_tune_to_bt_params(tune_params)
+    archive = {'bootstrap': bootstrap, 'fixtures': fixtures, 'understat': {},
+               'summaries': summaries, 'manifest': {'season': 'live'}}
+    m = _run_backtest_for_picks(archive, bt_params, max(5, finished[0]), finished[-1])
+
+    def _r(key, nd):
+        v = m.get(key)
+        return round(v, nd) if v is not None else None
+
+    return {
+        'top10_mean_pts': _r('top10_mean_pts', 2),
+        'haul_capture_20': _r('haul_capture_20', 4),
+        'captain_return_rate': _r('captain_return_rate', 4),
+        'haul_hit_rate': _r('haul_hit_rate', 4),
+        'n_gws': m.get('n_gws'),
+    }
+
+
 def run(dry_run: bool = False):
     """Fetch FPL data and write to cache. On failure, write stale last_updated.json."""
     if dry_run:
@@ -571,6 +606,26 @@ def run(dry_run: bool = False):
                           f"fas_slope={pp['fas_slope']}, defcon_scale={pp['defcon_scale']}")
             except Exception as tune_exc:
                 print(f'[tune] non-fatal error: {tune_exc}', file=sys.stderr)
+            # PICK-01: honest pick-quality metrics (non-fatal)
+            try:
+                _tune_params_for_picks = {
+                    'blend_alpha': blend_alpha_used,
+                    'form_window_gws': form_window_gws_used,
+                    'cs_prob_base': cs_prob_base_used,
+                    'cs_prob_slope': cs_prob_slope_used,
+                    'cs_team_form_slope': cs_team_form_slope_used,
+                    'cs_def_form_window_gws': cs_def_form_window_gws_used,
+                    'atf_slope': atf_slope_used,
+                    'atf_window_gws': atf_window_gws_used,
+                    'fas_slope': fas_slope_used,
+                    'defcon_scale': defcon_scale_used,
+                }
+                _hm = compute_honest_metrics(bootstrap, fixtures, summaries, _tune_params_for_picks)
+                if _hm is not None:
+                    backtest_data['summary']['honest_metrics'] = _hm
+                    print(f"[picks] honest metrics over {_hm['n_gws']} GWs: top10={_hm['top10_mean_pts']}")
+            except Exception as exc:
+                print(f"[pipeline] honest metrics failed (non-fatal): {exc}", file=sys.stderr)
             save('accuracy_backtest.json', backtest_data)
             timestamps['accuracy_backtest.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
             print(f"Accuracy backtest: {len(backtest_data.get('gws_covered', []))} GWs covered, "
