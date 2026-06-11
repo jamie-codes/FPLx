@@ -18,15 +18,11 @@ Every item below is grounded in measured evidence, not speculation. Backlog stat
 | — | Honest-tuned defaults: BLEND_ALPHA 0.4→0.2, FORM_WINDOW_GWS 5→4 | val top10_mean +0.27, captain return 50%→60% |
 | — | DGW-02 follow-up validation: double-fixture predictions ratio 2.03–2.12 across GW26/33/36 | DGW logic confirmed with real data |
 | BT-03 | Honest tuner — TUNE-01 now evaluates all candidates on the leakage-free harness (10 swept honestly, 3 frozen at priors) | full honest tuner run: 27s, sane promotions; promotion path test-covered |
+| SA-02 | In-season archive accumulation — pipeline snapshots the full season to `pipeline/data/season_<label>/` on each newly finished GW; CI commits it (contents: write + bot commit step). Same-GW partial snapshots self-heal when a later run fetches more players. | 7 tests; gate logic verified against real archive (write→idempotent) |
 
 **Promoted model vs old (validation GW29–38):** top10_mean 5.18→5.66 pts, captain return 0.50→0.60, RMSE 2.955→2.932, Spearman 0.351→0.359.
 
 ## Priority 1 — biggest expected edge for 2026/27
-
-### SA-02: In-season archive accumulation
-Persist the fetched summaries + bootstrap snapshot on every pipeline run during 2026/27 (cheap — data already in memory at run time). Unlocks: per-GW ownership history (element-summary `selected`), price trajectories, growing multi-season training data, and an honest early-season tuner (2025/26 archive as prior + current season as it accrues).
-
-**Open infra decision (needs user input):** the pipeline runs in GitHub Actions (ephemeral FS, Vercel Blob storage). Options: (a) weekly GW-gated snapshot to Blob (~50MB/GW — check Blob quota), (b) CI commits the snapshot back to the repo (free + versioned, needs workflow write permission), (c) local-machine cron mirror. Decide before the season starts (first GW ~mid-August).
 
 ### PICK-01: Weekly Picks page (the user-facing deliverable)
 Productise the retro picks table: ranked top-10 for 1GW and 3GW horizons, each with haul probability (existing MC sim), differential flag (low ownership), and the model's *measured* backtest hit-rate displayed as confidence ("this list catches ~20% of hauls, top-10 averages ~5.7 pts/GW"). Rank by mean xPts — exp04 proved nothing beats it.
