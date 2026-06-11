@@ -19,13 +19,10 @@ Every item below is grounded in measured evidence, not speculation. Backlog stat
 | — | DGW-02 follow-up validation: double-fixture predictions ratio 2.03–2.12 across GW26/33/36 | DGW logic confirmed with real data |
 | BT-03 | Honest tuner — TUNE-01 now evaluates all candidates on the leakage-free harness (10 swept honestly, 3 frozen at priors) | full honest tuner run: 27s, sane promotions; promotion path test-covered |
 | SA-02 | In-season archive accumulation — pipeline snapshots the full season to `pipeline/data/season_<label>/` on each newly finished GW; CI commits it (contents: write + bot commit step). Same-GW partial snapshots self-heal when a later run fetches more players. | 7 tests; gate logic verified against real archive (write→idempotent) |
+| PICK-01 | Weekly Picks tab (Analyse) — confidence strip (live honest metrics after GW8, else 2025/26 validation), side-by-side 1GW/3GW top-10 tables with expandable component breakdowns, under-the-radar gems row | 19 UI tests + 2 pipeline tests; both suites green |
+| DC-02 | DefCon xPts component surfaced in the UI (expandable picks rows) — delivered inside PICK-01 | — |
 
 **Promoted model vs old (validation GW29–38):** top10_mean 5.18→5.66 pts, captain return 0.50→0.60, RMSE 2.955→2.932, Spearman 0.351→0.359.
-
-## Priority 1 — biggest expected edge for 2026/27
-
-### PICK-01: Weekly Picks page (the user-facing deliverable)
-Productise the retro picks table: ranked top-10 for 1GW and 3GW horizons, each with haul probability (existing MC sim), differential flag (low ownership), and the model's *measured* backtest hit-rate displayed as confidence ("this list catches ~20% of hauls, top-10 averages ~5.7 pts/GW"). Rank by mean xPts — exp04 proved nothing beats it.
 
 ## Priority 2 — measured gaps worth closing
 
@@ -40,7 +37,6 @@ The gem/differential logic in the web app has never been backtested. With SA-02'
 
 ## Priority 3 — polish / infra
 
-- **DC-02**: surface the new `defcon` xPts component in the gem-table hover (data already flows; UI ignores it today)
 - **ALERT-01**: the one unshipped backlog item (push/email infra)
 - **VAR-01**: distribution-aware captaincy — keep mean ranking for picks; for captaincy specifically, test P(haul) from the MC sim against archived DGWs
 - **Lab hygiene**: BT-02's `DEFAULT_PARAMS` intentionally lags live defaults (it's the experimental control); document per-experiment which param set is "current live"
