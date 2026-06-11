@@ -264,6 +264,7 @@ describe('Phase 36: page.tsx state', () => {
     // D-02: new Analyse order; D-01: no standalone Heat Map sub-tab
     expect(subTabBtns).toEqual([
       'Gem Ratings',
+      'Weekly Picks',    // PICK-01: Weekly Picks inserted after Gem Ratings
       'Insights',
       'DefCon Analysis',
       'Set Pieces',

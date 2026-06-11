@@ -42,6 +42,7 @@ import { DecisionSummaryTab } from '@/components/squad/DecisionSummaryTab'
 import { LiveGwTab } from '@/components/squad/LiveGwTab'
 import { useSettledGws } from '@/lib/hooks/useSettledGws'
 import { DeadlineBanner } from '@/components/DeadlineBanner'
+import { WeeklyPicksTab } from '@/components/weekly-picks/WeeklyPicksTab'
 
 class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -64,7 +65,7 @@ class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: 
 }
 
 export type Section = 'analyse' | 'plan' | 'squad'
-export type SubTab = 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'season' | 'window' | 'decision' | 'transfers' | 'optimiser' | 'price-reset' | 'price-changes' | 'rivals' | 'lineup' | 'review' | 'rank-sim' | 'next-season' | 'watchlist' | 'perfect-gw' | 'live' | 'wildcard'
+export type SubTab = 'gems' | 'picks' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'season' | 'window' | 'decision' | 'transfers' | 'optimiser' | 'price-reset' | 'price-changes' | 'rivals' | 'lineup' | 'review' | 'rank-sim' | 'next-season' | 'watchlist' | 'perfect-gw' | 'live' | 'wildcard'
 
 export const SECTIONS = [
   {
@@ -72,6 +73,7 @@ export const SECTIONS = [
     label: 'Analyse',
     subTabs: [
       { id: 'gems' as SubTab,          label: 'Gem Ratings',     mobileLabel: 'Gems'     },
+      { id: 'picks' as SubTab,         label: 'Weekly Picks',    mobileLabel: 'Picks'    },
       { id: 'insights' as SubTab,      label: 'Insights',        mobileLabel: 'Insights' },
       { id: 'defcon' as SubTab,        label: 'DefCon Analysis', mobileLabel: 'DefCon'   },
       { id: 'set-pieces' as SubTab,    label: 'Set Pieces',      mobileLabel: 'SP'       },
@@ -301,6 +303,7 @@ export default function Home() {
         {activeSection !== 'squad' && activeSubTab === 'gems' && (
           <GemTable preset={gemPreset} onPresetChange={setGemPreset} onCompare={handleCompare} watchlistIds={watchlistIds} toggleWatchlist={toggleWatchlist} />
         )}
+        {activeSection !== 'squad' && activeSubTab === 'picks' && <WeeklyPicksTab />}
         {activeSection !== 'squad' && activeSubTab === 'defcon' && <DefConTables />}
         {activeSection !== 'squad' && activeSubTab === 'club-form' && (
           <ClubFormTab submittedId={submittedId} />
