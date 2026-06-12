@@ -86,6 +86,88 @@ describe('TableShell / Th / Td', () => {
     expect(td.className).toContain('py-1.5')
     expect(td.className).toContain('text-right')
   })
+
+  // UIX-03 0c: sticky-first-column contract (ports GemTable's mechanics).
+  it('sticky Th gets the positional classes and opaque surface-1 bg (z-30)', () => {
+    render(
+      <table>
+        <thead>
+          <tr>
+            <Th sticky>Player</Th>
+          </tr>
+        </thead>
+      </table>
+    )
+    const th = screen.getByText('Player')
+    expect(th.className).toContain('sticky')
+    expect(th.className).toContain('left-0')
+    expect(th.className).toContain('z-30')
+    expect(th.className).toContain('bg-surface-1')
+  })
+
+  it('sticky Td gets the positional classes and opaque surface-1 bg (z-10)', () => {
+    render(
+      <table>
+        <tbody>
+          <tr>
+            <Td sticky>Haaland</Td>
+          </tr>
+        </tbody>
+      </table>
+    )
+    const td = screen.getByText('Haaland')
+    expect(td.className).toContain('sticky')
+    expect(td.className).toContain('left-0')
+    expect(td.className).toContain('z-10')
+    expect(td.className).toContain('bg-surface-1')
+  })
+
+  it('non-sticky Th/Td carry no positional classes (unchanged default)', () => {
+    render(
+      <table>
+        <thead>
+          <tr>
+            <Th>Plain</Th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <Td>6.4</Td>
+          </tr>
+        </tbody>
+      </table>
+    )
+    expect(screen.getByText('Plain').className).not.toContain('sticky')
+    expect(screen.getByText('Plain').className).not.toContain('z-30')
+    expect(screen.getByText('6.4').className).not.toContain('sticky')
+    expect(screen.getByText('6.4').className).not.toContain('z-10')
+  })
+
+  it('sticky cells still merge caller className', () => {
+    render(
+      <table>
+        <tbody>
+          <tr>
+            <Td sticky className="text-right">9.9</Td>
+          </tr>
+        </tbody>
+      </table>
+    )
+    const td = screen.getByText('9.9')
+    expect(td.className).toContain('text-right')
+    expect(td.className).toContain('z-10')
+  })
+
+  it('TableShell accepts stickyFirstCol without changing the wrapper chrome', () => {
+    const { container } = render(
+      <TableShell stickyFirstCol>
+        <table />
+      </TableShell>
+    )
+    const shell = container.firstChild as HTMLElement
+    expect(shell.className).toContain('overflow-x-auto')
+    expect(shell.className).toContain('bg-surface-1')
+  })
 })
 
 describe('KitIcon', () => {
