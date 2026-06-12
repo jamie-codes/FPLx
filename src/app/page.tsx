@@ -78,22 +78,14 @@ const HORIZON_TOOLS: ReadonlySet<ToolId> = new Set<ToolId>([
   'planner', 'manual-plan', 'route-tree', 'rank-sim', 'wildcard',
 ])
 
-// UIX-01 URL sync: ?t=<toolId> is read once, in the state initialisers
-// (the same lazy-init pattern teamId/planHorizon use for localStorage).
-function initialToolFromUrl(): ToolId {
-  if (typeof window === 'undefined') return 'home'
-  const t = new URLSearchParams(window.location.search).get('t')
-  return t !== null && (ALL_TOOL_IDS as string[]).includes(t) ? (t as ToolId) : 'home'
-}
-
 export default function Home() {
   // UIX-01 shell state: active tool + per-group memory (port of the old
   // sectionMemory, D-05 — switching groups restores the last tool used there).
-  const [activeTool, setActiveTool] = useState<ToolId>(initialToolFromUrl)
-  const [groupMemory, setGroupMemory] = useState<Partial<Record<string, ToolId>>>(() => {
-    const t = initialToolFromUrl()
-    return t === 'home' ? {} : { [groupOf(t).id]: t }
-  })
+  // Initial state is always 'home' (SSR-safe — avoids hydration mismatch).
+  // The ?t= URL param is read in a useEffect below so both server and client
+  // agree on the initial render.
+  const [activeTool, setActiveTool] = useState<ToolId>('home')
+  const [groupMemory, setGroupMemory] = useState<Partial<Record<string, ToolId>>>({})
   const [moreOpen, setMoreOpen] = useState(false)
   const [gemPreset, setGemPreset] = useState<ViewPreset>('default')
   const [comparePlayer, setComparePlayer] = useState<ScoredPlayer | null>(null)
@@ -107,6 +99,18 @@ export default function Home() {
       window.history.replaceState(null, '', '?t=' + tool)
     }
   }, [])
+
+  // UIX-01 URL sync — read ?t= once after mount (SSR-safe: avoids hydration
+  // mismatch that occurs when reading window.location in useState initialiser).
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('t')
+    if (t !== null && (ALL_TOOL_IDS as string[]).includes(t)) {
+      const toolId = t as ToolId
+      setActiveTool(toolId)
+      setGroupMemory({ [groupOf(toolId).id]: toolId })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // intentionally empty — runs once on mount only
 
   // Phase 98 PGW-02 live data + PGW-04 auto-surface input.
   // Default [] keeps the GwPillToggle's "no settled GWs" branch quiet during load/error.
