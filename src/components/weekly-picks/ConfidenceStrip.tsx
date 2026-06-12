@@ -12,7 +12,8 @@ const LAST_SEASON: HonestMetrics = {
 }
 const MIN_LIVE_GWS = 8
 
-const CARD_CLS = 'rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2'
+// UIX-03 Task 3: retokenized (plan said token-pure already; raw zinc found → migrated).
+const CARD_CLS = 'rounded-lg border border-line bg-surface-2 px-3 py-2'
 
 export function ConfidenceStrip({ honest }: { honest: HonestMetrics | undefined }) {
   const live = honest != null && honest.n_gws >= MIN_LIVE_GWS
@@ -25,17 +26,17 @@ export function ConfidenceStrip({ honest }: { honest: HonestMetrics | undefined 
     <div className="flex flex-wrap gap-2 text-sm">
       <div className={CARD_CLS}>
         <span className="font-semibold">{m.top10_mean_pts != null ? m.top10_mean_pts.toFixed(1) : '—'}</span> pts/pick
-        <div className="text-xs text-zinc-500 dark:text-zinc-400">top-10 weekly avg</div>
+        <div className="text-xs text-ink-muted">top-10 weekly avg</div>
       </div>
       <div className={CARD_CLS}>
         <span className="font-semibold">{haulCaptureLabel(m.haul_capture_20)}</span>
-        <div className="text-xs text-zinc-500 dark:text-zinc-400">hauls captured in top-20</div>
+        <div className="text-xs text-ink-muted">hauls captured in top-20</div>
       </div>
       <div className={CARD_CLS}>
         <span className="font-semibold">{m.captain_return_rate != null ? `${Math.round(m.captain_return_rate * 100)}%` : '—'}</span>
-        <div className="text-xs text-zinc-500 dark:text-zinc-400">#1 pick returns 6+</div>
+        <div className="text-xs text-ink-muted">#1 pick returns 6+</div>
       </div>
-      <div className="rounded border border-dashed border-zinc-300 dark:border-zinc-600 px-3 py-2 text-xs text-zinc-500 dark:text-zinc-400 self-stretch flex items-center">
+      <div className="rounded-lg border border-dashed border-line px-3 py-2 text-xs text-ink-muted self-stretch flex items-center">
         {caption}
       </div>
     </div>

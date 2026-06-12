@@ -1,17 +1,18 @@
 'use client'
 // PICK-01: one ranked picks table. Rank-ordered by definition — no sorting UI.
-// Chrome constants are local copies per PATTERNS.md convention.
+// UIX-03 Task 3: chrome → ui/Table primitives (local TABLE_CLS family deleted),
+// identity column → PlayerCell sm (pos/team move into its meta line),
+// status ⚠ → Chip warning. Haul column/colSpan + ExpandedPanel preserved exactly.
 import { Fragment, useState } from 'react'
 import type { MergedPlayer } from '@/lib/types'
 import { xptsFor, nextEventsFixtures, type PicksHorizon } from '@/lib/picks'
 import { DifferentialBadge } from '@/components/gem-table/DifferentialBadge'
 import { MCDistributionBar } from '@/components/mc/MCDistributionBar'
 import { FixtureBadges } from '@/components/fixtures/FixtureBadges'
+import { TableShell, Th, Td, TABLE_CLS, TR_CLS } from '@/components/ui/Table'
+import { PlayerCell } from '@/components/ui/PlayerCell'
+import { Chip } from '@/components/ui/Chip'
 
-const TABLE_CLS = 'w-full text-sm border-collapse'
-const TH_CLS = 'text-left font-semibold text-zinc-600 dark:text-zinc-400 pb-1 border-b border-zinc-200 dark:border-zinc-700'
-const TR_CLS = 'even:bg-zinc-50 dark:even:bg-zinc-800/50 cursor-pointer hover:bg-blue-50 dark:hover:bg-zinc-700'
-const TD_CLS = 'py-1 px-1'
 const POS_LABEL: Record<number, string> = { 1: 'GKP', 2: 'DEF', 3: 'MID', 4: 'FWD' }
 const STATUS_WARN: Record<string, string> = { d: 'Doubtful', i: 'Injured', s: 'Suspended', n: 'Not available' }
 
@@ -34,12 +35,12 @@ function ExpandedPanel({ p }: { p: MergedPlayer }) {
         <div className="space-y-0.5">
           {entries.map(([label, v]) => (
             <div key={label} className="flex items-center gap-2">
-              <span className="w-20 text-zinc-500 dark:text-zinc-400">{label}</span>
-              <div className="h-2 rounded bg-blue-400 dark:bg-blue-600" style={{ width: `${(v / max) * 120}px` }} />
+              <span className="w-20 text-ink-muted">{label}</span>
+              <div className="h-2 rounded bg-accent" style={{ width: `${(v / max) * 120}px` }} />
               <span>{v.toFixed(2)}</span>
             </div>
           ))}
-          <div className="text-zinc-400 dark:text-zinc-500">per-GW components</div>
+          <div className="text-ink-muted">per-GW components</div>
         </div>
       )}
       {p.haul_prob != null && p.p10_pts != null && p.p90_pts != null && (
@@ -58,51 +59,61 @@ export function PicksTable({ title, players, horizon }: {
   const nEvents = horizon === '1gw' ? 1 : 3
 
   return (
-    <div className="flex-1 min-w-[300px] rounded border border-zinc-200 dark:border-zinc-700 p-3">
-      <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-700 dark:text-zinc-300">{title}</h3>
-      <table className={TABLE_CLS}>
-        <thead>
-          <tr>
-            <th className={TH_CLS}>#</th>
-            <th className={TH_CLS}>Player</th>
-            <th className={TH_CLS}>{horizon === '1gw' ? 'Fixture' : 'Fixtures'}</th>
-            <th className={`${TH_CLS} text-right`}>xPts</th>
-            {horizon === '1gw' && <th className={`${TH_CLS} text-right`}>Haul</th>}
-            <th className={TH_CLS}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {players.map((p, i) => (
-            <Fragment key={p.id}>
-              <tr className={TR_CLS} onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}>
-                <td className={TD_CLS}>{i + 1}</td>
-                <td className={TD_CLS}>
-                  <span className="font-medium">{p.web_name}</span>{' '}
-                  <span className="text-xs text-zinc-400 dark:text-zinc-500">
-                    {POS_LABEL[p.element_type]} {p.team_short_name}
-                  </span>
-                  {STATUS_WARN[p.status] && <span title={STATUS_WARN[p.status]}> ⚠</span>}
-                </td>
-                <td className={TD_CLS}><FixtureBadges fixtures={nextEventsFixtures(p.fixtures ?? [], nEvents)} /></td>
-                <td className={`${TD_CLS} text-right font-semibold`}>{xptsFor(p, horizon).toFixed(1)}</td>
-                {horizon === '1gw' && (
-                  <td className={`${TD_CLS} text-right`}>
-                    {p.haul_prob != null ? `${Math.round(p.haul_prob * 100)}%` : '—'}
-                  </td>
-                )}
-                <td className={TD_CLS}>
-                  <DifferentialBadge flag={p.differential_flag} ownership={Number(p.selected_by_percent)} />
-                </td>
-              </tr>
-              {expandedId === p.id && (
-                <tr className="bg-blue-50 dark:bg-blue-950">
-                  <td colSpan={horizon === '1gw' ? 6 : 5} className="px-3 py-2"><ExpandedPanel p={p} /></td>
+    <div className="flex-1 min-w-[300px]">
+      <h3 className="text-sm font-semibold uppercase tracking-wide mb-2">{title}</h3>
+      <TableShell>
+        <table className={TABLE_CLS}>
+          <thead>
+            <tr>
+              <Th>#</Th>
+              <Th>Player</Th>
+              <Th>{horizon === '1gw' ? 'Fixture' : 'Fixtures'}</Th>
+              <Th className="text-right">xPts</Th>
+              {horizon === '1gw' && <Th className="text-right">Haul</Th>}
+              <Th></Th>
+            </tr>
+          </thead>
+          <tbody>
+            {players.map((p, i) => (
+              <Fragment key={p.id}>
+                <tr className={`${TR_CLS} cursor-pointer`} onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}>
+                  <Td>{i + 1}</Td>
+                  <Td>
+                    <span className="inline-flex items-center gap-1.5">
+                      <PlayerCell
+                        size="sm"
+                        webName={p.web_name}
+                        code={p.code}
+                        teamCode={p.team_code}
+                        pos={POS_LABEL[p.element_type]}
+                        teamShort={p.team_short_name}
+                      />
+                      {STATUS_WARN[p.status] && (
+                        <Chip intent="warning" size="sm" title={STATUS_WARN[p.status]}>⚠</Chip>
+                      )}
+                    </span>
+                  </Td>
+                  <Td><FixtureBadges fixtures={nextEventsFixtures(p.fixtures ?? [], nEvents)} /></Td>
+                  <Td className="text-right font-semibold">{xptsFor(p, horizon).toFixed(1)}</Td>
+                  {horizon === '1gw' && (
+                    <Td className="text-right">
+                      {p.haul_prob != null ? `${Math.round(p.haul_prob * 100)}%` : '—'}
+                    </Td>
+                  )}
+                  <Td>
+                    <DifferentialBadge flag={p.differential_flag} ownership={Number(p.selected_by_percent)} />
+                  </Td>
                 </tr>
-              )}
-            </Fragment>
-          ))}
-        </tbody>
-      </table>
+                {expandedId === p.id && (
+                  <tr className="bg-accent-soft">
+                    <td colSpan={horizon === '1gw' ? 6 : 5} className="px-3 py-2"><ExpandedPanel p={p} /></td>
+                  </tr>
+                )}
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
+      </TableShell>
     </div>
   )
 }

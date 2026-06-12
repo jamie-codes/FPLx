@@ -12,11 +12,11 @@ export function WeeklyPicksTab() {
   const { data: accuracy } = useAccuracy()
 
   if (isLoading) {
-    return <p className="text-gray-500 dark:text-zinc-400">Loading players...</p>
+    return <p className="text-ink-muted">Loading players...</p>
   }
   if (error) {
     return (
-      <p className="text-red-500">
+      <p className="text-negative">
         Failed to load players: {error instanceof Error ? error.message : String(error)}
       </p>
     )
@@ -27,7 +27,7 @@ export function WeeklyPicksTab() {
     return (
       <div className="space-y-4">
         <ConfidenceStrip honest={accuracy?.summary?.honest_metrics} />
-        <div className="rounded border border-zinc-200 dark:border-zinc-700 p-6 text-center text-zinc-500 dark:text-zinc-400">
+        <div className="rounded-lg border border-line p-6 text-center text-ink-muted">
           Picks return when the season starts.
         </div>
       </div>
