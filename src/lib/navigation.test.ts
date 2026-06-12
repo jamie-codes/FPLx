@@ -35,6 +35,15 @@ describe('navigation.ts completeness (UIX-01)', () => {
     ])
   })
 
+  it('every group icon is a lucide component reference, not an emoji string', () => {
+    for (const group of GROUPS) {
+      // lucide-react icons are forwardRef exotic components (objects with render)
+      expect(typeof group.icon, `${group.id} icon`).not.toBe('string')
+      expect(group.icon, `${group.id} icon`).toBeTruthy()
+      expect(['function', 'object']).toContain(typeof group.icon)
+    }
+  })
+
   it('every tool has a label and a mobileLabel', () => {
     for (const group of GROUPS) {
       for (const tool of group.tools) {

@@ -81,8 +81,8 @@ function SheetPanel({ onClose, active, onSelect }: {
         className="sheet-enter absolute inset-x-0 bottom-0 max-h-[70vh] overflow-y-auto rounded-t-xl bg-surface-1 border-t border-line shadow-2xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
         {GROUPS.filter((g) => SHEET_GROUP_IDS.includes(g.id)).map((group) => (
           <div key={group.id} className="mb-3 last:mb-0">
-            <div className="px-1 py-1 text-data font-medium uppercase tracking-wide text-ink-muted">
-              <span aria-hidden className="mr-1.5">{group.icon}</span>
+            <div className="flex items-center gap-1.5 px-1 py-1 text-data font-medium uppercase tracking-wide text-ink-muted">
+              <group.icon size={16} strokeWidth={2} aria-hidden className="shrink-0" />
               {group.label}
             </div>
             <div className="grid grid-cols-2 gap-1">

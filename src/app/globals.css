@@ -50,6 +50,9 @@
   --color-warning: var(--sp-warning);
   --color-negative: var(--sp-negative);
   --nav-height: 96px;
+  /* UIX-01 shell layout: single source of truth for the desktop sidebar width
+     (Sidebar w-[var(--sidebar-w)] + page.tsx lg:pl-[var(--sidebar-w)]). */
+  --sidebar-w: 220px;
 }
 
 .dark {

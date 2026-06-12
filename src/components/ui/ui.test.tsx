@@ -230,6 +230,40 @@ describe('Tabs', () => {
     expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Gamma' }))
   })
 
+  it('scrollIntoViewActive scrolls the active pill into view on selection', () => {
+    // jsdom does not implement Element.prototype.scrollIntoView — stub it.
+    const scrollIntoView = vi.fn()
+    const orig = Element.prototype.scrollIntoView
+    Element.prototype.scrollIntoView = scrollIntoView
+    try {
+      const { rerender } = render(
+        <Tabs items={items} value="a" onChange={() => {}} scrollIntoViewActive />
+      )
+      scrollIntoView.mockClear() // ignore the mount call — assert the selection change
+      rerender(<Tabs items={items} value="c" onChange={() => {}} scrollIntoViewActive />)
+      expect(scrollIntoView).toHaveBeenCalledTimes(1)
+      expect(scrollIntoView).toHaveBeenCalledWith(
+        expect.objectContaining({ inline: 'nearest' })
+      )
+      expect(scrollIntoView.mock.instances[0]).toBe(screen.getByRole('tab', { name: 'Gamma' }))
+    } finally {
+      Element.prototype.scrollIntoView = orig
+    }
+  })
+
+  it('does not scroll without scrollIntoViewActive (default opt-out)', () => {
+    const scrollIntoView = vi.fn()
+    const orig = Element.prototype.scrollIntoView
+    Element.prototype.scrollIntoView = scrollIntoView
+    try {
+      const { rerender } = render(<Tabs items={items} value="a" onChange={() => {}} />)
+      rerender(<Tabs items={items} value="c" onChange={() => {}} />)
+      expect(scrollIntoView).not.toHaveBeenCalled()
+    } finally {
+      Element.prototype.scrollIntoView = orig
+    }
+  })
+
   it('Home selects + focuses the first item, End the last', () => {
     const onChange = vi.fn()
     render(<Tabs items={items} value="b" onChange={onChange} />)

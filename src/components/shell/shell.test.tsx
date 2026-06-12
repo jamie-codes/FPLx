@@ -52,7 +52,7 @@ describe('Sidebar', () => {
     const aside = container.querySelector('aside')
     expect(aside?.className).toContain('hidden')
     expect(aside?.className).toContain('lg:flex')
-    expect(aside?.className).toContain('w-[220px]')
+    expect(aside?.className).toContain('w-[var(--sidebar-w)]')
   })
 })
 

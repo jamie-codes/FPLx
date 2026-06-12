@@ -1,6 +1,13 @@
 // UIX-01: single source of truth for the app's navigation.
 // The 27 tool ids are the pre-overhaul SubTab ids — every one must appear
 // exactly once (navigation.test.ts enforces against this list).
+// Group icons are lucide-react component references (UIX-01 audit batch 2) —
+// this module is only consumed client-side, so holding a component here is
+// fine; consumers render <group.icon size={...} strokeWidth={2} /> and the
+// SVGs inherit currentColor, following the ink/accent token states for free.
+// (lucide v1 renamed Home → House and BarChart3 → ChartColumn — same glyphs.)
+import { House, Zap, Shirt, Search, CalendarDays, ChartColumn, type LucideIcon } from 'lucide-react'
+
 export type ToolId =
   | 'home'
   | 'picks' | 'decision' | 'lineup' | 'live' | 'review'
@@ -10,27 +17,27 @@ export type ToolId =
   | 'accuracy' | 'season'
 
 export interface Tool { id: ToolId; label: string; mobileLabel: string }
-export interface Group { id: string; label: string; icon: string; tools: Tool[] }
+export interface Group { id: string; label: string; icon: LucideIcon; tools: Tool[] }
 
 export const GROUPS: Group[] = [
-  { id: 'home', label: 'Home', icon: '🏠', tools: [
+  { id: 'home', label: 'Home', icon: House, tools: [
     { id: 'home', label: 'Home', mobileLabel: 'Home' },
   ]},
-  { id: 'this-week', label: 'This Week', icon: '⚡', tools: [
+  { id: 'this-week', label: 'This Week', icon: Zap, tools: [
     { id: 'picks',    label: 'Weekly Picks', mobileLabel: 'Picks' },
     { id: 'decision', label: 'Decision',     mobileLabel: 'Decision' },
     { id: 'lineup',   label: 'Lineup',       mobileLabel: 'Lineup' },
     { id: 'live',     label: 'Live',         mobileLabel: 'Live' },
     { id: 'review',   label: 'Review',       mobileLabel: 'Review' },
   ]},
-  { id: 'my-squad', label: 'My Squad', icon: '👕', tools: [
+  { id: 'my-squad', label: 'My Squad', icon: Shirt, tools: [
     { id: 'transfers', label: 'Transfers', mobileLabel: 'Transfers' },
     { id: 'optimiser', label: 'Optimiser', mobileLabel: 'Optimiser' },
     { id: 'watchlist', label: 'Watchlist', mobileLabel: 'Watchlist' },
     { id: 'rank-sim',  label: 'Rank Sim',  mobileLabel: 'Rank Sim' },
     { id: 'rivals',    label: 'Rivals',    mobileLabel: 'Rivals' },
   ]},
-  { id: 'research', label: 'Research', icon: '🔍', tools: [
+  { id: 'research', label: 'Research', icon: Search, tools: [
     { id: 'gems',       label: 'Gem Ratings',     mobileLabel: 'Gems' },
     { id: 'value-gems', label: 'Value Gems',      mobileLabel: 'Values' },
     { id: 'insights',   label: 'Insights',        mobileLabel: 'Insights' },
@@ -39,7 +46,7 @@ export const GROUPS: Group[] = [
     { id: 'club-form',  label: 'Club Form',       mobileLabel: 'Form' },
     { id: 'perfect-gw', label: 'Perfect GW',      mobileLabel: 'Perfect' },
   ]},
-  { id: 'planning', label: 'Planning', icon: '📅', tools: [
+  { id: 'planning', label: 'Planning', icon: CalendarDays, tools: [
     { id: 'planner',       label: 'Planner',       mobileLabel: 'Planner' },
     { id: 'manual-plan',   label: 'Manual Plan',   mobileLabel: 'Manual' },
     { id: 'route-tree',    label: 'Route Tree',    mobileLabel: 'Routes' },
@@ -49,7 +56,7 @@ export const GROUPS: Group[] = [
     { id: 'price-reset',   label: 'Price Reset',   mobileLabel: 'Resets' },
     { id: 'price-changes', label: 'Price Changes', mobileLabel: 'Prices' },
   ]},
-  { id: 'model', label: 'Model', icon: '📊', tools: [
+  { id: 'model', label: 'Model', icon: ChartColumn, tools: [
     { id: 'accuracy', label: 'Accuracy', mobileLabel: 'Acc' },
     { id: 'season',   label: 'Season',   mobileLabel: 'Season' },
   ]},

@@ -10,7 +10,7 @@ export function Sidebar({ active, onSelect }: {
   onSelect: (t: ToolId) => void
 }) {
   return (
-    <aside className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-[220px] flex-col bg-surface-1 border-r border-line">
+    <aside className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-[var(--sidebar-w)] flex-col bg-surface-1 border-r border-line">
       <div className="px-4 pt-4 pb-2 shrink-0">
         <span className="font-[family-name:var(--font-honk)] text-3xl text-ink leading-none">
           FPLx
@@ -19,8 +19,8 @@ export function Sidebar({ active, onSelect }: {
       <nav aria-label="Primary navigation" className="flex-1 overflow-y-auto pb-4">
         {GROUPS.map((group) => (
           <div key={group.id} className="mt-3">
-            <div className="px-4 py-1 text-data font-medium uppercase tracking-wide text-ink-muted">
-              <span aria-hidden className="mr-1.5">{group.icon}</span>
+            <div className="flex items-center gap-1.5 px-4 py-1 text-data font-medium uppercase tracking-wide text-ink-muted">
+              <group.icon size={16} strokeWidth={2} aria-hidden className="shrink-0" />
               {group.label}
             </div>
             {group.tools.map((tool) => {

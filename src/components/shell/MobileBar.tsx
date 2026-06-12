@@ -6,6 +6,7 @@
 // remembered tool (per-group memory lives in page.tsx). More stays a button —
 // it opens the MoreSheet dialog (Planning + Model groups), so it gets
 // aria-haspopup/aria-expanded rather than aria-current (UIX-01 audit).
+import { Ellipsis } from 'lucide-react'
 import { GROUPS, groupOf, type ToolId } from '@/lib/navigation'
 
 const BAR_GROUPS: { groupId: string; label: string }[] = [
@@ -44,7 +45,7 @@ export function MobileBar({ active, onSelect, onMore, moreOpen = false }: {
             }}
             aria-current={isActive ? 'page' : undefined}
             className={`${BTN_CLS} ${isActive ? 'text-accent' : 'text-ink-muted'}`}>
-            <span aria-hidden>{group.icon}</span>
+            <group.icon size={20} strokeWidth={2} aria-hidden />
             {label}
           </a>
         )
@@ -55,7 +56,7 @@ export function MobileBar({ active, onSelect, onMore, moreOpen = false }: {
         aria-haspopup="dialog"
         aria-expanded={moreOpen}
         className={`${BTN_CLS} ${moreActive ? 'text-accent' : 'text-ink-muted'}`}>
-        <span aria-hidden>⋯</span>
+        <Ellipsis size={20} strokeWidth={2} aria-hidden />
         More
       </button>
     </nav>

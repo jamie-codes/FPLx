@@ -61,9 +61,9 @@ class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: 
   render() {
     if (this.state.error) {
       return (
-        <div className="rounded border border-red-300 bg-red-50 dark:bg-red-950 p-4 m-4 text-sm text-red-700 dark:text-red-300 space-y-1">
+        <div className="rounded border border-negative/40 bg-negative-soft p-4 m-4 text-body text-negative space-y-1">
           <p className="font-semibold">Decision tab error — please report this message:</p>
-          <pre className="whitespace-pre-wrap break-all text-xs">{this.state.error.message}</pre>
+          <pre className="whitespace-pre-wrap break-all text-data">{this.state.error.message}</pre>
         </div>
       )
     }
@@ -182,7 +182,7 @@ export default function Home() {
   return (
     <>
       <Sidebar active={activeTool} onSelect={selectTool} />
-      <div className="lg:pl-[220px]">
+      <div className="lg:pl-[var(--sidebar-w)]">
         {/* Top bar — the right-cluster slot hosts the page's EXISTING chrome,
             relocated unchanged (UIX-01: moved, not recreated). */}
         <TopBar>
@@ -201,6 +201,7 @@ export default function Home() {
             items={activeGroup.tools.map((t) => ({ id: t.id, label: t.mobileLabel }))}
             value={activeTool}
             onChange={selectTool}
+            scrollIntoViewActive
           />
         </nav>
 
@@ -209,11 +210,11 @@ export default function Home() {
           {HORIZON_TOOLS.has(activeTool) && (
             <>
               <div className="hidden sm:flex items-center gap-3 mb-6" data-testid="plan-section-horizon">
-                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Planning Horizon</span>
+                <span className="text-data font-medium text-ink-muted">Planning Horizon</span>
                 <HorizonSelector value={planHorizon} onChange={setPlanHorizon} />
               </div>
               <div className="sm:hidden flex items-center gap-3 mb-4 overflow-x-auto" data-testid="plan-section-horizon-mobile">
-                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Horizon</span>
+                <span className="text-data font-medium text-ink-muted">Horizon</span>
                 <HorizonSelector value={planHorizon} onChange={setPlanHorizon} />
               </div>
             </>
