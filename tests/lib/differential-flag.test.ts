@@ -65,22 +65,22 @@ describe('Phase 30: Differential flag pipeline output', () => {
 })
 
 describe('Phase 30: DifferentialBadge component', () => {
-  it('renders green DIFF pill for flag="diff"', () => {
+  it('renders positive DIFF pill for flag="diff" (UIX-03: Chip positive)', () => {
     const { container } = render(DifferentialBadge({ flag: 'diff', ownership: 3.4 }))
     const span = container.querySelector('span')
     expect(span).not.toBeNull()
     expect(span!.textContent).toBe('DIFF')
-    expect(span!.className).toContain('bg-green-100')
-    expect(span!.className).toContain('text-xs')
+    expect(span!.className).toContain('bg-positive-soft')
+    expect(span!.className).toContain('text-data')
     expect(span!.getAttribute('title')).toMatch(/^Differential:/)
   })
 
-  it('renders amber TRAP pill for flag="trap"', () => {
+  it('renders warning TRAP pill for flag="trap" (UIX-03: Chip warning)', () => {
     const { container } = render(DifferentialBadge({ flag: 'trap', ownership: 22.7 }))
     const span = container.querySelector('span')
     expect(span).not.toBeNull()
     expect(span!.textContent).toBe('TRAP')
-    expect(span!.className).toContain('bg-amber-100')
+    expect(span!.className).toContain('bg-warning-soft')
     expect(span!.getAttribute('title')).toMatch(/^Template trap:/)
   })
 
@@ -89,7 +89,7 @@ describe('Phase 30: DifferentialBadge component', () => {
     const span = container.querySelector('span')
     expect(span).not.toBeNull()
     expect(span!.textContent).toBe('—')
-    expect(span!.className).toContain('text-zinc-400')
+    expect(span!.className).toContain('text-ink-muted')
   })
 
   it('renders em-dash for flag=undefined', () => {
@@ -97,7 +97,7 @@ describe('Phase 30: DifferentialBadge component', () => {
     const span = container.querySelector('span')
     expect(span).not.toBeNull()
     expect(span!.textContent).toBe('—')
-    expect(span!.className).toContain('text-zinc-400')
+    expect(span!.className).toContain('text-ink-muted')
   })
 
   it('DIFF tooltip mentions ownership %, "above-average xPts for position" and "rank gain potential"', () => {

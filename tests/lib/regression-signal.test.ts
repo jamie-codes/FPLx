@@ -69,21 +69,21 @@ describe('Phase 29: Regression Signal pipeline output', () => {
 })
 
 describe('Phase 29: RegressionSignalBadge component', () => {
-  it('renders green BUY pill for signal="buy"', () => {
+  it('renders positive BUY pill for signal="buy" (UIX-03: Chip positive)', () => {
     const { container } = render(RegressionSignalBadge({ signal: 'buy', delta: -0.75 }))
     const span = container.querySelector('span')
     expect(span).not.toBeNull()
     expect(span!.textContent).toBe('BUY')
-    expect(span!.className).toContain('bg-green-100')
-    expect(span!.className).toContain('text-xs')
+    expect(span!.className).toContain('bg-positive-soft')
+    expect(span!.className).toContain('text-data')
   })
 
-  it('renders amber SELL pill for signal="sell"', () => {
+  it('renders warning SELL pill for signal="sell" (UIX-03: Chip warning)', () => {
     const { container } = render(RegressionSignalBadge({ signal: 'sell', delta: 0.82 }))
     const span = container.querySelector('span')
     expect(span).not.toBeNull()
     expect(span!.textContent).toBe('SELL')
-    expect(span!.className).toContain('bg-amber-100')
+    expect(span!.className).toContain('bg-warning-soft')
   })
 
   it('renders em-dash for signal=null', () => {
@@ -91,7 +91,7 @@ describe('Phase 29: RegressionSignalBadge component', () => {
     const span = container.querySelector('span')
     expect(span).not.toBeNull()
     expect(span!.textContent).toBe('—')
-    expect(span!.className).toContain('text-zinc-400')
+    expect(span!.className).toContain('text-ink-muted')
   })
 
   it('renders em-dash for signal=undefined', () => {
@@ -99,7 +99,7 @@ describe('Phase 29: RegressionSignalBadge component', () => {
     const span = container.querySelector('span')
     expect(span).not.toBeNull()
     expect(span!.textContent).toBe('—')
-    expect(span!.className).toContain('text-zinc-400')
+    expect(span!.className).toContain('text-ink-muted')
   })
 
   it('BUY title attribute mentions xG+xA and "Consider buying"', () => {

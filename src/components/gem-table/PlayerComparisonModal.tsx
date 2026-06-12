@@ -75,7 +75,7 @@ export function PlayerComparisonModal({ open, playerA, onClose }: PlayerComparis
   // Helper renderers
 
   const renderPlaceholder = () => (
-    <div className="flex items-center justify-center h-full min-h-[120px] rounded border border-dashed border-zinc-300 dark:border-zinc-600 text-sm text-zinc-400 dark:text-zinc-500">
+    <div className="flex items-center justify-center h-full min-h-[120px] rounded border border-dashed border-line text-sm text-ink-muted">
       Search for a player to compare
     </div>
   )
@@ -88,10 +88,10 @@ export function PlayerComparisonModal({ open, playerA, onClose }: PlayerComparis
         <div className="flex items-center gap-2 min-w-0">
           <PlayerAvatar code={pA.code} webName={pA.web_name} teamShortName={pA.team_short_name} width={40} height={50} className="rounded" />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">{pA.web_name}</p>
+            <p className="text-sm font-semibold text-ink truncate">{pA.web_name}</p>
             <div className="flex items-center gap-1 mt-0.5">
               <TeamBadge shortName={pA.team_short_name} size={13} />
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">{pA.team_short_name}</span>
+              <span className="text-xs text-ink-muted">{pA.team_short_name}</span>
             </div>
           </div>
         </div>
@@ -99,40 +99,40 @@ export function PlayerComparisonModal({ open, playerA, onClose }: PlayerComparis
           <div className="flex items-center gap-2 min-w-0">
             <PlayerAvatar code={pB.code} webName={pB.web_name} teamShortName={pB.team_short_name} width={40} height={50} className="rounded" />
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">{pB.web_name}</p>
+              <p className="text-sm font-semibold text-ink truncate">{pB.web_name}</p>
               <div className="flex items-center gap-1 mt-0.5">
                 <TeamBadge shortName={pB.team_short_name} size={13} />
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">{pB.team_short_name}</span>
+                <span className="text-xs text-ink-muted">{pB.team_short_name}</span>
               </div>
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center min-h-[20px] text-xs text-zinc-400 dark:text-zinc-500 italic">—</div>
+          <div className="flex items-center justify-center min-h-[20px] text-xs text-ink-muted italic">—</div>
         )}
       </div>
       {/* Row: 1 GW */}
       <div className="grid grid-cols-3 gap-2">
-        <span className="text-zinc-500 dark:text-zinc-400 text-xs">1 GW</span>
+        <span className="text-ink-muted text-xs">1 GW</span>
         <span>{pA.xPts_1gw?.toFixed(1) ?? '—'}<VarianceBadge ceiling={pA.xPts_ceiling_1gw} /></span>
-        {pB ? <span>{pB.xPts_1gw?.toFixed(1) ?? '—'}<VarianceBadge ceiling={pB.xPts_ceiling_1gw} /></span> : <span className="text-zinc-400">—</span>}
+        {pB ? <span>{pB.xPts_1gw?.toFixed(1) ?? '—'}<VarianceBadge ceiling={pB.xPts_ceiling_1gw} /></span> : <span className="text-ink-muted">—</span>}
       </div>
       {/* Row: 3 GW */}
       <div className="grid grid-cols-3 gap-2">
-        <span className="text-zinc-500 dark:text-zinc-400 text-xs">3 GW</span>
+        <span className="text-ink-muted text-xs">3 GW</span>
         <span>{pA.xPts_3gw?.toFixed(1) ?? '—'}</span>
-        {pB ? <span>{pB.xPts_3gw?.toFixed(1) ?? '—'}</span> : <span className="text-zinc-400">—</span>}
+        {pB ? <span>{pB.xPts_3gw?.toFixed(1) ?? '—'}</span> : <span className="text-ink-muted">—</span>}
       </div>
       {/* Row: 5 GW */}
       <div className="grid grid-cols-3 gap-2">
-        <span className="text-zinc-500 dark:text-zinc-400 text-xs">5 GW</span>
+        <span className="text-ink-muted text-xs">5 GW</span>
         <span>{pA.xPts_5gw?.toFixed(1) ?? '—'}</span>
-        {pB ? <span>{pB.xPts_5gw?.toFixed(1) ?? '—'}</span> : <span className="text-zinc-400">—</span>}
+        {pB ? <span>{pB.xPts_5gw?.toFixed(1) ?? '—'}</span> : <span className="text-ink-muted">—</span>}
       </div>
       {/* Row: Ceiling */}
       <div className="grid grid-cols-3 gap-2">
-        <span className="text-zinc-500 dark:text-zinc-400 text-xs">Ceiling (90th)</span>
+        <span className="text-ink-muted text-xs">Ceiling (90th)</span>
         <span>{pA.xPts_90th_1gw?.toFixed(1) ?? '—'}</span>
-        {pB ? <span>{pB.xPts_90th_1gw?.toFixed(1) ?? '—'}</span> : <span className="text-zinc-400">—</span>}
+        {pB ? <span>{pB.xPts_90th_1gw?.toFixed(1) ?? '—'}</span> : <span className="text-ink-muted">—</span>}
       </div>
     </div>
   )
@@ -150,7 +150,7 @@ export function PlayerComparisonModal({ open, playerA, onClose }: PlayerComparis
         ['Set Piece', fmtScore(p.set_piece_score)],
       ] as const).map(([label, value]) => (
         <div key={label} className="flex justify-between">
-          <span className="text-zinc-500 dark:text-zinc-400 text-xs">{label}</span>
+          <span className="text-ink-muted text-xs">{label}</span>
           <span>{value}</span>
         </div>
       ))}
@@ -160,15 +160,15 @@ export function PlayerComparisonModal({ open, playerA, onClose }: PlayerComparis
   const renderSignalsColumn = (p: ScoredPlayer) => (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
-        <span className="text-zinc-500 dark:text-zinc-400 text-xs w-20 shrink-0">Signal</span>
+        <span className="text-ink-muted text-xs w-20 shrink-0">Signal</span>
         <RegressionSignalBadge signal={p.regression_signal} delta={p.actual_vs_xg_delta} />
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-zinc-500 dark:text-zinc-400 text-xs w-20 shrink-0">Flag</span>
+        <span className="text-ink-muted text-xs w-20 shrink-0">Flag</span>
         <DifferentialBadge flag={p.differential_flag} ownership={parseFloat(p.selected_by_percent ?? '0')} />
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-zinc-500 dark:text-zinc-400 text-xs w-20 shrink-0">Minutes</span>
+        <span className="text-ink-muted text-xs w-20 shrink-0">Minutes</span>
         <MinsRiskBadge minsRisk={p.mins_risk} />
       </div>
     </div>
@@ -178,15 +178,15 @@ export function PlayerComparisonModal({ open, playerA, onClose }: PlayerComparis
     <dialog
       ref={dialogRef}
       onClick={handleDialogClick}
-      className="hidden open:flex flex-col rounded-lg bg-white dark:bg-zinc-900 p-4 max-w-2xl w-full max-h-[85vh] border border-zinc-200 dark:border-zinc-700 shadow-lg"
+      className="hidden open:flex flex-col rounded-lg bg-surface-1 p-4 max-w-2xl w-full max-h-[85vh] border border-line shadow-lg"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Compare Players</h2>
+        <h2 className="text-base font-semibold text-ink">Compare Players</h2>
         <button
           type="button"
           onClick={onClose}
-          className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer active:scale-95 transition-transform"
+          className="text-sm text-ink-muted hover:text-ink cursor-pointer active:scale-95 transition-transform"
           aria-label="Close"
         >
           ✕
@@ -200,28 +200,28 @@ export function PlayerComparisonModal({ open, playerA, onClose }: PlayerComparis
         placeholder="Search for a player…"
         value={search}
         onChange={e => setSearch(e.target.value)}
-        className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-400 mb-3"
+        className="w-full px-3 py-2 text-sm border border-line rounded bg-surface-1 text-ink focus:outline-none focus:ring-1 focus:ring-accent mb-3"
         style={{ fontSize: '16px' }}
       />
 
       {/* Search results — only when search is non-empty AND playerB unset */}
       {search.trim() !== '' && playerB === null && (
-        <div className="overflow-y-auto max-h-40 divide-y divide-zinc-100 dark:divide-zinc-800 mb-3 border border-zinc-200 dark:border-zinc-700 rounded">
+        <div className="overflow-y-auto max-h-40 divide-y divide-line mb-3 border border-line rounded">
           {filteredPlayers.map(p => (
             <button
               type="button"
               key={p.id}
               onClick={() => { setPlayerB(p); setSearch('') }}
-              className="w-full text-left px-3 py-2 flex items-center justify-between gap-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+              className="w-full text-left px-3 py-2 flex items-center justify-between gap-2 hover:bg-surface-2 cursor-pointer transition-colors"
             >
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate">{p.web_name}</span>
-                <span className="text-xs text-zinc-500 dark:text-zinc-400 shrink-0">{p.team_short_name}</span>
+                <span className="text-sm text-ink truncate">{p.web_name}</span>
+                <span className="text-xs text-ink-muted shrink-0">{p.team_short_name}</span>
               </div>
             </button>
           ))}
           {filteredPlayers.length === 0 && (
-            <p className="px-3 py-4 text-sm text-zinc-500 dark:text-zinc-400 text-center">No players found</p>
+            <p className="px-3 py-4 text-sm text-ink-muted text-center">No players found</p>
           )}
         </div>
       )}
@@ -231,21 +231,21 @@ export function PlayerComparisonModal({ open, playerA, onClose }: PlayerComparis
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
           {/* Section: xPts Projection */}
-          <h3 className="col-span-full text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide border-b border-zinc-200 dark:border-zinc-700 pb-1 mb-2">xPts Projection</h3>
+          <h3 className="col-span-full text-xs font-semibold text-ink-muted uppercase tracking-wide border-b border-line pb-1 mb-2">xPts Projection</h3>
           {renderXptsSection(playerA, playerB)}
 
           {/* Section: Gem Scores */}
-          <h3 className="col-span-full text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide border-b border-zinc-200 dark:border-zinc-700 pb-1 mb-2 mt-3">Gem Scores</h3>
+          <h3 className="col-span-full text-xs font-semibold text-ink-muted uppercase tracking-wide border-b border-line pb-1 mb-2 mt-3">Gem Scores</h3>
           {renderGemColumn(playerA)}
           {playerB ? renderGemColumn(playerB) : renderPlaceholder()}
 
           {/* Section: Next Fixtures */}
-          <h3 className="col-span-full text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide border-b border-zinc-200 dark:border-zinc-700 pb-1 mb-2 mt-3">Next Fixtures</h3>
+          <h3 className="col-span-full text-xs font-semibold text-ink-muted uppercase tracking-wide border-b border-line pb-1 mb-2 mt-3">Next Fixtures</h3>
           <div className="text-sm"><FixtureBadges fixtures={playerA.fixtures.slice(0, 5)} /></div>
           {playerB ? <div className="text-sm"><FixtureBadges fixtures={playerB.fixtures.slice(0, 5)} /></div> : renderPlaceholder()}
 
           {/* Section: Signals */}
-          <h3 className="col-span-full text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide border-b border-zinc-200 dark:border-zinc-700 pb-1 mb-2 mt-3">Signals</h3>
+          <h3 className="col-span-full text-xs font-semibold text-ink-muted uppercase tracking-wide border-b border-line pb-1 mb-2 mt-3">Signals</h3>
           {renderSignalsColumn(playerA)}
           {playerB ? renderSignalsColumn(playerB) : renderPlaceholder()}
         </div>

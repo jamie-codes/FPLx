@@ -346,7 +346,7 @@ describe('BPS-01: Bonus EV column', () => {
 })
 
 describe('FLOOR-01: Cons% column', () => {
-  it('cons_rate=0.75 renders "75%" with text-emerald-400', () => {
+  it('cons_rate=0.75 renders "75%" with text-positive', () => {
     const cols = createColumns(vi.fn())
     const col = cols.find((c: any) => c.accessorKey === 'cons_rate') as any
     expect(col).toBeTruthy()
@@ -355,10 +355,10 @@ describe('FLOOR-01: Cons% column', () => {
     )
     const span = container.querySelector('span')
     expect(span?.textContent).toBe('75%')
-    expect(span?.className).toContain('text-emerald-400')
+    expect(span?.className).toContain('text-positive')
   })
 
-  it('cons_rate=0.50 renders "50%" with text-zinc-100', () => {
+  it('cons_rate=0.50 renders "50%" with text-ink', () => {
     const cols = createColumns(vi.fn())
     const col = cols.find((c: any) => c.accessorKey === 'cons_rate') as any
     const { container } = render(
@@ -366,10 +366,11 @@ describe('FLOOR-01: Cons% column', () => {
     )
     const span = container.querySelector('span')
     expect(span?.textContent).toBe('50%')
-    expect(span?.className).toContain('text-zinc-100')
+    expect(span?.className).toContain('text-ink')
+    expect(span?.className).not.toContain('text-ink-muted')
   })
 
-  it('cons_rate=0.30 renders "30%" with text-zinc-500', () => {
+  it('cons_rate=0.30 renders "30%" with text-ink-muted', () => {
     const cols = createColumns(vi.fn())
     const col = cols.find((c: any) => c.accessorKey === 'cons_rate') as any
     const { container } = render(
@@ -377,7 +378,7 @@ describe('FLOOR-01: Cons% column', () => {
     )
     const span = container.querySelector('span')
     expect(span?.textContent).toBe('30%')
-    expect(span?.className).toContain('text-zinc-500')
+    expect(span?.className).toContain('text-ink-muted')
   })
 
   it('cons_rate=null renders em-dash', () => {
@@ -417,7 +418,7 @@ describe('FLOOR-01: Floor column (p10_pts)', () => {
 })
 
 describe('STREAK-01: Streak column', () => {
-  it('streak=5 renders "5" with text-emerald-400', () => {
+  it('streak=5 renders "5" with text-positive', () => {
     const cols = createColumns(vi.fn())
     const col = cols.find((c: any) => c.accessorKey === 'streak') as any
     expect(col).toBeTruthy()
@@ -426,10 +427,10 @@ describe('STREAK-01: Streak column', () => {
     )
     const span = container.querySelector('span')
     expect(span?.textContent).toBe('5')
-    expect(span?.className).toContain('text-emerald-400')
+    expect(span?.className).toContain('text-positive')
   })
 
-  it('streak=1 renders "1" with text-zinc-100', () => {
+  it('streak=1 renders "1" with text-ink', () => {
     const cols = createColumns(vi.fn())
     const col = cols.find((c: any) => c.accessorKey === 'streak') as any
     const { container } = render(
@@ -437,10 +438,11 @@ describe('STREAK-01: Streak column', () => {
     )
     const span = container.querySelector('span')
     expect(span?.textContent).toBe('1')
-    expect(span?.className).toContain('text-zinc-100')
+    expect(span?.className).toContain('text-ink')
+    expect(span?.className).not.toContain('text-ink-muted')
   })
 
-  it('streak=0 renders "0" with text-zinc-500', () => {
+  it('streak=0 renders "0" with text-ink-muted', () => {
     const cols = createColumns(vi.fn())
     const col = cols.find((c: any) => c.accessorKey === 'streak') as any
     const { container } = render(
@@ -448,7 +450,7 @@ describe('STREAK-01: Streak column', () => {
     )
     const span = container.querySelector('span')
     expect(span?.textContent).toBe('0')
-    expect(span?.className).toContain('text-zinc-500')
+    expect(span?.className).toContain('text-ink-muted')
   })
 
   it('streak=null renders em-dash', () => {
@@ -462,7 +464,7 @@ describe('STREAK-01: Streak column', () => {
 })
 
 describe('STREAK-01: ΔForm column', () => {
-  it('form_delta=2.5 renders "+2.5" with text-emerald-400', () => {
+  it('form_delta=2.5 renders "+2.5" with text-positive', () => {
     const cols = createColumns(vi.fn())
     const col = cols.find((c: any) => c.accessorKey === 'form_delta') as any
     expect(col).toBeTruthy()
@@ -471,10 +473,10 @@ describe('STREAK-01: ΔForm column', () => {
     )
     const span = container.querySelector('span')
     expect(span?.textContent).toBe('+2.5')
-    expect(span?.className).toContain('text-emerald-400')
+    expect(span?.className).toContain('text-positive')
   })
 
-  it('form_delta=-1.8 renders "-1.8" with text-red-400', () => {
+  it('form_delta=-1.8 renders "-1.8" with text-negative', () => {
     const cols = createColumns(vi.fn())
     const col = cols.find((c: any) => c.accessorKey === 'form_delta') as any
     const { container } = render(
@@ -482,10 +484,10 @@ describe('STREAK-01: ΔForm column', () => {
     )
     const span = container.querySelector('span')
     expect(span?.textContent).toBe('-1.8')
-    expect(span?.className).toContain('text-red-400')
+    expect(span?.className).toContain('text-negative')
   })
 
-  it('form_delta=0.2 renders "+0.2" with text-zinc-100', () => {
+  it('form_delta=0.2 renders "+0.2" with text-ink', () => {
     const cols = createColumns(vi.fn())
     const col = cols.find((c: any) => c.accessorKey === 'form_delta') as any
     const { container } = render(
@@ -493,7 +495,8 @@ describe('STREAK-01: ΔForm column', () => {
     )
     const span = container.querySelector('span')
     expect(span?.textContent).toBe('+0.2')
-    expect(span?.className).toContain('text-zinc-100')
+    expect(span?.className).toContain('text-ink')
+    expect(span?.className).not.toContain('text-ink-muted')
   })
 
   it('form_delta=null renders em-dash', () => {

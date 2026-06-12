@@ -32,6 +32,7 @@ import { PlayerInsightSection } from '@/components/shared/PlayerInsightSection'
 import { ConfirmedSigningBadge } from '@/components/shared/ConfirmedSigningBadge'
 import { useTransferNews } from '@/lib/hooks/useTransferNews'
 import { buildConfirmedSigningMap } from '@/lib/buildConfirmedSigningMap'
+import { TableShell, Th, Td, TABLE_CLS } from '@/components/ui/Table'
 
 // Phase 65 WHY-01: position-code label for adaptive-framing rejection-panel rendering.
 const POSITION_CODES_LABEL: Record<number, string> = {
@@ -77,7 +78,7 @@ function RejectionPanelInline({
   // Adaptive positive framing — reasons.length === 0 means computeRejection deemed the player strong.
   if (reasons.length === 0) {
     return (
-      <p className="mt-2 text-xs text-green-700 dark:text-green-400">
+      <p className="mt-2 text-xs text-positive">
         {`No rejection signals — ranked #${xPtsRank} at ${posCodeLabel} by xPts (${xPts1gw.toFixed(1)} pts projected)`}
       </p>
     )
@@ -85,10 +86,10 @@ function RejectionPanelInline({
   // Rejection reasons list.
   return (
     <div className="mt-2 space-y-1">
-      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Why not recommended:</p>
+      <p className="text-xs font-medium text-ink-muted">Why not recommended:</p>
       <ul className="space-y-0.5">
         {reasons.map((line, i) => (
-          <li key={i} className="text-xs text-zinc-600 dark:text-zinc-400">
+          <li key={i} className="text-xs text-ink-muted">
             {line}
           </li>
         ))}
@@ -99,9 +100,9 @@ function RejectionPanelInline({
 
 // Phase 88 SCRAPER-01: row-expand news section helper (D-06).
 const ROW_EXPAND_SEVERITY_CLASS: Record<NewsSeverity, string> = {
-  red:   'text-red-600 dark:text-red-400',
-  amber: 'text-amber-600 dark:text-amber-400',
-  zinc:  'text-zinc-500 dark:text-zinc-400',
+  red:   'text-negative',
+  amber: 'text-warning',
+  zinc:  'text-ink-muted',
   none:  '',
 }
 const ROW_EXPAND_SEVERITY_ICON: Record<NewsSeverity, string> = { red: '⚠', amber: '⚠', zinc: 'ℹ', none: '' }
@@ -126,7 +127,7 @@ function RowExpandNewsSection({
     <div className={`mt-2 ${ROW_EXPAND_SEVERITY_CLASS[severity]} text-xs`} data-testid="row-expand-news">
       <span aria-hidden="true">{ROW_EXPAND_SEVERITY_ICON[severity]} </span>
       {news}
-      {relTime && <span className="ml-1 text-zinc-400 dark:text-zinc-500">({relTime})</span>}
+      {relTime && <span className="ml-1 text-ink-muted">({relTime})</span>}
     </div>
   )
 }
@@ -232,12 +233,12 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
   }
 
   if (isLoading) {
-    return <p className="text-gray-500 dark:text-zinc-400">Loading players...</p>
+    return <p className="text-ink-muted">Loading players...</p>
   }
 
   if (error) {
     return (
-      <p className="text-red-500">
+      <p className="text-negative">
         Failed to load players: {error instanceof Error ? error.message : String(error)}
       </p>
     )
@@ -246,7 +247,10 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Gem Ratings</h1>
-      <div className="sticky top-0 sm:static z-40 bg-white dark:bg-zinc-900 py-2 -mx-4 px-4 flex justify-between items-center mb-2 border-b border-gray-100 dark:border-zinc-800 sm:border-0">
+      {/* UIX-03: overflow-x-auto on mobile — the SegmentedToggle controls are
+          whitespace-nowrap, so the bar scrolls horizontally instead of clipping
+          the position-filter options on narrow viewports. */}
+      <div className="sticky top-0 sm:static z-40 bg-surface-0 py-2 -mx-4 px-4 flex justify-between items-center gap-2 mb-2 border-b border-line sm:border-0 overflow-x-auto sm:overflow-visible">
         <PositionFilter active={activePosition} onChange={handlePositionChange} />
         <div className="flex items-center gap-2">
           <PresetToggle
@@ -261,22 +265,21 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
         </div>
       </div>
       <LandscapeTip isMobile={isMobile} isPortrait={isPortrait} />
-      <p className="text-sm text-gray-500 dark:text-zinc-400 mb-2">
+      <p className="text-sm text-ink-muted mb-2">
         {table.getRowModel().rows.length} players
       </p>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-700">
+      {/* UIX-03 Task 5: chrome \u2192 TableShell/Th/Td. z-tier contract (Table.tsx):
+          sticky td (z-10) < header cells (z-20) < sticky th (z-30) < XPtsCell hover card (z-50). */}
+      <TableShell stickyFirstCol stickyHeader>
+        <table className={TABLE_CLS}>
+          <thead className="sticky top-0 bg-surface-1">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th
+                  <Th
                     key={header.id}
-                    className={`px-2 py-2.5 sm:py-1 font-semibold text-gray-700 dark:text-zinc-300 whitespace-nowrap min-h-[44px] ${
-                      header.column.id === 'web_name'
-                        ? 'sticky left-0 z-30 bg-white dark:bg-zinc-900'
-                        : 'z-20'
-                    } ${
+                    sticky={header.column.id === 'web_name'}
+                    className={`${header.column.id === 'web_name' ? '' : 'z-20 '}${
                       header.column.getCanSort() ? 'cursor-pointer select-none' : ''
                     }`}
                     onClick={header.column.getToggleSortingHandler()}
@@ -289,7 +292,7 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
                       : header.column.getIsSorted() === 'desc'
                         ? ' \u25BC'
                         : null}
-                  </th>
+                  </Th>
                 ))}
               </tr>
             ))}
@@ -298,7 +301,7 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
             {table.getRowModel().rows.map((row) => (
               <Fragment key={row.id}>
                 <tr
-                  className={`even:bg-gray-50 dark:even:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-zinc-700 cursor-pointer active:bg-blue-100`}
+                  className="even:bg-surface-0 hover:bg-surface-2 transition-colors duration-150 cursor-pointer active:bg-surface-2"
                   onClick={() => {
                     row.toggleExpanded()
                     if (isMobile) {
@@ -307,16 +310,9 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
                   }}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td
-                      key={cell.id}
-                      className={
-                        cell.column.id === 'web_name'
-                          ? 'px-2 py-1 whitespace-nowrap sticky left-0 z-10 bg-white dark:bg-zinc-900'
-                          : 'px-2 py-1 whitespace-nowrap'
-                      }
-                    >
+                    <Td key={cell.id} sticky={cell.column.id === 'web_name'}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
+                    </Td>
                   ))}
                 </tr>
                 {row.getIsExpanded() && (() => {
@@ -329,7 +325,7 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
                   return (
                     <>
                       {/* Mobile expand row — preserved + rejection panel appended (D-03) */}
-                      <tr className="bg-blue-50 dark:bg-blue-950 sm:hidden">
+                      <tr className="bg-accent-soft sm:hidden">
                         <td colSpan={row.getVisibleCells().length} className="px-3 py-3">
                           {/* Phase 127 WATCH-01 D-15: star action row — FIRST child (D-16) */}
                           <div className="flex items-center gap-2 mb-2">
@@ -338,8 +334,8 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
                               onClick={() => toggleWatchlist?.(row.original.id)}
                               className={`text-xs cursor-pointer ${
                                 watchlistIds.includes(row.original.id)
-                                  ? 'text-amber-500'
-                                  : 'text-zinc-600 dark:text-zinc-300'
+                                  ? 'text-warning'
+                                  : 'text-ink-muted'
                               }`}
                             >
                               {watchlistIds.includes(row.original.id) ? '⭐ Pinned' : '⭐ Pin to watchlist'}
@@ -354,7 +350,7 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
                                   onCompare?.(row.original)
                                   setActionSheetPlayer(null)
                                 }}
-                                className="text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 rounded px-2 py-1 cursor-pointer"
+                                className="text-xs text-ink bg-surface-2 rounded px-2 py-1 cursor-pointer"
                               >
                                 Compare
                               </button>
@@ -364,7 +360,7 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
                                   e.stopPropagation()
                                   setActionSheetPlayer(null)
                                 }}
-                                className="text-xs text-zinc-400 dark:text-zinc-500 cursor-pointer"
+                                className="text-xs text-ink-muted cursor-pointer"
                                 aria-label="Dismiss"
                               >
                                 ✕
@@ -376,7 +372,7 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
                               .filter(cell => HIDDEN_COLUMN_LABELS[cell.column.id])
                               .map(cell => (
                                 <div key={cell.column.id} className="flex gap-1">
-                                  <dt className="text-gray-500 dark:text-zinc-400 shrink-0">
+                                  <dt className="text-ink-muted shrink-0">
                                     {HIDDEN_COLUMN_LABELS[cell.column.id]}:
                                   </dt>
                                   <dd className="font-medium truncate">
@@ -420,7 +416,7 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
                         </td>
                       </tr>
                       {/* NEW desktop expand row — rejection panel ONLY (D-02 + Pitfall 5: hidden sm:table-row) */}
-                      <tr className="bg-blue-50 dark:bg-blue-950 hidden sm:table-row">
+                      <tr className="bg-accent-soft hidden sm:table-row">
                         <td colSpan={row.getVisibleCells().length} className="px-3 py-3">
                           {/* Phase 127 WATCH-01 D-15: star action row — FIRST child (D-16) */}
                           <div className="flex items-center gap-2 mb-2">
@@ -429,8 +425,8 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
                               onClick={() => toggleWatchlist?.(row.original.id)}
                               className={`text-xs cursor-pointer ${
                                 watchlistIds.includes(row.original.id)
-                                  ? 'text-amber-500'
-                                  : 'text-zinc-600 dark:text-zinc-300'
+                                  ? 'text-warning'
+                                  : 'text-ink-muted'
                               }`}
                             >
                               {watchlistIds.includes(row.original.id) ? '⭐ Pinned' : '⭐ Pin to watchlist'}
@@ -475,11 +471,11 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
             ))}
           </tbody>
         </table>
-      </div>
+      </TableShell>
       {isMobile && showBackToTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-24 right-4 z-50 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-full w-10 h-10 flex items-center justify-center shadow-lg active:scale-95 transition-transform sm:hidden"
+          className="fixed bottom-24 right-4 z-50 bg-ink text-surface-1 rounded-full w-10 h-10 flex items-center justify-center shadow-lg active:scale-95 transition-transform sm:hidden"
           aria-label="Back to top"
         >
           ↑

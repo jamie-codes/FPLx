@@ -9,34 +9,37 @@ interface Config {
   title: string
 }
 
+// UIX-03: stays bespoke (5 tones don't fit the 6-intent Chip set) — internals
+// retokenized per the badge policy: green→positive, blue→accent, amber/orange→warning,
+// zinc→neutral (surface-2/ink-muted). RiskChip stacking preserved.
 const BADGE_MAP: Record<Exclude<MinsRisk | SubRiskLabel, 'injured'>, Config> = {
   nailed: {
-    bg: 'bg-green-100 dark:bg-green-900',
-    text: 'text-green-800 dark:text-green-200',
+    bg: 'bg-positive-soft',
+    text: 'text-positive',
     label: 'Nailed',
     title: 'Nailed: high start probability (≥85%)',
   },
   likely_start: {
-    bg: 'bg-blue-100 dark:bg-blue-900',
-    text: 'text-blue-800 dark:text-blue-200',
+    bg: 'bg-accent-soft',
+    text: 'text-accent',
     label: 'Likely start',
     title: 'Likely start: moderate start probability (65–84%)',
   },
   rotation_risk: {
-    bg: 'bg-amber-100 dark:bg-amber-900',
-    text: 'text-amber-800 dark:text-amber-200',
+    bg: 'bg-warning-soft',
+    text: 'text-warning',
     label: 'Rotation risk',
     title: 'Rotation risk: rotation risk identified',
   },
   cameo: {
-    bg: 'bg-zinc-100 dark:bg-zinc-700',
-    text: 'text-zinc-600 dark:text-zinc-300',
+    bg: 'bg-surface-2',
+    text: 'text-ink-muted',
     label: 'Cameo',
     title: 'Cameo: low minutes expected',
   },
   sub_risk: {
-    bg: 'bg-orange-100 dark:bg-orange-900',
-    text: 'text-orange-800 dark:text-orange-200',
+    bg: 'bg-warning-soft',
+    text: 'text-warning',
     label: 'Sub risk',
     title: 'Sub risk: likely to start but exits before 60 min',
   },

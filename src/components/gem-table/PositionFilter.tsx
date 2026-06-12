@@ -1,13 +1,16 @@
 'use client'
 
 import type { PositionCode } from '@/lib/types'
+import { SegmentedToggle } from '@/components/ui/SegmentedToggle'
 
-const POSITIONS: Array<{ label: string; code: PositionCode | null }> = [
-  { label: 'All', code: null },
-  { label: 'GK', code: 1 },
-  { label: 'DEF', code: 2 },
-  { label: 'MID', code: 3 },
-  { label: 'FWD', code: 4 },
+// UIX-03: control unified onto the SegmentedToggle primitive (same options/
+// semantics — 'all' maps to the null position code).
+const POSITIONS: { id: string; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: '1', label: 'GK' },
+  { id: '2', label: 'DEF' },
+  { id: '3', label: 'MID' },
+  { id: '4', label: 'FWD' },
 ]
 
 interface Props {
@@ -17,20 +20,11 @@ interface Props {
 
 export function PositionFilter({ active, onChange }: Props) {
   return (
-    <div className="flex gap-2">
-      {POSITIONS.map(({ label, code }) => (
-        <button
-          key={label}
-          onClick={() => onChange(code)}
-          className={`px-3 py-2.5 sm:py-1 rounded text-sm font-medium transition-colors cursor-pointer active:scale-95 transition-transform min-h-[44px] ${
-            active === code
-              ? 'bg-blue-600 dark:bg-blue-500 text-white'
-              : 'bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-600'
-          }`}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
+    <SegmentedToggle
+      options={POSITIONS}
+      value={active === null ? 'all' : String(active)}
+      onChange={(id) => onChange(id === 'all' ? null : (Number(id) as PositionCode))}
+      ariaLabel="Position filter"
+    />
   )
 }

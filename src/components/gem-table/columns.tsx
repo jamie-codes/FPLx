@@ -13,6 +13,9 @@ import { MCDistributionBar } from '@/components/mc/MCDistributionBar'
 import { computeRouteFlags } from '@/lib/routes'
 import { RoutePillsCell } from '@/components/gem-table/RoutePillsCell'
 import { BonusEvCell } from '@/components/gem-table/BonusEvCell'
+import { PlayerCell } from '@/components/ui/PlayerCell'
+import { Chip } from '@/components/ui/Chip'
+import { PriceTrendCell } from '@/components/shared/PriceTrendCell'
 
 const col = createColumnHelper<ScoredPlayer>()
 
@@ -124,11 +127,12 @@ export function XPtsCell({
         {display}
         <VarianceBadge ceiling={ceiling} />
       </span>
-      {/* Hover card: visible on desktop hover (CSS) or mobile tap (state). z-50 clears sticky web_name z-10. */}
+      {/* Hover card: visible on desktop hover (CSS) or mobile tap (state). z-50 clears sticky web_name z-10
+          (full z-tier stack documented in ui/Table.tsx: sticky td 10 < header 20 < sticky th 30 < this card 50). */}
       <div
         className={[
           'absolute bottom-full left-0 mb-1 w-44 z-50',
-          'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700',
+          'bg-surface-1 border border-line',
           'rounded shadow-lg p-2 text-xs',
           'invisible opacity-0 group-hover/xpts:visible group-hover/xpts:opacity-100',
           'transition-opacity',
@@ -137,11 +141,11 @@ export function XPtsCell({
       >
         {rows.map(([label, val]) => (
           <div key={label} className="flex justify-between">
-            <span className="text-zinc-500 dark:text-zinc-400">{label}</span>
+            <span className="text-ink-muted">{label}</span>
             <span className="font-mono">{val}</span>
           </div>
         ))}
-        <hr className="my-1 border-zinc-200 dark:border-zinc-600" />
+        <hr className="my-1 border-line" />
         {showMC && (
           <>
             <MCDistributionBar
@@ -150,7 +154,7 @@ export function XPtsCell({
               p10Pts={p10Pts!}
               p90Pts={p90Pts!}
             />
-            <hr className="my-1 border-zinc-200 dark:border-zinc-600" />
+            <hr className="my-1 border-line" />
           </>
         )}
         <div className="flex justify-between font-semibold">
@@ -176,13 +180,20 @@ export function createColumns(
     col.accessor('web_name', {
       header: 'Player',
       enableSorting: true,
+      // UIX-03 Task 5: identity → PlayerCell sm INSIDE the existing cell structure —
+      // the hover ⊞ compare button (stopPropagation vs the row's expand onClick) is preserved.
       cell: ({ row }) => (
         <div className="relative group/name flex items-center gap-1">
-          <span>{row.original.web_name}</span>
+          <PlayerCell
+            size="sm"
+            webName={row.original.web_name}
+            code={row.original.code}
+            teamCode={row.original.team_code}
+          />
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onCompare(row.original) }}
-            className="opacity-0 group-hover/name:opacity-100 transition-opacity text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 ml-1 text-xs cursor-pointer hidden sm:inline"
+            className="opacity-0 group-hover/name:opacity-100 transition-opacity text-ink-muted hover:text-ink ml-1 text-xs cursor-pointer hidden sm:inline"
             aria-label={`Compare ${row.original.web_name}`}
           >
             ⊞
@@ -259,18 +270,19 @@ export function createColumns(
     cell: (info) => {
       const s = info.getValue()
       if (s === 'a') return null
-      const cfg: Record<string, { label: string; cls: string }> = {
-        d: { label: 'D', cls: 'bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200' },
-        i: { label: 'I', cls: 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' },
-        s: { label: 'S', cls: 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' },
-        u: { label: 'U', cls: 'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300' },
-        n: { label: 'N', cls: 'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300' },
+      // UIX-03 badge policy: status pill → Chip (d→warning, i/s→negative, u/n→neutral).
+      const cfg: Record<string, { label: string; intent: 'warning' | 'negative' | 'neutral' }> = {
+        d: { label: 'D', intent: 'warning' },
+        i: { label: 'I', intent: 'negative' },
+        s: { label: 'S', intent: 'negative' },
+        u: { label: 'U', intent: 'neutral' },
+        n: { label: 'N', intent: 'neutral' },
       }
-      const c = cfg[s] ?? { label: s.toUpperCase(), cls: 'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300' }
+      const c = cfg[s] ?? { label: s.toUpperCase(), intent: 'neutral' as const }
       // Phase 88 SCRAPER-01: title= when news non-empty AND gate enabled (D-05)
       const news = (info.row.original as ScoredPlayer).news
       const titleAttr = (newsFlagEnabled && news && news.trim().length > 0) ? news : undefined
-      return <span className={`inline-block text-xs font-normal rounded px-2 py-1 ${c.cls}`} title={titleAttr}>{c.label}</span>
+      return <Chip intent={c.intent} size="sm" title={titleAttr}>{c.label}</Chip>
     },
   }),
   col.display({
@@ -284,8 +296,8 @@ export function createColumns(
     header: H('Start%', 'Probability of starting the next match (0–100%). Based on last 10 GW start rate × availability.'),
     cell: (info) => {
       const v = info.getValue()
-      if (v == null) return <span className="text-zinc-400">—</span>
-      return <span className="text-zinc-100">{Math.round(v * 100)}%</span>
+      if (v == null) return <span className="text-ink-muted">—</span>
+      return <span className="text-ink">{Math.round(v * 100)}%</span>
     },
     enableSorting: true,
   }),
@@ -294,8 +306,8 @@ export function createColumns(
     header: H('60+%', 'Probability of playing 60+ minutes when starting. Low = sub risk even when named in XI.'),
     cell: (info) => {
       const v = info.getValue()
-      if (v == null) return <span className="text-zinc-400">—</span>
-      return <span className="text-zinc-100">{Math.round(v * 100)}%</span>
+      if (v == null) return <span className="text-ink-muted">—</span>
+      return <span className="text-ink">{Math.round(v * 100)}%</span>
     },
     enableSorting: true,
   }),
@@ -327,7 +339,7 @@ export function createColumns(
     cell: (info) => {
       const v = info.getValue()
       return v === null || v === undefined
-        ? <span className="text-zinc-400">{'—'}</span>
+        ? <span className="text-ink-muted">{'—'}</span>
         : Math.round(v).toString()
     },
     enableSorting: true,
@@ -358,15 +370,15 @@ export function createColumns(
   }),
   // Phase 114 SPARK-01: rank_trajectory sparkline micro-column (inline SVG polyline, no Recharts).
   // Values: 0.0 = best rank (top of position), 1.0 = worst rank; length always 5 when present.
-  // Green stroke = rank improving (trend < -0.05), red = declining (trend > +0.05), zinc-400 = flat.
+  // Positive stroke = rank improving (trend < -0.05), negative = declining, ink-muted = flat.
   col.accessor('rank_trajectory', {
     header: H('Trend', 'Rank trajectory over last 5 gameweeks. Green = rank improving (lower percentile). Red = rank declining.'),
     enableSorting: false,
     cell: (info) => {
       const trajectory = info.getValue()
-      if (!trajectory || trajectory.length < 2) return <span className="text-zinc-400">—</span>
+      if (!trajectory || trajectory.length < 2) return <span className="text-ink-muted">—</span>
       const trend = trajectory[trajectory.length - 1] - trajectory[0]
-      const stroke = trend < -0.05 ? 'var(--color-positive)' : trend > 0.05 ? 'var(--color-negative)' : '#a1a1aa'
+      const stroke = trend < -0.05 ? 'var(--color-positive)' : trend > 0.05 ? 'var(--color-negative)' : 'var(--color-ink-muted)'
       const pointsStr = trajectory.map((v, i) => `${2 + i * 9},${(1 + v * 18).toFixed(1)}`).join(' ')
       return (
         <svg width="40" height="20" viewBox="0 0 40 20" aria-hidden="true">
@@ -420,12 +432,12 @@ export function createColumns(
       if (position === 1 || position === 2) {
         const csProb = info.getValue()
         if (csProb === null || csProb === undefined) {
-          return <span className="text-zinc-400">—</span>
+          return <span className="text-ink-muted">—</span>
         }
         // 0% is meaningful (BGW or zero xmins) — render explicitly, not as em-dash.
         return `${(csProb * 100).toFixed(0)}%`
       }
-      return <span className="text-zinc-400">—</span>
+      return <span className="text-ink-muted">—</span>
     },
     enableSorting: true,
   }),
@@ -436,13 +448,13 @@ export function createColumns(
     header: H('Routes', 'Point-scoring routes: PK = penalty taker, FK = direct FK taker, CK = corner taker, xG = above-median xG in team, xA = above-median xA in team.'),
     cell: (info) => {
       const flags = routeFlagsMap.get(info.row.original.id)
-      if (!flags) return <span className="text-zinc-400">—</span>
+      if (!flags) return <span className="text-ink-muted">—</span>
       return <RoutePillsCell flags={flags} />
     },
     enableSorting: true,
   }),
   // Phase 53 BPS-01: per-player bonus EV.
-  // Muted (text-zinc-500) for 'prior' players — position prior only, insufficient data.
+  // Muted (text-ink-muted) for 'prior' players — position prior only, insufficient data.
   col.accessor('bonus_ev', {
     header: H('Bonus EV', 'Expected bonus points per game start. Shrinkage-estimated from recent history — muted values use the position prior (insufficient data).'),
     cell: (info) => (
@@ -454,14 +466,14 @@ export function createColumns(
     enableSorting: true,
   }),
   // Phase FLOOR-01: Historical consistency rate.
-  // Colour bands: >=70% emerald (reliable), 40-69% zinc-100 (average), <40% zinc-500 (unreliable).
+  // Colour bands: >=70% positive (reliable), 40-69% ink (average), <40% ink-muted (unreliable).
   col.accessor('cons_rate', {
     header: H('Cons%', 'Consistency rate: % of last 10 starts returning ≥ position threshold (GK/DEF ≥ 6 pts, MID/FWD ≥ 5 pts). Blank = fewer than 4 starts on record.'),
     cell: (info) => {
       const v = info.getValue()
-      if (v == null) return <span className="text-zinc-400">—</span>
+      if (v == null) return <span className="text-ink-muted">—</span>
       const pct = Math.round(v * 100)
-      const cls = pct >= 70 ? 'text-emerald-400' : pct >= 40 ? 'text-zinc-100' : 'text-zinc-500'
+      const cls = pct >= 70 ? 'text-positive' : pct >= 40 ? 'text-ink' : 'text-ink-muted'
       return <span className={cls}>{pct}%</span>
     },
     enableSorting: true,
@@ -473,19 +485,19 @@ export function createColumns(
     header: H('Floor', 'Simulated points floor: 10th-percentile outcome from 10,000 season simulations. Low floor = boom-or-bust; high floor = reliable scorer.'),
     cell: (info) => {
       const v = info.getValue()
-      if (v == null) return <span className="text-zinc-400">—</span>
-      return <span className="text-zinc-100">{v.toFixed(1)}</span>
+      if (v == null) return <span className="text-ink-muted">—</span>
+      return <span className="text-ink">{v.toFixed(1)}</span>
     },
     enableSorting: true,
   }),
   // Phase STREAK-01: Current scoring streak.
-  // Colour bands: >=3 emerald (hot run), 1-2 zinc-100 (active short), 0 zinc-500 (broken).
+  // Colour bands: >=3 positive (hot run), 1-2 ink (active short), 0 ink-muted (broken).
   col.accessor('streak', {
     header: H('Streak', 'Consecutive starts returning ≥ position threshold (GK/DEF ≥ 6 pts, MID/FWD ≥ 5 pts). 0 = streak broken last start. Blank = no starts on record.'),
     cell: (info) => {
       const v = info.getValue()
-      if (v == null) return <span className="text-zinc-400">—</span>
-      const cls = v >= 3 ? 'text-emerald-400' : v >= 1 ? 'text-zinc-100' : 'text-zinc-500'
+      if (v == null) return <span className="text-ink-muted">—</span>
+      const cls = v >= 3 ? 'text-positive' : v >= 1 ? 'text-ink' : 'text-ink-muted'
       return <span className={cls}>{v}</span>
     },
     enableSorting: true,
@@ -496,8 +508,8 @@ export function createColumns(
     header: H('ΔForm', 'Last 5 starts avg pts minus season avg pts per start. Positive = currently above own baseline. Blank = fewer than 6 starts on record.'),
     cell: (info) => {
       const v = info.getValue()
-      if (v == null) return <span className="text-zinc-400">—</span>
-      const cls = v > 0.5 ? 'text-emerald-400' : v < -0.5 ? 'text-red-400' : 'text-zinc-100'
+      if (v == null) return <span className="text-ink-muted">—</span>
+      const cls = v > 0.5 ? 'text-positive' : v < -0.5 ? 'text-negative' : 'text-ink'
       const sign = v > 0 ? '+' : ''
       return <span className={cls}>{sign}{v.toFixed(1)}</span>
     },
@@ -506,32 +518,14 @@ export function createColumns(
   col.display({
     id: 'trend',
     header: H('Trend', 'Price trend: this GW change (↑/↓) and season-to-date change'),
-    cell: ({ row }) => {
-      const ev = row.original.cost_change_event ?? 0
-      const st = row.original.cost_change_start ?? 0
-      const seasonAmt = (Math.abs(st) / 10).toFixed(1)
-      const seasonSign = st > 0 ? '+' : st < 0 ? '-' : ''
-      const seasonText = st !== 0 ? `${seasonSign}${seasonAmt}m season` : ''
-
-      if (ev > 0) return (
-        <div>
-          <span className="text-green-600">↑ {(ev / 10).toFixed(1)}m</span>
-          {seasonText && <span className="block text-[10px] text-zinc-400">{seasonText}</span>}
-        </div>
-      )
-      if (ev < 0) return (
-        <div>
-          <span className="text-red-600">↓ {(Math.abs(ev) / 10).toFixed(1)}m</span>
-          {seasonText && <span className="block text-[10px] text-zinc-400">{seasonText}</span>}
-        </div>
-      )
-      return (
-        <div>
-          <span className="text-zinc-400">—</span>
-          {seasonText && <span className="block text-[10px] text-zinc-400">{seasonText}</span>}
-        </div>
-      )
-    },
+    // UIX-03 Task 5: repointed to the shared PriceTrendCell (created in Task 2;
+    // this was a verbatim duplicate of value-gems' trend renderer).
+    cell: ({ row }) => (
+      <PriceTrendCell
+        costChangeEvent={row.original.cost_change_event ?? 0}
+        costChangeStart={row.original.cost_change_start ?? 0}
+      />
+    ),
   }),
   col.display({
     id: 'fixtures',

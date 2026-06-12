@@ -4,10 +4,10 @@ interface BonusEvCellProps {
 }
 
 export function BonusEvCell({ value, source }: BonusEvCellProps) {
-  if (value == null) return <span className="text-zinc-400">—</span>
+  if (value == null) return <span className="text-ink-muted">—</span>
   const muted = source === 'prior'
   return (
-    <span className={muted ? 'text-zinc-500' : 'text-zinc-100'}>
+    <span className={muted ? 'text-ink-muted' : 'text-ink'}>
       {value.toFixed(2)}
     </span>
   )

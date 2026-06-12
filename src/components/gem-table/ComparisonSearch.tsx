@@ -47,7 +47,7 @@ export function ComparisonSearch({ rowPlayer, allPlayers }: ComparisonSearchProp
 
   return (
     <div className="mt-2 space-y-1">
-      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Compare with…</p>
+      <p className="text-xs font-medium text-ink-muted">Compare with…</p>
       <PlayerSearchInput
         players={candidates}
         onSelect={setCompPlayer}
@@ -58,17 +58,17 @@ export function ComparisonSearch({ rowPlayer, allPlayers }: ComparisonSearchProp
       {reasonsYHasButXLacks !== null && compPlayer && (
         <div className="space-y-0.5">
           {reasonsYHasButXLacks.length === 0 ? (
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="text-xs text-ink-muted">
               No predicates where {rowPlayer.web_name} ranks above {compPlayer.web_name}.
             </p>
           ) : (
             <>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400">
+              <p className="text-xs text-ink-muted">
                 {rowPlayer.web_name} beats {compPlayer.web_name} because {compPlayer.web_name} was penalised for:
               </p>
               <ul className="space-y-0.5 ml-4 list-disc">
                 {reasonsYHasButXLacks.map((reason, i) => (
-                  <li key={i} className="text-xs text-zinc-600 dark:text-zinc-400">{reason}</li>
+                  <li key={i} className="text-xs text-ink-muted">{reason}</li>
                 ))}
               </ul>
             </>
@@ -77,7 +77,7 @@ export function ComparisonSearch({ rowPlayer, allPlayers }: ComparisonSearchProp
             type="button"
             aria-label="Clear comparison"
             onClick={() => setCompPlayer(null)}
-            className="text-xs text-zinc-400 dark:text-zinc-500 cursor-pointer"
+            className="text-xs text-ink-muted cursor-pointer"
           >
             {'×'} clear
           </button>

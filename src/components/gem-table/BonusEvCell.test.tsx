@@ -5,28 +5,27 @@ import { render } from '@testing-library/react'
 import { BonusEvCell } from './BonusEvCell'
 
 describe('BonusEvCell', () => {
-  it('learned_calibrated source renders value to 2dp with text-zinc-100', () => {
+  it('learned_calibrated source renders value to 2dp with text-ink', () => {
     const { container } = render(<BonusEvCell value={0.72} source="learned_calibrated" />)
     const span = container.querySelector('span')!
     expect(span.textContent).toBe('0.72')
-    expect(span.className).toContain('text-zinc-100')
-    expect(span.className).not.toContain('text-zinc-500')
+    expect(span.className).toContain('text-ink')
+    expect(span.className).not.toContain('text-ink-muted')
   })
 
-  it('learned_uncalibrated source renders value with text-zinc-100', () => {
+  it('learned_uncalibrated source renders value with text-ink', () => {
     const { container } = render(<BonusEvCell value={0.65} source="learned_uncalibrated" />)
     const span = container.querySelector('span')!
     expect(span.textContent).toBe('0.65')
-    expect(span.className).toContain('text-zinc-100')
-    expect(span.className).not.toContain('text-zinc-500')
+    expect(span.className).toContain('text-ink')
+    expect(span.className).not.toContain('text-ink-muted')
   })
 
-  it('prior source renders value with text-zinc-500 (muted)', () => {
+  it('prior source renders value with text-ink-muted (muted)', () => {
     const { container } = render(<BonusEvCell value={0.70} source="prior" />)
     const span = container.querySelector('span')!
     expect(span.textContent).toBe('0.70')
-    expect(span.className).toContain('text-zinc-500')
-    expect(span.className).not.toContain('text-zinc-100')
+    expect(span.className).toContain('text-ink-muted')
   })
 
   it('null value renders em-dash regardless of source', () => {
@@ -39,10 +38,11 @@ describe('BonusEvCell', () => {
     expect(container.textContent).toBe('—')
   })
 
-  it('null source treated as learned (text-zinc-100)', () => {
+  it('null source treated as learned (text-ink)', () => {
     const { container } = render(<BonusEvCell value={0.30} source={null} />)
     const span = container.querySelector('span')!
     expect(span.textContent).toBe('0.30')
-    expect(span.className).toContain('text-zinc-100')
+    expect(span.className).toContain('text-ink')
+    expect(span.className).not.toContain('text-ink-muted')
   })
 })

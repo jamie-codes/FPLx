@@ -18,7 +18,7 @@ describe('FragilityBadge — Phase 93 SENS-01', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it('renders amber badge for fragile tier with single reason', () => {
+  it('renders warning badge for fragile tier with single reason', () => {
     const { container } = render(
       <FragilityBadge tier="fragile" reasons={['start_prob < 70%']} />
     )
@@ -27,8 +27,8 @@ describe('FragilityBadge — Phase 93 SENS-01', () => {
     expect(badge?.textContent ?? '').toContain('no longer recommended if: start_prob < 70%')
     const cls = badge?.className ?? ''
     expect(cls).toContain('text-xs')
-    expect(cls).toContain('text-amber-600')
-    expect(cls).toContain('dark:text-amber-400')
+    expect(cls).toContain('text-warning')
+    expect(cls).not.toContain('text-negative')
   })
 
   it('fragile tier MUST NOT include filled-pill classes (Pitfall 4)', () => {
@@ -36,13 +36,12 @@ describe('FragilityBadge — Phase 93 SENS-01', () => {
       <FragilityBadge tier="fragile" reasons={['harder fixture']} />
     )
     const cls = container.querySelector('[data-testid="fragility-badge"]')?.className ?? ''
-    expect(cls).not.toContain('bg-amber-100')
-    expect(cls).not.toContain('bg-amber-900')
+    expect(cls).not.toContain('bg-')
     expect(cls).not.toContain('inline-block')
     expect(cls).not.toContain('rounded')
   })
 
-  it('renders orange badge for knife_edge tier with multiple reasons', () => {
+  it('renders negative badge for knife_edge tier with multiple reasons', () => {
     const { container } = render(
       <FragilityBadge
         tier="knife_edge"
@@ -56,10 +55,8 @@ describe('FragilityBadge — Phase 93 SENS-01', () => {
     )
     const cls = badge?.className ?? ''
     expect(cls).toContain('text-xs')
-    expect(cls).toContain('text-orange-600')
-    expect(cls).toContain('dark:text-orange-400')
-    expect(cls).not.toContain('text-amber-600')
-    expect(cls).not.toContain('text-amber-400')
+    expect(cls).toContain('text-negative')
+    expect(cls).not.toContain('text-warning')
   })
 
   it('knife_edge tier MUST NOT include filled-pill classes (Pitfall 4)', () => {
@@ -67,8 +64,7 @@ describe('FragilityBadge — Phase 93 SENS-01', () => {
       <FragilityBadge tier="knife_edge" reasons={['news doubt', 'harder fixture']} />
     )
     const cls = container.querySelector('[data-testid="fragility-badge"]')?.className ?? ''
-    expect(cls).not.toContain('bg-orange-100')
-    expect(cls).not.toContain('bg-orange-900')
+    expect(cls).not.toContain('bg-')
     expect(cls).not.toContain('inline-block')
     expect(cls).not.toContain('rounded')
   })

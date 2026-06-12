@@ -68,14 +68,14 @@ describe('MinsRiskBadge — Phase 52 MIN-01 tooltip upgrade', () => {
 })
 
 describe('MIN-01 — sub_risk badge', () => {
-  it('sub_risk renders label "Sub risk" with orange text class', () => {
+  it('sub_risk renders label "Sub risk" with warning text class', () => {
     const { container } = render(
       <MinsRiskBadge minsRisk="sub_risk" />
     )
     const span = container.querySelector('span')
     expect(span).not.toBeNull()
     expect(span?.textContent).toBe('Sub risk')
-    expect(span?.className).toContain('text-orange-800')
+    expect(span?.className).toContain('text-warning')
   })
 
   it('sub_risk with mins60Prob=0.45 renders tooltip "Sub risk — 45% chance 60+ min"', () => {
@@ -90,7 +90,7 @@ describe('MIN-01 — sub_risk badge', () => {
     const { container } = render(<MinsRiskBadge minsRisk="nailed" />)
     const span = container.querySelector('span')
     expect(span?.textContent).toBe('Nailed')
-    expect(span?.className).toContain('text-green-800')
+    expect(span?.className).toContain('text-positive')
   })
 })
 

@@ -12,23 +12,22 @@ describe('ConfirmedSigningBadge', () => {
     expect(span?.textContent).toBe('Confirmed Signing')
   })
 
-  it('renders with green background and text classes', () => {
+  it('renders with positive-intent token classes (UIX-03: Chip positive equivalent)', () => {
     const { container } = render(<ConfirmedSigningBadge />)
     const span = container.querySelector('span')
-    expect(span?.className).toContain('bg-green-100')
-    expect(span?.className).toContain('dark:bg-green-900')
-    expect(span?.className).toContain('text-green-800')
-    expect(span?.className).toContain('dark:text-green-200')
+    expect(span?.className).toContain('bg-positive-soft')
+    expect(span?.className).toContain('text-positive')
+    expect(span?.className).toContain('border-positive/40')
   })
 
-  it('renders with pill classes (inline-block, rounded, px-2, py-1, text-xs)', () => {
+  it('renders with pill classes (inline-flex, rounded-md, px-2, py-0.5, text-data)', () => {
     const { container } = render(<ConfirmedSigningBadge />)
     const span = container.querySelector('span')
-    expect(span?.className).toContain('inline-block')
-    expect(span?.className).toContain('rounded')
+    expect(span?.className).toContain('inline-flex')
+    expect(span?.className).toContain('rounded-md')
     expect(span?.className).toContain('px-2')
-    expect(span?.className).toContain('py-1')
-    expect(span?.className).toContain('text-xs')
+    expect(span?.className).toContain('py-0.5')
+    expect(span?.className).toContain('text-data')
   })
 
   it('sets data-testid="confirmed-signing-badge"', () => {

@@ -1,5 +1,7 @@
 'use client'
 
+import { SegmentedToggle } from '@/components/ui/SegmentedToggle'
+
 export type ViewPreset = 'default' | 'compact' | 'analysis'
 
 export const MOBILE_HIDDEN_COLUMNS: Record<string, boolean> = {
@@ -109,32 +111,23 @@ interface Props {
   disabled?: boolean  // Phase 46 (D-08): when true, add pointer-events-none opacity-50 to wrapper (FH mode)
 }
 
+const GW_OPTIONS = ([1, 3, 5] as const).map((gw) => ({
+  id: String(gw),
+  label: `Next ${gw} GW${gw === 1 ? '' : 's'}`,
+}))
+
+// UIX-03: control unified onto the SegmentedToggle primitive (same options/
+// semantics; only the control chrome changed). The FH-mode `disabled` wrapper
+// (Phase 46 D-08: pointer-events-none opacity-50) is preserved.
 export function GwToggle({ value, onChange, disabled }: Props) {
   return (
-    <div className={disabled ? 'pointer-events-none opacity-50' : undefined}>
-      <div
-        role="group"
-        aria-label="Projected points horizon"
-        className="flex rounded overflow-hidden border border-zinc-300 dark:border-zinc-600"
-      >
-        {([1, 3, 5] as const).map((gw) => (
-          <button
-            key={gw}
-            onClick={() => onChange(gw)}
-            disabled={disabled}
-            aria-pressed={value === gw}
-            aria-disabled={disabled}
-            tabIndex={disabled ? -1 : undefined}
-            className={`px-3 py-2.5 sm:py-1 text-sm font-medium transition-all cursor-pointer active:scale-95 min-h-[44px] ${
-              value === gw
-                ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
-                : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
-            }`}
-          >
-            Next {gw} GW{gw === 1 ? '' : 's'}
-          </button>
-        ))}
-      </div>
+    <div className={disabled ? 'pointer-events-none opacity-50' : undefined} aria-disabled={disabled || undefined}>
+      <SegmentedToggle
+        options={GW_OPTIONS}
+        value={String(value)}
+        onChange={(id) => onChange(Number(id) as 1 | 3 | 5)}
+        ariaLabel="Projected points horizon"
+      />
     </div>
   )
 }

@@ -50,15 +50,15 @@ describe('RoutePillsCell', () => {
   it('PK/FK/CK pills have bg-* class (solid fill), not a border class', () => {
     const { container } = render(<RoutePillsCell flags={ALL_TRUE} />)
     const pk = container.querySelector('[title="Penalty taker"]')!
-    expect(pk.className).toMatch(/bg-red-500/)
+    expect(pk.className).toMatch(/bg-negative/)
     expect(pk.className).not.toMatch(/border-/)
   })
 
   it('xG/xA pills have border-* class (outline), not bg-* class', () => {
     const { container } = render(<RoutePillsCell flags={ALL_TRUE} />)
     const xg = container.querySelector('[title="Above-median xG in team"]')!
-    expect(xg.className).toMatch(/border-blue-500/)
-    expect(xg.className).not.toMatch(/bg-[a-z]+-[0-9]+/)
+    expect(xg.className).toMatch(/border-accent/)
+    expect(xg.className).not.toMatch(/bg-/)
   })
 
   it('each pill has the correct title attribute', () => {

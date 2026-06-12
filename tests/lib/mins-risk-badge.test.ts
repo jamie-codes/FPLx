@@ -6,8 +6,8 @@ describe('getMinsRiskConfig', () => {
     const config = getMinsRiskConfig('nailed')
     expect(config).not.toBeNull()
     expect(config!.label).toBe('Nailed')
-    expect(config!.bg).toBe('bg-green-100 dark:bg-green-900')
-    expect(config!.text).toBe('text-green-800 dark:text-green-200')
+    expect(config!.bg).toBe('bg-positive-soft')
+    expect(config!.text).toBe('text-positive')
     expect(config!.title).toBe('Nailed: high start probability (\u226585%)')
   })
 
@@ -15,8 +15,8 @@ describe('getMinsRiskConfig', () => {
     const config = getMinsRiskConfig('likely_start')
     expect(config).not.toBeNull()
     expect(config!.label).toBe('Likely start')
-    expect(config!.bg).toBe('bg-blue-100 dark:bg-blue-900')
-    expect(config!.text).toBe('text-blue-800 dark:text-blue-200')
+    expect(config!.bg).toBe('bg-accent-soft')
+    expect(config!.text).toBe('text-accent')
     expect(config!.title).toBe('Likely start: moderate start probability (65\u201384%)')
   })
 
@@ -24,8 +24,8 @@ describe('getMinsRiskConfig', () => {
     const config = getMinsRiskConfig('rotation_risk')
     expect(config).not.toBeNull()
     expect(config!.label).toBe('Rotation risk')
-    expect(config!.bg).toBe('bg-amber-100 dark:bg-amber-900')
-    expect(config!.text).toBe('text-amber-800 dark:text-amber-200')
+    expect(config!.bg).toBe('bg-warning-soft')
+    expect(config!.text).toBe('text-warning')
     expect(config!.title).toBe('Rotation risk: rotation risk identified')
   })
 
@@ -33,8 +33,8 @@ describe('getMinsRiskConfig', () => {
     const config = getMinsRiskConfig('cameo')
     expect(config).not.toBeNull()
     expect(config!.label).toBe('Cameo')
-    expect(config!.bg).toBe('bg-zinc-100 dark:bg-zinc-700')
-    expect(config!.text).toBe('text-zinc-600 dark:text-zinc-300')
+    expect(config!.bg).toBe('bg-surface-2')
+    expect(config!.text).toBe('text-ink-muted')
     expect(config!.title).toBe('Cameo: low minutes expected')
   })
 

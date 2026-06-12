@@ -137,7 +137,7 @@ describe('watchlist star button', () => {
     expect(pinButtons.length).toBeGreaterThan(0)
   })
 
-  it('renders "⭐ Pinned" text and text-amber-500 class when id is in watchlistIds', () => {
+  it('renders "⭐ Pinned" text and text-warning class when id is in watchlistIds', () => {
     const { container, getByText } = withQueryClient(
       <GemTable watchlistIds={[1]} toggleWatchlist={vi.fn()} />
     )
@@ -145,7 +145,7 @@ describe('watchlist star button', () => {
     const buttons = container.querySelectorAll('button[type="button"]')
     const pinnedButtons = Array.from(buttons).filter(b => b.textContent?.includes('Pinned'))
     expect(pinnedButtons.length).toBeGreaterThan(0)
-    expect(pinnedButtons[0].className).toContain('text-amber-500')
+    expect(pinnedButtons[0].className).toContain('text-warning')
   })
 
   it('clicking the star button calls toggleWatchlist with the player id', () => {

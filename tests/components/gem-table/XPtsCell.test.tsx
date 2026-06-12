@@ -6,38 +6,37 @@ import { VarianceBadge } from '@/components/gem-table/VarianceBadge'
 import { XPtsCell } from '@/components/gem-table/columns'
 
 describe('VarianceBadge', () => {
-  it('renders ⬆ in violet envelope when ceiling=true', () => {
+  // UIX-03: VarianceBadge now delegates to the Chip primitive inside an ml-1
+  // wrapper span (⬆ ceiling → violet intent, = consistent → neutral intent).
+  it('renders ⬆ in violet Chip when ceiling=true', () => {
     const { container } = render(<VarianceBadge ceiling={true} />)
-    const span = container.querySelector('span')
-    expect(span).not.toBeNull()
-    expect(span!.textContent).toBe('⬆')
-    const cls = span!.className
-    expect(cls).toContain('bg-violet-100')
-    expect(cls).toContain('dark:bg-violet-900')
-    expect(cls).toContain('text-violet-800')
-    expect(cls).toContain('dark:text-violet-200')
-    expect(cls).toContain('ml-1')
-    expect(cls).toContain('inline-block')
-    expect(cls).toContain('text-xs')
-    expect(cls).toContain('font-normal')
-    expect(cls).toContain('rounded')
+    const outer = container.querySelector('span')
+    expect(outer).not.toBeNull()
+    expect(outer!.className).toContain('ml-1')
+    expect(outer!.textContent).toBe('⬆')
+    const chip = outer!.querySelector('span')
+    expect(chip).not.toBeNull()
+    const cls = chip!.className
+    expect(cls).toContain('bg-violet-soft')
+    expect(cls).toContain('text-violet')
+    expect(cls).toContain('rounded-md')
     expect(cls).toContain('px-2')
-    expect(cls).toContain('py-1')
-    expect(span!.getAttribute('title')).toMatch(/^High ceiling/)
+    expect(cls).toContain('text-data')
+    expect(chip!.getAttribute('title')).toMatch(/^High ceiling/)
   })
 
-  it('renders = in zinc envelope when ceiling=false', () => {
+  it('renders = in neutral Chip when ceiling=false', () => {
     const { container } = render(<VarianceBadge ceiling={false} />)
-    const span = container.querySelector('span')
-    expect(span).not.toBeNull()
-    expect(span!.textContent).toBe('=')
-    const cls = span!.className
-    expect(cls).toContain('bg-zinc-100')
-    expect(cls).toContain('dark:bg-zinc-700')
-    expect(cls).toContain('text-zinc-600')
-    expect(cls).toContain('dark:text-zinc-300')
-    expect(cls).toContain('ml-1')
-    expect(span!.getAttribute('title')).toMatch(/^Consistent/)
+    const outer = container.querySelector('span')
+    expect(outer).not.toBeNull()
+    expect(outer!.className).toContain('ml-1')
+    expect(outer!.textContent).toBe('=')
+    const chip = outer!.querySelector('span')
+    expect(chip).not.toBeNull()
+    const cls = chip!.className
+    expect(cls).toContain('bg-surface-2')
+    expect(cls).toContain('text-ink-muted')
+    expect(chip!.getAttribute('title')).toMatch(/^Consistent/)
   })
 
   it('renders nothing when ceiling=undefined', () => {

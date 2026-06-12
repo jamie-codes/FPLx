@@ -1,9 +1,10 @@
 'use client'
 
 // Phase 29 REG-01, REG-02 — regression signal badge component.
-// Visual envelope matches VarianceBadge.tsx and MinsRiskBadge.tsx (text-xs font-normal rounded px-2 py-1).
-// BUY = green pill, SELL = amber pill, null/undefined = em-dash.
+// UIX-03: thin wrapper delegating to the Chip primitive per the badge policy
+// (BUY → positive, SELL → warning, null/undefined → em-dash). Call sites stable.
 // Tooltip: native HTML title attribute (no Radix — project pattern from VarianceBadge.tsx).
+import { Chip } from '@/components/ui/Chip'
 
 export function RegressionSignalBadge({
   signal,
@@ -12,27 +13,29 @@ export function RegressionSignalBadge({
   signal: 'buy' | 'sell' | null | undefined
   delta: number | null | undefined
 }) {
-  if (!signal) return <span className="text-zinc-400">—</span>
+  if (!signal) return <span className="text-ink-muted">—</span>
 
   const deltaStr = delta != null ? (delta >= 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2)) : ''
 
   if (signal === 'buy') {
     return (
-      <span
-        className="inline-block text-xs font-normal rounded px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
+      <Chip
+        intent="positive"
+        size="sm"
         title={`Underperforming xG+xA over last 5 GW (delta ${deltaStr} per match). Actual G+A below expected — may regress upward. Consider buying.`}
       >
         BUY
-      </span>
+      </Chip>
     )
   }
 
   return (
-    <span
-      className="inline-block text-xs font-normal rounded px-2 py-1 bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200"
+    <Chip
+      intent="warning"
+      size="sm"
       title={`Overperforming xG+xA over last 5 GW (delta ${deltaStr} per match). Actual G+A above expected — may regress downward. Consider selling.`}
     >
       SELL
-    </span>
+    </Chip>
   )
 }
