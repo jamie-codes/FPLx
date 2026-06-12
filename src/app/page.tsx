@@ -317,7 +317,7 @@ export default function Home() {
           onClose={() => setCompareOpen(false)}
         />
       )}
-      <MobileBar active={activeTool} onSelect={handleGroupSelect} onMore={() => setMoreOpen(true)} />
+      <MobileBar active={activeTool} onSelect={handleGroupSelect} onMore={() => setMoreOpen(true)} moreOpen={moreOpen} />
       <MoreSheet
         open={moreOpen}
         onClose={() => setMoreOpen(false)}

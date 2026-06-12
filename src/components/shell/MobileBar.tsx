@@ -1,8 +1,11 @@
 'use client'
 // UIX-01 shell: mobile bottom tab bar — Home · This Week · Squad · Research ·
-// More. Group buttons report the group's FIRST tool id via onSelect; page.tsx
-// maps that to the group's remembered tool (per-group memory lives in page.tsx).
-// More opens the MoreSheet (Planning + Model groups).
+// More. Group items are real links to the group's FIRST tool (?t=<id>) so
+// middle-click/open-in-new-tab work; plain click is intercepted and reports
+// the first tool id via onSelect; page.tsx maps that to the group's
+// remembered tool (per-group memory lives in page.tsx). More stays a button —
+// it opens the MoreSheet dialog (Planning + Model groups), so it gets
+// aria-haspopup/aria-expanded rather than aria-current (UIX-01 audit).
 import { GROUPS, groupOf, type ToolId } from '@/lib/navigation'
 
 const BAR_GROUPS: { groupId: string; label: string }[] = [
@@ -16,10 +19,11 @@ const SHEET_GROUP_IDS = ['planning', 'model']
 const BTN_CLS =
   'flex-1 min-h-[48px] flex flex-col items-center justify-center gap-0.5 text-data font-medium transition-colors duration-150 ease-out'
 
-export function MobileBar({ active, onSelect, onMore }: {
+export function MobileBar({ active, onSelect, onMore, moreOpen = false }: {
   active: ToolId
   onSelect: (t: ToolId) => void
   onMore: () => void
+  moreOpen?: boolean
 }) {
   const activeGroupId = groupOf(active).id
   const moreActive = SHEET_GROUP_IDS.includes(activeGroupId)
@@ -31,21 +35,25 @@ export function MobileBar({ active, onSelect, onMore }: {
         const group = GROUPS.find((g) => g.id === groupId)!
         const isActive = groupId === activeGroupId
         return (
-          <button
+          <a
             key={groupId}
-            type="button"
-            onClick={() => onSelect(group.tools[0].id)}
+            href={`?t=${group.tools[0].id}`}
+            onClick={(e) => {
+              e.preventDefault()
+              onSelect(group.tools[0].id)
+            }}
             aria-current={isActive ? 'page' : undefined}
             className={`${BTN_CLS} ${isActive ? 'text-accent' : 'text-ink-muted'}`}>
             <span aria-hidden>{group.icon}</span>
             {label}
-          </button>
+          </a>
         )
       })}
       <button
         type="button"
         onClick={onMore}
-        aria-current={moreActive ? 'page' : undefined}
+        aria-haspopup="dialog"
+        aria-expanded={moreOpen}
         className={`${BTN_CLS} ${moreActive ? 'text-accent' : 'text-ink-muted'}`}>
         <span aria-hidden>⋯</span>
         More

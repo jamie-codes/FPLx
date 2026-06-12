@@ -1,6 +1,8 @@
 'use client'
 // UIX-01 shell: desktop-only fixed 220px sidebar — brand at top, then the 6
 // nav groups as headed lists of tools. page.tsx owns the active-tool state.
+// Items are real links (?t=<id>) so middle-click/ctrl-click/open-in-new-tab
+// work; plain click is intercepted for the SPA select (UIX-01 audit).
 import { GROUPS, type ToolId } from '@/lib/navigation'
 
 export function Sidebar({ active, onSelect }: {
@@ -24,10 +26,13 @@ export function Sidebar({ active, onSelect }: {
             {group.tools.map((tool) => {
               const isActive = tool.id === active
               return (
-                <button
+                <a
                   key={tool.id}
-                  type="button"
-                  onClick={() => onSelect(tool.id)}
+                  href={`?t=${tool.id}`}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    onSelect(tool.id)
+                  }}
                   aria-current={isActive ? 'page' : undefined}
                   className={`block w-full text-left px-4 py-1.5 text-body border-l-2 transition-colors duration-150 ease-out ${
                     isActive
@@ -35,7 +40,7 @@ export function Sidebar({ active, onSelect }: {
                       : 'text-ink-muted border-transparent hover:bg-surface-2 hover:text-ink'
                   }`}>
                   {tool.label}
-                </button>
+                </a>
               )
             })}
           </div>

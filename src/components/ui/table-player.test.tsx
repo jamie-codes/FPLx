@@ -99,10 +99,17 @@ describe('KitIcon', () => {
     expect(img.getAttribute('height')).toBe('32')
   })
 
-  it('renders nothing after the image errors', () => {
-    const { container } = render(<KitIcon teamCode={43} />)
+  it('renders a size-locked neutral placeholder after the image errors (zero CLS)', () => {
+    const { container } = render(<KitIcon teamCode={43} size={24} />)
     fireEvent.error(container.querySelector('img')!)
-    expect(container.firstChild).toBeNull()
+    expect(container.querySelector('img')).toBeNull()
+    const placeholder = container.firstChild as HTMLElement
+    expect(placeholder).not.toBeNull()
+    expect(placeholder.className).toContain('bg-surface-2')
+    expect(placeholder.className).toContain('rounded')
+    // same box as the image: width=size, height=size*1.33
+    expect(placeholder.style.width).toBe('24px')
+    expect(placeholder.style.height).toBe('32px')
   })
 })
 

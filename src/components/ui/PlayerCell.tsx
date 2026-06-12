@@ -1,6 +1,7 @@
 'use client'
 // UIX-01 signature component: headshot + name + team badge + meta. Zero-CLS:
-// explicit dimensions; skeleton until load; initials avatar on photo error.
+// explicit dimensions; bg-surface-2 placeholder fill shows behind the photo
+// while it loads; initials avatar on photo error.
 import Image from 'next/image'
 import { useState } from 'react'
 

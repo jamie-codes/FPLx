@@ -1,10 +1,13 @@
 'use client'
 // UIX-01 primitive: the app's button. md hits the 44px touch target.
+// primary/danger ink is the on-accent token (white in light, near-black in
+// dark — dark accent/negative fills are light, so white ink failed AA) and
+// hover is a dedicated darker/lighter token, not an alpha fade.
 const VARIANT_CLS = {
-  primary:   'bg-accent text-white hover:bg-accent/90',
+  primary:   'bg-accent text-on-accent hover:bg-accent-hover',
   secondary: 'bg-surface-1 border border-line text-ink hover:bg-surface-2',
   ghost:     'text-ink-muted hover:bg-surface-2 hover:text-ink',
-  danger:    'bg-negative text-white hover:bg-negative/90',
+  danger:    'bg-negative text-on-accent hover:bg-negative-hover',
 } as const
 
 export type ButtonVariant = keyof typeof VARIANT_CLS

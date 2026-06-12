@@ -3,22 +3,31 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ── UIX-01 Slate Pro tokens ─ tier 1 primitives live only in this :root block ── */
+/* Light ink/accent values darkened for WCAG AA (UIX-01 audit): every intent
+   colour must hit 4.5:1 as 12.5px chip text over its -soft fill composited on
+   surface-1, and on-accent ink must hit 4.5:1 on accent/negative button fills. */
 :root {
   --sp-surface-0: #f8fafc; --sp-surface-1: #ffffff; --sp-surface-2: #eef1f5;
-  --sp-line: #e4e7ec; --sp-ink: #1a1f29; --sp-ink-muted: #667085;
-  --sp-accent: #2563eb; --sp-accent-soft: rgba(37, 99, 235, 0.10);
-  --sp-positive: #16a34a; --sp-positive-soft: rgba(22, 163, 74, 0.12);
-  --sp-warning: #d97706; --sp-warning-soft: rgba(217, 119, 6, 0.14);
-  --sp-negative: #dc2626; --sp-negative-soft: rgba(220, 38, 38, 0.12);
-  --sp-focus-ring: rgba(37, 99, 235, 0.4);
+  --sp-line: #e4e7ec; --sp-ink: #1a1f29; --sp-ink-muted: #5d6779;
+  --sp-accent: #1d4ed8; --sp-accent-soft: rgba(29, 78, 216, 0.10);
+  --sp-accent-hover: #1e40af;
+  --sp-on-accent: #ffffff;
+  --sp-positive: #166534; --sp-positive-soft: rgba(22, 163, 74, 0.12);
+  --sp-warning: #92600a; --sp-warning-soft: rgba(217, 119, 6, 0.14);
+  --sp-negative: #b91c1c; --sp-negative-soft: rgba(220, 38, 38, 0.12);
+  --sp-negative-hover: #991b1b;
+  --sp-focus-ring: rgba(29, 78, 216, 0.4);
 }
 .dark {
   --sp-surface-0: #0f1115; --sp-surface-1: #171a21; --sp-surface-2: #1e232d;
   --sp-line: #262b36; --sp-ink: #e7e9ee; --sp-ink-muted: #8a93a6;
   --sp-accent: #5b8cff; --sp-accent-soft: rgba(91, 140, 255, 0.14);
+  --sp-accent-hover: #6f9aff;
+  --sp-on-accent: #0f1115;
   --sp-positive: #4ade80; --sp-positive-soft: rgba(74, 222, 128, 0.14);
   --sp-warning: #fbbf24; --sp-warning-soft: rgba(251, 191, 36, 0.16);
   --sp-negative: #f87171; --sp-negative-soft: rgba(248, 113, 113, 0.14);
+  --sp-negative-hover: #fa8a8a;
   --sp-focus-ring: rgba(91, 140, 255, 0.45);
 }
 
@@ -72,6 +81,8 @@
   --color-surface-2: var(--sp-surface-2); --color-line: var(--sp-line);
   --color-ink: var(--sp-ink); --color-ink-muted: var(--sp-ink-muted);
   --color-accent: var(--sp-accent); --color-accent-soft: var(--sp-accent-soft);
+  --color-accent-hover: var(--sp-accent-hover); --color-on-accent: var(--sp-on-accent);
+  --color-negative-hover: var(--sp-negative-hover);
   --color-positive: var(--sp-positive); --color-positive-soft: var(--sp-positive-soft);
   --color-warning: var(--sp-warning); --color-warning-soft: var(--sp-warning-soft);
   --color-negative: var(--sp-negative); --color-negative-soft: var(--sp-negative-soft);

@@ -97,11 +97,12 @@ import { ALL_TOOL_IDS, GROUPS, groupOf } from '@/lib/navigation'
 import type { ToolId } from '@/lib/navigation'
 
 // Click a tool in the desktop Sidebar by its (unique) full label.
+// UIX-01 audit: sidebar items are links (?t=<id>) with SPA onClick.
 function clickSidebarTool(container: HTMLElement, label: string) {
   const sidebar = container.querySelector('nav[aria-label="Primary navigation"]')!
-  const btn = Array.from(sidebar.querySelectorAll('button')).find((b) => b.textContent === label)
-  expect(btn, `sidebar tool "${label}"`).toBeDefined()
-  fireEvent.click(btn!)
+  const link = Array.from(sidebar.querySelectorAll('a')).find((a) => a.textContent === label)
+  expect(link, `sidebar tool "${label}"`).toBeDefined()
+  fireEvent.click(link!)
 }
 
 // Global beforeEach: mark GW35 as already seen so the PGW-04 auto-surface
@@ -117,7 +118,7 @@ describe('UIX-01: shell state in page.tsx', () => {
     const { container } = render(<Home />)
     expect(container.textContent).toContain('Welcome to FPLx')
     const sidebar = container.querySelector('nav[aria-label="Primary navigation"]')!
-    const active = sidebar.querySelector('button[aria-current="page"]')
+    const active = sidebar.querySelector('a[aria-current="page"]')
     expect(active?.textContent).toBe('Home')
     expect(container.querySelector('[data-testid="gem-table"]')).toBeNull()
   })
@@ -186,7 +187,7 @@ describe('UIX-01: shell state in page.tsx', () => {
     const { container } = render(<Home />)
     expect(container.querySelector('[data-testid="insights"]')).not.toBeNull()
     const sidebar = container.querySelector('nav[aria-label="Primary navigation"]')!
-    expect(sidebar.querySelector('button[aria-current="page"]')?.textContent).toBe('Insights')
+    expect(sidebar.querySelector('a[aria-current="page"]')?.textContent).toBe('Insights')
   })
 
   it('ignores an invalid ?t= value and stays on Home', () => {
@@ -205,8 +206,8 @@ describe('UIX-01: shell state in page.tsx', () => {
     expect(container.querySelector('[data-testid="insights"]')).toBeNull()
     // Re-enter Research from the mobile bar — Insights restored, not Gem Ratings
     const mobileNav = container.querySelector('nav[aria-label="Mobile navigation"]')!
-    const researchBtn = Array.from(mobileNav.querySelectorAll('button')).find((b) => b.textContent?.includes('Research'))
-    fireEvent.click(researchBtn!)
+    const researchLink = Array.from(mobileNav.querySelectorAll('a')).find((a) => a.textContent?.includes('Research'))
+    fireEvent.click(researchLink!)
     expect(container.querySelector('[data-testid="insights"]')).not.toBeNull()
     expect(container.querySelector('[data-testid="gem-table"]')).toBeNull()
   })
@@ -214,8 +215,8 @@ describe('UIX-01: shell state in page.tsx', () => {
   it("MobileBar group button without memory lands on the group's first tool", () => {
     const { container } = render(<Home />)
     const mobileNav = container.querySelector('nav[aria-label="Mobile navigation"]')!
-    const squadBtn = Array.from(mobileNav.querySelectorAll('button')).find((b) => b.textContent?.includes('Squad'))
-    fireEvent.click(squadBtn!)
+    const squadLink = Array.from(mobileNav.querySelectorAll('a')).find((a) => a.textContent?.includes('Squad'))
+    fireEvent.click(squadLink!)
     // my-squad group's first tool is Transfers
     expect(container.querySelector('[data-testid="transfer-panel"]')).not.toBeNull()
   })
@@ -245,8 +246,8 @@ describe('UIX-01: shell state in page.tsx', () => {
     fireEvent.click(moreBtn!)
     const sheet = container.querySelector('[role="dialog"][aria-label="More tools"]')
     expect(sheet).not.toBeNull()
-    const wildcardBtn = Array.from(sheet!.querySelectorAll('button')).find((b) => b.textContent === 'Wildcard')
-    fireEvent.click(wildcardBtn!)
+    const wildcardLink = Array.from(sheet!.querySelectorAll('a')).find((a) => a.textContent === 'Wildcard')
+    fireEvent.click(wildcardLink!)
     expect(container.querySelector('[data-testid="wildcard-builder-tab"]')).not.toBeNull()
     // sheet closes after selection
     expect(container.querySelector('[role="dialog"][aria-label="More tools"]')).toBeNull()
@@ -302,7 +303,7 @@ describe('UIX-01: shell state in page.tsx', () => {
   it('sidebar exposes all 6 groups and 28 tools (navigation.ts is the source of truth)', () => {
     const { container } = render(<Home />)
     const sidebar = container.querySelector('nav[aria-label="Primary navigation"]')!
-    expect(sidebar.querySelectorAll('button')).toHaveLength(28)
+    expect(sidebar.querySelectorAll('a')).toHaveLength(28)
     for (const group of GROUPS) {
       expect(sidebar.textContent).toContain(group.label)
     }

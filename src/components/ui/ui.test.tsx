@@ -126,6 +126,19 @@ describe('Button', () => {
     expect(screen.getByRole('button', { name: 'Go' }).className).toContain(cls)
   })
 
+  it('primary/danger use the on-accent ink and token hover fills (AA contrast)', () => {
+    const { rerender } = render(<Button variant="primary">Go</Button>)
+    let cls = screen.getByRole('button', { name: 'Go' }).className
+    expect(cls).toContain('text-on-accent')
+    expect(cls).toContain('hover:bg-accent-hover')
+    expect(cls).not.toContain('text-white')
+    rerender(<Button variant="danger">Go</Button>)
+    cls = screen.getByRole('button', { name: 'Go' }).className
+    expect(cls).toContain('text-on-accent')
+    expect(cls).toContain('hover:bg-negative-hover')
+    expect(cls).not.toContain('text-white')
+  })
+
   it('md has the 44px touch target, sm has 32px', () => {
     const { rerender } = render(<Button variant="primary">Go</Button>)
     expect(screen.getByRole('button').className).toContain('min-h-[44px]')
@@ -175,6 +188,13 @@ describe('Tabs', () => {
     expect(screen.getByText('Beta')).toBeTruthy()
   })
 
+  it('tabs are links with ?t=<id> hrefs (middle-click / open-in-new-tab works)', () => {
+    render(<Tabs items={items} value="a" onChange={() => {}} />)
+    const beta = screen.getByRole('tab', { name: 'Beta' })
+    expect(beta.tagName).toBe('A')
+    expect(beta.getAttribute('href')).toBe('?t=b')
+  })
+
   it('marks the active tab with aria-selected and accent-soft fill', () => {
     render(<Tabs items={items} value="b" onChange={() => {}} />)
     const beta = screen.getByRole('tab', { name: 'Beta' })
@@ -190,18 +210,37 @@ describe('Tabs', () => {
     expect(onChange).toHaveBeenCalledWith('c')
   })
 
-  it('ArrowRight moves selection to the next item', () => {
+  it('ArrowRight moves selection AND DOM focus to the next item', () => {
     const onChange = vi.fn()
     render(<Tabs items={items} value="a" onChange={onChange} />)
-    fireEvent.keyDown(screen.getByRole('tab', { name: 'Alpha' }), { key: 'ArrowRight' })
+    const alpha = screen.getByRole('tab', { name: 'Alpha' })
+    alpha.focus()
+    fireEvent.keyDown(alpha, { key: 'ArrowRight' })
     expect(onChange).toHaveBeenCalledWith('b')
+    expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Beta' }))
   })
 
-  it('ArrowLeft wraps from the first item to the last', () => {
+  it('ArrowLeft wraps from the first item to the last and focuses it', () => {
     const onChange = vi.fn()
     render(<Tabs items={items} value="a" onChange={onChange} />)
-    fireEvent.keyDown(screen.getByRole('tab', { name: 'Alpha' }), { key: 'ArrowLeft' })
+    const alpha = screen.getByRole('tab', { name: 'Alpha' })
+    alpha.focus()
+    fireEvent.keyDown(alpha, { key: 'ArrowLeft' })
     expect(onChange).toHaveBeenCalledWith('c')
+    expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Gamma' }))
+  })
+
+  it('Home selects + focuses the first item, End the last', () => {
+    const onChange = vi.fn()
+    render(<Tabs items={items} value="b" onChange={onChange} />)
+    const beta = screen.getByRole('tab', { name: 'Beta' })
+    beta.focus()
+    fireEvent.keyDown(beta, { key: 'Home' })
+    expect(onChange).toHaveBeenCalledWith('a')
+    expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Alpha' }))
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'Beta' }), { key: 'End' })
+    expect(onChange).toHaveBeenCalledWith('c')
+    expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Gamma' }))
   })
 })
 
