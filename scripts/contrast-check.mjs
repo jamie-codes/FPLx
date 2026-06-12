@@ -30,6 +30,9 @@ const L = {
   positiveSoft: composite(hex('#16a34a'), 0.12, hex('#ffffff')),
   warningSoft: composite(hex('#d97706'), 0.14, hex('#ffffff')),
   negativeSoft: composite(hex('#dc2626'), 0.12, hex('#ffffff')),
+  // UIX-03: violet intent (Chip/VarianceBadge/RoutePills) — spec default #7c3aed
+  violet: hex('#7c3aed'),
+  violetSoft: composite(hex('#7c3aed'), 0.10, hex('#ffffff')),
 }
 // Dark theme primitives (unchanged hues; surfaces unchanged)
 const D = {
@@ -42,6 +45,9 @@ const D = {
   positiveSoft: composite(hex('#4ade80'), 0.14, hex('#171a21')),
   warningSoft: composite(hex('#fbbf24'), 0.16, hex('#171a21')),
   negativeSoft: composite(hex('#f87171'), 0.14, hex('#171a21')),
+  // UIX-03: violet intent — spec default #a78bfa
+  violet: hex('#a78bfa'),
+  violetSoft: composite(hex('#a78bfa'), 0.14, hex('#171a21')),
 }
 
 const rows = [
@@ -61,6 +67,7 @@ const rows = [
   ['L chip negative / negative-soft∘surface-1', L.negative, L.negativeSoft, 4.5],
   ['L chip accent / accent-soft∘surface-1', L.accent, L.accentSoft, 4.5],
   ['L chip neutral ink-muted / surface-2', L.inkMuted, L.surface2, 4.5],
+  ['L chip violet / violet-soft∘surface-1', L.violet, L.violetSoft, 4.5],
   ['D ink-muted / surface-0', D.inkMuted, D.surface0, 4.5],
   ['D ink-muted / surface-1', D.inkMuted, D.surface1, 4.5],
   ['D ink-muted / surface-2', D.inkMuted, D.surface2, 4.5],
@@ -74,6 +81,7 @@ const rows = [
   ['D chip positive / positive-soft∘surface-1', D.positive, D.positiveSoft, 4.5],
   ['D chip negative / negative-soft∘surface-1', D.negative, D.negativeSoft, 4.5],
   ['D chip accent / accent-soft∘surface-1', D.accent, D.accentSoft, 4.5],
+  ['D chip violet / violet-soft∘surface-1', D.violet, D.violetSoft, 4.5],
 ]
 
 let fail = 0

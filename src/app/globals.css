@@ -16,6 +16,9 @@
   --sp-warning: #92600a; --sp-warning-soft: rgba(217, 119, 6, 0.14);
   --sp-negative: #b91c1c; --sp-negative-soft: rgba(220, 38, 38, 0.12);
   --sp-negative-hover: #991b1b;
+  /* UIX-03: violet intent (Chip violet / VarianceBadge ceiling / xA route pill).
+     AA-verified by scripts/contrast-check.mjs: 4.91:1 on violet-soft∘surface-1. */
+  --sp-violet: #7c3aed; --sp-violet-soft: rgba(124, 58, 237, 0.10);
   --sp-focus-ring: rgba(29, 78, 216, 0.4);
 }
 .dark {
@@ -28,6 +31,8 @@
   --sp-warning: #fbbf24; --sp-warning-soft: rgba(251, 191, 36, 0.16);
   --sp-negative: #f87171; --sp-negative-soft: rgba(248, 113, 113, 0.14);
   --sp-negative-hover: #fa8a8a;
+  /* UIX-03 violet, dark: AA-verified 5.12:1 on violet-soft∘surface-1. */
+  --sp-violet: #a78bfa; --sp-violet-soft: rgba(167, 139, 250, 0.14);
   --sp-focus-ring: rgba(91, 140, 255, 0.45);
 }
 
@@ -89,6 +94,7 @@
   --color-positive: var(--sp-positive); --color-positive-soft: var(--sp-positive-soft);
   --color-warning: var(--sp-warning); --color-warning-soft: var(--sp-warning-soft);
   --color-negative: var(--sp-negative); --color-negative-soft: var(--sp-negative-soft);
+  --color-violet: var(--sp-violet); --color-violet-soft: var(--sp-violet-soft);
   /* type ramp — 1.2 minor third */
   --text-data: 12.5px; --text-data--line-height: 1.2;
   --text-body: 15px;  --text-body--line-height: 1.45;
