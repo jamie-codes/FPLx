@@ -180,7 +180,7 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
       usePlayersMock.mockReturnValue({ data: [], isLoading: false })
       const { container } = render(<OptimiserPanel teamId="1234567" />)
       expect(container.textContent).toContain('Boom — 404 from FPL')
-      expect(container.querySelector('.border-red-300')).not.toBeNull()
+      expect(container.querySelector('.bg-negative-soft')).not.toBeNull()
     })
 
     it('renders fallback error copy when error has empty message', () => {
@@ -242,7 +242,7 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
       expect(container.querySelector('[data-testid="section-header-bench"]')).not.toBeNull()
     })
 
-    it('changed starter rows have border-l-2 + border-l-green-500 classes and a delta pill', () => {
+    it('changed starter rows have border-l-2 + border-l-positive classes and a delta pill', () => {
       // Use a fixture with a proper formation in the current XI (1GK+4DEF+3MID+3FWD = 4-3-3).
       // Make id=6 (MID in XI, pos=6) weak and id=12 (MID bench, pos=12) strong.
       // Engine swaps id=12 into XI, id=6 to bench. Changed MID rows get border-l-2 + delta pill.
@@ -274,13 +274,13 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
       expect(changedRows.length).toBeGreaterThan(0)
       const firstChanged = changedRows[0] as HTMLElement
       expect(firstChanged.className).toContain('border-l-2')
-      expect(firstChanged.className).toContain('border-l-green-500')
+      expect(firstChanged.className).toContain('border-l-positive')
       const deltaPill = container.querySelector('[data-testid="delta-pill"]')
       expect(deltaPill).not.toBeNull()
       expect(deltaPill!.textContent).toMatch(/^\+\d+\.\d xPts$/)
     })
 
-    it('unchanged rows have no border-l-green-500 class and no delta-pill', () => {
+    it('unchanged rows have no border-l-positive class and no delta-pill', () => {
       // Use a stable fixture where the current XI matches what the engine would pick.
       // XI positions 1-11: 1GK + 4DEF + 3MID + 3FWD (formation 4-3-3). Bench: 1GK+1DEF+1MID+1MID.
       // All xPts equal -> engine picks ids 1-11 exactly -> no swap -> no changed rows.
@@ -302,7 +302,7 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
       const { container } = render(<OptimiserPanel teamId="1234567" />)
       clickOptimiseIfPresent(container)
       const greenBordered = Array.from(container.querySelectorAll('[data-testid="comparison-table"] *'))
-        .filter(el => (el as HTMLElement).className && (el as HTMLElement).className.toString().includes('border-l-green-500'))
+        .filter(el => (el as HTMLElement).className && (el as HTMLElement).className.toString().includes('border-l-positive'))
       expect(greenBordered).toHaveLength(0)
       expect(container.querySelector('[data-testid="delta-pill"]')).toBeNull()
     })

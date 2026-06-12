@@ -50,6 +50,9 @@ export function PerfectGWPitch({ result, teams, livePoints }: PerfectGWPitchProp
       />
 
       {/* Pitch */}
+      {/* UIX-04 sanctioned exception: representational pitch visual — the green
+          gradient + white/20 line overlays depict a football pitch and stay
+          theme-independent by design (spec ruling 2). */}
       <div className="relative rounded-lg overflow-hidden bg-gradient-to-b from-green-800 to-green-700 p-3">
         {/* Pitch markings */}
         <div className="absolute inset-3 border border-white/20 rounded pointer-events-none" />
@@ -79,10 +82,10 @@ export function PerfectGWPitch({ result, teams, livePoints }: PerfectGWPitchProp
 
       {/* Footer: formation + total */}
       <div className="flex items-center justify-between px-1">
-        <span className="text-sm text-zinc-500 dark:text-zinc-400">
+        <span className="text-sm text-ink-muted">
           {result.formation} · £{(result.squadCost / 10).toFixed(1)}m
         </span>
-        <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{result.totalPts}</span>
+        <span className="text-lg font-bold text-ink">{result.totalPts}</span>
       </div>
     </div>
   )

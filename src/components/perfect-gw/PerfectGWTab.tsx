@@ -29,7 +29,7 @@ export function PerfectGWTab() {
   if (bsLoading || ptLoading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <p className="text-zinc-500 dark:text-zinc-400 text-sm">Loading…</p>
+        <p className="text-ink-muted text-sm">Loading…</p>
       </div>
     )
   }
@@ -38,7 +38,7 @@ export function PerfectGWTab() {
   if (!bsError && !ptError && bootstrap && effectiveGw === null) {
     return (
       <div className="flex items-center justify-center py-16">
-        <p className="text-zinc-500 dark:text-zinc-400 text-sm">No completed gameweeks yet.</p>
+        <p className="text-ink-muted text-sm">No completed gameweeks yet.</p>
       </div>
     )
   }
@@ -46,7 +46,7 @@ export function PerfectGWTab() {
   if (bsError || ptError || !bootstrap || !livePoints || effectiveGw === null) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <p className="text-red-600 dark:text-red-400 text-sm">Error loading Perfect GW data.</p>
+        <p className="text-negative text-sm">Error loading Perfect GW data.</p>
       </div>
     )
   }
@@ -56,7 +56,7 @@ export function PerfectGWTab() {
   if (!gwEvent?.finished || !gwEvent?.data_checked) {
     return (
       <div className="py-16 text-center">
-        <p className="text-zinc-500 dark:text-zinc-400 text-sm">
+        <p className="text-ink-muted text-sm">
           GW in progress — results available after all matches complete.
         </p>
       </div>
@@ -88,33 +88,33 @@ export function PerfectGWTab() {
           onClick={goPrev}
           disabled={!canGoPrev}
           aria-label="Previous gameweek"
-          className="px-3 py-1.5 rounded text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="px-3 py-1.5 rounded text-sm font-medium text-ink-muted hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           {canGoPrev ? `◀ GW ${settledGws[currentIdx - 1]}` : '◀'}
         </button>
-        <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+        <span className="font-semibold text-ink">
           GW {effectiveGw} — Perfect XI
         </span>
         <button
           onClick={goNext}
           disabled={!canGoNext}
           aria-label="Next gameweek"
-          className="px-3 py-1.5 rounded text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="px-3 py-1.5 rounded text-sm font-medium text-ink-muted hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           {canGoNext ? `GW ${settledGws[currentIdx + 1]} ▶` : '▶'}
         </button>
       </div>
 
       {/* Inner tabs */}
-      <div role="tablist" className="flex gap-2 border-b border-zinc-200 dark:border-zinc-700">
+      <div role="tablist" className="flex gap-2 border-b border-line">
         <button
           role="tab"
           onClick={() => setActiveTab('pitch')}
           aria-selected={activeTab === 'pitch'}
           className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
             activeTab === 'pitch'
-              ? 'border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100'
-              : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+              ? 'border-ink text-ink'
+              : 'border-transparent text-ink-muted hover:text-ink'
           }`}
         >
           ⚽ Perfect XI
@@ -125,8 +125,8 @@ export function PerfectGWTab() {
           aria-selected={activeTab === 'top-scorers'}
           className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
             activeTab === 'top-scorers'
-              ? 'border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100'
-              : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+              ? 'border-ink text-ink'
+              : 'border-transparent text-ink-muted hover:text-ink'
           }`}
         >
           📊 Top Scorers

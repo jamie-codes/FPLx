@@ -81,11 +81,11 @@ export function FixtureSwingDetector() {
   }, [squad, players])
 
   if (isLoading) {
-    return <p className="text-gray-500 dark:text-zinc-400">Loading fixture data...</p>
+    return <p className="text-ink-muted">Loading fixture data...</p>
   }
   if (error) {
     return (
-      <p className="text-red-500">
+      <p className="text-negative">
         Failed to load fixture data: {error instanceof Error ? error.message : String(error)}
       </p>
     )
@@ -142,17 +142,17 @@ export function FixtureSwingDetector() {
               }
             : {})}
         >
-          <span className="w-6 text-right text-zinc-500">{i + 1}</span>
+          <span className="w-6 text-right text-ink-muted">{i + 1}</span>
           <span className="w-12 font-mono">{row.team.team_short_name}</span>
           <EaseBar ease={row.ease} />
-          <span className="w-14 text-right text-xs text-zinc-500">
+          <span className="w-14 text-right text-xs text-ink-muted">
             {row.swing > 0 ? '+' : ''}{(row.swing * 100).toFixed(0)}%
           </span>
           <span
             className={
               direction === 'IMPROVING'
-                ? 'inline-block text-xs font-normal rounded px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
-                : 'inline-block text-xs font-normal rounded px-2 py-1 bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200'
+                ? 'inline-block text-xs font-normal rounded px-2 py-1 bg-positive-soft text-positive'
+                : 'inline-block text-xs font-normal rounded px-2 py-1 bg-warning-soft text-warning'
             }
             title={
               direction === 'IMPROVING'
@@ -166,14 +166,14 @@ export function FixtureSwingDetector() {
           {ownedCount > 0 && (
             <>
               <span
-                className="inline-block text-xs font-normal rounded px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 ml-1"
+                className="inline-block text-xs font-normal rounded px-2 py-1 bg-positive-soft text-positive ml-1"
                 title="Click to see your owned players from this team."
                 data-testid={`you-own-badge-${row.team.team_short_name}`}
               >
                 You own {ownedCount}
               </span>
               <span
-                className="ml-auto text-zinc-400 dark:text-zinc-500 w-4 h-4"
+                className="ml-auto text-ink-muted w-4 h-4"
                 title={isExpanded ? 'Hide owned players' : 'Show owned players for this team'}
                 aria-hidden="true"
               >
@@ -184,13 +184,13 @@ export function FixtureSwingDetector() {
         </li>
         {isExpanded && (
           <li
-            className="mt-1 mb-2 pl-8 bg-zinc-50 dark:bg-zinc-800 rounded list-none"
+            className="mt-1 mb-2 pl-8 bg-surface-2 rounded list-none"
             data-testid={`expanded-${row.team.team_short_name}`}
           >
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="text-zinc-500 dark:text-zinc-400 border-b border-zinc-100 dark:border-zinc-800">
+                  <tr className="text-ink-muted border-b border-line">
                     <th className="py-1 pr-3 text-left w-28">Player</th>
                     <th className="py-1 pr-3 text-left w-8">Pos</th>
                     <th className="py-1 pr-3 text-right w-10">xPts</th>
@@ -229,9 +229,9 @@ export function FixtureSwingDetector() {
       </div>
       {/* Improving section */}
       <div className="mb-4">
-        <h3 className="text-sm font-semibold mb-2 text-green-700 dark:text-green-400">Improving</h3>
+        <h3 className="text-sm font-semibold mb-2 text-positive">Improving</h3>
         {improving.length === 0 ? (
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm">
+          <p className="text-ink-muted text-sm">
             No teams with materially improving fixtures this window.
           </p>
         ) : (
@@ -242,9 +242,9 @@ export function FixtureSwingDetector() {
       </div>
       {/* Worsening section */}
       <div>
-        <h3 className="text-sm font-semibold mb-2 text-amber-700 dark:text-amber-400">Worsening</h3>
+        <h3 className="text-sm font-semibold mb-2 text-warning">Worsening</h3>
         {worsening.length === 0 ? (
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm">
+          <p className="text-ink-muted text-sm">
             No teams with materially worsening fixtures this window.
           </p>
         ) : (

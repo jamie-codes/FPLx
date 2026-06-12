@@ -79,14 +79,14 @@ describe('ChipSquadView — Wave 0 (RED)', () => {
     expect(getByTestId('chip-squad-headline').textContent).toContain('91.7')
   })
 
-  it('XI players have green accent border (border-l-2 border-green-500) (D-16)', () => {
+  it('XI players have positive accent border (border-l-2 border-positive) (D-16)', () => {
     const { container } = render(
       <ChipSquadView result={MOCK_SQUAD} chipMode="wildcard" />
     )
     const xiRows = container.querySelectorAll('[data-xi="true"]')
     expect(xiRows.length).toBe(11)
     xiRows.forEach(row => {
-      expect(row.className).toContain('border-green-500')
+      expect(row.className).toContain('border-positive')
     })
   })
 

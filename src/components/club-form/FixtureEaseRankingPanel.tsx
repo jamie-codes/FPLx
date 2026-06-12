@@ -49,11 +49,11 @@ export function FixtureEaseRankingPanel() {
   // removed in revision iteration 2 (lint warning: destructured value never read).
 
   if (isLoading) {
-    return <p className="text-gray-500 dark:text-zinc-400">Loading fixture ease...</p>
+    return <p className="text-ink-muted">Loading fixture ease...</p>
   }
   if (error) {
     return (
-      <p className="text-red-500">
+      <p className="text-negative">
         Failed to load fixture ease: {error instanceof Error ? error.message : String(error)}
       </p>
     )
@@ -110,21 +110,21 @@ export function FixtureEaseRankingPanel() {
                     }
                   : {})}
               >
-                <span className="w-6 text-right text-zinc-500">{i + 1}</span>
+                <span className="w-6 text-right text-ink-muted">{i + 1}</span>
                 <span className="w-12 font-mono">{team.team_short_name}</span>
                 <EaseBar ease={ease} />
-                <span className="w-10 text-right text-xs text-zinc-500">{pct}</span>
+                <span className="w-10 text-right text-xs text-ink-muted">{pct}</span>
                 {isTarget && (
                   <>
                     <span
-                      className="inline-block text-xs font-normal rounded px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
+                      className="inline-block text-xs font-normal rounded px-2 py-1 bg-positive-soft text-positive"
                       title="4+ favourable fixtures in the next 5 GWs (attacking difficulty < 0.5). Click to see top players."
                       data-testid={`target-badge-${team.team_short_name}`}
                     >
                       TARGET
                     </span>
                     <span
-                      className="ml-auto text-zinc-400 dark:text-zinc-500 w-4 h-4"
+                      className="ml-auto text-ink-muted w-4 h-4"
                       title={isExpanded ? 'Hide player list' : 'Show top players for this team'}
                       aria-hidden="true"
                     >
@@ -135,13 +135,13 @@ export function FixtureEaseRankingPanel() {
               </li>
               {isExpanded && (
                 <li
-                  className="mt-1 mb-2 pl-8 bg-zinc-50 dark:bg-zinc-800 rounded list-none"
+                  className="mt-1 mb-2 pl-8 bg-surface-2 rounded list-none"
                   data-testid={`expanded-${team.team_short_name}`}
                 >
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="text-zinc-500 dark:text-zinc-400 border-b border-zinc-100 dark:border-zinc-800">
+                        <tr className="text-ink-muted border-b border-line">
                           <th className="py-1 pr-3 text-left w-28">Player</th>
                           <th className="py-1 pr-3 text-left w-8">Pos</th>
                           <th className="py-1 pr-3 text-right w-10">xGI%</th>
@@ -163,7 +163,7 @@ export function FixtureEaseRankingPanel() {
                                 {share != null ? (
                                   `${(share * 100).toFixed(0)}%`
                                 ) : (
-                                  <span className="text-zinc-400">—</span>
+                                  <span className="text-ink-muted">—</span>
                                 )}
                               </td>
                               <td className="py-1 pr-3 text-right">
@@ -186,7 +186,7 @@ export function FixtureEaseRankingPanel() {
                         })}
                         {topPlayers.length === 0 && (
                           <tr>
-                            <td colSpan={6} className="text-xs text-zinc-500 dark:text-zinc-400 py-1">
+                            <td colSpan={6} className="text-xs text-ink-muted py-1">
                               No available players with xGI data for this team.
                             </td>
                           </tr>

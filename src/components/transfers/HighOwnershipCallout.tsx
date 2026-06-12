@@ -30,17 +30,17 @@ export function HighOwnershipCallout({ entries }: HighOwnershipCalloutProps) {
   return (
     <div
       data-testid="high-ownership-callout"
-      className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 p-3 space-y-1"
+      className="rounded border border-line bg-surface-2 p-3 space-y-1"
     >
       {/* D-14: header with ℹ️ prefix (Unicode info symbol U+2139 + variation selector U+FE0F). */}
-      <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+      <p className="text-sm font-medium text-ink">
         &#8505;&#65039; Why aren&apos;t these players appearing?
       </p>
       {entries.map(entry => {
         const ownedRaw = parseFloat(entry.player.selected_by_percent)
         const owned = !isNaN(ownedRaw) ? Math.round(ownedRaw) : 0
         return (
-          <p key={entry.player.id} className="text-xs text-zinc-600 dark:text-zinc-400">
+          <p key={entry.player.id} className="text-xs text-ink-muted">
             <span className="font-medium">{entry.player.web_name}</span>
             {' '}({owned}%):{' '}
             {entry.inSquad

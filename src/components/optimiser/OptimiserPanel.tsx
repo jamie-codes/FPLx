@@ -19,6 +19,7 @@ import { buildOptimalSquad, computeBenchBoostXPts, CHIP_DEFAULT_BUDGET_TENTHS } 
 import { ChipModeToggle } from './ChipModeToggle'
 import { ChipSquadView } from './ChipSquadView'
 import { capByPosition } from '@/lib/cap-transfer-suggestions'
+import { TableShell, Th, Td } from '@/components/ui/Table'
 
 interface OptimiserPanelProps {
   // teamId is the SUBMITTED team id (page.tsx passes `submittedId ?? ''`). Empty string means
@@ -82,14 +83,14 @@ function HeadlineRow({
 }) {
   return (
     <div
-      className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 py-2 flex-wrap"
+      className="flex items-center gap-2 text-sm text-ink py-2 flex-wrap"
       data-testid="headline-row"
     >
       <span><span className="font-semibold">Formation:</span> {formation}</span>
-      <span className="text-zinc-400">│</span>
+      <span className="text-ink-muted">│</span>
       <span><span className="font-semibold">Changes:</span> {changeCount} {changeCount === 1 ? 'player' : 'players'}</span>
-      <span className="text-zinc-400">│</span>
-      <span className="font-semibold text-green-600 dark:text-green-400">+{xPtsGain.toFixed(1)} xPts gain</span>
+      <span className="text-ink-muted">│</span>
+      <span className="font-semibold text-positive">+{xPtsGain.toFixed(1)} xPts gain</span>
     </div>
   )
 }
@@ -106,15 +107,17 @@ function ComparisonTable({
   horizonField: 'xPts_1gw' | 'xPts_3gw' | 'xPts_5gw'
   isBenchBoost?: boolean
 }) {
+  // UIX-04: plain table chrome unified onto TableShell/Th/Td primitives.
   return (
+    <TableShell>
     <table className="w-full text-sm border-collapse" data-testid="comparison-table">
       <thead>
-        <tr className="text-xs text-zinc-500 dark:text-zinc-400">
-          <th className="text-left py-1 pl-2 font-semibold w-[38%]">Current</th>
-          <th className="text-right py-1 w-[10%]">xPts</th>
-          <th className="text-center py-1 w-[4%]">→</th>
-          <th className="text-left py-1 w-[38%]">Optimised</th>
-          <th className="text-right py-1 pr-2 w-[10%]"></th>
+        <tr className="text-xs">
+          <Th className="w-[38%]">Current</Th>
+          <Th className="text-right w-[10%]">xPts</Th>
+          <Th className="text-center w-[4%]">→</Th>
+          <Th className="w-[38%]">Optimised</Th>
+          <Th className="text-right w-[10%]"></Th>
         </tr>
       </thead>
       <tbody>
@@ -123,7 +126,7 @@ function ComparisonTable({
             <tr>
               <td
                 colSpan={5}
-                className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400 pt-3 pb-1 pl-2 bg-zinc-50 dark:bg-zinc-800/40"
+                className="text-xs font-semibold uppercase text-ink-muted pt-3 pb-1 pl-2 bg-surface-2"
                 data-testid={`section-header-${section.toLowerCase()}`}
               >
                 {section}
@@ -133,9 +136,9 @@ function ComparisonTable({
               const cur = playerMap.get(row.currentId)
               const opt = playerMap.get(row.optimisedId)
               const curXPts = (cur?.[horizonField] as number | undefined) ?? 0
-              const baseRowCls = 'border-b border-zinc-100 dark:border-zinc-800'
+              const baseRowCls = 'border-b border-line'
               const changedRowCls = row.isChanged
-                ? `${baseRowCls} border-l-2 border-l-green-500${row.isBench && !isBenchBoost ? ' opacity-80' : ''}`
+                ? `${baseRowCls} border-l-2 border-l-positive${row.isBench && !isBenchBoost ? ' opacity-80' : ''}`
                 : baseRowCls
               return (
                 <tr
@@ -143,23 +146,23 @@ function ComparisonTable({
                   className={changedRowCls}
                   {...(row.isChanged ? { 'data-testid': 'comparison-row-changed' } : {})}
                 >
-                  <td className="py-1.5 pl-2 text-zinc-700 dark:text-zinc-300">{cur?.web_name ?? ''}</td>
-                  <td className="text-right text-zinc-500 dark:text-zinc-400 text-xs">{curXPts.toFixed(1)}</td>
-                  <td className="text-center text-zinc-400">→</td>
-                  <td className={`py-1.5 ${row.isChanged && !row.isBench ? 'text-green-700 dark:text-green-400 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                  <Td className="text-ink">{cur?.web_name ?? ''}</Td>
+                  <Td className="text-right text-ink-muted text-xs">{curXPts.toFixed(1)}</Td>
+                  <Td className="text-center text-ink-muted">→</Td>
+                  <Td className={row.isChanged && !row.isBench ? 'text-positive font-semibold' : 'text-ink'}>
                     {opt?.web_name ?? ''}
-                  </td>
-                  <td className="text-right pr-2">
+                  </Td>
+                  <Td className="text-right">
                     {!row.isChanged ? null : row.isBench ? (
                       row.isPromoted ? (
-                        <span className="text-xs font-semibold text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-950 rounded px-1 py-0.5" data-testid="badge-promoted">Promoted</span>
+                        <span className="text-xs font-semibold text-positive bg-positive-soft rounded px-1 py-0.5" data-testid="badge-promoted">Promoted</span>
                       ) : (
-                        <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 rounded px-1 py-0.5" data-testid="badge-dropped">Dropped</span>
+                        <span className="text-xs font-semibold text-ink-muted bg-surface-2 rounded px-1 py-0.5" data-testid="badge-dropped">Dropped</span>
                       )
                     ) : (
-                      <span className="text-xs font-semibold text-green-400 bg-green-950 rounded px-1 py-0.5" data-testid="delta-pill">+{row.delta.toFixed(1)} xPts</span>
+                      <span className="text-xs font-semibold text-positive bg-positive-soft rounded px-1 py-0.5" data-testid="delta-pill">+{row.delta.toFixed(1)} xPts</span>
                     )}
-                  </td>
+                  </Td>
                 </tr>
               )
             })}
@@ -167,6 +170,7 @@ function ComparisonTable({
         ))}
       </tbody>
     </table>
+    </TableShell>
   )
 }
 
@@ -187,7 +191,7 @@ function MobileComparisonCards({
     <>
       {rows.map(({ section, items }) => (
         <Fragment key={section}>
-          <div className="text-[10px] font-semibold uppercase text-zinc-500 dark:text-zinc-400 pt-3 pb-0.5 bg-zinc-50 dark:bg-zinc-800/40 px-1">
+          <div className="text-[10px] font-semibold uppercase text-ink-muted pt-3 pb-0.5 bg-surface-2 px-1">
             {section}
           </div>
           {items.map((row, i) => {
@@ -198,25 +202,25 @@ function MobileComparisonCards({
             return (
               <div
                 key={`${section}-mobile-${i}`}
-                className={`py-2 border-b border-zinc-100 dark:border-zinc-800${row.isChanged ? ' border-l-2 border-l-green-500 pl-2' : (row.isBench && !isBenchBoost ? ' opacity-60' : '')}`}
+                className={`py-2 border-b border-line${row.isChanged ? ' border-l-2 border-l-positive pl-2' : (row.isBench && !isBenchBoost ? ' opacity-60' : '')}`}
                 {...(row.isChanged ? { 'data-testid': 'comparison-row-changed' } : {})}
               >
-                <div className="text-xs text-zinc-500 dark:text-zinc-400">{cur?.web_name ?? ''}</div>
-                <div className="text-[10px] text-zinc-400 mb-1">{curXPts.toFixed(1)} xPts</div>
-                <div className="text-xs text-zinc-300 dark:text-zinc-500 mb-0.5">→</div>
-                <div className={`text-xs ${row.isChanged && !row.isBench ? 'text-green-700 dark:text-green-400 font-semibold' : 'text-zinc-500 dark:text-zinc-400'}`}>{opt?.web_name ?? ''}</div>
-                <div className="text-[10px] text-zinc-400">{optXPts.toFixed(1)} xPts</div>
+                <div className="text-xs text-ink-muted">{cur?.web_name ?? ''}</div>
+                <div className="text-[10px] text-ink-muted mb-1">{curXPts.toFixed(1)} xPts</div>
+                <div className="text-xs text-ink-muted mb-0.5">→</div>
+                <div className={`text-xs ${row.isChanged && !row.isBench ? 'text-positive font-semibold' : 'text-ink-muted'}`}>{opt?.web_name ?? ''}</div>
+                <div className="text-[10px] text-ink-muted">{optXPts.toFixed(1)} xPts</div>
                 {row.isChanged && !row.isBench && (
                   <div className="text-[10px] mt-1">
-                    <span className="text-xs font-semibold text-green-400 bg-green-950 rounded px-1 py-0.5" data-testid="delta-pill">+{row.delta.toFixed(1)} xPts</span>
+                    <span className="text-xs font-semibold text-positive bg-positive-soft rounded px-1 py-0.5" data-testid="delta-pill">+{row.delta.toFixed(1)} xPts</span>
                   </div>
                 )}
                 {row.isChanged && row.isBench && (
                   <div className="text-[10px] mt-1">
                     {row.isPromoted ? (
-                      <span className="text-xs font-semibold text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-950 rounded px-1 py-0.5" data-testid="badge-promoted">Promoted</span>
+                      <span className="text-xs font-semibold text-positive bg-positive-soft rounded px-1 py-0.5" data-testid="badge-promoted">Promoted</span>
                     ) : (
-                      <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 rounded px-1 py-0.5" data-testid="badge-dropped">Dropped</span>
+                      <span className="text-xs font-semibold text-ink-muted bg-surface-2 rounded px-1 py-0.5" data-testid="badge-dropped">Dropped</span>
                     )}
                   </div>
                 )}
@@ -318,8 +322,8 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
   if (submittedId === null) {
     return (
       <section className="mt-6 space-y-3" data-testid="optimiser-panel">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Optimised Lineup</h2>
-        <div className="rounded border border-zinc-200 dark:border-zinc-700 p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+        <h2 className="text-base font-semibold text-ink">Optimised Lineup</h2>
+        <div className="rounded border border-line p-6 text-center text-sm text-ink-muted">
           Enter your FPL Team ID to see your optimised lineup.
         </div>
       </section>
@@ -330,8 +334,8 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
   if (isLoading) {
     return (
       <section className="mt-6 space-y-3" data-testid="optimiser-panel">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Optimised Lineup</h2>
-        <div className="rounded border border-zinc-200 dark:border-zinc-700 p-4 text-sm text-zinc-500 dark:text-zinc-400">
+        <h2 className="text-base font-semibold text-ink">Optimised Lineup</h2>
+        <div className="rounded border border-line p-4 text-sm text-ink-muted">
           Loading squad...
         </div>
       </section>
@@ -345,8 +349,8 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
       : 'Unable to load squad data. Please try again.'
     return (
       <section className="mt-6 space-y-3" data-testid="optimiser-panel">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Optimised Lineup</h2>
-        <div className="rounded border border-red-300 bg-red-50 dark:bg-red-950 p-4 text-sm text-red-700 dark:text-red-300">
+        <h2 className="text-base font-semibold text-ink">Optimised Lineup</h2>
+        <div className="rounded border border-negative/40 bg-negative-soft p-4 text-sm text-negative">
           {errorMessage}
         </div>
       </section>
@@ -357,8 +361,8 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
   if (!squadData || !playersData) {
     return (
       <section className="mt-6 space-y-3" data-testid="optimiser-panel">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Optimised Lineup</h2>
-        <div className="rounded border border-zinc-200 dark:border-zinc-700 p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+        <h2 className="text-base font-semibold text-ink">Optimised Lineup</h2>
+        <div className="rounded border border-line p-6 text-center text-sm text-ink-muted">
           Load your squad using the Transfers tab, then return here to see your optimised lineup.
         </div>
       </section>
@@ -370,7 +374,7 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
   if (!hasRun) {
     return (
       <section className="mt-6 space-y-3" data-testid="optimiser-panel">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Optimised Lineup</h2>
+        <h2 className="text-base font-semibold text-ink">Optimised Lineup</h2>
 
         {/* Horizon selector row */}
         <div className="flex items-center justify-end">
@@ -382,15 +386,15 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
 
         {/* Ready-state placeholder card (D-02) */}
         <div
-          className="rounded border border-zinc-200 dark:border-zinc-700 p-6 text-center space-y-3"
+          className="rounded border border-line p-6 text-center space-y-3"
           data-testid="optimiser-ready-state"
         >
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-ink-muted">
             Configure settings above, then click to calculate the best lineup for your horizon.
           </p>
           <button
             type="button"
-            className="bg-green-600 hover:bg-green-700 text-white text-sm rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="bg-ink text-surface-1 text-sm font-medium rounded min-h-[44px] px-4 py-2 hover:opacity-90 cursor-pointer"
             data-testid="optimise-button"
             onClick={() => setHasRun(true)}
           >
@@ -405,17 +409,17 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
   if (lineup === null) {
     return (
       <section className="mt-6 space-y-3" data-testid="optimiser-panel">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Optimised Lineup</h2>
+        <h2 className="text-base font-semibold text-ink">Optimised Lineup</h2>
         {eligibleCount < 11 ? (
           <div
-            className="rounded border border-amber-400 bg-amber-50 dark:bg-amber-950 px-3 py-2 text-sm text-amber-800 dark:text-amber-200"
+            className="rounded border border-warning/40 bg-warning-soft px-3 py-2 text-sm text-warning"
             data-testid="bgw-banner-critical"
           >
             <span className="font-semibold">Warning:</span>{' '}
             fewer than 11 eligible starters — only {eligibleCount} of your {totalPlayersInSquad} players have a fixture this gameweek. Optimised lineup may include bench players.
           </div>
         ) : (
-          <div className="rounded border border-red-300 bg-red-50 dark:bg-red-950 p-4 text-sm text-red-700 dark:text-red-300">
+          <div className="rounded border border-negative/40 bg-negative-soft p-4 text-sm text-negative">
             Unable to optimise lineup. Please try again.
           </div>
         )}
@@ -474,12 +478,12 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
 
   return (
     <section className="mt-6 space-y-3" data-testid="optimiser-panel">
-      <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Optimised Lineup</h2>
+      <h2 className="text-base font-semibold text-ink">Optimised Lineup</h2>
 
       {/* BGW soft warning: some BGW exclusions but still >= 11 eligible — engine returned a lineup but show a notice */}
       {eligibleCount < totalPlayersInSquad && eligibleCount >= 11 && (
         <div
-          className="rounded border border-amber-400 bg-amber-50 dark:bg-amber-950 px-3 py-2 text-sm text-amber-800 dark:text-amber-200"
+          className="rounded border border-warning/40 bg-warning-soft px-3 py-2 text-sm text-warning"
           data-testid="bgw-banner-soft"
         >
           <span className="font-semibold">Blank gameweek warning:</span>{' '}
@@ -499,7 +503,7 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
       {(chipMode === 'wildcard' || chipMode === 'free-hit') ? (
         chipSquad === null ? (
           <div
-            className="rounded border border-amber-400 bg-amber-50 dark:bg-amber-950 px-3 py-2 text-sm text-amber-800 dark:text-amber-200"
+            className="rounded border border-warning/40 bg-warning-soft px-3 py-2 text-sm text-warning"
             data-testid="chip-squad-null-banner"
           >
             <span className="font-semibold">Unable to build optimal squad:</span>{' '}
@@ -515,22 +519,22 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
           {/* BB headline (D-13) — replaces HeadlineRow when BB active */}
           {chipMode === 'bench-boost' ? (
             <div
-              className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 py-2 flex-wrap"
+              className="flex items-center gap-2 text-sm text-ink py-2 flex-wrap"
               data-testid="bb-headline-row"
             >
               <span className="font-semibold">Bench Boost</span>
-              <span className="text-zinc-400">│</span>
+              <span className="text-ink-muted">│</span>
               <span>
                 <span className="font-semibold">Bench xPts:</span>{' '}
                 {bbBenchXPts.toFixed(1)}
               </span>
-              <span className="text-zinc-400">│</span>
+              <span className="text-ink-muted">│</span>
               <span>
                 <span className="font-semibold">Start xPts:</span>{' '}
                 {lineup.starters.reduce((s, id) => s + ((playerMap.get(id)?.[horizonField] as number | undefined) ?? 0), 0).toFixed(1)}
               </span>
-              <span className="text-zinc-400">│</span>
-              <span className="font-semibold text-green-600 dark:text-green-400">
+              <span className="text-ink-muted">│</span>
+              <span className="font-semibold text-positive">
                 Total: {(
                   bbBenchXPts +
                   lineup.starters.reduce((s, id) => s + ((playerMap.get(id)?.[horizonField] as number | undefined) ?? 0), 0)
@@ -544,7 +548,7 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
           {/* BB notice (D-15) */}
           {chipMode === 'bench-boost' && (
             <p
-              className="text-xs text-zinc-500 dark:text-zinc-400 italic"
+              className="text-xs text-ink-muted italic"
               data-testid="bb-notice"
             >
               All 15 players score points — bench contributions included above.
@@ -554,7 +558,7 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
           {/* BENCH-01 / D-11 (Phase 55): bench order is decorative under Bench Boost — inform the user. */}
           {chipMode === 'bench-boost' && (
             <p
-              className="text-xs text-zinc-500 dark:text-zinc-400 italic"
+              className="text-xs text-ink-muted italic"
               data-testid="bb-bench-order-note"
             >
               Bench order doesn&apos;t affect score with Bench Boost active
@@ -586,17 +590,17 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
       {/* Transfer Suggestions: hidden when WC/FH active (chips rebuild entire squad) (D-02, D-03) */}
       {chipMode !== 'wildcard' && chipMode !== 'free-hit' && (
         <section
-          className="pt-4 space-y-3 border-t border-zinc-200 dark:border-zinc-700"
+          className="pt-4 space-y-3 border-t border-line"
           data-testid="transfer-suggestions-section"
         >
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+          <h3 className="text-sm font-semibold text-ink">
             Transfer Suggestions
           </h3>
           {/* FT toggle: visible only when None or BB active (D-02, Pitfall 3) */}
           <FtToggle value={ftCount} onChange={setFtCount} />
           {transferSuggestions.length === 0 ? (
             <div
-              className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/40 px-3 py-3 text-sm text-zinc-500 dark:text-zinc-400 text-center"
+              className="rounded border border-line bg-surface-2 px-3 py-3 text-sm text-ink-muted text-center"
               data-testid="suggestions-empty-state"
             >
               Your current squad is already optimal for this horizon.
@@ -620,8 +624,8 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
                       const isHit = sug.cost === 4
                       const variantAttr: 'free' | 'hit' | 'combo' = isCombo ? 'combo' : (isHit ? 'hit' : 'free')
                       const costPillClass = isHit
-                        ? 'text-xs font-semibold text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950 border border-amber-400 rounded px-1 py-0.5'
-                        : 'text-xs font-semibold text-green-400 bg-green-950 rounded px-1 py-0.5'
+                        ? 'text-xs font-semibold text-warning bg-warning-soft border border-warning/40 rounded px-1 py-0.5'
+                        : 'text-xs font-semibold text-positive bg-positive-soft rounded px-1 py-0.5'
                       const costPillTestId = isHit ? 'cost-pill-hit' : 'cost-pill-free'
                       const costPillCopy = isHit ? '-4pts' : 'FREE'
 
@@ -629,24 +633,24 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
                         return (
                           <div
                             key={`sug-${pos}-${idx}`}
-                            className="border-b border-zinc-100 dark:border-zinc-800 py-1.5"
+                            className="border-b border-line py-1.5"
                             data-testid="suggestion-row"
                             data-variant={variantAttr}
                           >
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-                              <span className="text-zinc-500 dark:text-zinc-400">Out:</span>
-                              <span className="text-zinc-700 dark:text-zinc-300">{sug.sell.web_name}</span>
-                              <span className="text-zinc-400 dark:text-zinc-500">→</span>
-                              <span className="text-zinc-500 dark:text-zinc-400">In:</span>
-                              <span className="text-green-700 dark:text-green-400">{sug.buy.web_name}</span>
-                              <span className="text-zinc-400 dark:text-zinc-500">│</span>
+                              <span className="text-ink-muted">Out:</span>
+                              <span className="text-ink">{sug.sell.web_name}</span>
+                              <span className="text-ink-muted">→</span>
+                              <span className="text-ink-muted">In:</span>
+                              <span className="text-positive">{sug.buy.web_name}</span>
+                              <span className="text-ink-muted">│</span>
                               <span className={costPillClass} data-testid={costPillTestId}>{costPillCopy}</span>
-                              <span className="text-zinc-400 dark:text-zinc-500">│</span>
-                              <span className="font-semibold text-green-600 dark:text-green-400">+{sug.xPtsGain.toFixed(1)} xPts</span>
+                              <span className="text-ink-muted">│</span>
+                              <span className="font-semibold text-positive">+{sug.xPtsGain.toFixed(1)} xPts</span>
                             </div>
                             {sug.breakEvenGws !== null && (
                               <div
-                                className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 ml-0 sm:ml-[3.25rem]"
+                                className="text-xs text-ink-muted mt-0.5 ml-0 sm:ml-[3.25rem]"
                                 data-testid="break-even"
                               >
                                 Breaks even in {sug.breakEvenGws} {sug.breakEvenGws === 1 ? 'GW' : 'GWs'}
@@ -660,27 +664,27 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
                       return (
                         <div
                           key={`sug-${pos}-${idx}`}
-                          className="border-b border-zinc-100 dark:border-zinc-800 py-2 px-2 bg-zinc-50/50 dark:bg-zinc-800/30 rounded"
+                          className="border-b border-line py-2 px-2 bg-surface-2/50 rounded"
                           data-testid="suggestion-row"
                           data-variant="combo"
                         >
                           {sug.transfers.map((t, ti) => (
                             <div key={`t-${ti}`} className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-sm${ti > 0 ? ' mt-0.5' : ''}`}>
-                              <span className="text-zinc-500 dark:text-zinc-400">Out:</span>
-                              <span className="text-zinc-700 dark:text-zinc-300">{t.sell.web_name}</span>
-                              <span className="text-zinc-400 dark:text-zinc-500">→</span>
-                              <span className="text-zinc-500 dark:text-zinc-400">In:</span>
-                              <span className="text-green-700 dark:text-green-400">{t.buy.web_name}</span>
+                              <span className="text-ink-muted">Out:</span>
+                              <span className="text-ink">{t.sell.web_name}</span>
+                              <span className="text-ink-muted">→</span>
+                              <span className="text-ink-muted">In:</span>
+                              <span className="text-positive">{t.buy.web_name}</span>
                             </div>
                           ))}
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm mt-1 pt-1 border-t border-zinc-200 dark:border-zinc-700">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm mt-1 pt-1 border-t border-line">
                             <span className={costPillClass} data-testid={costPillTestId}>{costPillCopy}</span>
-                            <span className="text-zinc-400 dark:text-zinc-500">│</span>
-                            <span className="font-semibold text-green-600 dark:text-green-400">+{sug.xPtsGain.toFixed(1)} xPts</span>
+                            <span className="text-ink-muted">│</span>
+                            <span className="font-semibold text-positive">+{sug.xPtsGain.toFixed(1)} xPts</span>
                           </div>
                           {sug.breakEvenGws !== null && (
                             <div
-                              className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5"
+                              className="text-xs text-ink-muted mt-0.5"
                               data-testid="break-even"
                             >
                               Breaks even in {sug.breakEvenGws} {sug.breakEvenGws === 1 ? 'GW' : 'GWs'}
@@ -692,7 +696,7 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
                     {/* TFR-02 D-07: truncation footnote when pre-cap bucket count > 3 */}
                     {(transferTotalsByPosition.get(pos) ?? 0) > 3 && (
                       <p
-                        className="text-xs text-zinc-500 dark:text-zinc-400 mt-1"
+                        className="text-xs text-ink-muted mt-1"
                         data-testid={`cap-footnote-${POSITION_LABELS[pos]}`}
                       >
                         Showing top 3 of {transferTotalsByPosition.get(pos)} {POSITION_LABELS[pos]} suggestions.

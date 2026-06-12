@@ -21,18 +21,21 @@ export function PlayerCard({ player, points, team, isCapt }: PlayerCardProps) {
   const isGk = player.element_type === 1
   const shirt = shirtUrl(team.code, isGk)
 
+  // UIX-04: card chrome tokenized (captaincy yellow → warning, per the LineupTab
+  // captain-badge precedent; points blue → accent). The green pitch behind the
+  // cards is the sanctioned exception — see PerfectGWPitch.tsx.
   return (
     <div className="relative flex flex-col items-center">
       {isCapt && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded z-10">
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-warning text-surface-1 text-[9px] font-bold px-1.5 py-0.5 rounded z-10">
           CAPT
         </span>
       )}
       <div
-        className={`relative rounded px-2 py-1.5 text-center min-w-[68px] bg-zinc-900 dark:bg-zinc-800 ${
+        className={`relative rounded px-2 py-1.5 text-center min-w-[68px] bg-surface-1 ${
           isCapt
-            ? 'border-2 border-yellow-400'
-            : 'border border-zinc-600 dark:border-zinc-500'
+            ? 'border-2 border-warning'
+            : 'border border-line'
         }`}
       >
         {/* Club shirt — FPL CDN, 33×45px matches the standard -66 sprite */}
@@ -45,15 +48,15 @@ export function PlayerCard({ player, points, team, isCapt }: PlayerCardProps) {
           className="mx-auto mb-1 object-contain"
         />
         <div className="flex items-center justify-between mb-0.5">
-          <span className="bg-zinc-700 text-zinc-200 text-[9px] font-bold px-1 rounded">
+          <span className="bg-surface-2 text-ink-muted text-[9px] font-bold px-1 rounded">
             {team.short_name}
           </span>
-          <span className="text-zinc-400 text-[9px]">{priceLabel}</span>
+          <span className="text-ink-muted text-[9px]">{priceLabel}</span>
         </div>
-        <p className={`text-xs font-semibold truncate max-w-[64px] ${isCapt ? 'text-yellow-300' : 'text-white'}`}>
+        <p className={`text-xs font-semibold truncate max-w-[64px] ${isCapt ? 'text-warning' : 'text-ink'}`}>
           {player.web_name}
         </p>
-        <p className={`text-sm font-bold mt-0.5 ${isCapt ? 'text-yellow-300' : 'text-blue-400'}`}>
+        <p className={`text-sm font-bold mt-0.5 ${isCapt ? 'text-warning' : 'text-accent'}`}>
           {points}
         </p>
       </div>

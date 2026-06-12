@@ -1,8 +1,9 @@
 // Phase 119 D-02/D-03/D-04/D-05 — shared StatusLabelBadge presentational component.
 // UI-SPEC §Component Specification: StatusLabelBadge.
-// Renders a colored pill for doubted (amber) and confirmed_absent (red) only.
+// Renders a colored pill for doubted (warning) and confirmed_absent (negative) only.
 // Returns null for confirmed_start, unknown, and undefined — structured signal
 // is only shown for availability-impacting states per D-04/D-05.
+// UIX-04: stays bespoke, internals retokenized — amber→warning, red→negative.
 import type { StatusLabel } from '@/lib/types'
 
 interface Config {
@@ -14,14 +15,14 @@ interface Config {
 
 const BADGE_MAP: Partial<Record<StatusLabel, Config>> = {
   doubted: {
-    bg: 'bg-amber-100 dark:bg-amber-900',
-    text: 'text-amber-800 dark:text-amber-200',
+    bg: 'bg-warning-soft',
+    text: 'text-warning',
     label: 'doubted',
     title: 'Doubted: lineup news indicates player may not play',
   },
   confirmed_absent: {
-    bg: 'bg-red-100 dark:bg-red-900',
-    text: 'text-red-700 dark:text-red-300',
+    bg: 'bg-negative-soft',
+    text: 'text-negative',
     label: 'confirmed absent',
     title: 'Confirmed absent: lineup news indicates player will not play',
   },

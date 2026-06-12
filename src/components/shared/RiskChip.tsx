@@ -1,5 +1,7 @@
 // MIN-02: RiskChip — compact risk indicator for fixture-difficulty rotation risk
 // and FPL availability risk.
+// UIX-04: stays bespoke, internals retokenized per ruling 3 severity mapping —
+// high/out→negative, medium/doubt→warning (two-tier distinction preserved).
 // Renders nothing when both signals are low/unknown (no visual noise for clean players).
 // Used by MinsRiskBadge, OpportunityCostTable, and WildcardBuilderTab.
 
@@ -25,8 +27,8 @@ export function RiskChip({ difficultyRotationRisk, availabilityRisk }: RiskChipP
         <span
           className={`inline-block text-xs font-normal rounded px-2 py-1 ${
             difficultyRotationRisk === 'high'
-              ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950'
-              : 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950'
+              ? 'text-negative bg-negative-soft'
+              : 'text-warning bg-warning-soft'
           }`}
           title={`Rotation risk: ${difficultyRotationRisk!.toUpperCase()} — fewer minutes expected in this fixture type`}
         >
@@ -37,8 +39,8 @@ export function RiskChip({ difficultyRotationRisk, availabilityRisk }: RiskChipP
         <span
           className={`inline-block text-xs font-normal rounded px-2 py-1 ${
             availabilityRisk === 'out'
-              ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950'
-              : 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950'
+              ? 'text-negative bg-negative-soft'
+              : 'text-warning bg-warning-soft'
           }`}
           title={
             availabilityRisk === 'out'

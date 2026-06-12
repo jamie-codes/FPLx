@@ -19,11 +19,11 @@ const OPTIONS: { value: ChipMode; label: string; testId: string }[] = [
 export function ChipModeToggle({ value, onChange }: ChipModeToggleProps) {
   return (
     <div className="flex items-center gap-2" data-testid="chip-mode-toggle">
-      <span className="text-xs text-zinc-500 dark:text-zinc-400">Chip:</span>
+      <span className="text-xs text-ink-muted">Chip:</span>
       <div
         role="group"
         aria-label="Chip mode"
-        className="inline-flex rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700"
+        className="inline-flex rounded-md overflow-hidden border border-line"
       >
         {OPTIONS.map(opt => (
           <button
@@ -34,8 +34,8 @@ export function ChipModeToggle({ value, onChange }: ChipModeToggleProps) {
             className={
               `min-h-[44px] px-3 text-xs font-semibold transition-colors ` +
               (value === opt.value
-                ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
-                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700')
+                ? 'bg-ink text-surface-1'
+                : 'bg-surface-1 text-ink hover:bg-surface-2')
             }
             data-testid={opt.testId}
           >

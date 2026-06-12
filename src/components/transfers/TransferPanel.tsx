@@ -229,11 +229,11 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
   return (
     <div className="max-w-7xl space-y-4">
       {/* Team ID input + auth */}
-      <div className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Load Your Squad</h2>
+      <div className="rounded border border-line p-4 space-y-3">
+        <h2 className="text-base font-semibold text-ink">Load Your Squad</h2>
         <form onSubmit={(e) => { e.preventDefault(); onSubmit() }} className="flex flex-col sm:flex-row gap-2 sm:items-end">
           <div className="flex flex-col gap-1">
-            <label htmlFor="teamId" className="text-sm text-zinc-600 dark:text-zinc-400">
+            <label htmlFor="teamId" className="text-sm text-ink-muted">
               FPL Team ID
             </label>
             <input
@@ -244,16 +244,16 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
               value={teamId}
               onChange={e => onTeamIdChange(e.target.value)}
               placeholder="e.g. 1234567"
-              className="border border-zinc-300 dark:border-zinc-600 rounded px-3 py-1.5 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-full sm:w-40"
+              className="border border-line rounded-md min-h-[44px] px-3 py-1.5 text-base sm:text-sm text-ink bg-surface-1 w-full sm:w-40"
             />
           </div>
 
           {/* Free transfers selector */}
           <div className="flex flex-col gap-1">
-            <label htmlFor="freeTransfers" className="text-sm text-zinc-600 dark:text-zinc-400">
+            <label htmlFor="freeTransfers" className="text-sm text-ink-muted">
               Free transfers:{' '}
               <span
-                className="text-zinc-400 cursor-help underline underline-offset-2 decoration-dotted"
+                className="text-ink-muted cursor-help underline underline-offset-2 decoration-dotted"
                 title="Enter your available free transfers (check FPL app)"
               >
                 ?
@@ -266,16 +266,16 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
               max={2}
               value={freeTransfers}
               onChange={e => setFreeTransfers(Math.max(1, Math.min(2, Number(e.target.value))))}
-              className="border border-zinc-300 dark:border-zinc-600 rounded px-3 py-1.5 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-full sm:w-20"
+              className="border border-line rounded-md min-h-[44px] px-3 py-1.5 text-base sm:text-sm text-ink bg-surface-1 w-full sm:w-20"
             />
           </div>
 
           {/* Bank balance input — TFX-05, D-09..D-12 */}
           <div className="flex flex-col gap-1">
-            <label htmlFor="bankBalance" className="text-sm text-zinc-600 dark:text-zinc-400">
+            <label htmlFor="bankBalance" className="text-sm text-ink-muted">
               Bank balance
               <span title="Your available transfer budget in £m. Pre-filled from FPL when connected."
-                    className="text-zinc-400 cursor-help underline underline-offset-2 decoration-dotted ml-1">
+                    className="text-ink-muted cursor-help underline underline-offset-2 decoration-dotted ml-1">
                 ?
               </span>
             </label>
@@ -289,41 +289,41 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
                 value={manualBank}
                 onChange={e => setManualBank(Math.max(0, Number(e.target.value)))}
                 placeholder="0.0"
-                className="border border-zinc-300 dark:border-zinc-600 rounded px-3 py-1.5 pr-10 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-full sm:w-28"
+                className="border border-line rounded-md min-h-[44px] px-3 py-1.5 pr-10 text-base sm:text-sm text-ink bg-surface-1 w-full sm:w-28"
               />
-              <span className="absolute right-3 text-xs text-zinc-400 dark:text-zinc-500 pointer-events-none">
+              <span className="absolute right-3 text-xs text-ink-muted pointer-events-none">
                 £m
               </span>
             </div>
             {isAuthenticated && myTeamData && (
-              <p className="text-xs text-zinc-400 italic">From your FPL account — override if needed.</p>
+              <p className="text-xs text-ink-muted italic">From your FPL account — override if needed.</p>
             )}
           </div>
 
           <button
             type="submit"
-            className="px-4 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium rounded hover:bg-zinc-700 dark:hover:bg-zinc-200 transition cursor-pointer active:scale-95 w-full sm:w-auto"
+            className="px-4 py-1.5 min-h-[44px] bg-ink text-surface-1 text-sm font-medium rounded hover:opacity-90 transition cursor-pointer active:scale-95 w-full sm:w-auto"
           >
             Load Squad
           </button>
         </form>
 
         {/* Auth — available immediately, independent of squad loading */}
-        <div className="border-t border-zinc-100 dark:border-zinc-800 pt-2">
+        <div className="border-t border-line pt-2">
           {!isAuthenticated ? (
             <button
               onClick={openModal}
-              className="text-sm text-blue-600 hover:text-blue-800 underline underline-offset-2 cursor-pointer active:scale-95 transition-transform"
+              className="text-sm text-accent hover:text-accent-hover underline underline-offset-2 cursor-pointer active:scale-95 transition-transform"
             >
               Connect FPL account for exact prices &rarr;
             </button>
           ) : (
-            <div className="text-sm text-zinc-600 dark:text-zinc-400 flex items-center gap-3 flex-wrap">
+            <div className="text-sm text-ink-muted flex items-center gap-3 flex-wrap">
               {expiryState === 'normal' && (
                 <span>
                   FPL connected
                   {expiresAt && (
-                    <span className="text-zinc-400 ml-1">
+                    <span className="text-ink-muted ml-1">
                       &bull; valid until{' '}
                       {new Date(expiresAt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
@@ -331,7 +331,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
                 </span>
               )}
               {expiryState === 'expiring-soon' && (
-                <span className="text-amber-600 dark:text-amber-400">
+                <span className="text-warning">
                   Expires soon &mdash; valid until{' '}
                   {expiresAt && new Date(expiresAt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
@@ -339,14 +339,14 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
               {expiryState === 'expired' && (
                 <button
                   onClick={openModal}
-                  className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 underline underline-offset-2 cursor-pointer active:scale-95 transition-transform"
+                  className="text-warning hover:opacity-80 underline underline-offset-2 cursor-pointer active:scale-95 transition-transform"
                 >
                   Token expired &mdash; reconnect &rarr;
                 </button>
               )}
               <button
                 onClick={handleLogout}
-                className="text-blue-600 hover:text-blue-800 underline underline-offset-2"
+                className="text-accent hover:text-accent-hover underline underline-offset-2"
               >
                 Disconnect
               </button>
@@ -363,14 +363,14 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
 
       {/* Loading state */}
       {isLoading && submittedId && (
-        <div className="rounded border border-zinc-200 dark:border-zinc-700 p-4 text-sm text-zinc-500 dark:text-zinc-400">
+        <div className="rounded border border-line p-4 text-sm text-ink-muted">
           Loading squad...
         </div>
       )}
 
       {/* Error state */}
       {squadError && (
-        <div className="rounded border border-red-300 bg-red-50 dark:bg-red-950 p-4 text-sm text-red-700 dark:text-red-300">
+        <div className="rounded border border-negative/40 bg-negative-soft p-4 text-sm text-negative">
           {squadError instanceof Error ? squadError.message : String(squadError)}
         </div>
       )}
@@ -389,8 +389,8 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
       {squadData && scoredPlayers.length > 0 && (
         <>
           {/* Squad display */}
-          <div className="rounded border border-zinc-200 dark:border-zinc-700 p-4">
-            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mb-3">Your Squad</h2>
+          <div className="rounded border border-line p-4">
+            <h2 className="text-base font-semibold text-ink mb-3">Your Squad</h2>
 
             <SquadView
               picks={squadData.picks}
@@ -413,9 +413,9 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
           <HighOwnershipCallout entries={highOwnershipAbsent} />
 
           {/* OCS section */}
-          <div className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3">
+          <div className="rounded border border-line p-4 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+              <h2 className="text-base font-semibold text-ink">
                 Transfer Opportunity Cost
               </h2>
               <div className="flex flex-wrap items-center gap-3">
@@ -426,7 +426,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
                   aria-label="Target gameweek"
                   value={targetGw ?? ''}
                   onChange={e => setTargetGw(e.target.value ? Number(e.target.value) : null)}
-                  className="border border-zinc-300 dark:border-zinc-600 rounded text-sm text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-400 px-2 py-1"
+                  className="border border-line rounded-md min-h-[44px] text-sm text-ink bg-surface-1 px-2 py-1"
                 >
                   <option value="">Target GW</option>
                   {availableGws.map(gw => (
@@ -436,13 +436,13 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
               </div>
             </div>
             {isAuthenticated && myTeamData && (
-              <p className="text-xs text-zinc-400 dark:text-zinc-500 italic">
+              <p className="text-xs text-ink-muted italic">
                 Detected from your FPL team — override if needed.
               </p>
             )}
             {/* Phase 101 GWT-01: ranked-by sub-label when GWT mode active (D-05 + UI-SPEC §GWT Active Mode Sub-Label) */}
             {targetGw !== null && (
-              <p className="text-xs text-zinc-400 dark:text-zinc-500 italic">
+              <p className="text-xs text-ink-muted italic">
                 Ranked by GW{targetGw} xPts
               </p>
             )}

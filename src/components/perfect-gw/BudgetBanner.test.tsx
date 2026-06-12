@@ -16,18 +16,18 @@ describe('BudgetBanner', () => {
     expect(screen.getByText(/£7\.4m over/i)).toBeTruthy()
   })
 
-  it('applies amber styling when over budget', () => {
+  it('applies warning styling when over budget', () => {
     const { container } = render(
       <BudgetBanner squadCost={1074} overBudget={true} overBudgetBy={74} />
     )
-    // The banner root should have an amber class
-    expect(container.innerHTML).toContain('amber')
+    // The banner root should have a warning intent class (UIX-04 ruling 3)
+    expect(container.innerHTML).toContain('warning')
   })
 
-  it('applies green styling when within budget', () => {
+  it('applies positive styling when within budget', () => {
     const { container } = render(
       <BudgetBanner squadCost={984} overBudget={false} overBudgetBy={0} />
     )
-    expect(container.innerHTML).toContain('green')
+    expect(container.innerHTML).toContain('positive')
   })
 })

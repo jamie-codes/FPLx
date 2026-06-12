@@ -47,48 +47,50 @@ interface BadgeConfig {
 // Phase 112 TFR-02: position labels for truncation footnote data-testid and text.
 const POSITION_LABELS: Record<number, string> = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' }
 
+// UIX-04 ruling 3: hit/free semantics — free→positive, hit→negative,
+// marginal→warning, roll baseline→neutral. Never flattened to accent.
 const BADGE_BY_KIND: Record<OCSRowKind, BadgeConfig> = {
   roll: {
-    bg: 'bg-zinc-100 dark:bg-zinc-700',
-    text: 'text-zinc-700 dark:text-zinc-300',
+    bg: 'bg-surface-2',
+    text: 'text-ink-muted',
     label: 'Baseline',
     title: 'Roll your free transfer — no points spent and no transfer made.',
   },
   'single-free': {
-    bg: 'bg-green-100 dark:bg-green-900',
-    text: 'text-green-700 dark:text-green-300',
+    bg: 'bg-positive-soft',
+    text: 'text-positive',
     label: 'Free',
     title: 'Uses a free transfer — no points cost.',
   },
   'single-hit': {
-    bg: 'bg-red-100 dark:bg-red-900',
-    text: 'text-red-700 dark:text-red-300',
+    bg: 'bg-negative-soft',
+    text: 'text-negative',
     label: 'Hit',
     title: 'This transfer costs a -4pt hit deducted from your score.',
   },
   'combo-free': {
-    bg: 'bg-green-100 dark:bg-green-900',
-    text: 'text-green-700 dark:text-green-300',
+    bg: 'bg-positive-soft',
+    text: 'text-positive',
     label: 'Free',
     title: 'Uses both free transfers — no points cost.',
   },
   'combo-hit': {
-    bg: 'bg-red-100 dark:bg-red-900',
-    text: 'text-red-700 dark:text-red-300',
+    bg: 'bg-negative-soft',
+    text: 'text-negative',
     label: 'Hit',
     title: 'This combination costs a -4pt hit deducted from your score.',
   },
   'combo-hit-8': {
-    bg: 'bg-red-100 dark:bg-red-900',
-    text: 'text-red-700 dark:text-red-300',
+    bg: 'bg-negative-soft',
+    text: 'text-negative',
     label: 'Hit',
     title: 'This combination costs a −8pt hit (two simultaneous hits) deducted from your score.',
   },
 }
 
 const MARGINAL_BADGE: BadgeConfig = {
-  bg: 'bg-amber-100 dark:bg-amber-900',
-  text: 'text-amber-800 dark:text-amber-200',
+  bg: 'bg-warning-soft',
+  text: 'text-warning',
   label: 'Marginal — verify',
   title: '2-FT gain is within 1.0 xPts of break-even — confirm before actioning.',
 }
@@ -128,7 +130,7 @@ function PlayerMoveCell({
   targetGw?: number
 }) {
   if (row.kind === 'roll' || !row.transfers || row.transfers.length === 0) {
-    return <span className="text-zinc-400 dark:text-zinc-500">—</span>
+    return <span className="text-ink-muted">—</span>
   }
   return (
     <div className="space-y-0.5">
@@ -141,11 +143,11 @@ function PlayerMoveCell({
         const sellReasonsCapped = sellReasons.slice(0, 4)
         return (
           <div key={i}>
-            <div className="flex flex-wrap items-center gap-x-2 text-sm text-zinc-900 dark:text-zinc-100">
-              <span className="text-zinc-500 dark:text-zinc-400 text-xs">Sell</span>
+            <div className="flex flex-wrap items-center gap-x-2 text-sm text-ink">
+              <span className="text-ink-muted text-xs">Sell</span>
               <span className="font-medium">{t.sell.web_name}</span>
-              <span className="text-zinc-500 dark:text-zinc-400">→</span>
-              <span className="text-zinc-500 dark:text-zinc-400 text-xs">Buy</span>
+              <span className="text-ink-muted">→</span>
+              <span className="text-ink-muted text-xs">Buy</span>
               <span className="font-medium">{t.buy.web_name}</span>
               <RotationRiskBadge rotationRisk={t.buy.rotation_risk ?? false} />
               {/* Phase 119 UI-02: StatusLabelBadge for buy candidate (D-09): after RotationRiskBadge, before NewsBanner */}
@@ -171,10 +173,10 @@ function PlayerMoveCell({
                     data-testid={`hold-label-${t.buy.id}`}
                     className={`text-xs font-medium rounded px-1.5 py-0.5 ${
                       isPlus
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                        ? 'bg-positive-soft text-positive'
                         : isOnly
-                        ? 'bg-zinc-100 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400'
-                        : 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300'
+                        ? 'bg-surface-2 text-ink-muted'
+                        : 'bg-warning-soft text-warning'
                     }`}
                   >
                     {holdLabel}
@@ -192,7 +194,7 @@ function PlayerMoveCell({
             {sellReasonsCapped.length > 0 && (
               <div className="space-y-1 mt-1" data-testid="sell-rejection-reasons">
                 {sellReasonsCapped.map((reason, ri) => (
-                  <p key={ri} className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <p key={ri} className="text-xs text-ink-muted">
                     {reason}
                   </p>
                 ))}
@@ -221,7 +223,7 @@ export function OpportunityCostTable({ rows, horizon, targetGw, gw, allPlayers, 
     <div className="space-y-2" data-testid="opportunity-cost-table">
       <table className="w-full text-sm border-collapse">
         <thead>
-          <tr className="text-xs text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-700">
+          <tr className="text-xs text-ink-muted border-b border-line">
             <th className="text-left py-2 pl-2 font-semibold w-[20%]">Option</th>
             <th className="text-left py-2 font-semibold w-[35%]">Player Move</th>
             <th className="text-right py-2 font-semibold w-[20%]">
@@ -241,31 +243,31 @@ export function OpportunityCostTable({ rows, horizon, targetGw, gw, allPlayers, 
               <tr
                 key={row.kind}
                 aria-disabled={isDisabled || undefined}
-                className={`border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50${isDisabled ? ' opacity-50' : ''}`}
+                className={`border-b border-line hover:bg-surface-2${isDisabled ? ' opacity-50' : ''}`}
                 data-testid={`ocs-row-${row.kind}`}
               >
-                <td className="py-2 pl-2 align-top text-zinc-900 dark:text-zinc-100 font-medium">
+                <td className="py-2 pl-2 align-top text-ink font-medium">
                   {row.label}
                 </td>
                 <td className="py-2 align-top">
                   <PlayerMoveCell row={row} gw={gw} allPlayers={allPlayers} lifecycleLabels={lifecycleLabels} lineupNewsMap={lineupNewsMap} confirmedSigningMap={confirmedSigningMap} targetGw={targetGw} />
                 </td>
-                <td className="py-2 text-right align-top text-zinc-900 dark:text-zinc-100">
-                  <div className={isDisabled ? 'line-through text-zinc-400 dark:text-zinc-600' : ''}>
+                <td className="py-2 text-right align-top text-ink">
+                  <div className={isDisabled ? 'line-through text-ink-muted' : ''}>
                     {formatXPts(row)}
                   </div>
                   {row.cost > 0 && (
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400">−{row.cost}pt hit</div>
+                    <div className="text-xs text-ink-muted">−{row.cost}pt hit</div>
                   )}
                   {row.kind !== 'roll' && (
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                    <div className="text-xs text-ink-muted">
                       Bank: {row.bankAfter >= 0
                         ? `£${(row.bankAfter / 10).toFixed(1)}m`
                         : `−£${(Math.abs(row.bankAfter) / 10).toFixed(1)}m`}
                     </div>
                   )}
                 </td>
-                <td className="py-2 text-right align-top text-zinc-700 dark:text-zinc-300 hidden sm:table-cell">
+                <td className="py-2 text-right align-top text-ink hidden sm:table-cell">
                   {formatBreakEven(row)}
                 </td>
                 <td className="py-2 pr-2 text-right align-top">
@@ -276,7 +278,7 @@ export function OpportunityCostTable({ rows, horizon, targetGw, gw, allPlayers, 
                     {badge.label}
                   </span>
                   {row.disabledReason && (
-                    <div className="text-xs text-red-600 dark:text-red-400 mt-1">{row.disabledReason}</div>
+                    <div className="text-xs text-negative mt-1">{row.disabledReason}</div>
                   )}
                 </td>
               </tr>
@@ -293,14 +295,14 @@ export function OpportunityCostTable({ rows, horizon, targetGw, gw, allPlayers, 
         .map(([pos, total]) => (
           <p
             key={`cap-footnote-${pos}`}
-            className="text-xs text-zinc-500 dark:text-zinc-400 mt-1"
+            className="text-xs text-ink-muted mt-1"
             data-testid={`cap-footnote-${POSITION_LABELS[pos] ?? pos}`}
           >
             Showing top 3 of {total} {POSITION_LABELS[pos] ?? '??'} suggestions.
           </p>
         ))}
       {onlyRoll && (
-        <p className="text-xs text-zinc-400 dark:text-zinc-500 pt-1">
+        <p className="text-xs text-ink-muted pt-1">
           No transfer improvements found for this horizon. Consider rolling your free transfer.
         </p>
       )}

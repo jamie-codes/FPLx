@@ -40,12 +40,12 @@ export function ChipSquadView({ result, chipMode }: ChipSquadViewProps) {
       {/* Headline row (D-17) */}
       <div
         data-testid="chip-squad-headline"
-        className="flex flex-wrap items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 py-2"
+        className="flex flex-wrap items-center gap-2 text-sm text-ink py-2"
       >
         <span className="font-semibold">{chipLabel}</span>
-        <span className="text-zinc-400">│</span>
+        <span className="text-ink-muted">│</span>
         <span><span className="font-semibold">Formation:</span> {formation}</span>
-        <span className="text-zinc-400">│</span>
+        <span className="text-ink-muted">│</span>
         <span><span className="font-semibold">Budget used:</span> £{budgetDisplayM}m</span>
       </div>
 
@@ -53,7 +53,7 @@ export function ChipSquadView({ result, chipMode }: ChipSquadViewProps) {
       {!isWildcard && (
         <p
           data-testid="fh-reversion-notice"
-          className="text-xs italic text-amber-600 dark:text-amber-500"
+          className="text-xs italic text-warning"
         >
           This squad is optimised for this GW only. Your actual squad reverts after the gameweek ends.
         </p>
@@ -65,19 +65,19 @@ export function ChipSquadView({ result, chipMode }: ChipSquadViewProps) {
         if (group.length === 0) return null
         return (
           <Fragment key={pos}>
-            <div className="text-[10px] font-semibold uppercase text-zinc-500 dark:text-zinc-400 pt-2 pb-0.5 bg-zinc-50 dark:bg-zinc-800/40 px-1">
+            <div className="text-[10px] font-semibold uppercase text-ink-muted pt-2 pb-0.5 bg-surface-2 px-1">
               {POSITION_LABELS[pos]}
             </div>
             {group.map(p => (
               <div
                 key={p.id}
                 data-xi="true"
-                className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800 border-l-2 border-green-500 pl-2 text-sm"
+                className="flex items-center justify-between py-1.5 border-b border-line border-l-2 border-positive pl-2 text-sm"
               >
-                <span className="text-zinc-700 dark:text-zinc-300 font-semibold">{p.web_name}</span>
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                <span className="text-ink font-semibold">{p.web_name}</span>
+                <span className="text-xs text-ink-muted">
                   £{(p.now_cost / 10).toFixed(1)}m
-                  <span className="ml-2 text-green-600 dark:text-green-400">+{p.xPts.toFixed(1)} xPts</span>
+                  <span className="ml-2 text-positive">+{p.xPts.toFixed(1)} xPts</span>
                 </span>
               </div>
             ))}
@@ -86,17 +86,17 @@ export function ChipSquadView({ result, chipMode }: ChipSquadViewProps) {
       })}
 
       {/* Bench section */}
-      <div className="text-[10px] font-semibold uppercase text-zinc-500 dark:text-zinc-400 pt-2 pb-0.5 bg-zinc-50 dark:bg-zinc-800/40 px-1">
+      <div className="text-[10px] font-semibold uppercase text-ink-muted pt-2 pb-0.5 bg-surface-2 px-1">
         Bench
       </div>
       {benchSorted.map(p => (
         <div
           key={p.id}
           data-xi="false"
-          className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800 opacity-60 pl-2 text-sm"
+          className="flex items-center justify-between py-1.5 border-b border-line opacity-60 pl-2 text-sm"
         >
-          <span className="text-zinc-700 dark:text-zinc-300">{p.web_name}</span>
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+          <span className="text-ink">{p.web_name}</span>
+          <span className="text-xs text-ink-muted">
             £{(p.now_cost / 10).toFixed(1)}m
             <span className="ml-2">+{p.xPts.toFixed(1)} xPts</span>
           </span>

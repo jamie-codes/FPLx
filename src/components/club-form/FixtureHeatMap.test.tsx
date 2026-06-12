@@ -99,7 +99,7 @@ describe('FixtureHeatMap', () => {
     })
   })
 
-  it('HEAT-01: maps difficulty_tier to bg-{green|amber|red}-100/dark:900 classes', () => {
+  it('HEAT-01: maps difficulty_tier to positive-soft/warning-soft/negative-soft tier classes', () => {
     const data: ClubForm[] = [
       team(1, 'ARS', [fix({ opp: 'CHE', home: true, gw: 34, tier: 'easy' })]),
       team(2, 'BHA', [fix({ opp: 'CHE', home: true, gw: 34, tier: 'medium' })]),
@@ -110,12 +110,12 @@ describe('FixtureHeatMap', () => {
     const arsCell = container.querySelector('tbody tr:nth-child(1) td')!
     const bhaCell = container.querySelector('tbody tr:nth-child(2) td')!
     const cheCell = container.querySelector('tbody tr:nth-child(3) td')!
-    expect(arsCell.className).toMatch(/bg-green-100/)
-    expect(arsCell.className).toMatch(/dark:bg-green-900/)
-    expect(bhaCell.className).toMatch(/bg-amber-100/)
-    expect(bhaCell.className).toMatch(/dark:bg-amber-900/)
-    expect(cheCell.className).toMatch(/bg-red-100/)
-    expect(cheCell.className).toMatch(/dark:bg-red-900/)
+    expect(arsCell.className).toMatch(/bg-positive-soft/)
+    expect(arsCell.className).toMatch(/text-positive/)
+    expect(bhaCell.className).toMatch(/bg-warning-soft/)
+    expect(bhaCell.className).toMatch(/text-warning/)
+    expect(cheCell.className).toMatch(/bg-negative-soft/)
+    expect(cheCell.className).toMatch(/text-negative/)
   })
 
   it('HEAT-01 (D-08): single-fixture tooltip format "OPP (H/A) — 0.dd"', () => {
@@ -156,7 +156,7 @@ describe('FixtureHeatMap', () => {
     expect(cell.getAttribute('title')).toBe('BHA (H) 0.28 / CHE (A) 0.71')
   })
 
-  it('HEAT-02: BGW cell is empty with bg-zinc-50/dark:bg-zinc-900 and "No fixture (BGW)" tooltip', () => {
+  it('HEAT-02: BGW cell is empty with bg-surface-2 and "No fixture (BGW)" tooltip', () => {
     const data: ClubForm[] = [
       team(1, 'ARS', [fix({ opp: 'BHA', home: true, gw: 35, tier: 'easy' })]),  // BGW at gw34
       team(2, 'CHE', [
@@ -169,9 +169,8 @@ describe('FixtureHeatMap', () => {
     // ARS row sorted before CHE alphabetically; ARS GW34 cell = BGW
     const arsRow = container.querySelector('tbody tr:nth-child(1)')!
     const arsGw34Cell = arsRow.querySelectorAll('td')[0]  // first td = first GW column = GW34
-    expect(arsGw34Cell.className).toMatch(/bg-zinc-50/)
-    expect(arsGw34Cell.className).toMatch(/dark:bg-zinc-900/)
-    expect(arsGw34Cell.className).not.toMatch(/bg-(green|amber|red)-/)
+    expect(arsGw34Cell.className).toMatch(/bg-surface-2/)
+    expect(arsGw34Cell.className).not.toMatch(/bg-(positive|warning|negative)-soft/)
     expect(arsGw34Cell.getAttribute('title')).toBe('No fixture (BGW)')
     expect(arsGw34Cell.textContent?.trim()).toBe('')
   })
@@ -317,16 +316,16 @@ describe('FixtureHeatMap', () => {
     mockUseClubForm.mockReturnValue({ data, isLoading: false, error: null })
     const { container } = render(<FixtureHeatMap />)
     let cell = container.querySelector('tbody tr:nth-child(1) td')!
-    expect(cell.className).toMatch(/bg-green-100/)
+    expect(cell.className).toMatch(/bg-positive-soft/)
     const defBtn = Array.from(container.querySelectorAll('button')).find(
       b => b.textContent?.trim() === 'DEF'
     )!
     fireEvent.click(defBtn)
     cell = container.querySelector('tbody tr:nth-child(1) td')!
-    expect(cell.className).toMatch(/bg-red-100/)
+    expect(cell.className).toMatch(/bg-negative-soft/)
   })
 
-  it('HEAT-08: owned-team rows carry bg-blue-50 + border-l-blue-500 even when filter is OFF', () => {
+  it('HEAT-08: owned-team rows carry bg-accent-soft + border-l-accent even when filter is OFF', () => {
     const data: ClubForm[] = [
       team(1, 'ARS', [fix({ opp: 'X', home: true, gw: 34, tier: 'easy' })]),
       team(2, 'BHA', [fix({ opp: 'X', home: true, gw: 34, tier: 'easy' })]),
@@ -344,11 +343,11 @@ describe('FixtureHeatMap', () => {
     })
     const { container } = render(<FixtureHeatMap submittedId="123" />)
     const arsRow = container.querySelector('tbody tr:nth-child(1)')!
-    expect(arsRow.className).toMatch(/bg-blue-50/)
-    expect(arsRow.className).toMatch(/border-l-blue-500/)
+    expect(arsRow.className).toMatch(/bg-accent-soft/)
+    expect(arsRow.className).toMatch(/border-l-accent/)
     const bhaRow = container.querySelector('tbody tr:nth-child(2)')!
-    expect(bhaRow.className).not.toMatch(/bg-blue-50/)
-    expect(bhaRow.className).not.toMatch(/border-l-blue-500/)
+    expect(bhaRow.className).not.toMatch(/bg-accent-soft/)
+    expect(bhaRow.className).not.toMatch(/border-l-accent/)
   })
 
   it('HEAT-05 (Pitfall 3): toggling owned-only does NOT shrink the column set (allEventIds derived from full data)', () => {
@@ -435,10 +434,10 @@ describe('FixtureHeatMap', () => {
     const arsCell = arsRow.querySelectorAll('td')[0]
     expect(arsCell.getAttribute('title')).toBe('MCI (H) — Played')
     expect(arsCell.className).toMatch(/opacity-40/)
-    expect(arsCell.className).toMatch(/bg-green-100|bg-green-900/)  // difficulty color preserved
+    expect(arsCell.className).toMatch(/bg-positive-soft/)  // difficulty color preserved
   })
 
-  it('FIX-01: played cell is visually distinct from BGW cell (not bg-zinc-50, not "No fixture (BGW)")', () => {
+  it('FIX-01: played cell is visually distinct from BGW cell (not bg-surface-2, not "No fixture (BGW)")', () => {
     const playedFix = fix({ opp: 'MCI', home: true, gw: 35, tier: 'easy' })
     const data: ClubForm[] = [
       team(1, 'ARS', [], [playedFix]),
@@ -448,11 +447,11 @@ describe('FixtureHeatMap', () => {
     const { container } = render(<FixtureHeatMap />)
     const arsRow = container.querySelector('tbody tr:nth-child(1)')!
     const arsCell = arsRow.querySelectorAll('td')[0]
-    expect(arsCell.className).not.toMatch(/bg-zinc-50/)
+    expect(arsCell.className).not.toMatch(/bg-surface-2/)
     expect(arsCell.getAttribute('title')).not.toBe('No fixture (BGW)')
   })
 
-  it('FIX-01: true BGW cell unchanged — blank, bg-zinc-50, "No fixture (BGW)"', () => {
+  it('FIX-01: true BGW cell unchanged — blank, bg-surface-2, "No fixture (BGW)"', () => {
     const data: ClubForm[] = [
       team(1, 'ARS', [], []),  // no upcoming, no played → true BGW
       team(2, 'CHE', [fix({ opp: 'BHA', home: true, gw: 35, tier: 'medium' })]),
@@ -461,7 +460,7 @@ describe('FixtureHeatMap', () => {
     const { container } = render(<FixtureHeatMap />)
     const arsRow = container.querySelector('tbody tr:nth-child(1)')!
     const arsCell = arsRow.querySelectorAll('td')[0]
-    expect(arsCell.className).toMatch(/bg-zinc-50/)
+    expect(arsCell.className).toMatch(/bg-surface-2/)
     expect(arsCell.getAttribute('title')).toBe('No fixture (BGW)')
     expect(arsCell.textContent?.trim()).toBe('')
   })
@@ -507,10 +506,10 @@ describe('FixtureHeatMap', () => {
     const arsRow = container.querySelector('tbody tr:nth-child(1)')!
     const arsCell = arsRow.querySelectorAll('td')[0]
     expect(arsCell.getAttribute('title')).toBe('PSG (H) — 0.28 / MCI (H) — Played')
-    expect(arsCell.className).toMatch(/bg-green-100|bg-green-900/)
+    expect(arsCell.className).toMatch(/bg-positive-soft/)
     expect(arsCell.className).not.toMatch(/opacity-40/)
     expect(arsCell.querySelector('span')?.textContent).toBe('PSG')
-    expect(arsCell.className).not.toMatch(/bg-zinc-50/)
+    expect(arsCell.className).not.toMatch(/bg-surface-2/)
   })
 
   it('FIX-01 (gap): partially-played DGW (1 upcoming + 2 played) tooltip lists all three opponents in order', () => {

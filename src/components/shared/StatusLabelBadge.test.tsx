@@ -20,15 +20,13 @@ describe('StatusLabelBadge', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it('renders amber pill with "doubted" label for doubted', () => {
+  it('renders warning pill with "doubted" label for doubted', () => {
     const { container } = render(<StatusLabelBadge statusLabel="doubted" />)
     const span = container.querySelector('span')
     expect(span).not.toBeNull()
     expect(span?.textContent).toBe('doubted')
-    expect(span?.className).toContain('bg-amber-100')
-    expect(span?.className).toContain('dark:bg-amber-900')
-    expect(span?.className).toContain('text-amber-800')
-    expect(span?.className).toContain('dark:text-amber-200')
+    expect(span?.className).toContain('bg-warning-soft')
+    expect(span?.className).toContain('text-warning')
     expect(span?.className).toContain('inline-block')
     expect(span?.className).toContain('text-xs')
     expect(span?.className).toContain('font-normal')
@@ -38,15 +36,13 @@ describe('StatusLabelBadge', () => {
     expect(span?.getAttribute('title')).toBe('Doubted: lineup news indicates player may not play')
   })
 
-  it('renders red pill with "confirmed absent" label for confirmed_absent', () => {
+  it('renders negative pill with "confirmed absent" label for confirmed_absent', () => {
     const { container } = render(<StatusLabelBadge statusLabel="confirmed_absent" />)
     const span = container.querySelector('span')
     expect(span).not.toBeNull()
     expect(span?.textContent).toBe('confirmed absent')
-    expect(span?.className).toContain('bg-red-100')
-    expect(span?.className).toContain('dark:bg-red-900')
-    expect(span?.className).toContain('text-red-700')
-    expect(span?.className).toContain('dark:text-red-300')
+    expect(span?.className).toContain('bg-negative-soft')
+    expect(span?.className).toContain('text-negative')
     expect(span?.getAttribute('title')).toBe('Confirmed absent: lineup news indicates player will not play')
   })
 

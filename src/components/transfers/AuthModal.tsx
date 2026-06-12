@@ -87,15 +87,15 @@ export function AuthModal({ open, onClose, onSuccess }: AuthModalProps) {
     <dialog
       ref={dialogRef}
       onClick={handleDialogClick}
-      className="rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 p-6 w-full max-w-lg shadow-lg"
+      className="rounded-lg bg-surface-1 border border-line p-6 w-full max-w-lg shadow-lg backdrop:bg-ink/40"
     >
       <div className="space-y-4">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+        <h2 className="text-base font-semibold text-ink">
           Connect FPL Account
         </h2>
 
         <form onSubmit={handleManualLogin} className="space-y-3">
-          <ol className="list-decimal list-inside space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+          <ol className="list-decimal list-inside space-y-1 text-sm text-ink">
             <li>Open <span className="font-medium">fantasy.premierleague.com</span> and log in</li>
             <li>Press <span className="font-mono font-medium">F12</span> → <span className="font-medium">Network</span> tab</li>
             <li>Reload the page, click any <span className="font-mono">/api/</span> request</li>
@@ -109,30 +109,30 @@ export function AuthModal({ open, onClose, onSuccess }: AuthModalProps) {
               value={tokenInput}
               onChange={e => setTokenInput(e.target.value)}
               required
-              className="border border-zinc-300 dark:border-zinc-600 rounded px-2 py-1.5 text-xs w-full font-mono bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+              className="border border-line rounded-md min-h-[44px] px-2 py-1.5 text-xs w-full font-mono bg-surface-1 text-ink"
             />
             <button
               type="button"
               onClick={handlePaste}
               title="Paste from clipboard"
-              className="px-2 py-1.5 border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700 cursor-pointer active:scale-95 transition-transform shrink-0"
+              className="px-2 py-1.5 min-h-[44px] border border-line rounded bg-surface-1 text-ink text-sm hover:bg-surface-2 cursor-pointer active:scale-95 transition-transform shrink-0"
             >
               &#x1F4CB; Paste
             </button>
           </div>
-          {manualError && <p className="text-sm text-red-600 dark:text-red-400">{manualError}</p>}
+          {manualError && <p className="text-sm text-negative">{manualError}</p>}
           <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
             <button
               type="submit"
               disabled={manualLoading || !tokenInput.trim()}
-              className="px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-medium rounded hover:bg-zinc-700 dark:hover:bg-zinc-100 disabled:opacity-50 cursor-pointer active:scale-95 transition-transform w-full sm:w-auto"
+              className="px-4 py-2 min-h-[44px] bg-ink text-surface-1 text-sm font-medium rounded hover:opacity-90 disabled:opacity-50 cursor-pointer active:scale-95 transition-transform w-full sm:w-auto"
             >
               {manualLoading ? 'Saving…' : 'Save token'}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer w-full sm:w-auto text-center sm:text-left"
+              className="text-sm text-ink-muted hover:text-ink cursor-pointer w-full sm:w-auto text-center sm:text-left"
             >
               Cancel
             </button>

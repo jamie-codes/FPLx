@@ -42,12 +42,12 @@ export function ClubFormTable() {
   })
 
   if (isLoading) {
-    return <p className="text-gray-500">Loading club form...</p>
+    return <p className="text-ink-muted">Loading club form...</p>
   }
 
   if (error) {
     return (
-      <p className="text-red-500">
+      <p className="text-negative">
         Failed to load club form: {error instanceof Error ? error.message : String(error)}
       </p>
     )
@@ -56,16 +56,16 @@ export function ClubFormTable() {
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Club Form (Last 5 Games)</h2>
-      <p className="text-sm text-gray-500 mb-2">{table.getRowModel().rows.length} clubs</p>
+      <p className="text-sm text-ink-muted mb-2">{table.getRowModel().rows.length} clubs</p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-700">
+          <thead className="sticky top-0 bg-surface-1 border-b border-line">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className={`px-2 py-1 font-semibold text-gray-700 dark:text-zinc-300 whitespace-nowrap ${
+                    className={`px-2 py-1 font-semibold text-ink-muted whitespace-nowrap ${
                       header.column.getCanSort() ? 'cursor-pointer select-none' : ''
                     }`}
                     onClick={header.column.getToggleSortingHandler()}
@@ -85,7 +85,7 @@ export function ClubFormTable() {
           </thead>
           <tbody>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="even:bg-gray-50 dark:even:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-zinc-700">
+              <tr key={row.id} className="even:bg-surface-0 hover:bg-surface-2 transition-colors duration-150">
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id} className="px-2 py-1 whitespace-nowrap">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

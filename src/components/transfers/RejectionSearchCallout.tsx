@@ -41,9 +41,9 @@ export function RejectionSearchCallout({ players, lifecycleLabels }: RejectionSe
   return (
     <div
       data-testid="rejection-search-callout"
-      className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 p-3 space-y-2"
+      className="rounded border border-line bg-surface-2 p-3 space-y-2"
     >
-      <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+      <p className="text-sm font-medium text-ink">
         &#8505;&#65039; Why isn&apos;t a player recommended?
       </p>
 
@@ -58,28 +58,28 @@ export function RejectionSearchCallout({ players, lifecycleLabels }: RejectionSe
       {rejection && selectedPlayer && (
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+            <p className="text-xs font-medium text-ink-muted">
               &#8505;&#65039; Why isn&apos;t {selectedPlayer.web_name} recommended?
             </p>
             <button
               type="button"
               aria-label="Dismiss explanation"
               onClick={() => setSelectedPlayer(null)}
-              className="text-xs text-zinc-400 dark:text-zinc-500 cursor-pointer"
+              className="text-xs text-ink-muted cursor-pointer"
             >
               {'×'}
             </button>
           </div>
           {rejection.reasons.length === 0 ? (
-            <p className="text-xs text-green-700 dark:text-green-400">
+            <p className="text-xs text-positive">
               {`No rejection signals — ranked #${rejection.xPtsRank} at ${posCodeLabel} by xPts (${(selectedPlayer.xPts_1gw ?? 0).toFixed(1)} pts projected)`}
             </p>
           ) : (
             <>
-              <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Why not recommended:</p>
+              <p className="text-xs font-medium text-ink-muted">Why not recommended:</p>
               <ul className="space-y-0.5">
                 {rejection.reasons.map((line, i) => (
-                  <li key={i} className="text-xs text-zinc-600 dark:text-zinc-400">{line}</li>
+                  <li key={i} className="text-xs text-ink-muted">{line}</li>
                 ))}
               </ul>
             </>

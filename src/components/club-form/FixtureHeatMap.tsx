@@ -11,22 +11,22 @@ import { HorizonToggle } from './HorizonToggle'
 import { OwnedFilterToggle } from './OwnedFilterToggle'
 import type { ClubForm, ClubFormFixture, DifficultyTier } from '@/lib/types'
 
+// UIX-04 ruling 1: FDR/difficulty scales are data, not chrome — the tiers map to
+// the SAME positive-soft/warning-soft/negative-soft tiers FixtureBadges adopted
+// in UIX-03 (easy→positive-soft, medium→warning-soft, hard→negative-soft).
 const TIER_CLASSES: Record<DifficultyTier, string> = {
-  easy:   'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  medium: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
-  hard:   'bg-red-100   text-red-800   dark:bg-red-900   dark:text-red-200',
+  easy:   'bg-positive-soft text-positive',
+  medium: 'bg-warning-soft text-warning',
+  hard:   'bg-negative-soft text-negative',
 }
 
-const TIER_HEX: Record<DifficultyTier, string> = {
-  easy:   '#dcfce7',
-  medium: '#fef3c7',
-  hard:   '#fee2e2',
-}
-
-const TIER_HEX_DARK: Record<DifficultyTier, string> = {
-  easy:   '#14532d',  // green-900
-  medium: '#78350f',  // amber-900
-  hard:   '#7f1d1d',  // red-900
+// DGW split-cell gradients are built from inline styles, so they reference the
+// same soft-tier tokens via CSS vars — theme switching is handled by the
+// cascade (no JS dark-mode detection needed since UIX-04).
+const TIER_FILL: Record<DifficultyTier, string> = {
+  easy:   'var(--color-positive-soft)',
+  medium: 'var(--color-warning-soft)',
+  hard:   'var(--color-negative-soft)',
 }
 
 function currentTier(f: ClubFormFixture, mode: 'ATT' | 'DEF'): DifficultyTier {
@@ -54,9 +54,10 @@ export interface HeatMapRowProps {
 export function HeatMapRow({ t, grid, mode, tierMap, ownedTeamIds }: HeatMapRowProps) {
   const { src, onError, showFallback, fallbackColour, initial } = useTeamBadge(t.team_short_name)
   const isOwned = ownedTeamIds.has(t.team_id)
+  // UIX-04: owned-row highlight blue → accent tokens
   const rowClass = isOwned
-    ? 'border-b border-zinc-100 dark:border-zinc-800 bg-blue-50 dark:bg-blue-950 border-l-2 border-l-blue-500'
-    : 'border-b border-zinc-100 dark:border-zinc-800'
+    ? 'border-b border-line bg-accent-soft border-l-2 border-l-accent'
+    : 'border-b border-line'
   return (
     <tr className={rowClass} data-owned={isOwned ? 'true' : 'false'}>
       <th scope="row" className="px-2 py-1 text-left font-mono text-xs w-20 h-8">
@@ -91,7 +92,7 @@ export function HeatMapRow({ t, grid, mode, tierMap, ownedTeamIds }: HeatMapRowP
           return (
             <td
               key={gw}
-              className="px-2 py-1 text-center min-w-[48px] h-8 bg-zinc-50 dark:bg-zinc-900"
+              className="px-2 py-1 text-center min-w-[48px] h-8 bg-surface-2"
               title="No fixture (BGW)"
             />
           )
@@ -112,10 +113,10 @@ export function HeatMapRow({ t, grid, mode, tierMap, ownedTeamIds }: HeatMapRowP
               style={{ background: gradient }}
               title={tooltip}
             >
-              <span className="absolute top-0 left-1 text-[10px] font-mono leading-none pt-0.5 text-zinc-900 dark:text-zinc-100">
+              <span className="absolute top-0 left-1 text-[10px] font-mono leading-none pt-0.5 text-ink">
                 {playedFixtures[0].opponent_team}
               </span>
-              <span className="absolute bottom-0 right-1 text-[10px] font-mono leading-none pb-0.5 text-zinc-900 dark:text-zinc-100">
+              <span className="absolute bottom-0 right-1 text-[10px] font-mono leading-none pb-0.5 text-ink">
                 {playedFixtures[1].opponent_team}
               </span>
             </td>
@@ -152,14 +153,14 @@ export function HeatMapRow({ t, grid, mode, tierMap, ownedTeamIds }: HeatMapRowP
               style={{ background: gradient }}
               title={tooltip}
             >
-              <span className="absolute top-0 left-1 text-[10px] font-mono leading-none pt-0.5 text-zinc-900 dark:text-zinc-100">
+              <span className="absolute top-0 left-1 text-[10px] font-mono leading-none pt-0.5 text-ink">
                 {fixtures[0].opponent_team}
               </span>
-              <span className="absolute bottom-0 right-1 text-[10px] font-mono leading-none pb-0.5 text-zinc-900 dark:text-zinc-100">
+              <span className="absolute bottom-0 right-1 text-[10px] font-mono leading-none pb-0.5 text-ink">
                 {fixtures[1].opponent_team}
               </span>
               {fixtures.length >= 3 && (
-                <span className="absolute bottom-0 left-1 text-[10px] font-mono leading-none pb-0.5 text-zinc-900 dark:text-zinc-100">
+                <span className="absolute bottom-0 left-1 text-[10px] font-mono leading-none pb-0.5 text-ink">
                   {fixtures[2].opponent_team}
                 </span>
               )}
@@ -195,21 +196,10 @@ export function FixtureHeatMap({ submittedId = null }: Props) {
   const [horizon, setHorizon] = useState<8 | 12 | 16>(8)
   const [mode, setMode] = useState<'ATT' | 'DEF'>('ATT')
   const [ownedOnly, setOwnedOnly] = useState(false)
-  const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
     setOwnedOnly(false)
   }, [submittedId])
-
-  useEffect(() => {
-    const html = document.documentElement
-    setIsDark(html.classList.contains('dark'))
-    const observer = new MutationObserver(() => {
-      setIsDark(html.classList.contains('dark'))
-    })
-    observer.observe(html, { attributes: true, attributeFilter: ['class'] })
-    return () => observer.disconnect()
-  }, [])
 
   const ownedTeamIds = useMemo<Set<number>>(() => {
     if (!squad?.picks || !players) return new Set()
@@ -259,18 +249,18 @@ export function FixtureHeatMap({ submittedId = null }: Props) {
   }, [data, horizon])
 
   if (isLoading) {
-    return <p className="text-zinc-500 dark:text-zinc-400">Loading fixture heat map...</p>
+    return <p className="text-ink-muted">Loading fixture heat map...</p>
   }
   if (error) {
     return (
-      <p className="text-sm text-red-600 dark:text-red-400 py-4">
+      <p className="text-sm text-negative py-4">
         Failed to load fixture data. Check the pipeline output and refresh.
       </p>
     )
   }
   if (!data || data.length === 0 || !grid) {
     return (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="text-sm text-ink-muted">
         No fixture data available. Run the pipeline to generate fixture data.
       </p>
     )
@@ -280,7 +270,8 @@ export function FixtureHeatMap({ submittedId = null }: Props) {
     ? grid.sortedTeams.filter(t => ownedTeamIds.has(t.team_id))
     : grid.sortedTeams
 
-  const tierMap = isDark ? TIER_HEX_DARK : TIER_HEX
+  // UIX-04: gradient fills come from theme-following CSS vars (one map for both themes)
+  const tierMap = TIER_FILL
 
   return (
     <section className="mb-6" data-testid="fixture-heat-map">
@@ -303,13 +294,13 @@ export function FixtureHeatMap({ submittedId = null }: Props) {
               <th
                 scope="col"
                 aria-label="Team"
-                className="px-2 py-1 text-left font-mono text-xs text-zinc-500 dark:text-zinc-400 w-20"
+                className="px-2 py-1 text-left font-mono text-xs text-ink-muted w-20"
               ></th>
               {grid.allEventIds.map(gw => (
                 <th
                   key={gw}
                   scope="col"
-                  className="px-2 py-1 text-center font-mono text-xs text-zinc-500 dark:text-zinc-400 min-w-[48px]"
+                  className="px-2 py-1 text-center font-mono text-xs text-ink-muted min-w-[48px]"
                 >
                   GW{gw}
                 </th>
@@ -321,7 +312,7 @@ export function FixtureHeatMap({ submittedId = null }: Props) {
               <tr>
                 <td
                   colSpan={grid.allEventIds.length + 1}
-                  className="text-sm text-zinc-500 dark:text-zinc-400 px-4 py-6 text-center"
+                  className="text-sm text-ink-muted px-4 py-6 text-center"
                 >
                   No fixtures for owned teams in this window. Try a longer horizon or turn off the filter.
                 </td>

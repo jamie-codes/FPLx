@@ -1,5 +1,6 @@
 import type { FPLElementRaw } from '@/lib/fpl-adapter'
 import type { FPLTeam } from '@/lib/types'
+import { TableShell } from '@/components/ui/Table'
 
 interface TopScorersTableProps {
   players: FPLElementRaw[]
@@ -22,14 +23,16 @@ export function TopScorersTable({ players, livePoints, teams }: TopScorersTableP
           .sort((a, b) => (livePoints[b.id] ?? 0) - (livePoints[a.id] ?? 0))
           .slice(0, TOP_N)
 
+        // UIX-04: per-position card chrome unified onto the TableShell primitive
+        // (surface-1 + line border + rounded shell).
         return (
-          <div key={pos} className="bg-white dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-700 overflow-hidden">
-            <div className="bg-zinc-100 dark:bg-zinc-800 px-3 py-2 text-center">
-              <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-wide">
+          <TableShell key={pos}>
+            <div className="bg-surface-2 px-3 py-2 text-center">
+              <span className="text-xs font-bold text-ink-muted uppercase tracking-wide">
                 {POSITION_LABELS[pos]}
               </span>
             </div>
-            <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <div className="divide-y divide-line">
               {posPlayers.map((player, idx) => {
                 const pts = livePoints[player.id] ?? 0
                 const team = teamMap.get(player.team)
@@ -40,25 +43,25 @@ export function TopScorersTable({ players, livePoints, teams }: TopScorersTableP
                     key={player.id}
                     data-testid={`${POSITION_LABELS[pos].toLowerCase()}-row-${player.web_name}`}
                     className={`flex items-center justify-between px-2 py-1.5 ${
-                      isTop ? 'bg-zinc-50 dark:bg-zinc-800/60' : ''
+                      isTop ? 'bg-surface-2' : ''
                     }`}
                   >
                     <div className="min-w-0 flex-1">
-                      <p className={`text-xs truncate ${isTop ? 'font-semibold text-zinc-900 dark:text-zinc-100' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                      <p className={`text-xs truncate ${isTop ? 'font-semibold text-ink' : 'text-ink'}`}>
                         {player.web_name}
                       </p>
-                      <p className="text-[10px] text-zinc-400">
+                      <p className="text-[10px] text-ink-muted">
                         {team?.short_name ?? '?'} · £{(player.now_cost / 10).toFixed(1)}m
                       </p>
                     </div>
-                    <span className={`text-sm font-bold ml-2 ${isTop ? 'text-green-600 dark:text-green-400' : 'text-zinc-500 dark:text-zinc-400'}`}>
+                    <span className={`text-sm font-bold ml-2 ${isTop ? 'text-positive' : 'text-ink-muted'}`}>
                       {pts}
                     </span>
                   </div>
                 )
               })}
             </div>
-          </div>
+          </TableShell>
         )
       })}
     </div>

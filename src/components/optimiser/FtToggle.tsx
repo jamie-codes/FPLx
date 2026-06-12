@@ -11,11 +11,11 @@ interface FtToggleProps {
 export function FtToggle({ value, onChange }: FtToggleProps) {
   return (
     <div className="flex items-center gap-2" data-testid="ft-toggle">
-      <span className="text-xs text-zinc-500 dark:text-zinc-400">Free transfers:</span>
+      <span className="text-xs text-ink-muted">Free transfers:</span>
       <div
         role="group"
         aria-label="Available free transfers"
-        className="inline-flex rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700"
+        className="inline-flex rounded-md overflow-hidden border border-line"
       >
         <button
           type="button"
@@ -24,8 +24,8 @@ export function FtToggle({ value, onChange }: FtToggleProps) {
           className={
             `min-h-[44px] px-3 text-xs font-semibold transition-colors ` +
             (value === 1
-              ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
-              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700')
+              ? 'bg-ink text-surface-1'
+              : 'bg-surface-1 text-ink hover:bg-surface-2')
           }
           data-testid="ft-toggle-1"
         >
@@ -38,8 +38,8 @@ export function FtToggle({ value, onChange }: FtToggleProps) {
           className={
             `min-h-[44px] px-3 text-xs font-semibold transition-colors ` +
             (value === 2
-              ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
-              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700')
+              ? 'bg-ink text-surface-1'
+              : 'bg-surface-1 text-ink hover:bg-surface-2')
           }
           data-testid="ft-toggle-2"
         >
