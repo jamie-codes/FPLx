@@ -48,8 +48,7 @@ import { TopBar } from '@/components/shell/TopBar'
 import { MobileBar } from '@/components/shell/MobileBar'
 import { MoreSheet } from '@/components/shell/MoreSheet'
 import { Tabs } from '@/components/ui/Tabs'
-import { Card } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
+import { HomeTab } from '@/components/home/HomeTab'
 
 class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -222,18 +221,13 @@ export default function Home() {
 
           {/* Tool content — all 27 pre-shell tabs re-keyed by tool id, props unchanged */}
           {activeTool === 'home' && (
-            <Card
-              title="Welcome to FPLx"
-              subtitle="The home dashboard arrives in UIX-02 — every tool is one click away in the meantime.">
-              <div className="flex flex-col items-start gap-3">
-                <p className="text-body text-ink-muted">
-                  Jump straight into this week&apos;s decisions, or pick any tool from the navigation.
-                </p>
-                <Button variant="primary" onClick={() => selectTool('picks')}>
-                  Go to This Week
-                </Button>
-              </div>
-            </Card>
+            <HomeTab
+              teamId={teamId}
+              onTeamIdChange={setTeamId}
+              submittedId={submittedId}
+              onSubmit={handleTeamIdSubmit}
+              selectTool={selectTool}
+            />
           )}
           {activeTool === 'decision' && (
             <DecisionErrorBoundary>

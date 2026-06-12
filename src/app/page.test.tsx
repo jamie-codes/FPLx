@@ -91,6 +91,16 @@ vi.mock('@/components/perfect-gw/PerfectGWTab', () => ({
 vi.mock('@/components/price-reset/PriceResetTab', () => ({
   PriceResetTab: () => <div data-testid="price-reset-tab" />,
 }))
+// UIX-02: HomeTab orchestrates TanStack Query hooks + engines — mocked here like
+// every other tab (page.test.tsx renders without a QueryClientProvider). The
+// mock preserves the selectTool deep-link contract for the CTA test.
+vi.mock('@/components/home/HomeTab', () => ({
+  HomeTab: (props: { selectTool: (t: string) => void }) => (
+    <div data-testid="home-tab-mock">
+      <button onClick={() => props.selectTool('picks')}>Go to This Week</button>
+    </div>
+  ),
+}))
 
 import Home from '@/app/page'
 import { ALL_TOOL_IDS, GROUPS, groupOf } from '@/lib/navigation'
@@ -114,16 +124,16 @@ beforeEach(() => {
 })
 
 describe('UIX-01: shell state in page.tsx', () => {
-  it('default landing is the Home tool with the welcome placeholder (UIX-01)', () => {
+  it('default landing is the Home tool with the HomeTab command centre (UIX-02)', () => {
     const { container } = render(<Home />)
-    expect(container.textContent).toContain('Welcome to FPLx')
+    expect(container.querySelector('[data-testid="home-tab-mock"]')).not.toBeNull()
     const sidebar = container.querySelector('nav[aria-label="Primary navigation"]')!
     const active = sidebar.querySelector('a[aria-current="page"]')
     expect(active?.textContent).toBe('Home')
     expect(container.querySelector('[data-testid="gem-table"]')).toBeNull()
   })
 
-  it('home placeholder CTA jumps to Weekly Picks', () => {
+  it('home CTA deep-links to Weekly Picks via selectTool', () => {
     const { container } = render(<Home />)
     const cta = Array.from(container.querySelectorAll('button')).find((b) => b.textContent === 'Go to This Week')
     fireEvent.click(cta!)
@@ -193,7 +203,7 @@ describe('UIX-01: shell state in page.tsx', () => {
   it('ignores an invalid ?t= value and stays on Home', () => {
     window.history.replaceState(null, '', '/?t=not-a-tool')
     const { container } = render(<Home />)
-    expect(container.textContent).toContain('Welcome to FPLx')
+    expect(container.querySelector('[data-testid="home-tab-mock"]')).not.toBeNull()
   })
 
   it('restores the remembered tool when re-entering a group via the MobileBar (D-05 port)', () => {
@@ -339,7 +349,7 @@ describe('Phase 98: page.tsx auto-surface (PGW-04)', () => {
     window.localStorage.setItem('pgw-reviewed:GW35', '1')
     const { container } = render(<Home />)
     // Default landing remains Home — no override
-    expect(container.textContent).toContain('Welcome to FPLx')
+    expect(container.querySelector('[data-testid="home-tab-mock"]')).not.toBeNull()
     expect(container.querySelector('[data-testid="gw-review-tab-mock"]')).toBeNull()
   })
 })
