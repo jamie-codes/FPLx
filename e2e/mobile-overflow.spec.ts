@@ -2,101 +2,79 @@ import { test, expect, type Page } from '@playwright/test'
 
 /**
  * Phase 77 POL-03: 430px mobile overflow audit.
- * Asserts no tab on the home page produces horizontal body scroll at Galaxy S26+ width.
+ * Asserts no tool on the home page produces horizontal body scroll at Galaxy S26+ width.
  * Baseline depends on Plan 01: AccuracyTab now has overflow-x-auto wrappers; LineupTab kit images
  * are object-contain w-6 h-6; DecisionSummaryTab captain row uses sm:flex-wrap.
  *
- * Navigation at 430px uses the MobileNav component (sm:hidden desktop nav is invisible):
- *   - Bottom section bar buttons: "Analyse", "Plan", "Squad"
- *   - Sub-tab pill row buttons use mobileLabel values from SECTIONS constant
+ * Navigation at 430px uses the UIX-01 shell: mobile bottom bar with groups (Home, This Week,
+ * Squad, Research, More), MoreSheet for Planning/Model tools, and ?t=<toolId> deep links.
+ * Each tool is driven via page.goto('/?t=<toolId>') to avoid fragile UI nav.
  */
 
 type TabSpec = {
   name: string
-  navigate: (page: Page) => Promise<void>
+  toolId: string
   settle: (page: Page) => Promise<void>
 }
 
 const TABS: TabSpec[] = [
   {
-    // Insights is in the Analyse section (default section on load), sub-tab mobileLabel="Insights"
+    // Insights is in the Research group
     name: 'Insights',
-    navigate: async (p) => {
-      // Ensure Analyse section is active (default, but make it explicit)
-      await p.getByRole('button', { name: 'Analyse', exact: true }).click()
-      await p.getByRole('button', { name: 'Insights', exact: true }).first().click()
-    },
+    toolId: 'insights',
     settle: async (p) => {
-      // InsightsTab renders a <section aria-label="Season pattern insights"> or <section aria-label="Insights not available">
-      await p.locator('section[aria-label="Season pattern insights"], section[aria-label="Insights not available"]').first().waitFor({ timeout: 15_000 })
+      // InsightsTab always renders <section aria-label="Insights"> as the outermost wrapper
+      await p.locator('section[aria-label="Insights"]').waitFor({ timeout: 15_000 })
     },
   },
   {
-    // Plan section — default sub-tab is Planner, which renders ChipStrategyPanel
-    name: 'Plan',
-    navigate: async (p) => {
-      await p.getByRole('button', { name: 'Plan', exact: true }).click()
-    },
+    // Planner is in the Planning group — renders ChipStrategyPanel
+    name: 'Planner',
+    toolId: 'planner',
     settle: async (p) => {
       // ChipStrategyPanel always renders (even without squad data), so this is stable
       await p.getByTestId('chip-strategy-panel').waitFor({ timeout: 15_000 })
     },
   },
   {
-    // Squad section → Lineup sub-tab. LineupTab has data-testid="lineup-tab".
-    // Without a team ID submitted, it renders the empty-state (a section with data-testid="lineup-tab").
-    name: 'Squad',
-    navigate: async (p) => {
-      await p.getByRole('button', { name: 'Squad', exact: true }).click()
-      await p.getByRole('button', { name: 'Lineup', exact: true }).click()
-    },
+    // Lineup is in the This Week group. Without a team ID submitted, it renders the empty-state.
+    name: 'Lineup',
+    toolId: 'lineup',
     settle: async (p) => {
       await p.getByTestId('lineup-tab').waitFor({ timeout: 15_000 })
     },
   },
   {
-    // Set Pieces is in the Analyse section, mobileLabel="SP"
+    // Set Pieces is in the Research group
     name: 'Set Pieces',
-    navigate: async (p) => {
-      await p.getByRole('button', { name: 'Analyse', exact: true }).click()
-      await p.getByRole('button', { name: 'SP', exact: true }).click()
-    },
+    toolId: 'set-pieces',
     settle: async (p) => {
       // SetPieceTakerPanel renders <h2>Set-Piece Takers</h2>
       await p.getByRole('heading', { name: 'Set-Piece Takers' }).waitFor({ timeout: 15_000 })
     },
   },
   {
-    // Accuracy is in the Analyse section, mobileLabel="Acc"
+    // Accuracy is in the Model group
     name: 'Accuracy',
-    navigate: async (p) => {
-      await p.getByRole('button', { name: 'Analyse', exact: true }).click()
-      await p.getByRole('button', { name: 'Acc', exact: true }).click()
-    },
+    toolId: 'accuracy',
     settle: async (p) => {
       // AccuracyTab renders a calibration chart or GW rows; fallback to the section container
       await p.locator('[data-testid="calibration-chart"], [data-testid^="gw-row-"]').first().waitFor({ timeout: 15_000 })
     },
   },
   {
-    // Rivals is in the Plan section, mobileLabel="Rivals"
+    // Rivals is in the My Squad group
     name: 'Rivals',
-    navigate: async (p) => {
-      await p.getByRole('button', { name: 'Plan', exact: true }).click()
-      await p.getByRole('button', { name: 'Rivals', exact: true }).click()
-    },
+    toolId: 'rivals',
     settle: async (p) => {
       // RivalsTab renders <h2>Track your mini-league rivals</h2>
       await p.getByRole('heading', { name: 'Track your mini-league rivals' }).waitFor({ timeout: 15_000 })
     },
   },
   {
-    // Value Gems is in the Plan section, mobileLabel="Values"
+    // Value Gems is in the Research group
     name: 'Value Gems',
-    navigate: async (p) => {
-      await p.getByRole('button', { name: 'Plan', exact: true }).click()
-      await p.getByRole('button', { name: 'Values', exact: true }).click()
-    },
+    toolId: 'value-gems',
     settle: async (p) => {
       // ValueGemsTable renders <h1>Value Gems</h1>
       await p.getByRole('heading', { name: 'Value Gems' }).waitFor({ timeout: 15_000 })
@@ -107,8 +85,7 @@ const TABS: TabSpec[] = [
 test.describe('POL-03 — 430px mobile overflow audit', () => {
   for (const tab of TABS) {
     test(`${tab.name} tab does not overflow 430px viewport horizontally`, async ({ page }) => {
-      await page.goto('/')
-      await tab.navigate(page)
+      await page.goto(`/?t=${tab.toolId}`)
       await tab.settle(page)
       await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {})
 
