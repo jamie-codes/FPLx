@@ -73,12 +73,12 @@ describe('WatchlistPlayerCard', () => {
     expect(container.querySelector('.opacity-50')).not.toBeNull()
   })
 
-  it('renders border-amber-400 class on the outer div when hasNews=true && !departed', () => {
+  it('renders border-warning class on the outer div when hasNews=true && !departed', () => {
     const { container } = render(
       <WatchlistPlayerCard player={makePlayer()} departed={false} hasNews={true} inSquad={false} />
     )
     const card = container.firstChild as HTMLElement
-    expect(card.className).toContain('border-amber-400')
+    expect(card.className).toContain('border-warning')
   })
 
   it('renders the squad-overlap dot span when inSquad=true && !departed', () => {
@@ -94,7 +94,7 @@ describe('WatchlistPlayerCard', () => {
       <WatchlistPlayerCard player={makePlayer({ cost_change_event: 1 })} departed={false} hasNews={false} inSquad={false} />
     )
     expect(container.textContent).toContain('▲')
-    const arrow = container.querySelector('.text-green-600')
+    const arrow = container.querySelector('.text-positive')
     expect(arrow).not.toBeNull()
   })
 
@@ -103,7 +103,7 @@ describe('WatchlistPlayerCard', () => {
       <WatchlistPlayerCard player={makePlayer({ cost_change_event: -1 })} departed={false} hasNews={false} inSquad={false} />
     )
     expect(container.textContent).toContain('▼')
-    const arrow = container.querySelector('.text-red-600')
+    const arrow = container.querySelector('.text-negative')
     expect(arrow).not.toBeNull()
   })
 
@@ -115,14 +115,14 @@ describe('WatchlistPlayerCard', () => {
     expect(container.textContent).not.toContain('▼')
   })
 
-  it('renders normal state with zinc border and full opacity when all flags are false', () => {
+  it('renders normal state with line border and full opacity when all flags are false', () => {
     const { container } = render(
       <WatchlistPlayerCard player={makePlayer()} departed={false} hasNews={false} inSquad={false} />
     )
     const card = container.firstChild as HTMLElement
-    expect(card.className).toContain('border-zinc-200')
+    expect(card.className).toContain('border-line')
     expect(card.className).not.toContain('opacity-50')
-    expect(card.className).not.toContain('border-amber-400')
+    expect(card.className).not.toContain('border-warning')
   })
 
   it('renders the ConfirmedSigningBadge when confirmedSigningTooltip is a non-empty string and departed=false', () => {

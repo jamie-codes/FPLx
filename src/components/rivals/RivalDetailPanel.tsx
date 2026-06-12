@@ -20,12 +20,12 @@ interface RivalDetailPanelProps {
 }
 
 const SECTION_CLS = 'space-y-2'
-const HEADING_CLS = 'text-base font-semibold text-zinc-900 dark:text-zinc-100'
+const HEADING_CLS = 'text-base font-semibold text-ink'
 const CHIP_LIST_CLS = 'flex flex-wrap gap-2'
-const CHIP_BASE = 'rounded border border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 flex flex-wrap items-center gap-x-2 gap-y-1'
-const CHIP_NAME_CLS = 'text-sm font-medium text-zinc-900 dark:text-zinc-100'
-const CHIP_XPTS_CLS = 'text-xs text-zinc-500 dark:text-zinc-400'
-const EMPTY_CLS = 'text-sm text-zinc-500 dark:text-zinc-400'
+const CHIP_BASE = 'rounded border border-line bg-surface-2 px-3 py-2 flex flex-wrap items-center gap-x-2 gap-y-1'
+const CHIP_NAME_CLS = 'text-sm font-medium text-ink'
+const CHIP_XPTS_CLS = 'text-xs text-ink-muted'
+const EMPTY_CLS = 'text-sm text-ink-muted'
 
 function PlayerChip({ player }: { player: MergedPlayer }) {
   const x = player.xPts_1gw
@@ -63,7 +63,8 @@ function CaptainEdge({
   const rounded = Number(edge.toFixed(1))
   const sign = rounded >= 0 ? '+' : '−'
   const abs = Math.abs(rounded).toFixed(1)
-  const cls = rounded >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+  // UIX-04 ruling 3: edge for/against → positive/negative tokens
+  const cls = rounded >= 0 ? 'text-positive' : 'text-negative'
   return (
     <span className={`text-sm font-medium ${cls}`}>
       Captain edge: {sign}{abs} xPts vs {rival.playerName}
@@ -76,7 +77,7 @@ export function RivalDetailPanel({
 }: RivalDetailPanelProps) {
   if (rival === null) {
     return (
-      <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4">
+      <div className="rounded border border-line bg-surface-1 p-4">
         <p className={EMPTY_CLS}>Select a rival from the table to see differential analysis.</p>
       </div>
     )
@@ -107,7 +108,7 @@ export function RivalDetailPanel({
   }
 
   return (
-    <div className="space-y-6 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4">
+    <div className="space-y-6 rounded border border-line bg-surface-1 p-4">
       <section className={SECTION_CLS}>
         <h3 className={HEADING_CLS}>Captain Edge</h3>
         <CaptainEdge rival={rival} userCaptainCandidate={userCaptainCandidate} playerById={playerById} />

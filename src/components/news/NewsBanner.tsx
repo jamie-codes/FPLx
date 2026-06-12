@@ -14,10 +14,12 @@ interface NewsBannerProps {
   chance_of_playing_next_round?: number | null
 }
 
+// UIX-04: severity vocabulary (red/amber/zinc — data, from lib/newsSeverity)
+// maps to negative/warning/neutral ink tokens. Text-only by design (no pill).
 const SEVERITY_CLASS: Record<NewsSeverity, string> = {
-  red:   'text-red-600 dark:text-red-400',
-  amber: 'text-amber-600 dark:text-amber-400',
-  zinc:  'text-zinc-500 dark:text-zinc-400',
+  red:   'text-negative',
+  amber: 'text-warning',
+  zinc:  'text-ink-muted',
   none:  '',
 }
 

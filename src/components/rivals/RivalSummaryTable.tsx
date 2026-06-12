@@ -11,17 +11,18 @@ interface RivalSummaryTableProps {
   playerNameById: Map<number, string>
 }
 
-const TH_CLS = 'text-left font-semibold text-zinc-600 dark:text-zinc-400 pb-1 border-b border-zinc-200 dark:border-zinc-700 text-xs sm:text-sm'
+const TH_CLS = 'text-left font-semibold text-ink-muted pb-1 border-b border-line text-xs sm:text-sm'
 const TD_CLS = 'py-2 text-sm'
 
 function rankGapDisplay(gap: number): { text: string; cls: string } {
   // UI-SPEC sign convention: user ahead = positive (green); rival ahead = negative (red).
   // RivalEntry.rankGap = rival.rank - userRank → negative when user is BETTER ranked.
   // Flip sign for display so "+N green" reads "user ahead".
+  // UIX-04 ruling 3: ahead/behind result semantics → positive/negative tokens.
   const display = -gap
-  if (display > 0) return { text: `+${display}`, cls: 'text-green-600 dark:text-green-400' }
-  if (display < 0) return { text: `−${Math.abs(display)}`, cls: 'text-red-600 dark:text-red-400' }
-  return { text: '0', cls: 'text-zinc-500 dark:text-zinc-400' }
+  if (display > 0) return { text: `+${display}`, cls: 'text-positive' }
+  if (display < 0) return { text: `−${Math.abs(display)}`, cls: 'text-negative' }
+  return { text: '0', cls: 'text-ink-muted' }
 }
 
 export function RivalSummaryTable({
@@ -42,8 +43,8 @@ export function RivalSummaryTable({
         {rivals.map(r => {
           const isSelected = r.entryId === selectedRivalId
           const rowCls = isSelected
-            ? 'cursor-pointer bg-zinc-100 dark:bg-zinc-800'
-            : 'cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
+            ? 'cursor-pointer bg-surface-2'
+            : 'cursor-pointer hover:bg-surface-2/50'
           const captainName = r.captainPlayerId !== null
             ? (playerNameById.get(r.captainPlayerId) ?? '—')
             : '—'

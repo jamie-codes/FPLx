@@ -165,7 +165,7 @@ describe('WatchlistTab', () => {
     const { container } = withQueryClient(
       <WatchlistTab watchlistIds={[1]} toggleWatchlist={vi.fn()} />
     )
-    expect(container.querySelector('.border-amber-400')).not.toBeNull()
+    expect(container.querySelector('.border-warning')).not.toBeNull()
   })
 
   it('renders squad-overlap dot on a card whose id is in the squad starters (envelope shape)', () => {

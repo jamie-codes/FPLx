@@ -59,9 +59,11 @@ const SOURCE_LABEL: Record<'skysports' | 'bbc', string> = {
   bbc:       '[BBC]',
 }
 
+// UIX-04: source branding mapped to intent tokens preserving hue distinction
+// (SKY blue → accent, BBC red → negative; identity colour, not semantics)
 const SOURCE_CLS: Record<'skysports' | 'bbc', string> = {
-  skysports: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  bbc:       'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+  skysports: 'bg-accent-soft text-accent',
+  bbc:       'bg-negative-soft text-negative',
 }
 
 // Phase 131 SPEC-01: Tier badge dicts (D-09/D-10)
@@ -71,10 +73,12 @@ const TIER_LABEL: Record<SourceTier, string> = {
   Speculative: 'Speculative',
 }
 
+// UIX-04: tier reliability ladder → positive (Official) / accent (Reliable) /
+// neutral (Speculative) tokens — three tiers stay visually distinct
 const TIER_CLS: Record<SourceTier, string> = {
-  Official:    'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200',
-  Reliable:    'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  Speculative: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
+  Official:    'bg-positive-soft text-positive',
+  Reliable:    'bg-accent-soft text-accent',
+  Speculative: 'bg-surface-2 text-ink-muted',
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -90,14 +94,14 @@ export function SummerWindowTab(): React.JSX.Element {
       <section className="mt-6 space-y-4" aria-label="Summer window transfer news">
         <div className="flex gap-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-8 w-20 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse" />
+            <div key={i} className="h-8 w-20 bg-surface-2 rounded animate-pulse" />
           ))}
         </div>
         <div className="space-y-2">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 animate-pulse">
-              <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-3/4 mb-2" />
-              <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded w-20" />
+            <div key={i} className="rounded border border-line bg-surface-1 px-4 py-3 animate-pulse">
+              <div className="h-4 bg-surface-2 rounded w-3/4 mb-2" />
+              <div className="h-3 bg-surface-2 rounded w-20" />
             </div>
           ))}
         </div>
@@ -108,11 +112,11 @@ export function SummerWindowTab(): React.JSX.Element {
   // Error state, unavailable (pipeline not active), or missing data after loading
   if (isError || !data || isNotAvailable) {
     return (
-      <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
-        <p className="text-sm text-zinc-700 dark:text-zinc-300 font-medium">
+      <div className="rounded border border-line bg-surface-1 p-4">
+        <p className="text-sm text-ink font-medium">
           {isNotAvailable ? 'Transfer news feed is not yet active.' : 'Failed to load transfer news.'}
         </p>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+        <p className="text-xs text-ink-muted mt-1">
           {isNotAvailable
             ? 'The pipeline will populate this feed on its next scheduled run.'
             : 'Refresh the page or try again later.'}
@@ -149,7 +153,7 @@ export function SummerWindowTab(): React.JSX.Element {
     <section className="mt-6 space-y-4" aria-label="Summer window transfer news">
       {/* Stale banner (D-04) */}
       {isStale && (
-        <div className="flex items-center gap-2 rounded border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+        <div className="flex items-center gap-2 rounded border border-warning/40 bg-warning-soft px-4 py-3 text-sm text-warning">
           <span aria-hidden="true">⚠</span>
           Feed last updated {formatRelativeTime(feed.scraped_at)} — may not reflect latest news.
         </div>
@@ -163,9 +167,10 @@ export function SummerWindowTab(): React.JSX.Element {
       >
         {PILLS.map((pill) => {
           const active = pill.value === activeFilter
+          // UIX-04: active = inverted ink (SegmentedToggle convention); inactive = surface-2
           const cls = active
-            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-            : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+            ? 'bg-ink text-surface-1'
+            : 'bg-surface-2 text-ink-muted hover:bg-line'
           return (
             <button
               key={pill.value}
@@ -181,14 +186,14 @@ export function SummerWindowTab(): React.JSX.Element {
         })}
 
         {/* Divider between classification and tier pill groups (D-12) */}
-        <span aria-hidden="true" className="self-stretch border-l border-zinc-300 dark:border-zinc-600 mx-1" />
+        <span aria-hidden="true" className="self-stretch border-l border-line mx-1" />
 
         {/* Phase 131 SPEC-03: Tier filter pills — same button shape as classification pills */}
         {TIER_PILLS.map((pill) => {
           const active = pill.value === activeTierFilter
           const cls = active
-            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-            : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+            ? 'bg-ink text-surface-1'
+            : 'bg-surface-2 text-ink-muted hover:bg-line'
           return (
             <button
               key={`tier-${pill.value}`}
@@ -206,8 +211,8 @@ export function SummerWindowTab(): React.JSX.Element {
 
       {/* Article list or empty state */}
       {sortedArticles.length === 0 ? (
-        <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">No {PILL_LABEL[activeFilter]} articles found.</p>
+        <div className="rounded border border-line bg-surface-1 p-4">
+          <p className="text-sm text-ink-muted">No {PILL_LABEL[activeFilter]} articles found.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -216,14 +221,14 @@ export function SummerWindowTab(): React.JSX.Element {
             return (
               <article
                 key={`${article.url}-${idx}`}
-                className={`rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3${stale ? ' opacity-40' : ''}`}
+                className={`rounded border border-line bg-surface-1 px-4 py-3${stale ? ' opacity-40' : ''}`}
               >
                 <div className="flex items-start gap-2">
                   <a
                     href={article.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 text-sm text-zinc-900 dark:text-zinc-100 hover:underline leading-snug"
+                    className="flex-1 text-sm text-ink hover:underline leading-snug"
                   >
                     {article.title}
                   </a>
@@ -236,7 +241,7 @@ export function SummerWindowTab(): React.JSX.Element {
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="mt-1 text-xs text-ink-muted">
                   {formatRelativeTime(article.published ?? article.scraped_at)}
                 </p>
               </article>

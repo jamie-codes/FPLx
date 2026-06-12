@@ -94,7 +94,7 @@ describe('RivalSummaryTable', () => {
     expect(onSel).toHaveBeenCalledWith(42)
   })
 
-  it('selected row has bg-zinc-100 class', () => {
+  it('selected row has bg-surface-2 class', () => {
     const { container } = render(
       <RivalSummaryTable
         rivals={[rival({ entryId: 42 })]}
@@ -104,7 +104,7 @@ describe('RivalSummaryTable', () => {
       />,
     )
     const row = container.querySelector('[data-testid="rival-row-42"]') as HTMLElement
-    expect(row.className).toContain('bg-zinc-100')
+    expect(row.className).toContain('bg-surface-2')
   })
 
   it('rank gap signs: user ahead = +N (green), rival ahead = −N (red), equal = 0', () => {
@@ -121,9 +121,9 @@ describe('RivalSummaryTable', () => {
       return { text: cell.textContent, cls: cell.className }
     })
     expect(cells[0].text).toBe('+3')
-    expect(cells[0].cls).toContain('text-green-600')
+    expect(cells[0].cls).toContain('text-positive')
     expect(cells[1].text).toBe('−4')
-    expect(cells[1].cls).toContain('text-red-600')
+    expect(cells[1].cls).toContain('text-negative')
     expect(cells[2].text).toBe('0')
   })
 })

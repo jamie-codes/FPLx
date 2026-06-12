@@ -4,10 +4,11 @@ import { usePriceChanges } from '@/lib/hooks/usePriceChanges'
 import type { PriceChangePrediction } from '@/lib/types'
 
 // Phase 51 D-13 severity convention (HIGH=red urgency)
+// UIX-04: severity → negative/warning/neutral tokens
 const CONFIDENCE_CLASSES = {
-  HIGH:   'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-  MEDIUM: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
-  LOW:    'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
+  HIGH:   'bg-negative-soft text-negative',
+  MEDIUM: 'bg-warning-soft text-warning',
+  LOW:    'bg-surface-2 text-ink-muted',
 } as const
 
 type Tier = keyof typeof CONFIDENCE_CLASSES
@@ -32,7 +33,7 @@ export function PriceChangePanel() {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">
+      <p className="text-sm text-ink-muted text-center py-8">
         Loading price change predictions…
       </p>
     )
@@ -40,7 +41,7 @@ export function PriceChangePanel() {
 
   if (error) {
     return (
-      <p className="text-sm text-red-600 dark:text-red-400 py-4">
+      <p className="text-sm text-negative py-4">
         Failed to load price change data. Check the pipeline output and refresh.
       </p>
     )
@@ -50,7 +51,7 @@ export function PriceChangePanel() {
     return (
       <section className="mt-6 space-y-2" aria-label="Price change predictions not available">
         <h2 className="text-lg font-semibold">No price change data yet</h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-ink-muted">
           Run the pipeline to generate price change predictions.
         </p>
       </section>
@@ -68,7 +69,7 @@ export function PriceChangePanel() {
   return (
     <section className="mt-6 space-y-6" aria-label="Price change predictions">
       {data.snapshot_days < MIN_DAYS_FOR_TIERS && (
-        <p className="text-xs text-amber-600 dark:text-amber-400 mb-4">
+        <p className="text-xs text-warning mb-4">
           Early data — less than 14 days of snapshots. Confidence scores are estimates only.
         </p>
       )}
@@ -100,15 +101,16 @@ export function PriceChangePanel() {
 
 function PredictionRow({ prediction, showTier }: { prediction: PriceChangePrediction; showTier: boolean }) {
   const tier = getConfidenceTier(prediction.confidence_pct)
-  const barColor = prediction.direction === 'rise' ? 'bg-rose-500' : 'bg-red-500'
+  // UIX-04 ruling 3: rise/fall semantics → positive/negative tokens (never accent)
+  const barColor = prediction.direction === 'rise' ? 'bg-positive' : 'bg-negative'
   const costPounds = (prediction.now_cost / 10).toFixed(1)
 
   return (
-    <div className="rounded-md border border-zinc-200 dark:border-zinc-800 p-3 space-y-2">
+    <div className="rounded-md border border-line bg-surface-1 p-3 space-y-2">
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="text-sm font-medium truncate">{prediction.name}</p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="text-xs text-ink-muted">
             {prediction.team} · £{costPounds}m
           </p>
         </div>
@@ -118,20 +120,20 @@ function PredictionRow({ prediction, showTier }: { prediction: PriceChangePredic
               {tier}
             </span>
           )}
-          <span className="text-xs tabular-nums text-zinc-600 dark:text-zinc-300">
+          <span className="text-xs tabular-nums text-ink-muted">
             {Math.round(prediction.confidence_pct)}%
           </span>
         </div>
       </div>
 
-      <div className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+      <div className="w-full h-1.5 bg-surface-2 rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all ${barColor}`}
           style={{ width: `${prediction.confidence_pct}%` }}
         />
       </div>
 
-      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+      <p className="text-xs text-ink-muted">
         ETA: {formatEta(prediction.eta_days)}
       </p>
     </div>

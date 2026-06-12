@@ -107,7 +107,7 @@ export function WatchlistTab({ watchlistIds, toggleWatchlist }: WatchlistTabProp
           aria-busy="true"
         >
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-24 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse" />
+            <div key={i} className="h-24 bg-surface-2 rounded animate-pulse" />
           ))}
         </div>
       </section>
@@ -117,9 +117,9 @@ export function WatchlistTab({ watchlistIds, toggleWatchlist }: WatchlistTabProp
   // Error guard
   if (isError) {
     return (
-      <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
-        <p className="text-sm text-zinc-700 dark:text-zinc-300 font-medium">Failed to load player data.</p>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Refresh to try again.</p>
+      <div className="rounded border border-line bg-surface-1 p-4">
+        <p className="text-sm text-ink font-medium">Failed to load player data.</p>
+        <p className="text-xs text-ink-muted mt-1">Refresh to try again.</p>
       </div>
     )
   }
@@ -127,7 +127,7 @@ export function WatchlistTab({ watchlistIds, toggleWatchlist }: WatchlistTabProp
   // Empty guard
   if (watchlistIds.length === 0) {
     return (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 py-4">
+      <p className="text-sm text-ink-muted py-4">
         No players pinned yet. Tap ⭐ on any player in Gem Ratings to add them here.
       </p>
     )

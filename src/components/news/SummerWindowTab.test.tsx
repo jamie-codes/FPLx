@@ -1,10 +1,9 @@
 // @vitest-environment jsdom
 // Phase 125 WIN-01 / D-01..D-09 — SummerWindowTab contract tests
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import type { UseQueryResult } from '@tanstack/react-query'
 import { render, fireEvent } from '@testing-library/react'
 import { SummerWindowTab } from './SummerWindowTab'
-import type { TransferNewsArticle, TransferNewsFeed } from '@/lib/types'
+import type { TransferNewsArticle } from '@/lib/types'
 
 vi.mock('@/lib/hooks/useTransferNews', () => ({
   useTransferNews: vi.fn(),
@@ -30,10 +29,12 @@ function makeArticle(overrides: ArticleOverride): TransferNewsArticle {
   }
 }
 
+// UIX-04: typed as the hook's actual return shape (UseQueryResult + isNotAvailable)
+// — fixes the pre-existing TS2345 batch (isNotAvailable was missing from the mock).
 function mockFeed(
   articles: ArticleOverride[],
   scrapedAt?: string
-): UseQueryResult<TransferNewsFeed> {
+): ReturnType<typeof useTransferNews> {
   return {
     data: {
       scraped_at: scrapedAt ?? '2026-05-19T11:00:00Z',
@@ -64,7 +65,8 @@ function mockFeed(
     isStale: false,
     status: 'success',
     refetch: vi.fn(),
-  } as unknown as UseQueryResult<TransferNewsFeed>
+    isNotAvailable: false,
+  } as unknown as ReturnType<typeof useTransferNews>
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────

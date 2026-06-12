@@ -58,11 +58,11 @@ describe('PriceResetTab', () => {
     expect(screen.getByRole('heading', { name: 'Price Reset' })).toBeTruthy()
 
     const risePill = screen.getByText('+0.5m')
-    expect(risePill.className).toContain('bg-green-100')
+    expect(risePill.className).toContain('bg-positive-soft')
 
     // Unicode minus U+2212
     const fallPill = screen.getByText('−0.3m')
-    expect(fallPill.className).toContain('bg-red-100')
+    expect(fallPill.className).toContain('bg-negative-soft')
 
     const mainSection = screen.getByRole('region', { name: 'Price reset analysis' })
     expect(mainSection).toBeTruthy()

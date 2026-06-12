@@ -17,14 +17,13 @@ describe('NewsBanner — Phase 88 SCRAPER-01', () => {
     const banner = container.querySelector('[data-testid="news-banner"]')
     expect(banner).not.toBeNull()
     const cls = banner?.className ?? ''
-    expect(cls).toContain('text-red-600')
-    expect(cls).toContain('dark:text-red-400')
+    expect(cls).toContain('text-negative')
     expect(cls).toContain('text-xs')
     expect(banner?.textContent ?? '').toContain('Hamstring injury')
     const ariaHidden = container.querySelector('span[aria-hidden="true"]')
     expect(ariaHidden?.textContent ?? '').toContain('⚠')
     // Pitfall guard: no filled pill classes
-    expect(cls).not.toContain('bg-red-100')
+    expect(cls).not.toContain('bg-')
     expect(cls).not.toContain('rounded')
   })
 
@@ -33,8 +32,7 @@ describe('NewsBanner — Phase 88 SCRAPER-01', () => {
     const banner = container.querySelector('[data-testid="news-banner"]')
     expect(banner).not.toBeNull()
     const cls = banner?.className ?? ''
-    expect(cls).toContain('text-amber-600')
-    expect(cls).toContain('dark:text-amber-400')
+    expect(cls).toContain('text-warning')
     expect(banner?.textContent ?? '').toContain('Knock - 75% chance')
     const ariaHidden = container.querySelector('span[aria-hidden="true"]')
     expect(ariaHidden?.textContent ?? '').toContain('⚠')
@@ -45,8 +43,7 @@ describe('NewsBanner — Phase 88 SCRAPER-01', () => {
     const banner = container.querySelector('[data-testid="news-banner"]')
     expect(banner).not.toBeNull()
     const cls = banner?.className ?? ''
-    expect(cls).toContain('text-zinc-500')
-    expect(cls).toContain('dark:text-zinc-400')
+    expect(cls).toContain('text-ink-muted')
     expect(banner?.textContent ?? '').toContain('Returned from international duty')
     const ariaHidden = container.querySelector('span[aria-hidden="true"]')
     expect(ariaHidden?.textContent ?? '').toContain('ℹ')
@@ -97,8 +94,7 @@ describe('NewsBanner — Phase 115 NEWS-01 staleness gate', () => {
     const banner = container.querySelector('[data-testid="news-banner"]')
     expect(banner).not.toBeNull()
     const cls = banner?.className ?? ''
-    expect(cls).toContain('text-zinc-500')
-    expect(cls).toContain('dark:text-zinc-400')
+    expect(cls).toContain('text-ink-muted')
   })
 
   it('does NOT suppress red badge when news_added is stale', () => {
@@ -113,7 +109,7 @@ describe('NewsBanner — Phase 115 NEWS-01 staleness gate', () => {
     const banner = container.querySelector('[data-testid="news-banner"]')
     expect(banner).not.toBeNull()
     const cls = banner?.className ?? ''
-    expect(cls).toContain('text-red-600')
+    expect(cls).toContain('text-negative')
   })
 
   it('does NOT suppress amber badge when news_added is stale', () => {
@@ -128,7 +124,7 @@ describe('NewsBanner — Phase 115 NEWS-01 staleness gate', () => {
     const banner = container.querySelector('[data-testid="news-banner"]')
     expect(banner).not.toBeNull()
     const cls = banner?.className ?? ''
-    expect(cls).toContain('text-amber-600')
+    expect(cls).toContain('text-warning')
   })
 
   it('does NOT suppress zinc badge when news_added is missing (undefined)', () => {

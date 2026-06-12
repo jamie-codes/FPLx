@@ -114,8 +114,8 @@ export function RivalsTab({ submittedId }: RivalsTabProps) {
     return (
       <div className="space-y-6">
         <header>
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Track your mini-league rivals</h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          <h2 className="text-lg font-semibold text-ink">Track your mini-league rivals</h2>
+          <p className="text-sm text-ink-muted mt-1">
             Enter your mini-league ID to see rival squads, differential picks, and captain edge estimates.
           </p>
         </header>
@@ -141,13 +141,13 @@ export function RivalsTab({ submittedId }: RivalsTabProps) {
       />
 
       {rivalsLoading && (
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-ink-muted">
           Loading rivals…
         </p>
       )}
 
       {rivalsError && (
-        <p className="text-sm text-red-600 dark:text-red-400">
+        <p className="text-sm text-negative">
           Failed to load rivals. Check your league ID and try again.
         </p>
       )}
@@ -155,12 +155,12 @@ export function RivalsTab({ submittedId }: RivalsTabProps) {
       {rivalsData && (
         <>
           {rivalsData.leagueTruncated && (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="text-sm text-ink-muted">
               Showing first 20 rivals. Large leagues are capped at 20.
             </p>
           )}
           {playersLoading ? (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading…</p>
+            <p className="text-sm text-ink-muted">Loading…</p>
           ) : (
             <>
               <RivalSummaryTable
@@ -196,7 +196,7 @@ interface LeagueIdFormProps {
 function LeagueIdForm({ leagueId, onLeagueIdChange, onSubmit, disabled, showInvalid }: LeagueIdFormProps) {
   return (
     <form onSubmit={onSubmit} className="space-y-1">
-      <label className="block text-sm font-medium text-zinc-900 dark:text-zinc-100" htmlFor="league-id-input">
+      <label className="block text-sm font-medium text-ink" htmlFor="league-id-input">
         Mini-League ID
       </label>
       <div className="flex flex-col sm:flex-row gap-2">
@@ -207,18 +207,18 @@ function LeagueIdForm({ leagueId, onLeagueIdChange, onSubmit, disabled, showInva
           placeholder="e.g. 12345"
           value={leagueId}
           onChange={e => onLeagueIdChange(e.target.value)}
-          className="border border-zinc-300 dark:border-zinc-600 rounded px-3 py-2 text-base sm:text-sm bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 w-full sm:w-40"
+          className="border border-line bg-surface-1 text-ink rounded-md min-h-[44px] px-3 py-2 text-base sm:text-sm w-full sm:w-40"
         />
         <button
           type="submit"
           disabled={disabled}
-          className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium rounded min-h-[48px] px-4 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-ink text-surface-1 font-medium rounded-md min-h-[48px] px-4 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Load Rivals
         </button>
       </div>
       {showInvalid && (
-        <p className="text-xs text-red-600 dark:text-red-400">Please enter a numeric league ID.</p>
+        <p className="text-xs text-negative">Please enter a numeric league ID.</p>
       )}
     </form>
   )

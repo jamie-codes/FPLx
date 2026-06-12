@@ -23,18 +23,19 @@ export function WatchlistPlayerCard({
   inSquad,
   confirmedSigningTooltip,
 }: WatchlistPlayerCardProps) {
+  // UIX-04: 48h lineup-news border → warning token (D-13 amber semantics)
   const borderClass = departed
-    ? 'border border-zinc-200 dark:border-zinc-700 opacity-50'
+    ? 'border border-line opacity-50'
     : hasNews
-      ? 'border-2 border-amber-400 dark:border-amber-500'
-      : 'border border-zinc-200 dark:border-zinc-700'
+      ? 'border-2 border-warning'
+      : 'border border-line'
 
   if (departed) {
     return (
-      <div className={`rounded bg-white dark:bg-zinc-800 p-3 text-sm space-y-1 ${borderClass}`}>
+      <div className={`rounded bg-surface-1 p-3 text-sm space-y-1 ${borderClass}`}>
         <div className="flex items-center gap-1">
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">ID: {player.id}</span>
-          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-zinc-100 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400">
+          <span className="text-xs text-ink-muted">ID: {player.id}</span>
+          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-surface-2 text-ink-muted">
             Departed
           </span>
         </div>
@@ -48,27 +49,28 @@ export function WatchlistPlayerCard({
     : fullPlayer.cost_change_event < 0
       ? '▼'
       : null
+  // UIX-04 ruling 3: price rise/fall → positive/negative tokens
   const trendCls = fullPlayer.cost_change_event > 0
-    ? 'text-green-600 dark:text-green-400'
-    : 'text-red-600 dark:text-red-400'
+    ? 'text-positive'
+    : 'text-negative'
 
   return (
-    <div className={`rounded bg-white dark:bg-zinc-800 p-3 text-sm space-y-1 ${borderClass}`}>
+    <div className={`rounded bg-surface-1 p-3 text-sm space-y-1 ${borderClass}`}>
       {/* Position badge */}
       <div className="flex items-center gap-1">
-        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-zinc-100 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400">
+        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-surface-2 text-ink-muted">
           {POSITION_LABELS[fullPlayer.element_type] ?? '?'}
         </span>
         {inSquad && (
           <span
             aria-label="In your pre-season squad"
-            className="inline-block w-2 h-2 rounded-full bg-green-500 ml-1"
+            className="inline-block w-2 h-2 rounded-full bg-positive ml-1"
           />
         )}
       </div>
 
       {/* Player name */}
-      <div className="font-semibold text-zinc-800 dark:text-zinc-100 truncate">
+      <div className="font-semibold text-ink truncate">
         {fullPlayer.web_name}
       </div>
 
@@ -80,7 +82,7 @@ export function WatchlistPlayerCard({
       )}
 
       {/* Price + trend arrow */}
-      <div className="text-xs text-zinc-600 dark:text-zinc-300">
+      <div className="text-xs text-ink">
         £{(fullPlayer.now_cost / 10).toFixed(1)}m
         {trendArrow !== null && (
           <span className={`ml-1 ${trendCls}`}>{trendArrow}</span>
@@ -88,7 +90,7 @@ export function WatchlistPlayerCard({
       </div>
 
       {/* Ownership */}
-      <div className="text-xs text-zinc-500 dark:text-zinc-400">
+      <div className="text-xs text-ink-muted">
         {fullPlayer.selected_by_percent}%
       </div>
     </div>
