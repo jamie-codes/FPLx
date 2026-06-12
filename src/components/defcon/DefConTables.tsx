@@ -11,57 +11,66 @@ import {
   type VisibilityState,
 } from '@tanstack/react-table'
 import { useDefCon } from '@/lib/hooks/useDefCon'
+import { usePlayers } from '@/lib/hooks/usePlayers'
 import { splitByPosition } from '@/lib/defcon'
-import type { DefConPlayer } from '@/lib/types'
-import { defconColumns } from './columns'
+import type { DefConPlayer, MergedPlayer } from '@/lib/types'
+import { createDefconColumns } from './columns'
 import { LandscapeTip } from '@/components/set-pieces/LandscapeTip'
+import { TableShell, Th, Td, TABLE_CLS, TR_CLS } from '@/components/ui/Table'
 
 function renderTable(table: Table<DefConPlayer>) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm text-left">
-        <thead className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-700">
+    <TableShell>
+      <table className={TABLE_CLS}>
+        <thead className="sticky top-0 bg-surface-1">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <th
+                <Th
                   key={header.id}
-                  className={`px-2 py-1 font-semibold text-zinc-700 dark:text-zinc-300 whitespace-nowrap ${
-                    header.column.getCanSort() ? 'cursor-pointer select-none' : ''
-                  }`}
+                  className={header.column.getCanSort() ? 'cursor-pointer select-none' : ''}
                   onClick={header.column.getToggleSortingHandler()}
                 >
                   {header.isPlaceholder
                     ? null
                     : flexRender(header.column.columnDef.header, header.getContext())}
                   {header.column.getIsSorted() === 'asc'
-                    ? ' \u25B2'
+                    ? ' ▲'
                     : header.column.getIsSorted() === 'desc'
-                      ? ' \u25BC'
+                      ? ' ▼'
                       : null}
-                </th>
+                </Th>
               ))}
             </tr>
           ))}
         </thead>
         <tbody>
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="even:bg-zinc-50 dark:even:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-zinc-700">
+            <tr key={row.id} className={TR_CLS}>
               {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className="px-2 py-1 whitespace-nowrap">
+                <Td key={cell.id}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
+                </Td>
               ))}
             </tr>
           ))}
         </tbody>
       </table>
-    </div>
+    </TableShell>
   )
 }
 
 export function DefConTables() {
   const { data, isLoading, error } = useDefCon()
+  // UIX-03 Task 1: join the shared players cache by id so the identity column
+  // can render PlayerCell headshots/badges (defcon rows lack code/team_code).
+  const { data: players } = usePlayers()
+
+  const playerById = useMemo(
+    () => new Map<number, MergedPlayer>((players ?? []).map((p) => [p.id, p])),
+    [players]
+  )
+  const columns = useMemo(() => createDefconColumns(playerById), [playerById])
 
   const { def: defPlayers, midFwd: midFwdPlayers } = useMemo(
     () => splitByPosition(data ?? []),
@@ -97,7 +106,7 @@ export function DefConTables() {
 
   const defTable = useReactTable({
     data: defPlayers,
-    columns: defconColumns,
+    columns,
     state: { sorting: defSorting, columnVisibility },
     onSortingChange: setDefSorting,
     getCoreRowModel: getCoreRowModel(),
@@ -106,15 +115,15 @@ export function DefConTables() {
 
   const midFwdTable = useReactTable({
     data: midFwdPlayers,
-    columns: defconColumns,
+    columns,
     state: { sorting: midFwdSorting, columnVisibility },
     onSortingChange: setMidFwdSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   })
 
-  if (isLoading) return <div className="text-center py-8 text-zinc-500">Loading DefCon data...</div>
-  if (error) return <div className="text-center py-8 text-red-500">Failed to load DefCon data</div>
+  if (isLoading) return <div className="text-center py-8 text-ink-muted">Loading DefCon data...</div>
+  if (error) return <div className="text-center py-8 text-negative">Failed to load DefCon data</div>
 
   return (
     <div className="space-y-8">
@@ -123,7 +132,7 @@ export function DefConTables() {
       <section>
         <h2 className="text-lg font-semibold mb-2">
           Defenders (threshold: 10 contributions)
-          <span className="ml-2 text-sm font-normal text-zinc-500">{defPlayers.length} players</span>
+          <span className="ml-2 text-sm font-normal text-ink-muted">{defPlayers.length} players</span>
         </h2>
         {renderTable(defTable)}
       </section>
@@ -132,7 +141,7 @@ export function DefConTables() {
       <section>
         <h2 className="text-lg font-semibold mb-2">
           Midfielders &amp; Forwards (threshold: 12 contributions)
-          <span className="ml-2 text-sm font-normal text-zinc-500">{midFwdPlayers.length} players</span>
+          <span className="ml-2 text-sm font-normal text-ink-muted">{midFwdPlayers.length} players</span>
         </h2>
         {renderTable(midFwdTable)}
       </section>
