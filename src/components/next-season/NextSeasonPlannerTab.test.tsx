@@ -217,15 +217,15 @@ describe('NextSeasonPlannerTab', () => {
     expect(container.textContent).toContain('all budgets feasible')
   })
 
-  it('renders "No feasible squad found" text in red when min_feasible_budget_greedy is null', () => {
+  it('renders "No feasible squad found" text in negative tone when min_feasible_budget_greedy is null', () => {
     const health = makeHealth({ greedy_null_rate: 1, min_feasible_budget_greedy: null })
     const envelope = makeEnvelope({ solver: 'ilp', health })
     usePreSeasonSquadMock.mockReturnValue({ data: envelope, isLoading: false, isError: false })
     const { container } = render(<NextSeasonPlannerTab />)
     expect(container.textContent).toContain('No feasible squad found')
-    // Red text element
-    const redEl = container.querySelector('.text-red-600, .text-red-400')
-    expect(redEl).not.toBeNull()
+    // UIX-04: negative-token text element (was text-red-600/400)
+    const negativeEl = container.querySelector('.text-negative')
+    expect(negativeEl).not.toBeNull()
   })
 
   it('renders "Pre-season squad not yet available" when data is null (404 state)', () => {
@@ -446,7 +446,7 @@ describe('NextSeasonPlannerTab', () => {
     expect(container.textContent).toMatch(/InputPlayer\d+/)
   })
 
-  it('amber gradient inline style contains #f59e0b and 10% threshold when min_feasible=84 (D-10)', () => {
+  it('warning-token gradient inline style contains var(--color-warning) and 10% threshold when min_feasible=84 (D-10)', () => {
     // threshold = ((84 - 80) / 40) * 100 = 10%
     const envelope = makeEnvelope({
       inputs: makeInputs(),
@@ -455,22 +455,21 @@ describe('NextSeasonPlannerTab', () => {
     usePreSeasonSquadMock.mockReturnValue({ data: envelope, isLoading: false, isError: false })
     const { container } = render(<NextSeasonPlannerTab />)
     const slider = container.querySelector('input[type="range"]') as HTMLInputElement
-    // Amber gradient must include the amber color and threshold position
-    expect(slider.style.background).toContain('#f59e0b')
+    // UIX-04: gradient must mark the infeasible zone with the warning token and threshold position
+    expect(slider.style.background).toContain('var(--color-warning)')
     expect(slider.style.background).toContain('10%')
   })
 
-  it('slider track is zinc #71717a only when health is null (D-11)', () => {
+  it('slider track is the muted token only when health is null (D-11)', () => {
     const envelope = makeEnvelope({
       inputs: makeInputs(),
-      health: null,  // no health → zinc track
+      health: null,  // no health → muted neutral track
     })
     usePreSeasonSquadMock.mockReturnValue({ data: envelope, isLoading: false, isError: false })
     const { container } = render(<NextSeasonPlannerTab />)
     const slider = container.querySelector('input[type="range"]') as HTMLInputElement
-    // Zinc-only track, no gradient
-    // jsdom normalises hex colours to rgb() — check for the rgb equivalent of #71717a
-    expect(slider.style.background).toMatch(/#71717a|rgb\(113,\s*113,\s*122\)/)
+    // UIX-04: muted-token-only track, no gradient
+    expect(slider.style.background).toContain('var(--color-ink-muted)')
     expect(slider.style.background).not.toContain('linear-gradient')
   })
 

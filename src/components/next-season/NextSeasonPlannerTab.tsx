@@ -7,7 +7,9 @@
 // Phase 128 (128-04): Added usePreSeasonActive hook integration — status pill (Awaiting/Live)
 //   and first-activation banner with localStorage suppression (AUTO-03).
 // Phase 129 (COST-01, COST-02): budget slider + useDeferredValue commit pipeline; consumes inputs envelope from /api/pre-season-squad?include=inputs.
-// Phase 129 Wave 3 (COST-03): infeasibility <p> with D-08/D-09 copy, dynamic amber gradient (D-10), zinc-only track when health null (D-11), inputs-refetch reset effect (R6).
+// Phase 129 Wave 3 (COST-03): infeasibility <p> with D-08/D-09 copy, dynamic warning-tier gradient (D-10), muted-only track when health null (D-11), inputs-refetch reset effect (R6).
+// UIX-04 (batch-table gap fix): retokenized — raw palette → semantic tokens; pill/banner/track
+// semantics per spec ruling 3 (budget validity → warning, solver/live state → positive).
 // D-04: read-only (no mutation paths, no <button> elements that change squad state).
 // D-05: formation grid (GK/DEF/MID/FWD rows + 4 bench).
 // D-06: ppm as native title-attribute tooltip on total-points span only (not visible column).
@@ -36,17 +38,17 @@ function FormationGrid({ squad, solver }: { squad: PreSeasonSquad; solver?: 'ilp
   return (
     <>
       {/* Headline row: formation + budget + solver badge */}
-      <div className="text-sm text-zinc-700 dark:text-zinc-300 py-2 flex flex-wrap items-center gap-2">
+      <div className="text-sm text-ink py-2 flex flex-wrap items-center gap-2">
         <span><span className="font-semibold">Formation:</span> {squad.formation}</span>
-        <span className="text-zinc-400">│</span>
+        <span className="text-ink-muted">│</span>
         <span><span className="font-semibold">Budget used:</span> £{(squad.budgetUsed / 10).toFixed(1)}m</span>
         {solver === 'ilp' && (
-          <span className="text-xs font-normal text-green-800 dark:text-green-200 bg-green-100 dark:bg-green-900 rounded px-2 py-1">
+          <span className="text-xs font-normal bg-positive-soft text-positive rounded px-2 py-1">
             ILP
           </span>
         )}
         {solver === 'greedy' && (
-          <span className="text-xs font-normal text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 rounded px-2 py-1">
+          <span className="text-xs font-normal bg-surface-2 text-ink-muted rounded px-2 py-1">
             Greedy
           </span>
         )}
@@ -58,16 +60,16 @@ function FormationGrid({ squad, solver }: { squad: PreSeasonSquad; solver?: 'ilp
         if (group.length === 0) return null
         return (
           <Fragment key={pos}>
-            <div className="text-[10px] font-semibold uppercase text-zinc-500 dark:text-zinc-400 pt-2 pb-0.5 bg-zinc-50 dark:bg-zinc-800/40 px-1">
+            <div className="text-[10px] font-semibold uppercase text-ink-muted pt-2 pb-0.5 bg-surface-2 px-1">
               {POSITION_LABELS[pos]}
             </div>
             {group.map(p => (
               <div
                 key={p.id}
-                className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800 border-l-2 border-l-green-500 pl-2 text-sm"
+                className="flex items-center justify-between py-1.5 border-b border-line border-l-2 border-l-positive pl-2 text-sm"
               >
-                <span className="font-semibold text-zinc-700 dark:text-zinc-300">{p.web_name}</span>
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                <span className="font-semibold text-ink">{p.web_name}</span>
+                <span className="text-xs text-ink-muted">
                   <span>{p.team_short_name}</span>
                   <span className="ml-2">£{(p.now_cost / 10).toFixed(1)}m</span>
                   <span className="ml-2" title={`${p.ppm.toFixed(2)}pts/min (last season)`}>{p.total_points}pts</span>
@@ -79,16 +81,16 @@ function FormationGrid({ squad, solver }: { squad: PreSeasonSquad; solver?: 'ilp
       })}
 
       {/* Bench section */}
-      <div className="text-[10px] font-semibold uppercase text-zinc-500 dark:text-zinc-400 pt-2 pb-0.5 bg-zinc-50 dark:bg-zinc-800/40 px-1">
+      <div className="text-[10px] font-semibold uppercase text-ink-muted pt-2 pb-0.5 bg-surface-2 px-1">
         Bench
       </div>
       {squad.bench.map(p => (
         <div
           key={p.id}
-          className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800 opacity-60 pl-2 text-sm"
+          className="flex items-center justify-between py-1.5 border-b border-line opacity-60 pl-2 text-sm"
         >
-          <span className="font-semibold text-zinc-700 dark:text-zinc-300">{p.web_name}</span>
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+          <span className="font-semibold text-ink">{p.web_name}</span>
+          <span className="text-xs text-ink-muted">
             <span>{p.team_short_name}</span>
             <span className="ml-2">£{(p.now_cost / 10).toFixed(1)}m</span>
             <span className="ml-2" title={`${p.ppm.toFixed(2)}pts/min (last season)`}>{p.total_points}pts</span>
@@ -107,18 +109,18 @@ function ArchetypeCard({ archetype }: { archetype: ArchetypeSquad }) {
 
   return (
     <div
-      className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3"
+      className="rounded border border-line bg-surface-1 p-4 space-y-3"
       data-testid="archetype-card"
     >
-      <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{label}</h4>
+      <h4 className="text-sm font-semibold text-ink">{label}</h4>
 
       {squad === null ? (
-        <p className="text-xs text-amber-600 dark:text-amber-400">
+        <p className="text-xs text-warning">
           Could not build squad — try adjusting the budget.
         </p>
       ) : (
         <>
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 flex flex-wrap gap-2">
+          <div className="text-xs text-ink-muted flex flex-wrap gap-2">
             <span><span className="font-semibold">Formation:</span> {squad.formation}</span>
             <span>│</span>
             <span><span className="font-semibold">Cost:</span> £{(squad.budgetUsed / 10).toFixed(1)}m</span>
@@ -126,15 +128,15 @@ function ArchetypeCard({ archetype }: { archetype: ArchetypeSquad }) {
 
           {topCaptains.length > 0 && (
             <div>
-              <p className="text-[10px] font-semibold uppercase text-zinc-400 dark:text-zinc-500 mb-1">
+              <p className="text-[10px] font-semibold uppercase text-ink-muted mb-1">
                 Captain options
               </p>
               {topCaptains.map((c, i) => (
                 <div key={c.id} className="flex items-center justify-between text-xs py-0.5">
-                  <span className={i === 0 ? 'font-semibold text-zinc-800 dark:text-zinc-200' : 'text-zinc-600 dark:text-zinc-400'}>
+                  <span className={i === 0 ? 'font-semibold text-ink' : 'text-ink-muted'}>
                     {c.web_name}
                   </span>
-                  <span className="text-zinc-400 dark:text-zinc-500">{c.total_points}pts</span>
+                  <span className="text-ink-muted">{c.total_points}pts</span>
                 </div>
               ))}
             </div>
@@ -148,16 +150,16 @@ function ArchetypeCard({ archetype }: { archetype: ArchetypeSquad }) {
             if (group.length === 0) return null
             return (
               <div key={pos}>
-                <p className="text-[10px] font-semibold uppercase text-zinc-400 dark:text-zinc-500 mb-0.5">
+                <p className="text-[10px] font-semibold uppercase text-ink-muted mb-0.5">
                   {POSITION_LABELS[pos]}
                 </p>
                 {group.map(p => (
                   <div
                     key={p.id}
-                    className={`flex items-center justify-between text-xs py-0.5 border-b border-zinc-100 dark:border-zinc-800 ${!starterIds.has(p.id) ? 'opacity-50' : ''}`}
+                    className={`flex items-center justify-between text-xs py-0.5 border-b border-line ${!starterIds.has(p.id) ? 'opacity-50' : ''}`}
                   >
-                    <span className="text-zinc-700 dark:text-zinc-300 truncate">{p.web_name}</span>
-                    <span className="text-zinc-400 dark:text-zinc-500 shrink-0 ml-2">
+                    <span className="text-ink truncate">{p.web_name}</span>
+                    <span className="text-ink-muted shrink-0 ml-2">
                       {p.team_short_name} £{(p.now_cost / 10).toFixed(1)}m
                     </span>
                   </div>
@@ -177,20 +179,20 @@ function ArchetypeCard({ archetype }: { archetype: ArchetypeSquad }) {
 function HealthIndicator({ health }: { health: SquadHealth }) {
   if (health.greedy_null_rate === 0) {
     return (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 py-2">
+      <p className="text-sm text-ink-muted py-2">
         Greedy success rate: 100% — all budgets feasible.
       </p>
     )
   }
   if (health.min_feasible_budget_greedy === null) {
     return (
-      <p className="text-sm text-red-600 dark:text-red-400 py-2">
+      <p className="text-sm text-negative py-2">
         No feasible squad found across £{health.budget_sweep_min}m–£{health.budget_sweep_max}m range.
       </p>
     )
   }
   return (
-    <p className="text-sm text-zinc-500 dark:text-zinc-400 py-2">
+    <p className="text-sm text-ink-muted py-2">
       Greedy success rate: {Math.round((1 - health.greedy_null_rate) * 100)}% across
       £{health.budget_sweep_min}m–£{health.budget_sweep_max}m budget sweep.
       {' '}Min feasible budget: £{health.min_feasible_budget_greedy.toFixed(1)}m.
@@ -253,12 +255,15 @@ export function NextSeasonPlannerTab() {
   }, [data?.inputs])
   useEffect(() => () => { if (keyboardTimerRef.current) clearTimeout(keyboardTimerRef.current) }, [])
 
+  // UIX-04: feasibility track tokens — warning marks the infeasible zone below
+  // min_feasible_budget_greedy; ink-muted is the neutral remainder (ruling 3:
+  // budget validity is a semantic state, never flattened to accent).
   const trackBackground = useMemo<string>(() => {
-    if (!health) return '#71717a'
+    if (!health) return 'var(--color-ink-muted)'
     const minFeasible = health.min_feasible_budget_greedy
-    if (minFeasible === null) return '#71717a'
+    if (minFeasible === null) return 'var(--color-ink-muted)'
     const threshold = ((minFeasible - 80) / 40) * 100
-    return `linear-gradient(to right, #f59e0b 0%, #f59e0b ${threshold}%, #71717a ${threshold}%, #71717a 100%)`
+    return `linear-gradient(to right, var(--color-warning) 0%, var(--color-warning) ${threshold}%, var(--color-ink-muted) ${threshold}%, var(--color-ink-muted) 100%)`
   }, [health])
 
   // Phase 129 (COST-01): Slider event handlers
@@ -286,12 +291,12 @@ export function NextSeasonPlannerTab() {
 
   if (isLoading) {
     squadSection = (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 py-4">Loading pre-season squad...</p>
+      <p className="text-sm text-ink-muted py-4">Loading pre-season squad...</p>
     )
   } else if (isError) {
     // GREEDY-NULL: surface reason code when hook throws with infeasibility message.
     squadSection = (
-      <p className="text-sm text-red-600 dark:text-red-400 py-4">
+      <p className="text-sm text-negative py-4">
         {error?.message ?? 'Failed to load pre-season squad'}. Check the pipeline output and refresh.
       </p>
     )
@@ -299,7 +304,7 @@ export function NextSeasonPlannerTab() {
     // Archive absent (data===null = 404) or envelope present but no squad yet.
     // Note: data===null is the canonical "Prices pending" state (D-03).
     squadSection = (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 py-4">
+      <p className="text-sm text-ink-muted py-4">
         Pre-season squad not yet available. The squad builder becomes available once the season archive is ready. Check back after GW38.
       </p>
     )
@@ -321,15 +326,15 @@ export function NextSeasonPlannerTab() {
 
   const heatmapSection: ReactNode = hasFixtures ? (
     // Future-ready: HeatMapRow is imported; populate grid/tierMap/ownedTeamIds from fixture data.
-    <p className="text-sm text-zinc-500 dark:text-zinc-400 py-2">
+    <p className="text-sm text-ink-muted py-2">
       Fixture data ready — heatmap rendering.
     </p>
   ) : (
     <>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 py-2">
+      <p className="text-sm text-ink-muted py-2">
         Fixtures not yet published for next season.
       </p>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="text-sm text-ink-muted">
         Next season&apos;s fixture list hasn&apos;t been released yet. Check back in late June.
       </p>
     </>
@@ -342,8 +347,8 @@ export function NextSeasonPlannerTab() {
         <div className="flex items-center gap-2 py-2">
           <span className={
             isActive
-              ? "text-xs font-normal text-green-800 dark:text-green-200 bg-green-100 dark:bg-green-900 rounded px-2 py-1"
-              : "text-xs font-normal text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 rounded px-2 py-1"
+              ? "text-xs font-normal bg-positive-soft text-positive rounded px-2 py-1"
+              : "text-xs font-normal bg-surface-2 text-ink-muted rounded px-2 py-1"
           }>
             {isActive ? 'Live' : 'Awaiting'}
           </span>
@@ -356,14 +361,14 @@ export function NextSeasonPlannerTab() {
           fplx_ prefix aligns with project localStorage key convention (RESEARCH.md Pitfall 5). */}
       {isActive && seasonId !== '' && !dismissed && typeof window !== 'undefined' &&
         localStorage.getItem(`fplx_nsp_activation_seen_${seasonId}`) !== 'true' && (
-        <div className="rounded border border-green-400 bg-green-50 dark:bg-green-950 p-4 text-sm text-green-800 dark:text-green-200 mb-4 flex items-start justify-between">
+        <div className="rounded border border-positive/40 bg-positive-soft p-4 text-sm text-positive mb-4 flex items-start justify-between">
           <span>🏆 Pre-season is live — your squad has been re-optimised against the new FPL prices.</span>
           <button
             onClick={() => {
               localStorage.setItem(`fplx_nsp_activation_seen_${seasonId}`, 'true')
               setDismissed(true)
             }}
-            className="ml-4 text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="ml-4 text-positive/70 hover:text-positive min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label="Dismiss activation banner"
           >
             ×
@@ -376,7 +381,7 @@ export function NextSeasonPlannerTab() {
         <h3 className="text-xl font-semibold">Pre-Season Squad</h3>
         {data?.inputs && data.squad != null && (
           <div className="py-2 min-h-[44px]">
-            <label className="text-sm text-zinc-700 dark:text-zinc-300 font-semibold">
+            <label className="text-sm text-ink font-semibold">
               Budget: £{sliderValue.toFixed(1)}m
             </label>
             <input
@@ -399,7 +404,7 @@ export function NextSeasonPlannerTab() {
           </div>
         )}
         {hasCommitted && clientSquad === null && (
-          <p className="text-sm text-amber-600 dark:text-amber-400 py-2">
+          <p className="text-sm text-warning py-2">
             {health?.min_feasible_budget_greedy != null
               ? `No squad possible at £${testedBudget.toFixed(1)}m — try £${health.min_feasible_budget_greedy.toFixed(1)}m+`
               : `No squad possible at £${testedBudget.toFixed(1)}m`}
@@ -414,7 +419,7 @@ export function NextSeasonPlannerTab() {
       {archetypes && (
         <div>
           <h3 className="text-xl font-semibold mb-3">Squad Archetypes</h3>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+          <p className="text-sm text-ink-muted mb-4">
             Three squad structures built from the same £{((data?.inputs?.budget_default ?? 1000) / 10).toFixed(0)}m budget.
             Captain options ranked by last-season points.
           </p>
