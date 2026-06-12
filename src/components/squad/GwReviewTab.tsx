@@ -14,22 +14,22 @@ interface GwReviewTabProps {
 interface StatCardProps {
   label: string
   value: string                  // pre-formatted (with prefix +/- if applicable)
-  sentimentClass?: string        // e.g. 'text-green-600 dark:text-green-400'
+  sentimentClass?: string        // e.g. 'text-positive'
   delta?: string                 // Phase 99 PGW-03: optional sub-label rendered below value
   testid?: string                // Phase 99 PGW-03: optional data-testid forwarded to root div
 }
 
 function StatCard({ label, value, sentimentClass, delta, testid }: StatCardProps) {
-  const valueClass = sentimentClass ?? 'text-zinc-900 dark:text-zinc-100'
+  const valueClass = sentimentClass ?? 'text-ink'
   return (
     <div
-      className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3"
+      className="rounded border border-line bg-surface-1 p-3"
       data-testid={testid}
     >
-      <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">{label}</p>
+      <p className="text-xs text-ink-muted mb-1">{label}</p>
       <p className={`text-xl font-semibold ${valueClass}`}>{value}</p>
       {delta && (
-        <p className={`text-xs mt-0.5 ${sentimentClass ?? 'text-zinc-500 dark:text-zinc-400'}`}>
+        <p className={`text-xs mt-0.5 ${sentimentClass ?? 'text-ink-muted'}`}>
           {delta}
         </p>
       )}
@@ -51,8 +51,8 @@ function GwPillToggle({ gws, activeGw, onSelect }: GwPillToggleProps) {
       {gws.map((gw) => {
         const active = gw === activeGw
         const cls = active
-          ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900'
-          : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+          ? 'bg-ink text-surface-1'
+          : 'text-ink-muted hover:text-ink'
         return (
           <button
             key={gw}
@@ -87,8 +87,8 @@ export function GwReviewTab({ teamId, settledGws }: GwReviewTabProps) {
   if (submittedId === null) {
     return (
       <section className="mt-6 space-y-3" data-testid="gw-review-tab">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">GW Review</h2>
-        <div className="rounded border border-zinc-200 dark:border-zinc-700 p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+        <h2 className="text-base font-semibold text-ink">GW Review</h2>
+        <div className="rounded border border-line p-6 text-center text-sm text-ink-muted">
           Load your squad to see GW reviews.
         </div>
       </section>
@@ -99,8 +99,8 @@ export function GwReviewTab({ teamId, settledGws }: GwReviewTabProps) {
   if (settledGws.length === 0 || queryGw === null) {
     return (
       <section className="mt-6 space-y-3" data-testid="gw-review-tab">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">GW Review</h2>
-        <div className="rounded border border-zinc-200 dark:border-zinc-700 p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+        <h2 className="text-base font-semibold text-ink">GW Review</h2>
+        <div className="rounded border border-line p-6 text-center text-sm text-ink-muted">
           GW review will appear once scores finalise.
         </div>
       </section>
@@ -110,7 +110,7 @@ export function GwReviewTab({ teamId, settledGws }: GwReviewTabProps) {
   // ───── Pill toggle is rendered for all data-bearing branches below ─────
   const header = (
     <header className="flex items-center justify-between">
-      <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">GW Review</h2>
+      <h2 className="text-base font-semibold text-ink">GW Review</h2>
       <GwPillToggle gws={settledGws} activeGw={queryGw} onSelect={setSelectedGw} />
     </header>
   )
@@ -120,7 +120,7 @@ export function GwReviewTab({ teamId, settledGws }: GwReviewTabProps) {
     return (
       <section className="mt-6 space-y-3" data-testid="gw-review-tab">
         {header}
-        <div className="rounded border border-zinc-200 dark:border-zinc-700 p-4 text-sm text-zinc-500 dark:text-zinc-400">
+        <div className="rounded border border-line p-4 text-sm text-ink-muted">
           Loading GW review...
         </div>
       </section>
@@ -138,8 +138,8 @@ export function GwReviewTab({ teamId, settledGws }: GwReviewTabProps) {
     }
     const isUnsettled = status === 503
     const errorBoxCls = isUnsettled
-      ? 'rounded border border-zinc-200 dark:border-zinc-700 p-6 text-center text-sm text-zinc-500 dark:text-zinc-400'
-      : 'rounded border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950 p-4 text-sm text-red-700 dark:text-red-300'
+      ? 'rounded border border-line p-6 text-center text-sm text-ink-muted'
+      : 'rounded border border-negative/40 bg-negative-soft p-4 text-sm text-negative'
     return (
       <section className="mt-6 space-y-3" data-testid="gw-review-tab">
         {header}
@@ -159,13 +159,13 @@ export function GwReviewTab({ teamId, settledGws }: GwReviewTabProps) {
       ? '0'
       : `+${captainDelta}pts missed`
   const deltaClass = deltaIsOptimal
-    ? 'text-green-600 dark:text-green-400'
-    : 'text-amber-700 dark:text-amber-300'
+    ? 'text-positive'
+    : 'text-warning'
 
   const scoreBeatsAverage = review.your_score > review.average_score
   const scoreClass = scoreBeatsAverage
-    ? 'text-green-600 dark:text-green-400'
-    : 'text-zinc-700 dark:text-zinc-300'
+    ? 'text-positive'
+    : 'text-ink'
 
   // Phase 99 PGW-03: benchmark card delta + sentiment
   // FIX-05 (Phase 110): flip sign — dream team beats user → positive diff → amber
@@ -174,13 +174,13 @@ export function GwReviewTab({ teamId, settledGws }: GwReviewTabProps) {
   let benchmarkSentimentClass: string
   if (benchmarkDiff > 0) {
     benchmarkDeltaLabel = `+${benchmarkDiff} vs you`
-    benchmarkSentimentClass = 'text-amber-700 dark:text-amber-300'
+    benchmarkSentimentClass = 'text-warning'
   } else if (benchmarkDiff === 0) {
     benchmarkDeltaLabel = 'on par'
-    benchmarkSentimentClass = 'text-green-600 dark:text-green-400'
+    benchmarkSentimentClass = 'text-positive'
   } else {
     benchmarkDeltaLabel = `−${Math.abs(benchmarkDiff)} vs you` // U+2212 minus sign (NOT hyphen-minus)
-    benchmarkSentimentClass = 'text-green-600 dark:text-green-400'
+    benchmarkSentimentClass = 'text-positive'
   }
 
   return (
@@ -203,39 +203,39 @@ export function GwReviewTab({ teamId, settledGws }: GwReviewTabProps) {
             />
       </div>
 
-      <div className="rounded border border-zinc-200 dark:border-zinc-700 px-3 py-2 flex items-baseline gap-2">
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">Top scorer</span>
-        <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+      <div className="rounded border border-line px-3 py-2 flex items-baseline gap-2">
+        <span className="text-xs text-ink-muted">Top scorer</span>
+        <span className="text-sm font-semibold text-ink">
           {review.top_scorer_name} - {review.top_scorer_pts}pts
         </span>
       </div>
 
-      <div className="rounded border border-zinc-200 dark:border-zinc-700 px-3 py-2 flex flex-wrap items-baseline gap-2">
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">Captain</span>
-        <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+      <div className="rounded border border-line px-3 py-2 flex flex-wrap items-baseline gap-2">
+        <span className="text-xs text-ink-muted">Captain</span>
+        <span className="text-sm font-semibold text-ink">
           {review.captain_name}
         </span>
         {captainDelta != null && !deltaIsOptimal && (
-          <span className="text-xs text-zinc-500 dark:text-zinc-400 ml-2">
+          <span className="text-xs text-ink-muted ml-2">
             Optimal: {review.optimal_captain_name}
           </span>
         )}
       </div>
 
-      <div className="rounded border border-zinc-200 dark:border-zinc-700 px-3 py-2 flex items-baseline gap-2">
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">Best bench</span>
-        <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+      <div className="rounded border border-line px-3 py-2 flex items-baseline gap-2">
+        <span className="text-xs text-ink-muted">Best bench</span>
+        <span className="text-sm font-semibold text-ink">
           {review.best_bench_player_name} — {review.best_bench_player_pts}pts
         </span>
       </div>
 
       {review.missed_players.length > 0 && (
         <div
-          className="rounded border border-zinc-200 dark:border-zinc-700 px-3 py-2 flex items-baseline gap-2"
+          className="rounded border border-line px-3 py-2 flex items-baseline gap-2"
           data-testid="gw-review-missed-row"
         >
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">Missed</span>
-          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+          <span className="text-xs text-ink-muted">Missed</span>
+          <span className="text-sm font-semibold text-ink">
             {review.missed_players.map((p) => `${p.name} (${p.pts})`).join(', ')}
           </span>
         </div>

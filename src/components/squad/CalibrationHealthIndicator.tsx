@@ -8,18 +8,20 @@ interface CalibrationHealthIndicatorProps {
 
 type Tier = 'good' | 'fair' | 'poor'
 
+// UIX-04 ruling 3: good/fair/poor health -> positive/warning/negative tokens
 const TIER_BADGE_CLASSES: Record<Tier, string> = {
-  good: 'text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900',
-  fair: 'text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900',
-  poor: 'text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900',
+  good: 'text-positive bg-positive-soft',
+  fair: 'text-warning bg-warning-soft',
+  poor: 'text-negative bg-negative-soft',
 }
 
 // Phase 109 D-09/D-10: mode badge for MC vs Analytical calibration path
 type CalibrationMode = 'mc' | 'analytical'
 
+// UIX-04: MC (teal identity) -> accent, analytical -> neutral tokens
 const MODE_BADGE_CLASSES: Record<CalibrationMode, string> = {
-  mc: 'text-teal-700 dark:text-teal-400 bg-teal-100 dark:bg-teal-900',
-  analytical: 'text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800',
+  mc: 'text-accent bg-accent-soft',
+  analytical: 'text-ink-muted bg-surface-2',
 }
 
 const MODE_BADGE_LABEL: Record<CalibrationMode, string> = {
@@ -55,10 +57,10 @@ export function CalibrationHealthIndicator({ data }: CalibrationHealthIndicatorP
     return (
       <div
         role="status"
-        className="flex items-center gap-3 py-3 px-4 border-t border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+        className="flex items-center gap-3 py-3 px-4 border-t border-line bg-surface-1"
       >
-        <span className="text-xs text-zinc-400 dark:text-zinc-500 shrink-0">Model health</span>
-        <span className="text-sm text-zinc-700 dark:text-zinc-300">
+        <span className="text-xs text-ink-muted shrink-0">Model health</span>
+        <span className="text-sm text-ink">
           Calibration evidence will appear after 3+ completed GWs.
         </span>
       </div>
@@ -77,9 +79,9 @@ export function CalibrationHealthIndicator({ data }: CalibrationHealthIndicatorP
   return (
     <div
       role="status"
-      className="flex items-center gap-3 py-3 px-4 border-t border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+      className="flex items-center gap-3 py-3 px-4 border-t border-line bg-surface-1"
     >
-      <span className="text-xs text-zinc-400 dark:text-zinc-500 shrink-0">Model health</span>
+      <span className="text-xs text-ink-muted shrink-0">Model health</span>
       <span
         aria-label={`Calibration health: ${tier}`}
         className={`text-xs font-semibold rounded px-2 py-0.5 ${TIER_BADGE_CLASSES[tier]}`}
@@ -94,7 +96,7 @@ export function CalibrationHealthIndicator({ data }: CalibrationHealthIndicatorP
           {MODE_BADGE_LABEL[calibrationMode]}
         </span>
       )}
-      <span className="text-sm text-zinc-700 dark:text-zinc-300">{sentence}</span>
+      <span className="text-sm text-ink">{sentence}</span>
     </div>
   )
 }

@@ -99,7 +99,7 @@ describe('ProseSummaryBlock', () => {
     expect(getByText2('GLOBAL')).toBeTruthy()
   })
 
-  it('renders fresh footer in zinc when generated_at is < 20 hours old', () => {
+  it('renders fresh footer in muted ink when generated_at is < 20 hours old', () => {
     // generated_at = 2 hours before frozen now (2026-05-05T18:00:00Z)
     mockSummary({ prose: 'Salah leads.', gw: 35, generated_at: '2026-05-05T18:00:00Z' })
     mockRefresh({})
@@ -107,11 +107,11 @@ describe('ProseSummaryBlock', () => {
     expect(getByText(/Updated 2 hours ago · GW35/)).toBeTruthy()
     const footer = container.querySelector('p.text-xs.mt-2')
     expect(footer).not.toBeNull()
-    expect(footer!.className).toContain('text-zinc-400')
-    expect(footer!.className).not.toContain('text-amber-600')
+    expect(footer!.className).toContain('text-ink-muted')
+    expect(footer!.className).not.toContain('text-warning')
   })
 
-  it('renders stale footer in amber when generated_at is >= 20 hours old', () => {
+  it('renders stale footer in warning when generated_at is >= 20 hours old', () => {
     // generated_at = exactly 20 hours before frozen now (2026-05-05T00:00:00Z)
     mockSummary({ prose: 'Salah leads.', gw: 35, generated_at: '2026-05-05T00:00:00Z' })
     mockRefresh({})
@@ -119,8 +119,8 @@ describe('ProseSummaryBlock', () => {
     expect(getByText(/Updated 20 hours ago · GW35/)).toBeTruthy()
     const footer = container.querySelector('p.text-xs.mt-2')
     expect(footer).not.toBeNull()
-    expect(footer!.className).toContain('text-amber-600')
-    expect(footer!.className).not.toContain('text-zinc-400')
+    expect(footer!.className).toContain('text-warning')
+    expect(footer!.className).not.toContain('text-ink-muted')
   })
 
   it('uses fresh styling at exactly 19h59m old (boundary)', () => {
@@ -130,8 +130,8 @@ describe('ProseSummaryBlock', () => {
     const { container } = render(<ProseSummaryBlock payload={SAMPLE_PAYLOAD} />)
     const footer = container.querySelector('p.text-xs.mt-2')
     expect(footer).not.toBeNull()
-    expect(footer!.className).toContain('text-zinc-400')
-    expect(footer!.className).not.toContain('text-amber-600')
+    expect(footer!.className).toContain('text-ink-muted')
+    expect(footer!.className).not.toContain('text-warning')
   })
 
   it('falls back to static GW label when generated_at is missing', () => {
@@ -143,7 +143,7 @@ describe('ProseSummaryBlock', () => {
     const footer = container.querySelector('p.text-xs.mt-2')
     expect(footer).not.toBeNull()
     expect(footer!.textContent).not.toContain('ago')
-    expect(footer!.className).toContain('text-zinc-400')
-    expect(footer!.className).not.toContain('text-amber-600')
+    expect(footer!.className).toContain('text-ink-muted')
+    expect(footer!.className).not.toContain('text-warning')
   })
 })

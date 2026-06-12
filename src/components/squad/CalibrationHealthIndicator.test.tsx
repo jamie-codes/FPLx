@@ -138,24 +138,24 @@ describe('CalibrationHealthIndicator', () => {
     expect(getByRole('status')).toBeTruthy()
   })
 
-  it('renders MC badge in teal when calibration_mode is mc', () => {
+  it('renders MC badge in accent when calibration_mode is mc', () => {
     const data = makeData({ summary: { calibration_mode: 'mc' } as never })
     const { getByLabelText, getByText } = render(<CalibrationHealthIndicator data={data} />)
     const badge = getByLabelText('Calibration mode: MC')
     expect(badge).toBeTruthy()
     expect(getByText('MC')).toBeTruthy()
-    expect(badge.className).toContain('text-teal-700')
-    expect(badge.className).toContain('bg-teal-100')
+    expect(badge.className).toContain('text-accent')
+    expect(badge.className).toContain('bg-accent-soft')
   })
 
-  it('renders Analytical badge in zinc when calibration_mode is analytical', () => {
+  it('renders Analytical badge in neutral when calibration_mode is analytical', () => {
     const data = makeData({ summary: { calibration_mode: 'analytical' } as never })
     const { getByLabelText, getByText } = render(<CalibrationHealthIndicator data={data} />)
     const badge = getByLabelText('Calibration mode: Analytical')
     expect(badge).toBeTruthy()
     expect(getByText('Analytical')).toBeTruthy()
-    expect(badge.className).toContain('text-zinc-600')
-    expect(badge.className).toContain('bg-zinc-100')
+    expect(badge.className).toContain('text-ink-muted')
+    expect(badge.className).toContain('bg-surface-2')
   })
 
   it('mode badge absent when calibration_mode is undefined (legacy cache)', () => {

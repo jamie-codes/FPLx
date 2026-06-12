@@ -282,9 +282,9 @@ describe('Phase 110 FIX-05: benchmarkDiff sign correction', () => {
     const card = container.querySelector('[data-testid="gw-review-benchmark-card"]')
     expect(card).not.toBeNull()
     expect(card!.textContent).toContain('+50 vs you')
-    // Amber sentiment class — check the delta sub-label element has amber class
+    // Warning sentiment class — check the delta sub-label element has the warning token (UIX-04)
     const deltaEl = card!.querySelector('p:last-child')
-    expect(deltaEl?.className).toContain('text-amber-700')
+    expect(deltaEl?.className).toContain('text-warning')
   })
 
   it('shows "−15 vs you" (U+2212) and green sentiment when user score (95) > dream team score (80)', () => {
@@ -297,9 +297,9 @@ describe('Phase 110 FIX-05: benchmarkDiff sign correction', () => {
     expect(card).not.toBeNull()
     // U+2212 MINUS SIGN (not ASCII hyphen-minus U+002D)
     expect(card!.textContent).toContain('−15 vs you')
-    // Green sentiment class
+    // Positive sentiment class (UIX-04 token)
     const deltaEl = card!.querySelector('p:last-child')
-    expect(deltaEl?.className).toContain('text-green-600')
+    expect(deltaEl?.className).toContain('text-positive')
   })
 
   it('shows "on par" and green sentiment when user score (88) equals dream team score (88)', () => {
@@ -311,8 +311,8 @@ describe('Phase 110 FIX-05: benchmarkDiff sign correction', () => {
     const card = container.querySelector('[data-testid="gw-review-benchmark-card"]')
     expect(card).not.toBeNull()
     expect(card!.textContent).toContain('on par')
-    // Green sentiment class
+    // Positive sentiment class (UIX-04 token)
     const deltaEl = card!.querySelector('p:last-child')
-    expect(deltaEl?.className).toContain('text-green-600')
+    expect(deltaEl?.className).toContain('text-positive')
   })
 })

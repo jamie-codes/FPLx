@@ -44,7 +44,7 @@ describe('ExplainPanel — Phase 65 WHY-03', () => {
     expect(getByText('Rotation risk — start probability 60%')).toBeTruthy()
   })
 
-  it('renders one <li> per rejection reason with text-xs text-zinc-600 dark:text-zinc-400 styling', () => {
+  it('renders one <li> per rejection reason with text-xs text-ink-muted styling', () => {
     const { container } = render(
       <ExplainPanel
         reasons={['x']}
@@ -52,7 +52,7 @@ describe('ExplainPanel — Phase 65 WHY-03', () => {
         rejectionReasons={['Ranked #5 at MID by xPts']}
       />,
     )
-    const li = container.querySelector('li.text-xs.text-zinc-600')
+    const li = container.querySelector('li.text-xs.text-ink-muted')
     // At least one li with the expected classes exists (positive reasons list may also match)
     expect(li).not.toBeNull()
   })

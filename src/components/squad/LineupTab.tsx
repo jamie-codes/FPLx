@@ -46,17 +46,20 @@ function PlayerCard({
   const teamCode = TEAM_BADGE_CODE[player.team_short_name]
 
   const wrapperCls = 'relative flex flex-col items-stretch w-full max-w-[96px] sm:max-w-[112px] gap-1'
-  const bodyBaseCls = 'relative flex flex-col items-stretch justify-center min-h-[64px] sm:min-h-[72px] w-full rounded border bg-zinc-50 dark:bg-zinc-800 px-2 py-2 text-left transition-shadow'
+  // bg lives on stateCls (not the base) so the armed warning fill never conflicts
+  // with the resting surface fill (Tailwind conflict order is stylesheet order).
+  const bodyBaseCls = 'relative flex flex-col items-stretch justify-center min-h-[64px] sm:min-h-[72px] w-full rounded border px-2 py-2 text-left transition-shadow'
+  // UIX-04 ruling 3: armed swap state → warning ring; legal target → positive ring
   const stateCls = isPending
-    ? 'border-amber-400 bg-amber-50 dark:bg-amber-950 ring-2 ring-amber-400 ring-offset-1 ring-offset-white dark:ring-offset-zinc-900'
+    ? 'border-warning bg-warning-soft ring-2 ring-warning ring-offset-1 ring-offset-surface-1'
     : isLegalTarget
-    ? 'border-zinc-200 dark:border-zinc-700 ring-2 ring-green-500 ring-offset-1 ring-offset-white dark:ring-offset-zinc-900 cursor-pointer'
+    ? 'border-line bg-surface-2 ring-2 ring-positive ring-offset-1 ring-offset-surface-1 cursor-pointer'
     : isIncompatible
-    ? 'border-zinc-200 dark:border-zinc-700 opacity-40 cursor-not-allowed'
-    : 'border-zinc-200 dark:border-zinc-700 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700'
-  const pillBase = 'flex-1 px-2 py-1 text-xs min-h-[44px] rounded border bg-white dark:bg-zinc-800 transition-all duration-150 cursor-pointer'
-  const pillIdle = 'border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
-  const pillDisabled = 'border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-500 opacity-50 cursor-not-allowed'
+    ? 'border-line bg-surface-2 opacity-40 cursor-not-allowed'
+    : 'border-line bg-surface-2 cursor-pointer hover:bg-line'
+  const pillBase = 'flex-1 px-2 py-1 text-xs min-h-[44px] rounded border bg-surface-1 transition-all duration-150 cursor-pointer'
+  const pillIdle = 'border-line text-ink hover:bg-surface-2'
+  const pillDisabled = 'border-line text-ink-muted opacity-50 cursor-not-allowed'
   // UI-SPEC LOCKED DECISION (Phase 76): direct-commit pills, no arm state.
   // See UI-SPEC.md §OPT-01 line 202 + §Rejected Patterns line 312.
   return (
@@ -95,24 +98,24 @@ function PlayerCard({
             />
           )}
           <div className="flex flex-col min-w-0 flex-1">
-            <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+            <span className="text-sm font-semibold text-ink truncate">
               {player.web_name}
             </span>
-            <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+            <span className="text-xs font-semibold text-ink">
               {(player.xPts_1gw ?? 0).toFixed(1)}
             </span>
-            <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+            <span className="text-[10px] text-ink-muted">
               {Math.round((player.start_prob ?? 0) * 100)}%
             </span>
           </div>
         </div>
         {isCaptain && (
-          <span className="absolute top-1 right-1 text-xs font-semibold text-amber-600 dark:text-amber-400" data-testid="captain-badge">
+          <span className="absolute top-1 right-1 text-xs font-semibold text-warning" data-testid="captain-badge">
             C
           </span>
         )}
         {isViceCaptain && (
-          <span className="absolute top-1 right-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400" data-testid="vc-badge">
+          <span className="absolute top-1 right-1 text-xs font-semibold text-ink-muted" data-testid="vc-badge">
             VC
           </span>
         )}
@@ -168,7 +171,7 @@ function PitchRow({
 }: PitchRowProps) {
   return (
     <div className="flex items-stretch gap-2 sm:gap-3" data-testid={`pitch-row-${position.toLowerCase()}`}>
-      <div className="text-[10px] font-semibold uppercase text-zinc-500 dark:text-zinc-400 tracking-wide w-10 self-center">
+      <div className="text-[10px] font-semibold uppercase text-ink-muted tracking-wide w-10 self-center">
         {position}
       </div>
       <div className="flex-1 flex justify-around gap-2 sm:gap-3">
@@ -291,8 +294,8 @@ export function LineupTab({ teamId }: LineupTabProps) {
   if (submittedId === null) {
     return (
       <section className="mt-6 space-y-3" data-testid="lineup-tab">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Optimised Lineup</h2>
-        <div className="rounded border border-zinc-200 dark:border-zinc-700 p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+        <h2 className="text-base font-semibold text-ink">Optimised Lineup</h2>
+        <div className="rounded border border-line p-6 text-center text-sm text-ink-muted">
           Enter your FPL Team ID on the Transfers tab to see your optimised lineup.
         </div>
       </section>
@@ -302,8 +305,8 @@ export function LineupTab({ teamId }: LineupTabProps) {
   if (isLoading) {
     return (
       <section className="mt-6 space-y-3" data-testid="lineup-tab">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Optimised Lineup</h2>
-        <div className="rounded border border-zinc-200 dark:border-zinc-700 p-4 text-sm text-zinc-500 dark:text-zinc-400">
+        <h2 className="text-base font-semibold text-ink">Optimised Lineup</h2>
+        <div className="rounded border border-line p-4 text-sm text-ink-muted">
           Loading squad...
         </div>
       </section>
@@ -316,8 +319,8 @@ export function LineupTab({ teamId }: LineupTabProps) {
       : 'Unable to load squad data. Please try again.'
     return (
       <section className="mt-6 space-y-3" data-testid="lineup-tab">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Optimised Lineup</h2>
-        <div className="rounded border border-red-300 bg-red-50 dark:bg-red-950 p-4 text-sm text-red-700 dark:text-red-300">
+        <h2 className="text-base font-semibold text-ink">Optimised Lineup</h2>
+        <div className="rounded border border-negative/40 bg-negative-soft p-4 text-sm text-negative">
           {errorMessage}
         </div>
       </section>
@@ -327,17 +330,17 @@ export function LineupTab({ teamId }: LineupTabProps) {
   if (lineup === null) {
     return (
       <section className="mt-6 space-y-3" data-testid="lineup-tab">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Optimised Lineup</h2>
+        <h2 className="text-base font-semibold text-ink">Optimised Lineup</h2>
         {eligibleCount < 11 ? (
           <div
-            className="rounded border border-amber-400 bg-amber-50 dark:bg-amber-950 px-3 py-2 text-sm text-amber-800 dark:text-amber-200"
+            className="rounded border border-warning/40 bg-warning-soft px-3 py-2 text-sm text-warning"
             data-testid="bgw-banner-critical"
           >
             <span className="font-semibold">Warning:</span>{' '}
             fewer than 11 eligible starters — only {eligibleCount} of your {totalPlayersInSquad} players have a fixture this gameweek. Optimised lineup may include bench players.
           </div>
         ) : (
-          <div className="rounded border border-red-300 bg-red-50 dark:bg-red-950 p-4 text-sm text-red-700 dark:text-red-300">
+          <div className="rounded border border-negative/40 bg-negative-soft p-4 text-sm text-negative">
             Unable to optimise lineup. Please try again.
           </div>
         )}
@@ -390,13 +393,13 @@ export function LineupTab({ teamId }: LineupTabProps) {
   return (
     <section className="mt-6 space-y-3" data-testid="lineup-tab">
       <header className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Optimised Lineup</h2>
+        <h2 className="text-base font-semibold text-ink">Optimised Lineup</h2>
         <button
           type="button"
           onClick={handleReset}
           data-testid="lineup-reset"
           aria-label="Reset to recommended lineup"
-          className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold rounded min-h-[44px] px-3 py-2 text-sm hover:bg-zinc-800 dark:hover:bg-zinc-200 cursor-pointer"
+          className="bg-ink text-surface-1 font-semibold rounded min-h-[44px] px-3 py-2 text-sm hover:opacity-90 cursor-pointer"
         >
           Reset
         </button>
@@ -404,7 +407,7 @@ export function LineupTab({ teamId }: LineupTabProps) {
 
       {eligibleCount < totalPlayersInSquad && eligibleCount >= 11 && (
         <div
-          className="rounded border border-amber-400 bg-amber-50 dark:bg-amber-950 px-3 py-2 text-sm text-amber-800 dark:text-amber-200"
+          className="rounded border border-warning/40 bg-warning-soft px-3 py-2 text-sm text-warning"
           data-testid="bgw-banner-soft"
         >
           <span className="font-semibold">Blank gameweek warning:</span>{' '}
@@ -412,16 +415,16 @@ export function LineupTab({ teamId }: LineupTabProps) {
         </div>
       )}
 
-      <div data-testid="lineup-headline-row" className="flex flex-wrap items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 py-2">
+      <div data-testid="lineup-headline-row" className="flex flex-wrap items-center gap-2 text-sm text-ink py-2">
         <span><span className="font-semibold">Formation:</span> {lineup.formation}</span>
-        <span className="text-zinc-400">│</span>
+        <span className="text-ink-muted">│</span>
         <span><span className="font-semibold">Captain:</span> {playerMap.get(lineup.captainId)?.web_name ?? '—'}</span>
-        <span className="text-zinc-400">│</span>
-        <span className="font-semibold text-green-600 dark:text-green-400">Total xPts: {totalXPts.toFixed(1)}</span>
+        <span className="text-ink-muted">│</span>
+        <span className="font-semibold text-positive">Total xPts: {totalXPts.toFixed(1)}</span>
       </div>
 
       <div
-        className="bg-zinc-50 dark:bg-zinc-800/40 rounded border border-zinc-200 dark:border-zinc-700 px-2 sm:px-4 py-3 sm:py-4 space-y-2"
+        className="bg-surface-2/40 rounded border border-line px-2 sm:px-4 py-3 sm:py-4 space-y-2"
         onClick={handleBackgroundTap}
         data-testid="pitch"
       >
@@ -429,12 +432,12 @@ export function LineupTab({ teamId }: LineupTabProps) {
         <PitchRow position="DEF" ids={starterDefs} playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} effectiveCaptainId={effectiveCaptainId} effectiveVcId={effectiveVcId} onSetCaptain={setCaptain} onSetVc={setVc} />
         <PitchRow position="MID" ids={starterMids} playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} effectiveCaptainId={effectiveCaptainId} effectiveVcId={effectiveVcId} onSetCaptain={setCaptain} onSetVc={setVc} />
         <PitchRow position="FWD" ids={starterFwds} playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} effectiveCaptainId={effectiveCaptainId} effectiveVcId={effectiveVcId} onSetCaptain={setCaptain} onSetVc={setVc} />
-        <div className="border-t border-zinc-200 dark:border-zinc-700 mt-4 pt-4">
+        <div className="border-t border-line mt-4 pt-4">
           <PitchRow position="Bench" ids={lineup.bench} playerMap={playerMap} pendingStarterId={pendingStarterId} legalBenchIds={legalBenchIds} onCardTap={onCardTap} effectiveCaptainId={effectiveCaptainId} effectiveVcId={effectiveVcId} onSetCaptain={setCaptain} onSetVc={setVc} isBench />
         </div>
       </div>
 
-      <p className="text-xs italic text-zinc-500 dark:text-zinc-400">
+      <p className="text-xs italic text-ink-muted">
         Tap a starter, then tap a bench player to swap. Tap elsewhere to cancel.
       </p>
     </section>

@@ -35,16 +35,17 @@ import { CalibrationHealthIndicator } from './CalibrationHealthIndicator'
 
 // ---- Private helpers ----
 
+// UIX-04: safe (blue identity) → accent, upside (variance) → warning tokens
 const TYPE_MAP: Record<'safe' | 'upside', { bg: string; text: string; label: string; title: string }> = {
   safe: {
-    bg: 'bg-blue-100 dark:bg-blue-900',
-    text: 'text-blue-800 dark:text-blue-200',
+    bg: 'bg-accent-soft',
+    text: 'text-accent',
     label: 'Safe',
     title: 'Safe pick: nailed starter with consistent high floor',
   },
   upside: {
-    bg: 'bg-amber-100 dark:bg-amber-900',
-    text: 'text-amber-800 dark:text-amber-200',
+    bg: 'bg-warning-soft',
+    text: 'text-warning',
     label: 'Upside',
     title: 'Upside pick: differential or high ceiling — higher variance',
   },
@@ -62,20 +63,21 @@ function CaptainTypeBadge({ type }: { type: 'safe' | 'upside' }) {
   )
 }
 
+// UIX-04 ruling 3: severity ladder → negative/warning/neutral tokens
 const SEVERITY_CONFIG: Record<SeverityLevel, { bg: string; text: string; title: string }> = {
   HIGH: {
-    bg: 'bg-red-100 dark:bg-red-900',
-    text: 'text-red-700 dark:text-red-300',
+    bg: 'bg-negative-soft',
+    text: 'text-negative',
     title: 'High priority — act on this',
   },
   MEDIUM: {
-    bg: 'bg-amber-100 dark:bg-amber-900',
-    text: 'text-amber-800 dark:text-amber-200',
+    bg: 'bg-warning-soft',
+    text: 'text-warning',
     title: 'Medium priority',
   },
   LOW: {
-    bg: 'bg-zinc-100 dark:bg-zinc-700',
-    text: 'text-zinc-700 dark:text-zinc-300',
+    bg: 'bg-surface-2',
+    text: 'text-ink-muted',
     title: 'Low priority',
   },
 }
@@ -93,13 +95,15 @@ function SeverityBadge({ level, title }: { level: SeverityLevel; title?: string 
 }
 
 // Copied from ChipStrategyPanel.tsx (module-private there — must re-declare here).
+// UIX-04 ruling 1 analogue: ease tiers are data, not chrome — 5-step ladder maps to
+// positive/positive-soft/warning-soft/negative-soft/negative tokens; BGW → surface-2.
 function easeFill(ease: number, isBGW: boolean | undefined): string {
-  if (isBGW) return 'bg-zinc-200 dark:bg-zinc-700'
-  if (ease >= 0.75) return 'bg-green-500'
-  if (ease >= 0.55) return 'bg-green-300 dark:bg-green-700'
-  if (ease >= 0.40) return 'bg-amber-300 dark:bg-amber-600'
-  if (ease >= 0.25) return 'bg-red-300 dark:bg-red-700'
-  return 'bg-red-500'
+  if (isBGW) return 'bg-surface-2'
+  if (ease >= 0.75) return 'bg-positive'
+  if (ease >= 0.55) return 'bg-positive-soft'
+  if (ease >= 0.40) return 'bg-warning-soft'
+  if (ease >= 0.25) return 'bg-negative-soft'
+  return 'bg-negative'
 }
 
 function EaseCellBar({ chip, scores }: { chip: 'bboost' | '3xc' | 'freehit'; scores: GWEaseScore[] }) {
@@ -110,7 +114,7 @@ function EaseCellBar({ chip, scores }: { chip: 'bboost' | '3xc' | 'freehit'; sco
     <div className="flex gap-1" role="img" aria-label={ariaLabel}>
       {scores.map(cell => {
         const fill = easeFill(cell.ease, cell.isBGW)
-        const ring = cell.isBest ? ' ring-2 ring-offset-1 ring-green-700 dark:ring-green-300' : ''
+        const ring = cell.isBest ? ' ring-2 ring-offset-1 ring-positive' : ''
         return (
           <div
             key={cell.gw}
@@ -126,8 +130,8 @@ function EaseCellBar({ chip, scores }: { chip: 'bboost' | '3xc' | 'freehit'; sco
 
 function NoSquadPlaceholder() {
   return (
-    <div className="rounded border border-zinc-200 dark:border-zinc-700 p-4 bg-white dark:bg-zinc-900 flex items-center justify-center min-h-[120px]">
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center">
+    <div className="rounded border border-line p-4 bg-surface-1 flex items-center justify-center min-h-[120px]">
+      <p className="text-sm text-ink-muted text-center">
         Load your squad to see transfer and risk recommendations.
       </p>
     </div>
@@ -429,7 +433,7 @@ export function DecisionSummaryTab({
         data-testid="decision-summary-tab"
       >
         <div
-          className="rounded border border-zinc-200 dark:border-zinc-700 p-4 text-sm text-zinc-500 dark:text-zinc-400"
+          className="rounded border border-line p-4 text-sm text-ink-muted"
           aria-live="polite"
         >
           Loading decision data…
@@ -445,7 +449,7 @@ export function DecisionSummaryTab({
         data-testid="decision-summary-tab"
       >
         <div
-          className="rounded border border-red-300 bg-red-50 dark:bg-red-950 p-4 text-sm text-red-700 dark:text-red-300"
+          className="rounded border border-negative/40 bg-negative-soft p-4 text-sm text-negative"
           aria-live="polite"
         >
           {squadError instanceof Error ? squadError.message : String(squadError)}
@@ -477,8 +481,8 @@ export function DecisionSummaryTab({
       data-testid="decision-summary-tab"
     >
       {/* Load Squad form — same form as TransferPanel so user can load squad from this tab */}
-      <div className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Load Your Squad</h2>
+      <div className="rounded border border-line p-4 space-y-3">
+        <h2 className="text-base font-semibold text-ink">Load Your Squad</h2>
         <form
           onSubmit={e => {
             e.preventDefault()
@@ -487,7 +491,7 @@ export function DecisionSummaryTab({
           className="flex flex-col sm:flex-row gap-2 sm:items-end"
         >
           <div className="flex flex-col gap-1">
-            <label htmlFor="dst-teamId" className="text-sm text-zinc-600 dark:text-zinc-400">
+            <label htmlFor="dst-teamId" className="text-sm text-ink-muted">
               FPL Team ID
             </label>
             <input
@@ -498,19 +502,19 @@ export function DecisionSummaryTab({
               value={teamId}
               onChange={e => onTeamIdChange(e.target.value)}
               placeholder="e.g. 1234567"
-              className="border border-zinc-300 dark:border-zinc-600 rounded px-3 py-1.5 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-full sm:w-40"
+              className="border border-line rounded-md min-h-[44px] px-3 py-1.5 text-base sm:text-sm text-ink bg-surface-1 w-full sm:w-40"
             />
           </div>
           <button
             type="submit"
-            className="px-4 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium rounded hover:bg-zinc-700 dark:hover:bg-zinc-200 cursor-pointer active:scale-95 transition-all w-full sm:w-auto"
+            className="px-4 py-1.5 min-h-[44px] bg-ink text-surface-1 text-sm font-medium rounded hover:opacity-90 cursor-pointer active:scale-95 transition-all w-full sm:w-auto"
           >
             Load Squad
           </button>
         </form>
 
           {isAuthenticated && (
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="text-xs text-ink-muted">
             FPL account connected — exact sell prices will be used.
           </p>
         )}
@@ -521,48 +525,48 @@ export function DecisionSummaryTab({
 
         {/* Card 1: Captain Pick */}
         <div
-          className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3 bg-white dark:bg-zinc-900"
+          className="rounded border border-line p-4 space-y-3 bg-surface-1"
           role="region"
           aria-label="Captain Pick"
           data-testid="captain-card"
         >
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+            <h2 className="text-base font-semibold text-ink">
               Captain Pick — GW {nextGw}
             </h2>
             <SeverityBadge level={severity.captain} />
           </div>
-          <p className="text-xs text-zinc-400 dark:text-zinc-500">1 GW</p>
+          <p className="text-xs text-ink-muted">1 GW</p>
           <div className="space-y-2">
             {captaincyCandidates.slice(0, 3).map((c, i) => (
               <div
                 key={c.player.id}
-                className="rounded border border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3"
+                className="rounded border border-line bg-surface-2 px-3 py-2 flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3"
               >
                 {/* Rank + player name */}
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm text-zinc-400 w-4 shrink-0">{i + 1}</span>
-                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 sm:flex-1">
+                  <span className="text-sm text-ink-muted w-4 shrink-0">{i + 1}</span>
+                  <span className="text-sm font-medium text-ink sm:flex-1">
                     {c.player.web_name}
                   </span>
                 </div>
                 {/* Team + fixture row */}
-                <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+                <div className="flex items-center gap-2 text-xs text-ink-muted">
                   <span className="text-xs">{c.player.team_short_name}</span>
                   {c.player.fixtures.length > 0 &&
                     (() => {
                       const nextGwId = c.player.fixtures[0].event_id
                       const nextGwFixtures = c.player.fixtures.filter(f => f.event_id === nextGwId)
                       return (
-                        <span className="text-xs text-zinc-400 dark:text-zinc-500 whitespace-nowrap">
+                        <span className="text-xs text-ink-muted whitespace-nowrap">
                           {nextGwFixtures.length >= 2 && (
-                            <span className="font-semibold text-violet-700 dark:text-violet-400 mr-1">
+                            <span className="font-semibold text-violet mr-1">
                               DGW
                             </span>
                           )}
                           {nextGwFixtures.map((f, j) => (
                             <span key={j}>
-                              {j > 0 && <span className="mx-0.5 text-zinc-400">/</span>}
+                              {j > 0 && <span className="mx-0.5 text-ink-muted">/</span>}
                               {f.is_home ? 'vs' : '@'} {f.opponent_team}
                             </span>
                           ))}
@@ -571,7 +575,7 @@ export function DecisionSummaryTab({
                     })()}
                 </div>
                 {/* Projected pts */}
-                <span className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
+                <span className="text-sm text-ink whitespace-nowrap">
                   {(isNaN(c.projected_captain_pts) ? 0 : c.projected_captain_pts).toFixed(1)} pts (C)
                 </span>
                 {/* Badges */}
@@ -587,18 +591,18 @@ export function DecisionSummaryTab({
         {/* Card 2: Transfer Options or NoSquadPlaceholder */}
         {squadData ? (
           <div
-            className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3 bg-white dark:bg-zinc-900"
+            className="rounded border border-line p-4 space-y-3 bg-surface-1"
             role="region"
             aria-label="Transfer Options"
             data-testid="transfer-card"
           >
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+              <h2 className="text-base font-semibold text-ink">
                 Transfer Options — 1 GW
               </h2>
               <SeverityBadge level={severity.transfer} />
             </div>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 italic">
+            <p className="text-xs text-ink-muted italic">
               {isAuthenticated && myTeamData
                 ? `Using ${derivedFtCount} free transfer${derivedFtCount > 1 ? 's' : ''} · detected from your team`
                 : 'Using 1 free transfer (default)'}
@@ -618,18 +622,18 @@ export function DecisionSummaryTab({
 
         {/* Card 3: Chip Timing */}
         <div
-          className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3 bg-white dark:bg-zinc-900"
+          className="rounded border border-line p-4 space-y-3 bg-surface-1"
           role="region"
           aria-label="Chip Timing"
           data-testid="chip-card"
         >
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Chip Timing</h2>
+            <h2 className="text-base font-semibold text-ink">Chip Timing</h2>
             <SeverityBadge level={severity.chip} />
           </div>
           {isDGW && (
             <span
-              className="inline-block text-xs font-semibold bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300 rounded px-2 py-1 mb-2"
+              className="inline-block text-xs font-semibold bg-violet-soft text-violet rounded px-2 py-1 mb-2"
               data-testid="chip-dgw-badge"
               title="Double gameweek detected — consider chip play"
             >
@@ -638,7 +642,7 @@ export function DecisionSummaryTab({
           )}
           {isBGW && (
             <span
-              className="inline-block text-xs font-semibold bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded px-2 py-1 mb-2"
+              className="inline-block text-xs font-semibold bg-surface-2 text-ink-muted rounded px-2 py-1 mb-2"
               data-testid="chip-bgw-badge"
               title="Blank gameweek detected — consider chip play"
             >
@@ -646,7 +650,7 @@ export function DecisionSummaryTab({
             </span>
           )}
           {unusedChipCodes.length === 0 ? (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">All chips have been played.</p>
+            <p className="text-sm text-ink-muted">All chips have been played.</p>
           ) : (
             <ul className="space-y-1">
               {unusedChipCodes.map(code => {
@@ -658,15 +662,15 @@ export function DecisionSummaryTab({
                     className="flex items-center gap-2 text-sm min-h-[44px]"
                     data-testid={`chip-row-${code}`}
                   >
-                    <span className="inline-block text-xs font-normal rounded px-2 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 w-24">
+                    <span className="inline-block text-xs font-normal rounded px-2 py-1 bg-surface-2 text-ink w-24">
                       {CHIP_LABELS[code]}
                     </span>
                     {best !== null ? (
-                      <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                      <span className="text-sm text-ink">
                         Best: GW{best}
                       </span>
                     ) : (
-                      <span className="text-xs text-zinc-400 dark:text-zinc-500">—</span>
+                      <span className="text-xs text-ink-muted">—</span>
                     )}
                     <EaseCellBar chip={code} scores={scores} />
                   </li>
@@ -679,26 +683,26 @@ export function DecisionSummaryTab({
         {/* Card 4: Risk Flags or NoSquadPlaceholder */}
         {squadData ? (
           <div
-            className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3 bg-white dark:bg-zinc-900"
+            className="rounded border border-line p-4 space-y-3 bg-surface-1"
             role="region"
             aria-label="Risk Flags"
             data-testid="risk-card"
           >
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Risk Flags</h2>
+              <h2 className="text-base font-semibold text-ink">Risk Flags</h2>
               <SeverityBadge level={severity.risk} />
             </div>
             {riskRows.length === 0 ? (
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              <p className="text-sm text-ink-muted">
                 No urgent risk signals for your squad this week.
               </p>
             ) : (
               riskRows.map(({ player, label }) => (
                 <div
                   key={player.id}
-                  className="flex items-center justify-between py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0"
+                  className="flex items-center justify-between py-2 border-b border-line last:border-0"
                 >
-                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                  <span className="text-sm font-medium text-ink">
                     {player.web_name}
                   </span>
                   <LifecycleLabelBadge label={label} />
@@ -714,16 +718,16 @@ export function DecisionSummaryTab({
       {/* Phase 119 UI-03: Team News Alert section — all 15 squad picks (D-11) filtered to doubted/confirmed_absent (D-12) */}
       {flaggedPlayers.length > 0 && (
         <div
-          className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3 bg-white dark:bg-zinc-900"
+          className="rounded border border-line p-4 space-y-3 bg-surface-1"
           role="region"
           aria-label="Team News Alert"
           data-testid="team-news-alert"
         >
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Team News Alert</h2>
+          <h2 className="text-base font-semibold text-ink">Team News Alert</h2>
           <ul className="space-y-2">
             {flaggedPlayers.map(({ player, statusLabel }) => (
               <li key={player.id} className="flex items-center justify-between py-1">
-                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{player.web_name}</span>
+                <span className="text-sm font-medium text-ink">{player.web_name}</span>
                 <StatusLabelBadge statusLabel={statusLabel} />
               </li>
             ))}

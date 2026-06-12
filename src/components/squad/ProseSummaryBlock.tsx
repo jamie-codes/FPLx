@@ -55,13 +55,13 @@ export function ProseSummaryBlock({ payload }: Props) {
 
   return (
     <div
-      className="rounded border border-zinc-200 dark:border-zinc-700 p-4 bg-white dark:bg-zinc-900 mt-4"
+      className="rounded border border-line p-4 bg-surface-1 mt-4"
       role="region"
       aria-label="AI Summary"
       data-testid="prose-summary-block"
     >
       <div className="flex items-start justify-between gap-3">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+        <h2 className="text-base font-semibold text-ink">
           AI Summary
         </h2>
         <button
@@ -70,20 +70,20 @@ export function ProseSummaryBlock({ payload }: Props) {
           title="Regenerate summary using your current squad"
           disabled={refresh.isPending || !payload}
           onClick={handleRefresh}
-          className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-40"
+          className="text-ink-muted hover:text-ink disabled:opacity-40"
         >
           {refresh.isPending ? '⏳' : '↻'}
         </button>
       </div>
-      <p className="text-sm text-zinc-700 dark:text-zinc-300 mt-3 leading-relaxed">
+      <p className="text-sm text-ink mt-3 leading-relaxed">
         {displayed.prose}
       </p>
       {hasValidGenAt ? (
-        <p className={`text-xs mt-2 ${isStale ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
+        <p className={`text-xs mt-2 ${isStale ? 'text-warning' : 'text-ink-muted'}`}>
           Updated {formatRelativeTime(displayed.generated_at)} · GW{displayed.gw}
         </p>
       ) : (
-        <p className="text-xs mt-2 text-zinc-400 dark:text-zinc-500">
+        <p className="text-xs mt-2 text-ink-muted">
           Updated GW{displayed.gw}
         </p>
       )}

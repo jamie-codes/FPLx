@@ -162,8 +162,10 @@ describe('LiveGwTab', () => {
     })
     render(<LiveGwTab teamId={12345} />, { wrapper: makeWrapper() })
     expect(screen.getByText(/Auto-subs/i)).toBeInTheDocument()
-    // Verify the actual sub line content renders
-    expect(screen.getByText(/Player5.*Player12/s)).toBeInTheDocument()
+    // Verify the actual sub line content renders.
+    // UIX-04 sanctioned tsc fix: the /s (dotAll) flag needs an es2018+ target —
+    // [\s\S] matches across newlines without the flag (identical behaviour here).
+    expect(screen.getByText(/Player5[\s\S]*Player12/)).toBeInTheDocument()
   })
 
   it('T7: provisional bonus disclaimer always rendered', () => {
