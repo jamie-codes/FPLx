@@ -1,13 +1,17 @@
 import type { Metadata } from "next";
 import type { Viewport } from "next";
-import { Geist, Geist_Mono, Honk } from "next/font/google";
+import { Inter, Geist_Mono, Honk } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { PushServiceWorkerRegistrar } from '@/components/push/PushServiceWorkerRegistrar'
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// UIX-01: Inter is the app face (wired to --font-sans in globals.css @theme).
+// Variable font — no weight needed. Geist Mono stays for font-mono surfaces;
+// Honk stays for the brand mark until the shell lands (UIX-01 Task 5).
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -42,7 +46,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${honk.variable} h-full antialiased`}
+      className={`${inter.variable} ${geistMono.variable} ${honk.variable} h-full antialiased`}
     >
       <head><script dangerouslySetInnerHTML={{ __html: themeInitScript }} /></head>
       <body className="min-h-full flex flex-col">

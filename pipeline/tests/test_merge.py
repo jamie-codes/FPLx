@@ -478,3 +478,29 @@ class TestComputeDifferentialFlag:
             position_p75=5.0,
         )
         assert result is None
+
+
+class TestAssetCodePassthrough:
+    """UIX-01: merge_players passes element code + team code through to merged
+    output so the client can build official asset URLs (photos p{code}.png,
+    badges t{team_code}.png, kits shirt_{team_code}-110.webp)."""
+
+    def test_code_and_team_code_passthrough(self):
+        history = [_hist(gw, 90, 6, xg=0.4, xa=0.2) for gw in range(1, 11)]
+        bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_minimal_inputs({1: history})
+        bootstrap['elements'][0]['code'] = 223094
+        bootstrap['teams'][0]['code'] = 14  # team id 14 (LIV) → official code 14
+        merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                                  xmins_stats=xmins_stats, summaries=summaries)
+        p = next(pl for pl in merged if pl['id'] == 1)
+        assert p['code'] == 223094
+        assert p['team_code'] == 14
+
+    def test_team_code_defaults_to_zero_when_absent(self):
+        """Bootstrap teams without a code field must not crash the merge."""
+        history = [_hist(gw, 90, 6) for gw in range(1, 11)]
+        bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_minimal_inputs({1: history})
+        merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                                  xmins_stats=xmins_stats, summaries=summaries)
+        p = next(pl for pl in merged if pl['id'] == 1)
+        assert p['team_code'] == 0

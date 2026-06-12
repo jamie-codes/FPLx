@@ -1276,6 +1276,8 @@ def merge_players(
             'web_name': element['web_name'],
             'team': team_id,
             'team_short_name': teams[team_id]['short_name'] if team_id in teams else '',
+            # UIX-01: official team asset code (badges t{code}.png, kits shirt_{code}-110.webp)
+            'team_code': teams[team_id].get('code', 0) if team_id in teams else 0,
             'element_type': element['element_type'],
             'now_cost': element['now_cost'],
             'selected_by_percent': element['selected_by_percent'],

@@ -101,6 +101,7 @@ export interface MergedPlayer {
   web_name: string
   team: number
   team_short_name: string
+  team_code?: number    // UIX-01: official team asset code (badges t{code}.png, kits shirt_{code}-110.webp); absent on pre-UIX-01 cache
   element_type: PositionCode
   now_cost: number
   selected_by_percent: string
