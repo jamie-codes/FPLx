@@ -20,9 +20,40 @@ describe('Chip', () => {
     ['positive', 'bg-positive-soft'],
     ['warning', 'bg-warning-soft'],
     ['negative', 'bg-negative-soft'],
+    ['violet', 'bg-violet-soft'],
   ] as const)('intent %s renders its semantic class fragment', (intent, cls) => {
     render(<Chip intent={intent}>X</Chip>)
     expect(screen.getByText('X').className).toContain(cls)
+  })
+
+  it('violet intent carries the violet ink and border', () => {
+    render(<Chip intent="violet">X</Chip>)
+    const cls = screen.getByText('X').className
+    expect(cls).toContain('text-violet')
+    expect(cls).toContain('border-violet/40')
+  })
+
+  it('outline variant drops the soft fill and keeps intent border/ink', () => {
+    render(<Chip intent="violet" variant="outline">X</Chip>)
+    const cls = screen.getByText('X').className
+    expect(cls).toContain('bg-transparent')
+    expect(cls).not.toContain('bg-violet-soft')
+    expect(cls).toContain('text-violet')
+    expect(cls).toContain('border-violet')
+  })
+
+  it('outline accent: transparent bg + accent border/ink', () => {
+    render(<Chip intent="accent" variant="outline">X</Chip>)
+    const cls = screen.getByText('X').className
+    expect(cls).toContain('bg-transparent')
+    expect(cls).not.toContain('bg-accent-soft')
+    expect(cls).toContain('text-accent')
+    expect(cls).toContain('border-accent')
+  })
+
+  it('variant defaults to solid (soft fill present)', () => {
+    render(<Chip intent="positive">X</Chip>)
+    expect(screen.getByText('X').className).toContain('bg-positive-soft')
   })
 
   it('defaults to neutral intent', () => {
