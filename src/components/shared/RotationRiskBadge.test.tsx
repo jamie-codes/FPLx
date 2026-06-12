@@ -15,14 +15,16 @@ describe('RotationRiskBadge', () => {
     )
   })
 
-  it('applies warning token classes (bg-warning/10 text-warning border-warning/30)', () => {
+  // UIX-03 Task 4: collapsed into Chip warning — class assertions updated to
+  // the Chip token classes (title/⚡/null behaviour assertions unchanged).
+  it('applies warning Chip classes (bg-warning-soft text-warning border-warning/40)', () => {
     const { container } = render(<RotationRiskBadge rotationRisk={true} />)
     const span = container.querySelector('span[title]')
-    expect(span?.className).toContain('bg-warning/10')
+    expect(span?.className).toContain('bg-warning-soft')
     expect(span?.className).toContain('text-warning')
-    expect(span?.className).toContain('border-warning/30')
+    expect(span?.className).toContain('border-warning/40')
     expect(span?.className).toContain('rounded')
-    expect(span?.className).toContain('text-xs')
+    expect(span?.className).toContain('text-data')
   })
 
   it('icon span has aria-hidden="true"', () => {

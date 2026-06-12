@@ -8,15 +8,21 @@
  * Coexists with MinsRiskBadge — different concept:
  *  - MinsRiskBadge: player-level minutes risk (start probability)
  *  - RotationRiskBadge: team-level fixture-calendar clash (this component)
+ *
+ * UIX-03 Task 4: collapsed into Chip per the badge policy (→ warning).
+ * Kept as a thin wrapper so call sites (set-pieces, transfers) stay stable.
  */
+import { Chip } from '@/components/ui/Chip'
+
 export function RotationRiskBadge({ rotationRisk }: { rotationRisk: boolean }) {
   if (!rotationRisk) return null
   return (
-    <span
-      className="inline-block text-xs font-normal bg-warning/10 text-warning border border-warning/30 rounded px-2 py-1"
+    <Chip
+      intent="warning"
+      size="sm"
       title="Rotation risk: cup/European fixture within 3 days of this PL fixture"
     >
-      <span aria-hidden="true">⚡</span>{' '}Rotation risk
-    </span>
+      <span aria-hidden="true">⚡</span> Rotation risk
+    </Chip>
   )
 }

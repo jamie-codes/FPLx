@@ -36,10 +36,14 @@ describe('SetPieceTakerPanel — SHD-01 ghost watermark', () => {
       error: null,
     })
     const { container } = render(<SetPieceTakerPanel />)
-    const card = container.querySelector('.grid > div')!
+    // UIX-03 Task 4: cards are the Card primitive (<section>); the watermark
+    // positioning frame (relative + overflow-hidden) is the inner padded div.
+    const card = container.querySelector('.grid > section')!
     expect(card).not.toBeNull()
-    expect(card.className).toMatch(/relative/)
-    expect(card.className).toMatch(/overflow-hidden/)
+    const frame = card.querySelector('div.relative')!
+    expect(frame).not.toBeNull()
+    expect(frame.className).toMatch(/relative/)
+    expect(frame.className).toMatch(/overflow-hidden/)
   })
 
   it('SHD-01: ghost <img> renders with aria-hidden, opacity-10, pointer-events-none, absolute, alt=""', () => {
@@ -49,7 +53,7 @@ describe('SetPieceTakerPanel — SHD-01 ghost watermark', () => {
       error: null,
     })
     const { container } = render(<SetPieceTakerPanel />)
-    const card = container.querySelector('.grid > div')!
+    const card = container.querySelector('.grid > section')!
     const ghost = card.querySelector('img[aria-hidden="true"]')
     expect(ghost).not.toBeNull()
     expect(ghost!.getAttribute('alt')).toBe('')
@@ -70,7 +74,7 @@ describe('SetPieceTakerPanel — SHD-01 ghost watermark', () => {
       error: null,
     })
     const { container } = render(<SetPieceTakerPanel />)
-    const card = container.querySelector('.grid > div')!
+    const card = container.querySelector('.grid > section')!
     expect(card.querySelector('img')).toBeNull()
     // Also verify no fallback swatch is rendered at the ghost position
     expect(card.querySelector('.rounded-full')).toBeNull()
@@ -156,7 +160,10 @@ describe('SetPieceTakerPanel — SPQ-03 delivery quality badge', () => {
     expect(badges[0].hasAttribute('title')).toBe(false)
   })
 
-  it('SPQ-03 D-05: Elite uses green palette, Weak uses amber, Good uses zinc-600/zinc-400 dark variant', () => {
+  // UIX-03 Task 4: badges collapsed into Chip per the badge policy —
+  // class assertions updated to semantic-token equivalents (behaviour
+  // assertions — text, titles, counts — unchanged above).
+  it('SPQ-03 D-05: Elite uses positive tokens, Weak uses warning tokens (Chip)', () => {
     const team = makeTeam({
       fk: { sp_tier: 'Elite', sp_sample_n: 14 },
       corner: { sp_tier: 'Weak', sp_sample_n: 8 },
@@ -169,19 +176,18 @@ describe('SetPieceTakerPanel — SPQ-03 delivery quality badge', () => {
     const cornerBadge = Array.from(container.querySelectorAll('p.text-sm'))
       .find((p) => p.textContent?.startsWith('Corners:'))!
       .querySelector('span')!
-    // Elite -> green palette
-    expect(fkBadge.className).toMatch(/bg-green-100/)
-    expect(fkBadge.className).toMatch(/text-green-800/)
-    expect(fkBadge.className).toMatch(/dark:bg-green-900/)
-    expect(fkBadge.className).toMatch(/dark:text-green-200/)
-    // Weak -> amber palette
-    expect(cornerBadge.className).toMatch(/bg-amber-100/)
-    expect(cornerBadge.className).toMatch(/text-amber-800/)
-    // And the inline-badge class pattern (matches existing "Changed" badge convention)
-    expect(fkBadge.className).toMatch(/ml-2 text-xs font-normal rounded px-2 py-1/)
+    // Elite -> positive tokens
+    expect(fkBadge.className).toMatch(/bg-positive-soft/)
+    expect(fkBadge.className).toMatch(/text-positive/)
+    // Weak -> warning tokens
+    expect(cornerBadge.className).toMatch(/bg-warning-soft/)
+    expect(cornerBadge.className).toMatch(/text-warning/)
+    // And the Chip envelope class pattern
+    expect(fkBadge.className).toMatch(/rounded-md border/)
+    expect(fkBadge.className).toMatch(/text-data px-2 py-0\.5/)
   })
 
-  it('SPQ-03 D-05: "—" badge uses the lighter zinc-100/zinc-400 + dark zinc-800/zinc-500 class', () => {
+  it('SPQ-03 D-05: "—" badge uses the neutral Chip tokens', () => {
     const team = makeTeam({ fk: {}, corner: { sp_tier: null } })
     mockUseSetPieces.mockReturnValue({ data: { teams: [team], change_count: 0 }, isLoading: false, error: null })
     const { container } = render(<SetPieceTakerPanel />)
@@ -189,9 +195,7 @@ describe('SetPieceTakerPanel — SPQ-03 delivery quality badge', () => {
       .find((p) => p.textContent?.startsWith('Direct FK:'))!
       .querySelector('span')!
     expect(fkBadge.textContent).toBe('—')
-    expect(fkBadge.className).toMatch(/bg-zinc-100/)
-    expect(fkBadge.className).toMatch(/text-zinc-400/)
-    expect(fkBadge.className).toMatch(/dark:bg-zinc-800/)
-    expect(fkBadge.className).toMatch(/dark:text-zinc-500/)
+    expect(fkBadge.className).toMatch(/bg-surface-2/)
+    expect(fkBadge.className).toMatch(/text-ink-muted/)
   })
 })

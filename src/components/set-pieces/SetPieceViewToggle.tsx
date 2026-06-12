@@ -1,11 +1,14 @@
 'use client'
+// UIX-03 Task 4: thin wrapper over the SegmentedToggle primitive — keeps the
+// call-site API (view/onViewChange) and option semantics; only the control unifies.
+import { SegmentedToggle } from '@/components/ui/SegmentedToggle'
 
 export type SetPieceView = 'takers' | 'league'
 
-const VIEW_LABELS: Record<SetPieceView, string> = {
-  takers: 'Takers',
-  league: 'League Table',
-}
+const OPTIONS: { id: SetPieceView; label: string }[] = [
+  { id: 'takers', label: 'Takers' },
+  { id: 'league', label: 'League Table' },
+]
 
 interface SetPieceViewToggleProps {
   view: SetPieceView
@@ -14,26 +17,11 @@ interface SetPieceViewToggleProps {
 
 export function SetPieceViewToggle({ view, onViewChange }: SetPieceViewToggleProps) {
   return (
-    <div
-      role="group"
-      aria-label="Set-piece view"
-      className="flex rounded overflow-hidden border border-zinc-300 dark:border-zinc-600"
-    >
-      {(['takers', 'league'] as const).map((v) => (
-        <button
-          key={v}
-          type="button"
-          onClick={() => onViewChange(v)}
-          aria-pressed={view === v}
-          className={`px-3 py-2 sm:py-1 text-sm font-medium transition-all cursor-pointer active:scale-95 min-h-[44px] sm:min-h-0 ${
-            view === v
-              ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
-              : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
-          }`}
-        >
-          {VIEW_LABELS[v]}
-        </button>
-      ))}
-    </div>
+    <SegmentedToggle
+      options={OPTIONS}
+      value={view}
+      onChange={(id) => onViewChange(id as SetPieceView)}
+      ariaLabel="Set-piece view"
+    />
   )
 }
