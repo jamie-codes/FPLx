@@ -5,6 +5,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { Chip } from './Chip'
+import { SegmentedToggle } from './SegmentedToggle'
 import { Card } from './Card'
 import { Stat } from './Stat'
 import { Button } from './Button'
@@ -71,6 +72,88 @@ describe('Chip', () => {
     expect(screen.getByText('X').className).toContain('text-data')
     rerender(<Chip size="md">X</Chip>)
     expect(screen.getByText('X').className).toContain('text-body')
+  })
+})
+
+describe('SegmentedToggle', () => {
+  const options = [
+    { id: 'gw', label: 'GW' },
+    { id: 'next3', label: 'Next 3' },
+    { id: 'season', label: 'Season' },
+  ]
+
+  it('renders every option as a button inside an aria-labelled group', () => {
+    render(
+      <SegmentedToggle options={options} value="gw" onChange={() => {}} ariaLabel="Horizon" />
+    )
+    const group = screen.getByRole('group', { name: 'Horizon' })
+    expect(group).toBeTruthy()
+    expect(screen.getAllByRole('button')).toHaveLength(3)
+    expect(screen.getByRole('button', { name: 'Next 3' })).toBeTruthy()
+  })
+
+  it('container uses the segmented chrome (inline-flex, line border, hidden overflow)', () => {
+    render(
+      <SegmentedToggle options={options} value="gw" onChange={() => {}} ariaLabel="Horizon" />
+    )
+    const cls = screen.getByRole('group', { name: 'Horizon' }).className
+    expect(cls).toContain('inline-flex')
+    expect(cls).toContain('rounded-md')
+    expect(cls).toContain('border-line')
+    expect(cls).toContain('overflow-hidden')
+  })
+
+  it('active option: aria-pressed=true + bg-ink/text-surface-1; inactive: aria-pressed=false + muted ink', () => {
+    render(
+      <SegmentedToggle options={options} value="next3" onChange={() => {}} ariaLabel="Horizon" />
+    )
+    const active = screen.getByRole('button', { name: 'Next 3' })
+    expect(active).toHaveAttribute('aria-pressed', 'true')
+    expect(active.className).toContain('bg-ink')
+    expect(active.className).toContain('text-surface-1')
+    const inactive = screen.getByRole('button', { name: 'GW' })
+    expect(inactive).toHaveAttribute('aria-pressed', 'false')
+    expect(inactive.className).toContain('text-ink-muted')
+    expect(inactive.className).toContain('hover:bg-surface-2')
+  })
+
+  it('click fires onChange with the option id', () => {
+    const onChange = vi.fn()
+    render(
+      <SegmentedToggle options={options} value="gw" onChange={onChange} ariaLabel="Horizon" />
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Season' }))
+    expect(onChange).toHaveBeenCalledWith('season')
+  })
+
+  it('sm uses the 32px target + text-data, md uses 44px + text-body (default md)', () => {
+    const { rerender } = render(
+      <SegmentedToggle options={options} value="gw" onChange={() => {}} ariaLabel="H" size="sm" />
+    )
+    let btn = screen.getByRole('button', { name: 'GW' })
+    expect(btn.className).toContain('min-h-[32px]')
+    expect(btn.className).toContain('px-3')
+    expect(btn.className).toContain('text-data')
+    rerender(
+      <SegmentedToggle options={options} value="gw" onChange={() => {}} ariaLabel="H" size="md" />
+    )
+    btn = screen.getByRole('button', { name: 'GW' })
+    expect(btn.className).toContain('min-h-[44px]')
+    expect(btn.className).toContain('px-4')
+    expect(btn.className).toContain('text-body')
+    rerender(
+      <SegmentedToggle options={options} value="gw" onChange={() => {}} ariaLabel="H" />
+    )
+    expect(screen.getByRole('button', { name: 'GW' }).className).toContain('min-h-[44px]')
+  })
+
+  it('buttons are type="button" (never submit a wrapping form)', () => {
+    render(
+      <SegmentedToggle options={options} value="gw" onChange={() => {}} ariaLabel="Horizon" />
+    )
+    for (const btn of screen.getAllByRole('button')) {
+      expect(btn).toHaveAttribute('type', 'button')
+    }
   })
 })
 
