@@ -1,0 +1,46 @@
+'use client'
+// UIX-01 shell: desktop-only fixed 220px sidebar — brand at top, then the 6
+// nav groups as headed lists of tools. page.tsx owns the active-tool state.
+import { GROUPS, type ToolId } from '@/lib/navigation'
+
+export function Sidebar({ active, onSelect }: {
+  active: ToolId
+  onSelect: (t: ToolId) => void
+}) {
+  return (
+    <aside className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-[220px] flex-col bg-surface-1 border-r border-line">
+      <div className="px-4 pt-4 pb-2 shrink-0">
+        <span className="font-[family-name:var(--font-honk)] text-3xl text-ink leading-none">
+          FPLx
+        </span>
+      </div>
+      <nav aria-label="Primary navigation" className="flex-1 overflow-y-auto pb-4">
+        {GROUPS.map((group) => (
+          <div key={group.id} className="mt-3">
+            <div className="px-4 py-1 text-data font-medium uppercase tracking-wide text-ink-muted">
+              <span aria-hidden className="mr-1.5">{group.icon}</span>
+              {group.label}
+            </div>
+            {group.tools.map((tool) => {
+              const isActive = tool.id === active
+              return (
+                <button
+                  key={tool.id}
+                  type="button"
+                  onClick={() => onSelect(tool.id)}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`block w-full text-left px-4 py-1.5 text-body border-l-2 transition-colors duration-150 ease-out ${
+                    isActive
+                      ? 'bg-accent-soft text-accent border-accent font-medium'
+                      : 'text-ink-muted border-transparent hover:bg-surface-2 hover:text-ink'
+                  }`}>
+                  {tool.label}
+                </button>
+              )
+            })}
+          </div>
+        ))}
+      </nav>
+    </aside>
+  )
+}

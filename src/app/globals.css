@@ -88,6 +88,13 @@
 }
 
 .tabular { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; }
+/* UIX-01 shell: MoreSheet entrance — 250ms panel motion per the spec; the
+   prefers-reduced-motion block below collapses it to 0.01ms automatically. */
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.sheet-enter { animation: sheet-up 250ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 :focus-visible { outline: 2px solid var(--sp-focus-ring); outline-offset: 1px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }

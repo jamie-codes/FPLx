@@ -1,0 +1,53 @@
+// UIX-01 Task 4: navigation completeness — the keep-all-features tripwire.
+// The 27 legacy SubTab ids are hardcoded from the feature inventory
+// (docs/superpowers/specs/2026-06-12-uix01-feature-inventory.md); if any tool
+// is dropped from GROUPS this fails before the UI can lose a feature.
+import { describe, it, expect } from 'vitest'
+import { GROUPS, ALL_TOOL_IDS, groupOf } from './navigation'
+
+const LEGACY_27 = [
+  'gems', 'picks', 'insights', 'defcon', 'set-pieces', 'planner', 'manual-plan',
+  'route-tree', 'club-form', 'value-gems', 'accuracy', 'season', 'window',
+  'decision', 'transfers', 'optimiser', 'price-reset', 'price-changes',
+  'rivals', 'lineup', 'review', 'rank-sim', 'next-season', 'watchlist',
+  'perfect-gw', 'live', 'wildcard',
+] as const
+
+describe('navigation.ts completeness (UIX-01)', () => {
+  it('has exactly 28 tool ids (27 legacy + home) with no duplicates', () => {
+    expect(ALL_TOOL_IDS).toHaveLength(28)
+    expect(new Set(ALL_TOOL_IDS).size).toBe(28)
+  })
+
+  it('contains every one of the 27 legacy SubTab ids exactly once', () => {
+    for (const id of LEGACY_27) {
+      expect(ALL_TOOL_IDS.filter((t) => t === id), `legacy id ${id}`).toHaveLength(1)
+    }
+  })
+
+  it('includes the new home id', () => {
+    expect(ALL_TOOL_IDS).toContain('home')
+  })
+
+  it('exposes the 6 groups in sidebar order', () => {
+    expect(GROUPS.map((g) => g.id)).toEqual([
+      'home', 'this-week', 'my-squad', 'research', 'planning', 'model',
+    ])
+  })
+
+  it('every tool has a label and a mobileLabel', () => {
+    for (const group of GROUPS) {
+      for (const tool of group.tools) {
+        expect(tool.label.length, `${tool.id} label`).toBeGreaterThan(0)
+        expect(tool.mobileLabel.length, `${tool.id} mobileLabel`).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('groupOf resolves a tool to its group', () => {
+    expect(groupOf('gems').id).toBe('research')
+    expect(groupOf('home').id).toBe('home')
+    expect(groupOf('rank-sim').id).toBe('my-squad')
+    expect(groupOf('season').id).toBe('model')
+  })
+})
