@@ -177,7 +177,7 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
   if (scoredPlayers.length === 0 && submittedId) {
     return (
       <section data-testid="route-tree-tab">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Computing routes…</p>
+        <p className="text-sm text-ink-muted">Computing routes…</p>
       </section>
     )
   }
@@ -187,8 +187,8 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
     return (
       <section data-testid="route-tree-tab" className="space-y-6">
         <header>
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Load your squad first</h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          <h2 className="text-lg font-semibold text-ink">Load your squad first</h2>
+          <p className="text-sm text-ink-muted mt-1">
             Enter your FPL Team ID to generate transfer route options for your squad.
           </p>
         </header>
@@ -197,7 +197,7 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
           className="flex flex-col sm:flex-row gap-2 sm:items-end"
         >
           <div className="flex flex-col gap-1">
-            <label htmlFor="routeTreeTeamId" className="text-sm text-zinc-600 dark:text-zinc-400">FPL Team ID</label>
+            <label htmlFor="routeTreeTeamId" className="text-sm text-ink-muted">FPL Team ID</label>
             <input
               id="routeTreeTeamId"
               type="text"
@@ -206,12 +206,12 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
               value={teamIdInput}
               onChange={(e) => setTeamIdInput(e.target.value)}
               placeholder="e.g. 1234567"
-              className="border border-zinc-300 dark:border-zinc-600 rounded px-3 py-1.5 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-full sm:w-40"
+              className="border border-line rounded-md min-h-[44px] px-3 py-1.5 text-base sm:text-sm text-ink bg-surface-1 w-full sm:w-40"
             />
           </div>
           <button
             type="submit"
-            className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold rounded min-h-[44px] px-3 py-2 text-sm cursor-pointer"
+            className="bg-ink text-surface-1 font-semibold rounded min-h-[44px] px-3 py-2 text-sm cursor-pointer"
           >
             Load Squad
           </button>
@@ -224,8 +224,8 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
   return (
     <section data-testid="route-tree-tab" className="space-y-4">
       <header>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Route Tree</h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+        <h2 className="text-lg font-semibold text-ink">Route Tree</h2>
+        <p className="text-sm text-ink-muted mt-1">
           Compare 2–3 transfer routes built greedily from your weakest squad players.
         </p>
       </header>
@@ -240,8 +240,8 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
 
       {/* Caveat banner — shown only when unauthenticated (MTP-07 mirror) */}
       {!isAuthenticated && picks !== null && (
-        <div className="rounded border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/30 px-4 py-3 mb-4">
-          <p className="text-sm text-amber-800 dark:text-amber-200">
+        <div className="rounded border border-warning/40 bg-warning-soft px-4 py-3 mb-4">
+          <p className="text-sm text-warning">
             Sell prices are approximate — log in to FPL for exact selling prices.
           </p>
         </div>
@@ -250,11 +250,11 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
       {/* Empty-tree fallback */}
       {tree && tree.paths.length === 0 && (
         <div
-          className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-4 py-6 text-center"
+          className="rounded border border-line bg-surface-2 px-4 py-6 text-center"
           data-testid="route-tree-empty"
         >
-          <p className="text-sm text-zinc-700 dark:text-zinc-300">No transfer routes found for the current horizon and chip mode.</p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Try a different horizon or clear the active chip.</p>
+          <p className="text-sm text-ink">No transfer routes found for the current horizon and chip mode.</p>
+          <p className="text-xs text-ink-muted mt-1">Try a different horizon or clear the active chip.</p>
         </div>
       )}
 
@@ -263,13 +263,13 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
         <div className="overflow-x-auto" data-testid="route-tree-table-wrapper">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-200 dark:border-zinc-700">
-                <th scope="col" className="px-3 py-3 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-left">Path</th>
-                <th scope="col" className="px-3 py-3 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-left">Transfer Hits</th>
-                <th scope="col" className="px-3 py-3 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-left">Hit cost</th>
-                <th scope="col" className="px-3 py-3 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-left">Net xPts</th>
-                <th scope="col" className="px-3 py-3 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-left">Chips</th>
-                <th scope="col" className="px-3 py-3 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-left">Action</th>
+              <tr className="border-b border-line">
+                <th scope="col" className="px-3 py-3 text-xs font-semibold text-ink-muted uppercase tracking-wide text-left">Path</th>
+                <th scope="col" className="px-3 py-3 text-xs font-semibold text-ink-muted uppercase tracking-wide text-left">Transfer Hits</th>
+                <th scope="col" className="px-3 py-3 text-xs font-semibold text-ink-muted uppercase tracking-wide text-left">Hit cost</th>
+                <th scope="col" className="px-3 py-3 text-xs font-semibold text-ink-muted uppercase tracking-wide text-left">Net xPts</th>
+                <th scope="col" className="px-3 py-3 text-xs font-semibold text-ink-muted uppercase tracking-wide text-left">Chips</th>
+                <th scope="col" className="px-3 py-3 text-xs font-semibold text-ink-muted uppercase tracking-wide text-left">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -284,8 +284,8 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
                       data-testid={`path-row-${i}`}
                       data-recommended={isRecommended ? 'true' : 'false'}
                       className={isRecommended
-                        ? 'ring-2 ring-offset-0 ring-inset ring-green-700 dark:ring-green-300 bg-zinc-50 dark:bg-zinc-800'
-                        : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-700'}
+                        ? 'ring-2 ring-offset-0 ring-inset ring-positive bg-surface-2'
+                        : 'hover:bg-surface-2 border-b border-line'}
                     >
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-2">
@@ -294,41 +294,41 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
                             onClick={() => toggleExpand(i)}
                             aria-label={isExpanded ? `Hide GW-by-GW breakdown for ${pathLabel}` : `Show GW-by-GW breakdown for ${pathLabel}`}
                             data-testid={`path-expand-${i}`}
-                            className="text-zinc-500 dark:text-zinc-400 text-xs hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer min-h-[44px] px-1"
+                            className={`${isExpanded ? 'text-accent' : 'text-ink-muted'} text-xs hover:text-ink cursor-pointer min-h-[44px] px-1`}
                           >
                             {isExpanded ? '▲' : '▼'}
                           </button>
-                          <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{pathLabel}</span>
+                          <span className="text-base font-semibold text-ink">{pathLabel}</span>
                           {isRecommended && (
-                            <span className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-xs font-semibold rounded px-2 py-1">Recommended</span>
+                            <span className="bg-positive-soft text-positive text-xs font-semibold rounded px-2 py-1">Recommended</span>
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{path.totalHits ?? 0}</td>
-                      <td className="px-3 py-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                      <td className="px-3 py-2 text-sm font-semibold text-ink">{path.totalHits ?? 0}</td>
+                      <td className="px-3 py-2 text-sm font-semibold text-ink">
                         {path.totalHitCostPts === 0
                           ? '0 pts'
-                          : <span className="text-red-700 dark:text-red-300">{`−${Math.abs(path.totalHitCostPts)} pts`}</span>}
+                          : <span className="text-negative">{`−${Math.abs(path.totalHitCostPts)} pts`}</span>}
                       </td>
-                      <td className="px-3 py-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100" data-testid={`path-net-xpts-${i}`}>
+                      <td className="px-3 py-2 text-sm font-semibold text-ink" data-testid={`path-net-xpts-${i}`}>
                         {path.netXpts >= 0 ? `+${path.netXpts.toFixed(1)}` : `−${Math.abs(path.netXpts).toFixed(1)}`}
                       </td>
                       <td className="px-3 py-2">
                         {path.chipsConsumed.length === 0
-                          ? <span className="text-zinc-500 dark:text-zinc-400 text-xs">All preserved</span>
-                          : <span className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 text-xs font-semibold rounded px-2 py-1">
+                          ? <span className="text-ink-muted text-xs">All preserved</span>
+                          : <span className="bg-warning-soft text-warning text-xs font-semibold rounded px-2 py-1">
                               {path.chipsConsumed.map(c => c === 'wildcard' ? 'WC' : c === 'freehit' ? 'FH' : c === 'bboost' ? 'BB' : c === '3xc' ? 'TC' : '').filter(Boolean).join(', ')}
                             </span>}
                       </td>
                       <td className="px-3 py-2">
                         {isConfirming ? (
                           <div className="flex items-center gap-2" data-testid={`path-confirm-${i}`}>
-                            <span className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-nowrap">Replace current plan?</span>
+                            <span className="text-sm text-ink whitespace-nowrap">Replace current plan?</span>
                             <button
                               type="button"
                               onClick={() => handleConfirmLoad(i)}
                               data-testid={`path-confirm-yes-${i}`}
-                              className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold rounded min-h-[44px] px-3 py-2 text-sm cursor-pointer"
+                              className="bg-ink text-surface-1 font-semibold rounded min-h-[44px] px-3 py-2 text-sm cursor-pointer"
                             >
                               Yes, replace
                             </button>
@@ -336,7 +336,7 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
                               type="button"
                               onClick={handleCancelLoad}
                               data-testid={`path-confirm-cancel-${i}`}
-                              className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 underline-offset-2 hover:underline cursor-pointer min-h-[44px] px-2"
+                              className="text-sm text-ink-muted hover:text-ink underline-offset-2 hover:underline cursor-pointer min-h-[44px] px-2"
                             >
                               Cancel
                             </button>
@@ -346,7 +346,7 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
                             type="button"
                             onClick={() => handleClickLoad(i)}
                             data-testid={`path-load-${i}`}
-                            className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold rounded min-h-[44px] px-3 py-2 text-sm hover:bg-zinc-800 dark:hover:bg-zinc-200 cursor-pointer whitespace-nowrap"
+                            className="bg-ink text-surface-1 font-semibold rounded min-h-[44px] px-3 py-2 text-sm hover:bg-ink/90 cursor-pointer whitespace-nowrap"
                           >
                             Load into Manual Planner
                           </button>
@@ -355,11 +355,11 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
                     </tr>
                     {isExpanded && (
                       <tr data-testid={`path-breakdown-${i}`}>
-                        <td colSpan={6} className="bg-zinc-50 dark:bg-zinc-800 border-t border-zinc-100 dark:border-zinc-700 px-3 py-3">
+                        <td colSpan={6} className="bg-surface-2 border-t border-line px-3 py-3">
                           <div className="overflow-x-auto">
                             <table className="text-xs w-full">
                               <thead>
-                                <tr className="text-zinc-500 dark:text-zinc-400">
+                                <tr className="text-ink-muted">
                                   <th className="text-left px-2 py-1">GW</th>
                                   <th className="text-left px-2 py-1">Sell</th>
                                   <th className="text-left px-2 py-1">Buy</th>
@@ -374,12 +374,12 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
                                     // Hold step — em-dashes
                                     return (
                                       <tr key={ni} data-testid={`breakdown-row-${i}-${ni}`}>
-                                        <td className="px-2 py-1 text-zinc-900 dark:text-zinc-100">{node.gw}</td>
-                                        <td className="px-2 py-1 text-zinc-500 dark:text-zinc-400">—</td>
-                                        <td className="px-2 py-1 text-zinc-500 dark:text-zinc-400">—</td>
-                                        <td className="px-2 py-1 text-zinc-900 dark:text-zinc-100">{node.ftBefore.available}</td>
-                                        <td className="px-2 py-1 text-zinc-500 dark:text-zinc-400">—</td>
-                                        <td className="px-2 py-1 text-zinc-900 dark:text-zinc-100">{node.xPtsContribution >= 0 ? `+${node.xPtsContribution.toFixed(1)}` : `−${Math.abs(node.xPtsContribution).toFixed(1)}`}</td>
+                                        <td className="px-2 py-1 text-ink">{node.gw}</td>
+                                        <td className="px-2 py-1 text-ink-muted">—</td>
+                                        <td className="px-2 py-1 text-ink-muted">—</td>
+                                        <td className="px-2 py-1 text-ink">{node.ftBefore.available}</td>
+                                        <td className="px-2 py-1 text-ink-muted">—</td>
+                                        <td className="px-2 py-1 text-ink">{node.xPtsContribution >= 0 ? `+${node.xPtsContribution.toFixed(1)}` : `−${Math.abs(node.xPtsContribution).toFixed(1)}`}</td>
                                       </tr>
                                     )
                                   }
@@ -390,20 +390,20 @@ export function RouteTreeTab({ submittedId, horizon, onSwitchSubTab }: RouteTree
                                     const isHit = node.hitCost !== 0  // always false per D-01 / Plan 01 contract
                                     return (
                                       <tr key={`${ni}-${ti}`} data-testid={`breakdown-row-${i}-${ni}-${ti}`}>
-                                        <td className="px-2 py-1 text-zinc-900 dark:text-zinc-100">{ti === 0 ? node.gw : ''}</td>
-                                        <td className="px-2 py-1 font-medium text-zinc-900 dark:text-zinc-100">{sellPlayer?.web_name ?? `#${t.sellId}`}</td>
-                                        <td className="px-2 py-1 font-medium text-zinc-900 dark:text-zinc-100">{buyPlayer?.web_name ?? `#${t.buyId}`}</td>
-                                        <td className="px-2 py-1 text-zinc-900 dark:text-zinc-100">{ti === 0 ? node.ftBefore.available : ''}</td>
+                                        <td className="px-2 py-1 text-ink">{ti === 0 ? node.gw : ''}</td>
+                                        <td className="px-2 py-1 font-medium text-ink">{sellPlayer?.web_name ?? `#${t.sellId}`}</td>
+                                        <td className="px-2 py-1 font-medium text-ink">{buyPlayer?.web_name ?? `#${t.buyId}`}</td>
+                                        <td className="px-2 py-1 text-ink">{ti === 0 ? node.ftBefore.available : ''}</td>
                                         <td className="px-2 py-1">
                                           {ti === 0 && (
                                             <span className={isHit
-                                              ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 text-xs font-semibold rounded px-2 py-1'
-                                              : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-xs font-semibold rounded px-2 py-1'}>
+                                              ? 'bg-negative-soft text-negative text-xs font-semibold rounded px-2 py-1'
+                                              : 'bg-positive-soft text-positive text-xs font-semibold rounded px-2 py-1'}>
                                               {isHit ? `Hit −4 pts` : 'Free'}
                                             </span>
                                           )}
                                         </td>
-                                        <td className="px-2 py-1 text-zinc-900 dark:text-zinc-100">
+                                        <td className="px-2 py-1 text-ink">
                                           {ti === 0 ? (node.xPtsContribution >= 0 ? `+${node.xPtsContribution.toFixed(1)}` : `−${Math.abs(node.xPtsContribution).toFixed(1)}`) : ''}
                                         </td>
                                       </tr>

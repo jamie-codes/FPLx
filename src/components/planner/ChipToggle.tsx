@@ -30,8 +30,8 @@ export function ChipToggle({ gw, activeChip, onToggle, disabled }: ChipTogglePro
               onClick={() => onToggle(chipCode)}
               className={`min-h-[44px] px-2 py-1 text-xs font-semibold rounded transition-colors ${
                 isActive
-                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
-                  : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
+                  ? 'bg-ink text-surface-1'
+                  : 'bg-surface-1 text-ink hover:bg-surface-2'
               }`}
             >
               {CHIP_LABELS[chipCode]}

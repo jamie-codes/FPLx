@@ -250,12 +250,12 @@ describe('summary table — TRT-04', () => {
     expect(recommendedVal).toBeCloseTo(maxVal, 1)
   })
 
-  it('the recommended row className contains ring-inset and ring-green-700', () => {
+  it('the recommended row className contains ring-inset and ring-positive', () => {
     const { container } = renderRouteTree()
     const recommendedRow = container.querySelector('[data-recommended="true"]') as HTMLElement | null
     expect(recommendedRow).not.toBeNull()
     expect(recommendedRow!.className).toContain('ring-inset')
-    expect(recommendedRow!.className).toContain('ring-green-700')
+    expect(recommendedRow!.className).toContain('ring-positive')
   })
 
   it('the recommended row contains the literal text "Recommended" (the badge)', () => {

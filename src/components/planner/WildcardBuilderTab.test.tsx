@@ -127,7 +127,7 @@ describe('WildcardBuilderTab', () => {
     expect(screen.queryByText(/xPts next GW/i)).toBeNull()
   })
 
-  it('winning xPts cell carries bg-green-50 class; losing cell does not', () => {
+  it('winning xPts cell carries bg-positive-soft class; losing cell does not', () => {
     mockBuildAnchoredSquad
       .mockReturnValueOnce(makeResult({ xPts1gw: 65.0 }))  // A wins
       .mockReturnValueOnce(makeResult({ xPts1gw: 60.0 }))  // B loses
@@ -137,19 +137,19 @@ describe('WildcardBuilderTab', () => {
     const xptsRow = Array.from(rows).find(r => r.textContent?.includes('xPts next GW'))
     expect(xptsRow).not.toBeNull()
     const cells = xptsRow!.querySelectorAll('td')
-    expect(cells[1].className).toMatch(/bg-green-50/)
-    expect(cells[2].className).not.toMatch(/bg-green-50/)
+    expect(cells[1].className).toMatch(/bg-positive-soft/)
+    expect(cells[2].className).not.toMatch(/bg-positive-soft/)
   })
 
-  it('equal xPts values → neither cell carries bg-green-50', () => {
+  it('equal xPts values → neither cell carries bg-positive-soft', () => {
     mockBuildAnchoredSquad.mockReturnValue(makeResult({ xPts1gw: 60.0 }))
     const { container } = render(<WildcardBuilderTab submittedId={null} horizon={1} />)
     const rows = container.querySelectorAll('tbody tr')
     const xptsRow = Array.from(rows).find(r => r.textContent?.includes('xPts next GW'))
     expect(xptsRow).not.toBeNull()
     const cells = xptsRow!.querySelectorAll('td')
-    expect(cells[1].className).not.toMatch(/bg-green-50/)
-    expect(cells[2].className).not.toMatch(/bg-green-50/)
+    expect(cells[1].className).not.toMatch(/bg-positive-soft/)
+    expect(cells[2].className).not.toMatch(/bg-positive-soft/)
   })
 
   it('conflict message renders when anchorConflicts is non-empty', () => {

@@ -341,21 +341,21 @@ export function PlannerTab({ horizon }: PlannerTabProps) {
         onClick={handleGeneratePlan}
         className={`px-4 py-2 rounded text-sm font-medium ${
           canGenerate
-            ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 cursor-pointer'
-            : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 opacity-40 cursor-not-allowed'
+            ? 'bg-ink text-surface-1 hover:bg-ink/90 cursor-pointer'
+            : 'bg-ink text-surface-1 opacity-40 cursor-not-allowed'
         }`}
       >
         Generate Plan
       </button>
-      <details className="text-sm text-zinc-500 dark:text-zinc-400">
-        <summary className="cursor-pointer select-none hover:text-zinc-700 dark:hover:text-zinc-300">
+      <details className="text-sm text-ink-muted">
+        <summary className="cursor-pointer select-none hover:text-ink">
           How do chips work in the planner?
         </summary>
         <ul className="mt-2 ml-4 space-y-1 list-disc">
-          <li><span className="font-medium text-zinc-700 dark:text-zinc-300">Wildcard</span> — re-plans that week with up to 3 free transfers, no hit cost. New squad carries forward.</li>
-          <li><span className="font-medium text-zinc-700 dark:text-zinc-300">Free Hit</span> — same as Wildcard but your squad reverts the following week.</li>
-          <li><span className="font-medium text-zinc-700 dark:text-zinc-300">Bench Boost</span> — shows expected points from your bench players for that week as bonus gain.</li>
-          <li><span className="font-medium text-zinc-700 dark:text-zinc-300">Triple Captain</span> — shows expected extra captain pts (your best XI player&apos;s proj pts, since 3× instead of 2×).</li>
+          <li><span className="font-medium text-ink">Wildcard</span> — re-plans that week with up to 3 free transfers, no hit cost. New squad carries forward.</li>
+          <li><span className="font-medium text-ink">Free Hit</span> — same as Wildcard but your squad reverts the following week.</li>
+          <li><span className="font-medium text-ink">Bench Boost</span> — shows expected points from your bench players for that week as bonus gain.</li>
+          <li><span className="font-medium text-ink">Triple Captain</span> — shows expected extra captain pts (your best XI player&apos;s proj pts, since 3× instead of 2×).</li>
         </ul>
       </details>
 

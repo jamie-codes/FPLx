@@ -63,24 +63,24 @@ export function SquadSnapshotRow({
         key={id}
         className={`flex items-center gap-2 py-0.5 px-2 text-sm ${dimmed ? 'opacity-50' : ''}`}
       >
-        <span className="text-zinc-900 dark:text-zinc-100">{player.web_name}</span>
+        <span className="text-ink">{player.web_name}</span>
         {isIn && (
-          <span className="text-xs font-semibold text-green-600 dark:text-green-400">IN</span>
+          <span className="text-xs font-semibold text-positive">IN</span>
         )}
-        <span className="text-zinc-500 dark:text-zinc-400 text-xs">{player.team_short_name}</span>
+        <span className="text-ink-muted text-xs">{player.team_short_name}</span>
         {isBench && (
-          <span className="text-xs text-zinc-400 dark:text-zinc-500">bench</span>
+          <span className="text-xs text-ink-muted">bench</span>
         )}
       </div>
     )
   }
 
   return (
-    <div className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50">
+    <div className="px-4 py-3 bg-surface-2">
       {/* Starters grouped by position */}
       {startersByGroup.map(({ et, items }, groupIndex) => (
         <div key={et}>
-          <h4 className={`text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1 ${groupIndex === 0 ? 'mt-0' : 'mt-2'}`}>
+          <h4 className={`text-xs font-semibold text-ink-muted mb-1 ${groupIndex === 0 ? 'mt-0' : 'mt-2'}`}>
             {POSITION_LABELS[et]}
           </h4>
           {items.map(({ id }) => renderPlayerRow(id, false))}
@@ -89,7 +89,7 @@ export function SquadSnapshotRow({
 
       {/* Bench divider */}
       {benchItems.length > 0 && (
-        <div className="border-t border-zinc-200 dark:border-zinc-700 my-2 text-xs text-zinc-400 dark:text-zinc-500 text-center">
+        <div className="border-t border-line my-2 text-xs text-ink-muted text-center">
           -- bench --
         </div>
       )}

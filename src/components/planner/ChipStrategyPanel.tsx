@@ -23,13 +23,16 @@ type ChipCode = 'bboost' | '3xc' | 'freehit'
 
 const POS_LABEL: Record<number, string> = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' }
 
+// UIX-04 ruling 1 analogue: ease tiers are data, not chrome — 5-step ladder maps to
+// positive/positive-soft/warning-soft/negative-soft/negative tokens; BGW → surface-2.
+// (Mirrors DecisionSummaryTab's easeFill mapping from Batch B.)
 function easeFill(ease: number, isBGW: boolean | undefined): string {
-  if (isBGW) return 'bg-zinc-200 dark:bg-zinc-700'
-  if (ease >= 0.75) return 'bg-green-500'
-  if (ease >= 0.55) return 'bg-green-300 dark:bg-green-700'
-  if (ease >= 0.40) return 'bg-amber-300 dark:bg-amber-600'
-  if (ease >= 0.25) return 'bg-red-300 dark:bg-red-700'
-  return 'bg-red-500'
+  if (isBGW) return 'bg-surface-2'
+  if (ease >= 0.75) return 'bg-positive'
+  if (ease >= 0.55) return 'bg-positive-soft'
+  if (ease >= 0.40) return 'bg-warning-soft'
+  if (ease >= 0.25) return 'bg-negative-soft'
+  return 'bg-negative'
 }
 
 interface ChipStrategyPanelProps {
@@ -46,7 +49,7 @@ interface EaseCellBarProps {
   chip: ChipCode
   scores: GWEaseScore[]
   ariaLabelPrefix: string
-  forceMuted?: boolean // used-chip rows: render all cells as zinc, no ring
+  forceMuted?: boolean // used-chip rows: render all cells as muted surface, no ring
 }
 
 function EaseCellBar({ chip, scores, ariaLabelPrefix, forceMuted }: EaseCellBarProps) {
@@ -56,8 +59,8 @@ function EaseCellBar({ chip, scores, ariaLabelPrefix, forceMuted }: EaseCellBarP
   return (
     <div className="flex gap-1" role="img" aria-label={ariaLabel}>
       {scores.map(cell => {
-        const fill = forceMuted ? 'bg-zinc-200 dark:bg-zinc-700' : easeFill(cell.ease, cell.isBGW)
-        const ring = !forceMuted && cell.isBest ? ' ring-2 ring-offset-1 ring-green-700 dark:ring-green-300' : ''
+        const fill = forceMuted ? 'bg-surface-2' : easeFill(cell.ease, cell.isBGW)
+        const ring = !forceMuted && cell.isBest ? ' ring-2 ring-offset-1 ring-positive' : ''
         return (
           <div
             key={cell.gw}
@@ -88,8 +91,8 @@ function ChipRow({ chip, scores, usedAtGw, detailPanel, isExpanded, onToggle }: 
   const isExpandable = !isUsed && detailPanel !== undefined
 
   const badgeClasses = isUsed
-    ? 'inline-block text-xs font-normal rounded px-2 py-1 bg-zinc-200 dark:bg-zinc-700 text-zinc-400 dark:text-zinc-500 w-24'
-    : 'inline-block text-xs font-normal rounded px-2 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 w-24'
+    ? 'inline-block text-xs font-normal rounded px-2 py-1 bg-surface-2 text-ink-muted w-24'
+    : 'inline-block text-xs font-normal rounded px-2 py-1 bg-surface-2 text-ink w-24'
   const bestGw = scores.find(s => s.isBest)?.gw
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -114,11 +117,11 @@ function ChipRow({ chip, scores, usedAtGw, detailPanel, isExpanded, onToggle }: 
       >
         <span className={badgeClasses}>{CHIP_LABELS[chip]}</span>
         {isUsed ? (
-          <span className="text-xs text-zinc-400 dark:text-zinc-500">Used GW{usedAtGw}</span>
+          <span className="text-xs text-ink-muted">Used GW{usedAtGw}</span>
         ) : bestGw !== undefined ? (
-          <span className="text-sm text-zinc-700 dark:text-zinc-300">Best: GW{bestGw}</span>
+          <span className="text-sm text-ink">Best: GW{bestGw}</span>
         ) : (
-          <span className="text-xs text-zinc-400 dark:text-zinc-500">—</span>
+          <span className="text-xs text-ink-muted">—</span>
         )}
         <EaseCellBar
           chip={chip}
@@ -128,7 +131,7 @@ function ChipRow({ chip, scores, usedAtGw, detailPanel, isExpanded, onToggle }: 
         />
         {isExpandable && (
           <span
-            className={`ml-auto text-zinc-400 dark:text-zinc-500 transition-transform duration-150 ${isExpanded ? 'rotate-180' : ''}`}
+            className={`ml-auto text-ink-muted transition-transform duration-150 ${isExpanded ? 'rotate-180' : ''}`}
             aria-hidden="true"
           >
             ▾
@@ -156,7 +159,7 @@ function FHChipRow({ scores, bestGw, suggestedSquad, usedAtGw }: FHChipRowProps)
   const isUsed = usedAtGw !== undefined
 
   if (isUsed) {
-    const badgeClasses = 'inline-block text-xs font-normal rounded px-2 py-1 bg-zinc-200 dark:bg-zinc-700 text-zinc-400 dark:text-zinc-500 w-24'
+    const badgeClasses = 'inline-block text-xs font-normal rounded px-2 py-1 bg-surface-2 text-ink-muted w-24'
     return (
       <li
         className="flex items-center gap-2 text-sm min-h-[44px] opacity-40"
@@ -164,7 +167,7 @@ function FHChipRow({ scores, bestGw, suggestedSquad, usedAtGw }: FHChipRowProps)
         aria-disabled={true}
       >
         <span className={badgeClasses}>{CHIP_LABELS['freehit']}</span>
-        <span className="text-xs text-zinc-400 dark:text-zinc-500">Used GW{usedAtGw}</span>
+        <span className="text-xs text-ink-muted">Used GW{usedAtGw}</span>
         <EaseCellBar
           chip="freehit"
           scores={scores}
@@ -182,7 +185,7 @@ function FHChipRow({ scores, bestGw, suggestedSquad, usedAtGw }: FHChipRowProps)
     }
   }
 
-  const badgeClasses = 'inline-block text-xs font-normal rounded px-2 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 w-24'
+  const badgeClasses = 'inline-block text-xs font-normal rounded px-2 py-1 bg-surface-2 text-ink w-24'
 
   return (
     <React.Fragment>
@@ -197,9 +200,9 @@ function FHChipRow({ scores, bestGw, suggestedSquad, usedAtGw }: FHChipRowProps)
       >
         <span className={badgeClasses}>{CHIP_LABELS['freehit']}</span>
         {bestGw !== null ? (
-          <span className="text-sm text-zinc-700 dark:text-zinc-300">Best: GW{bestGw} — click for squad</span>
+          <span className="text-sm text-ink">Best: GW{bestGw} — click for squad</span>
         ) : (
-          <span className="text-xs text-zinc-400 dark:text-zinc-500">—</span>
+          <span className="text-xs text-ink-muted">—</span>
         )}
         <EaseCellBar
           chip="freehit"
@@ -209,14 +212,14 @@ function FHChipRow({ scores, bestGw, suggestedSquad, usedAtGw }: FHChipRowProps)
         />
         <span
           aria-hidden="true"
-          className="ml-auto text-zinc-400 dark:text-zinc-500 w-4 h-4"
+          className="ml-auto text-ink-muted w-4 h-4"
           title={fhExpanded ? 'Hide suggested squad' : 'Show suggested Free Hit squad'}
         >
           {fhExpanded ? '▴' : '▾'}
         </span>
       </li>
       {fhExpanded && (
-        <li className="pl-8 bg-zinc-50 dark:bg-zinc-800 rounded list-none mt-1 mb-2" data-testid="fh-expanded">
+        <li className="pl-8 bg-surface-2 rounded list-none mt-1 mb-2" data-testid="fh-expanded">
           <FHSquadTable squad={suggestedSquad} gw={bestGw ?? 0} />
         </li>
       )}
@@ -227,7 +230,7 @@ function FHChipRow({ scores, bestGw, suggestedSquad, usedAtGw }: FHChipRowProps)
 function FHSquadTable({ squad, gw }: { squad: FHSquadPlayer[]; gw: number }) {
   if (squad.length === 0) {
     return (
-      <p className="text-xs text-zinc-500 dark:text-zinc-400 py-1">
+      <p className="text-xs text-ink-muted py-1">
         No squad suggestion available — run the pipeline first.
       </p>
     )
@@ -236,7 +239,7 @@ function FHSquadTable({ squad, gw }: { squad: FHSquadPlayer[]; gw: number }) {
     <div className="overflow-x-auto" data-testid="fh-squad-table">
       <table className="w-full text-xs">
         <thead>
-          <tr className="text-zinc-500 dark:text-zinc-400 border-b border-zinc-100 dark:border-zinc-800">
+          <tr className="text-ink-muted border-b border-line">
             <th className="py-1 pr-3 text-left w-28">Player</th>
             <th className="py-1 pr-3 text-left w-8">Pos</th>
             <th className="py-1 pr-3 text-right w-10">xPts</th>
@@ -306,7 +309,7 @@ export function ChipStrategyPanel({
   if (!isValidTeamId) {
     return (
       <section aria-label="Chip Strategy" className="mt-6 space-y-3" data-testid="chip-strategy-panel">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 py-4">
+        <p className="text-sm text-ink-muted py-4">
           Enter your FPL Team ID to see chip recommendations.
         </p>
       </section>
@@ -315,7 +318,7 @@ export function ChipStrategyPanel({
   if (!startingGw || clubForm === undefined) {
     return (
       <section aria-label="Chip Strategy" className="mt-6 space-y-3" data-testid="chip-strategy-panel">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 py-4">
+        <p className="text-sm text-ink-muted py-4">
           Loading fixture data…
         </p>
       </section>
@@ -324,7 +327,7 @@ export function ChipStrategyPanel({
   if (isLoading) {
     return (
       <section aria-label="Chip Strategy" className="mt-6 space-y-3" data-testid="chip-strategy-panel">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">
+        <p className="text-sm text-ink-muted text-center py-8">
           Loading chip strategy…
         </p>
       </section>
@@ -333,7 +336,7 @@ export function ChipStrategyPanel({
   if (error) {
     return (
       <section aria-label="Chip Strategy" className="mt-6 space-y-3" data-testid="chip-strategy-panel">
-        <p className="text-sm text-red-600 dark:text-red-400 py-4">
+        <p className="text-sm text-negative py-4">
           Failed to load chip strategy. Check squad data and refresh.
         </p>
       </section>
@@ -342,10 +345,10 @@ export function ChipStrategyPanel({
 
   return (
     <section aria-label="Chip Strategy" className="mt-6 space-y-3" data-testid="chip-strategy-panel">
-      <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 space-y-3">
+      <div className="rounded border border-line bg-surface-1 p-4 space-y-3">
         <div className="space-y-1">
           <h2 className="text-lg font-semibold">Chip Strategy</h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-ink-muted">
             Best upcoming gameweek to play each remaining chip.
           </p>
         </div>

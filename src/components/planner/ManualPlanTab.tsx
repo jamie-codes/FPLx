@@ -270,7 +270,7 @@ export function ManualPlanTab({ submittedId, horizon }: ManualPlanTabProps) {
   if (scoredPlayers.length === 0 && submittedId) {
     return (
       <section className="space-y-4">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading…</p>
+        <p className="text-sm text-ink-muted">Loading…</p>
       </section>
     )
   }
@@ -280,10 +280,10 @@ export function ManualPlanTab({ submittedId, horizon }: ManualPlanTabProps) {
     return (
       <section className="space-y-6">
         <header>
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+          <h2 className="text-lg font-semibold text-ink">
             Load your squad first
           </h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-sm text-ink-muted mt-1">
             Enter your FPL Team ID to build a manual transfer plan with live bank balance, FT tracking, and break-even per hit.
           </p>
         </header>
@@ -294,7 +294,7 @@ export function ManualPlanTab({ submittedId, horizon }: ManualPlanTabProps) {
           <div className="flex flex-col gap-1">
             <label
               htmlFor="manualPlanTeamId"
-              className="text-sm text-zinc-600 dark:text-zinc-400"
+              className="text-sm text-ink-muted"
             >
               FPL Team ID
             </label>
@@ -306,12 +306,12 @@ export function ManualPlanTab({ submittedId, horizon }: ManualPlanTabProps) {
               value={teamIdInput}
               onChange={(e) => setTeamIdInput(e.target.value)}
               placeholder="e.g. 1234567"
-              className="border border-zinc-300 dark:border-zinc-600 rounded px-3 py-1.5 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-full sm:w-40"
+              className="border border-line rounded-md min-h-[44px] px-3 py-1.5 text-base sm:text-sm text-ink bg-surface-1 w-full sm:w-40"
             />
           </div>
           <button
             type="submit"
-            className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold rounded min-h-[44px] px-3 py-2 text-sm cursor-pointer"
+            className="bg-ink text-surface-1 font-semibold rounded min-h-[44px] px-3 py-2 text-sm cursor-pointer"
           >
             Load Squad
           </button>
@@ -325,8 +325,8 @@ export function ManualPlanTab({ submittedId, horizon }: ManualPlanTabProps) {
     <section className="space-y-4">
       {/* Caveat banner — D-13: shown only when unauthenticated (T-59-06 mitigation) */}
       {!isAuthenticated && picks !== null && (
-        <div className="rounded border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/30 px-4 py-3 mb-4">
-          <p className="text-sm text-amber-800 dark:text-amber-200">
+        <div className="rounded border border-warning/40 bg-warning-soft px-4 py-3 mb-4">
+          <p className="text-sm text-warning">
             Sell prices are approximate — log in to FPL for exact selling prices.
           </p>
         </div>
@@ -336,26 +336,26 @@ export function ManualPlanTab({ submittedId, horizon }: ManualPlanTabProps) {
       <div className="flex items-center justify-end gap-4 mb-4">
         <button
           onClick={handleReset}
-          className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 underline-offset-2 hover:underline cursor-pointer"
+          className="text-sm text-ink-muted hover:text-ink underline-offset-2 hover:underline cursor-pointer"
         >
           Reset Plan
         </button>
       </div>
 
       {/* Summary header band */}
-      <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-4 py-3 mb-4">
+      <div className="rounded border border-line bg-surface-2 px-4 py-3 mb-4">
         <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
           {/* Hits */}
           <div className="flex items-baseline gap-2">
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">Hits</span>
-            <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+            <span className="text-xs text-ink-muted">Hits</span>
+            <span className="text-base font-semibold text-ink">
               {summary?.totalHits ?? 0}
             </span>
           </div>
           {/* Hit cost */}
           <div className="flex items-baseline gap-2">
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">Hit cost</span>
-            <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+            <span className="text-xs text-ink-muted">Hit cost</span>
+            <span className="text-base font-semibold text-ink">
               {summary && summary.totalHitCostPts !== 0
                 ? `−${Math.abs(summary.totalHitCostPts)} pts`
                 : '0 pts'}
@@ -363,8 +363,8 @@ export function ManualPlanTab({ submittedId, horizon }: ManualPlanTabProps) {
           </div>
           {/* Avg break-even */}
           <div className="flex items-baseline gap-2">
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">Avg break-even</span>
-            <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+            <span className="text-xs text-ink-muted">Avg break-even</span>
+            <span className="text-base font-semibold text-ink">
               {!summary || summary.avgBreakEvenGws === null
                 ? '—'
                 : summary.avgBreakEvenGws === Infinity
@@ -406,28 +406,28 @@ export function ManualPlanTab({ submittedId, horizon }: ManualPlanTabProps) {
             role="dialog"
             aria-modal="true"
             aria-label="Select player to sell"
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40"
           >
-            <div data-testid="sell-stage-picker" className="rounded-lg bg-white dark:bg-zinc-900 p-4 max-w-sm w-full max-h-[70vh] flex flex-col border border-zinc-200 dark:border-zinc-700 shadow-lg">
+            <div data-testid="sell-stage-picker" className="rounded-lg bg-surface-1 p-4 max-w-sm w-full max-h-[70vh] flex flex-col border border-line shadow-lg">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                <h2 className="text-base font-semibold text-ink">
                   Select player to sell
                 </h2>
                 <button
                   type="button"
                   onClick={handleClosePicker}
-                  className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer"
+                  className="text-sm text-ink-muted hover:text-ink cursor-pointer"
                   aria-label="Close"
                 >
                   ✕
                 </button>
               </div>
-              <div className="overflow-y-auto flex-1 divide-y divide-zinc-100 dark:divide-zinc-800">
+              <div className="overflow-y-auto flex-1 divide-y divide-line">
                 {squadEntering.map((playerId) => {
                   const player = playerMap.get(playerId)
                   if (!player) {
                     return (
-                      <div key={playerId} className="w-full px-3 py-2 text-sm text-zinc-400 italic">
+                      <div key={playerId} className="w-full px-3 py-2 text-sm text-ink-muted italic">
                         Unknown player (ID {playerId})
                       </div>
                     )
@@ -437,17 +437,17 @@ export function ManualPlanTab({ submittedId, horizon }: ManualPlanTabProps) {
                       key={playerId}
                       type="button"
                       onClick={() => handlePickSell(playerId)}
-                      className="w-full text-left px-3 py-2 flex items-center justify-between gap-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+                      className="w-full text-left px-3 py-2 flex items-center justify-between gap-2 hover:bg-surface-2 cursor-pointer transition-colors"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate">
+                        <span className="text-sm text-ink truncate">
                           {player.web_name}
                         </span>
-                        <span className="text-xs text-zinc-500 dark:text-zinc-400 shrink-0">
+                        <span className="text-xs text-ink-muted shrink-0">
                           {player.team_short_name}
                         </span>
                       </div>
-                      <span className="text-sm text-zinc-700 dark:text-zinc-300 shrink-0">
+                      <span className="text-sm text-ink shrink-0">
                         £{((player.now_cost ?? 0) / 10).toFixed(1)}m
                       </span>
                     </button>
@@ -547,8 +547,8 @@ function GwStepCard({
   const bankValueTenths = derivedStep.bankAfter
   const bankColorClass =
     bankValueTenths < 0
-      ? 'text-red-700 dark:text-red-300 font-semibold'
-      : 'text-zinc-900 dark:text-zinc-100 font-medium'
+      ? 'text-negative font-semibold'
+      : 'text-ink font-medium'
   const bankDisplay = `£${(bankValueTenths / 10).toFixed(1)}m`
 
   const ftLabelText = computeFtLabel(step, derivedStep)
@@ -567,11 +567,11 @@ function GwStepCard({
   })
 
   return (
-    <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden mb-3">
+    <div className="rounded border border-line bg-surface-1 overflow-hidden mb-3">
       {/* Step header row */}
-      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-zinc-100 dark:border-zinc-700 flex-wrap">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-line flex-wrap">
         <div className="flex items-center gap-3">
-          <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+          <span className="text-base font-semibold text-ink">
             GW {step.gw}
           </span>
         </div>
@@ -579,7 +579,7 @@ function GwStepCard({
         <button
           aria-expanded={isOpen}
           onClick={onAccordionToggle}
-          className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer min-h-[44px] px-2"
+          className="text-sm text-ink-muted hover:text-ink cursor-pointer min-h-[44px] px-2"
         >
           {isOpen ? '▲ Hide squad' : '▼ Show squad'}
         </button>
@@ -601,18 +601,18 @@ function GwStepCard({
       <div className="px-4 py-3">
         <button
           onClick={onAddTransferClick}
-          className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded px-3 py-2 min-h-[44px] border border-dashed border-zinc-300 dark:border-zinc-600 cursor-pointer"
+          className="text-sm font-semibold text-ink bg-surface-2 hover:bg-line rounded px-3 py-2 min-h-[44px] border border-dashed border-line cursor-pointer"
         >
           + Add Transfer
         </button>
       </div>
 
       {/* Step footer: bank + FT */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 border-t border-zinc-100 dark:border-zinc-700 text-xs">
-        <span className="text-zinc-500 dark:text-zinc-400">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 border-t border-line text-xs">
+        <span className="text-ink-muted">
           Bank: <span className={bankColorClass}>{bankDisplay}</span>
         </span>
-        <span className="text-zinc-500 dark:text-zinc-400">FT: {ftLabelText}</span>
+        <span className="text-ink-muted">FT: {ftLabelText}</span>
       </div>
 
       {/* Accordion expanded body (D-10) */}
@@ -645,20 +645,21 @@ function TransferRow({ transfer, isHit, breakEvenLabel, playerMap, onRemove }: T
   const sell = playerMap.get(transfer.sellId)
   const buy = playerMap.get(transfer.buyId)
 
+  // UIX-04 ruling 3: hit/free result semantics → negative/positive tokens
   const badgeClass = isHit
-    ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
-    : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+    ? 'bg-negative-soft text-negative'
+    : 'bg-positive-soft text-positive'
   const badgeLabel = isHit ? 'Hit −4 pts' : 'Free'
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 border-b border-zinc-100 dark:border-zinc-700">
-      <span className="text-xs text-zinc-500 dark:text-zinc-400">Sell</span>
-      <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 border-b border-line">
+      <span className="text-xs text-ink-muted">Sell</span>
+      <span className="text-sm font-medium text-ink">
         {sell?.web_name ?? '…'}
       </span>
-      <span className="text-zinc-400 dark:text-zinc-500">→</span>
-      <span className="text-xs text-zinc-500 dark:text-zinc-400">Buy</span>
-      <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+      <span className="text-ink-muted">→</span>
+      <span className="text-xs text-ink-muted">Buy</span>
+      <span className="text-sm font-medium text-ink">
         {buy?.web_name ?? '…'}
       </span>
 
@@ -670,7 +671,7 @@ function TransferRow({ transfer, isHit, breakEvenLabel, playerMap, onRemove }: T
       {/* Break-even (only if Hit) */}
       {isHit && breakEvenLabel !== null && (
         <span
-          className="text-xs text-zinc-500 dark:text-zinc-400"
+          className="text-xs text-ink-muted"
           title={breakEvenLabel === '∞' ? 'No break-even — incoming player projects equal or fewer xPts than outgoing.' : undefined}
         >
           Break-even: {breakEvenLabel}
@@ -682,7 +683,7 @@ function TransferRow({ transfer, isHit, breakEvenLabel, playerMap, onRemove }: T
       <button
         onClick={onRemove}
         aria-label="Remove transfer"
-        className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 cursor-pointer text-base min-h-[44px] min-w-[44px] flex items-center justify-center"
+        className="text-ink-muted hover:text-negative cursor-pointer text-base min-h-[44px] min-w-[44px] flex items-center justify-center"
       >
         ✕
       </button>

@@ -8,28 +8,29 @@ interface Props {
 function ScoreBar({ value, label, valueLabel }: { value: number; label: string; valueLabel: string }) {
   return (
     <div className="flex items-center gap-2 text-xs">
-      <span className="w-20 shrink-0 text-zinc-500 dark:text-zinc-400">{label}</span>
-      <div className="flex-1 h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-700">
+      <span className="w-20 shrink-0 text-ink-muted">{label}</span>
+      <div className="flex-1 h-1.5 rounded-full bg-line">
         <div
-          className="h-1.5 rounded-full bg-blue-500 dark:bg-blue-400"
+          className="h-1.5 rounded-full bg-accent"
           style={{ width: `${Math.min(100, Math.round(value))}%` }}
         />
       </div>
-      <span className="w-14 text-right tabular-nums text-zinc-700 dark:text-zinc-300">{valueLabel}</span>
+      <span className="w-14 text-right tabular-nums text-ink">{valueLabel}</span>
     </div>
   )
 }
 
+// UIX-04 ruling 3: readiness tiers → positive/accent/warning tokens
 function scoreBadgeClass(score: number): string {
-  if (score >= 80) return 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30'
-  if (score >= 50) return 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'
-  return 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30'
+  if (score >= 80) return 'text-positive bg-positive-soft'
+  if (score >= 50) return 'text-accent bg-accent-soft'
+  return 'text-warning bg-warning-soft'
 }
 
 export function BBDetailPanel({ readiness, hitCostLabel }: Props) {
   if (readiness.score === 0 && readiness.bench_xpts === 0) {
     return (
-      <div className="px-1 py-2 text-xs text-zinc-400 dark:text-zinc-500">
+      <div className="px-1 py-2 text-xs text-ink-muted">
         Load your squad to see BB readiness
       </div>
     )
@@ -67,7 +68,7 @@ export function BBDetailPanel({ readiness, hitCostLabel }: Props) {
 
       {/* Hit cost label */}
       {hitCostLabel && (
-        <p className="text-xs text-amber-600 dark:text-amber-400">{hitCostLabel}</p>
+        <p className="text-xs text-warning">{hitCostLabel}</p>
       )}
     </div>
   )

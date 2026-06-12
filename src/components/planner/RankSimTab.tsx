@@ -47,8 +47,8 @@ function CustomTooltip(props: TooltipContentProps) {
   const { active, payload, label } = props
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs shadow-sm">
-      <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-1">{label as string}</p>
+    <div className="rounded border border-line bg-surface-1 px-3 py-2 text-xs shadow-sm">
+      <p className="font-semibold text-ink mb-1">{label as string}</p>
       {(payload as unknown as Array<{ dataKey?: string | number; color?: string; value?: number }>)
         .filter((e) => e.dataKey === 'mean' || e.dataKey === 'altMean')
         .map((entry) => (
@@ -195,11 +195,11 @@ export function RankSimTab({ submittedId }: RankSimTabProps) {
   if (picks === null) {
     return (
       <section data-testid="rank-sim-tab">
-        <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-4 py-6 text-center">
-          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+        <div className="rounded border border-line bg-surface-2 px-4 py-6 text-center">
+          <p className="text-sm font-semibold text-ink">
             Load your squad to run the rank simulator
           </p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-xs text-ink-muted mt-1">
             Go to the Squad tab and enter your FPL Team ID to get started.
           </p>
         </div>
@@ -215,8 +215,8 @@ export function RankSimTab({ submittedId }: RankSimTabProps) {
   return (
     <section data-testid="rank-sim-tab" className="space-y-4">
       <header>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Rank Simulator</h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+        <h2 className="text-lg font-semibold text-ink">Rank Simulator</h2>
+        <p className="text-sm text-ink-muted mt-1">
           Project your squad&apos;s rank trajectory over 5 GWs and compare a one-transfer alternative.
         </p>
       </header>
@@ -224,68 +224,70 @@ export function RankSimTab({ submittedId }: RankSimTabProps) {
       {/* 3-column rank header */}
       <div
         data-testid="rank-header"
-        className="grid grid-cols-3 gap-4 rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-4 py-3"
+        className="grid grid-cols-3 gap-4 rounded border border-line bg-surface-2 px-4 py-3"
       >
         <div className="flex flex-col items-center gap-0">
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">Current rank</span>
-          <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+          <span className="text-xs text-ink-muted">Current rank</span>
+          <span className="text-base font-semibold text-ink">
             {formatRank(rankQuery.data?.summary_overall_rank)}
           </span>
         </div>
         <div className="flex flex-col items-center gap-0">
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">P(rank gain) ~</span>
-          <span className="text-base font-semibold text-green-700 dark:text-green-300">
+          <span className="text-xs text-ink-muted">P(rank gain) ~</span>
+          <span className="text-base font-semibold text-positive">
             {pStats.pGain != null ? `${Math.round(pStats.pGain * 100)}%` : '—'}
           </span>
         </div>
         <div className="flex flex-col items-center gap-0">
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">P(rank drop) ~</span>
-          <span className="text-base font-semibold text-red-600 dark:text-red-400">
+          <span className="text-xs text-ink-muted">P(rank drop) ~</span>
+          <span className="text-base font-semibold text-negative">
             {pStats.pDrop != null ? `${Math.round(pStats.pDrop * 100)}%` : '—'}
           </span>
         </div>
       </div>
-      <p className="text-xs text-zinc-400 dark:text-zinc-500">
+      <p className="text-xs text-ink-muted">
         Based on beat-the-average heuristic — not a direct rank model.
       </p>
       {rankQuery.isError && (
-        <p className="text-xs text-red-600 dark:text-red-400">
+        <p className="text-xs text-negative">
           Could not load rank — check your Team ID.
         </p>
       )}
 
       {/* Legend */}
-      <div className="flex gap-4 text-xs text-zinc-600 dark:text-zinc-400">
+      <div className="flex gap-4 text-xs text-ink-muted">
         <span className="flex items-center gap-1">
           <span style={{ display: 'inline-block', width: 12, height: 2, background: 'currentColor' }} />
           Current XI
         </span>
         {altInfo && (
           <span className="flex items-center gap-1">
-            <span style={{ display: 'inline-block', width: 12, height: 2, background: '#f59e0b', borderTop: '2px dashed #f59e0b' }} />
+            {/* UIX-04 ruling 5: alt-scenario swatch tracks the accent token in both themes */}
+            <span style={{ display: 'inline-block', width: 12, height: 2, background: 'var(--color-accent)', borderTop: '2px dashed var(--color-accent)' }} />
             {altLegendLabel}
           </span>
         )}
       </div>
 
       {/* Fan chart */}
-      <div data-testid="rank-sim-chart" className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-2 py-3">
+      <div data-testid="rank-sim-chart" className="rounded border border-line bg-surface-2 px-2 py-3">
         <ResponsiveContainer width="100%" height={256}>
           <ComposedChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(161,161,170,0.3)" />
+            {/* UIX-04 ruling 5: grid/band strokes built on the muted ink token (theme-aware) */}
+            <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--color-ink-muted) 30%, transparent)" />
             <XAxis dataKey="gw" tick={{ fontSize: 12, fill: 'currentColor' }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 12, fill: 'currentColor' }} axisLine={false} tickLine={false} width={32} />
             <Tooltip content={CustomTooltip} />
             {/* Confidence band — current XI only. Pitfall 1: ComposedChart not AreaChart. */}
             {/* Pitfall 6: hide={true} not tooltipType="none" (v2-only prop). */}
-            <Area type="monotone" dataKey="p90" stroke="none" fill="rgba(161,161,170,0.25)" fillOpacity={1} legendType="none" activeDot={false} hide isAnimationActive={false} />
+            <Area type="monotone" dataKey="p90" stroke="none" fill="color-mix(in srgb, var(--color-ink-muted) 25%, transparent)" fillOpacity={1} legendType="none" activeDot={false} hide isAnimationActive={false} />
             {/* Pitfall 2: fill="var(--background)" for dark-mode erase-fill correctness. */}
             <Area type="monotone" dataKey="p10" stroke="none" fill="var(--background)" fillOpacity={1} legendType="none" activeDot={false} hide isAnimationActive={false} />
             {/* Current XI mean — solid */}
             <Line type="monotone" dataKey="mean" stroke="currentColor" strokeWidth={2} dot={false} isAnimationActive={false} />
-            {/* Alt XI mean — dashed amber, conditional */}
+            {/* Alt XI mean — dashed accent, conditional (UIX-04 ruling 5) */}
             {altInfo && (
-              <Line type="monotone" dataKey="altMean" stroke="#f59e0b" strokeWidth={2} strokeDasharray="5 3" dot={false} isAnimationActive={false} />
+              <Line type="monotone" dataKey="altMean" stroke="var(--color-accent)" strokeWidth={2} strokeDasharray="5 3" dot={false} isAnimationActive={false} />
             )}
           </ComposedChart>
         </ResponsiveContainer>
@@ -293,10 +295,10 @@ export function RankSimTab({ submittedId }: RankSimTabProps) {
 
       {/* Transfer comparison dropdowns */}
       <div className="space-y-2">
-        <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Compare a transfer</p>
+        <p className="text-sm font-semibold text-ink">Compare a transfer</p>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <label className="flex flex-col gap-1 w-full sm:w-auto">
-            <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wide">Sell</span>
+            <span className="text-xs font-semibold text-ink-muted uppercase tracking-wide">Sell</span>
             <select
               aria-label="Sell"
               data-testid="rank-sim-sell"
@@ -305,7 +307,7 @@ export function RankSimTab({ submittedId }: RankSimTabProps) {
                 setSellId(e.target.value ? Number(e.target.value) : null)
                 setBuyId(null)
               }}
-              className="border border-zinc-300 dark:border-zinc-600 rounded px-3 py-2 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-zinc-900 dark:focus:border-zinc-100 min-h-[44px] w-full sm:w-auto"
+              className="border border-line rounded-md px-3 py-2 bg-surface-1 text-sm text-ink min-h-[44px] w-full sm:w-auto"
             >
               <option value="">— Select player to sell —</option>
               {sellOptions.map(p => (
@@ -315,16 +317,16 @@ export function RankSimTab({ submittedId }: RankSimTabProps) {
               ))}
             </select>
           </label>
-          <span className="hidden sm:inline text-zinc-400">→</span>
+          <span className="hidden sm:inline text-ink-muted">→</span>
           <label className="flex flex-col gap-1 w-full sm:w-auto">
-            <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wide">Buy</span>
+            <span className="text-xs font-semibold text-ink-muted uppercase tracking-wide">Buy</span>
             <select
               aria-label="Buy"
               data-testid="rank-sim-buy"
               value={buyId ?? ''}
               onChange={(e) => setBuyId(e.target.value ? Number(e.target.value) : null)}
               disabled={sellId == null}
-              className="border border-zinc-300 dark:border-zinc-600 rounded px-3 py-2 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-zinc-900 dark:focus:border-zinc-100 min-h-[44px] w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+              className="border border-line rounded-md px-3 py-2 bg-surface-1 text-sm text-ink min-h-[44px] w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="">{sellId == null ? '— Select a player to sell first —' : '— Select player to buy —'}</option>
               {buyOptions.map(p => (
@@ -339,7 +341,7 @@ export function RankSimTab({ submittedId }: RankSimTabProps) {
               type="button"
               data-testid="rank-sim-clear"
               onClick={handleClearComparison}
-              className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 underline-offset-2 hover:underline cursor-pointer"
+              className="text-xs text-ink-muted hover:text-ink underline-offset-2 hover:underline cursor-pointer"
             >
               Clear comparison
             </button>

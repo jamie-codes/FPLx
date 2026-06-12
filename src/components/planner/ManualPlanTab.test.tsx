@@ -456,7 +456,7 @@ describe('ManualPlanTab', () => {
     expect(screen.getByText('Break-even: ∞')).toBeDefined()
   })
 
-  it('S20: bank balance < 0 renders with text-red-700 class', () => {
+  it('S20: bank balance < 0 renders with text-negative class', () => {
     // bank=10 (£1.0m), sell player3 now_cost=60 (£6.0m), buy player99 now_cost=100 (£10.0m)
     // bank after: 10 + 60 - 100 = -30 → red
     const scored = [
@@ -469,8 +469,8 @@ describe('ManualPlanTab', () => {
     })
     setupDefaultMocks({ scoredPlayers: scored })
     const { container } = renderManualPlan()
-    // The bank span should have red class
-    const redSpan = container.querySelector('.text-red-700')
+    // The bank span should have negative class
+    const redSpan = container.querySelector('.text-negative')
     expect(redSpan).not.toBeNull()
   })
 

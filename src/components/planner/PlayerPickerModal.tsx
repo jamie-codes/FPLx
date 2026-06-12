@@ -104,18 +104,18 @@ export function PlayerPickerModal({
     <dialog
       ref={dialogRef}
       onClick={handleDialogClick}
-      className="rounded-lg bg-white dark:bg-zinc-900 p-4 max-w-md w-full max-h-[70vh] flex flex-col border border-zinc-200 dark:border-zinc-700 shadow-lg"
+      className="rounded-lg bg-surface-1 p-4 max-w-md w-full max-h-[70vh] flex flex-col border border-line shadow-lg backdrop:bg-ink/40"
     >
       <div className="flex flex-col flex-1 min-h-0 gap-3">
         {/* Heading */}
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+          <h2 className="text-base font-semibold text-ink">
             {positionLabel} — Select Player
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer active:scale-95 transition-transform"
+            className="text-sm text-ink-muted hover:text-ink cursor-pointer active:scale-95 transition-transform"
             aria-label="Close"
           >
             ✕
@@ -129,32 +129,32 @@ export function PlayerPickerModal({
           placeholder="Search by name…"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+          className="w-full px-3 py-2 text-sm border border-line rounded-md min-h-[44px] bg-surface-1 text-ink"
           style={{ fontSize: '16px' }}
         />
 
         {/* Player list */}
-        <div className="overflow-y-auto flex-1 divide-y divide-zinc-100 dark:divide-zinc-800">
+        <div className="overflow-y-auto flex-1 divide-y divide-line">
           {/* Suggested player pinned at top */}
           {suggestedPlayer !== null && (
             <button
               type="button"
               key={`suggested-${suggestedPlayer.id}`}
               onClick={() => handlePick(suggestedPlayer.id)}
-              className="w-full text-left px-3 py-2 flex items-center justify-between gap-2 bg-violet-50 dark:bg-violet-950/30 hover:bg-violet-100 dark:hover:bg-violet-900/40 cursor-pointer transition-colors"
+              className="w-full text-left px-3 py-2 flex items-center justify-between gap-2 bg-violet-soft hover:bg-violet/20 cursor-pointer transition-colors"
             >
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-xs font-medium text-violet-600 dark:text-violet-400 shrink-0">
+                <span className="text-xs font-medium text-violet shrink-0">
                   Suggested
                 </span>
-                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                <span className="text-sm font-medium text-ink truncate">
                   {suggestedPlayer.web_name}
                 </span>
-                <span className="text-xs text-zinc-500 dark:text-zinc-400 shrink-0">
+                <span className="text-xs text-ink-muted shrink-0">
                   {suggestedPlayer.team_short_name}
                 </span>
               </div>
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 shrink-0">
+              <span className="text-sm font-medium text-ink shrink-0">
                 {(suggestedPlayer.xPts_1gw ?? 0).toFixed(1)} pts
               </span>
             </button>
@@ -166,17 +166,17 @@ export function PlayerPickerModal({
               type="button"
               key={player.id}
               onClick={() => handlePick(player.id)}
-              className="w-full text-left px-3 py-2 flex items-center justify-between gap-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+              className="w-full text-left px-3 py-2 flex items-center justify-between gap-2 hover:bg-surface-2 cursor-pointer transition-colors"
             >
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate">
+                <span className="text-sm text-ink truncate">
                   {player.web_name}
                 </span>
-                <span className="text-xs text-zinc-500 dark:text-zinc-400 shrink-0">
+                <span className="text-xs text-ink-muted shrink-0">
                   {player.team_short_name}
                 </span>
               </div>
-              <span className="text-sm text-zinc-700 dark:text-zinc-300 shrink-0">
+              <span className="text-sm text-ink shrink-0">
                 {(player.xPts_1gw ?? 0).toFixed(1)} pts
               </span>
             </button>
@@ -184,7 +184,7 @@ export function PlayerPickerModal({
 
           {/* Empty state */}
           {suggestedPlayer === null && otherPlayers.length === 0 && (
-            <p className="px-3 py-4 text-sm text-zinc-500 dark:text-zinc-400 text-center">
+            <p className="px-3 py-4 text-sm text-ink-muted text-center">
               No players found
             </p>
           )}

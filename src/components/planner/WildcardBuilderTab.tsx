@@ -59,11 +59,11 @@ function StructurePanel({
     : []
 
   return (
-    <div className="rounded border border-zinc-200 dark:border-zinc-700 p-4 space-y-3">
-      <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+    <div className="rounded border border-line p-4 space-y-3">
+      <h2 className="text-base font-semibold text-ink">
         {label}
         {result && (
-          <span className="ml-2 text-xs font-normal text-zinc-500 dark:text-zinc-400">
+          <span className="ml-2 text-xs font-normal text-ink-muted">
             {result.formation}
           </span>
         )}
@@ -74,16 +74,16 @@ function StructurePanel({
         {selected.map(p => (
           <div
             key={p.id}
-            className="flex items-center gap-2 rounded bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 px-2 py-1"
+            className="flex items-center gap-2 rounded bg-accent-soft border border-accent/40 px-2 py-1"
           >
-            <span className="text-xs font-medium text-blue-900 dark:text-blue-100 flex-1 truncate">
+            <span className="text-xs font-medium text-accent flex-1 truncate">
               📌 {p.web_name}
             </span>
             <button
               type="button"
               aria-label={`Remove ${p.web_name}`}
               onClick={() => onRemove(p.id)}
-              className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-200 text-sm leading-none"
+              className="text-accent/60 hover:text-accent text-sm leading-none"
             >
               ✕
             </button>
@@ -103,7 +103,7 @@ function StructurePanel({
       {result?.anchorConflicts.map(c => (
         <p
           key={c.playerId}
-          className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded px-2 py-1"
+          className="text-xs text-warning bg-warning-soft border border-warning/40 rounded px-2 py-1"
         >
           Player {c.playerId} skipped — {c.reason.replace(/_/g, ' ')}
         </p>
@@ -111,7 +111,7 @@ function StructurePanel({
 
       {/* Null result */}
       {result === null && (
-        <p className="text-sm text-amber-600 dark:text-amber-400">
+        <p className="text-sm text-warning">
           Could not build a valid squad — try removing an anchor or checking budget.
         </p>
       )}
@@ -121,14 +121,14 @@ function StructurePanel({
         <div className="space-y-2 pt-1">
           {positionGroups.map(group => (
             <div key={group.label}>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-0.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted mb-0.5">
                 {group.label}
               </p>
               <div className="space-y-0.5">
                 {group.players.map(p => (
                   <div key={p.id} className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1 min-w-0">
-                      <span className={`text-xs truncate ${selectedIds.has(p.id) ? 'font-semibold text-blue-700 dark:text-blue-300' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                      <span className={`text-xs truncate ${selectedIds.has(p.id) ? 'font-semibold text-accent' : 'text-ink'}`}>
                         {p.web_name}
                         {selectedIds.has(p.id) && <span className="ml-1 text-[9px]">📌</span>}
                       </span>
@@ -137,7 +137,7 @@ function StructurePanel({
                         availabilityRisk={p.availability_risk}
                       />
                     </div>
-                    <span className="text-xs text-zinc-400 dark:text-zinc-500 shrink-0">
+                    <span className="text-xs text-ink-muted shrink-0">
                       {p.xPts.toFixed(1)}
                     </span>
                   </div>
@@ -145,7 +145,8 @@ function StructurePanel({
               </div>
             </div>
           ))}
-          <p className="text-xs text-zinc-400 dark:text-zinc-500 pt-1">
+          {/* UIX-04 ruling 3: budget validity → positive/negative tokens */}
+          <p className={`text-xs pt-1 ${result.budgetRemaining < 0 ? 'text-negative' : 'text-positive'}`}>
             {formatPounds(result.budgetRemaining)} remaining
           </p>
         </div>
@@ -205,13 +206,14 @@ function ComparisonTable({
     },
   ]
 
-  const TH = 'text-left text-xs font-semibold text-zinc-600 dark:text-zinc-400 pb-1 border-b border-zinc-200 dark:border-zinc-700'
+  const TH = 'text-left text-xs font-semibold text-ink-muted pb-1 border-b border-line'
   const TD = 'py-1 px-2 text-sm'
-  const WIN = 'bg-green-50 dark:bg-green-950'
+  // UIX-04 ruling 3: winning-cell highlight → positive-soft token
+  const WIN = 'bg-positive-soft'
 
   return (
     <section className="mt-6">
-      <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
+      <h2 className="text-base font-semibold text-ink mb-3">
         Comparison
       </h2>
       <div className="overflow-x-auto">
@@ -226,7 +228,7 @@ function ComparisonTable({
           <tbody>
             {numericRows.map(row => (
               <tr key={row.label}>
-                <td className={`${TD} text-zinc-700 dark:text-zinc-300`}>{row.label}</td>
+                <td className={`${TD} text-ink`}>{row.label}</td>
                 <td className={`${TD} text-right ${row.aWins === true ? WIN : ''}`}>
                   {row.a}
                 </td>
@@ -236,11 +238,11 @@ function ComparisonTable({
               </tr>
             ))}
             <tr>
-              <td className={`${TD} text-zinc-700 dark:text-zinc-300`}>Captain options</td>
-              <td className={`${TD} text-right text-zinc-600 dark:text-zinc-400`}>
+              <td className={`${TD} text-ink`}>Captain options</td>
+              <td className={`${TD} text-right text-ink-muted`}>
                 {resultA.captainCandidates.map(c => c.web_name).join(', ')}
               </td>
-              <td className={`${TD} text-right text-zinc-600 dark:text-zinc-400`}>
+              <td className={`${TD} text-right text-ink-muted`}>
                 {resultB.captainCandidates.map(c => c.web_name).join(', ')}
               </td>
             </tr>
@@ -316,14 +318,14 @@ export function WildcardBuilderTab({ submittedId, horizon }: WildcardBuilderTabP
 
   if (playersLoading) {
     return (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">
+      <p className="text-sm text-ink-muted text-center py-8">
         Loading player data…
       </p>
     )
   }
   if (playersError) {
     return (
-      <p className="text-sm text-red-600 dark:text-red-400 py-4">
+      <p className="text-sm text-negative py-4">
         Failed to load player data. Check your connection and refresh.
       </p>
     )

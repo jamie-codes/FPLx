@@ -58,20 +58,20 @@ export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle, onM
   return (
     <div className="space-y-4">
       {/* Plan value headline */}
-      <p aria-live="polite" className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+      <p aria-live="polite" className="text-xl font-semibold text-ink">
         Plan value: {formatGain(totalNetGain)}
       </p>
 
       {/* Transfer table */}
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-zinc-200 dark:border-zinc-700">
-            <th scope="col" className="px-2 py-2 sm:px-4 text-sm font-medium text-zinc-500 dark:text-zinc-400 text-left">GW</th>
-            <th scope="col" className="hidden sm:table-cell px-2 py-2 sm:px-4 text-sm font-medium text-zinc-500 dark:text-zinc-400 text-left">Chip</th>
-            <th scope="col" className="px-2 py-2 sm:px-4 text-sm font-medium text-zinc-500 dark:text-zinc-400 text-left">Out</th>
-            <th scope="col" className="px-2 py-2 sm:px-4 text-sm font-medium text-zinc-500 dark:text-zinc-400 text-left">In</th>
-            <th scope="col" className="px-2 py-2 sm:px-4 text-sm font-medium text-zinc-500 dark:text-zinc-400 text-left">Hit</th>
-            <th scope="col" className="px-2 py-2 sm:px-4 text-sm font-medium text-zinc-500 dark:text-zinc-400 text-left">Gain</th>
+          <tr className="border-b border-line">
+            <th scope="col" className="px-2 py-2 sm:px-4 text-sm font-medium text-ink-muted text-left">GW</th>
+            <th scope="col" className="hidden sm:table-cell px-2 py-2 sm:px-4 text-sm font-medium text-ink-muted text-left">Chip</th>
+            <th scope="col" className="px-2 py-2 sm:px-4 text-sm font-medium text-ink-muted text-left">Out</th>
+            <th scope="col" className="px-2 py-2 sm:px-4 text-sm font-medium text-ink-muted text-left">In</th>
+            <th scope="col" className="px-2 py-2 sm:px-4 text-sm font-medium text-ink-muted text-left">Hit</th>
+            <th scope="col" className="px-2 py-2 sm:px-4 text-sm font-medium text-ink-muted text-left">Gain</th>
           </tr>
         </thead>
         <tbody>
@@ -96,25 +96,25 @@ export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle, onM
             let gainContent: React.ReactNode
             if (step.chip === 'bboost') {
               gainContent = (
-                <span className="text-emerald-700 dark:text-emerald-400">
+                <span className="text-positive">
                   Bench: {formatGain(step.bbValue ?? 0)}
                 </span>
               )
             } else if (step.chip === '3xc') {
               gainContent = (
-                <span className="text-violet-700 dark:text-violet-400">
+                <span className="text-violet">
                   3xC: {formatGain(step.bbValue ?? 0)}
                 </span>
               )
             } else if (step.chip === 'wildcard' || step.chip === 'freehit') {
               gainContent = formatGain(step.chipGain ?? 0)
             } else if (!hasTransfer) {
-              gainContent = <span className="text-zinc-400 dark:text-zinc-500">&mdash;</span>
+              gainContent = <span className="text-ink-muted">&mdash;</span>
             } else {
               const gain = step.scoredTransfers[0]?.netGain ?? 0
               if (step.unconfirmedFixtures) {
                 gainContent = (
-                  <span className="italic text-zinc-400 dark:text-zinc-500">
+                  <span className="italic text-ink-muted">
                     {formatGain(gain)}
                     <abbr title="Fixtures not yet confirmed for this gameweek">*</abbr>
                   </span>
@@ -126,12 +126,12 @@ export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle, onM
 
             return (
               <Fragment key={`step-${i}`}>
-                <tr className="border-b border-zinc-200 dark:border-zinc-700">
+                <tr className="border-b border-line">
                   {/* GW cell */}
-                  <td className="px-2 py-2 sm:px-4 text-zinc-900 dark:text-zinc-100 whitespace-nowrap">
+                  <td className="px-2 py-2 sm:px-4 text-ink whitespace-nowrap">
                     <button
                       onClick={() => toggleStep(i)}
-                      className="inline-flex items-center gap-1 hover:text-zinc-600 dark:hover:text-zinc-400"
+                      className="inline-flex items-center gap-1 hover:text-ink-muted"
                       aria-expanded={openSteps.has(i)}
                       aria-label={`${openSteps.has(i) ? 'Collapse' : 'Expand'} squad for GW${step.gw}`}
                     >
@@ -140,7 +140,7 @@ export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle, onM
                     </button>
                     {isDgw && (
                       <span
-                        className="ml-1 text-xs font-semibold text-violet-700 dark:text-violet-400"
+                        className="ml-1 text-xs font-semibold text-violet"
                         aria-label="Double gameweek"
                       >
                         DGW
@@ -148,7 +148,7 @@ export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle, onM
                     )}
                     {isBgw && (
                       <span
-                        className="ml-1 text-xs font-semibold text-amber-600 dark:text-amber-400"
+                        className="ml-1 text-xs font-semibold text-warning"
                         aria-label="Blank gameweek"
                       >
                         BGW
@@ -168,12 +168,12 @@ export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle, onM
                   {/* Out / In cells */}
                   {hasTransfer ? (
                     <>
-                      <td className="px-2 py-2 sm:px-4 text-zinc-700 dark:text-zinc-300">
+                      <td className="px-2 py-2 sm:px-4 text-ink">
                         {step.transfersOut.map(id => (
                           <div key={id}>{playerMap.get(id)?.web_name ?? '\u2014'}</div>
                         ))}
                       </td>
-                      <td className="px-2 py-2 sm:px-4 text-zinc-700 dark:text-zinc-300">
+                      <td className="px-2 py-2 sm:px-4 text-ink">
                         {step.transfersIn.length === 1 ? (
                           <span className="inline-flex items-center gap-1">
                             {playerMap.get(step.transfersIn[0])?.web_name ?? '\u2014'}
@@ -181,14 +181,14 @@ export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle, onM
                              step.transfersIn[0] !== planResult.originalSteps[i].transfersIn[0] && (
                               <button
                                 onClick={() => onRestoreSuggested(i)}
-                                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 text-xs"
+                                className="text-ink-muted hover:text-ink text-xs"
                                 aria-label="Restore suggested player"
                                 title="Restore suggested"
                               >&#x21A9;</button>
                             )}
                             <button
                               onClick={() => openPicker(i)}
-                              className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 text-xs"
+                              className="text-ink-muted hover:text-ink text-xs"
                               aria-label="Edit transfer"
                               title="Edit"
                             >&#x270F;</button>
@@ -202,28 +202,28 @@ export function TransferPlanTable({ planResult, scoredPlayers, onChipToggle, onM
                     </>
                   ) : (
                     <td colSpan={2} className="px-2 py-2 sm:px-4">
-                      <span className="text-zinc-400 dark:text-zinc-500">Hold</span>
-                      <span className="block text-xs text-zinc-400 dark:text-zinc-500">No profitable transfer this gameweek</span>
+                      <span className="text-ink-muted">Hold</span>
+                      <span className="block text-xs text-ink-muted">No profitable transfer this gameweek</span>
                     </td>
                   )}
 
                   {/* Hit cell */}
                   <td
                     className={`px-2 py-2 sm:px-4 ${
-                      step.hitCost < 0 ? 'text-red-700 dark:text-red-300' : 'text-zinc-700 dark:text-zinc-300'
+                      step.hitCost < 0 ? 'text-negative' : 'text-ink'
                     }`}
                   >
                     {step.hitCost === 0 ? '0' : `${step.hitCost} pts`}
                   </td>
 
                   {/* Gain cell */}
-                  <td className="px-2 py-2 sm:px-4 text-zinc-700 dark:text-zinc-300">
+                  <td className="px-2 py-2 sm:px-4 text-ink">
                     {gainContent}
                   </td>
                 </tr>
 
                 {/* Mobile chip row */}
-                <tr key={`chip-mobile-${i}`} className="sm:hidden border-b border-zinc-200 dark:border-zinc-700">
+                <tr key={`chip-mobile-${i}`} className="sm:hidden border-b border-line">
                   <td colSpan={6} className="px-2 py-2 sm:px-4">
                     <ChipToggle
                       gw={step.gw}
