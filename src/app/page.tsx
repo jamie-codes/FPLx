@@ -16,7 +16,6 @@ import { LastUpdated } from '@/components/LastUpdated'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { BellNotificationButton } from '@/components/push/BellNotificationButton'
 import { ValueGemsTable } from '@/components/value-gems/ValueGemsTable'
-import { MobileNav } from '@/components/nav/MobileNav'
 import { PlannerTab } from '@/components/planner/PlannerTab'
 import { ManualPlanTab } from '@/components/planner/ManualPlanTab'
 import { RouteTreeTab } from '@/components/planner/RouteTreeTab'
@@ -43,6 +42,14 @@ import { LiveGwTab } from '@/components/squad/LiveGwTab'
 import { useSettledGws } from '@/lib/hooks/useSettledGws'
 import { DeadlineBanner } from '@/components/DeadlineBanner'
 import { WeeklyPicksTab } from '@/components/weekly-picks/WeeklyPicksTab'
+import { ALL_TOOL_IDS, groupOf, type ToolId } from '@/lib/navigation'
+import { Sidebar } from '@/components/shell/Sidebar'
+import { TopBar } from '@/components/shell/TopBar'
+import { MobileBar } from '@/components/shell/MobileBar'
+import { MoreSheet } from '@/components/shell/MoreSheet'
+import { Tabs } from '@/components/ui/Tabs'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
 
 class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -64,91 +71,71 @@ class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: 
   }
 }
 
-export type Section = 'analyse' | 'plan' | 'squad'
-export type SubTab = 'gems' | 'picks' | 'insights' | 'defcon' | 'set-pieces' | 'planner' | 'manual-plan' | 'route-tree' | 'club-form' | 'value-gems' | 'accuracy' | 'season' | 'window' | 'decision' | 'transfers' | 'optimiser' | 'price-reset' | 'price-changes' | 'rivals' | 'lineup' | 'review' | 'rank-sim' | 'next-season' | 'watchlist' | 'perfect-gw' | 'live' | 'wildcard'
+// UIX-01: tools that consume the shared planHorizon (D-07) — the page-level
+// HorizonSelector renders for exactly these. (Pre-shell it rendered for the
+// whole Plan section; these five are the tools that actually take the prop.)
+const HORIZON_TOOLS: ReadonlySet<ToolId> = new Set<ToolId>([
+  'planner', 'manual-plan', 'route-tree', 'rank-sim', 'wildcard',
+])
 
-export const SECTIONS = [
-  {
-    id: 'analyse' as Section,
-    label: 'Analyse',
-    subTabs: [
-      { id: 'gems' as SubTab,          label: 'Gem Ratings',     mobileLabel: 'Gems'     },
-      { id: 'picks' as SubTab,         label: 'Weekly Picks',    mobileLabel: 'Picks'    },
-      { id: 'insights' as SubTab,      label: 'Insights',        mobileLabel: 'Insights' },
-      { id: 'defcon' as SubTab,        label: 'DefCon Analysis', mobileLabel: 'DefCon'   },
-      { id: 'set-pieces' as SubTab,    label: 'Set Pieces',      mobileLabel: 'SP'       },
-      { id: 'club-form' as SubTab,     label: 'Club Form',       mobileLabel: 'Form'     },
-      { id: 'accuracy' as SubTab,      label: 'Accuracy',        mobileLabel: 'Acc'      },
-      { id: 'season' as SubTab,        label: 'Season',          mobileLabel: 'Season'   },
-      { id: 'window' as SubTab,        label: 'Summer Window',   mobileLabel: 'Window'   },
-      { id: 'price-reset' as SubTab,   label: 'Price Reset',     mobileLabel: 'Resets'   },
-      { id: 'price-changes' as SubTab, label: 'Price Changes',   mobileLabel: 'Prices'   },
-      { id: 'perfect-gw' as SubTab,    label: 'Perfect GW',      mobileLabel: 'Perfect'  },
-    ],
-    defaultSubTab: 'gems' as SubTab,
-  },
-  {
-    id: 'plan' as Section,
-    label: 'Plan',
-    subTabs: [
-      { id: 'planner' as SubTab,     label: 'Planner',     mobileLabel: 'Planner' },
-      { id: 'manual-plan' as SubTab, label: 'Manual Plan', mobileLabel: 'Manual'  },
-      { id: 'route-tree' as SubTab,  label: 'Route Tree',  mobileLabel: 'Routes'  },
-      { id: 'rank-sim' as SubTab,    label: 'Rank Sim',    mobileLabel: 'Rank Sim' },  // Phase 62 MC-03
-      { id: 'value-gems' as SubTab, label: 'Value Gems', mobileLabel: 'Values'  },
-      { id: 'rivals' as SubTab,     label: 'Rivals',     mobileLabel: 'Rivals'  },
-      { id: 'next-season' as SubTab, label: 'Next Season', mobileLabel: 'Pre-Season' },
-      { id: 'watchlist' as SubTab,   label: 'Watchlist',   mobileLabel: 'Watchlist' },
-      { id: 'wildcard' as SubTab,    label: 'Wildcard',    mobileLabel: 'Wildcard' },
-    ],
-    defaultSubTab: 'planner' as SubTab,
-  },
-  {
-    id: 'squad' as Section,
-    label: 'Squad',
-    subTabs: [
-      { id: 'decision' as SubTab,  label: 'Decision',  mobileLabel: 'Decision'  },
-      { id: 'transfers' as SubTab, label: 'Transfers', mobileLabel: 'Transfers' },
-      { id: 'optimiser' as SubTab, label: 'Optimiser', mobileLabel: 'Optimiser' },
-      { id: 'lineup' as SubTab,    label: 'Lineup',    mobileLabel: 'Lineup'    },
-      { id: 'review' as SubTab,    label: 'Review',    mobileLabel: 'Review'    },
-      { id: 'live' as SubTab,      label: 'Live',      mobileLabel: 'Live'      },
-    ],
-    defaultSubTab: 'decision' as SubTab,
-  },
-] as const
+// UIX-01 URL sync: ?t=<toolId> is read once, in the state initialisers
+// (the same lazy-init pattern teamId/planHorizon use for localStorage).
+function initialToolFromUrl(): ToolId {
+  if (typeof window === 'undefined') return 'home'
+  const t = new URLSearchParams(window.location.search).get('t')
+  return t !== null && (ALL_TOOL_IDS as string[]).includes(t) ? (t as ToolId) : 'home'
+}
 
 export default function Home() {
-  const [activeSection, setActiveSection] = useState<Section>('analyse')
-  const [sectionMemory, setSectionMemory] = useState<Record<Section, SubTab | null>>({
-    analyse: 'gems',
-    plan: 'planner',
-    squad: 'decision',
+  // UIX-01 shell state: active tool + per-group memory (port of the old
+  // sectionMemory, D-05 — switching groups restores the last tool used there).
+  const [activeTool, setActiveTool] = useState<ToolId>(initialToolFromUrl)
+  const [groupMemory, setGroupMemory] = useState<Partial<Record<string, ToolId>>>(() => {
+    const t = initialToolFromUrl()
+    return t === 'home' ? {} : { [groupOf(t).id]: t }
   })
+  const [moreOpen, setMoreOpen] = useState(false)
   const [gemPreset, setGemPreset] = useState<ViewPreset>('default')
   const [comparePlayer, setComparePlayer] = useState<ScoredPlayer | null>(null)
   const [compareOpen, setCompareOpen] = useState(false)
+
+  const selectTool = useCallback((tool: ToolId) => {
+    setActiveTool(tool)
+    setGroupMemory((prev) => ({ ...prev, [groupOf(tool).id]: tool }))
+    // UIX-01 URL sync: shareable/bookmarkable, no Next router involvement.
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', '?t=' + tool)
+    }
+  }, [])
 
   // Phase 98 PGW-02 live data + PGW-04 auto-surface input.
   // Default [] keeps the GwPillToggle's "no settled GWs" branch quiet during load/error.
   const { data: settledGws = [] } = useSettledGws()
 
-  // Phase 98 PGW-04: auto-surface Squad > Review when a new GW has settled and the
-  // user has not yet seen it. One-time per GW (D-03); flag is written synchronously
-  // at the moment of navigation (D-04); localStorage key format documented in D-05.
+  // Phase 98 PGW-04: auto-surface the Review tool when a new GW has settled and
+  // the user has not yet seen it. One-time per GW (D-03); flag is written
+  // synchronously at the moment of navigation (D-04); localStorage key format
+  // documented in D-05. Runs after mount, so the once-per-GW surface wins over
+  // the ?t= deep link on first visit (pre-shell behaviour: it overrode landing).
   useEffect(() => {
     if (settledGws.length === 0) return
     const latestGw = settledGws[settledGws.length - 1]
     const key = `pgw-reviewed:GW${latestGw}`
     try {
       if (localStorage.getItem(key) !== null) return
-      setActiveSection('squad')
-      setSectionMemory((prev) => ({ ...prev, squad: 'review' }))
+      selectTool('review')
       localStorage.setItem(key, '1')
     } catch {
       // localStorage unavailable (SSR / private browsing) — skip silently
     }
-  }, [settledGws])
+  }, [settledGws, selectTool])
+
+  // UIX-01: MobileBar group buttons report the group's first tool; jump to the
+  // group's remembered tool instead when we have one (per-group memory, D-05).
+  const handleGroupSelect = useCallback((firstTool: ToolId) => {
+    const group = groupOf(firstTool)
+    selectTool(groupMemory[group.id] ?? firstTool)
+  }, [groupMemory, selectTool])
 
   // Phase 43 D-11: teamId / submittedId lifted from TransferPanel so both Transfers
   // and Optimiser sub-tabs share the squad fetch via TanStack Query cache.
@@ -165,7 +152,7 @@ export default function Home() {
     }
   }, [teamId])
 
-  // D-07: Plan-section horizon shared across PlannerTab, ManualPlanTab, and RouteTreeTab.
+  // D-07: planning horizon shared across PlannerTab, ManualPlanTab, and RouteTreeTab.
   // Initialised from localStorage via loadManualPlan so the persisted plan's horizon is the
   // source of truth on page reload. Default 3 when no plan is stored.
   const [planHorizon, setPlanHorizon] = useState<PlannerHorizon>(() => {
@@ -186,165 +173,139 @@ export default function Home() {
     setCompareOpen(true)
   }, [])
 
-  const activeSubTab = sectionMemory[activeSection]
-
-  function handleSectionChange(section: Section) {
-    setActiveSection(section)
-    // sectionMemory already holds last sub-tab — D-05 means we DO NOT reset
-  }
-
-  function handleSubTabChange(subTab: SubTab) {
-    setSectionMemory(prev => ({ ...prev, [activeSection]: subTab }))
-  }
+  const activeGroup = groupOf(activeTool)
 
   return (
     <>
-      <main className="max-w-7xl mx-auto px-4 pt-2 pb-8 max-sm:pb-24 overflow-x-hidden">
-        {/* Header — scrolls away */}
-        <div className="flex items-center gap-3 mb-2">
-          <span className="font-[family-name:var(--font-honk)] text-5xl text-zinc-900 dark:text-white leading-none">FPLx</span>
-          <div className="ml-auto flex sm:hidden items-center gap-2">
-            <BellNotificationButton />
-            <ThemeToggle />
-          </div>
-        </div>
+      <Sidebar active={activeTool} onSelect={selectTool} />
+      <div className="lg:pl-[220px]">
+        {/* Top bar — the right-cluster slot hosts the page's EXISTING chrome,
+            relocated unchanged (UIX-01: moved, not recreated). */}
+        <TopBar>
+          <DeadlineBanner />
+          <LastUpdated />
+          <BellNotificationButton />
+          <ThemeToggle />
+        </TopBar>
 
-        <DeadlineBanner />
-        {/* Sticky nav wrapper — section tabs + sub-tabs (D-07, D-08) */}
-        <div className="sticky top-0 z-40 bg-surface/95 backdrop-blur-sm border-b border-border -mx-4 px-4">
-          {/* Section navigation */}
-          <nav aria-label="Section navigation" className="hidden sm:flex items-center gap-2 py-2">
-            {SECTIONS.map((section) => (
-              <button
-                key={section.id}
-                className={`px-4 py-1.5 text-sm font-medium rounded-full min-h-[44px] transition-colors ${activeSection === section.id ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
-                onClick={() => handleSectionChange(section.id)}
-                aria-current={activeSection === section.id ? 'page' : undefined}
-              >
-                {section.label}
-              </button>
-            ))}
-            <div className="ml-auto flex items-center gap-2">
-              <LastUpdated />
-              <BellNotificationButton />
-              <ThemeToggle />
-            </div>
-          </nav>
+        {/* Mobile tool pill row — the active group's tools (old sub-tab pattern restyled) */}
+        <nav
+          aria-label={`${activeGroup.label} tools`}
+          className="lg:hidden sticky top-14 z-30 bg-surface-1/95 backdrop-blur border-b border-line px-3 py-2">
+          <Tabs
+            size="sm"
+            items={activeGroup.tools.map((t) => ({ id: t.id, label: t.mobileLabel }))}
+            value={activeTool}
+            onChange={selectTool}
+          />
+        </nav>
 
-          {/* Sub-tab row — rendered for any section with subTabs.length > 0 (D-08) */}
-          {(() => {
-            const activeSectionDef = SECTIONS.find(s => s.id === activeSection)!
-            if (!activeSectionDef.subTabs.length) return null
-            return (
-              <nav aria-label={`${activeSectionDef.label} sub-tabs`} className="hidden sm:flex items-center gap-2 py-2">
-                {activeSectionDef.subTabs.map((sub) => (
-                  <button
-                    key={sub.id}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-full min-h-[44px] transition-colors ${activeSubTab === sub.id ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
-                    onClick={() => handleSubTabChange(sub.id)}
-                    aria-current={activeSubTab === sub.id ? 'page' : undefined}
-                  >
-                    {sub.label}
-                  </button>
-                ))}
-              </nav>
-            )
-          })()}
-        </div>
+        <main className="max-w-7xl mx-auto px-4 pt-4 pb-8 max-lg:pb-24 overflow-x-hidden">
+          {/* D-07: page-level HorizonSelector — for the tools that consume planHorizon */}
+          {HORIZON_TOOLS.has(activeTool) && (
+            <>
+              <div className="hidden sm:flex items-center gap-3 mb-6" data-testid="plan-section-horizon">
+                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Planning Horizon</span>
+                <HorizonSelector value={planHorizon} onChange={setPlanHorizon} />
+              </div>
+              <div className="sm:hidden flex items-center gap-3 mb-4 overflow-x-auto" data-testid="plan-section-horizon-mobile">
+                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Horizon</span>
+                <HorizonSelector value={planHorizon} onChange={setPlanHorizon} />
+              </div>
+            </>
+          )}
 
-        {/* Spacing below sticky nav — lg (24px) per UI-SPEC spacing scale */}
-        <div className="h-6" />
-
-        {/* D-07: Section-level HorizonSelector — only when Plan section is active */}
-        {activeSection === 'plan' && (
-          <>
-            <div className="hidden sm:flex items-center gap-3 mb-6" data-testid="plan-section-horizon">
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Planning Horizon</span>
-              <HorizonSelector value={planHorizon} onChange={setPlanHorizon} />
-            </div>
-            <div className="sm:hidden flex items-center gap-3 mb-4 overflow-x-auto" data-testid="plan-section-horizon-mobile">
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Horizon</span>
-              <HorizonSelector value={planHorizon} onChange={setPlanHorizon} />
-            </div>
-          </>
-        )}
-
-        {/* Tab content — squad guards on section + sub-tab; others guard on sub-tab AND non-squad section */}
-        {activeSection === 'squad' && activeSubTab === 'decision' && (
-          <DecisionErrorBoundary>
-            <DecisionSummaryTab
+          {/* Tool content — all 27 pre-shell tabs re-keyed by tool id, props unchanged */}
+          {activeTool === 'home' && (
+            <Card
+              title="Welcome to FPLx"
+              subtitle="The home dashboard arrives in UIX-02 — every tool is one click away in the meantime.">
+              <div className="flex flex-col items-start gap-3">
+                <p className="text-body text-ink-muted">
+                  Jump straight into this week&apos;s decisions, or pick any tool from the navigation.
+                </p>
+                <Button variant="primary" onClick={() => selectTool('picks')}>
+                  Go to This Week
+                </Button>
+              </div>
+            </Card>
+          )}
+          {activeTool === 'decision' && (
+            <DecisionErrorBoundary>
+              <DecisionSummaryTab
+                teamId={teamId}
+                onTeamIdChange={setTeamId}
+                submittedId={submittedId}
+                onSubmit={handleTeamIdSubmit}
+              />
+            </DecisionErrorBoundary>
+          )}
+          {activeTool === 'transfers' && (
+            <TransferPanel
               teamId={teamId}
               onTeamIdChange={setTeamId}
               submittedId={submittedId}
               onSubmit={handleTeamIdSubmit}
             />
-          </DecisionErrorBoundary>
-        )}
-        {activeSection === 'squad' && activeSubTab === 'transfers' && (
-          <TransferPanel
-            teamId={teamId}
-            onTeamIdChange={setTeamId}
-            submittedId={submittedId}
-            onSubmit={handleTeamIdSubmit}
-          />
-        )}
-        {activeSection === 'squad' && activeSubTab === 'optimiser' && (
-          <OptimiserPanel teamId={submittedId ?? ''} />
-        )}
-        {activeSection === 'squad' && activeSubTab === 'lineup' && (
-          <LineupTab teamId={submittedId ?? ''} />
-        )}
-        {activeSection === 'squad' && activeSubTab === 'review' && (
-          <GwReviewTab teamId={submittedId ?? ''} settledGws={settledGws} />
-        )}
-        {activeSection === 'squad' && activeSubTab === 'live' && (
-          <LiveGwTab teamId={submittedId != null && /^\d+$/.test(submittedId) ? parseInt(submittedId, 10) : null} />
-        )}
-        {activeSection !== 'squad' && activeSubTab === 'gems' && (
-          <GemTable preset={gemPreset} onPresetChange={setGemPreset} onCompare={handleCompare} watchlistIds={watchlistIds} toggleWatchlist={toggleWatchlist} />
-        )}
-        {activeSection !== 'squad' && activeSubTab === 'picks' && <WeeklyPicksTab />}
-        {activeSection !== 'squad' && activeSubTab === 'defcon' && <DefConTables />}
-        {activeSection !== 'squad' && activeSubTab === 'club-form' && (
-          <ClubFormTab submittedId={submittedId} />
-        )}
-        {activeSection !== 'squad' && activeSubTab === 'set-pieces' && <SetPieceTakerPanel />}
-        {activeSection !== 'squad' && activeSubTab === 'insights' && <InsightsTab />}
-        {activeSection !== 'squad' && activeSubTab === 'accuracy' && <AccuracyTab teamId={submittedId} />}
-        {activeSection !== 'squad' && activeSubTab === 'season' && <SeasonReviewTab teamId={submittedId} />}
-        {activeSection !== 'squad' && activeSubTab === 'window' && <SummerWindowTab />}
-        {activeSection !== 'squad' && activeSubTab === 'price-reset' && <PriceResetTab />}
-        {activeSection !== 'squad' && activeSubTab === 'price-changes' && <PriceChangePanel />}
-        {activeSection !== 'squad' && activeSubTab === 'perfect-gw' && <PerfectGWTab />}
-        {activeSection !== 'squad' && activeSubTab === 'value-gems' && <ValueGemsTable />}
-        {activeSection === 'plan' && activeSubTab === 'rivals' && (
-          <RivalsTab submittedId={submittedId} />
-        )}
-        {activeSection === 'plan' && activeSubTab === 'next-season' && (
-          <NextSeasonPlannerTab />
-        )}
-        {activeSection === 'plan' && activeSubTab === 'watchlist' && (
-          <WatchlistTab watchlistIds={watchlistIds} toggleWatchlist={toggleWatchlist} />
-        )}
-        {activeSection === 'plan' && activeSubTab === 'manual-plan' && (
-          <ManualPlanTab submittedId={submittedId} horizon={planHorizon} />
-        )}
-        {activeSection === 'plan' && activeSubTab === 'route-tree' && (
-          <RouteTreeTab submittedId={submittedId} horizon={planHorizon} onSwitchSubTab={handleSubTabChange} />
-        )}
-        {activeSection === 'plan' && activeSubTab === 'rank-sim' && (
-          <RankSimTab submittedId={submittedId} horizon={planHorizon} />
-        )}
-        {activeSection === 'plan' && activeSubTab === 'planner' && (
-          <>
-            <PlannerTab horizon={planHorizon} />
-            <CaptainPicksPanel submittedId={submittedId} />
-          </>
-        )}
-        {activeSection === 'plan' && activeSubTab === 'wildcard' && (
-          <WildcardBuilderTab submittedId={submittedId} horizon={planHorizon} />
-        )}
-      </main>
+          )}
+          {activeTool === 'optimiser' && (
+            <OptimiserPanel teamId={submittedId ?? ''} />
+          )}
+          {activeTool === 'lineup' && (
+            <LineupTab teamId={submittedId ?? ''} />
+          )}
+          {activeTool === 'review' && (
+            <GwReviewTab teamId={submittedId ?? ''} settledGws={settledGws} />
+          )}
+          {activeTool === 'live' && (
+            <LiveGwTab teamId={submittedId != null && /^\d+$/.test(submittedId) ? parseInt(submittedId, 10) : null} />
+          )}
+          {activeTool === 'gems' && (
+            <GemTable preset={gemPreset} onPresetChange={setGemPreset} onCompare={handleCompare} watchlistIds={watchlistIds} toggleWatchlist={toggleWatchlist} />
+          )}
+          {activeTool === 'picks' && <WeeklyPicksTab />}
+          {activeTool === 'defcon' && <DefConTables />}
+          {activeTool === 'club-form' && (
+            <ClubFormTab submittedId={submittedId} />
+          )}
+          {activeTool === 'set-pieces' && <SetPieceTakerPanel />}
+          {activeTool === 'insights' && <InsightsTab />}
+          {activeTool === 'accuracy' && <AccuracyTab teamId={submittedId} />}
+          {activeTool === 'season' && <SeasonReviewTab teamId={submittedId} />}
+          {activeTool === 'window' && <SummerWindowTab />}
+          {activeTool === 'price-reset' && <PriceResetTab />}
+          {activeTool === 'price-changes' && <PriceChangePanel />}
+          {activeTool === 'perfect-gw' && <PerfectGWTab />}
+          {activeTool === 'value-gems' && <ValueGemsTable />}
+          {activeTool === 'rivals' && (
+            <RivalsTab submittedId={submittedId} />
+          )}
+          {activeTool === 'next-season' && (
+            <NextSeasonPlannerTab />
+          )}
+          {activeTool === 'watchlist' && (
+            <WatchlistTab watchlistIds={watchlistIds} toggleWatchlist={toggleWatchlist} />
+          )}
+          {activeTool === 'manual-plan' && (
+            <ManualPlanTab submittedId={submittedId} horizon={planHorizon} />
+          )}
+          {activeTool === 'route-tree' && (
+            <RouteTreeTab submittedId={submittedId} horizon={planHorizon} onSwitchSubTab={selectTool} />
+          )}
+          {activeTool === 'rank-sim' && (
+            <RankSimTab submittedId={submittedId} horizon={planHorizon} />
+          )}
+          {activeTool === 'planner' && (
+            <>
+              <PlannerTab horizon={planHorizon} />
+              <CaptainPicksPanel submittedId={submittedId} />
+            </>
+          )}
+          {activeTool === 'wildcard' && (
+            <WildcardBuilderTab submittedId={submittedId} horizon={planHorizon} />
+          )}
+        </main>
+      </div>
       {comparePlayer && (
         <PlayerComparisonModal
           open={compareOpen}
@@ -352,11 +313,12 @@ export default function Home() {
           onClose={() => setCompareOpen(false)}
         />
       )}
-      <MobileNav
-        activeSection={activeSection}
-        activeSubTab={activeSubTab}
-        onSectionChange={handleSectionChange}
-        onSubTabChange={handleSubTabChange}
+      <MobileBar active={activeTool} onSelect={handleGroupSelect} onMore={() => setMoreOpen(true)} />
+      <MoreSheet
+        open={moreOpen}
+        onClose={() => setMoreOpen(false)}
+        active={activeTool}
+        onSelect={(t) => { selectTool(t); setMoreOpen(false) }}
       />
     </>
   )
