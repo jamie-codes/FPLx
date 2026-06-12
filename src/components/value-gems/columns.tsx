@@ -1,6 +1,8 @@
 import { createColumnHelper } from '@tanstack/react-table'
 import type { ScoredPlayer } from '@/lib/types'
 import { FixtureBadges } from '@/components/fixtures/FixtureBadges'
+import { PlayerCell } from '@/components/ui/PlayerCell'
+import { PriceTrendCell } from '@/components/shared/PriceTrendCell'
 
 const col = createColumnHelper<ScoredPlayer>()
 
@@ -8,34 +10,21 @@ const POS_LABEL: Record<number, string> = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD
 const fmtScore = (v: number) => (v * 100).toFixed(0)
 const H = (label: string, tip: string) => () => <span title={tip} className="cursor-help">{label}</span>
 
-/** Reusable price trend cell renderer — shows GW change (primary) with season total (secondary sub-text) per CONTEXT.md */
-function PriceTrendCell({ costChangeEvent, costChangeStart }: { costChangeEvent: number; costChangeStart: number }) {
-  const seasonAmt = (Math.abs(costChangeStart) / 10).toFixed(1)
-  const seasonSign = costChangeStart > 0 ? '+' : costChangeStart < 0 ? '-' : ''
-  const seasonText = costChangeStart !== 0 ? `${seasonSign}${seasonAmt}m season` : ''
-
-  if (costChangeEvent > 0) return (
-    <div>
-      <span className="text-green-600">↑ {(costChangeEvent / 10).toFixed(1)}m</span>
-      {seasonText && <span className="block text-[10px] text-zinc-400">{seasonText}</span>}
-    </div>
-  )
-  if (costChangeEvent < 0) return (
-    <div>
-      <span className="text-red-600">↓ {(Math.abs(costChangeEvent) / 10).toFixed(1)}m</span>
-      {seasonText && <span className="block text-[10px] text-zinc-400">{seasonText}</span>}
-    </div>
-  )
-  return (
-    <div>
-      <span className="text-zinc-400">—</span>
-      {seasonText && <span className="block text-[10px] text-zinc-400">{seasonText}</span>}
-    </div>
-  )
-}
-
 export const columns = [
-  col.accessor('web_name', { header: 'Player', enableSorting: true }),
+  col.accessor('web_name', {
+    header: 'Player',
+    enableSorting: true,
+    // UIX-03 Task 2: identity column → PlayerCell sm (MergedPlayer carries
+    // code/team_code directly; pos/team/price stay in their own columns).
+    cell: (info) => (
+      <PlayerCell
+        size="sm"
+        webName={info.getValue()}
+        code={info.row.original.code}
+        teamCode={info.row.original.team_code}
+      />
+    ),
+  }),
   col.accessor('element_type', {
     header: 'Pos',
     enableSorting: false,
@@ -81,6 +70,8 @@ export const columns = [
   col.display({
     id: 'trend',
     header: 'Trend',
+    // UIX-03 Task 2: repointed to the shared PriceTrendCell (gem-table's
+    // duplicate is repointed in Task 5).
     cell: ({ row }) => (
       <PriceTrendCell
         costChangeEvent={row.original.cost_change_event ?? 0}

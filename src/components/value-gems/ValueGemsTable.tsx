@@ -14,8 +14,16 @@ import { computeAllGemScores } from '@/lib/gem-score'
 import { columns } from './columns'
 import { LastUpdated } from '@/components/LastUpdated'
 import { isCheapGem, isLowOwned } from '@/lib/value-gems'
+import { SegmentedToggle } from '@/components/ui/SegmentedToggle'
+import { TableShell, Th, Td, TABLE_CLS, TR_CLS } from '@/components/ui/Table'
 
 type FilterMode = 'cheap' | 'low-owned' | 'all'
+
+const FILTER_OPTIONS: { id: FilterMode; label: string }[] = [
+  { id: 'cheap', label: 'Cheap (£6m-)' },
+  { id: 'low-owned', label: 'Low-owned (<10%)' },
+  { id: 'all', label: 'All' },
+]
 
 export function ValueGemsTable() {
   const { data, isLoading, error } = usePlayers()
@@ -59,12 +67,12 @@ export function ValueGemsTable() {
   })
 
   if (isLoading) {
-    return <p className="text-gray-500">Loading players...</p>
+    return <p className="text-ink-muted">Loading players...</p>
   }
 
   if (error) {
     return (
-      <p className="text-red-500">
+      <p className="text-negative">
         Failed to load players: {error instanceof Error ? error.message : String(error)}
       </p>
     )
@@ -74,64 +82,56 @@ export function ValueGemsTable() {
     <div>
       <h1 className="text-2xl font-bold mb-4">Value Gems</h1>
 
-      {/* Filter pills */}
-      <div className="flex gap-2 mb-4">
-        {(['cheap', 'low-owned', 'all'] as const).map((mode) => (
-          <button
-            key={mode}
-            className={`px-3 py-1 text-sm rounded-full border ${
-              filter === mode
-                ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-zinc-900 dark:border-white'
-                : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-300 dark:border-zinc-600 hover:border-zinc-500 dark:hover:border-zinc-400'
-            }`}
-            onClick={() => setFilter(mode)}
-          >
-            {mode === 'cheap' ? 'Cheap (£6m-)' : mode === 'low-owned' ? 'Low-owned (<10%)' : 'All'}
-          </button>
-        ))}
+      {/* UIX-03 Task 2: filter pills → SegmentedToggle (same modes/semantics) */}
+      <div className="mb-4">
+        <SegmentedToggle
+          options={FILTER_OPTIONS}
+          value={filter}
+          onChange={(id) => setFilter(id as FilterMode)}
+          size="sm"
+          ariaLabel="Filter players"
+        />
       </div>
 
-      <p className="text-sm text-gray-500 mb-2">{table.getRowModel().rows.length} players</p>
+      <p className="text-sm text-ink-muted mb-2">{table.getRowModel().rows.length} players</p>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-700">
+      <TableShell>
+        <table className={TABLE_CLS}>
+          <thead className="sticky top-0 bg-surface-1">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th
+                  <Th
                     key={header.id}
-                    className={`px-2 py-1 font-semibold text-gray-700 dark:text-zinc-300 whitespace-nowrap ${
-                      header.column.getCanSort() ? 'cursor-pointer select-none' : ''
-                    }`}
+                    className={header.column.getCanSort() ? 'cursor-pointer select-none' : ''}
                     onClick={header.column.getToggleSortingHandler()}
                   >
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
                     {header.column.getIsSorted() === 'asc'
-                      ? ' \u25B2'
+                      ? ' ▲'
                       : header.column.getIsSorted() === 'desc'
-                        ? ' \u25BC'
+                        ? ' ▼'
                         : null}
-                  </th>
+                  </Th>
                 ))}
               </tr>
             ))}
           </thead>
           <tbody>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="even:bg-gray-50 dark:even:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-zinc-700">
+              <tr key={row.id} className={TR_CLS}>
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-2 py-1 whitespace-nowrap">
+                  <Td key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
+                  </Td>
                 ))}
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
+      </TableShell>
 
       <LastUpdated />
     </div>

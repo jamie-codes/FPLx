@@ -2,10 +2,13 @@
 
 import type { FixtureEntry } from '@/lib/types'
 
+// UIX-03: stays bespoke (grouped DGW-aware layout); internals retokenized per
+// the spec's badge policy — easy→positive-soft, medium→warning-soft,
+// hard→negative-soft, DGW label→violet.
 const TIER_COLOURS: Record<string, string> = {
-  easy:   'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700',
-  medium: 'bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-700',
-  hard:   'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-300 dark:border-red-700',
+  easy:   'bg-positive-soft text-positive border-positive/40',
+  medium: 'bg-warning-soft text-warning border-warning/40',
+  hard:   'bg-negative-soft text-negative border-negative/40',
 }
 
 export function FixtureBadges({ fixtures }: { fixtures: FixtureEntry[] }) {
@@ -21,7 +24,7 @@ export function FixtureBadges({ fixtures }: { fixtures: FixtureEntry[] }) {
       {Array.from(grouped.entries()).map(([eventId, gwFixtures]) => (
         <span key={eventId} className="flex items-center gap-0.5">
           {gwFixtures.length >= 2 && (
-            <span className="text-xs font-semibold text-violet-700 dark:text-violet-400 mr-0.5">DGW</span>
+            <span className="text-xs font-semibold text-violet mr-0.5">DGW</span>
           )}
           {gwFixtures.map((f, i) => (
             <span
