@@ -30,6 +30,9 @@ import type { TooltipContentProps } from 'recharts'
 // Phase 96 BACK-01 — captain regret sub-tab.
 import { BackTab } from './BackTab'
 import { Tabs } from '@/components/ui/Tabs'
+// ACC-05: Forward Skill panel (leakage-free honest metrics)
+import { ForwardSkillPanel } from './ForwardSkillPanel'
+import { SectionHeader } from '@/components/ui/SectionHeader'
 
 // Tier thresholds + colour classes — semantic tokens per UIX-05 ruling 3.
 const TIER_CLASSES = {
@@ -1153,21 +1156,36 @@ export function AccuracyTab({ teamId = null }: { teamId?: string | null }) {
       <AccuracySubTabNav value={subTab} onChange={setSubTab} />
       {subTab === 'summary' && (
         <>
-          <GwSummaryTable data={data} />
-          <HaulterList data={data} />
-          <PlayerDeltaTable data={data} />
+          {/* ACC-05: Forward Skill panel — leakage-free honest metrics at the top */}
+          <ForwardSkillPanel honest={data.summary.honest_metrics} />
+          {/* ACC-05: relabelled leaky block — now labelled as in-sample calibration */}
+          <div>
+            <SectionHeader
+              title="In-sample calibration"
+              subtitle="Uses each gameweek's own xG and minutes — a model-fit diagnostic, not forward skill. For forward skill see the panel above."
+            />
+            <div className="mt-4 space-y-8">
+              <GwSummaryTable data={data} />
+              <HaulterList data={data} />
+              <PlayerDeltaTable data={data} />
+            </div>
+          </div>
         </>
       )}
       {subTab === 'calibration' && (
         <>
+          <p className="text-data text-ink-muted">In-sample diagnostic — uses contemporaneous xG/minutes per GW.</p>
           {data.calibration && <CalibrationSection data={data} />}
         </>
       )}
       {subTab === 'back' && <BackTab teamId={teamId} />}
       {subTab === 'versions' && (
-        data.versions && data.versions.length >= 1
-          ? <VersionHistoryTable data={data} />
-          : <p className="text-sm text-ink-muted">No version history yet.</p>
+        <>
+          <p className="text-data text-ink-muted">In-sample version history — hit-rates are from the leaky backtest (calibration diagnostic, not forward skill).</p>
+          {data.versions && data.versions.length >= 1
+            ? <VersionHistoryTable data={data} />
+            : <p className="text-sm text-ink-muted">No version history yet.</p>}
+        </>
       )}
     </section>
   )

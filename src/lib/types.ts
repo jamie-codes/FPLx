@@ -363,12 +363,31 @@ export interface AccuracyGwSummary {
 }
 
 // PICK-01: honest pick-quality metrics (BT-02 leakage-free harness, computed in-pipeline)
+// ACC-05: widened with new optional fields; existing required fields kept for ConfidenceStrip back-compat
 export interface HonestMetrics {
   top10_mean_pts: number | null
   haul_capture_20: number | null
   captain_return_rate: number | null
   haul_hit_rate?: number | null
   n_gws: number
+  // ACC-05 new optional fields
+  mid_tier_hit_rate?: number | null
+  captain_hit_rate?: number | null
+  rmse?: number | null
+  mae?: number | null
+  spearman?: number | null
+  mode?: string
+  by_position?: Record<'GKP' | 'DEF' | 'MID' | 'FWD', { n: number; rmse: number; n_haulers: number }>
+  per_gw?: {
+    gw: number
+    n_haulers: number
+    haul_hits: number
+    haul_hit_rate: number | null
+    top10_mean_pts: number
+    spearman: number
+    captain_actual: number
+    captain_name: string
+  }[]
 }
 
 export interface AccuracySummary {

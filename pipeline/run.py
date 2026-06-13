@@ -120,10 +120,18 @@ def _diff_sp_snapshots(prev: dict, curr: dict, bootstrap: dict) -> dict:
 
 
 def _run_backtest_for_picks(archive: dict, params: dict, first_gw: int, last_gw: int) -> dict:
-    """Seam for tests. Runs the BT-02 honest backtest and returns its metrics."""
+    """Seam for tests. Runs the BT-02 honest backtest and returns the full result dict
+    (keys: 'metrics', 'per_gw', 'rows')."""
     from backtest import run_backtest
     return run_backtest(archive=archive, params=params, mode='deploy',
-                        first_gw=first_gw, last_gw=last_gw)['metrics']
+                        first_gw=first_gw, last_gw=last_gw)
+
+
+def _slim_per_gw(per_gw: list) -> list:
+    """Keep only display fields per GW for honest_metrics persistence."""
+    keep = {'gw', 'n_haulers', 'haul_hits', 'haul_hit_rate',
+            'top10_mean_pts', 'spearman', 'captain_actual', 'captain_name'}
+    return [{k: row[k] for k in keep if k in row} for row in per_gw]
 
 
 def compute_honest_metrics(bootstrap: dict, fixtures: list, summaries: dict,
@@ -139,18 +147,28 @@ def compute_honest_metrics(bootstrap: dict, fixtures: list, summaries: dict,
     bt_params = _map_tune_to_bt_params(tune_params)
     archive = {'bootstrap': bootstrap, 'fixtures': fixtures, 'understat': {},
                'summaries': summaries, 'manifest': {'season': 'live'}}
-    m = _run_backtest_for_picks(archive, bt_params, max(5, finished[0]), finished[-1])
+    result = _run_backtest_for_picks(archive, bt_params, max(5, finished[0]), finished[-1])
+    m = result['metrics']
+    raw_per_gw = result.get('per_gw', [])
 
     def _r(key, nd):
         v = m.get(key)
         return round(v, nd) if v is not None else None
 
     return {
-        'top10_mean_pts': _r('top10_mean_pts', 2),
-        'haul_capture_20': _r('haul_capture_20', 4),
+        'top10_mean_pts':      _r('top10_mean_pts', 2),
+        'haul_capture_20':     _r('haul_capture_20', 4),
         'captain_return_rate': _r('captain_return_rate', 4),
-        'haul_hit_rate': _r('haul_hit_rate', 4),
-        'n_gws': m.get('n_gws'),
+        'haul_hit_rate':       _r('haul_hit_rate', 4),
+        'mid_tier_hit_rate':   _r('mid_tier_hit_rate', 4),
+        'captain_hit_rate':    _r('captain_hit_rate', 4),
+        'rmse':                _r('rmse', 4),
+        'mae':                 _r('mae', 4),
+        'spearman':            _r('spearman', 4),
+        'by_position':         m.get('by_position'),
+        'per_gw':              _slim_per_gw(raw_per_gw),
+        'n_gws':               m.get('n_gws'),
+        'mode':                'deploy',
     }
 
 

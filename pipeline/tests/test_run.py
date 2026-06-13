@@ -525,10 +525,84 @@ def test_compute_honest_metrics_shape(monkeypatch):
     fake_metrics = {'top10_mean_pts': 5.123, 'haul_capture_20': 0.25,
                     'captain_return_rate': 0.7, 'haul_hit_rate': 0.12, 'n_gws': 6}
     monkeypatch.setattr(run_mod, '_run_backtest_for_picks',
-                        lambda archive, params, first_gw, last_gw: fake_metrics)
+                        lambda archive, params, first_gw, last_gw: {
+                            'metrics': fake_metrics, 'per_gw': []})
     result = run_mod.compute_honest_metrics(bootstrap, [], {}, {'fas_slope': 0.4})
-    assert result == {'top10_mean_pts': 5.12, 'haul_capture_20': 0.25,
-                      'captain_return_rate': 0.7, 'haul_hit_rate': 0.12, 'n_gws': 6}
+    assert result is not None
+    assert result['top10_mean_pts'] == 5.12
+    assert result['haul_capture_20'] == 0.25
+    assert result['captain_return_rate'] == 0.7
+    assert result['haul_hit_rate'] == 0.12
+    assert result['n_gws'] == 6
+    assert result['mode'] == 'deploy'
+    assert result['per_gw'] == []
+
+
+def test_compute_honest_metrics_widened_keys(monkeypatch):
+    """ACC-05: widened dict includes all new keys + slim per_gw with correct fields."""
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+    import run as run_mod
+    bootstrap = {'events': [{'id': g, 'finished': g <= 12} for g in range(1, 39)]}
+    fake_metrics = {
+        'top10_mean_pts': 5.66, 'haul_capture_20': 0.1944, 'captain_return_rate': 0.60,
+        'haul_hit_rate': 0.1234, 'mid_tier_hit_rate': 0.0987, 'captain_hit_rate': 0.5432,
+        'rmse': 3.1415, 'mae': 2.7182, 'spearman': 0.3210,
+        'by_position': {'GKP': {'n': 100, 'rmse': 1.5, 'n_haulers': 2}},
+        'n_gws': 12,
+    }
+    fake_per_gw = [
+        {'gw': 1, 'n_rows': 250, 'n_haulers': 5, 'haul_hits': 2,
+         'haul_hit_rate': 0.40, 'top10_mean_pts': 5.5, 'spearman': 0.32,
+         'captain_actual': 12, 'captain_name': 'Salah'},
+        {'gw': 2, 'n_rows': 240, 'n_haulers': 3, 'haul_hits': 1,
+         'haul_hit_rate': 0.333, 'top10_mean_pts': 4.8, 'spearman': 0.28,
+         'captain_actual': 8, 'captain_name': 'Haaland'},
+    ]
+    monkeypatch.setattr(run_mod, '_run_backtest_for_picks',
+                        lambda archive, params, first_gw, last_gw: {
+                            'metrics': fake_metrics, 'per_gw': fake_per_gw})
+    result = run_mod.compute_honest_metrics(bootstrap, [], {}, {})
+    assert result is not None
+    # Existing keys still present
+    assert result['top10_mean_pts'] == round(5.66, 2)
+    assert result['haul_capture_20'] == round(0.1944, 4)
+    assert result['captain_return_rate'] == round(0.60, 4)
+    assert result['haul_hit_rate'] == round(0.1234, 4)
+    # New scalar keys
+    assert result['mid_tier_hit_rate'] == round(0.0987, 4)
+    assert result['captain_hit_rate'] == round(0.5432, 4)
+    assert result['rmse'] == round(3.1415, 4)
+    assert result['mae'] == round(2.7182, 4)
+    assert result['spearman'] == round(0.3210, 4)
+    assert result['mode'] == 'deploy'
+    assert result['n_gws'] == 12
+    # by_position passed through unchanged
+    assert result['by_position'] == fake_metrics['by_position']
+    # per_gw: slim — n_rows dropped, other fields preserved
+    assert len(result['per_gw']) == 2
+    gw1 = result['per_gw'][0]
+    assert gw1['gw'] == 1
+    assert gw1['n_haulers'] == 5
+    assert gw1['haul_hits'] == 2
+    assert gw1['haul_hit_rate'] == 0.40
+    assert gw1['top10_mean_pts'] == 5.5
+    assert gw1['spearman'] == 0.32
+    assert gw1['captain_actual'] == 12
+    assert gw1['captain_name'] == 'Salah'
+    assert 'n_rows' not in gw1, "n_rows must be dropped by _slim_per_gw"
+
+
+def test_compute_honest_metrics_gate_still_none_below_8(monkeypatch):
+    """ACC-05: gate behaviour unchanged — <8 finished GWs still returns None."""
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+    import run as run_mod
+    bootstrap = {'events': [{'id': g, 'finished': g <= 7} for g in range(1, 39)]}
+    called = []
+    monkeypatch.setattr(run_mod, '_run_backtest_for_picks',
+                        lambda *a, **kw: called.append(1) or {})
+    result = run_mod.compute_honest_metrics(bootstrap, [], {}, {})
+    assert result is None
+    assert len(called) == 0, "_run_backtest_for_picks must not be called when < 8 GWs"
 
 
 def test_run_binds_accuracy_module_name():

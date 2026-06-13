@@ -776,3 +776,56 @@ describe('DQ-01: DataHealthPanel expanded content', () => {
     expect(container.querySelector('[data-testid="data-health-panel"]')!.textContent).toContain('Set-piece unmatched IDs')
   })
 })
+
+// ============================================================================
+// ACC-05: ForwardSkillPanel integration in AccuracyTab
+// ============================================================================
+
+describe('ACC-05: ForwardSkillPanel in AccuracyTab Summary sub-tab', () => {
+  beforeEach(() => {
+    mockedUseAccuracy.mockReset()
+    mockedUseDataHealth.mockReturnValue({ data: undefined, isLoading: true, error: null } as never)
+  })
+
+  it('renders ForwardSkillPanel above the In-sample calibration block in the Summary sub-tab', () => {
+    mockedUseAccuracy.mockReturnValue({ data: fixtureBacktest, isLoading: false, error: null } as never)
+    const { container } = render(<AccuracyTab />)
+    const panel = container.querySelector('[data-testid="forward-skill-panel"]')
+    expect(panel).not.toBeNull()
+    // "In-sample calibration" section header text is present in summary
+    expect(container.textContent).toContain('In-sample calibration')
+    // Panel must appear BEFORE the calibration section
+    const html = container.innerHTML
+    const panelIdx = html.indexOf('forward-skill-panel')
+    const calibIdx = html.indexOf('In-sample calibration')
+    expect(panelIdx).toBeLessThan(calibIdx)
+  })
+
+  it('relabel caption "For forward skill see the panel above" is present in Summary sub-tab', () => {
+    mockedUseAccuracy.mockReturnValue({ data: fixtureBacktest, isLoading: false, error: null } as never)
+    const { container } = render(<AccuracyTab />)
+    expect(container.textContent).toContain('For forward skill see the panel above')
+  })
+
+  it('ForwardSkillPanel shows fallback state when honest_metrics is absent', () => {
+    // fixtureBacktest has no honest_metrics — should fall back to baseline constants
+    mockedUseAccuracy.mockReturnValue({ data: fixtureBacktest, isLoading: false, error: null } as never)
+    const { container } = render(<AccuracyTab />)
+    expect(container.querySelector('[data-testid="forward-skill-panel"]')).not.toBeNull()
+    expect(container.textContent).toContain('switches to live after GW8')
+  })
+
+  it('Calibration sub-tab shows in-sample diagnostic caption', () => {
+    mockedUseAccuracy.mockReturnValue({ data: fixtureWithVersionsAndCalibration, isLoading: false, error: null } as never)
+    const { container } = render(<AccuracyTab />)
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] [role="tab"]:nth-child(2)') as HTMLElement)
+    expect(container.textContent).toContain('In-sample diagnostic')
+  })
+
+  it('Versions sub-tab shows in-sample diagnostic caption', () => {
+    mockedUseAccuracy.mockReturnValue({ data: fixtureWithVersionsAndCalibration, isLoading: false, error: null } as never)
+    const { container } = render(<AccuracyTab />)
+    fireEvent.click(container.querySelector('[aria-label="Accuracy section"] [role="tab"]:nth-child(4)') as HTMLElement)
+    expect(container.textContent).toContain('In-sample version history')
+  })
+})
