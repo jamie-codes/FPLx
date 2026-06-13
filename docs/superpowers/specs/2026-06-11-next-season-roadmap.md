@@ -56,3 +56,4 @@ GKP haul capture is 11% (worst position). Save points are entirely unmodelled in
 | GK save-points EV (saves_per90/3 x opp attack) | worsens GKP RMSE 2.71->3.01; CS+appearance already over-cover GKs |
 | TRAP flag removal | exp06: trap success 0.340 vs base 0.370 on n=53 — underpowered, inconclusive; kept pending 2026/27 data |
 | Removing ownership from gem-score (E5 ablation) | directionally supportive (top decile 10.41 vs 10.00, more monotonic) but not decisive — recorded, not acted on |
+| npxG / penalty-xG split (Improvement #3) | DEFERRED 2026-06-13: no historical per-GW npxG anywhere (FPL never exposed it; archive npxG all-zero) so it cannot be honestly backtested; prior evidence already shows pen-taker xG works. Revisit once SA-02 accrues per-GW Understat npxG via the USR-01 endpoint. |
