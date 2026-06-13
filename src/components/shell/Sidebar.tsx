@@ -12,7 +12,7 @@ export function Sidebar({ active, onSelect }: {
   return (
     <aside className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-[var(--sidebar-w)] flex-col bg-surface-1 border-r border-line">
       <div className="px-4 pt-4 pb-2 shrink-0">
-        <span className="font-[family-name:var(--font-honk)] text-3xl text-ink leading-none">
+        <span className="font-[family-name:var(--font-honk)] text-display text-ink leading-none">
           FPLx
         </span>
       </div>

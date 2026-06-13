@@ -215,7 +215,7 @@ describe('Phase 110 FIX-06: /api/decision-history modelCeilingPts from element-s
 
     // Override readFile: gw35 → snapshot, gw36 → ENOENT
     const fsMod = await import('fs/promises')
-    vi.mocked(fsMod.readFile).mockImplementation(async (path: unknown) => {
+    ;(vi.mocked(fsMod.readFile) as unknown as { mockImplementation: (fn: (path: unknown) => Promise<Buffer>) => void }).mockImplementation(async (path: unknown) => {
       const p = String(path)
       if (p.includes('captain_picks_gw35')) {
         return JSON.stringify({ gw: 35, ceiling: { id: 306, name: 'Salah', xPts_1gw: 8.5 } }) as unknown as Buffer

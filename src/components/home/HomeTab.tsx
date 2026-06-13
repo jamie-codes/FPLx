@@ -152,7 +152,7 @@ export function HomeTab({ teamId, onTeamIdChange, submittedId, onSubmit, selectT
           <Skeleton className="h-16" />
           <Skeleton className="h-16" />
         </div>
-        <Skeleton className="h-64" />
+        <Skeleton className="h-[28rem]" />
         <Skeleton className="h-36" />
       </div>
     )

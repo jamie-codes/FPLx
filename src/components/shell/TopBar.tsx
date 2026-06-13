@@ -5,7 +5,7 @@
 export function TopBar({ children }: { children?: React.ReactNode }) {
   return (
     <header className="sticky top-0 z-40 h-14 flex items-center gap-3 px-4 bg-surface-1/95 backdrop-blur border-b border-line">
-      <span className="lg:hidden font-[family-name:var(--font-honk)] text-2xl text-ink leading-none">
+      <span className="lg:hidden font-[family-name:var(--font-honk)] text-display text-ink leading-none">
         FPLx
       </span>
       <div className="ml-auto flex items-center gap-2 min-w-0">{children}</div>

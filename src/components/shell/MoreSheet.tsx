@@ -79,6 +79,7 @@ function SheetPanel({ onClose, active, onSelect }: {
         aria-modal="true"
         aria-label="More tools"
         className="sheet-enter absolute inset-x-0 bottom-0 max-h-[70vh] overflow-y-auto rounded-t-xl bg-surface-1 border-t border-line shadow-2xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <div aria-hidden className="mx-auto mb-3 h-1 w-9 rounded-full bg-line" />
         {GROUPS.filter((g) => SHEET_GROUP_IDS.includes(g.id)).map((group) => (
           <div key={group.id} className="mb-3 last:mb-0">
             <div className="flex items-center gap-1.5 px-1 py-1 text-data font-medium uppercase tracking-wide text-ink-muted">

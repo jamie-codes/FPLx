@@ -43,7 +43,7 @@ function ActionCard({
       <div className="flex h-full flex-col gap-1.5">
         <span className="text-data font-medium uppercase tracking-wide text-ink-muted">{title}</span>
         <span className="text-h4 font-semibold text-ink">{headline}</span>
-        <span className="text-data text-ink-muted">{support}</span>
+        <span className="text-data text-ink-muted tabular">{support}</span>
         <div className="mt-auto pt-2 -ml-3 self-start">
           <Button variant="ghost" size="sm" onClick={() => onGo(go.tool)}>
             → {go.label}
