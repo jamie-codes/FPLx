@@ -212,6 +212,13 @@ def run(dry_run: bool = False):
         except Exception as tn_exc:
             print(f"[transfer_news] non-fatal error: {tn_exc}", file=sys.stderr)
 
+        # TFR-01: confirmed transfers ledger — year-round, env-gated, non-fatal.
+        try:
+            from confirmed_transfers import compute_confirmed_transfers
+            compute_confirmed_transfers(bootstrap)
+        except Exception as ct_exc:
+            print(f"[confirmed_transfers] non-fatal error: {ct_exc}", file=sys.stderr)
+
         # Fetch and save fixtures
         fixtures = get_fixtures()
         save('fpl_fixtures.json', fixtures)
