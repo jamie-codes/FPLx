@@ -17,10 +17,10 @@ import type {
 // Maps below convert the 6-label vocabulary to Tailwind classes (per UI-SPEC §Color) and Unicode icons.
 
 const SIGNAL_CLASSES: Record<SignalLabel, string> = {
-  'Strong signal':   'bg-primary/10 text-primary border border-primary/30',
-  'Hidden gem':      'bg-primary/10 text-primary border border-primary/30',
-  'Watchlist':       'bg-surface-elevated text-foreground border border-border',
-  'Weak signal':     'bg-surface-elevated text-muted border border-border',
+  'Strong signal':   'bg-positive/10 text-positive border border-positive/30',
+  'Hidden gem':      'bg-positive/10 text-positive border border-positive/30',
+  'Watchlist':       'bg-surface-2 text-ink border border-line',
+  'Weak signal':     'bg-surface-2 text-ink-muted border border-line',
   'Trap risk':       'bg-warning/10 text-warning border border-warning/30',
   'Regression risk': 'bg-warning/10 text-warning border border-warning/30',
 }
@@ -65,10 +65,10 @@ function InsightCard({ insight }: { insight: Insight }) {
   const benchmarkPct = clampPct(insight.benchmark_value)
 
   return (
-    <div className="rounded border border-border bg-surface p-4 space-y-2">
+    <div className="rounded border border-line bg-surface-1 p-4 space-y-2">
       {/* Zone 1: category badge row (D-15) */}
       <div className="flex items-center justify-between">
-        <span className="text-xs text-muted">{SECTION_LABELS[insight.category as SectionKey]}</span>
+        <span className="text-xs text-ink-muted">{SECTION_LABELS[insight.category as SectionKey]}</span>
         <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${signalCls}`}>
           <span aria-hidden="true">{icon}</span>
           <span>{insight.signal_label}</span>
@@ -84,16 +84,16 @@ function InsightCard({ insight }: { insight: Insight }) {
           <span className="tabular-nums text-3xl font-semibold leading-tight">
             {insight.metric_value.toFixed(1)}%
           </span>
-          <span className="text-xs text-muted">{insight.metric_label}</span>
+          <span className="text-xs text-ink-muted">{insight.metric_label}</span>
         </div>
         {/* Progress bar: overflow-hidden clips fill; benchmark span escapes clip as absolute sibling */}
-        <div className="relative w-full h-2 bg-surface-elevated rounded-full overflow-hidden">
+        <div className="relative w-full h-2 bg-surface-2 rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full bg-primary"
+            className="h-full rounded-full bg-positive"
             style={{ width: `${fillPct}%` }}
           />
           <span
-            className="absolute top-[-4px] w-px h-4 bg-muted"
+            className="absolute top-[-4px] w-px h-4 bg-ink-muted"
             style={{ left: `${benchmarkPct}%` }}
             aria-label={`Benchmark ${benchmarkPct}%`}
           />
@@ -101,13 +101,13 @@ function InsightCard({ insight }: { insight: Insight }) {
       </div>
 
       {/* Zone 4: takeaway */}
-      <p className="text-sm text-foreground">{insight.takeaway}</p>
+      <p className="text-sm text-ink">{insight.takeaway}</p>
 
       {/* Zone 5: action hint */}
-      <p className="text-xs text-muted">{insight.action_hint}</p>
+      <p className="text-xs text-ink-muted">{insight.action_hint}</p>
 
       {/* Methodology (INS-06, D-14) */}
-      <details className="text-xs text-muted">
+      <details className="text-xs text-ink-muted">
         <summary
           className="cursor-pointer select-none"
           aria-label={`Methodology for ${insight.title}`}
@@ -138,7 +138,7 @@ function CollapsibleSection({
       >
         <span aria-hidden="true">{open ? '▼' : '▶'}</span>
         <span>{label}</span>
-        <span className="text-xs text-muted rounded-full px-2 py-0.5 bg-surface-elevated">{count}</span>
+        <span className="text-xs text-ink-muted rounded-full px-2 py-0.5 bg-surface-2">{count}</span>
       </button>
       {open && <div className="space-y-3">{children}</div>}
     </div>
@@ -161,16 +161,16 @@ function DecisionSummary({ insights }: { insights: Insight[] }) {
   if (top3.length === 0) return null
 
   return (
-    <div className="sticky top-[var(--nav-height,96px)] z-30 bg-surface/95 backdrop-blur-sm border-b border-border -mx-4 px-4 py-3 mb-4">
+    <div className="sticky top-[var(--nav-height,96px)] z-30 bg-surface-1/95 backdrop-blur-sm border-b border-line -mx-4 px-4 py-3 mb-4">
       <h2 className="text-sm font-semibold mb-2">Decision Summary</h2>
       <ul className="space-y-2">
         {top3.map(insight => (
           <li key={insight.id} className="text-sm flex flex-wrap items-center gap-2">
-            <span className="text-foreground">{insight.action_hint}</span>
+            <span className="text-ink">{insight.action_hint}</span>
             {insight.player_names.map(name => (
               <span
                 key={`p-${insight.id}-${name}`}
-                className="rounded-full px-2 py-0.5 text-xs bg-surface-elevated text-foreground"
+                className="rounded-full px-2 py-0.5 text-xs bg-surface-2 text-ink"
               >
                 {name}
               </span>
@@ -178,7 +178,7 @@ function DecisionSummary({ insights }: { insights: Insight[] }) {
             {insight.team_names.map(team => (
               <span
                 key={`t-${insight.id}-${team}`}
-                className="rounded-full px-2 py-0.5 text-xs bg-surface-elevated text-foreground"
+                className="rounded-full px-2 py-0.5 text-xs bg-surface-2 text-ink"
               >
                 {team}
               </span>
@@ -194,8 +194,8 @@ function DecisionSummary({ insights }: { insights: Insight[] }) {
 
 function PositionOpportunityCardView({ card }: { card: PositionOpportunityCard }) {
   return (
-    <div className="rounded border border-border bg-surface p-4 space-y-2">
-      <span className="text-xs text-muted">{card.gw_label}</span>
+    <div className="rounded border border-line bg-surface-1 p-4 space-y-2">
+      <span className="text-xs text-ink-muted">{card.gw_label}</span>
       <h3 className="text-[15px] font-semibold leading-tight">
         Position opportunity: {card.position}
       </h3>
@@ -206,8 +206,8 @@ function PositionOpportunityCardView({ card }: { card: PositionOpportunityCard }
 
 function RotationRiskCardView({ card }: { card: RotationRiskCard }) {
   return (
-    <div className="rounded border border-border bg-surface p-4 space-y-2">
-      <span className="text-xs text-muted">{card.gw_label}</span>
+    <div className="rounded border border-line bg-surface-1 p-4 space-y-2">
+      <span className="text-xs text-ink-muted">{card.gw_label}</span>
       <h3 className="text-[15px] font-semibold leading-tight">
         Rotation risk: {card.team_short_name}
       </h3>
@@ -215,7 +215,7 @@ function RotationRiskCardView({ card }: { card: RotationRiskCard }) {
         {card.competition} fixture clash within 3 days of PL kickoff.
       </p>
       {card.table_stakes_label && (
-        <p className="text-xs text-muted">Context: {card.table_stakes_label}</p>
+        <p className="text-xs text-ink-muted">Context: {card.table_stakes_label}</p>
       )}
     </div>
   )
@@ -224,8 +224,8 @@ function RotationRiskCardView({ card }: { card: RotationRiskCard }) {
 function DGWBGWCardView({ card }: { card: DGWBGWCard }) {
   const kindLabel = card.is_dgw ? 'Double Gameweek' : 'Blank Gameweek'
   return (
-    <div className="rounded border border-border bg-surface p-4 space-y-2">
-      <span className="text-xs text-muted">{card.gw_label}</span>
+    <div className="rounded border border-line bg-surface-1 p-4 space-y-2">
+      <span className="text-xs text-ink-muted">{card.gw_label}</span>
       <h3 className="text-[15px] font-semibold leading-tight">
         {kindLabel}: {card.team_short_name}
       </h3>
@@ -252,7 +252,7 @@ function XptsTrajectoryBar({
       {gw_xpts.map((x, i) => {
         const heightPx = Math.max(4, Math.min(32, Math.round((x / max) * 32)))
         const isCurrent = i === current_gw_index
-        const fillCls = isCurrent ? 'bg-primary' : 'bg-surface-elevated'
+        const fillCls = isCurrent ? 'bg-positive' : 'bg-surface-2'
         const dgwSuffix = is_dgw[i] ? '†' : ''
         return (
           <div key={i} className="flex flex-col items-center gap-1 flex-1 min-w-0">
@@ -261,7 +261,7 @@ function XptsTrajectoryBar({
               style={{ height: `${heightPx}px` }}
               aria-label={`GW${gw_numbers[i] ?? '?'}: ${x.toFixed(1)} projected xPts`}
             />
-            <span className="text-xs text-muted">
+            <span className="text-xs text-ink-muted">
               GW{gw_numbers[i] ?? '?'}{dgwSuffix}
             </span>
           </div>
@@ -274,8 +274,8 @@ function XptsTrajectoryBar({
 function FixtureRunCardView({ card }: { card: FixtureRunCard }) {
   const hasDgw = card.is_dgw.some(Boolean)
   return (
-    <div className="rounded border border-border bg-surface p-4 space-y-2">
-      <span className="text-xs text-muted">{card.gw_label}</span>
+    <div className="rounded border border-line bg-surface-1 p-4 space-y-2">
+      <span className="text-xs text-ink-muted">{card.gw_label}</span>
       <h3 className="text-[15px] font-semibold leading-tight">{card.web_name}</h3>
       <p className="text-sm">{card.narrative}</p>
       <XptsTrajectoryBar
@@ -285,7 +285,7 @@ function FixtureRunCardView({ card }: { card: FixtureRunCard }) {
         current_gw_index={0}
       />
       {hasDgw && (
-        <p className="text-xs text-muted">† Double Gameweek</p>
+        <p className="text-xs text-ink-muted">† Double Gameweek</p>
       )}
     </div>
   )
@@ -318,10 +318,10 @@ function GWIntelSection() {
   return (
     <CollapsibleSection label="This Gameweek" count={cards.length}>
       {isLoading && (
-        <p className="text-sm text-muted">Loading GW insights…</p>
+        <p className="text-sm text-ink-muted">Loading GW insights…</p>
       )}
       {!isLoading && (error || cards.length === 0) && (
-        <p className="text-sm text-muted">
+        <p className="text-sm text-ink-muted">
           GW insights will appear once fixtures are confirmed.
         </p>
       )}
@@ -365,7 +365,7 @@ export function InsightsTab() {
 
       {/* Season-pattern insights (Phase 79) — handles its own loading/error/empty state. */}
       {isLoading && (
-        <p className="text-sm text-muted text-center py-8">
+        <p className="text-sm text-ink-muted text-center py-8">
           Loading insights…
         </p>
       )}
@@ -377,7 +377,7 @@ export function InsightsTab() {
       {!isLoading && !error && (!data || data.length === 0) && (
         <div className="space-y-2" aria-label="Insights not available">
           <h2 className="text-lg font-semibold">No insights available yet</h2>
-          <p className="text-sm text-muted">
+          <p className="text-sm text-ink-muted">
             Run the pipeline to generate pattern data for this season.
           </p>
         </div>
@@ -396,7 +396,7 @@ export function InsightsTab() {
               </CollapsibleSection>
             )
           })}
-          <p className="text-xs text-muted mt-4">
+          <p className="text-xs text-ink-muted mt-4">
             Patterns shown only when seen in 10 or more fixtures.
           </p>
         </>

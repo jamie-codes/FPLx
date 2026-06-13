@@ -36,21 +36,7 @@
   --sp-focus-ring: rgba(91, 140, 255, 0.45);
 }
 
-/* UIX-01 legacy aliases — removed in UIX-05.
-   Every pre-overhaul var now points at its nearest Slate Pro token by meaning:
-   background→surface-0 (app bg), surface→surface-1 (card), surface-elevated→surface-2 (raised),
-   foreground→ink, muted→ink-muted, border→line, secondary→accent (blue),
-   primary→positive (legacy primary is the green highlight; positive keeps the hue),
-   positive/warning/negative→same-name tokens. */
 :root {
-  --background: var(--sp-surface-0);
-  --surface: var(--sp-surface-1);
-  --surface-elevated: var(--sp-surface-2);
-  --foreground: var(--sp-ink);
-  --muted: var(--sp-ink-muted);
-  --border: var(--sp-line);
-  --color-primary: var(--sp-positive);
-  --color-secondary: var(--sp-accent);
   --color-positive: var(--sp-positive);
   --color-warning: var(--sp-warning);
   --color-negative: var(--sp-negative);
@@ -61,29 +47,12 @@
 }
 
 .dark {
-  --background: var(--sp-surface-0);
-  --surface: var(--sp-surface-1);
-  --surface-elevated: var(--sp-surface-2);
-  --foreground: var(--sp-ink);
-  --muted: var(--sp-ink-muted);
-  --border: var(--sp-line);
-  --color-primary: var(--sp-positive);
-  --color-secondary: var(--sp-accent);
   --color-positive: var(--sp-positive);
   --color-warning: var(--sp-warning);
   --color-negative: var(--sp-negative);
 }
 
 @theme inline {
-  /* legacy utility names (bg-surface, text-foreground, …) — kept until UIX-05 */
-  --color-background: var(--background);
-  --color-surface: var(--surface);
-  --color-surface-elevated: var(--surface-elevated);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-border: var(--border);
-  --color-primary: var(--color-primary);
-  --color-secondary: var(--color-secondary);
   /* UIX-01 semantic tokens (bg-surface-1, text-ink, border-line, …) */
   --color-surface-0: var(--sp-surface-0); --color-surface-1: var(--sp-surface-1);
   --color-surface-2: var(--sp-surface-2); --color-line: var(--sp-line);
@@ -126,8 +95,8 @@ html, body {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--sp-surface-0);
+  color: var(--sp-ink);
 }
 
 .tabular-nums, [data-numeric] {
