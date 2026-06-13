@@ -29,22 +29,23 @@ import type { TooltipContentProps } from 'recharts'
 
 // Phase 96 BACK-01 — captain regret sub-tab.
 import { BackTab } from './BackTab'
+import { Tabs } from '@/components/ui/Tabs'
 
-// Tier thresholds + colour classes — reused verbatim from InsightsTab (TIER_CLASSES locked by 33-UI-SPEC).
+// Tier thresholds + colour classes — semantic tokens per UIX-05 ruling 3.
 const TIER_CLASSES = {
-  HIGH:   'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  MEDIUM: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
-  LOW:    'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
+  HIGH:   'bg-positive-soft text-positive',
+  MEDIUM: 'bg-warning-soft text-warning',
+  LOW:    'bg-surface-2 text-ink-muted',
 } as const
 type Tier = keyof typeof TIER_CLASSES
 
 // Phase 96 BACK-01 — sub-tab nav inside AccuracyTab (D-01, D-02, D-03, D-04).
 type AccuracySubTab = 'summary' | 'calibration' | 'back' | 'versions'
-const ACCURACY_SUB_TABS: ReadonlyArray<{ value: AccuracySubTab; label: string }> = [
-  { value: 'summary', label: 'Summary' },
-  { value: 'calibration', label: 'Calibration' },
-  { value: 'back', label: 'Back' },
-  { value: 'versions', label: 'Versions' },
+const ACCURACY_SUB_TAB_ITEMS: ReadonlyArray<{ id: AccuracySubTab; label: string }> = [
+  { id: 'summary', label: 'Summary' },
+  { id: 'calibration', label: 'Calibration' },
+  { id: 'back', label: 'Back' },
+  { id: 'versions', label: 'Versions' },
 ]
 
 function AccuracySubTabNav({
@@ -55,26 +56,12 @@ function AccuracySubTabNav({
   onChange: (v: AccuracySubTab) => void
 }) {
   return (
-    <div
-      role="group"
-      aria-label="Accuracy section"
-      className="flex rounded overflow-hidden border border-zinc-300 dark:border-zinc-600"
-    >
-      {ACCURACY_SUB_TABS.map(({ value: v, label }) => (
-        <button
-          key={v}
-          type="button"
-          onClick={() => onChange(v)}
-          aria-pressed={value === v}
-          className={`px-3 py-2 sm:py-1 text-sm font-medium transition-all cursor-pointer active:scale-95 min-h-[44px] sm:min-h-0 ${
-            value === v
-              ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
-              : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
-          }`}
-        >
-          {label}
-        </button>
-      ))}
+    <div aria-label="Accuracy section">
+      <Tabs
+        items={ACCURACY_SUB_TAB_ITEMS as { id: AccuracySubTab; label: string }[]}
+        value={value}
+        onChange={onChange}
+      />
     </div>
   )
 }
@@ -107,7 +94,7 @@ const ARTIFACT_LABELS: Record<string, string> = {
   'last_updated.json':     'Last pipeline run',
 }
 
-const RED_PILL_CLS = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+const RED_PILL_CLS = 'bg-negative-soft text-negative'
 
 function rollUpStatus(checks: SanityCheck[]): 'ok' | 'warn' | 'error' {
   if (checks.some(c => c.status === 'error')) return 'error'
@@ -123,9 +110,9 @@ function formatSanityValue(check: SanityCheck): string {
 }
 
 function SanityIcon({ status }: { status: 'ok' | 'warn' | 'error' }) {
-  if (status === 'ok')   return <span className="text-green-600 dark:text-green-400" aria-label="ok">✓</span>
-  if (status === 'warn') return <span className="text-amber-600 dark:text-amber-400" aria-label="warning">⚠</span>
-  return <span className="text-red-600 dark:text-red-400" aria-label="error">✗</span>
+  if (status === 'ok')   return <span className="text-positive" aria-label="ok">✓</span>
+  if (status === 'warn') return <span className="text-warning" aria-label="warning">⚠</span>
+  return <span className="text-negative" aria-label="error">✗</span>
 }
 
 function HitRateBadge({ rate }: { rate: number }) {
@@ -139,23 +126,23 @@ function HitRateBadge({ rate }: { rate: number }) {
 
 function FlaggedCell({ flagged }: { flagged: boolean }) {
   return flagged
-    ? <span className="text-green-600 dark:text-green-400" aria-label="Flagged: yes">✓</span>
-    : <span className="text-zinc-400 dark:text-zinc-500" aria-label="Flagged: no">✗</span>
+    ? <span className="text-positive" aria-label="Flagged: yes">✓</span>
+    : <span className="text-ink-muted" aria-label="Flagged: no">✗</span>
 }
 
 function DeltaCell({ delta }: { delta: number }) {
   const formatted = delta >= 0 ? `+${delta.toFixed(1)}` : delta.toFixed(1)
   const cls = delta < 0
-    ? 'text-red-600 dark:text-red-400'
+    ? 'text-negative'
     : delta > 0
-      ? 'text-green-600 dark:text-green-400'
-      : 'text-zinc-500'
+      ? 'text-positive'
+      : 'text-ink-muted'
   return <span className={cls}>{formatted}</span>
 }
 
-// Locked table chrome classes (UI-SPEC).
-const TH_CLS = 'text-left font-semibold text-zinc-600 dark:text-zinc-400 pb-1 border-b border-zinc-200 dark:border-zinc-700'
-const TR_CLS = 'even:bg-zinc-50 dark:even:bg-zinc-800/50'
+// Locked table chrome classes (UI-SPEC — tokenized UIX-05).
+const TH_CLS = 'text-left font-semibold text-ink-muted pb-1 border-b border-line'
+const TR_CLS = 'even:bg-surface-1'
 const TD_CLS = 'py-1'
 const TABLE_CLS = 'w-full text-sm border-collapse'
 
@@ -179,7 +166,7 @@ function GateFlagsCell({ flags }: { flags: VersionGateFlags }) {
     .map(([key]) => GATE_LABEL[key])
 
   if (enabled.length === 0) {
-    return <span className="text-zinc-400 dark:text-zinc-500">—</span>
+    return <span className="text-ink-muted">—</span>
   }
 
   return (
@@ -187,7 +174,7 @@ function GateFlagsCell({ flags }: { flags: VersionGateFlags }) {
       {enabled.map((label) => (
         <span
           key={label}
-          className="inline-block text-xs rounded px-2 py-0.5 bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+          className="inline-block text-xs rounded px-2 py-0.5 bg-surface-2 text-ink"
         >
           {label}
         </span>
@@ -223,7 +210,7 @@ function VersionHistoryTable({ data }: { data: AccuracyBacktest }) {
                 <td className={TD_CLS}>
                   {v.formula_version}
                   {isCurrent && (
-                    <span className="ml-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                    <span className="ml-2 text-xs font-semibold text-ink-muted">
                       (current)
                     </span>
                   )}
@@ -231,12 +218,12 @@ function VersionHistoryTable({ data }: { data: AccuracyBacktest }) {
                 <td className={TD_CLS}>{formatRecordedAt(v.recorded_at)}</td>
                 <td className={TD_CLS}>
                   {(v.sample_gws ?? 0) < 3
-                    ? <span className="text-amber-600 dark:text-amber-400 text-xs">cold start</span>
+                    ? <span className="text-warning text-xs">cold start</span>
                     : <HitRateBadge rate={v.hit_rate} />}
                 </td>
                 <td className={TD_CLS}>
                   {delta === null
-                    ? <span className="text-zinc-400 dark:text-zinc-500">—</span>
+                    ? <span className="text-ink-muted">—</span>
                     : <DeltaCell delta={delta} />}
                 </td>
                 <td className={TD_CLS}>
@@ -244,7 +231,7 @@ function VersionHistoryTable({ data }: { data: AccuracyBacktest }) {
                 </td>
                 <td className={TD_CLS}>
                   {(v.sample_gws ?? 0) < 3
-                    ? <span className="text-amber-600 dark:text-amber-400 text-xs">{'< 3 GWs'}</span>
+                    ? <span className="text-warning text-xs">{'< 3 GWs'}</span>
                     : v.sample_gws}
                 </td>
               </tr>
@@ -276,6 +263,9 @@ function positionLabel(p: CalibrationPosition): string {
   return found ? found.label : 'All'
 }
 
+// PositionTabSelector uses the WAI-ARIA tablist pattern (role=tablist/role=tab/aria-selected)
+// tested explicitly by CAL-02. SegmentedToggle uses role=group+aria-pressed (different semantics).
+// Per UIX-05 spec: adapt the call site with token classes; do NOT modify the primitive.
 function PositionTabSelector({
   value,
   onChange,
@@ -292,8 +282,8 @@ function PositionTabSelector({
       {POSITION_PILLS.map((pill) => {
         const active = pill.value === value
         const cls = active
-          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-          : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+          ? 'bg-ink text-surface-1'
+          : 'bg-surface-2 text-ink-muted hover:bg-surface-2 hover:text-ink'
         return (
           <button
             key={pill.value}
@@ -317,17 +307,17 @@ function CalibrationTooltip({ active, payload }: TooltipContentProps) {
   const bucketLow = Math.round((p.bucket_mid - 0.05) * 100)
   const bucketHigh = Math.round((p.bucket_mid + 0.05) * 100)
   return (
-    <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs shadow-sm">
-      <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
+    <div className="rounded border border-line bg-surface-1 px-3 py-2 text-xs shadow-sm">
+      <p className="font-semibold text-ink mb-1">
         Decile {bucketLow}%–{bucketHigh}%
       </p>
-      <p className="text-zinc-700 dark:text-zinc-300">
+      <p className="text-ink">
         Predicted: {(p.predicted_rate * 100).toFixed(1)}%
       </p>
-      <p className="text-zinc-700 dark:text-zinc-300">
+      <p className="text-ink">
         Actual: {(p.actual_rate * 100).toFixed(1)}%
       </p>
-      <p className="text-zinc-500 dark:text-zinc-400 mt-1">n = {p.sample_n}</p>
+      <p className="text-ink-muted mt-1">n = {p.sample_n}</p>
     </div>
   )
 }
@@ -341,20 +331,20 @@ function XptsTooltip({ active, payload }: TooltipContentProps) {
   const bucketHigh = Math.round((p.bucket_mid + 0.05) * 100)
   const deviation = p.actual_mean - p.predicted_mean
   return (
-    <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs shadow-sm">
-      <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
+    <div className="rounded border border-line bg-surface-1 px-3 py-2 text-xs shadow-sm">
+      <p className="font-semibold text-ink mb-1">
         Decile {bucketLow}%–{bucketHigh}%
       </p>
-      <p className="text-zinc-700 dark:text-zinc-300">
+      <p className="text-ink">
         Predicted: {p.predicted_mean.toFixed(2)} pts
       </p>
-      <p className="text-zinc-700 dark:text-zinc-300">
+      <p className="text-ink">
         Actual: {p.actual_mean.toFixed(2)} pts
       </p>
-      <p className="text-zinc-700 dark:text-zinc-300">
+      <p className="text-ink">
         Deviation: {deviation.toFixed(2)} pts
       </p>
-      <p className="text-zinc-500 dark:text-zinc-400 mt-1">n = {p.sample_n}</p>
+      <p className="text-ink-muted mt-1">n = {p.sample_n}</p>
     </div>
   )
 }
@@ -390,31 +380,31 @@ function CalibrationSection({ data }: { data: AccuracyBacktest }) {
   return (
     <div>
       <h2 className="text-lg font-semibold mb-2">Calibration Reliability</h2>
-      <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3">
+      <p className="text-xs text-ink-muted mb-3">
         Predicted xPts decile vs actual haul rate. A well-calibrated model traces
         the diagonal — points above mean under-confidence, points below mean over-confidence.
       </p>
 
       <PositionTabSelector value={position} onChange={setPosition} />
 
-      <div className="flex gap-4 text-xs text-zinc-600 dark:text-zinc-400 mb-2">
+      <div className="flex gap-4 text-xs text-ink-muted mb-2">
         <span className="flex items-center gap-1">
           <span style={{ display: 'inline-block', width: 12, height: 2, background: 'currentColor' }} />
           Actual haul rate
         </span>
         <span className="flex items-center gap-1">
-          <span style={{ display: 'inline-block', width: 12, height: 0, borderTop: '1px dashed rgba(161,161,170,0.7)' }} />
+          <span style={{ display: 'inline-block', width: 12, height: 0, borderTop: '1px dashed color-mix(in srgb, var(--color-ink-muted) 70%, transparent)' }} />
           Perfect calibration (y=x)
         </span>
       </div>
 
       <div
         data-testid="calibration-chart"
-        className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-2 py-3 relative"
+        className="rounded border border-line bg-surface-1 px-2 py-3 relative"
       >
         <ResponsiveContainer width="100%" height={288}>
           <ComposedChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(161,161,170,0.3)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--color-ink-muted) 30%, transparent)" />
             <XAxis
               type="number"
               dataKey="bucket_mid"
@@ -438,7 +428,7 @@ function CalibrationSection({ data }: { data: AccuracyBacktest }) {
             <Tooltip content={CalibrationTooltip} />
             <ReferenceLine
               segment={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
-              stroke="rgba(161,161,170,0.5)"
+              stroke="color-mix(in srgb, var(--color-ink-muted) 50%, transparent)"
               strokeDasharray="4 4"
               strokeWidth={1}
               ifOverflow="extendDomain"
@@ -457,13 +447,13 @@ function CalibrationSection({ data }: { data: AccuracyBacktest }) {
         </ResponsiveContainer>
         {data.gws_covered.length < 3 ? (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="text-xs text-ink-muted">
               Calibration evidence will appear after 3+ completed GWs.
             </p>
           </div>
         ) : chartData.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="text-xs text-ink-muted">
               Insufficient data for {positionLabel(position)} at this sample size.
             </p>
           </div>
@@ -472,14 +462,14 @@ function CalibrationSection({ data }: { data: AccuracyBacktest }) {
 
       {/* Phase 91 CAL-01: xPts-mean calibration chart (UI-SPEC §Chart Specification) */}
       <div className="mt-12">
-        <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
+        <h3 className="text-lg font-semibold text-ink mb-2">
           Predicted vs Actual xPts
         </h3>
-        <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2">
+        <p className="text-xs text-ink-muted mb-2">
           Predicted xPts decile mean vs actual points mean. A well-calibrated model traces
           the diagonal — points above mean over-prediction, points below mean under-prediction.
         </p>
-        <div className="flex gap-4 text-xs text-zinc-600 dark:text-zinc-400 mb-2">
+        <div className="flex gap-4 text-xs text-ink-muted mb-2">
           <span className="flex items-center gap-1">
             <span
               aria-hidden="true"
@@ -494,7 +484,7 @@ function CalibrationSection({ data }: { data: AccuracyBacktest }) {
                 display: 'inline-block',
                 width: 12,
                 height: 0,
-                borderTop: '1px dashed rgba(161,161,170,0.7)',
+                borderTop: '1px dashed color-mix(in srgb, var(--color-ink-muted) 70%, transparent)',
               }}
             />
             Perfect calibration (y=x)
@@ -502,11 +492,11 @@ function CalibrationSection({ data }: { data: AccuracyBacktest }) {
         </div>
         <div
           data-testid="calibration-xpts-chart"
-          className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-2 py-3 relative"
+          className="rounded border border-line bg-surface-1 px-2 py-3 relative"
         >
           <ResponsiveContainer width="100%" height={288}>
             <ComposedChart data={xptsData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(161,161,170,0.3)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--color-ink-muted) 30%, transparent)" />
               <XAxis
                 type="number"
                 dataKey="predicted_mean"
@@ -529,7 +519,7 @@ function CalibrationSection({ data }: { data: AccuracyBacktest }) {
                   { x: 0, y: 0 },
                   { x: maxPredictedMean, y: maxPredictedMean },
                 ]}
-                stroke="rgba(161,161,170,0.5)"
+                stroke="color-mix(in srgb, var(--color-ink-muted) 50%, transparent)"
                 strokeDasharray="4 4"
                 strokeWidth={1}
                 ifOverflow="extendDomain"
@@ -548,7 +538,7 @@ function CalibrationSection({ data }: { data: AccuracyBacktest }) {
           </ResponsiveContainer>
           {xptsData.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="text-xs text-ink-muted">
                 Insufficient sample (n&lt;5) for {positionLabel(position)} this window.
               </p>
             </div>
@@ -584,7 +574,7 @@ function GwSummaryTable({ data }: { data: AccuracyBacktest }) {
 
   function shCls(key: GwSortKey) {
     const active = sortKey === key
-    return `text-left font-semibold pb-1 border-b border-zinc-200 dark:border-zinc-700 cursor-pointer ${active ? 'text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-400'}`
+    return `text-left font-semibold pb-1 border-b border-line cursor-pointer ${active ? 'text-ink' : 'text-ink-muted'}`
   }
 
   function arrow(key: GwSortKey) {
@@ -637,7 +627,7 @@ function GwSummaryTable({ data }: { data: AccuracyBacktest }) {
             return (
               <Fragment key={r.gw}>
                 <tr
-                  className={`${TR_CLS} cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700`}
+                  className={`${TR_CLS} cursor-pointer hover:bg-surface-2`}
                   onClick={() => setExpandedGw(isExpanded ? null : r.gw)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -654,7 +644,7 @@ function GwSummaryTable({ data }: { data: AccuracyBacktest }) {
                 >
                   <td className={TD_CLS}>
                     GW{r.gw}
-                    <span className="ml-2 text-zinc-400 dark:text-zinc-500" aria-hidden="true">
+                    <span className="ml-2 text-ink-muted" aria-hidden="true">
                       {isExpanded ? '▴' : '▾'}
                     </span>
                   </td>
@@ -664,20 +654,20 @@ function GwSummaryTable({ data }: { data: AccuracyBacktest }) {
                 </tr>
                 {isExpanded && (
                   <tr id={`gw-drilldown-${r.gw}`} data-testid={`gw-drilldown-${r.gw}`}>
-                    <td colSpan={4} className="bg-zinc-50 dark:bg-zinc-800/50 px-4 py-4">
+                    <td colSpan={4} className="bg-surface-1 px-4 py-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                         {/* Haulers sub-panel */}
                         <div>
                           <h3 className="text-sm font-semibold mb-1">Haulers (≥10 pts)</h3>
                           {gwHaulters.length === 0 ? (
-                            <p className="text-sm text-zinc-500 dark:text-zinc-400 py-2">No haulers this GW.</p>
+                            <p className="text-sm text-ink-muted py-2">No haulers this GW.</p>
                           ) : (
                             <table className="w-full text-xs">
                               <thead>
                                 <tr>
-                                  <th className="text-left pb-1 border-b border-zinc-200 dark:border-zinc-700 font-semibold">Player</th>
-                                  <th className="text-right pb-1 border-b border-zinc-200 dark:border-zinc-700 font-semibold">Actual</th>
-                                  <th className="text-right pb-1 border-b border-zinc-200 dark:border-zinc-700 font-semibold">Predicted</th>
+                                  <th className="text-left pb-1 border-b border-line font-semibold">Player</th>
+                                  <th className="text-right pb-1 border-b border-line font-semibold">Actual</th>
+                                  <th className="text-right pb-1 border-b border-line font-semibold">Predicted</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -696,14 +686,14 @@ function GwSummaryTable({ data }: { data: AccuracyBacktest }) {
                         <div>
                           <h3 className="text-sm font-semibold mb-1">xPts Flagged Misses</h3>
                           {gwFlaggedMisses.length === 0 ? (
-                            <p className="text-sm text-zinc-500 dark:text-zinc-400 py-2">No flagged misses this GW — predictions held.</p>
+                            <p className="text-sm text-ink-muted py-2">No flagged misses this GW — predictions held.</p>
                           ) : (
                             <table className="w-full text-xs">
                               <thead>
                                 <tr>
-                                  <th className="text-left pb-1 border-b border-zinc-200 dark:border-zinc-700 font-semibold">Player</th>
-                                  <th className="text-right pb-1 border-b border-zinc-200 dark:border-zinc-700 font-semibold">Actual</th>
-                                  <th className="text-right pb-1 border-b border-zinc-200 dark:border-zinc-700 font-semibold">Predicted</th>
+                                  <th className="text-left pb-1 border-b border-line font-semibold">Player</th>
+                                  <th className="text-right pb-1 border-b border-line font-semibold">Actual</th>
+                                  <th className="text-right pb-1 border-b border-line font-semibold">Predicted</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -725,7 +715,7 @@ function GwSummaryTable({ data }: { data: AccuracyBacktest }) {
               </Fragment>
             )
           })}
-          <tr className="font-semibold bg-zinc-50 dark:bg-zinc-800">
+          <tr className="font-semibold bg-surface-1">
             <td className={TD_CLS}>Overall</td>
             <td className={TD_CLS}>—</td>
             <td className={TD_CLS}>—</td>
@@ -763,7 +753,7 @@ function HaulterList({ data }: { data: AccuracyBacktest }) {
 
   function shCls(key: HaulterSortKey) {
     const active = sortKey === key
-    return `text-left font-semibold pb-1 border-b border-zinc-200 dark:border-zinc-700 cursor-pointer ${active ? 'text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-400'}`
+    return `text-left font-semibold pb-1 border-b border-line cursor-pointer ${active ? 'text-ink' : 'text-ink-muted'}`
   }
 
   function arrow(key: HaulterSortKey) {
@@ -857,8 +847,8 @@ function PlayerDeltaTable({ data }: { data: AccuracyBacktest }) {
 
   function sortableHeaderCls(key: SortKey) {
     const active = sortKey === key
-    const colour = active ? 'text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-400'
-    return `text-left font-semibold pb-1 border-b border-zinc-200 dark:border-zinc-700 cursor-pointer ${colour}`
+    const colour = active ? 'text-ink' : 'text-ink-muted'
+    return `text-left font-semibold pb-1 border-b border-line cursor-pointer ${colour}`
   }
 
   function ariaSort(key: SortKey): 'ascending' | 'descending' | 'none' {
@@ -869,7 +859,7 @@ function PlayerDeltaTable({ data }: { data: AccuracyBacktest }) {
   return (
     <div>
       <h2 className="text-lg font-semibold mb-2">Player Prediction Errors</h2>
-      <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+      <p className="text-xs text-ink-muted mb-2">
         Sorted by biggest xPts over-prediction (most negative delta first). Click any column header to re-sort.
       </p>
       <div className="overflow-x-auto">
@@ -924,8 +914,8 @@ const SPARKLINE_STATUS_LABEL: Record<HistoryEntry['overall_status'], string> = {
 function SparklineDot(props: any) {
   const { cx, cy, payload } = props
   const fill = payload?.timestamp === null
-    ? 'var(--muted)'
-    : SPARKLINE_STATUS_COLOR[payload?.overall_status as keyof typeof SPARKLINE_STATUS_COLOR] ?? 'var(--muted)'
+    ? 'var(--color-ink-muted)'
+    : SPARKLINE_STATUS_COLOR[payload?.overall_status as keyof typeof SPARKLINE_STATUS_COLOR] ?? 'var(--color-ink-muted)'
   return <circle cx={cx} cy={cy} r={4} fill={fill} stroke="none" />
 }
 
@@ -935,16 +925,16 @@ function SparklineTooltip({ active, payload }: any) {
   const entry = payload[0].payload
   if (entry.timestamp === null) {
     return (
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-1 text-xs">
-        <p className="italic text-zinc-500 dark:text-zinc-400">First run</p>
+      <div className="bg-surface-1 border border-line rounded px-2 py-1 text-xs">
+        <p className="italic text-ink-muted">First run</p>
       </div>
     )
   }
   const label = SPARKLINE_STATUS_LABEL[entry.overall_status as HistoryEntry['overall_status']] ?? entry.overall_status
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-1 text-xs space-y-0.5">
-      <p className="font-semibold text-zinc-900 dark:text-zinc-100">{label}</p>
-      <p className="text-zinc-500 dark:text-zinc-400">{new Date(entry.timestamp).toLocaleString()}</p>
+    <div className="bg-surface-1 border border-line rounded px-2 py-1 text-xs space-y-0.5">
+      <p className="font-semibold text-ink">{label}</p>
+      <p className="text-ink-muted">{new Date(entry.timestamp).toLocaleString()}</p>
     </div>
   )
 }
@@ -970,7 +960,7 @@ function DataHealthSparkline({ history }: { history: HistoryEntry[] }) {
           <Line
             type="monotone"
             dataKey="y"
-            stroke="rgba(161,161,170,0.4)"
+            stroke="color-mix(in srgb, var(--color-ink-muted) 40%, transparent)"
             strokeWidth={1}
             dot={<SparklineDot />}
             activeDot={false}
@@ -1040,13 +1030,13 @@ function DataHealthPanel() {
       {isExpanded && data && (
         <div className="space-y-4 pt-1">
           {/* DQ-01: data freshness line */}
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="text-xs text-ink-muted">
             Generated: {new Date(data.generated_at).toLocaleString()}
           </p>
 
           {/* Sanity checks table */}
           <div>
-            <p className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400 mb-1">Checks</p>
+            <p className="text-xs font-semibold uppercase text-ink-muted mb-1">Checks</p>
             <table className={TABLE_CLS}>
               <thead>
                 <tr>
@@ -1071,7 +1061,7 @@ function DataHealthPanel() {
 
           {/* DQ-01: null counts */}
           <div>
-            <p className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400 mb-1">Null counts</p>
+            <p className="text-xs font-semibold uppercase text-ink-muted mb-1">Null counts</p>
             <table className={TABLE_CLS}>
               <tbody>
                 <tr className={TR_CLS}>
@@ -1093,7 +1083,7 @@ function DataHealthPanel() {
           {/* DQ-01: artifact timestamps */}
           {Object.keys(data.timestamps).length > 0 && (
             <div>
-              <p className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400 mb-1">Artifact timestamps</p>
+              <p className="text-xs font-semibold uppercase text-ink-muted mb-1">Artifact timestamps</p>
               <table className={TABLE_CLS}>
                 <tbody>
                   {Object.entries(data.timestamps).map(([name, ts]) => (
@@ -1125,7 +1115,7 @@ export function AccuracyTab({ teamId = null }: { teamId?: string | null }) {
       <section className="mt-6 space-y-8" aria-label="Projection accuracy">
         {panel}
         <AccuracySubTabNav value={subTab} onChange={setSubTab} />
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">
+        <p className="text-sm text-ink-muted text-center py-8">
           Loading accuracy data…
         </p>
       </section>
@@ -1137,7 +1127,7 @@ export function AccuracyTab({ teamId = null }: { teamId?: string | null }) {
       <section className="mt-6 space-y-8" aria-label="Projection accuracy">
         {panel}
         <AccuracySubTabNav value={subTab} onChange={setSubTab} />
-        <p className="text-sm text-red-600 dark:text-red-400 py-4">
+        <p className="text-sm text-negative py-4">
           Failed to load accuracy data. Run the pipeline and refresh.
         </p>
       </section>
@@ -1150,7 +1140,7 @@ export function AccuracyTab({ teamId = null }: { teamId?: string | null }) {
         {panel}
         <AccuracySubTabNav value={subTab} onChange={setSubTab} />
         <h2 className="text-lg font-semibold">No accuracy data yet</h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-ink-muted">
           Run the pipeline to generate backtest data.
         </p>
       </section>
@@ -1177,7 +1167,7 @@ export function AccuracyTab({ teamId = null }: { teamId?: string | null }) {
       {subTab === 'versions' && (
         data.versions && data.versions.length >= 1
           ? <VersionHistoryTable data={data} />
-          : <p className="text-sm text-zinc-500 dark:text-zinc-400">No version history yet.</p>
+          : <p className="text-sm text-ink-muted">No version history yet.</p>
       )}
     </section>
   )

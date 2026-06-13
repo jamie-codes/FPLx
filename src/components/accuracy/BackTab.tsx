@@ -24,18 +24,19 @@ import { useDecisionHistory } from '@/lib/hooks/useDecisionHistory'
 import { useSeasonAnalytics } from '@/lib/hooks/useSeasonAnalytics'
 import { computeSeasonSummary, computeTransferSeasonSummary } from '@/lib/regret'
 import type { ChipRoiEntry, HitTrackingEntry, RegretEntry, TransferRegretEntry } from '@/lib/types'
+import { SegmentedToggle } from '@/components/ui/SegmentedToggle'
 
 // Locked table-chrome classes — duplicated from AccuracyTab.tsx lines 101–104
-// (PATTERNS.md §BackTab.tsx requires local copies, not re-exports).
-const TH_CLS = 'text-left font-semibold text-zinc-600 dark:text-zinc-400 pb-1 border-b border-zinc-200 dark:border-zinc-700'
-const TR_CLS = 'even:bg-zinc-50 dark:even:bg-zinc-800/50'
+// (PATTERNS.md §BackTab.tsx requires local copies, not re-exports). Tokenized UIX-05.
+const TH_CLS = 'text-left font-semibold text-ink-muted pb-1 border-b border-line'
+const TR_CLS = 'even:bg-surface-1'
 const TD_CLS = 'py-1 px-2'
 const TABLE_CLS = 'w-full text-sm border-collapse'
 
-// Bar fill colours — UI-SPEC §3 Regret Bar Chart.
-const REGRET_RED = '#ef4444'
-const REGRET_GREEN = '#22c55e'
-const REGRET_GREY = 'rgba(161,161,170,0.5)'
+// Bar fill colours — UI-SPEC §3 Regret Bar Chart. Tokenized UIX-05.
+const REGRET_RED = 'var(--color-negative)'
+const REGRET_GREEN = 'var(--color-positive)'
+const REGRET_GREY = 'color-mix(in srgb, var(--color-ink-muted) 50%, transparent)'
 
 // UI-SPEC chip-name display mapping — Wildcard excluded (D-04)
 const CHIP_DISPLAY_NAME: Record<'bboost' | '3xc' | 'freehit', string> = {
@@ -74,19 +75,19 @@ function RegretTooltip({ active, payload }: TooltipContentProps) {
         : `${p.regret}pts`
   const regretCls =
     p.regret === null
-      ? 'text-zinc-500 dark:text-zinc-400'
+      ? 'text-ink-muted'
       : p.regret > 0
-        ? 'text-red-600 dark:text-red-400'
+        ? 'text-negative'
         : p.regret < 0
-          ? 'text-green-600 dark:text-green-400'
-          : 'text-zinc-500 dark:text-zinc-400'
+          ? 'text-positive'
+          : 'text-ink-muted'
   return (
-    <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs shadow-sm">
-      <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-1">GW{p.gw}</p>
-      <p className="text-zinc-700 dark:text-zinc-300">
+    <div className="rounded border border-line bg-surface-1 px-3 py-2 text-xs shadow-sm">
+      <p className="font-semibold text-ink mb-1">GW{p.gw}</p>
+      <p className="text-ink">
         Your captain: {p.userCaptainName ?? 'Log in to see'} ({userPtsLabel})
       </p>
-      <p className="text-zinc-700 dark:text-zinc-300">
+      <p className="text-ink">
         Model pick: {p.modelCeilingName ?? 'No snapshot'} ({modelPtsLabel})
       </p>
       <p className={regretCls}>Regret: {regretLabel}</p>
@@ -111,15 +112,15 @@ function TransferRegretTooltip({ active, payload }: TooltipContentProps) {
     : e.delta > 0 ? `+${e.delta}pts`
     : `${e.delta}pts`
   const deltaCls =
-    e.delta === null ? 'text-zinc-500 dark:text-zinc-400'
-    : e.delta > 0 ? 'text-red-600 dark:text-red-400'
-    : e.delta < 0 ? 'text-green-600 dark:text-green-400'
-    : 'text-zinc-500 dark:text-zinc-400'
+    e.delta === null ? 'text-ink-muted'
+    : e.delta > 0 ? 'text-negative'
+    : e.delta < 0 ? 'text-positive'
+    : 'text-ink-muted'
   return (
-    <div className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs shadow-sm">
-      <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-1">GW{e.gw}</p>
-      <p className="text-zinc-700 dark:text-zinc-300">Engine: {engineLabel}</p>
-      <p className="text-zinc-700 dark:text-zinc-300">You: {userLabel}</p>
+    <div className="rounded border border-line bg-surface-1 px-3 py-2 text-xs shadow-sm">
+      <p className="font-semibold text-ink mb-1">GW{e.gw}</p>
+      <p className="text-ink">Engine: {engineLabel}</p>
+      <p className="text-ink">You: {userLabel}</p>
       <p className={deltaCls}>Delta: {deltaLabel}</p>
     </div>
   )
@@ -127,32 +128,32 @@ function TransferRegretTooltip({ active, payload }: TooltipContentProps) {
 
 function RegretCell({ regret }: { regret: number | null }) {
   if (regret === null) {
-    return <td className={`${TD_CLS} text-right text-zinc-400 dark:text-zinc-500`}>—</td>
+    return <td className={`${TD_CLS} text-right text-ink-muted`}>—</td>
   }
   if (regret > 0) {
     return (
-      <td className={`${TD_CLS} text-right text-red-600 dark:text-red-400`}>
+      <td className={`${TD_CLS} text-right text-negative`}>
         +{regret}pts (model better)
       </td>
     )
   }
   if (regret < 0) {
     return (
-      <td className={`${TD_CLS} text-right text-green-600 dark:text-green-400`}>
+      <td className={`${TD_CLS} text-right text-positive`}>
         {/* The negative sign comes from the value itself */}
         {regret}pts (you beat it)
       </td>
     )
   }
   return (
-    <td className={`${TD_CLS} text-right text-zinc-500 dark:text-zinc-400`}>0pts (tied)</td>
+    <td className={`${TD_CLS} text-right text-ink-muted`}>0pts (tied)</td>
   )
 }
 
 function UserCaptainCell({ entry }: { entry: RegretEntry }) {
   if (entry.userCaptainName === null || entry.userCaptainPts === null) {
     return (
-      <td className={`${TD_CLS} italic text-zinc-400 dark:text-zinc-500`}>Log in to see</td>
+      <td className={`${TD_CLS} italic text-ink-muted`}>Log in to see</td>
     )
   }
   return (
@@ -165,7 +166,7 @@ function UserCaptainCell({ entry }: { entry: RegretEntry }) {
 function ModelPickCell({ entry }: { entry: RegretEntry }) {
   if (!entry.hasSnapshot || entry.modelCeilingName === null || entry.modelCeilingPts === null) {
     return (
-      <td className={`${TD_CLS} italic text-zinc-400 dark:text-zinc-500`}>No model snapshot</td>
+      <td className={`${TD_CLS} italic text-ink-muted`}>No model snapshot</td>
     )
   }
   return (
@@ -179,10 +180,10 @@ function SeasonSummaryHeader({ entries }: { entries: RegretEntry[] }) {
   const summary = useMemo(() => computeSeasonSummary(entries), [entries])
   const totalCls =
     summary.totalRegret > 0
-      ? 'text-red-600 dark:text-red-400'
+      ? 'text-negative'
       : summary.totalRegret < 0
-        ? 'text-green-600 dark:text-green-400'
-        : 'text-zinc-600 dark:text-zinc-400'
+        ? 'text-positive'
+        : 'text-ink-muted'
   const totalLabel =
     summary.totalRegret > 0
       ? `+${summary.totalRegret}pts`
@@ -194,17 +195,17 @@ function SeasonSummaryHeader({ entries }: { entries: RegretEntry[] }) {
       <p className={`text-xl font-semibold ${totalCls}`}>
         Total captain regret: {totalLabel} across {summary.gwsWithData} GWs
       </p>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        <span className="text-red-600 dark:text-red-400">Model better: {summary.modelBetter} GWs</span>
+      <p className="text-sm text-ink-muted">
+        <span className="text-negative">Model better: {summary.modelBetter} GWs</span>
         {' | '}
-        <span className="text-green-600 dark:text-green-400">You won: {summary.userWon} GWs</span>
+        <span className="text-positive">You won: {summary.userWon} GWs</span>
         {' | '}
-        <span className="text-zinc-500 dark:text-zinc-400">Tied: {summary.tied} GWs</span>
+        <span className="text-ink-muted">Tied: {summary.tied} GWs</span>
       </p>
       {summary.captainHitRate !== null && (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm text-ink-muted">
           Captain hit rate:{' '}
-          <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+          <span className="font-semibold text-ink">
             {summary.captainHits}/{summary.gwsWithData} GWs ({Math.round(summary.captainHitRate * 100)}%)
           </span>
         </p>
@@ -221,30 +222,30 @@ function formatSignedPts(value: number): string {
 // Chip ROI: positive delta = chip scored above season average = GOOD (green).
 // Do NOT reuse for transfer regret — transfer delta polarity is opposite.
 function chipDeltaColorClass(delta: number): string {
-  if (delta > 0) return 'text-green-600 dark:text-green-400'
-  if (delta < 0) return 'text-red-600 dark:text-red-400'
-  return 'text-zinc-500 dark:text-zinc-400'
+  if (delta > 0) return 'text-positive'
+  if (delta < 0) return 'text-negative'
+  return 'text-ink-muted'
 }
 
 function ChipRoiSection({ entries }: { entries: ChipRoiEntry[] }) {
   if (entries.length === 0) {
     return (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 py-2">
+      <p className="text-sm text-ink-muted py-2">
         No chips played yet this season.
       </p>
     )
   }
   return (
-    <ul className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-4 py-1">
+    <ul className="rounded border border-line bg-surface-1 px-4 py-1">
       {entries.map((c) => {
         const displayName = CHIP_DISPLAY_NAME[c.chipName]
         const avgInt = Math.round(c.seasonAvgPoints)
         return (
           <li
             key={`${c.chipName}-${c.event}`}
-            className="flex items-baseline justify-between gap-4 py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0"
+            className="flex items-baseline justify-between gap-4 py-2 border-b border-line last:border-0"
           >
-            <span className="text-sm text-zinc-700 dark:text-zinc-300">
+            <span className="text-sm text-ink">
               {displayName} GW{c.event}
             </span>
             <span className={`text-sm font-semibold ${chipDeltaColorClass(c.delta)}`}>
@@ -260,7 +261,7 @@ function ChipRoiSection({ entries }: { entries: ChipRoiEntry[] }) {
 function HitTrackingSection({ entries }: { entries: HitTrackingEntry[] }) {
   if (entries.length === 0) {
     return (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 py-2">
+      <p className="text-sm text-ink-muted py-2">
         No transfer hits taken this season.
       </p>
     )
@@ -280,19 +281,19 @@ function HitTrackingSection({ entries }: { entries: HitTrackingEntry[] }) {
           {entries.map((h, i) => {
             const netColor =
               h.netPts === null
-                ? 'text-zinc-400 dark:text-zinc-500'
+                ? 'text-ink-muted'
                 : h.netPts > 0
-                  ? 'text-green-600 dark:text-green-400'
+                  ? 'text-positive'
                   : h.netPts < 0
-                    ? 'text-red-600 dark:text-red-400'
-                    : 'text-zinc-500 dark:text-zinc-400'
+                    ? 'text-negative'
+                    : 'text-ink-muted'
             const resultText = h.brokeEven === null ? '—' : h.brokeEven ? '✓' : '✗'
             const resultColor =
               h.brokeEven === null
-                ? 'text-zinc-400 dark:text-zinc-500'
+                ? 'text-ink-muted'
                 : h.brokeEven
-                  ? 'text-green-600 dark:text-green-400 font-semibold'
-                  : 'text-red-600 dark:text-red-400 font-semibold'
+                  ? 'text-positive font-semibold'
+                  : 'text-negative font-semibold'
             const resultLabel =
               h.brokeEven === null
                 ? 'broke-even data unavailable'
@@ -324,7 +325,7 @@ function RegretChart({ entries }: { entries: RegretEntry[] }) {
   return (
     <div
       aria-label="Captain regret per gameweek"
-      className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-2 py-3 relative mb-4"
+      className="rounded border border-line bg-surface-1 px-2 py-3 relative mb-4"
     >
       <ResponsiveContainer width="100%" height={288}>
         <BarChart data={entries}>
@@ -344,7 +345,7 @@ function RegretChart({ entries }: { entries: RegretEntry[] }) {
             tickLine={false}
             width={40}
           />
-          <ReferenceLine y={0} stroke="rgba(161,161,170,0.5)" strokeWidth={1} />
+          <ReferenceLine y={0} stroke="color-mix(in srgb, var(--color-ink-muted) 50%, transparent)" strokeWidth={1} />
           <Tooltip content={RegretTooltip} />
           <Bar dataKey="regret" isAnimationActive={false}>
             {entries.map((e, i) => (
@@ -362,24 +363,24 @@ function TransferSeasonSummaryHeader({ entries }: { entries: TransferRegretEntry
   const summary = useMemo(() => computeTransferSeasonSummary(entries), [entries])
   const totalCls =
     summary.totalDelta > 0
-      ? 'text-red-600 dark:text-red-400'
+      ? 'text-negative'
       : summary.totalDelta < 0
-        ? 'text-green-600 dark:text-green-400'
-        : 'text-zinc-600 dark:text-zinc-400'
+        ? 'text-positive'
+        : 'text-ink-muted'
   return (
     <div className="mb-4 space-y-1">
       <p className={`text-xl font-semibold ${totalCls}`}>
         Total transfer regret: {summary.totalDelta}pts across {summary.gwsWithData} GWs
       </p>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-ink-muted">
         Engine better:{' '}
-        <span className="text-red-600 dark:text-red-400">{summary.engineBetter}</span>
+        <span className="text-negative">{summary.engineBetter}</span>
         {' | '}
         You better:{' '}
-        <span className="text-green-600 dark:text-green-400">{summary.userBetter}</span>
+        <span className="text-positive">{summary.userBetter}</span>
         {' | '}
         Tied:{' '}
-        <span className="text-zinc-500 dark:text-zinc-400">{summary.tied}</span>
+        <span className="text-ink-muted">{summary.tied}</span>
       </p>
     </div>
   )
@@ -390,7 +391,7 @@ function TransferRegretChart({ entries }: { entries: TransferRegretEntry[] }) {
   return (
     <div
       aria-label="Transfer regret per gameweek"
-      className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-2 py-3 relative mb-4"
+      className="rounded border border-line bg-surface-1 px-2 py-3 relative mb-4"
     >
       <ResponsiveContainer width="100%" height={288}>
         <BarChart data={entries}>
@@ -410,7 +411,7 @@ function TransferRegretChart({ entries }: { entries: TransferRegretEntry[] }) {
             tickLine={false}
             width={40}
           />
-          <ReferenceLine y={0} stroke="rgba(161,161,170,0.5)" strokeWidth={1} />
+          <ReferenceLine y={0} stroke="color-mix(in srgb, var(--color-ink-muted) 50%, transparent)" strokeWidth={1} />
           <Tooltip content={TransferRegretTooltip} />
           <Bar dataKey="delta" isAnimationActive={false}>
             {entries.map((e, i) => (
@@ -449,7 +450,7 @@ function formatTransferCell(
 function TransferRegretView({ entries }: { entries: TransferRegretEntry[] }) {
   if (entries.length === 0) {
     return (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">
+      <p className="text-sm text-ink-muted text-center py-8">
         No transfer history yet — data accumulates each GW after this version is deployed.
       </p>
     )
@@ -478,7 +479,7 @@ function TransferRegretView({ entries }: { entries: TransferRegretEntry[] }) {
               let engineCell: React.ReactNode
               if (!e.hasSnapshot) {
                 engineCell = (
-                  <td className={`${TD_CLS} italic text-zinc-400 dark:text-zinc-500`}>
+                  <td className={`${TD_CLS} italic text-ink-muted`}>
                     No model snapshot
                   </td>
                 )
@@ -506,7 +507,7 @@ function TransferRegretView({ entries }: { entries: TransferRegretEntry[] }) {
               let deltaCell: React.ReactNode
               if (e.delta === null) {
                 deltaCell = (
-                  <td className={`${TD_CLS} text-right text-zinc-400 dark:text-zinc-500`}>
+                  <td className={`${TD_CLS} text-right text-ink-muted`}>
                     {/* U+2014 EM DASH */}
                     —
                   </td>
@@ -514,7 +515,7 @@ function TransferRegretView({ entries }: { entries: TransferRegretEntry[] }) {
               } else if (e.delta > 0) {
                 deltaCell = (
                   <td className={`${TD_CLS} text-right`}>
-                    <span className="text-red-600 dark:text-red-400">
+                    <span className="text-negative">
                       +{e.delta}pts (engine better)
                     </span>
                   </td>
@@ -522,7 +523,7 @@ function TransferRegretView({ entries }: { entries: TransferRegretEntry[] }) {
               } else if (e.delta < 0) {
                 deltaCell = (
                   <td className={`${TD_CLS} text-right`}>
-                    <span className="text-green-600 dark:text-green-400">
+                    <span className="text-positive">
                       {/* U+2212 MINUS SIGN — UI-SPEC copy contract (NOT ASCII hyphen) */}
                       −{Math.abs(e.delta)}pts (good hold)
                     </span>
@@ -530,7 +531,7 @@ function TransferRegretView({ entries }: { entries: TransferRegretEntry[] }) {
                 )
               } else {
                 deltaCell = (
-                  <td className={`${TD_CLS} text-right text-zinc-500 dark:text-zinc-400`}>
+                  <td className={`${TD_CLS} text-right text-ink-muted`}>
                     0pts (tied)
                   </td>
                 )
@@ -565,7 +566,7 @@ export function BackTab({ teamId }: { teamId: string | null }) {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">
+      <p className="text-sm text-ink-muted text-center py-8">
         Loading captain history…
       </p>
     )
@@ -573,7 +574,7 @@ export function BackTab({ teamId }: { teamId: string | null }) {
 
   if (error) {
     return (
-      <p className="text-sm text-red-600 dark:text-red-400 py-4">
+      <p className="text-sm text-negative py-4">
         Failed to load captain history. Check your connection and refresh.
       </p>
     )
@@ -581,7 +582,7 @@ export function BackTab({ teamId }: { teamId: string | null }) {
 
   if (!data || data.entries.length === 0) {
     return (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">
+      <p className="text-sm text-ink-muted text-center py-8">
         No captain history yet — data accumulates each GW after this version is deployed.
         Log in to see your actual captain picks.
       </p>
@@ -594,19 +595,19 @@ export function BackTab({ teamId }: { teamId: string | null }) {
   let seasonSections: React.ReactNode = null
   if (teamId === null) {
     seasonSections = (
-      <div className="rounded border border-zinc-200 dark:border-zinc-700 p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+      <div className="rounded border border-line p-6 text-center text-sm text-ink-muted">
         Load your squad to see chip ROI and hit tracking.
       </div>
     )
   } else if (seasonLoading) {
     seasonSections = (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">
+      <p className="text-sm text-ink-muted text-center py-4">
         Loading season analytics…
       </p>
     )
   } else if (seasonError) {
     seasonSections = (
-      <p className="text-sm text-red-600 dark:text-red-400 py-2">
+      <p className="text-sm text-negative py-2">
         Failed to load season analytics. Check your connection and refresh.
       </p>
     )
@@ -614,13 +615,13 @@ export function BackTab({ teamId }: { teamId: string | null }) {
     seasonSections = (
       <>
         <section className="mt-6">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
+          <h2 className="text-lg font-semibold text-ink mb-3">
             Chip ROI
           </h2>
           <ChipRoiSection entries={seasonData.chipRoi} />
         </section>
         <section className="mt-6">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
+          <h2 className="text-lg font-semibold text-ink mb-3">
             Hit Break-Even Tracking
           </h2>
           <HitTrackingSection entries={seasonData.hitTracking} />
@@ -632,25 +633,16 @@ export function BackTab({ teamId }: { teamId: string | null }) {
   return (
     <div>
       {/* Phase 113 BACK-02 D-08: pill toggle is first visual element (UI-SPEC §1) */}
-      <div
-        role="group"
-        aria-label="Backtester view"
-        className="flex rounded overflow-hidden border border-zinc-300 dark:border-zinc-600 mb-4"
-      >
-        {(['captain', 'transfer'] as const).map((v) => (
-          <button
-            key={v}
-            onClick={() => setView(v)}
-            aria-pressed={view === v}
-            className={`px-3 py-2 sm:py-1 text-sm font-medium transition-all cursor-pointer active:scale-95 min-h-[44px] ${
-              view === v
-                ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
-                : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
-            }`}
-          >
-            {v === 'captain' ? 'Captain' : 'Transfer'}
-          </button>
-        ))}
+      <div className="mb-4">
+        <SegmentedToggle
+          options={[
+            { id: 'captain', label: 'Captain' },
+            { id: 'transfer', label: 'Transfer' },
+          ]}
+          value={view}
+          onChange={(v) => setView(v as 'captain' | 'transfer')}
+          ariaLabel="Backtester view"
+        />
       </div>
 
       {view === 'captain' && (

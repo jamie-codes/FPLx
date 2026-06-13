@@ -91,8 +91,8 @@ describe('BackTab — Phase 96 BACK-01', () => {
     } as ReturnType<typeof useDecisionHistory>)
     const { container } = render(<BackTab teamId="12345" />)
     expect(container.textContent).toContain('+8pts (model better)')
-    // Tailwind colour class for negative outcome (model beat user)
-    expect(container.innerHTML).toMatch(/text-red-600/)
+    // Tailwind colour class for negative outcome (model beat user) — tokenized UIX-05
+    expect(container.innerHTML).toMatch(/text-negative/)
   })
 
   it('renders "No model snapshot" placeholder when hasSnapshot is false (D-10)', () => {
@@ -240,7 +240,7 @@ describe('BackTab — Phase 100 HIST-01/02/03', () => {
     expect(container.textContent).toContain('74pts')
     expect(container.textContent).toContain('52pt avg')
     expect(container.textContent).toContain('+22pts')
-    expect(container.innerHTML).toMatch(/text-green-600/)
+    expect(container.innerHTML).toMatch(/text-positive/)
   })
 
   it('HIST-03 empty: renders "No transfer hits taken this season." when hitTracking is empty', () => {
@@ -390,7 +390,7 @@ describe('BackTab — Phase 113 TransferRegretView', () => {
     const transferBtn = screen.getByRole('button', { name: 'Transfer' })
     fireEvent.click(transferBtn)
     expect(container.textContent).toContain('+8pts (engine better)')
-    expect(container.innerHTML).toMatch(/text-red-600/)
+    expect(container.innerHTML).toMatch(/text-negative/)
   })
 
   it('isHold=true renders "Held — no transfer" AND delta<0 renders "−2pts (good hold)" with text-green-600', () => {
@@ -412,7 +412,7 @@ describe('BackTab — Phase 113 TransferRegretView', () => {
     expect(container.textContent).toContain('Held — no transfer')
     // U+2212 MINUS SIGN, not ASCII hyphen
     expect(container.textContent).toContain('−2pts (good hold)')
-    expect(container.innerHTML).toMatch(/text-green-600/)
+    expect(container.innerHTML).toMatch(/text-positive/)
   })
 
   it('hasSnapshot=false renders "No model snapshot" in Engine column, "—" in You cell, and "—" in Delta cell', () => {
