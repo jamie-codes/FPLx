@@ -460,7 +460,7 @@ Features already shipped or in-progress are excluded. v1.7 (phases 47-51) covers
 
 ---
 
-### TFR-01: Confirmed Transfers Ledger
+### ~~TFR-01: Confirmed Transfers Ledger~~ ✅ SHIPPED 2026-06-13
 **Problem:** No single accurate view of completed PL transfers. WIN-01's news feed is fast but tiered/speculative; at window close (and through the season) what matters is a confirmed, accurate ledger.
 **Scope:**
 - New "Transfers" view: confirmed deals only, scraped from Wikipedia's per-window list pages (`List_of_English_football_transfers_summer_2026`, winter equivalents — stable URL convention per window/season)
@@ -472,5 +472,6 @@ Features already shipped or in-progress are excluded. v1.7 (phases 47-51) covers
 - Best moment: end of transfer window review; also useful in-season (winter window page)
 **Implementation:** New pipeline step (scrape + parse wikitable -> transfers.json with club mapping), API route + hook per house pattern, one new tool under Research or Planning in navigation.ts. UI on UIX primitives (TableShell/Chip/TeamBadge).
 **Priority:** Nice-to-have / High seasonal value (window close)
+**Status:** SHIPPED 2026-06-13 — pipeline/confirmed_transfers.py (Wikipedia scrape, PL filter, live-DOM-hardened) → /api/transfers → Confirmed Transfers tab (Planning group, by-club + chronological, Rumours cross-link to Summer Window). 22 live deals parsed; 594 pipeline + UI suites green.
 **Estimated effort:** Medium
 **Added:** 2026-06-12 (user request)

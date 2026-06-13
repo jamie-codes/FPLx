@@ -37,7 +37,7 @@ GKP haul capture is 11% (worst position). Save points are entirely unmodelled in
 
 ## Priority 3 — polish / infra
 
-- **TFR-01**: Confirmed Transfers Ledger — Wikipedia per-window transfer lists scraped to a confirmed-only PL ledger (pltransfers.com-style); speculative tab = link WIN-01. Backlog entry added 2026-06-12. High value at window close.
+- **TFR-01** ✅ SHIPPED 2026-06-13: Confirmed Transfers Ledger — Wikipedia scrape → PL filter → Planning-group tab (by-club + chronological, Rumours→Summer Window). Live-DOM-hardened; 594 tests green.
 
 - **VAR-01**: distribution-aware captaincy — keep mean ranking for picks; for captaincy specifically, test P(haul) from the MC sim against archived DGWs
 - **Lab hygiene**: BT-02's `DEFAULT_PARAMS` intentionally lags live defaults (it's the experimental control); document per-experiment which param set is "current live"
