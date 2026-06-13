@@ -1252,3 +1252,45 @@ export interface PushSubscriptionRecord {
     fired_2h: boolean
   }
 }
+
+// ============================================================================
+// TFR-01: Confirmed Transfers Ledger types
+// ============================================================================
+
+export interface TransferDeal {
+  date: string
+  player: string
+  fee: string
+  kind: 'permanent' | 'loan'
+  other_club?: string
+}
+
+export interface TransferGroup {
+  team_id: number
+  team_name: string
+  team_short_name: string
+  ins: TransferDeal[]
+  outs: TransferDeal[]
+}
+
+export interface ChronoTransfer {
+  date: string
+  player: string
+  fee: string
+  kind: 'permanent' | 'loan'
+  from_club: string
+  to_club: string
+  from_short: string | null
+  to_short: string | null
+  is_pl_to_pl: boolean
+}
+
+export interface ConfirmedTransfers {
+  enabled: boolean
+  scraped_at: string
+  window: string
+  source_url: string
+  groups: TransferGroup[]
+  chronological: ChronoTransfer[]
+  counts: { deals: number; loans: number }
+}
