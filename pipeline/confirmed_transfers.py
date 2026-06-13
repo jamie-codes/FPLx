@@ -231,7 +231,7 @@ def compute_confirmed_transfers(bootstrap: dict) -> None:
         return
     now = datetime.now(timezone.utc)
     url = _current_window_url(now.month, now.year)
-    window = url.rsplit('_', 1)[-1] if 'summer' in url else url.split('transfers_')[-1]
+    window = url.split('transfers_')[-1]  # e.g. 'summer_2026' / 'winter_2026-27'
     try:
         html = _fetch_html(url)
     except Exception as exc:

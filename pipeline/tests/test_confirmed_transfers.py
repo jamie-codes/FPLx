@@ -79,3 +79,58 @@ def test_gate_off_returns_early(monkeypatch):
     monkeypatch.delenv('CONFIRMED_TRANSFERS_ENABLED', raising=False)
     ct.compute_confirmed_transfers(BOOTSTRAP)
     assert 'fetched' not in called
+
+
+# ── live-DOM robustness (locks in the 3 fixes found during the smoke) ──────── #
+
+def test_date_continuation_rows():
+    """Wikipedia omits the date cell on same-date deals (4 td cells). The parser
+    carries last_date forward instead of dropping the row."""
+    html = """
+    <table class="wikitable">
+    <tr><th>Date</th><th>Player</th><th>Moving from</th><th>Moving to</th><th>Fee</th></tr>
+    <tr><td>1 July 2026</td><td><a>P1</a></td><td><a>Arsenal</a></td><td><a>Spurs</a></td><td>£10m</td></tr>
+    <tr><td><a>P2</a></td><td><a>Spurs</a></td><td><a>Arsenal</a></td><td>£5m</td></tr>
+    </table>
+    """
+    rows = ct._parse_transfers(html, ct._build_team_lookup(BOOTSTRAP))
+    assert len(rows) == 2
+    assert rows[1]['player'] == 'P2' and rows[1]['date'] == '1 July 2026'  # carried forward
+
+
+def test_citation_superscripts_stripped():
+    """Fee/club cells carry [n] citation markers via <sup>; _clean_text removes them."""
+    html = """
+    <table class="wikitable">
+    <tr><th>Date</th><th>Player</th><th>Moving from</th><th>Moving to</th><th>Fee</th></tr>
+    <tr><td>2 July 2026</td><td><a>P3</a></td><td><a>Wolves</a></td><td><a>Arsenal</a></td><td>Undisclosed<sup class="reference">[12]</sup></td></tr>
+    </table>
+    """
+    rows = ct._parse_transfers(html, ct._build_team_lookup(BOOTSTRAP))
+    assert rows[0]['fee'] == 'Undisclosed'  # no [12]
+
+
+def test_alt_loan_schema_no_fee_column():
+    """Live loans table is Start date | End date | Name | From | To (no Fee).
+    Detected by header and tagged kind='loan'."""
+    html = """
+    <h3>Loans</h3>
+    <table class="wikitable">
+    <tr><th>Start date</th><th>End date</th><th>Name</th><th>Moving from</th><th>Moving to</th></tr>
+    <tr><td>3 July 2026</td><td>30 June 2027</td><td><a>P4</a></td><td><a>Spurs</a></td><td><a>Arsenal</a></td></tr>
+    </table>
+    """
+    rows = ct._parse_transfers(html, ct._build_team_lookup(BOOTSTRAP))
+    assert len(rows) == 1
+    assert rows[0]['kind'] == 'loan' and rows[0]['player'] == 'P4'
+
+
+def test_window_value_keeps_season_prefix(monkeypatch):
+    """Regression: window must be 'summer_2026', not '2026' (UI renders it)."""
+    saved = {}
+    monkeypatch.setattr(ct, 'save', lambda k, v: saved.setdefault(k, v))
+    monkeypatch.setattr(ct, '_fetch_html', lambda url: FIXTURE_HTML)
+    monkeypatch.setattr(ct, '_current_window_url', lambda m, y: ct.WIKI_BASE + 'summer_2026')
+    monkeypatch.setenv('CONFIRMED_TRANSFERS_ENABLED', 'true')
+    ct.compute_confirmed_transfers(BOOTSTRAP)
+    assert saved['transfers_confirmed.json']['window'] == 'summer_2026'
