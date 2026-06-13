@@ -1237,15 +1237,36 @@ def merge_players(
                         xa_per90 = round((xa_val / us_minutes) * 90, 4)
                     # If minutes == 0, leave xg_per90/xa_per90 as None (no data to derive per-90)
 
-        # DQ-01: FPL goals/assists proxy when Understat data missing
+        # DQ-01: layered fallback when Understat data is missing for this player.
+        # Layer 1 — FPL expected_goals_per_90 / expected_assists_per_90 (bootstrap element fields,
+        #            strings → float).  Correlation: xG 0.85, xA 0.70 vs Understat.
+        # Layer 2 — goals/assists per-90 proxy (last resort; no chance quality signal).
+        #            Correlation: xG 0.72, xA 0.50 vs Understat.
         if xg_per90 is None:
-            fpl_minutes = element.get('minutes', 0)
-            if fpl_minutes > 0:
-                xg_per90 = round((element.get('goals_scored', 0) / fpl_minutes) * 90, 4)
-                xa_per90 = round((element.get('assists', 0) / fpl_minutes) * 90, 4)
+            fpl_xg_per90_raw = element.get('expected_goals_per_90')
+            fpl_xa_per90_raw = element.get('expected_assists_per_90')
+            try:
+                fpl_xg_per90 = float(fpl_xg_per90_raw) if fpl_xg_per90_raw not in (None, '') else 0.0
+            except (TypeError, ValueError):
+                fpl_xg_per90 = 0.0
+            try:
+                fpl_xa_per90 = float(fpl_xa_per90_raw) if fpl_xa_per90_raw not in (None, '') else 0.0
+            except (TypeError, ValueError):
+                fpl_xa_per90 = 0.0
+
+            if fpl_xg_per90 > 0 or fpl_xa_per90 > 0:
+                # Layer 1: use FPL's own per-90 xG/xA (better proxy than goals ratio)
+                xg_per90 = round(fpl_xg_per90, 4)
+                xa_per90 = round(fpl_xa_per90, 4)
             else:
-                xg_per90 = 0.0
-                xa_per90 = 0.0
+                # Layer 2: goals/assists per-90 proxy (last resort)
+                fpl_minutes = element.get('minutes', 0)
+                if fpl_minutes > 0:
+                    xg_per90 = round((element.get('goals_scored', 0) / fpl_minutes) * 90, 4)
+                    xa_per90 = round((element.get('assists', 0) / fpl_minutes) * 90, 4)
+                else:
+                    xg_per90 = 0.0
+                    xa_per90 = 0.0
 
         # VG-01: Historical points from element-summary
         pts_last3gw = 0

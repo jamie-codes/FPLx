@@ -2,7 +2,6 @@
 
 import json
 import os
-import re
 import requests
 from datetime import datetime, timezone, timedelta
 
@@ -15,7 +14,7 @@ HEADERS = {
         'AppleWebKit/537.36 (KHTML, like Gecko) '
         'Chrome/124.0.0.0 Safari/537.36'
     ),
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept': 'application/json, text/javascript, */*; q=0.01',
     'Accept-Language': 'en-GB,en;q=0.5',
     'Connection': 'keep-alive',
 }
@@ -61,21 +60,6 @@ def _write_cache(players: dict) -> None:
         json.dump(payload, f, ensure_ascii=False)
 
 
-def _parse_players(html: str) -> dict:
-    """Extract playersData JSON from Understat HTML."""
-    # Try single-quote format first, then double-quote
-    for pattern in [
-        r"var playersData\s*=\s*JSON\.parse\('(.+?)'\)",
-        r'var playersData\s*=\s*JSON\.parse\("(.+?)"\)',
-    ]:
-        match = re.search(pattern, html)
-        if match:
-            encoded = match.group(1)
-            decoded = encoded.encode('raw_unicode_escape').decode('unicode_escape')
-            return json.loads(decoded)
-    return {}
-
-
 def get_understat_players() -> dict:
     """Fetch Understat xG/xA season stats for all EPL players.
 
@@ -83,30 +67,32 @@ def get_understat_players() -> dict:
         player, team, xG, xA, npxG, npxA, minutes
 
     Returns an empty dict (with a warning) if Understat is unreachable —
-    the pipeline will fall back to FPL goals/assists proxy for xG/xA.
+    the pipeline will fall back to the layered DQ-01 fallback (FPL xG/xA per-90,
+    then goals/assists proxy) for xG/xA.
     """
     if _is_cache_fresh():
         print("Understat: using cached data (< 24h old)")
         return _load_cache()
 
     season_year = _current_season_year()
-    url = f'https://understat.com/league/EPL/{season_year}'
-    print(f"Understat: fetching from {url} ...")
+    print(f"Understat: fetching via JSON endpoint (season {season_year}) ...")
 
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=30)
+        resp = requests.post(
+            'https://understat.com/main/getPlayersStats/',
+            data={'league': 'EPL', 'season': str(season_year)},
+            headers={**HEADERS, 'X-Requested-With': 'XMLHttpRequest',
+                     'Referer': f'https://understat.com/league/EPL/{season_year}'},
+            timeout=30,
+        )
         resp.raise_for_status()
+        raw_players = resp.json().get('players', [])
     except Exception as exc:
-        print(f"Understat: HTTP error — {exc}. Falling back to FPL proxy data.")
+        print(f"Understat: HTTP error — {exc}. Falling back to layered DQ-01 data.")
         return {}
 
-    raw_players = _parse_players(resp.text)
-
     if not raw_players:
-        # Log first 300 chars to help diagnose (bot protection page, changed format, etc.)
-        preview = resp.text[:300].replace('\n', ' ')
-        print(f"Understat: playersData not found in HTML. Preview: {preview}")
-        print("Understat: falling back to FPL proxy data.")
+        print("Understat: empty players list returned. Falling back to layered DQ-01 data.")
         return {}
 
     players = {}
