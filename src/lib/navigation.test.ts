@@ -14,9 +14,9 @@ const LEGACY_27 = [
 ] as const
 
 describe('navigation.ts completeness (UIX-01)', () => {
-  it('has exactly 28 tool ids (27 legacy + home) with no duplicates', () => {
-    expect(ALL_TOOL_IDS).toHaveLength(28)
-    expect(new Set(ALL_TOOL_IDS).size).toBe(28)
+  it('has exactly 29 tool ids (27 legacy + home + transfers-confirmed) with no duplicates', () => {
+    expect(ALL_TOOL_IDS).toHaveLength(29)
+    expect(new Set(ALL_TOOL_IDS).size).toBe(29)
   })
 
   it('contains every one of the 27 legacy SubTab ids exactly once', () => {

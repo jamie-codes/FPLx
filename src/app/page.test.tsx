@@ -91,6 +91,9 @@ vi.mock('@/components/perfect-gw/PerfectGWTab', () => ({
 vi.mock('@/components/price-reset/PriceResetTab', () => ({
   PriceResetTab: () => <div data-testid="price-reset-tab" />,
 }))
+vi.mock('@/components/transfers-confirmed/ConfirmedTransfersTab', () => ({
+  ConfirmedTransfersTab: (_props: { selectTool: (t: string) => void }) => <div data-testid="confirmed-transfers-tab" />,
+}))
 // UIX-02: HomeTab orchestrates TanStack Query hooks + engines — mocked here like
 // every other tab (page.test.tsx renders without a QueryClientProvider). The
 // mock preserves the selectTool deep-link contract for the CTA test.
@@ -165,6 +168,7 @@ describe('UIX-01: shell state in page.tsx', () => {
       'route-tree': 'route-tree-tab',
       'wildcard': 'wildcard-builder-tab',
       'window': 'summer-window-tab',
+      'transfers-confirmed': 'confirmed-transfers-tab',
       'next-season': 'next-season-planner-tab',
       'price-reset': 'price-reset-tab',
       'price-changes': 'price-change-panel',
@@ -310,10 +314,10 @@ describe('UIX-01: shell state in page.tsx', () => {
     }
   })
 
-  it('sidebar exposes all 6 groups and 28 tools (navigation.ts is the source of truth)', () => {
+  it('sidebar exposes all 6 groups and 29 tools (navigation.ts is the source of truth)', () => {
     const { container } = render(<Home />)
     const sidebar = container.querySelector('nav[aria-label="Primary navigation"]')!
-    expect(sidebar.querySelectorAll('a')).toHaveLength(28)
+    expect(sidebar.querySelectorAll('a')).toHaveLength(29)
     for (const group of GROUPS) {
       expect(sidebar.textContent).toContain(group.label)
     }

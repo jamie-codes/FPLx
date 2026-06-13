@@ -13,7 +13,7 @@ export type ToolId =
   | 'picks' | 'decision' | 'lineup' | 'live' | 'review'
   | 'transfers' | 'optimiser' | 'watchlist' | 'rank-sim' | 'rivals'
   | 'gems' | 'value-gems' | 'insights' | 'defcon' | 'set-pieces' | 'club-form' | 'perfect-gw'
-  | 'planner' | 'manual-plan' | 'route-tree' | 'wildcard' | 'window' | 'next-season' | 'price-reset' | 'price-changes'
+  | 'planner' | 'manual-plan' | 'route-tree' | 'wildcard' | 'window' | 'transfers-confirmed' | 'next-season' | 'price-reset' | 'price-changes'
   | 'accuracy' | 'season'
 
 export interface Tool { id: ToolId; label: string; mobileLabel: string }
@@ -50,9 +50,10 @@ export const GROUPS: Group[] = [
     { id: 'planner',       label: 'Planner',       mobileLabel: 'Planner' },
     { id: 'manual-plan',   label: 'Manual Plan',   mobileLabel: 'Manual' },
     { id: 'route-tree',    label: 'Route Tree',    mobileLabel: 'Routes' },
-    { id: 'wildcard',      label: 'Wildcard',      mobileLabel: 'Wildcard' },
-    { id: 'window',        label: 'Summer Window', mobileLabel: 'Window' },
-    { id: 'next-season',   label: 'Next Season',   mobileLabel: 'Pre-Season' },
+    { id: 'wildcard',             label: 'Wildcard',             mobileLabel: 'Wildcard'   },
+    { id: 'window',              label: 'Summer Window',        mobileLabel: 'Window'     },
+    { id: 'transfers-confirmed', label: 'Confirmed Transfers',  mobileLabel: 'Transfers'  },
+    { id: 'next-season',         label: 'Next Season',          mobileLabel: 'Pre-Season' },
     { id: 'price-reset',   label: 'Price Reset',   mobileLabel: 'Resets' },
     { id: 'price-changes', label: 'Price Changes', mobileLabel: 'Prices' },
   ]},

@@ -26,6 +26,7 @@ import { InsightsTab } from '@/components/insights/InsightsTab'
 import { AccuracyTab } from '@/components/accuracy/AccuracyTab'
 import { SeasonReviewTab } from '@/components/season-review/SeasonReviewTab'
 import { SummerWindowTab } from '@/components/news/SummerWindowTab'
+import { ConfirmedTransfersTab } from '@/components/transfers-confirmed/ConfirmedTransfersTab'
 import { PriceChangePanel } from '@/components/price-changes/PriceChangePanel'
 import { PerfectGWTab } from '@/components/perfect-gw/PerfectGWTab'
 import { PriceResetTab } from '@/components/price-reset/PriceResetTab'
@@ -272,6 +273,9 @@ export default function Home() {
           {activeTool === 'accuracy' && <AccuracyTab teamId={submittedId} />}
           {activeTool === 'season' && <SeasonReviewTab teamId={submittedId} />}
           {activeTool === 'window' && <SummerWindowTab />}
+          {activeTool === 'transfers-confirmed' && (
+            <ConfirmedTransfersTab selectTool={selectTool} />
+          )}
           {activeTool === 'price-reset' && <PriceResetTab />}
           {activeTool === 'price-changes' && <PriceChangePanel />}
           {activeTool === 'perfect-gw' && <PerfectGWTab />}
