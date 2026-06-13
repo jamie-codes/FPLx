@@ -16,23 +16,23 @@ export function MCDistributionBar({ blankProb, haulProb, p10Pts, p90Pts }: MCDis
     <div className="flex flex-col gap-1 w-full">
       {/* Bar row */}
       <div className="flex items-center gap-1">
-        <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400 tabular-nums w-6 text-right">
+        <span className="text-xs font-mono text-ink-muted tabular-nums w-6 text-right">
           {p10Pts.toFixed(1)}
         </span>
         <div
-          className="flex-1 h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-600 relative"
+          className="flex-1 h-1.5 rounded-full bg-surface-2 relative"
           role="img"
           aria-label={`MC range: ${p10Pts.toFixed(1)} to ${p90Pts.toFixed(1)} pts`}
         >
           <div className="absolute inset-y-0 left-0 w-full rounded-full bg-teal-500 dark:bg-teal-400" />
         </div>
-        <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400 tabular-nums w-6 text-left">
+        <span className="text-xs font-mono text-ink-muted tabular-nums w-6 text-left">
           {p90Pts.toFixed(1)}
         </span>
       </div>
       {/* Haul% row — conditional, same threshold (>= 0.40) and amber token as columns.tsx line 150 */}
       {haulProb >= 0.40 && (
-        <div className="text-xs font-mono text-amber-600 dark:text-amber-400">
+        <div className="text-xs font-mono text-warning">
           Haul {(haulProb * 100).toFixed(0)}%
         </div>
       )}

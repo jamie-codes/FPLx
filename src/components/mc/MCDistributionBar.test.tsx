@@ -32,13 +32,12 @@ describe('MCDistributionBar — Phase 102 MC-01', () => {
     expect(fill).not.toBeNull()
   })
 
-  it('renders amber "Haul 42%" row when haulProb=0.42', () => {
+  it('renders warning "Haul 42%" row when haulProb=0.42', () => {
     render(<MCDistributionBar blankProb={0.1} haulProb={0.42} p10Pts={3.2} p90Pts={11.8} />)
     const haul = screen.getByText(/Haul 42%/)
     expect(haul).toBeTruthy()
     const cls = haul.className
-    expect(cls).toContain('text-amber-600')
-    expect(cls).toContain('dark:text-amber-400')
+    expect(cls).toContain('text-warning')
   })
 
   it('renders amber "Haul 40%" row at boundary haulProb=0.40 (inclusive >=)', () => {

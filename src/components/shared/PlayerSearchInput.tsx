@@ -59,14 +59,14 @@ export function PlayerSearchInput(props: PlayerSearchInputProps) {
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         aria-label={ariaLabel}
-        className={`w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-400 ${inputClassName ?? 'text-sm'}`}
+        className={`w-full px-3 py-2 border border-line rounded-md bg-surface-1 text-ink min-h-[44px] ${inputClassName ?? 'text-sm'}`}
         style={{ fontSize: '16px' }}
       />
       {open && suggestions.length > 0 && (
         // onMouseDown preventDefault prevents the input from losing focus when clicking
         // within the dropdown, eliminating the blur/click race without an arbitrary setTimeout.
         <div
-          className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900 shadow-sm"
+          className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto divide-y divide-line border border-line rounded-md bg-surface-1 shadow-sm"
           onMouseDown={e => e.preventDefault()}
         >
           {suggestions.map(p => (
@@ -74,16 +74,16 @@ export function PlayerSearchInput(props: PlayerSearchInputProps) {
               type="button"
               key={p.id}
               onClick={() => { onSelect(p); setQuery(p.web_name); setOpen(false) }}
-              className="w-full text-left px-3 py-2 flex items-center justify-between gap-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+              className="w-full text-left px-3 py-2 flex items-center justify-between gap-2 hover:bg-surface-2 cursor-pointer transition-colors"
             >
-              <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate">{p.web_name}</span>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400 shrink-0">{p.team_short_name}</span>
+              <span className="text-sm text-ink truncate">{p.web_name}</span>
+              <span className="text-xs text-ink-muted shrink-0">{p.team_short_name}</span>
             </button>
           ))}
         </div>
       )}
       {showNoResults && (
-        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 text-xs text-ink-muted">
           No players found matching &lsquo;{debouncedQuery}&rsquo;
         </p>
       )}

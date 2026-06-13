@@ -9,14 +9,14 @@ import { formatRelativeTime } from '@/lib/formatRelativeTime'
 export function LastUpdatedDisplay({ relativeTime, stale }: { relativeTime: string; stale: boolean }) {
   if (!stale) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs bg-surface-elevated text-muted">
+      <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs bg-surface-2 text-ink-muted">
         <span aria-hidden="true">●</span>
         Updated {relativeTime}
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400">
+    <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs bg-warning-soft text-warning">
       <span aria-hidden="true">⚠</span>
       Updated {relativeTime}
     </span>

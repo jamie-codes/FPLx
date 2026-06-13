@@ -23,21 +23,20 @@ describe('LastUpdatedDisplay', () => {
     expect(screen.getByText('Updated 3 hours ago', { exact: false })).toBeDefined()
   })
 
-  it('uses surface-elevated token when not stale', () => {
+  it('uses surface-2 token when not stale', () => {
     const { container } = render(<LastUpdatedDisplay relativeTime="3 hours ago" stale={false} />)
     const span = getDisplaySpan(container)
-    expect(span.className).toContain('bg-surface-elevated')
-    expect(span.className).toContain('text-muted')
-    expect(span.className).not.toContain('bg-amber-50')
+    expect(span.className).toContain('bg-surface-2')
+    expect(span.className).toContain('text-ink-muted')
+    expect(span.className).not.toContain('bg-warning-soft')
   })
 
-  it('uses amber colour when stale', () => {
+  it('uses warning token when stale', () => {
     const { container } = render(<LastUpdatedDisplay relativeTime="3 hours ago" stale={true} />)
     const span = getDisplaySpan(container)
-    expect(span.className).toContain('text-amber-600')
-    expect(span.className).toContain('dark:text-amber-400')
-    expect(span.className).toContain('bg-amber-50')
-    expect(span.className).not.toContain('bg-surface-elevated')
+    expect(span.className).toContain('text-warning')
+    expect(span.className).toContain('bg-warning-soft')
+    expect(span.className).not.toContain('bg-surface-2')
   })
 
   it('applies base pill classes when not stale', () => {
@@ -126,12 +125,12 @@ describe('LastUpdated (connected)', () => {
     expect(clearSpy).toHaveBeenCalled()
   })
 
-  it('renders amber when stale flag is true', () => {
+  it('renders warning token when stale flag is true', () => {
     mockedUseLastUpdated.mockReturnValue({
       data: { last_updated: isoMinutesBefore(60), stale: true },
     } as any)
     const { container } = render(<LastUpdated />)
     const span = getDisplaySpan(container)
-    expect(span.className).toContain('text-amber-600')
+    expect(span.className).toContain('text-warning')
   })
 })

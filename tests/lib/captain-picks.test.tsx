@@ -288,7 +288,7 @@ describe('Phase 31: CaptainPicksPanel component', () => {
     const { container } = render(<CaptainPicksPanel />)
     expect(container.textContent).toContain('Failed to load captain picks. Check the pipeline output and refresh.')
     const p = container.querySelector('p')
-    expect(p?.className).toContain('text-red-600')
+    expect(p?.className).toContain('text-negative')
   })
 })
 

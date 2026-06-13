@@ -20,7 +20,7 @@ export function ThemeToggle() {
     <button
       onClick={toggle}
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      className="p-2 rounded text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+      className="p-2 rounded text-ink-muted hover:text-ink"
     >
       {isDark ? '\u2600\uFE0F' : '\uD83C\uDF19'}
     </button>

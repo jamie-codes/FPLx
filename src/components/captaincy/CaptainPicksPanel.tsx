@@ -38,7 +38,7 @@ function EOModeToggle({ value, onChange }: { value: EOMode; onChange: (v: EOMode
       <div
         role="group"
         aria-label="Captain ranking mode"
-        className="inline-flex flex-wrap rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700"
+        className="inline-flex flex-wrap rounded-md overflow-hidden border border-line"
       >
         {EO_MODES.map(opt => (
           <button
@@ -49,8 +49,8 @@ function EOModeToggle({ value, onChange }: { value: EOMode; onChange: (v: EOMode
             className={
               `min-h-[44px] px-3 text-xs font-semibold transition-colors ` +
               (value === opt.value
-                ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
-                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700')
+                ? 'bg-ink text-surface-1'
+                : 'bg-surface-2 text-ink-muted hover:bg-surface-2/80')
             }
             data-testid={opt.testId}
           >
@@ -65,7 +65,7 @@ function EOModeToggle({ value, onChange }: { value: EOMode; onChange: (v: EOMode
 function DangerousToFadeBadge() {
   return (
     <span
-      className="inline-block text-xs font-normal text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900 rounded px-2 py-1"
+      className="inline-block text-xs font-normal text-warning bg-warning-soft rounded px-2 py-1"
       title={DANGEROUS_TOOLTIP}
     >
       Dangerous to fade
@@ -73,12 +73,12 @@ function DangerousToFadeBadge() {
   )
 }
 
-// Phase 62 MC-04: McLabel badge — same amber token as DangerousToFadeBadge (D-17).
+// Phase 62 MC-04: McLabel badge — same warning token as DangerousToFadeBadge (D-17).
 function McLabel({ label, value }: { label: string; value: string }) {
   return (
     <span
       data-testid="mc-label-badge"
-      className="inline-block text-xs font-normal text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900 rounded px-2 py-1"
+      className="inline-block text-xs font-normal text-warning bg-warning-soft rounded px-2 py-1"
     >
       {label} — {value}
     </span>
@@ -121,13 +121,13 @@ function CandidateRow({
   return (
     <div
       data-testid="eo-candidate-row"
-      className="rounded border border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3"
+      className="rounded border border-line bg-surface-1 px-3 py-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3"
     >
       <div className="flex items-center gap-1.5 sm:flex-1 flex-wrap">
-        <span className="text-sm text-zinc-400 w-4 shrink-0">{rank}</span>
-        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{candidate.web_name}</span>
+        <span className="text-sm text-ink-muted w-4 shrink-0">{rank}</span>
+        <span className="text-sm font-medium text-ink">{candidate.web_name}</span>
         <span
-          className="text-sm text-zinc-500 dark:text-zinc-400"
+          className="text-sm text-ink-muted"
           title={EO_TOOLTIP}
           data-testid="eo-percent"
         >
@@ -144,27 +144,27 @@ function CandidateRow({
           chance_of_playing_next_round={candidate.chance_of_playing_next_round}
         />
       </div>
-      <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+      <div className="flex items-center gap-2 text-xs text-ink-muted">
         <span className="text-xs">{candidate.team_short_name}</span>
         {nextGwFixtures.length > 0 && (
-          <span className="text-xs text-zinc-400 dark:text-zinc-500 whitespace-nowrap">
+          <span className="text-xs text-ink-muted whitespace-nowrap">
             {nextGwFixtures.length >= 2 && (
-              <span className="font-semibold text-violet-700 dark:text-violet-400 mr-1">DGW</span>
+              <span className="font-semibold text-violet mr-1">DGW</span>
             )}
             {nextGwFixtures.map((f, i) => (
               <span key={i}>
-                {i > 0 && <span className="mx-0.5 text-zinc-400">/</span>}
+                {i > 0 && <span className="mx-0.5 text-ink-muted">/</span>}
                 {f.is_home ? 'vs' : '@'} {f.opponent_team}
               </span>
             ))}
           </span>
         )}
       </div>
-      <span className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
+      <span className="text-sm text-ink whitespace-nowrap">
         {((candidate.xPts_1gw ?? 0) * 2).toFixed(1)} pts (C)
       </span>
       {candidate.p10_pts !== undefined && candidate.p90_pts !== undefined && (
-        <span className="text-xs text-zinc-400 dark:text-zinc-500 tabular-nums">
+        <span className="text-xs text-ink-muted tabular-nums">
           {' · '}{candidate.p10_pts.toFixed(1)}{'–'}{candidate.p90_pts.toFixed(1)}
         </span>
       )}
@@ -212,7 +212,7 @@ export function CaptainPicksPanel({ submittedId }: CaptainPicksPanelProps = {}) 
 
   if (isLoading) {
     return (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">
+      <p className="text-sm text-ink-muted text-center py-8">
         Loading captain picks…
       </p>
     )
@@ -220,7 +220,7 @@ export function CaptainPicksPanel({ submittedId }: CaptainPicksPanelProps = {}) 
 
   if (error) {
     return (
-      <p className="text-sm text-red-600 dark:text-red-400 py-4">
+      <p className="text-sm text-negative py-4">
         Failed to load captain picks. Check the pipeline output and refresh.
       </p>
     )
@@ -232,7 +232,7 @@ export function CaptainPicksPanel({ submittedId }: CaptainPicksPanelProps = {}) 
     <section className="mt-6 space-y-3">
       <div className="space-y-1">
         <h2 className="text-lg font-semibold">Captain Picks — GW {gameweek ?? '—'}</h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-ink-muted">
           Re-rank candidates by mode. Differential filters to at or above median xPts only.
         </p>
       </div>
@@ -240,16 +240,16 @@ export function CaptainPicksPanel({ submittedId }: CaptainPicksPanelProps = {}) 
       {tcCandidate && (
         <div
           data-testid="tc-callout"
-          className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2"
+          className="rounded border border-line bg-surface-1 px-3 py-2"
         >
-          <p className="text-sm text-zinc-700 dark:text-zinc-300">
+          <p className="text-sm text-ink">
             <span className="font-semibold">TC:</span>{' '}
             {tcCandidate.web_name} — {Math.round((tcCandidate.haul_prob ?? 0) * 100)}% P(haul)
           </p>
         </div>
       )}
       {eoCandidates.length === 0 ? (
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 py-4">
+        <p className="text-sm text-ink-muted py-4">
           {mode === 'differential_aggressive'
             ? 'No differential captains pass the median xPts floor this GW.'
             : `No captain candidates available for GW ${gameweek ?? '—'}.`}

@@ -72,63 +72,63 @@ describe('DeadlineBanner — DL-02 urgency states', () => {
     vi.unstubAllGlobals()
   })
 
-  it('B1: msRemaining >= 24h → neutral zinc classes, no sticky', () => {
+  it('B1: msRemaining >= 24h → neutral surface-2 classes, no sticky', () => {
     const ms = 25 * 60 * 60_000 // 25h
     mockedUseNextDeadline.mockReturnValue({
       data: { id: 32, deadline_time: isoMsFromNow(ms) },
     } as any)
     const { container } = render(<DeadlineBanner />)
     const root = getRoot(container)
-    expect(root.className).toContain('bg-zinc-')
-    expect(root.className).not.toContain('bg-amber-50')
-    expect(root.className).not.toContain('bg-red-50')
+    expect(root.className).toContain('bg-surface-2')
+    expect(root.className).not.toContain('bg-warning-soft')
+    expect(root.className).not.toContain('bg-negative-soft')
     expect(root.className).not.toContain('sticky')
   })
 
-  it('B2: msRemaining between 2h and 24h → amber classes, no sticky', () => {
+  it('B2: msRemaining between 2h and 24h → warning token classes, no sticky', () => {
     const ms = 12 * 60 * 60_000 // 12h
     mockedUseNextDeadline.mockReturnValue({
       data: { id: 32, deadline_time: isoMsFromNow(ms) },
     } as any)
     const { container } = render(<DeadlineBanner />)
     const root = getRoot(container)
-    expect(root.className).toContain('bg-amber-50')
-    expect(root.className).toContain('text-amber-700')
+    expect(root.className).toContain('bg-warning-soft')
+    expect(root.className).toContain('text-warning')
     expect(root.className).not.toContain('sticky top-0')
   })
 
-  it('B3: msRemaining < 2h → red classes + sticky top-0 z-50', () => {
+  it('B3: msRemaining < 2h → negative token classes + sticky top-0 z-50', () => {
     const ms = 1 * 60 * 60_000 // 1h
     mockedUseNextDeadline.mockReturnValue({
       data: { id: 32, deadline_time: isoMsFromNow(ms) },
     } as any)
     const { container } = render(<DeadlineBanner />)
     const root = getRoot(container)
-    expect(root.className).toContain('bg-red-50')
-    expect(root.className).toContain('text-red-700')
+    expect(root.className).toContain('bg-negative-soft')
+    expect(root.className).toContain('text-negative')
     expect(root.className).toContain('sticky')
     expect(root.className).toContain('top-0')
     expect(root.className).toContain('z-50')
   })
 
-  it('B4: auto-escalates from amber to red after 60s tick (D-06)', async () => {
-    // Start at 2h 30m → amber
+  it('B4: auto-escalates from warning to negative after 60s tick (D-06)', async () => {
+    // Start at 2h 30m → warning
     const ms = (2 * 60 + 30) * 60_000
     mockedUseNextDeadline.mockReturnValue({
       data: { id: 32, deadline_time: isoMsFromNow(ms) },
     } as any)
     const { container } = render(<DeadlineBanner />)
     const root = getRoot(container)
-    expect(root.className).toContain('bg-amber-50')
+    expect(root.className).toContain('bg-warning-soft')
 
-    // Advance system time by 1 hour — now 1h 30m remaining → red
+    // Advance system time by 1 hour — now 1h 30m remaining → negative
     act(() => {
       vi.setSystemTime(NOW + 60 * 60_000)
       vi.advanceTimersByTime(60_000)
     })
 
     const rootAfter = getRoot(container)
-    expect(rootAfter.className).toContain('bg-red-50')
+    expect(rootAfter.className).toContain('bg-negative-soft')
   })
 })
 

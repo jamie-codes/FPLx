@@ -15,9 +15,9 @@ const TWO_HOURS_MS = 2 * ONE_HOUR_MS            // 7_200_000
 const TICK_MS = 60_000
 
 const URGENCY_CLASSES: Record<UrgencyState, string> = {
-  neutral: 'bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700',
-  amber:   'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700',
-  red:     'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700',
+  neutral: 'bg-surface-2 text-ink-muted border-line',
+  amber:   'bg-warning-soft text-warning border-warning/40',
+  red:     'bg-negative-soft text-negative border-negative/40',
 }
 
 const STICKY_CLASSES: Record<UrgencyState, string> = {

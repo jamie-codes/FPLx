@@ -84,24 +84,24 @@ export function PlayerInsightSection({
   const isHardError = isError && error?.message !== 'GUARDRAIL_FAILED'
 
   return (
-    <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">
+    <div className="mt-2 pt-2 border-t border-line">
       {/* Prose display: shown when insight is loaded (from cache or button click) */}
       {insight !== null && (
         <>
-          <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-1">AI ✨ Insight</p>
-          <p className="text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed">{insight.prose}</p>
+          <p className="text-xs text-ink-muted mb-1">AI ✨ Insight</p>
+          <p className="text-sm text-ink leading-relaxed">{insight.prose}</p>
         </>
       )}
 
       {/* Guardrail fallback: structured rejection reasons with disclaimer */}
       {guardrailFailed && insight === null && (
         <div>
-          <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-1">
+          <p className="text-xs text-ink-muted mb-1">
             AI insight unavailable — showing analysis:
           </p>
           <ul className="list-disc list-inside space-y-0.5">
             {rejectionReasons.map((reason, i) => (
-              <li key={i} className="text-xs text-zinc-600 dark:text-zinc-400">
+              <li key={i} className="text-xs text-ink-muted">
                 {reason}
               </li>
             ))}
@@ -111,7 +111,7 @@ export function PlayerInsightSection({
 
       {/* Hard error message */}
       {isHardError && (
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">AI unavailable — try again</p>
+        <p className="text-xs text-ink-muted">AI unavailable — try again</p>
       )}
 
       {/* Button: idle / loading / refresh */}
@@ -121,9 +121,9 @@ export function PlayerInsightSection({
         onClick={handleGetInsight}
         className={[
           'mt-1 text-xs px-2 py-0.5 rounded cursor-pointer',
-          'text-zinc-600 dark:text-zinc-300',
-          'bg-zinc-100 dark:bg-zinc-800',
-          'hover:bg-zinc-200 dark:hover:bg-zinc-700',
+          'text-ink-muted',
+          'bg-surface-2',
+          'hover:bg-surface-2/80',
           'disabled:opacity-50 disabled:cursor-not-allowed',
         ].join(' ')}
       >

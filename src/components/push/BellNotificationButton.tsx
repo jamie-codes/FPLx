@@ -11,10 +11,10 @@ const STATUS_TEXT: Record<PushPermissionStatus, string> = {
 }
 
 const STATUS_CLASS: Record<PushPermissionStatus, string> = {
-  granted: 'text-green-600 dark:text-green-400',
-  denied: 'text-amber-600 dark:text-amber-400',
-  default: 'text-muted',
-  unsupported: 'text-muted',
+  granted: 'text-positive',
+  denied: 'text-warning',
+  default: 'text-ink-muted',
+  unsupported: 'text-ink-muted',
 }
 
 export function BellNotificationButton(): React.JSX.Element {
@@ -58,7 +58,7 @@ export function BellNotificationButton(): React.JSX.Element {
         aria-label="Push notifications"
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="p-2 rounded text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white min-h-[44px]"
+        className="p-2 rounded text-ink-muted hover:text-ink min-h-[44px]"
       >
         🔔
       </button>
@@ -66,10 +66,10 @@ export function BellNotificationButton(): React.JSX.Element {
         <div
           role="dialog"
           aria-label="Push notification settings"
-          className="absolute right-0 top-full mt-2 w-60 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-lg z-50"
+          className="absolute right-0 top-full mt-2 w-60 bg-surface-1 border border-line rounded-lg p-4 shadow-lg z-50"
         >
           <div className="flex items-center justify-between gap-4">
-            <span className="text-sm font-medium text-foreground">Push notifications</span>
+            <span className="text-sm font-medium text-ink">Push notifications</span>
             <button
               role="switch"
               aria-checked={status === 'granted'}
@@ -78,7 +78,7 @@ export function BellNotificationButton(): React.JSX.Element {
               onClick={handleToggle}
               className={[
                 'relative inline-flex h-6 w-10 flex-shrink-0 rounded-full transition-colors',
-                status === 'granted' ? 'bg-green-500' : 'bg-zinc-200 dark:bg-zinc-700',
+                status === 'granted' ? 'bg-positive' : 'bg-surface-2',
                 status === 'denied' || status === 'unsupported'
                   ? 'opacity-50 cursor-not-allowed'
                   : 'cursor-pointer',

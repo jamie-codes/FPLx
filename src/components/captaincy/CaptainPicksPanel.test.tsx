@@ -340,7 +340,7 @@ describe('Phase 102 MC-02: CandidateRow P10/P90 inline range', () => {
     expect(range).toBeDefined()
   })
 
-  it('range span has classes text-xs text-zinc-400 dark:text-zinc-500 tabular-nums', () => {
+  it('range span has classes text-xs text-ink-muted tabular-nums', () => {
     vi.mocked(usePlayers).mockReturnValue({ data: withMC(buildPlayers()), isLoading: false, error: null } as never)
     const { container } = render(<CaptainPicksPanel />)
     const range = Array.from(container.querySelectorAll('span')).find(
@@ -349,8 +349,7 @@ describe('Phase 102 MC-02: CandidateRow P10/P90 inline range', () => {
     expect(range).toBeDefined()
     const cls = range?.className ?? ''
     expect(cls).toContain('text-xs')
-    expect(cls).toContain('text-zinc-400')
-    expect(cls).toContain('dark:text-zinc-500')
+    expect(cls).toContain('text-ink-muted')
     expect(cls).toContain('tabular-nums')
   })
 
