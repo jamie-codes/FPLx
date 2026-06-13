@@ -75,28 +75,117 @@ def _parse_date(s: str) -> datetime:
         return datetime.min
 
 
+_CITE_RE = __import__('re').compile(r'\[[\d\w]+\]')
+
+
+def _clean_text(cell) -> str:
+    """Get text from a BS4 cell, stripping Wikipedia citation superscripts ([1], [2a], etc.)
+    and the hidden sort-value spans that precede fee text."""
+    return _CITE_RE.sub('', cell.get_text(strip=True)).strip()
+
+
 def _parse_transfers(html: str, lookup: dict) -> list:
     """Parse wikitables to rows; keep a row iff from OR to is a PL club.
-    Loans-section tables tagged kind='loan'."""
+
+    Real-DOM handling (verified against live Wikipedia page 2026-06-13):
+    - Permanent/Loan tables with standard cols (Date, Player, Moving from,
+      Moving to, Fee): many rows omit Date when it repeats the row above —
+      only 4 data cells.  We carry the last seen date for these rows.
+    - Wikipedia summer 2026 loan table uses a different schema (Start date,
+      End date, Name, Moving from, Moving to — no Fee column).  Detected by
+      inspecting the header column names.
+    - Fee cells contain Wikipedia citation superscripts ([38], [2a] etc.) —
+      stripped via _CITE_RE.
+    - Preceding heading 'Loans' tags kind='loan'; default is 'permanent'.
+    """
     soup = BeautifulSoup(html, 'lxml')
     rows = []
     for table in soup.select('table.wikitable'):
-        # a table is "loans" if a preceding heading mentions Loan
-        kind = 'permanent'
+        # Detect table schema from the header row
+        header_row = table.find('tr')
+        if not header_row:
+            continue
+        ths = header_row.find_all('th')
+        if not ths:
+            continue
+        col_names = [th.get_text(strip=True).lower() for th in ths]
+
+        # Determine section kind
         prev = table.find_previous(['h2', 'h3', 'h4'])
-        if prev and 'loan' in prev.get_text(strip=True).lower():
-            kind = 'loan'
-        for tr in table.find_all('tr'):
-            cells = tr.find_all(['td', 'th'])
-            if len(cells) < 5 or tr.find('th'):
-                continue  # header / malformed
-            date, player, frm, to, fee = (c.get_text(strip=True) for c in cells[:5])
-            t_from, t_to = _resolve(frm, lookup), _resolve(to, lookup)
-            if not t_from and not t_to:
-                continue  # neither side PL
-            rows.append({'date': date, 'player': player, 'from_club': frm,
-                         'to_club': to, 'fee': fee, 'kind': kind,
-                         '_from': t_from, '_to': t_to})
+        section_is_loans = (prev and 'loan' in prev.get_text(strip=True).lower())
+
+        # Detect alternate loan schema: 'start date' | 'end date' | 'name' | from | to
+        # (no fee column; seen on live summer_2026 page)
+        is_alt_loan_schema = (
+            len(col_names) >= 5
+            and 'start date' in col_names[0]
+            and ('name' in col_names[2] or col_names[2] in ('name', 'player'))
+        )
+
+        if is_alt_loan_schema:
+            # Alternate loan schema: Start date | End date | Name | Moving from | Moving to
+            last_date = ''
+            for tr in table.find_all('tr'):
+                if tr.find('th'):
+                    continue
+                cells = [td for td in tr.find_all('td')]
+                if len(cells) >= 5:
+                    date = _clean_text(cells[0]) or last_date
+                    player = _clean_text(cells[2])
+                    frm = _clean_text(cells[3])
+                    to = _clean_text(cells[4])
+                    if date:
+                        last_date = date
+                elif len(cells) == 4:
+                    # continuation: end_date, player, frm, to
+                    date = last_date
+                    player = _clean_text(cells[1])
+                    frm = _clean_text(cells[2])
+                    to = _clean_text(cells[3])
+                else:
+                    continue
+                if not player or not frm or not to:
+                    continue
+                t_from, t_to = _resolve(frm, lookup), _resolve(to, lookup)
+                if not t_from and not t_to:
+                    continue
+                rows.append({'date': date, 'player': player, 'from_club': frm,
+                             'to_club': to, 'fee': 'Loan', 'kind': 'loan',
+                             '_from': t_from, '_to': t_to})
+        else:
+            # Standard schema: Date | Player | Moving from | Moving to | Fee
+            kind = 'loan' if section_is_loans else 'permanent'
+            last_date = ''
+            for tr in table.find_all('tr'):
+                if tr.find('th'):
+                    continue  # header row
+                cells = [td for td in tr.find_all('td')]
+                if len(cells) >= 5:
+                    # Full row: date present
+                    date = _clean_text(cells[0]) or last_date
+                    player = _clean_text(cells[1])
+                    frm = _clean_text(cells[2])
+                    to = _clean_text(cells[3])
+                    fee = _clean_text(cells[4])
+                    if date:
+                        last_date = date
+                elif len(cells) == 4:
+                    # Date-continuation row: player, from, to, fee (date omitted)
+                    date = last_date
+                    player = _clean_text(cells[0])
+                    frm = _clean_text(cells[1])
+                    to = _clean_text(cells[2])
+                    fee = _clean_text(cells[3])
+                else:
+                    continue
+                if not player or not frm or not to:
+                    continue
+                t_from, t_to = _resolve(frm, lookup), _resolve(to, lookup)
+                if not t_from and not t_to:
+                    continue
+                rows.append({'date': date, 'player': player, 'from_club': frm,
+                             'to_club': to, 'fee': fee, 'kind': kind,
+                             '_from': t_from, '_to': t_to})
     return rows
 
 
