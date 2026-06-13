@@ -549,7 +549,7 @@ describe('Phase 92 DH-04: DataHealthSparkline', () => {
     // (b) the SparklineTooltip wrapper class signature inside the document
     const html = container.innerHTML
     const hasStatusLabel = /\b(OK|Warning|Error)\b/.test(html)
-    const hasTooltipWrapper = /bg-white[^"]*dark:bg-zinc-900/.test(html)
+    const hasTooltipWrapper = /bg-surface-1[^"]*border-line/.test(html)
     expect(hasStatusLabel || hasTooltipWrapper).toBe(true)
   })
 
