@@ -37,6 +37,7 @@ jobs:
       MC_ITERATIONS: 10000
       MC_SEED: 42
       TRANSFER_NEWS_ENABLED: 'true'
+      CONFIRMED_TRANSFERS_ENABLED: 'true'  # TFR-01: Wikipedia confirmed-transfers scrape
       NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}  # Phase 135: notify.py posts to /api/push/send
 
     steps:
