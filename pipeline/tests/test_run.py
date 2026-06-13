@@ -529,3 +529,18 @@ def test_compute_honest_metrics_shape(monkeypatch):
     result = run_mod.compute_honest_metrics(bootstrap, [], {}, {'fas_slope': 0.4})
     assert result == {'top10_mean_pts': 5.12, 'haul_capture_20': 0.25,
                       'captain_return_rate': 0.7, 'haul_hit_rate': 0.12, 'n_gws': 6}
+
+
+def test_run_binds_accuracy_module_name():
+    """Regression (prod incident 2026-06-13): run.py references accuracy.BLEND_ALPHA
+    etc. in main()'s tuner-default block, so the bare module name MUST be bound.
+    `from accuracy import X` alone does NOT bind it — this guards the missing
+    `import accuracy` that NameError'd the live pipeline."""
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+    import run as run_mod
+    assert hasattr(run_mod, 'accuracy'), "run.py must bind the `accuracy` module name"
+    assert run_mod.accuracy.__name__ == 'accuracy'
+    # the specific constants run.py dereferences must resolve through it
+    for attr in ('BLEND_ALPHA', 'FORM_WINDOW_GWS', 'FAS_SLOPE', 'DEFCON_SCALE',
+                 'ATF_SLOPE', 'CS_TEAM_FORM_SLOPE'):
+        assert hasattr(run_mod.accuracy, attr), f"accuracy.{attr} must resolve"

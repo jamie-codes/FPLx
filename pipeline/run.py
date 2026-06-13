@@ -22,6 +22,7 @@ from price_changes import compute_price_change_predictions
 from insights import compute_insights
 from gw_intel import compute_gw_intel, _apply_rotation_risk
 from european_cup_dates import EUROPEAN_CUP_DATES
+import accuracy  # bare module name: main()'s tuner-default block dereferences accuracy.BLEND_ALPHA etc.
 from accuracy import compute_accuracy_backtest, build_predictions_snapshot
 from data_health import _sanitize_error
 
