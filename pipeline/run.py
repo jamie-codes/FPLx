@@ -475,6 +475,26 @@ def run(dry_run: bool = False):
             print(f"MC simulation (5-GW uncertainty bands): {'ENABLED' if mc_enabled else 'DISABLED'}")
             print(f"TUNE-01 params: form_window={form_window_gws_used}, cs_prob_base={cs_prob_base_used}, cs_prob_slope={cs_prob_slope_used}, form_actual_beta={form_actual_beta_used}, form_difficulty_gamma={form_difficulty_gamma_used}, sub_appear_window_gws={sub_appear_window_gws_used}, cs_team_form_slope={cs_team_form_slope_used}, cs_def_form_window_gws={cs_def_form_window_gws_used}, atf_slope={atf_slope_used}, atf_window_gws={atf_window_gws_used}, fas_slope={fas_slope_used}, defcon_scale={defcon_scale_used}")
 
+            # COLD-01: build the cold-start prior once from the latest completed-season archive.
+            # Non-fatal if the archive is absent → empty lookups → pure no-op.
+            prior_lookup, bucket_priors, start_seed = {}, {}, {}
+            try:
+                from capture_season import load_season_archive
+                from season_prior import build_prior_lookup, build_bucket_priors
+                _archive = load_season_archive()
+                prior_lookup = build_prior_lookup(_archive)
+                bucket_priors = build_bucket_priors(_archive)
+                # start_seed: code → {start_rate, mins_per_start} for players in prior lookup
+                start_seed = {
+                    code: {'start_rate': p['start_rate'], 'mins_per_start': p['mins_per_start']}
+                    for code, p in prior_lookup.items()
+                }
+                print(f"COLD-01 prior: {len(prior_lookup)} players, {len(bucket_priors)} buckets")
+            except FileNotFoundError:
+                print("COLD-01 prior: no season archive — cold-start blend disabled (no-op)")
+            except Exception as e:
+                print(f"COLD-01 prior: skipped ({e})")
+
             # Compute xmins stats (Phase 7 — MINS-01)
             print("Computing xmins stats...")
             # MIN-02: pass fixtures and next GW id for fixture-aware rotation risk.
@@ -487,6 +507,7 @@ def run(dry_run: bool = False):
                 fixtures=fixtures,
                 next_gw_id=_next_gw_id,
                 sub_appear_window_gws=sub_appear_window_gws_used,   # APM-01
+                start_seed=start_seed,                               # COLD-01
             )
             print(f"xmins stats: {len(xmins_stats)} players")
 
@@ -516,6 +537,8 @@ def run(dry_run: bool = False):
                 atf_window_gws=atf_window_gws_used,  # ATF-01
                 fas_slope=fas_slope_used,       # FAS-01
                 defcon_scale=defcon_scale_used, # DC-01
+                prior_lookup=prior_lookup,      # COLD-01
+                bucket_priors=bucket_priors,    # COLD-01
             )
             if mc_enabled:
                 merged = compute_simulations(merged, xmins_v2_enabled,
