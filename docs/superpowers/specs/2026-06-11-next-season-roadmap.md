@@ -42,7 +42,7 @@ GKP haul capture is 11% (worst position). Save points are entirely unmodelled in
 
 - **TFR-01** ✅ SHIPPED 2026-06-13: Confirmed Transfers Ledger — Wikipedia scrape → PL filter → Planning-group tab (by-club + chronological, Rumours→Summer Window). Live-DOM-hardened; 594 tests green.
 
-- **VAR-01**: distribution-aware captaincy — keep mean ranking for picks; for captaincy specifically, test P(haul) from the MC sim against archived DGWs
+- **VAR-01** ✅ SHIPPED 2026-06-14: distribution-aware captaincy — exp07 validated analytical ceiling (xPts_90th) beats mean-xPts for captaincy on all 3 splits (val 6.90→7.30 mean-captain-pts, equal/higher haul rate). computeCaptaincyCandidates now ranks by ceiling; resolves the inconsistency with the pipeline ceiling pick + eo-candidates chase_rank. (MC haul_prob not lab-reachable — used the analytical ceiling, which the MC p90 overwrites live anyway.)
 - **Lab hygiene**: BT-02's `DEFAULT_PARAMS` intentionally lags live defaults (it's the experimental control); document per-experiment which param set is "current live"
 
 ## Explicitly rejected (don't re-litigate without new evidence)
