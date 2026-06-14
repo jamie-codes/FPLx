@@ -1,0 +1,94 @@
+{
+ "full": {
+  "A_mean": {
+   "n_gws": 32,
+   "mean_capt_pts": 6.062,
+   "return_rate": 0.5,
+   "haul_rate": 0.219,
+   "hit_rate": 0.0
+  },
+  "C_ceiling": {
+   "n_gws": 32,
+   "mean_capt_pts": 6.312,
+   "return_rate": 0.469,
+   "haul_rate": 0.25,
+   "hit_rate": 0.0
+  },
+  "D_attacking": {
+   "n_gws": 32,
+   "mean_capt_pts": 5.75,
+   "return_rate": 0.438,
+   "haul_rate": 0.219,
+   "hit_rate": 0.0
+  }
+ },
+ "train": {
+  "A_mean": {
+   "n_gws": 22,
+   "mean_capt_pts": 5.682,
+   "return_rate": 0.455,
+   "haul_rate": 0.182,
+   "hit_rate": 0.0
+  },
+  "C_ceiling": {
+   "n_gws": 22,
+   "mean_capt_pts": 5.864,
+   "return_rate": 0.409,
+   "haul_rate": 0.227,
+   "hit_rate": 0.0
+  },
+  "D_attacking": {
+   "n_gws": 22,
+   "mean_capt_pts": 5.682,
+   "return_rate": 0.364,
+   "haul_rate": 0.227,
+   "hit_rate": 0.0
+  }
+ },
+ "val": {
+  "A_mean": {
+   "n_gws": 10,
+   "mean_capt_pts": 6.9,
+   "return_rate": 0.6,
+   "haul_rate": 0.3,
+   "hit_rate": 0.0
+  },
+  "C_ceiling": {
+   "n_gws": 10,
+   "mean_capt_pts": 7.3,
+   "return_rate": 0.6,
+   "haul_rate": 0.3,
+   "hit_rate": 0.0
+  },
+  "D_attacking": {
+   "n_gws": 10,
+   "mean_capt_pts": 5.9,
+   "return_rate": 0.6,
+   "haul_rate": 0.2,
+   "hit_rate": 0.0
+  }
+ },
+ "dgw": {
+  "A_mean": {
+   "n_gws": 3,
+   "mean_capt_pts": 5.333,
+   "return_rate": 0.333,
+   "haul_rate": 0.333,
+   "hit_rate": 0.0
+  },
+  "C_ceiling": {
+   "n_gws": 3,
+   "mean_capt_pts": 5.333,
+   "return_rate": 0.333,
+   "haul_rate": 0.333,
+   "hit_rate": 0.0
+  },
+  "D_attacking": {
+   "n_gws": 3,
+   "mean_capt_pts": 9.0,
+   "return_rate": 0.667,
+   "haul_rate": 0.667,
+   "hit_rate": 0.0
+  }
+ }
+}
