@@ -32,6 +32,9 @@ Every item below is grounded in measured evidence, not speculation. Backlog stat
 ### XM-01: Minutes model v3
 35 hauls/season are pure minutes-model failures (player ranked when actual minutes known, missed when predicted). Current xmins proxy = trailing 5-game mean. Candidates: exponential decay, explicit return-from-injury handling via lineup_news, starts-streak weighting. Validate in the lab (deploy vs conditional gap is the target metric).
 
+### EUR-01: European-rotation xmins signal (DEFERRED to 2026/27 season setup)
+Validatable in BT-02 (NOT data-blocked — archive fixtures carry kickoff dates, so a (team,gw)→euro-clash lookup is reconstructable; a euro_rotation_factor slots into the multiplicative xmins_adjusted chain + a BT-02 sweep, FAS/DC-style). Prerequisite: populate EUROPEAN_CUP_DATES (currently empty) with the season European calendar for the ~6-7 PL clubs. DEFERRED 2026-06-14 (user): the live feature needs that UEFA calendar hand-entered each season anyway, so do the backtest data-entry + exp07 sweep alongside the July 2026/27 calendar setup. Honest prior is LOW (FDR-rotation + availability already partly capture this; xmins-decay & GK-saves both validated negative) — may land in the rejected table. Live wiring partly exists: gw_intel._apply_rotation_risk already detects euro clashes as a display boolean; promotion would convert it to an xmins multiplier + tune.py param.
+
 ### GK-02: Goalkeeper modelling
 GKP haul capture is 11% (worst position). Save points are entirely unmodelled in the backtest path and gated off in live. Element-summary has per-GW `saves`; opponent xG proxy exists. Build save-points EV from prior save rates × opponent attack, validate in lab.
 
