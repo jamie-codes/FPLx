@@ -388,6 +388,8 @@ export interface HonestMetrics {
     captain_actual: number
     captain_name: string
   }[]
+  // ACC-06: honest xPts calibration buckets (present once >= 8 GWs)
+  calibration?: { bin_lo: number; bin_hi: number; n: number; mean_pred: number; mean_actual: number }[]
 }
 
 export interface AccuracySummary {

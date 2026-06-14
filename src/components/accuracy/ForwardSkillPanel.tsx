@@ -1,5 +1,6 @@
 'use client'
 // ACC-05: Forward Skill panel — leakage-free honest metrics from the BT-02 harness.
+// ACC-06: honest xPts calibration table (live-state-only).
 // UIX primitives and semantic tokens ONLY — zero raw palette values.
 import type { HonestMetrics } from '@/lib/types'
 import { Stat } from '@/components/ui/Stat'
@@ -116,6 +117,55 @@ function ByPositionTable({ byPosition }: { byPosition: ByPosition }) {
 }
 
 // ============================================================================
+// ACC-06: Calibration table
+// ============================================================================
+
+type CalibBucket = NonNullable<HonestMetrics['calibration']>[number]
+
+function binLabel(b: CalibBucket): string {
+  return b.bin_hi === 99 ? `${b.bin_lo}+` : `${b.bin_lo}–${b.bin_hi}`
+}
+
+function CalibrationTable({ buckets }: { buckets: CalibBucket[] }) {
+  return (
+    <div>
+      <p className="text-data font-medium text-ink-muted mb-2">xPts calibration</p>
+      <TableShell>
+        <table className={TABLE_CLS} data-testid="calibration-table">
+          <thead>
+            <tr>
+              <Th>Bin</Th>
+              <Th>n</Th>
+              <Th>Predicted</Th>
+              <Th>Actual</Th>
+              <Th>Δ</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {buckets.map((b) => {
+              const delta = b.mean_actual - b.mean_pred
+              return (
+                <tr key={`${b.bin_lo}-${b.bin_hi}`} className={TR_CLS}>
+                  <Td>{binLabel(b)}</Td>
+                  <Td>{b.n}</Td>
+                  <Td>{b.mean_pred.toFixed(2)}</Td>
+                  <Td>{b.mean_actual.toFixed(2)}</Td>
+                  <Td>{delta >= 0 ? '+' : ''}{delta.toFixed(2)}</Td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </TableShell>
+      <p className="text-data text-ink-muted mt-2">
+        Each row is a predicted-xPts bucket; Δ = actual − predicted.
+        Positive Δ = model under-predicted, negative = over-predicted.
+      </p>
+    </div>
+  )
+}
+
+// ============================================================================
 // Main panel
 // ============================================================================
 
@@ -185,6 +235,15 @@ export function ForwardSkillPanel({ honest }: { honest: HonestMetrics | undefine
 
       {/* By-position mini-table — live only */}
       {live && <ByPositionTable byPosition={(honest as HonestMetrics).by_position} />}
+
+      {/* ACC-06: Calibration table — live only, only when buckets present */}
+      {live && (honest as HonestMetrics).calibration != null && (honest as HonestMetrics).calibration!.length > 0 ? (
+        <CalibrationTable buckets={(honest as HonestMetrics).calibration!} />
+      ) : (
+        <p className="text-data text-ink-muted">
+          Calibration appears once the season is underway.
+        </p>
+      )}
 
       {/* Provenance / source caption */}
       <p className="text-data text-ink-muted border-t border-line pt-2">

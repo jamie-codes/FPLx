@@ -155,3 +155,81 @@ describe('ForwardSkillPanel — panel position in AccuracyTab', () => {
     expect(container.querySelector('[data-testid="forward-skill-panel"]')).not.toBeNull()
   })
 })
+
+// ============================================================================
+// ACC-06: Calibration table tests
+// ============================================================================
+
+const calibrationFixture: HonestMetrics = {
+  ...liveMetrics,
+  n_gws: 12,
+  calibration: [
+    { bin_lo: 1, bin_hi: 2, n: 20, mean_pred: 1.45, mean_actual: 1.60 },
+    { bin_lo: 3, bin_hi: 4, n: 35, mean_pred: 3.52, mean_actual: 3.20 },
+    { bin_lo: 5, bin_hi: 6, n: 18, mean_pred: 5.44, mean_actual: 5.80 },
+  ],
+}
+
+describe('ForwardSkillPanel — ACC-06 calibration (live state, calibration present)', () => {
+  it('renders the calibration table when live and calibration is present', () => {
+    const { container } = render(<ForwardSkillPanel honest={calibrationFixture} />)
+    const table = container.querySelector('[data-testid="calibration-table"]')
+    expect(table).not.toBeNull()
+  })
+
+  it('shows a bin label in the calibration table', () => {
+    const { container } = render(<ForwardSkillPanel honest={calibrationFixture} />)
+    const table = container.querySelector('[data-testid="calibration-table"]')
+    // 1–2 bin
+    expect(table!.textContent).toContain('1')
+    expect(table!.textContent).toContain('2')
+  })
+
+  it('shows mean_actual value in the calibration table', () => {
+    const { container } = render(<ForwardSkillPanel honest={calibrationFixture} />)
+    const table = container.querySelector('[data-testid="calibration-table"]')
+    expect(table!.textContent).toContain('1.60')
+  })
+
+  it('shows n in the calibration table', () => {
+    const { container } = render(<ForwardSkillPanel honest={calibrationFixture} />)
+    const table = container.querySelector('[data-testid="calibration-table"]')
+    expect(table!.textContent).toContain('20')
+  })
+
+  it('shows the calibration caption', () => {
+    const { container } = render(<ForwardSkillPanel honest={calibrationFixture} />)
+    expect(container.textContent).toContain('predicted-xPts bucket')
+  })
+})
+
+describe('ForwardSkillPanel — ACC-06 calibration (fallback / below gate)', () => {
+  it('hides calibration table in fallback state (honest undefined)', () => {
+    const { container } = render(<ForwardSkillPanel honest={undefined} />)
+    expect(container.querySelector('[data-testid="calibration-table"]')).toBeNull()
+  })
+
+  it('hides calibration table when n_gws < 8', () => {
+    const { container } = render(<ForwardSkillPanel honest={belowGateMetrics} />)
+    expect(container.querySelector('[data-testid="calibration-table"]')).toBeNull()
+  })
+
+  it('shows "Calibration appears once the season is underway" in fallback', () => {
+    const { container } = render(<ForwardSkillPanel honest={undefined} />)
+    expect(container.textContent).toContain('Calibration appears once the season is underway')
+  })
+
+  it('shows calibration note when live but calibration absent', () => {
+    const metricsNoCalib: HonestMetrics = { ...liveMetrics, calibration: undefined }
+    const { container } = render(<ForwardSkillPanel honest={metricsNoCalib} />)
+    expect(container.querySelector('[data-testid="calibration-table"]')).toBeNull()
+    expect(container.textContent).toContain('Calibration appears once the season is underway')
+  })
+
+  it('does not crash when calibration is an empty array', () => {
+    const metricsEmptyCalib: HonestMetrics = { ...liveMetrics, calibration: [] }
+    expect(() => render(<ForwardSkillPanel honest={metricsEmptyCalib} />)).not.toThrow()
+    const { container } = render(<ForwardSkillPanel honest={metricsEmptyCalib} />)
+    expect(container.querySelector('[data-testid="calibration-table"]')).toBeNull()
+  })
+})

@@ -618,3 +618,103 @@ def test_run_binds_accuracy_module_name():
     for attr in ('BLEND_ALPHA', 'FORM_WINDOW_GWS', 'FAS_SLOPE', 'DEFCON_SCALE',
                  'ATF_SLOPE', 'CS_TEAM_FORM_SLOPE'):
         assert hasattr(run_mod.accuracy, attr), f"accuracy.{attr} must resolve"
+
+
+# ---------------------------------------------------------------------------
+# ACC-06: _honest_calibration + compute_honest_metrics calibration key
+# ---------------------------------------------------------------------------
+
+def test_honest_calibration_bucketing():
+    """ACC-06: a row at xpts_pred=3.5 lands in the [3,4) bin."""
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+    import run as run_mod
+    rows = [
+        {'xpts_pred': 3.5, 'actual_pts': 4.0, 'element_type': 3},
+    ]
+    result = run_mod._honest_calibration(rows)
+    assert len(result) == 1, f"Expected 1 bucket, got {len(result)}"
+    b = result[0]
+    assert b['bin_lo'] == 3
+    assert b['bin_hi'] == 4
+    assert b['n'] == 1
+    assert b['mean_pred'] == 3.5
+    assert b['mean_actual'] == 4.0
+
+
+def test_honest_calibration_empty_bins_dropped():
+    """ACC-06: empty bins are not included in the output."""
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+    import run as run_mod
+    # Only one row — only [0,1) should be populated
+    rows = [{'xpts_pred': 0.5, 'actual_pts': 1.0, 'element_type': 1}]
+    result = run_mod._honest_calibration(rows)
+    assert len(result) == 1
+    assert result[0]['bin_lo'] == 0
+    assert result[0]['bin_hi'] == 1
+
+
+def test_honest_calibration_mean_actual_averaged():
+    """ACC-06: mean_actual is the average over all rows in the bucket."""
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+    import run as run_mod
+    rows = [
+        {'xpts_pred': 2.1, 'actual_pts': 2.0, 'element_type': 3},
+        {'xpts_pred': 2.8, 'actual_pts': 4.0, 'element_type': 3},
+    ]
+    result = run_mod._honest_calibration(rows)
+    assert len(result) == 1
+    b = result[0]
+    assert b['bin_lo'] == 2
+    assert b['bin_hi'] == 3
+    assert b['n'] == 2
+    assert abs(b['mean_pred'] - round((2.1 + 2.8) / 2, 2)) < 1e-9
+    assert abs(b['mean_actual'] - round((2.0 + 4.0) / 2, 2)) < 1e-9
+
+
+def test_honest_calibration_last_bin_open_ended():
+    """ACC-06: last bin [8,99) captures rows with xpts_pred >= 8."""
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+    import run as run_mod
+    rows = [{'xpts_pred': 10.0, 'actual_pts': 12.0, 'element_type': 4}]
+    result = run_mod._honest_calibration(rows)
+    assert len(result) == 1
+    assert result[0]['bin_lo'] == 8
+    assert result[0]['bin_hi'] == 99
+
+
+def test_compute_honest_metrics_includes_calibration(monkeypatch):
+    """ACC-06: compute_honest_metrics includes 'calibration' key when >= 8 GWs."""
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+    import run as run_mod
+    bootstrap = {'events': [{'id': g, 'finished': g <= 10} for g in range(1, 39)]}
+    fake_metrics = {
+        'top10_mean_pts': 5.0, 'haul_capture_20': 0.2,
+        'captain_return_rate': 0.6, 'haul_hit_rate': 0.1, 'n_gws': 10,
+    }
+    fake_rows = [
+        {'xpts_pred': 3.5, 'actual_pts': 4.0, 'element_type': 3},
+        {'xpts_pred': 1.2, 'actual_pts': 2.0, 'element_type': 2},
+    ]
+    monkeypatch.setattr(run_mod, '_run_backtest_for_picks',
+                        lambda archive, params, first_gw, last_gw: {
+                            'metrics': fake_metrics, 'per_gw': [], 'rows': fake_rows})
+    result = run_mod.compute_honest_metrics(bootstrap, [], {}, {})
+    assert result is not None
+    assert 'calibration' in result, "compute_honest_metrics must include 'calibration' key"
+    calib = result['calibration']
+    assert isinstance(calib, list)
+    # 3.5 -> [3,4), 1.2 -> [1,2) — two separate non-empty bins
+    assert len(calib) == 2
+
+
+def test_compute_honest_metrics_calibration_gate_below_8(monkeypatch):
+    """ACC-06: gate <8 GWs still returns None — calibration key not added before gate."""
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+    import run as run_mod
+    bootstrap = {'events': [{'id': g, 'finished': g <= 6} for g in range(1, 39)]}
+    called = []
+    monkeypatch.setattr(run_mod, '_run_backtest_for_picks',
+                        lambda *a, **kw: called.append(1) or {})
+    result = run_mod.compute_honest_metrics(bootstrap, [], {}, {})
+    assert result is None
+    assert len(called) == 0

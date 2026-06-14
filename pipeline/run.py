@@ -119,6 +119,27 @@ def _diff_sp_snapshots(prev: dict, curr: dict, bootstrap: dict) -> dict:
     }
 
 
+CALIB_BINS = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 8), (8, 99)]
+
+
+def _honest_calibration(rows: list) -> list:
+    """ACC-06: bucket rows by xpts_pred into fixed bins and return per-bucket aggregates.
+
+    Empty bins are dropped. Last bin label is [8,99) to represent '8+'.
+    """
+    out = []
+    for lo, hi in CALIB_BINS:
+        b = [r for r in rows if lo <= r['xpts_pred'] < hi]
+        if not b:
+            continue
+        out.append({
+            'bin_lo': lo, 'bin_hi': hi, 'n': len(b),
+            'mean_pred':   round(sum(r['xpts_pred'] for r in b) / len(b), 2),
+            'mean_actual': round(sum(r['actual_pts'] for r in b) / len(b), 2),
+        })
+    return out
+
+
 def _run_backtest_for_picks(archive: dict, params: dict, first_gw: int, last_gw: int) -> dict:
     """Seam for tests. Runs the BT-02 honest backtest and returns the full result dict
     (keys: 'metrics', 'per_gw', 'rows')."""
@@ -150,6 +171,7 @@ def compute_honest_metrics(bootstrap: dict, fixtures: list, summaries: dict,
     result = _run_backtest_for_picks(archive, bt_params, max(5, finished[0]), finished[-1])
     m = result['metrics']
     raw_per_gw = result.get('per_gw', [])
+    raw_rows = result.get('rows', [])
 
     def _r(key, nd):
         v = m.get(key)
@@ -169,6 +191,7 @@ def compute_honest_metrics(bootstrap: dict, fixtures: list, summaries: dict,
         'per_gw':              _slim_per_gw(raw_per_gw),
         'n_gws':               m.get('n_gws'),
         'mode':                'deploy',
+        'calibration':         _honest_calibration(raw_rows),
     }
 
 
