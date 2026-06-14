@@ -3,15 +3,18 @@
 // UIX-03 Task 3: chrome → ui/Table primitives (local TABLE_CLS family deleted),
 // identity column → PlayerCell sm (pos/team move into its meta line),
 // status ⚠ → Chip warning. Haul column/colSpan + ExpandedPanel preserved exactly.
+// PICK-02: PickExplain mounted below component bars + MCDistributionBar.
 import { Fragment, useState } from 'react'
 import type { MergedPlayer } from '@/lib/types'
 import { xptsFor, nextEventsFixtures, type PicksHorizon } from '@/lib/picks'
+import { explainPick } from '@/lib/explain-pick'
 import { DifferentialBadge } from '@/components/gem-table/DifferentialBadge'
 import { MCDistributionBar } from '@/components/mc/MCDistributionBar'
 import { FixtureBadges } from '@/components/fixtures/FixtureBadges'
 import { TableShell, Th, Td, TABLE_CLS, TR_CLS } from '@/components/ui/Table'
 import { PlayerCell } from '@/components/ui/PlayerCell'
 import { Chip } from '@/components/ui/Chip'
+import { PickExplain } from './PickExplain'
 
 const POS_LABEL: Record<number, string> = { 1: 'GKP', 2: 'DEF', 3: 'MID', 4: 'FWD' }
 const STATUS_WARN: Record<string, string> = { d: 'Doubtful', i: 'Injured', s: 'Suspended', n: 'Not available' }
@@ -46,6 +49,8 @@ function ExpandedPanel({ p }: { p: MergedPlayer }) {
       {p.haul_prob != null && p.p10_pts != null && p.p90_pts != null && (
         <MCDistributionBar blankProb={p.blank_prob ?? 0} haulProb={p.haul_prob} p10Pts={p.p10_pts} p90Pts={p.p90_pts} />
       )}
+      {/* PICK-02: deterministic why/risk explanation — annotation only, no ranking change */}
+      <PickExplain explanation={explainPick(p)} />
     </div>
   )
 }
