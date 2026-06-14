@@ -256,9 +256,10 @@ describe('HomeTab — state 1: no FPL ID', () => {
     expect(props.onTeamIdChange).toHaveBeenCalledWith('123')
     fireEvent.click(screen.getByRole('button', { name: /load squad/i }))
     expect(props.onSubmit).toHaveBeenCalled()
-    // captain card uses the pool fallback (top outfield by xPts_1gw)
-    expect(screen.getByText('PoolStar')).toBeTruthy()
-    expect(screen.getByText(/18\.0/)).toBeTruthy() // 9.0 × 2
+    // captain card uses the pool fallback sorted by ceiling (xPts_90th_1gw ?? xPts_1gw) — VAR-01
+    // P8 (xPts_90th_1gw=11.0) outranks PoolStar (xPts_90th_1gw=7.0) despite lower mean
+    expect(screen.getByText('P8')).toBeTruthy()
+    expect(screen.getByText(/16\.0/)).toBeTruthy() // 8.0 × 2
     // Picks link routes
     fireEvent.click(screen.getByRole('button', { name: /weekly picks/i }))
     expect(props.selectTool).toHaveBeenCalledWith('picks')

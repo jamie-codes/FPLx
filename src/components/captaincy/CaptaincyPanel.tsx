@@ -82,9 +82,12 @@ export function CaptaincyPanel({ candidates, nextGw }: CaptaincyPanelProps) {
                 )
               })()}
             </div>
-            {/* Projected pts */}
-            <span className="text-sm text-ink whitespace-nowrap">
+            {/* Projected pts + ceiling (VAR-01: ceiling is the ranking basis) */}
+            <span className="text-sm text-ink whitespace-nowrap tabular-nums">
               {(isNaN(c.projected_captain_pts) ? 0 : c.projected_captain_pts).toFixed(1)} pts (C)
+            </span>
+            <span className="text-xs text-ink-muted whitespace-nowrap tabular-nums">
+              ceiling {(isNaN(c.ceiling_pts) ? 0 : c.ceiling_pts).toFixed(1)}
             </span>
             {/* Badges row */}
             <div className="flex items-center gap-1.5">

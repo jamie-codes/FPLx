@@ -105,17 +105,18 @@ export function HomeTab({ teamId, onTeamIdChange, submittedId, onSubmit, selectT
   }, [suggestions, squadData])
 
   // Captaincy — squad-aware preferred; pool fallback mirrors DecisionSummaryTab
-  // (WDS-04 / CONTEXT.md D-16): top outfield by xPts_1gw, doubled.
+  // (WDS-04 / CONTEXT.md D-16): top outfield by ceiling (xPts_90th_1gw ?? xPts_1gw) — VAR-01.
   const captainCandidate = useMemo<CaptaincyCandidate | undefined>(() => {
     if (scored.length === 0) return undefined
     if (squadData) return computeCaptaincyCandidates(squadData.picks, scored, 5)[0]
     const top = scored
       .filter((p) => (p.xPts_1gw ?? 0) > 0 && p.element_type !== 1)
-      .sort((a, b) => (b.xPts_1gw ?? 0) - (a.xPts_1gw ?? 0))[0]
+      .sort((a, b) => (b.xPts_90th_1gw ?? b.xPts_1gw ?? 0) - (a.xPts_90th_1gw ?? a.xPts_1gw ?? 0))[0]
     if (!top) return undefined
     return {
       player: top,
       projected_captain_pts: (top.xPts_1gw ?? 0) * 2,
+      ceiling_pts: top.xPts_90th_1gw ?? (top.xPts_1gw ?? 0),
       captain_type: top.mins_risk === 'nailed' ? 'safe' : 'upside',
     }
   }, [squadData, scored])

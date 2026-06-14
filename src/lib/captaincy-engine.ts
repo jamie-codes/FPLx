@@ -6,7 +6,8 @@ import type { SquadPick } from '@/lib/squad-adapter'
  */
 export interface CaptaincyCandidate {
   player: ScoredPlayer
-  projected_captain_pts: number  // xPts_1gw * 2
+  projected_captain_pts: number  // xPts_1gw * 2 — honest expected return
+  ceiling_pts: number            // xPts_90th_1gw ?? xPts_1gw — ranking basis (VAR-01)
   captain_type: 'safe' | 'upside'
 }
 
@@ -37,10 +38,12 @@ function computePositionAverages(allPlayers: ScoredPlayer[]): Record<number, num
  * - Only starting-XI picks (position 1-11) are considered
  * - Goalkeepers (element_type === 1) are excluded — captaining a GK is never optimal
  * - Players with xPts_1gw <= 0 or mins_risk === 'injured' are excluded
- * - projected_captain_pts = xPts_1gw * 2
+ * - projected_captain_pts = xPts_1gw * 2 (honest expected return; still displayed)
+ * - ceiling_pts = xPts_90th_1gw ?? xPts_1gw (ranking basis — VAR-01 / exp07)
  * - captain_type is 'safe' when mins_risk === 'nailed' AND gem_score >= position average
  * - captain_type is 'upside' for all other cases
- * - Results sorted by projected_captain_pts descending
+ * - Results sorted by ceiling_pts descending; tie-break projected_captain_pts descending
+ *   // VAR-01 (exp07): captaincy ranks by ceiling — doubling one player rewards upside (validated GW7-38).
  *
  * @param squadPicks - The manager's current squad picks
  * @param allPlayers - Full player pool (used for position average computation)
@@ -78,6 +81,8 @@ export function computeCaptaincyCandidates(
     if (player.mins_risk === 'injured') continue
 
     const projected_captain_pts = (player.xPts_1gw ?? 0) * 2
+    // VAR-01 (exp07): ceiling is the ranking basis — xPts_90th_1gw when available, else mean
+    const ceiling_pts = player.xPts_90th_1gw ?? (player.xPts_1gw ?? 0)
 
     // Classify captain type
     const posAvg = positionAvgs[player.element_type] ?? 0.5
@@ -87,12 +92,18 @@ export function computeCaptaincyCandidates(
     candidates.push({
       player,
       projected_captain_pts,
+      ceiling_pts,
       captain_type: isSafe ? 'safe' : 'upside',
     })
   }
 
-  // Sort by projected_captain_pts descending
-  candidates.sort((a, b) => b.projected_captain_pts - a.projected_captain_pts)
+  // Sort by ceiling_pts descending; tie-break projected_captain_pts descending
+  // VAR-01 (exp07): captaincy ranks by ceiling — doubling one player rewards upside (validated GW7-38).
+  candidates.sort((a, b) =>
+    b.ceiling_pts !== a.ceiling_pts
+      ? b.ceiling_pts - a.ceiling_pts
+      : b.projected_captain_pts - a.projected_captain_pts,
+  )
 
   return candidates.slice(0, topN)
 }

@@ -205,14 +205,16 @@ export function DecisionSummaryTab({
   const captaincyCandidates = useMemo<CaptaincyCandidate[]>(() => {
     if (scoredPlayers.length === 0) return []
     if (!squadData) {
-      // No-squad fallback: derive top-3 from player pool (WDS-04 / CONTEXT.md D-16)
+      // No-squad fallback: derive top-3 from player pool sorted by ceiling — VAR-01
+      // (WDS-04 / CONTEXT.md D-16): sort by xPts_90th_1gw ?? xPts_1gw.
       return scoredPlayers
         .filter(p => (p.xPts_1gw ?? 0) > 0 && p.element_type !== 1)
-        .sort((a, b) => (b.xPts_1gw ?? 0) - (a.xPts_1gw ?? 0))
+        .sort((a, b) => (b.xPts_90th_1gw ?? b.xPts_1gw ?? 0) - (a.xPts_90th_1gw ?? a.xPts_1gw ?? 0))
         .slice(0, 3)
         .map<CaptaincyCandidate>(p => ({
           player: p,
           projected_captain_pts: (p.xPts_1gw ?? 0) * 2,
+          ceiling_pts: p.xPts_90th_1gw ?? (p.xPts_1gw ?? 0),
           captain_type: p.mins_risk === 'nailed' ? 'safe' : 'upside',
         }))
     }
@@ -574,9 +576,12 @@ export function DecisionSummaryTab({
                       )
                     })()}
                 </div>
-                {/* Projected pts */}
-                <span className="text-sm text-ink whitespace-nowrap">
+                {/* Projected pts + ceiling (VAR-01: ceiling is the ranking basis) */}
+                <span className="text-sm text-ink whitespace-nowrap tabular-nums">
                   {(isNaN(c.projected_captain_pts) ? 0 : c.projected_captain_pts).toFixed(1)} pts (C)
+                </span>
+                <span className="text-xs text-ink-muted whitespace-nowrap tabular-nums">
+                  ceiling {(isNaN(c.ceiling_pts) ? 0 : c.ceiling_pts).toFixed(1)}
                 </span>
                 {/* Badges */}
                 <div className="flex items-center gap-1.5">
