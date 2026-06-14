@@ -3,27 +3,27 @@
     {
       "odds_cs_weight": 0.0,
       "top10_mean_pts": 4.753124999999999,
-      "cs_brier": 0.17833045890270327
+      "cs_brier": 0.17743158286511795
     },
     {
       "odds_cs_weight": 0.25,
-      "top10_mean_pts": 4.765624999999998,
-      "cs_brier": 0.17833045890270327
+      "top10_mean_pts": 4.790624999999998,
+      "cs_brier": 0.17743158286511795
     },
     {
       "odds_cs_weight": 0.5,
-      "top10_mean_pts": 4.8500000000000005,
-      "cs_brier": 0.17833045890270327
+      "top10_mean_pts": 4.871875,
+      "cs_brier": 0.17743158286511795
     },
     {
       "odds_cs_weight": 0.75,
-      "top10_mean_pts": 4.9375,
-      "cs_brier": 0.17833045890270327
+      "top10_mean_pts": 4.949999999999999,
+      "cs_brier": 0.17743158286511795
     },
     {
       "odds_cs_weight": 1.0,
-      "top10_mean_pts": 5.018750000000002,
-      "cs_brier": 0.17833045890270327
+      "top10_mean_pts": 5.003125000000001,
+      "cs_brier": 0.17743158286511795
     }
   ],
   "goalexp_sweep": [
@@ -48,10 +48,10 @@
       "top10_mean_pts": 4.9625
     }
   ],
-  "cs_brier_market": 0.17833045890270327,
-  "cs_logloss_market": 0.5351700043297964,
-  "goalexp_rmse_market": 1.0842182858877423,
-  "goalexp_corr_market": 0.31362530741111794,
+  "cs_brier_market": 0.17743158286511795,
+  "cs_logloss_market": 0.5328058082887325,
+  "goalexp_rmse_market": 1.0828478985605647,
+  "goalexp_corr_market": 0.315762684953571,
   "best_cs_weight": 1.0,
   "best_goalexp_weight": 0.25,
   "verdict": "SHIP_BOTH"

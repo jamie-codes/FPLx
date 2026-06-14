@@ -436,7 +436,7 @@ def run_backtest(archive: dict | None = None, params: dict | None = None,
 
                 # ODDS-01: market attack-difficulty blend — affects attack scaling ONLY.
                 atk_difficulty = difficulty
-                od = odds_lookup.get((gw, team_id)) if odds_lookup is not None else None
+                od = odds_lookup.get((fix['id'], team_id)) if odds_lookup is not None else None
                 if od is not None and p['odds_goalexp_weight'] > 0.0:
                     atk_difficulty = ((1.0 - p['odds_goalexp_weight']) * difficulty
                                       + p['odds_goalexp_weight'] * od['attack_difficulty'])

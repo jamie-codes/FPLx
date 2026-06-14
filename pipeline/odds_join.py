@@ -1,9 +1,14 @@
 """ODDS-01: join parsed odds rows to the season archive, producing a
-(gw, team_id) -> {cs_prob, goal_exp, attack_difficulty} lookup.
+(fixture_id, team_id) -> {cs_prob, goal_exp, attack_difficulty} lookup.
 
 cs_prob          market clean-sheet prob = exp(-lam_opponent)   (blend into cs_prob_raw)
 goal_exp         the team's own market lambda                   (raw, for RMSE metric)
 attack_difficulty 1 - per-GW-normalised(lam_team)               (blend into attack scaling)
+
+Keyed by (fixture_id, team_id) so that double-gameweek teams (who play two
+fixtures in one GW) produce two distinct entries rather than silently overwriting.
+Per-GW min-max normalisation of attack_difficulty still groups all fixture-legs
+within the same GW, so DGW legs contribute multiple entries to the normalisation.
 """
 from collections import defaultdict
 from odds_model import lambdas_from_odds, cs_prob
@@ -122,7 +127,9 @@ def build_odds_lookup(odds_rows: list[dict], archive: dict) -> dict:
         fix_index[key] = f
 
     # First pass: per-GW raw lambdas so we can normalise attack_difficulty per GW.
-    raw = []  # (gw, team_id, lam_team, lam_opp)
+    # Store (fix_id, gw, team_id, lam_team, lam_opp) — fix_id is the final key;
+    # gw is retained only for the per-GW normalisation grouping.
+    raw = []  # (fix_id, gw, team_id, lam_team, lam_opp)
     for r in odds_rows:
         if r['home'] not in name_to_id:
             raise ValueError(f"ODDS-01: unmapped home team {r['home']!r}")
@@ -134,22 +141,24 @@ def build_odds_lookup(odds_rows: list[dict], archive: dict) -> dict:
         if fix is None:
             raise ValueError(f"ODDS-01: no archived fixture for "
                              f"{r['date']} {r['home']} v {r['away']}")
+        fix_id = fix['id']
         gw = fix['event']
         lam_h, lam_a = lambdas_from_odds(r['odds_1x2'], r['odds_ou25'])
-        raw.append((gw, home_id, lam_h, lam_a))
-        raw.append((gw, away_id, lam_a, lam_h))
+        raw.append((fix_id, gw, home_id, lam_h, lam_a))
+        raw.append((fix_id, gw, away_id, lam_a, lam_h))
 
-    # per-GW min-max of lam_team for attack_difficulty
+    # per-GW min-max of lam_team for attack_difficulty.
+    # DGW teams contribute two entries to their GW's pool — intentional.
     by_gw = defaultdict(list)
-    for gw, _tid, lam_team, _lam_opp in raw:
+    for _fix_id, gw, _tid, lam_team, _lam_opp in raw:
         by_gw[gw].append(lam_team)
     gw_minmax = {gw: (min(v), max(v)) for gw, v in by_gw.items()}
 
     lookup = {}
-    for gw, tid, lam_team, lam_opp in raw:
+    for fix_id, gw, tid, lam_team, lam_opp in raw:
         lo, hi = gw_minmax[gw]
         norm = (lam_team - lo) / (hi - lo) if hi > lo else 0.5
-        lookup[(gw, tid)] = {
+        lookup[(fix_id, tid)] = {
             'cs_prob': cs_prob(lam_opp),
             'goal_exp': lam_team,
             'attack_difficulty': 1.0 - norm,

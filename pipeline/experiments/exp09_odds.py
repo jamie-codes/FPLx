@@ -48,9 +48,8 @@ def _cs_pairs(odds_lookup, archive):
         hs, as_ = f.get('team_h_score'), f.get('team_a_score')
         if hs is None or as_ is None:
             continue
-        gw = f['event']
-        odh = odds_lookup.get((gw, h))
-        oda = odds_lookup.get((gw, a))
+        odh = odds_lookup.get((f['id'], h))
+        oda = odds_lookup.get((f['id'], a))
         if odh is not None:
             pairs.append((odh['cs_prob'], as_ == 0))  # home keeps CS iff away scored 0
         if oda is not None:
@@ -68,8 +67,7 @@ def _goalexp_pairs(odds_lookup, archive):
         hs, as_ = f.get('team_h_score'), f.get('team_a_score')
         if hs is None or as_ is None:
             continue
-        gw = f['event']
-        odh, oda = odds_lookup.get((gw, h)), odds_lookup.get((gw, a))
+        odh, oda = odds_lookup.get((f['id'], h)), odds_lookup.get((f['id'], a))
         if odh is not None:
             pairs.append((odh['goal_exp'], hs))
         if oda is not None:
