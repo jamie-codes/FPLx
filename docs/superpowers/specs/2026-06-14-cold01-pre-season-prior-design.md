@@ -17,7 +17,7 @@ At GW1 (and thinly through ~GW6) the model has **zero current-season data**: Und
 - `build_prior_lookup(archive: dict) -> dict[int, dict]` — keyed by **player `code`** (persistent across seasons; FPL `id` reshuffles). For each archived player, sum `expected_goals`/`expected_assists`/`minutes`/`starts` over `archive['summaries'][pid]['history']`:
   `{code: {xg_per90, xa_per90, total_minutes, start_rate, mins_per_start}}`. Only players with `total_minutes >= 500` (reuse `suggest_squad`'s eligibility floor) to avoid cameo noise. (Understat 2025/26 archive is empty → FPL summed history is the honest, complete source; matches `build_asof_signals`' own derivation.)
 - `build_bucket_priors(archive) -> dict[(et, band), {xg_per90, xa_per90}]` — mean per-90 by `(element_type, price_band)` for new entrants with no `code` match. Coarse bands (budget/mid/premium by `now_cost`) for robustness to cross-season price drift. ≥500-min filter.
-- `SEED_MINUTES = 540` constant (≈6 full matches; the one knob, fit in the lab — see Validation).
+- `SEED_MINUTES = 270` constant (≈3 full matches; the one knob, **fit in the lab via exp08 — 270 beat 540/180/0 on the held-out early window**; see Validation).
 - `prior_for(code, element_type, now_cost, lookup, buckets) -> {xg_per90, xa_per90, start_rate, mins_per_start} | None` — code match first, then bucket, then None.
 
 ### merge.py — Layer-3 prior blend (after the USR-01 fallback, ~line 1269)
@@ -25,7 +25,7 @@ At GW1 (and thinly through ~GW6) the model has **zero current-season data**: Und
 Applied to the FINAL `xg_per90`/`xa_per90` (after Understat→FPL→proxy resolve), weighted by accrued current minutes (`minutes = element['minutes']`, merge.py:1286):
 
 ```
-w = max(0.0, min(1.0, cur_minutes / SEED_MINUTES))   # GW1: w=0 (pure prior); ~GW7: w=1 (pure current)
+w = max(0.0, min(1.0, cur_minutes / SEED_MINUTES))   # GW1: w=0 (pure prior); ~GW3-4: w=1 (pure current)
 if prior present and w < 1.0:
     cur_total = xg_per90 + xa_per90
     prior_total = prior_xg90 + prior_xa90
@@ -36,7 +36,7 @@ if prior present and w < 1.0:
     xa_per90 = blended_total * (1 - share)
 ```
 
-Self-deactivating: as `cur_minutes → SEED_MINUTES`, `w → 1` and the prior vanishes — no off-season gate needed. Gated by `prior present` so it's a pure no-op when no prior lookup is passed (backward-compatible default). Mirrors the existing form-blend's split-by-share convention.
+Self-deactivating: as `cur_minutes → SEED_MINUTES` (≈3 matches), `w → 1` and the prior vanishes — no off-season gate needed. Gated by `prior present` so it's a pure no-op when no prior lookup is passed (backward-compatible default). Mirrors the existing form-blend's split-by-share convention.
 
 ### xmins.py — prior start seed
 
