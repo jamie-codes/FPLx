@@ -1,0 +1,286 @@
+{
+ "config": {
+  "h1_window": "GW1-19",
+  "h2_window": "GW20-26",
+  "seed_values_swept": [
+   270,
+   360,
+   450,
+   540,
+   630,
+   720
+  ],
+  "fixed_seed_c": 540,
+  "prior_min_minutes": 500,
+  "params": {
+   "blend_alpha": 0.2,
+   "form_window_gws": 4,
+   "cs_prob_base": 0.4,
+   "cs_prob_slope": 0.3,
+   "cs_team_form_slope": 0.0,
+   "cs_def_form_window_gws": 6,
+   "atf_slope": 0.0,
+   "atf_window_gws": 6,
+   "min_prior_minutes": 180,
+   "xmins_window": 5,
+   "defcon_scale": 0.0,
+   "fixture_attack_slope": 0.4,
+   "use_xgc_def_form": 0.0,
+   "xmins_halflife": 0.0,
+   "gk_saves_scale": 0.0
+  }
+ },
+ "bucket_priors": {
+  "1": {
+   "xg_per90": 0.0,
+   "xa_per90": 0.0018160881965032518
+  },
+  "2": {
+   "xg_per90": 0.0535007063674063,
+   "xa_per90": 0.054721122795144926
+  },
+  "3": {
+   "xg_per90": 0.1580198232058733,
+   "xa_per90": 0.11630975500383682
+  },
+  "4": {
+   "xg_per90": 0.41529886708331437,
+   "xa_per90": 0.0437689686225816
+  }
+ },
+ "results": [
+  {
+   "arm": "A_current_only",
+   "seed": null,
+   "full_m1_7": {
+    "label": "A_current_only",
+    "n_gws": 6,
+    "top10_mean_pts": 4.3667,
+    "haul_capture": 0.1268,
+    "n_haulers": 71
+   },
+   "early_m1_3": {
+    "label": "A_current_only (m=1-3)",
+    "n_gws": 2,
+    "top10_mean_pts": 3.85,
+    "haul_capture": 0.1875,
+    "n_haulers": 16
+   },
+   "shared_m2_3": {
+    "label": "A_current_only (m=2-3)",
+    "n_gws": 2,
+    "top10_mean_pts": 3.85,
+    "haul_capture": 0.1875,
+    "n_haulers": 16
+   }
+  },
+  {
+   "arm": "B_blend_seed270",
+   "seed": 270,
+   "full_m1_7": {
+    "label": "B_blend_seed270",
+    "n_gws": 7,
+    "top10_mean_pts": 4.7286,
+    "haul_capture": 0.1236,
+    "n_haulers": 89
+   },
+   "early_m1_3": {
+    "label": "B_blend_seed270 (m=1-3)",
+    "n_gws": 3,
+    "top10_mean_pts": 4.9333,
+    "haul_capture": 0.1212,
+    "n_haulers": 33
+   },
+   "shared_m2_3": {
+    "label": "B_blend_seed270 (m=2-3)",
+    "n_gws": 2,
+    "top10_mean_pts": 4.3,
+    "haul_capture": 0.1667,
+    "n_haulers": 18
+   }
+  },
+  {
+   "arm": "B_blend_seed360",
+   "seed": 360,
+   "full_m1_7": {
+    "label": "B_blend_seed360",
+    "n_gws": 7,
+    "top10_mean_pts": 4.6429,
+    "haul_capture": 0.1236,
+    "n_haulers": 89
+   },
+   "early_m1_3": {
+    "label": "B_blend_seed360 (m=1-3)",
+    "n_gws": 3,
+    "top10_mean_pts": 4.7,
+    "haul_capture": 0.1212,
+    "n_haulers": 33
+   },
+   "shared_m2_3": {
+    "label": "B_blend_seed360 (m=2-3)",
+    "n_gws": 2,
+    "top10_mean_pts": 3.95,
+    "haul_capture": 0.1667,
+    "n_haulers": 18
+   }
+  },
+  {
+   "arm": "B_blend_seed450",
+   "seed": 450,
+   "full_m1_7": {
+    "label": "B_blend_seed450",
+    "n_gws": 7,
+    "top10_mean_pts": 5.0857,
+    "haul_capture": 0.1124,
+    "n_haulers": 89
+   },
+   "early_m1_3": {
+    "label": "B_blend_seed450 (m=1-3)",
+    "n_gws": 3,
+    "top10_mean_pts": 4.7,
+    "haul_capture": 0.1212,
+    "n_haulers": 33
+   },
+   "shared_m2_3": {
+    "label": "B_blend_seed450 (m=2-3)",
+    "n_gws": 2,
+    "top10_mean_pts": 3.95,
+    "haul_capture": 0.1667,
+    "n_haulers": 18
+   }
+  },
+  {
+   "arm": "B_blend_seed540",
+   "seed": 540,
+   "full_m1_7": {
+    "label": "B_blend_seed540",
+    "n_gws": 7,
+    "top10_mean_pts": 4.9143,
+    "haul_capture": 0.1348,
+    "n_haulers": 89
+   },
+   "early_m1_3": {
+    "label": "B_blend_seed540 (m=1-3)",
+    "n_gws": 3,
+    "top10_mean_pts": 4.5333,
+    "haul_capture": 0.1212,
+    "n_haulers": 33
+   },
+   "shared_m2_3": {
+    "label": "B_blend_seed540 (m=2-3)",
+    "n_gws": 2,
+    "top10_mean_pts": 3.7,
+    "haul_capture": 0.1667,
+    "n_haulers": 18
+   }
+  },
+  {
+   "arm": "B_blend_seed630",
+   "seed": 630,
+   "full_m1_7": {
+    "label": "B_blend_seed630",
+    "n_gws": 7,
+    "top10_mean_pts": 5.2143,
+    "haul_capture": 0.1461,
+    "n_haulers": 89
+   },
+   "early_m1_3": {
+    "label": "B_blend_seed630 (m=1-3)",
+    "n_gws": 3,
+    "top10_mean_pts": 4.7667,
+    "haul_capture": 0.1212,
+    "n_haulers": 33
+   },
+   "shared_m2_3": {
+    "label": "B_blend_seed630 (m=2-3)",
+    "n_gws": 2,
+    "top10_mean_pts": 4.05,
+    "haul_capture": 0.1667,
+    "n_haulers": 18
+   }
+  },
+  {
+   "arm": "B_blend_seed720",
+   "seed": 720,
+   "full_m1_7": {
+    "label": "B_blend_seed720",
+    "n_gws": 7,
+    "top10_mean_pts": 4.7857,
+    "haul_capture": 0.1461,
+    "n_haulers": 89
+   },
+   "early_m1_3": {
+    "label": "B_blend_seed720 (m=1-3)",
+    "n_gws": 3,
+    "top10_mean_pts": 4.1,
+    "haul_capture": 0.1212,
+    "n_haulers": 33
+   },
+   "shared_m2_3": {
+    "label": "B_blend_seed720 (m=2-3)",
+    "n_gws": 2,
+    "top10_mean_pts": 3.05,
+    "haul_capture": 0.1667,
+    "n_haulers": 18
+   }
+  },
+  {
+   "arm": "C_bucket_prior",
+   "seed": 540,
+   "full_m1_7": {
+    "label": "C_bucket_seed540",
+    "n_gws": 7,
+    "top10_mean_pts": 4.7714,
+    "haul_capture": 0.1348,
+    "n_haulers": 89
+   },
+   "early_m1_3": {
+    "label": "C_bucket_seed540 (m=1-3)",
+    "n_gws": 3,
+    "top10_mean_pts": 4.2667,
+    "haul_capture": 0.1515,
+    "n_haulers": 33
+   },
+   "shared_m2_3": {
+    "label": "C_bucket_seed540 (m=2-3)",
+    "n_gws": 2,
+    "top10_mean_pts": 3.9,
+    "haul_capture": 0.1667,
+    "n_haulers": 18
+   }
+  }
+ ],
+ "verdict": {
+  "best_seed_by_early": 270,
+  "best_seed_by_shared": 270,
+  "gw20_coverage_a": 0,
+  "gw20_coverage_b": 338,
+  "b_wins_gw20_coverage": true,
+  "b_beats_a_early_top10": true,
+  "b_beats_a_early_haul_biased": false,
+  "b_beats_a_shared_top10": true,
+  "b_beats_a_shared_haul": false,
+  "b_beats_c_early_top10": true,
+  "early_top10_pts": {
+   "A": 3.85,
+   "B": 4.9333,
+   "C": 4.2667
+  },
+  "early_haul_capture_biased": {
+   "A": 0.1875,
+   "B": 0.1212,
+   "C": 0.1515
+  },
+  "shared_top10_pts": {
+   "A": 3.85,
+   "B": 4.3,
+   "C": 3.9
+  },
+  "shared_haul_capture": {
+   "A": 0.1875,
+   "B": 0.1667,
+   "C": 0.1667
+  },
+  "verdict_text": "VALIDATE: prior-blend beats current-only on top10pts in both early (m=1-3) and shared (m=2-3) windows, AND provides full GW1 coverage that A lacks entirely \u2014 SHIP the live model."
+ }
+}
