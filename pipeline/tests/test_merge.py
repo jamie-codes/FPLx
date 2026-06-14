@@ -504,3 +504,148 @@ class TestAssetCodePassthrough:
                                   xmins_stats=xmins_stats, summaries=summaries)
         p = next(pl for pl in merged if pl['id'] == 1)
         assert p['team_code'] == 0
+
+
+# ── COLD-01 Layer-3 prior blend tests ────────────────────────────────────────
+
+def _build_cold_start_inputs(player_code=1001, minutes=0, element_type=3, now_cost=70,
+                              xg_str='0.0', xa_str='0.0'):
+    """Build minimal inputs for a single GW1-like cold player (no current-season data)."""
+    element = {
+        'id': 1,
+        'code': player_code,
+        'web_name': 'ColdPlayer',
+        'element_type': element_type,
+        'team': 14,
+        'now_cost': now_cost,
+        'selected_by_percent': '5.0',
+        'form': '0',
+        'status': 'a',
+        'minutes': minutes,
+        'starts': 0,
+        'total_points': 0,
+        'goals_scored': 0,
+        'assists': 0,
+        'expected_goals': xg_str,
+        'expected_assists': xa_str,
+        'cost_change_event': 0,
+        'cost_change_start': 0,
+        'penalties_text': '',
+        'direct_freekicks_text': '',
+        'corners_and_indirect_freekicks_text': '',
+        'news': '',
+        'defensive_contribution': None,
+        'clearances_blocks_interceptions': None,
+        'direct_freekicks_order': None,
+        'penalties_order': None,
+        'corners_and_indirect_freekicks_order': None,
+    }
+    bootstrap = {
+        'elements': [element],
+        'teams': [{'id': 14, 'short_name': 'LIV'}],
+        'events': [{'id': 1, 'finished': False, 'is_current': True}],
+    }
+    fixtures = [{
+        'event': 1, 'team_h': 14, 'team_a': 1,
+        'team_h_difficulty': 3, 'team_a_difficulty': 3,
+        'finished': False,
+    }]
+    understat = {}
+    id_map = {'1': {'understat_id': None}}
+    xmins_stats = {1: {'xmins': 60.0, 'start_prob': 0.8, 'mins_risk': 'nailed'}}
+    summaries = {1: {'history': []}}
+    return bootstrap, fixtures, understat, id_map, xmins_stats, summaries
+
+
+class TestCold01PriorBlend:
+    """COLD-01: Layer-3 prior blend in merge_players."""
+
+    def test_no_op_when_no_prior_args(self):
+        """When neither prior_lookup nor bucket_priors passed, output is unchanged (backward-compat)."""
+        history = [_hist(gw, 90, 6, xg=0.4, xa=0.2) for gw in range(1, 11)]
+        bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_minimal_inputs({1: history})
+        merged_default, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                                          xmins_stats=xmins_stats, summaries=summaries)
+        merged_explicit, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                                           xmins_stats=xmins_stats, summaries=summaries,
+                                           prior_lookup=None, bucket_priors=None)
+        p_default = next(p for p in merged_default if p['id'] == 1)
+        p_explicit = next(p for p in merged_explicit if p['id'] == 1)
+        assert p_default['xg_per90'] == p_explicit['xg_per90']
+        assert p_default['xa_per90'] == p_explicit['xa_per90']
+
+    def test_prior_used_at_gw1_pure_prior(self):
+        """At cur_minutes=0 (GW1), w=0 → output equals prior (re-split by prior share)."""
+        prior_xg = 0.3
+        prior_xa = 0.15
+        prior_lookup = {
+            1001: {
+                'xg_per90': prior_xg,
+                'xa_per90': prior_xa,
+                'total_minutes': 2700,
+                'start_rate': 0.95,
+                'mins_per_start': 88.0,
+            }
+        }
+        bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_cold_start_inputs(
+            player_code=1001, minutes=0
+        )
+        merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                                   xmins_stats=xmins_stats, summaries=summaries,
+                                   prior_lookup=prior_lookup, bucket_priors={})
+        p = next(pl for pl in merged if pl['id'] == 1)
+        # w=0 → pure prior; total = prior_xg + prior_xa; re-split by prior share
+        prior_total = prior_xg + prior_xa
+        share = prior_xg / prior_total
+        expected_xg = round(prior_total * share, 4)
+        expected_xa = round(prior_total * (1 - share), 4)
+        assert abs(p['xg_per90'] - expected_xg) < 1e-4, f"Expected xg_per90={expected_xg}, got {p['xg_per90']}"
+        assert abs(p['xa_per90'] - expected_xa) < 1e-4, f"Expected xa_per90={expected_xa}, got {p['xa_per90']}"
+
+    def test_prior_vanishes_at_seed_minutes(self):
+        """At cur_minutes >= SEED_MINUTES (270), w=1 → current xg/xa unchanged."""
+        from season_prior import SEED_MINUTES
+        prior_lookup = {
+            1001: {
+                'xg_per90': 0.5,   # very different from current
+                'xa_per90': 0.3,
+                'total_minutes': 2700,
+                'start_rate': 0.95,
+                'mins_per_start': 88.0,
+            }
+        }
+        # Player has 270 current minutes and FPL xG data (non-zero)
+        bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_cold_start_inputs(
+            player_code=1001, minutes=SEED_MINUTES, xg_str='0.1', xa_str='0.05'
+        )
+        merged_with_prior, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                                              xmins_stats=xmins_stats, summaries=summaries,
+                                              prior_lookup=prior_lookup, bucket_priors={})
+        merged_no_prior, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                                            xmins_stats=xmins_stats, summaries=summaries)
+        p_with = next(p for p in merged_with_prior if p['id'] == 1)
+        p_no = next(p for p in merged_no_prior if p['id'] == 1)
+        assert p_with['xg_per90'] == p_no['xg_per90'], (
+            f"Prior should vanish at SEED_MINUTES; with={p_with['xg_per90']}, no={p_no['xg_per90']}"
+        )
+        assert p_with['xa_per90'] == p_no['xa_per90']
+
+    def test_bucket_prior_used_when_no_code_match(self):
+        """New-entrant (code not in lookup) uses bucket prior."""
+        bucket_xg = 0.2
+        bucket_xa = 0.1
+        bucket_priors = {(3, 1): {'xg_per90': bucket_xg, 'xa_per90': bucket_xa}}
+        # code=9999 not in lookup; element_type=3, now_cost=70 → band=1
+        bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_cold_start_inputs(
+            player_code=9999, minutes=0, element_type=3, now_cost=70
+        )
+        merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                                   xmins_stats=xmins_stats, summaries=summaries,
+                                   prior_lookup={}, bucket_priors=bucket_priors)
+        p = next(pl for pl in merged if pl['id'] == 1)
+        prior_total = bucket_xg + bucket_xa
+        share = bucket_xg / prior_total
+        expected_xg = round(prior_total * share, 4)
+        expected_xa = round(prior_total * (1 - share), 4)
+        assert abs(p['xg_per90'] - expected_xg) < 1e-4
+        assert abs(p['xa_per90'] - expected_xa) < 1e-4

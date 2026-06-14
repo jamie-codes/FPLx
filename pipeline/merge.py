@@ -3,6 +3,7 @@ custom FDR from rolling goals conceded, and next 5 fixture difficulty scores."""
 
 from typing import Optional
 from saves import poisson_floor_save_pts, AWAY_FACTOR, HOME_FACTOR
+from season_prior import prior_for, SEED_MINUTES  # COLD-01
 
 
 def _safe_float(val, default: float = 0.0) -> float:
@@ -951,6 +952,8 @@ def merge_players(
     atf_window_gws: int = 6,                # ATF-01: rolling window for goals-scored average
     fas_slope: float = 0.4,                 # FAS-01: default per honest backtest
     defcon_scale: float = 0.0,              # DC-01: tuner-controlled
+    prior_lookup: dict | None = None,       # COLD-01: code→prior dict (build_prior_lookup)
+    bucket_priors: dict | None = None,      # COLD-01: (et,band)→prior dict (build_bucket_priors)
 ) -> tuple[list, dict]:
     """Merge FPL bootstrap + Understat xG/xA into a unified player list.
 
@@ -1267,6 +1270,25 @@ def merge_players(
                 else:
                     xg_per90 = 0.0
                     xa_per90 = 0.0
+
+        # COLD-01 Layer-3: blend prior-season per-90 toward current as minutes accrue.
+        # No-op when no prior passed. Self-deactivates at cur_minutes >= SEED_MINUTES.
+        if prior_lookup is not None or bucket_priors is not None:
+            prior = prior_for(
+                element.get('code', 0), element['element_type'], element['now_cost'],
+                prior_lookup or {}, bucket_priors or {},
+            )
+            cur_minutes = element.get('minutes', 0)
+            w = max(0.0, min(1.0, cur_minutes / SEED_MINUTES)) if SEED_MINUTES > 0 else 1.0
+            if prior is not None and w < 1.0:
+                prior_xg90 = prior.get('xg_per90', 0.0)
+                prior_xa90 = prior.get('xa_per90', 0.0)
+                cur_total = (xg_per90 or 0.0) + (xa_per90 or 0.0)
+                prior_total = prior_xg90 + prior_xa90
+                blended_total = (1 - w) * prior_total + w * cur_total
+                share = prior_xg90 / prior_total if prior_total > 0 else 0.5
+                xg_per90 = round(blended_total * share, 4)
+                xa_per90 = round(blended_total * (1 - share), 4)
 
         # VG-01: Historical points from element-summary
         pts_last3gw = 0
