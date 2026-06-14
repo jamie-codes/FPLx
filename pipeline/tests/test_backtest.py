@@ -692,3 +692,56 @@ def test_gk_saves_scale_adds_ev_only_for_gkp():
     # FWD: no change
     assert rows_scale[2]['xpts_pred'] == pytest.approx(
         rows_base[2]['xpts_pred'], abs=1e-6)
+
+
+# ── ODDS-01 blend tests ───────────────────────────────────────────────────── #
+
+def test_cs_prob_odds_blend_noop_at_zero_weight():
+    from merge import _cs_prob
+    base = _cs_prob(0.5, 90.0, cs_prob_base=0.40, cs_prob_slope=0.30)
+    blended = _cs_prob(0.5, 90.0, cs_prob_base=0.40, cs_prob_slope=0.30,
+                       odds_cs_prob=0.9, odds_cs_weight=0.0)
+    assert base == blended  # weight 0 -> identical
+
+
+def test_cs_prob_odds_blend_full_weight_uses_market():
+    from merge import _cs_prob
+    # full weight: cs_prob_raw becomes the market prob, then x minutes factor (=1 at 90')
+    out = _cs_prob(0.5, 90.0, mins_60_prob=1.0,
+                   odds_cs_prob=0.55, odds_cs_weight=1.0)
+    assert abs(out - 0.55) < 1e-9
+
+
+def test_run_backtest_noop_when_no_odds_lookup():
+    from backtest import run_backtest
+    from capture_season import load_season_archive
+    archive = load_season_archive()
+    base = run_backtest(archive, mode='deploy')
+    same = run_backtest(archive, mode='deploy', odds_lookup=None)
+    assert base['metrics'] == same['metrics']
+
+
+def test_run_backtest_odds_weight_zero_matches_baseline():
+    from backtest import run_backtest
+    from capture_season import load_season_archive
+    from odds_client import parse_odds_csv, SNAPSHOT_PATH
+    from odds_join import build_odds_lookup
+    archive = load_season_archive()
+    lk = build_odds_lookup(parse_odds_csv(open(SNAPSHOT_PATH, encoding='utf-8').read()), archive)
+    base = run_backtest(archive, mode='deploy')
+    # lookup present but both weights 0 -> identical to baseline
+    same = run_backtest(archive, params={'odds_cs_weight': 0.0, 'odds_goalexp_weight': 0.0},
+                        mode='deploy', odds_lookup=lk)
+    assert base['metrics'] == same['metrics']
+
+
+def test_run_backtest_odds_cs_weight_changes_metrics():
+    from backtest import run_backtest
+    from capture_season import load_season_archive
+    from odds_client import parse_odds_csv, SNAPSHOT_PATH
+    from odds_join import build_odds_lookup
+    archive = load_season_archive()
+    lk = build_odds_lookup(parse_odds_csv(open(SNAPSHOT_PATH, encoding='utf-8').read()), archive)
+    base = run_backtest(archive, mode='deploy')
+    blended = run_backtest(archive, params={'odds_cs_weight': 1.0}, mode='deploy', odds_lookup=lk)
+    assert base['metrics'] != blended['metrics']  # CS blend moves predictions

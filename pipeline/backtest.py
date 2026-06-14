@@ -46,6 +46,8 @@ DEFAULT_PARAMS = {
     'use_xgc_def_form': 0.0,    # BT-02: use xGC-based team defence instead of goals-conceded
     'xmins_halflife': 0.0,      # 0.0 = off; > 0 = exponential weighting halflife (GWs)
     'gk_saves_scale': 0.0,      # 0.0 = off; > 0 = GKP save-point EV scaling
+    'odds_cs_weight': 0.0,        # ODDS-01: blend market CS-prob into cs_prob_raw
+    'odds_goalexp_weight': 0.0,   # ODDS-01: blend market attack-difficulty into attack scaling
 }
 
 HAUL_THRESHOLD = 10
@@ -363,7 +365,7 @@ def compute_metrics(rows: list):
 
 def run_backtest(archive: dict | None = None, params: dict | None = None,
                  mode: str = 'deploy', first_gw: int = 7,
-                 last_gw: int = 38) -> dict:
+                 last_gw: int = 38, odds_lookup: dict | None = None) -> dict:
     """Leakage-free backtest over the season archive. See module docstring."""
     from accuracy import build_team_def_form_lookup, build_team_atf_lookup
     from merge import _compute_xpts_fixture
@@ -432,9 +434,16 @@ def run_backtest(archive: dict | None = None, params: dict | None = None,
                     ncr = def_form.get((gw, team_id), 0.5)
                 nar = atf_form.get((gw, team_id), 0.5)
 
+                # ODDS-01: market attack-difficulty blend — affects attack scaling ONLY.
+                atk_difficulty = difficulty
+                od = odds_lookup.get((gw, team_id)) if odds_lookup is not None else None
+                if od is not None and p['odds_goalexp_weight'] > 0.0:
+                    atk_difficulty = ((1.0 - p['odds_goalexp_weight']) * difficulty
+                                      + p['odds_goalexp_weight'] * od['attack_difficulty'])
+
                 # BT-02: fixture_attack_slope — scale attacking EV by opponent difficulty
                 if p['fixture_attack_slope'] > 0.0:
-                    atk_scale = max(0.0, 1.0 + (0.5 - difficulty) * p['fixture_attack_slope'])
+                    atk_scale = max(0.0, 1.0 + (0.5 - atk_difficulty) * p['fixture_attack_slope'])
                     xg_used = sig['xg_per90'] * atk_scale
                     xa_used = sig['xa_per90'] * atk_scale
                 else:
@@ -475,6 +484,8 @@ def run_backtest(archive: dict | None = None, params: dict | None = None,
                     cs_team_form_slope=p['cs_team_form_slope'],
                     norm_attack_rate=nar,
                     atf_slope=p['atf_slope'],
+                    odds_cs_prob=(od['cs_prob'] if od is not None else None),   # ODDS-01
+                    odds_cs_weight=p['odds_cs_weight'],                          # ODDS-01
                 )
                 pred += result['total']
 

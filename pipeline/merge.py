@@ -211,6 +211,8 @@ def _cs_prob(defensive_difficulty: float, xmins: float, mins_60_prob: float | No
              cs_prob_base: float = 0.40, cs_prob_slope: float = 0.30,
              norm_concede_rate: float = 0.5,   # CSF-01: own team's goals-conceded rate (normalised)
              cs_team_form_slope: float = 0.0,  # CSF-01: weight for team defensive form
+             odds_cs_prob: float | None = None,  # ODDS-01: market-implied CS probability
+             odds_cs_weight: float = 0.0,        # ODDS-01: blend weight (0 = no-op)
              ) -> float:
     """Compute effective CS probability for a fixture (Phase 28 CR-01, WR-01).
 
@@ -238,6 +240,9 @@ def _cs_prob(defensive_difficulty: float, xmins: float, mins_60_prob: float | No
         - defensive_difficulty * cs_prob_slope
         - norm_concede_rate * cs_team_form_slope   # CSF-01
     ))
+    # ODDS-01: blend market-implied CS-prob at the raw-prob stage (no-op at weight 0).
+    if odds_cs_prob is not None and odds_cs_weight > 0.0:
+        cs_prob_raw = (1.0 - odds_cs_weight) * cs_prob_raw + odds_cs_weight * odds_cs_prob
     if mins_60_prob is not None:
         mins_factor = mins_60_prob
     else:
@@ -316,6 +321,8 @@ def _compute_xpts_fixture(
     fas_slope: float = 0.0,                         # FAS-01: weight for fixture attack scaling
     defcon_rate: float = 0.0,                       # DC-01: prior P(DC threshold | 60+ mins)
     defcon_scale: float = 0.0,                      # DC-01: weight for DefCon EV
+    odds_cs_prob: float | None = None,              # ODDS-01: market CS-prob for this team-fixture
+    odds_cs_weight: float = 0.0,                    # ODDS-01: blend weight (0 = no-op)
 ) -> dict:
     """Compute expected FPL points for a single fixture (Phase 28 DATA-02).
 
@@ -370,7 +377,9 @@ def _compute_xpts_fixture(
                                  cs_prob_base=cs_prob_base,
                                  cs_prob_slope=cs_prob_slope,
                                  norm_concede_rate=norm_concede_rate,        # CSF-01
-                                 cs_team_form_slope=cs_team_form_slope)      # CSF-01
+                                 cs_team_form_slope=cs_team_form_slope,      # CSF-01
+                                 odds_cs_prob=odds_cs_prob,                  # ODDS-01
+                                 odds_cs_weight=odds_cs_weight)              # ODDS-01
     cs_pts = effective_cs_prob * CS_PTS[element_type]
 
     # Bonus: flat position-average rate, scaled by expected minutes only.
