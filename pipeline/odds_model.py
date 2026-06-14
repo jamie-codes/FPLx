@@ -18,10 +18,11 @@ def poisson_pmf(k: int, lam: float) -> float:
 
 
 def devig(decimal_odds: list[float]) -> list[float]:
-    """Normalise reciprocal decimal odds to sum to 1 (removes the bookmaker margin)."""
-    inv = [1.0 / o for o in decimal_odds]
+    """Normalise reciprocal decimal odds to sum to 1 (removes the bookmaker margin).
+    Non-positive odds are treated as 0 probability (defensive — real books never quote <=0)."""
+    inv = [1.0 / o if o and o > 0 else 0.0 for o in decimal_odds]
     s = sum(inv)
-    return [x / s for x in inv]
+    return [x / s for x in inv] if s > 0 else [1.0 / len(inv)] * len(inv)
 
 
 def _p_over_25(lam_total: float) -> float:

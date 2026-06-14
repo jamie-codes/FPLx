@@ -12,7 +12,6 @@ import os
 from capture_season import load_season_archive
 from odds_client import parse_odds_csv, SNAPSHOT_PATH
 from odds_join import build_odds_lookup
-from odds_model import lambdas_from_odds
 from backtest import run_backtest
 
 _OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'exp09_odds.json')
@@ -98,9 +97,10 @@ def run():
     odds_lookup = build_odds_lookup(
         parse_odds_csv(open(SNAPSHOT_PATH, encoding='utf-8').read()), archive)
 
-    # CS metrics are intrinsic to the lookup (proxy CS is implicit in the baseline arm).
-    cs_brier = _brier(_cs_pairs(odds_lookup, archive))
-    cs_logloss = _logloss(_cs_pairs(odds_lookup, archive))
+    # CS metrics are intrinsic to the lookup (market CS-prob vs actual clean sheets).
+    cs_pairs = _cs_pairs(odds_lookup, archive)
+    cs_brier = _brier(cs_pairs)
+    cs_logloss = _logloss(cs_pairs)
     ge_pairs = _goalexp_pairs(odds_lookup, archive)
     ge_rmse, ge_corr = _rmse(ge_pairs), _corr(ge_pairs)
 
@@ -113,7 +113,7 @@ def run():
         cs_sweep.append({
             'odds_cs_weight': w,
             'top10_mean_pts': top10({'odds_cs_weight': w}),
-            'cs_brier': cs_brier if w > 0 else _brier(_cs_pairs(odds_lookup, archive)),
+            'cs_brier': cs_brier,  # market CS Brier (constant across CS-weight arms)
         })
     base_top10 = next(a['top10_mean_pts'] for a in cs_sweep if a['odds_cs_weight'] == 0.0)
     best_cs = max(cs_sweep, key=lambda a: a['top10_mean_pts'])
