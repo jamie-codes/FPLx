@@ -59,15 +59,15 @@ Independent Poisson slightly under-weights low scores; acceptable for a relative
 
 ### `pipeline/odds_join.py` — alias + keying (join)
 - `FOOTBALL_DATA_TO_FPL: dict[str, str]` — football-data names → FPL team `name`/`short_name` (e.g. `Man United→Man Utd`, `Tottenham→Spurs`, `Nott'm Forest→Nott'm Forest`, `Newcastle→Newcastle`, `Wolves→Wolves`). Resolved against `archive['bootstrap']['teams']` to get team ids.
-- `build_odds_lookups(odds_rows, archive) -> tuple[dict, dict]` — returns `(cs_lookup, goalexp_lookup)`, each keyed `(gw, team_id)`. Joins each odds row to its archived fixture by `(date, home_id, away_id)`; reads the fixture's `event` (GW). For each side, stores `cs_prob(λ_opp)` and `goal_exp = λ_side`. **Asserts every odds row matched a fixture and every team resolved — raises on any gap (no silent truncation).**
+- `build_odds_lookup(odds_rows, archive) -> dict` — returns one unified lookup keyed **`(fixture_id, team_id)`** with value `{cs_prob, goal_exp, attack_difficulty}`. Joins each odds row to its archived fixture by `(date, home_id, away_id)`; reads the fixture's `event` (GW) for the per-GW `attack_difficulty` normalisation. For each side: `cs_prob = exp(−λ_opp)`, `goal_exp = λ_side`, `attack_difficulty = 1 − minmax_GW(λ_side)`. **Asserts every odds row matched a fixture and every team resolved — raises on any gap (no silent truncation).** *Keying note:* the key is `(fixture_id, team_id)`, NOT `(gw, team_id)` — a `(gw, team_id)` key silently collapses double-gameweeks (a team's two legs in one GW overwrite each other). Per-fixture keying handles DGWs correctly, which matters precisely where chip timing is decided.
 
-### `pipeline/backtest.py` — integration (the `(gw, team_id)` seam)
+### `pipeline/backtest.py` — integration (the per-fixture seam)
 - `DEFAULT_PARAMS` gains `odds_cs_weight: 0.0`, `odds_goalexp_weight: 0.0` (no-op at default — existing backtest results unchanged).
-- `run_backtest(...)` gains optional `odds_cs_lookup=None`, `odds_goalexp_lookup=None`.
-- In the per-fixture xPts path:
-  - **CS blend (at the raw-prob stage):** when `odds_cs_weight > 0` and `(gw, team_id)` is in `odds_cs_lookup`, `cs_prob_raw = (1 − w)·proxy_raw + w·market_cs_prob`, then × the existing minutes factor. Market CS-prob is already a calibrated probability, so it blends with `cs_prob_raw` (post-`cs_prob_base/slope`), not with `defensive_difficulty`.
-  - **Goal-exp blend (on the difficulty scale):** when `odds_goalexp_weight > 0`, normalise each GW's market λ across the 20 teams to 0–1 (min-max, same transform the proxy uses) and blend into `attacking_difficulty`/`defensive_difficulty` by `odds_goalexp_weight`, preserving the existing FAS-01 scale.
-- Leakage: closing odds are pre-kickoff; lookup consumed only for its own GW (identical contract to `def_form`).
+- `run_backtest(...)` gains optional `odds_lookup=None` (the single unified `(fixture_id, team_id)` lookup).
+- In the per-fixture xPts path (which already has `fix['id']` and `team_id`):
+  - **CS blend (at the raw-prob stage):** when `odds_cs_weight > 0` and `(fix['id'], team_id)` is in `odds_lookup`, blend inside `_cs_prob`: `cs_prob_raw = (1 − w)·proxy_raw + w·market_cs_prob`, then × the existing minutes factor. Market CS-prob is already a calibrated probability, so it blends with `cs_prob_raw` (post-`cs_prob_base/slope`), not with `defensive_difficulty`.
+  - **Goal-exp blend (attack scaling ONLY):** when `odds_goalexp_weight > 0`, blend the market `attack_difficulty` into a SEPARATE local `atk_difficulty` used only by the `fixture_attack_slope` scaling — the `difficulty` that feeds CS as `defensive_difficulty` is left untouched, keeping the two signals cleanly separated.
+- Leakage: closing odds are pre-kickoff; lookup consumed only for its own fixture (identical contract to `def_form`).
 
 ### `pipeline/experiments/exp09_odds.py` (+ `.json`) — orchestration
 - Loads the committed `E0_2025_26.csv` snapshot + the season archive; builds the lookups; runs deploy-mode backtests over a coordinate sweep: `odds_cs_weight ∈ [0, 0.25, 0.5, 0.75, 1.0]`, then `odds_goalexp_weight ∈ [0, 0.25, 0.5, 0.75, 1.0]` at the best CS weight.
