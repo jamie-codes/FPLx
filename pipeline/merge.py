@@ -1286,7 +1286,9 @@ def merge_players(
                 cur_total = (xg_per90 or 0.0) + (xa_per90 or 0.0)
                 prior_total = prior_xg90 + prior_xa90
                 blended_total = (1 - w) * prior_total + w * cur_total
-                share = prior_xg90 / prior_total if prior_total > 0 else 0.5
+                prior_share = prior_xg90 / prior_total if prior_total > 0 else 0.5
+                cur_share = (xg_per90 or 0.0) / cur_total if cur_total > 0 else prior_share
+                share = (1 - w) * prior_share + w * cur_share
                 xg_per90 = round(blended_total * share, 4)
                 xa_per90 = round(blended_total * (1 - share), 4)
 

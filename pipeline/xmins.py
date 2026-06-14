@@ -185,9 +185,11 @@ def _compute_player_xmins(
         if len(starts_in_recent) < 3:
             # COLD-01: use prior start_rate when available; else flat POSITION_PRIOR
             if prior_start is not None:
-                start_prob = round(prior_start['start_rate'] * availability, 4)
+                start_prob = round(
+                    prior_start.get('start_rate', POSITION_PRIOR.get(element_type, 0.65)) * availability, 4
+                )
                 if avg_mins_started == 0.0:
-                    avg_mins_started = prior_start['mins_per_start']
+                    avg_mins_started = prior_start.get('mins_per_start', 0.0)
             else:
                 start_prob = round(POSITION_PRIOR.get(element_type, 0.65) * availability, 4)
         else:
@@ -208,9 +210,11 @@ def _compute_player_xmins(
         if starts < 3:
             # COLD-01: use prior start_rate when available; else flat POSITION_PRIOR
             if prior_start is not None:
-                start_prob = round(prior_start['start_rate'] * availability, 4)
+                start_prob = round(
+                    prior_start.get('start_rate', POSITION_PRIOR.get(element_type, 0.65)) * availability, 4
+                )
                 if avg_mins_started == 0.0:
-                    avg_mins_started = prior_start['mins_per_start']
+                    avg_mins_started = prior_start.get('mins_per_start', 0.0)
             else:
                 start_prob = round(POSITION_PRIOR.get(element_type, 0.65) * availability, 4)
         else:

@@ -630,6 +630,42 @@ class TestCold01PriorBlend:
         )
         assert p_with['xa_per90'] == p_no['xa_per90']
 
+    def test_intermediate_w_pure_xa_player_not_rendered_pure_xg(self):
+        """At intermediate w (cur_minutes=243 → w=0.9), a current pure-xA player keeps xa > xg.
+
+        Prior is pure-xG (xg=0.3, xa=0.0).  Current is pure-xA (xg=0.0, xa=0.4).
+        With old code (share = prior_xg/prior_total = 1.0), the player would be
+        rendered pure-xG regardless of current data.  With blended share the
+        current signal should dominate (w=0.9) and xa_per90 > xg_per90.
+        """
+        from season_prior import SEED_MINUTES
+        prior_lookup = {
+            1001: {
+                'xg_per90': 0.3,
+                'xa_per90': 0.0,   # pure-xG prior
+                'total_minutes': 2700,
+                'start_rate': 0.95,
+                'mins_per_start': 88.0,
+            }
+        }
+        # cur_minutes=243, SEED_MINUTES=270 → w = 243/270 = 0.9
+        cur_minutes = int(SEED_MINUTES * 0.9)
+        # Build inputs with a pure-xA current player using per-90 fields (Layer-1 path)
+        bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_cold_start_inputs(
+            player_code=1001, minutes=cur_minutes, xg_str='0.0', xa_str='0.4'
+        )
+        # Inject expected_goals_per_90 / expected_assists_per_90 so Layer-1 picks them up
+        bootstrap['elements'][0]['expected_goals_per_90'] = '0.0'
+        bootstrap['elements'][0]['expected_assists_per_90'] = '0.4'
+        merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                                   xmins_stats=xmins_stats, summaries=summaries,
+                                   prior_lookup=prior_lookup, bucket_priors={})
+        p = next(pl for pl in merged if pl['id'] == 1)
+        assert p['xa_per90'] > p['xg_per90'], (
+            f"At w=0.9 with pure-xA current player, xa_per90 ({p['xa_per90']}) "
+            f"must exceed xg_per90 ({p['xg_per90']})"
+        )
+
     def test_bucket_prior_used_when_no_code_match(self):
         """New-entrant (code not in lookup) uses bucket prior."""
         bucket_xg = 0.2

@@ -720,60 +720,77 @@ def test_compute_honest_metrics_calibration_gate_below_8(monkeypatch):
     assert len(called) == 0
 
 
-# ── COLD-01: prior built and threaded via run.py source checks ────────────────
+# ── COLD-01: _build_cold_start_prior() behavioral tests ───────────────────────
 
-def test_run_py_cold01_source_contains_prior_build():
-    """COLD-01: run.py source references the prior-build block."""
-    run_path = os.path.join(os.path.dirname(__file__), '..', 'run.py')
-    with open(run_path, 'r', encoding='utf-8') as f:
-        src = f.read()
-    assert 'build_prior_lookup' in src, "run.py must call build_prior_lookup"
-    assert 'build_bucket_priors' in src, "run.py must call build_bucket_priors"
-    assert 'start_seed' in src, "run.py must build start_seed"
-    assert 'prior_lookup=prior_lookup' in src, "run.py must pass prior_lookup to merge_players"
-    assert 'bucket_priors=bucket_priors' in src, "run.py must pass bucket_priors to merge_players"
-    assert 'start_seed=start_seed' in src, "run.py must pass start_seed to compute_xmins_stats"
+def _minimal_archive_for_prior():
+    """Return a tiny season archive with one eligible player (>=500 minutes)."""
+    return {
+        'bootstrap': {
+            'elements': [
+                {
+                    'id': 1, 'code': 9001,
+                    'element_type': 3, 'now_cost': 70,
+                }
+            ]
+        },
+        'summaries': {
+            1: {
+                'history': [
+                    {
+                        'minutes': 90, 'starts': 1,
+                        'expected_goals': '0.3', 'expected_assists': '0.1',
+                    }
+                ] * 6  # 6 × 90 = 540 minutes → eligible
+            }
+        },
+    }
 
 
-def test_run_py_cold01_non_fatal_when_archive_absent(monkeypatch):
-    """COLD-01: FileNotFoundError from load_season_archive leaves pipeline running with empty lookups."""
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+def test_build_cold_start_prior_good_archive(monkeypatch):
+    """COLD-01: _build_cold_start_prior returns non-empty lookups and start_seed for a valid archive."""
     import run as run_mod
-    import season_prior as sp_mod
-
-    # Patch load_season_archive to raise FileNotFoundError
-    def _raise_fnf(*a, **kw):
-        raise FileNotFoundError("no archive")
-
-    captured_prior_lookup = {}
-    captured_bucket_priors = {}
-    captured_start_seed = {}
-
-    original_build_prior = sp_mod.build_prior_lookup
-    original_build_buckets = sp_mod.build_bucket_priors
-
-    def _fake_build_prior(archive):
-        captured_prior_lookup['called'] = True
-        return original_build_prior(archive)
-
-    # Monkeypatch load_season_archive in the run module's capture_season import
     import capture_season as cs_mod
-    monkeypatch.setattr(cs_mod, 'load_season_archive', _raise_fnf)
 
-    # The non-fatal block should catch FileNotFoundError and leave lookups empty.
-    # We verify by calling the pattern inline (same logic run.py uses):
-    prior_lookup, bucket_priors, start_seed = {}, {}, {}
-    try:
-        _archive = cs_mod.load_season_archive()
-        prior_lookup = sp_mod.build_prior_lookup(_archive)
-        bucket_priors = sp_mod.build_bucket_priors(_archive)
-        start_seed = {
-            code: {'start_rate': p['start_rate'], 'mins_per_start': p['mins_per_start']}
-            for code, p in prior_lookup.items()
-        }
-    except FileNotFoundError:
-        pass  # non-fatal
+    monkeypatch.setattr(cs_mod, 'load_season_archive', lambda: _minimal_archive_for_prior())
+
+    prior_lookup, bucket_priors, start_seed = run_mod._build_cold_start_prior()
+
+    assert prior_lookup, "prior_lookup must be non-empty for a valid archive"
+    assert bucket_priors, "bucket_priors must be non-empty for a valid archive"
+    assert 9001 in prior_lookup, "player code 9001 must be in prior_lookup"
+    assert 'xg_per90' in prior_lookup[9001]
+    assert 'xa_per90' in prior_lookup[9001]
+    assert start_seed, "start_seed must be non-empty for a valid archive"
+    assert 9001 in start_seed
+    assert 'start_rate' in start_seed[9001]
+    assert 'mins_per_start' in start_seed[9001]
+
+
+def test_build_cold_start_prior_file_not_found(monkeypatch):
+    """COLD-01: FileNotFoundError from load_season_archive → returns ({}, {}, {}) non-fatally."""
+    import run as run_mod
+    import capture_season as cs_mod
+
+    monkeypatch.setattr(cs_mod, 'load_season_archive',
+                        lambda: (_ for _ in ()).throw(FileNotFoundError("no archive")))
+
+    prior_lookup, bucket_priors, start_seed = run_mod._build_cold_start_prior()
 
     assert prior_lookup == {}, "prior_lookup must be empty when archive is absent"
     assert bucket_priors == {}, "bucket_priors must be empty when archive is absent"
     assert start_seed == {}, "start_seed must be empty when archive is absent"
+
+
+def test_build_cold_start_prior_malformed_archive(monkeypatch):
+    """COLD-01: generic Exception (malformed archive) → returns ({}, {}, {}) non-fatally."""
+    import run as run_mod
+    import capture_season as cs_mod
+
+    monkeypatch.setattr(cs_mod, 'load_season_archive',
+                        lambda: (_ for _ in ()).throw(Exception("corrupt JSON")))
+
+    prior_lookup, bucket_priors, start_seed = run_mod._build_cold_start_prior()
+
+    assert prior_lookup == {}, "prior_lookup must be empty on malformed archive"
+    assert bucket_priors == {}, "bucket_priors must be empty on malformed archive"
+    assert start_seed == {}, "start_seed must be empty on malformed archive"

@@ -195,6 +195,34 @@ def compute_honest_metrics(bootstrap: dict, fixtures: list, summaries: dict,
     }
 
 
+def _build_cold_start_prior():
+    """COLD-01: build the cold-start prior from the latest completed-season archive.
+
+    Returns (prior_lookup, bucket_priors, start_seed). Non-fatal — returns empty dicts
+    if the archive is absent or unreadable.
+    """
+    from capture_season import load_season_archive
+    from season_prior import build_prior_lookup, build_bucket_priors
+    prior_lookup: dict = {}
+    bucket_priors: dict = {}
+    start_seed: dict = {}
+    try:
+        _archive = load_season_archive()
+        prior_lookup = build_prior_lookup(_archive)
+        bucket_priors = build_bucket_priors(_archive)
+        # start_seed: code → {start_rate, mins_per_start} for players in prior lookup
+        start_seed = {
+            code: {'start_rate': p['start_rate'], 'mins_per_start': p['mins_per_start']}
+            for code, p in prior_lookup.items()
+        }
+        print(f"COLD-01 prior: {len(prior_lookup)} players, {len(bucket_priors)} buckets")
+    except FileNotFoundError:
+        print("COLD-01 prior: no season archive — cold-start blend disabled (no-op)")
+    except Exception as e:
+        print(f"COLD-01 prior: skipped ({e})")
+    return prior_lookup, bucket_priors, start_seed
+
+
 def run(dry_run: bool = False):
     """Fetch FPL data and write to cache. On failure, write stale last_updated.json."""
     if dry_run:
@@ -477,23 +505,7 @@ def run(dry_run: bool = False):
 
             # COLD-01: build the cold-start prior once from the latest completed-season archive.
             # Non-fatal if the archive is absent → empty lookups → pure no-op.
-            prior_lookup, bucket_priors, start_seed = {}, {}, {}
-            try:
-                from capture_season import load_season_archive
-                from season_prior import build_prior_lookup, build_bucket_priors
-                _archive = load_season_archive()
-                prior_lookup = build_prior_lookup(_archive)
-                bucket_priors = build_bucket_priors(_archive)
-                # start_seed: code → {start_rate, mins_per_start} for players in prior lookup
-                start_seed = {
-                    code: {'start_rate': p['start_rate'], 'mins_per_start': p['mins_per_start']}
-                    for code, p in prior_lookup.items()
-                }
-                print(f"COLD-01 prior: {len(prior_lookup)} players, {len(bucket_priors)} buckets")
-            except FileNotFoundError:
-                print("COLD-01 prior: no season archive — cold-start blend disabled (no-op)")
-            except Exception as e:
-                print(f"COLD-01 prior: skipped ({e})")
+            prior_lookup, bucket_priors, start_seed = _build_cold_start_prior()
 
             # Compute xmins stats (Phase 7 — MINS-01)
             print("Computing xmins stats...")

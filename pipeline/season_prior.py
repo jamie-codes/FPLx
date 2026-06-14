@@ -9,7 +9,8 @@ on the held-out early window).
 """
 
 
-SEED_MINUTES = 270   # ≈3 full matches; lab-fit via exp08
+SEED_MINUTES = 270          # ≈3 full matches; lab-fit via exp08
+MIN_ELIGIBLE_MINUTES = 500  # minimum season minutes for prior eligibility
 
 
 def price_band(now_cost: int) -> int:
@@ -37,7 +38,7 @@ def build_prior_lookup(archive: dict) -> dict:
 
     For each archived player, sums expected_goals / expected_assists / minutes /
     starts over archive['summaries'][id]['history']. Keeps only players with
-    total_minutes >= 500 (reuse suggest_squad's eligibility floor).
+    total_minutes >= MIN_ELIGIBLE_MINUTES (reuse suggest_squad's eligibility floor).
 
     Returns:
         {code (int): {
@@ -78,7 +79,7 @@ def build_prior_lookup(archive: dict) -> dict:
             total_xg += float(row.get('expected_goals', 0.0) or 0.0)
             total_xa += float(row.get('expected_assists', 0.0) or 0.0)
 
-        if total_minutes < 500:
+        if total_minutes < MIN_ELIGIBLE_MINUTES:
             continue
 
         xg_per90 = total_xg / total_minutes * 90 if total_minutes > 0 else 0.0
@@ -100,7 +101,7 @@ def build_prior_lookup(archive: dict) -> dict:
 def build_bucket_priors(archive: dict) -> dict:
     """Build mean per-90 by (element_type, price_band) over eligible players.
 
-    Uses the same ≥500-min filter as build_prior_lookup.
+    Uses the same ≥MIN_ELIGIBLE_MINUTES filter as build_prior_lookup.
     price_band from archive bootstrap now_cost: 0=budget(<55), 1=mid(55-84), 2=premium(>=85).
 
     Returns:
@@ -136,7 +137,7 @@ def build_bucket_priors(archive: dict) -> dict:
             total_xg += float(row.get('expected_goals', 0.0) or 0.0)
             total_xa += float(row.get('expected_assists', 0.0) or 0.0)
 
-        if total_minutes < 500:
+        if total_minutes < MIN_ELIGIBLE_MINUTES:
             continue
 
         xg_per90 = total_xg / total_minutes * 90
