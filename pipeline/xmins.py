@@ -110,6 +110,7 @@ def compute_xmins_stats(
     fixtures: list | None = None,    # MIN-02: for rotation risk (optional, backward-compat)
     next_gw_id: int | None = None,   # MIN-02: for rotation risk (optional, backward-compat)
     sub_appear_window_gws: int = 15,   # APM-01: sub appearance history window
+    start_seed: dict | None = None,    # COLD-01: code→{start_rate,mins_per_start} prior seed
 ) -> dict:
     """
     Compute xmins, start_prob, mins_risk for every player.
@@ -142,9 +143,12 @@ def compute_xmins_stats(
     for element in bootstrap.get('elements', []):
         player_id = element['id']
         next_fixture_difficulty = team_fdr.get(element.get('team'))
+        # COLD-01: look up prior start seed by player code
+        prior_start = (start_seed or {}).get(element.get('code')) if start_seed else None
         results[player_id] = _compute_player_xmins(
             element, summaries.get(player_id), finished_gws, next_fixture_difficulty,
             sub_appear_window_gws=sub_appear_window_gws,   # APM-01
+            prior_start=prior_start,                        # COLD-01
         )
 
     return results
@@ -156,6 +160,7 @@ def _compute_player_xmins(
     finished_gws: int,
     next_fixture_difficulty: int | None = None,   # MIN-02: for rotation risk
     sub_appear_window_gws: int = 15,              # APM-01: sub appearance history window
+    prior_start: dict | None = None,              # COLD-01: {start_rate, mins_per_start}
 ) -> dict:
     """Compute xmins stats for a single player."""
     starts = element.get('starts', 0)
@@ -178,7 +183,13 @@ def _compute_player_xmins(
             avg_mins_started = 0.0
 
         if len(starts_in_recent) < 3:
-            start_prob = round(POSITION_PRIOR.get(element_type, 0.65) * availability, 4)
+            # COLD-01: use prior start_rate when available; else flat POSITION_PRIOR
+            if prior_start is not None:
+                start_prob = round(prior_start['start_rate'] * availability, 4)
+                if avg_mins_started == 0.0:
+                    avg_mins_started = prior_start['mins_per_start']
+            else:
+                start_prob = round(POSITION_PRIOR.get(element_type, 0.65) * availability, 4)
         else:
             recent_start_rate = len(starts_in_recent) / max(len(recent), 1)
             start_prob = round(recent_start_rate * availability, 4)
@@ -195,7 +206,13 @@ def _compute_player_xmins(
         avg_mins_started = minutes / starts if starts > 0 else 0.0
         # D-05.1 applies in bootstrap too: zero or sub-3 starts -> position prior
         if starts < 3:
-            start_prob = round(POSITION_PRIOR.get(element_type, 0.65) * availability, 4)
+            # COLD-01: use prior start_rate when available; else flat POSITION_PRIOR
+            if prior_start is not None:
+                start_prob = round(prior_start['start_rate'] * availability, 4)
+                if avg_mins_started == 0.0:
+                    avg_mins_started = prior_start['mins_per_start']
+            else:
+                start_prob = round(POSITION_PRIOR.get(element_type, 0.65) * availability, 4)
         else:
             recent_start_rate = starts / finished_gws if finished_gws > 0 else 0.0
             start_prob = round(recent_start_rate * availability, 4)

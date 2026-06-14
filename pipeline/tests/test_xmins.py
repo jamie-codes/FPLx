@@ -404,3 +404,96 @@ def test_sub_appear_prob_dgw_counts_two():
     result = _compute_player_xmins(_element(starts=10, minutes=900), _summary(history), 12,
                                     sub_appear_window_gws=12)
     assert abs(result['sub_appear_prob'] - round(2/12, 4)) < 1e-4
+
+
+# ── COLD-01: prior start seed tests ──────────────────────────────────────────
+
+def test_cold_player_with_prior_start_uses_prior_start_rate():
+    """COLD-01: cold player (starts<3) with prior_start → start_prob = start_rate * availability."""
+    from xmins import _compute_player_xmins
+    prior_start = {'start_rate': 0.88, 'mins_per_start': 85.0}
+    # 2 starts in recent → position-prior branch normally; prior should override
+    history = [_hist(90, 1)] * 2 + [_hist(0, 0)] * 8
+    result = _compute_player_xmins(
+        _element(element_type=3, starts=2, minutes=180),
+        _summary(history),
+        10,
+        prior_start=prior_start,
+    )
+    expected = round(0.88 * 1.0, 4)  # availability=1.0
+    assert result['start_prob'] == expected, (
+        f"Expected start_prob={expected} (prior), got {result['start_prob']}"
+    )
+
+
+def test_cold_player_with_prior_start_seeds_avg_mins():
+    """COLD-01: when avg_mins_started=0 in cold branch, prior seeds it → xmins > 0."""
+    from xmins import _compute_player_xmins
+    prior_start = {'start_rate': 0.80, 'mins_per_start': 80.0}
+    # 0 starts in recent history → avg_mins_started=0.0 normally
+    history = [_hist(0, 0)] * 10
+    result = _compute_player_xmins(
+        _element(element_type=3, starts=0, minutes=0),
+        _summary(history),
+        10,
+        prior_start=prior_start,
+    )
+    # xmins = avg_mins_started * start_prob; both seeded from prior → xmins > 0
+    assert result['xmins'] > 0, f"Expected xmins > 0 (seeded from prior), got {result['xmins']}"
+
+
+def test_cold_player_without_prior_start_uses_position_prior():
+    """COLD-01: cold player with no prior_start → unchanged flat POSITION_PRIOR behaviour."""
+    from xmins import _compute_player_xmins, POSITION_PRIOR
+    history = [_hist(90, 1)] * 2 + [_hist(0, 0)] * 8
+    result = _compute_player_xmins(
+        _element(element_type=3, starts=2, minutes=180),
+        _summary(history),
+        10,
+        prior_start=None,
+    )
+    expected = round(POSITION_PRIOR[3] * 1.0, 4)
+    assert result['start_prob'] == expected, (
+        f"Expected POSITION_PRIOR start_prob={expected}, got {result['start_prob']}"
+    )
+
+
+def test_warm_player_start_probe_unchanged_by_prior():
+    """COLD-01: player with starts>=3 → existing path unchanged regardless of prior_start."""
+    from xmins import _compute_player_xmins
+    prior_start = {'start_rate': 0.1, 'mins_per_start': 10.0}  # very different from actual
+    # 5 starts in recent history → sufficient → should use actual start rate
+    history = [_hist(90, 1)] * 5 + [_hist(0, 0)] * 5
+    result_with_prior = _compute_player_xmins(
+        _element(element_type=3, starts=5, minutes=450),
+        _summary(history),
+        10,
+        prior_start=prior_start,
+    )
+    result_no_prior = _compute_player_xmins(
+        _element(element_type=3, starts=5, minutes=450),
+        _summary(history),
+        10,
+        prior_start=None,
+    )
+    assert result_with_prior['start_prob'] == result_no_prior['start_prob'], (
+        f"Warm player must not be affected by prior_start. "
+        f"with={result_with_prior['start_prob']}, without={result_no_prior['start_prob']}"
+    )
+
+
+def test_cold_bootstrap_branch_with_prior_start():
+    """COLD-01: bootstrap-only cold path (no summary) with prior_start → prior seeds start_prob."""
+    from xmins import _compute_player_xmins
+    prior_start = {'start_rate': 0.75, 'mins_per_start': 80.0}
+    # No summary, starts=0 → bootstrap branch, starts<3
+    result = _compute_player_xmins(
+        _element(element_type=2, starts=0, minutes=0),
+        None,  # no summary
+        10,
+        prior_start=prior_start,
+    )
+    expected = round(0.75 * 1.0, 4)
+    assert result['start_prob'] == expected, (
+        f"Expected prior start_prob={expected} in bootstrap cold branch, got {result['start_prob']}"
+    )
