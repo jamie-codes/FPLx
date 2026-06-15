@@ -745,3 +745,42 @@ def test_run_backtest_odds_cs_weight_changes_metrics():
     base = run_backtest(archive, mode='deploy')
     blended = run_backtest(archive, params={'odds_cs_weight': 1.0}, mode='deploy', odds_lookup=lk)
     assert base['metrics'] != blended['metrics']  # CS blend moves predictions
+
+
+# ── EUR-01 congestion-penalty tests ──────────────────────────────────────────
+
+def test_congestion_penalty_zero_is_noop():
+    from backtest import run_backtest
+    from capture_season import load_season_archive
+    from congestion_dates import MIDWEEK_FIXTURE_DATES
+    from congestion_join import build_congestion_lookup
+    archive = load_season_archive()
+    clashes = build_congestion_lookup(MIDWEEK_FIXTURE_DATES, archive['fixtures'])
+    base = run_backtest(archive, mode='deploy')
+    same = run_backtest(archive, params={'congestion_penalty': 0.0},
+                        mode='deploy', congestion_clashes=clashes)
+    assert base['metrics'] == same['metrics']
+
+
+def test_congestion_penalty_changes_metrics_and_flags_rows():
+    from backtest import run_backtest
+    from capture_season import load_season_archive
+    from congestion_dates import MIDWEEK_FIXTURE_DATES
+    from congestion_join import build_congestion_lookup
+    archive = load_season_archive()
+    clashes = build_congestion_lookup(MIDWEEK_FIXTURE_DATES, archive['fixtures'])
+    base = run_backtest(archive, mode='deploy')
+    pen = run_backtest(archive, params={'congestion_penalty': 0.20},
+                       mode='deploy', congestion_clashes=clashes)
+    assert base['metrics'] != pen['metrics']            # penalty moves predictions
+    assert any(r['congestion_clash'] for r in pen['rows'])  # some rows flagged
+
+
+def test_congestion_clashes_none_is_noop():
+    from backtest import run_backtest
+    from capture_season import load_season_archive
+    archive = load_season_archive()
+    base = run_backtest(archive, mode='deploy')
+    same = run_backtest(archive, params={'congestion_penalty': 0.20},
+                        mode='deploy', congestion_clashes=None)
+    assert base['metrics'] == same['metrics']  # no clash set -> no-op even at penalty>0

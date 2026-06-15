@@ -48,6 +48,7 @@ DEFAULT_PARAMS = {
     'gk_saves_scale': 0.0,      # 0.0 = off; > 0 = GKP save-point EV scaling
     'odds_cs_weight': 0.0,        # ODDS-01: blend market CS-prob into cs_prob_raw
     'odds_goalexp_weight': 0.0,   # ODDS-01: blend market attack-difficulty into attack scaling
+    'congestion_penalty': 0.0,    # EUR-01: xmins penalty when a midweek-congestion clash precedes the GW
 }
 
 HAUL_THRESHOLD = 10
@@ -365,7 +366,8 @@ def compute_metrics(rows: list):
 
 def run_backtest(archive: dict | None = None, params: dict | None = None,
                  mode: str = 'deploy', first_gw: int = 7,
-                 last_gw: int = 38, odds_lookup: dict | None = None) -> dict:
+                 last_gw: int = 38, odds_lookup: dict | None = None,
+                 congestion_clashes: set | None = None) -> dict:
     """Leakage-free backtest over the season archive. See module docstring."""
     from accuracy import build_team_def_form_lookup, build_team_atf_lookup
     from merge import _compute_xpts_fixture
@@ -418,6 +420,7 @@ def run_backtest(archive: dict | None = None, params: dict | None = None,
                     continue
 
             pred = 0.0
+            row_clash = False
             for e in entries:
                 fix = fixtures_by_id.get(e.get('fixture'))
                 if fix is None:
@@ -455,6 +458,10 @@ def run_backtest(archive: dict | None = None, params: dict | None = None,
                     # genuinely can play full minutes twice in a DGW; refining
                     # per-fixture minutes is future work.
                     xm, sp_ = sig['xmins'], sig['start_prob']
+                    # EUR-01: penalise xmins on a midweek-congestion clash (no-op at 0.0).
+                    if congestion_clashes is not None and (team_id, gw) in congestion_clashes:
+                        row_clash = True
+                        xm = xm * (1.0 - p['congestion_penalty'])
                 else:
                     m = e.get('minutes', 0) or 0
                     if m < 45:
@@ -518,6 +525,7 @@ def run_backtest(archive: dict | None = None, params: dict | None = None,
                 'xg_per90': round(sig['xg_per90'], 3),
                 'xa_per90': round(sig['xa_per90'], 3),
                 'n_fixtures': len(entries),
+                'congestion_clash': row_clash,
             })
 
     metrics, per_gw = compute_metrics(rows)
