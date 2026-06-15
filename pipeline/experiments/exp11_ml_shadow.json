@@ -1,0 +1,178 @@
+{
+  "ml_metrics": {
+    "n_rows": 3450,
+    "n_gws": 10,
+    "haul_hit_rate": 0.09154929577464789,
+    "haul_capture_20": 0.14788732394366197,
+    "mid_tier_hit_rate": 0.15762273901808785,
+    "captain_hit_rate": 0.0,
+    "captain_return_rate": 0.5,
+    "top10_mean_pts": 4.62,
+    "rmse": 2.9934,
+    "mae": 2.2068,
+    "spearman": 0.3156,
+    "by_position": {
+      "GKP": {
+        "n": 224,
+        "rmse": 2.8345,
+        "n_haulers": 6
+      },
+      "DEF": {
+        "n": 1259,
+        "rmse": 3.1346,
+        "n_haulers": 54
+      },
+      "MID": {
+        "n": 1553,
+        "rmse": 2.7484,
+        "n_haulers": 61
+      },
+      "FWD": {
+        "n": 414,
+        "rmse": 3.4798,
+        "n_haulers": 21
+      }
+    },
+    "n_haulers_total": 142
+  },
+  "formula_metrics": {
+    "n_rows": 3450,
+    "n_gws": 10,
+    "haul_hit_rate": 0.11267605633802817,
+    "haul_capture_20": 0.2112676056338028,
+    "mid_tier_hit_rate": 0.18087855297157623,
+    "captain_hit_rate": 0.0,
+    "captain_return_rate": 0.5,
+    "top10_mean_pts": 5.18,
+    "rmse": 2.9546,
+    "mae": 2.1494,
+    "spearman": 0.3511,
+    "by_position": {
+      "GKP": {
+        "n": 224,
+        "rmse": 2.705,
+        "n_haulers": 6
+      },
+      "DEF": {
+        "n": 1259,
+        "rmse": 3.1364,
+        "n_haulers": 54
+      },
+      "MID": {
+        "n": 1553,
+        "rmse": 2.7584,
+        "n_haulers": 61
+      },
+      "FWD": {
+        "n": 414,
+        "rmse": 3.2138,
+        "n_haulers": 21
+      }
+    },
+    "n_haulers_total": 142
+  },
+  "feature_importances": {
+    "1": {
+      "xg_per90": 0.0,
+      "xa_per90": 0.0501,
+      "season_xg90": 0.0,
+      "season_xa90": 0.0579,
+      "cum_minutes": 0.0513,
+      "xmins": 0.125,
+      "start_prob": 0.1436,
+      "mins_60_prob": 0.0564,
+      "sub_appear_prob": 0.0636,
+      "dc_rate_10": 0.0,
+      "dc_rate_12": 0.0,
+      "saves_per90": 0.0532,
+      "was_home": 0.064,
+      "n_fixtures": 0.1023,
+      "norm_concede_rate": 0.0657,
+      "norm_attack_rate": 0.0572,
+      "difficulty": 0.0581,
+      "odds_cs_prob": 0.0,
+      "attack_difficulty": 0.0,
+      "now_cost": 0.0519
+    },
+    "2": {
+      "xg_per90": 0.044,
+      "xa_per90": 0.0455,
+      "season_xg90": 0.0479,
+      "season_xa90": 0.0492,
+      "cum_minutes": 0.0481,
+      "xmins": 0.0925,
+      "start_prob": 0.0352,
+      "mins_60_prob": 0.1008,
+      "sub_appear_prob": 0.0611,
+      "dc_rate_10": 0.0432,
+      "dc_rate_12": 0.0423,
+      "saves_per90": 0.0,
+      "was_home": 0.0467,
+      "n_fixtures": 0.0715,
+      "norm_concede_rate": 0.0614,
+      "norm_attack_rate": 0.0493,
+      "difficulty": 0.0802,
+      "odds_cs_prob": 0.0,
+      "attack_difficulty": 0.0,
+      "now_cost": 0.081
+    },
+    "3": {
+      "xg_per90": 0.046,
+      "xa_per90": 0.048,
+      "season_xg90": 0.0547,
+      "season_xa90": 0.0519,
+      "cum_minutes": 0.0525,
+      "xmins": 0.0992,
+      "start_prob": 0.0409,
+      "mins_60_prob": 0.1212,
+      "sub_appear_prob": 0.0497,
+      "dc_rate_10": 0.0498,
+      "dc_rate_12": 0.0571,
+      "saves_per90": 0.0,
+      "was_home": 0.0432,
+      "n_fixtures": 0.0534,
+      "norm_concede_rate": 0.0475,
+      "norm_attack_rate": 0.0484,
+      "difficulty": 0.066,
+      "odds_cs_prob": 0.0,
+      "attack_difficulty": 0.0,
+      "now_cost": 0.0705
+    },
+    "4": {
+      "xg_per90": 0.0544,
+      "xa_per90": 0.0499,
+      "season_xg90": 0.0581,
+      "season_xa90": 0.0443,
+      "cum_minutes": 0.0687,
+      "xmins": 0.0678,
+      "start_prob": 0.0385,
+      "mins_60_prob": 0.0696,
+      "sub_appear_prob": 0.0845,
+      "dc_rate_10": 0.0581,
+      "dc_rate_12": 0.0587,
+      "saves_per90": 0.0,
+      "was_home": 0.0522,
+      "n_fixtures": 0.0184,
+      "norm_concede_rate": 0.0546,
+      "norm_attack_rate": 0.0472,
+      "difficulty": 0.0721,
+      "odds_cs_prob": 0.0,
+      "attack_difficulty": 0.0,
+      "now_cost": 0.1028
+    }
+  },
+  "caveat": "IN-SAMPLE shadow over one season \u2014 train/test share players across halves, so the model memorizes player-level scoring and these numbers OVERSTATE true edge. Harness sanity check, NOT a promotion signal. Promotion is gated on a cold 2026/27 cross-season test (train 2025/26 -> predict 2026/27 unseen).",
+  "config": {
+    "train_gw": [
+      7,
+      28
+    ],
+    "test_gw": [
+      29,
+      38
+    ],
+    "n_train": 6883,
+    "n_test": 3450,
+    "seed": 42
+  }
+}
