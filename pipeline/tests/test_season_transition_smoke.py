@@ -104,8 +104,10 @@ def test_run_smoke_detects_unknown_team(tmp_path):
 
 def test_run_smoke_writes_nothing_to_real_cache(tmp_path):
     import os
-    before = set(os.listdir('pipeline/cache')) if os.path.isdir('pipeline/cache') else set()
+    import season_transition_smoke
+    real_cache = os.path.join(os.path.dirname(os.path.abspath(season_transition_smoke.__file__)), 'cache')
+    before = set(os.listdir(real_cache)) if os.path.isdir(real_cache) else set()
     from season_transition_smoke import run_smoke
     run_smoke()
-    after = set(os.listdir('pipeline/cache')) if os.path.isdir('pipeline/cache') else set()
+    after = set(os.listdir(real_cache)) if os.path.isdir(real_cache) else set()
     assert before == after, 'smoke must not write to the real cache'

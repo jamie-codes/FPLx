@@ -161,6 +161,7 @@ _EXPECTED_ARTEFACTS = [
     'fpl_bootstrap.json', 'fpl_fixtures.json', 'merged_players.json',
     'captain_picks.json', 'insights.json', 'gw_intel.json',
     'defcon_stats.json', 'last_updated.json', 'data_health.json',
+    'set_piece_changes.json', 'predictions_snapshot.json',
 ]
 
 
