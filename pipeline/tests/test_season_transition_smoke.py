@@ -73,3 +73,39 @@ def test_coverage_report_flags_fabricated_clubs():
     for sn in ('XYZ', 'QQQ', 'ZZZ'):
         assert sn in rep['TEAM_BADGE_CODE']
         assert sn in rep['TEAM_COLOURS']
+
+
+def test_run_smoke_passes_on_synthetic_transition(tmp_path):
+    from season_transition_smoke import run_smoke
+    result = run_smoke()
+    assert result['ok'] is True, result['hard_checks']
+    hc = result['hard_checks']
+    assert hc['no_exception'] is True
+    assert hc['offseason_gate'] is True       # IS_OFF_SEASON True for offseason boot
+    assert hc['live_gate'] is True            # IS_OFF_SEASON False for live boot
+    assert hc['season_label'] is True
+    assert hc['artefacts_present'] is True
+    assert hc['no_unknown_team'] is True
+    assert hc['coldstart_engaged'] is True
+    assert 'coverage' in result
+
+
+def test_run_smoke_detects_unknown_team(tmp_path):
+    # a player on a non-existent team id must trip no_unknown_team
+    from season_transition_smoke import run_smoke, build_synthetic_transition
+    from capture_season import load_season_archive
+    syn = build_synthetic_transition(load_season_archive())
+    syn['bootstrap_live']['elements'][0]['team'] = 9999  # orphan team id
+    result = run_smoke(bootstrap=syn['bootstrap_live'], fixtures=syn['fixtures'],
+                       summaries=syn['summaries'], _offseason_bootstrap=syn['bootstrap_offseason'])
+    assert result['hard_checks']['no_unknown_team'] is False
+    assert result['ok'] is False
+
+
+def test_run_smoke_writes_nothing_to_real_cache(tmp_path):
+    import os
+    before = set(os.listdir('pipeline/cache')) if os.path.isdir('pipeline/cache') else set()
+    from season_transition_smoke import run_smoke
+    run_smoke()
+    after = set(os.listdir('pipeline/cache')) if os.path.isdir('pipeline/cache') else set()
+    assert before == after, 'smoke must not write to the real cache'

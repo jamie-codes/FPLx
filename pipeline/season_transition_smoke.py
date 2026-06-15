@@ -167,10 +167,14 @@ _EXPECTED_ARTEFACTS = [
 def _run_pipeline_isolated(bootstrap, fixtures, summaries, tmp_dir) -> dict:
     """Run run.run() against synthetic data in tmp_dir. Returns {'raised': exc-or-None}."""
     import run as run_mod
+    import upload as upload_mod
     from upload import save_local
 
+    def _save_to_tmp(name, data):
+        save_local(name, data, cache_dir=tmp_dir)
+
     saved = {}
-    # data fetchers
+    # data fetchers — monkeypatched on the run module namespace
     saved['get_bootstrap_static'] = run_mod.get_bootstrap_static
     saved['get_fixtures'] = run_mod.get_fixtures
     saved['get_element_summary'] = run_mod.get_element_summary
@@ -182,11 +186,15 @@ def _run_pipeline_isolated(bootstrap, fixtures, summaries, tmp_dir) -> dict:
     run_mod.get_fixtures = lambda: fixtures
     run_mod.get_element_summary = lambda pid: summaries.get(pid, {'history': [], 'history_past': []})
     run_mod.get_understat_players = lambda: {}
-    run_mod.save = lambda name, data: save_local(name, data, cache_dir=tmp_dir)
+    run_mod.save = _save_to_tmp
     run_mod._get_cache_dir = lambda: tmp_dir
 
+    # Also patch upload.save directly so sub-modules that do their own
+    # `from upload import save` (e.g. data_health, price_baseline) also write to tmp_dir.
+    saved['upload_save'] = upload_mod.save
+    upload_mod.save = _save_to_tmp
+
     # neutralize outbound side-effects (network/push/scrape) that run always.
-    # Each maps an attribute on the relevant module to a no-op; restored in finally.
     # run_notify is imported locally inside run.run() so we monkeypatch notify module directly.
     # compute_lineup_news makes HTTP calls and is not env-gated, so stub at module level.
     import notify as notify_mod
@@ -216,6 +224,8 @@ def _run_pipeline_isolated(bootstrap, fixtures, summaries, tmp_dir) -> dict:
                 notify_mod.run_notify = v
             elif k == 'lineup_news_compute_lineup_news':
                 lineup_news_mod.compute_lineup_news = v
+            elif k == 'upload_save':
+                upload_mod.save = v
             else:
                 setattr(run_mod, k, v)
         for k, v in prev_env.items():
