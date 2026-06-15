@@ -11,6 +11,9 @@ from xgboost import XGBRegressor
 _XGB_PARAMS = dict(
     n_estimators=300, max_depth=4, learning_rate=0.05,
     subsample=0.8, colsample_bytree=0.8, objective='reg:squarederror',
+    # n_jobs=1: single-threaded so predictions are deterministic across machines /
+    # CI core counts (xgboost's parallel reductions can otherwise vary by thread count).
+    n_jobs=1,
 )
 
 
