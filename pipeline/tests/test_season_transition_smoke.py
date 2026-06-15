@@ -50,3 +50,26 @@ def test_fixtures_are_gw1_future_unfinished():
         assert f['finished'] is False
         assert f.get('team_h_score') is None
         assert 'kickoff_time' in f
+
+
+def test_extract_ts_record_keys_reads_team_colours():
+    from season_transition_smoke import _extract_ts_record_keys, _TEAM_COLOURS_TS
+    badge = _extract_ts_record_keys(_TEAM_COLOURS_TS, 'TEAM_BADGE_CODE')
+    colours = _extract_ts_record_keys(_TEAM_COLOURS_TS, 'TEAM_COLOURS')
+    assert 'ARS' in badge and 'LIV' in badge      # known real entries
+    assert 'ARS' in colours and 'MUN' in colours
+    assert 'XYZ' not in badge                       # fabricated club absent
+
+
+def test_coverage_report_flags_fabricated_clubs():
+    from season_transition_smoke import build_synthetic_transition, coverage_report
+    from capture_season import load_season_archive
+    syn = build_synthetic_transition(load_season_archive())
+    rep = coverage_report(syn['bootstrap_live'])
+    # all four tables present in the report
+    assert set(rep) == {'TEAM_BADGE_CODE', 'TEAM_COLOURS',
+                        'FOOTBALL_DATA_TO_FPL', 'WIKI_CLUB_TO_FPL'}
+    # the 3 fabricated clubs are missing from the short-name-keyed asset tables
+    for sn in ('XYZ', 'QQQ', 'ZZZ'):
+        assert sn in rep['TEAM_BADGE_CODE']
+        assert sn in rep['TEAM_COLOURS']
