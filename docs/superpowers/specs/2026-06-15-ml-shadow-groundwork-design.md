@@ -25,7 +25,7 @@ Add `xgboost` (pinned, current stable compatible with `numpy>=2.2`, e.g. `xgboos
 - `pipeline/requirements.txt`
 - the `pip install` line in `.github/workflows/pipeline.yml` (so the CI test job can import `pipeline/ml/`).
 
-numpy is already a CI dependency (used by `simulate.py`). No other new deps (the stdlib `_spearman` in backtest.py is reused via `compute_metrics`; no scipy needed).
+numpy is already a CI dependency (used by `simulate.py`). **Update (verified at build):** xgboost's sklearn-style `XGBRegressor` interface — which this harness uses — *requires* `scikit-learn` (confirmed empirically: `from xgboost import XGBRegressor` raises ImportError when scikit-learn is absent). So `scikit-learn` is added alongside xgboost as a necessary companion. `scipy` (xgboost's other declared dep) installs transitively. The stdlib `_spearman` in backtest.py is reused via `compute_metrics`.
 
 ## Architecture
 
