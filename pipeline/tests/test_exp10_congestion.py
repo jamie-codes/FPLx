@@ -6,6 +6,11 @@ def test_exp10_runs_and_produces_verdict():
     assert result['verdict'] in ('SHIP', 'NO_SHIP')
     base = next(a for a in result['sweep'] if a['congestion_penalty'] == 0.0)
     assert 'top10_mean_pts' in base and 'clash_rmse' in base
+    # Robustness keys added by EUR-01 honest verdict
+    assert 'permutation_pvalue' in result
+    assert 'permutation_n' in result
+    assert 'robustness_note' in result
+    assert 0.0 <= result['permutation_pvalue'] <= 1.0
 
 
 def test_rmse_helper():

@@ -3,39 +3,42 @@
     {
       "congestion_penalty": 0.0,
       "top10_mean_pts": 4.753124999999999,
-      "clash_rmse": 3.226237598824883
+      "clash_rmse": 3.220212383218181
     },
     {
       "congestion_penalty": 0.05,
       "top10_mean_pts": 4.849999999999999,
-      "clash_rmse": 3.2212224066779935
+      "clash_rmse": 3.2150142938276933
     },
     {
       "congestion_penalty": 0.1,
       "top10_mean_pts": 4.8374999999999995,
-      "clash_rmse": 3.217351039754841
+      "clash_rmse": 3.210943628262472
     },
     {
       "congestion_penalty": 0.15,
       "top10_mean_pts": 4.784375,
-      "clash_rmse": 3.214980645247801
+      "clash_rmse": 3.208348700708113
     },
     {
       "congestion_penalty": 0.2,
       "top10_mean_pts": 4.75625,
-      "clash_rmse": 3.2134391969847105
+      "clash_rmse": 3.20652546245023
     },
     {
       "congestion_penalty": 0.25,
       "top10_mean_pts": 4.75,
-      "clash_rmse": 3.2133235851294555
+      "clash_rmse": 3.2061130697654203
     }
   ],
-  "clash_count": 150,
+  "clash_count": 151,
   "baseline_top10": 4.753124999999999,
-  "baseline_clash_rmse": 3.226237598824883,
+  "baseline_clash_rmse": 3.220212383218181,
   "best_penalty": 0.05,
   "best_top10": 4.849999999999999,
-  "best_clash_rmse": 3.2212224066779935,
-  "verdict": "SHIP"
+  "best_clash_rmse": 3.2150142938276933,
+  "permutation_pvalue": 0.04,
+  "permutation_n": 150,
+  "robustness_note": "p=0.04 (>0.02 bar); best penalty=0.05 equals min non-zero penalty (peak-at-min noise signature); verdict: NO_SHIP",
+  "verdict": "NO_SHIP"
 }

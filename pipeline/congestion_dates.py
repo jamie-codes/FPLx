@@ -5,6 +5,11 @@ used to detect rotation risk when a club plays midweek 1-4 days before a PL GW.
 Hand-researched from Wikipedia season pages and official sources (cited per club).
 2025/26 only; the 2026/27 calendar is entered at launch if EUR-01 validates.
 
+CAVEAT: EFL Cup R2 dates (week of 2025-08-25/26/27) are approximate — a blanket
+date of 2025-08-26 is used because per-club R2 dates were not all individually
+verifiable from available sources. EUR-01 experiment landed NO_SHIP so this
+calendar was not exhaustively hardened beyond the errors flagged in code review.
+
 FPL team_id map (2025/26):
   1 Arsenal, 2 Aston Villa, 3 Burnley, 4 Bournemouth, 5 Brentford,
   6 Brighton, 7 Chelsea, 8 Crystal Palace, 9 Everton, 10 Fulham,
@@ -29,7 +34,7 @@ MIDWEEK_FIXTURE_DATES: dict[int, list[str]] = {
         "2025-11-04",  # UCL MD4 vs Slavia Prague (A)
         "2025-11-26",  # UCL MD5 vs Bayern Munich (H)
         "2025-12-10",  # UCL MD6 vs Club Brugge (A)
-        "2026-01-20",  # UCL MD7 vs Inter Milan (A)
+        "2026-01-21",  # UCL MD7 vs Inter Milan (A)
         "2026-01-28",  # UCL MD8 vs FC Kairat (H)
         # UCL Round of 16 (top-8 qualified, no playoff)
         "2026-03-11",  # UCL R16 Leg 1 vs Bayer Leverkusen (A)
@@ -43,7 +48,7 @@ MIDWEEK_FIXTURE_DATES: dict[int, list[str]] = {
         # UCL Final: 2026-05-30 (Saturday — not midweek, omitted)
         # EFL Cup
         "2025-09-24",  # EFL Cup R3 vs Port Vale (A)
-        "2025-10-28",  # EFL Cup R4 vs Brighton (H)
+        "2025-10-29",  # EFL Cup R4 vs Brighton (H)
         "2025-12-23",  # EFL Cup QF vs Crystal Palace (H)
         "2026-01-14",  # EFL Cup SF Leg 1 vs Chelsea (A)
         "2026-02-03",  # EFL Cup SF Leg 2 vs Chelsea (H) — Tuesday
@@ -121,7 +126,7 @@ MIDWEEK_FIXTURE_DATES: dict[int, list[str]] = {
         # EFL Cup R2
         "2025-08-26",  # EFL Cup R2
         # EFL Cup R3
-        "2025-09-23",  # EFL Cup R3 — Brentford 5-0 Grimsby
+        "2025-09-16",  # EFL Cup R3 vs Aston Villa (A) — Tuesday
         # EFL Cup R4
         "2025-10-28",  # EFL Cup R4
         # EFL Cup QF
@@ -135,7 +140,7 @@ MIDWEEK_FIXTURE_DATES: dict[int, list[str]] = {
     # ── Brighton (id 6) ───────────────────────────────────────────────────────
     # No European competition. EFL Cup + FA Cup only.
     # Source: 101greatgoals.com (Brighton eliminated Arsenal in EFL Cup R3? —
-    #         actually Arsenal beat Brighton 2-0 in R4 on 2025-10-28);
+    #         actually Arsenal beat Brighton 2-0 in R4 on 2025-10-29);
     #         Arsenal R3 was Port Vale 2025-09-24; Brighton entered R2.
     # Brighton won FA Cup R3 vs Man Utd 2-1 (2026-01-11).
     6: [
@@ -144,7 +149,7 @@ MIDWEEK_FIXTURE_DATES: dict[int, list[str]] = {
         # EFL Cup R3 (Brighton drew Arsenal? No — Arsenal beat Brighton in R4)
         "2025-09-23",  # EFL Cup R3
         # EFL Cup R4 — Arsenal 2-0 Brighton (eliminated)
-        "2025-10-28",  # EFL Cup R4 (eliminated)
+        "2025-10-29",  # EFL Cup R4 — Arsenal 2-0 Brighton (eliminated)
         # FA Cup
         "2026-01-11",  # FA Cup R3 vs Manchester United (Brighton won 2-1) — Sunday
         "2026-02-14",  # FA Cup R4 — Liverpool 3-0 Brighton (eliminated)
@@ -214,7 +219,7 @@ MIDWEEK_FIXTURE_DATES: dict[int, list[str]] = {
         "2026-05-27",  # UECL Final
         # EFL Cup (entered R3 as European club)
         "2025-09-16",  # EFL Cup R3 — Crystal Palace R3
-        "2025-10-28",  # EFL Cup R4 — Crystal Palace 3-0 Liverpool
+        "2025-10-29",  # EFL Cup R4 — Crystal Palace 3-0 Liverpool
         "2025-12-23",  # EFL Cup QF — Arsenal 1-1, Arsenal won pens (eliminated)
         # FA Cup
         "2026-01-10",  # FA Cup R3 — Crystal Palace vs Macclesfield (lost 1-2)
@@ -291,7 +296,7 @@ MIDWEEK_FIXTURE_DATES: dict[int, list[str]] = {
         "2026-04-14",  # UCL QF Leg 2 vs PSG (H) — eliminated
         # EFL Cup
         "2025-09-23",  # EFL Cup R3 — Liverpool 2-1 Southampton
-        "2025-10-28",  # EFL Cup R4 — Crystal Palace 3-0 Liverpool (eliminated)
+        "2025-10-29",  # EFL Cup R4 — Crystal Palace 3-0 Liverpool (eliminated)
         # FA Cup
         "2026-01-12",  # FA Cup R3 vs Barnsley (H) — Monday
         "2026-02-14",  # FA Cup R4 — Liverpool 3-0 Brighton
