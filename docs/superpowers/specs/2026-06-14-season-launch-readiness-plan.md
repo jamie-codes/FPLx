@@ -83,11 +83,11 @@ A verification checklist + small fixes so the pipeline flips cleanly from off-se
 
 Ordered by value × readiness. All buildable today against the 2025/26 archive, no new-season data needed:
 
-1. **Cold-start Pre-Season Prior model (§2)** — the headline. Turns GW1 from a guess into an edge. *Highest value.*
-2. **ODDS-01 odds experiment (§3)** — biggest potential *model* win; validate the CS/difficulty signal vs the archive now, ship if it clears.
-3. **EUR-01 2025/26 calendar + lab validation (§3)** — clears a deferred item cheaply; populate live calendar at launch if validated.
-4. **Season-transition verification harness (§1)** — the launch-day smoke; small, makes the bootstrap flip painless.
-5. **ML groundwork (§3)** — stand up the feature-extraction + training/eval harness against the archive so it's ready to validate the moment season 2 accrues.
+1. ✅ **Cold-start Pre-Season Prior model (§2)** — SHIPPED 2026-06-14 (COLD-01, exp08 SEED=270). The headline. Turns GW1 from a guess into an edge.
+2. ✅ **ODDS-01 odds experiment (§3)** — LAB-VALIDATED 2026-06-14 (exp09 SHIP_BOTH); live-wiring follow-up spec'd 2026-06-15 (shadow-first), build at launch.
+3. ❌ **EUR-01 (§3)** — TESTED & REJECTED 2026-06-15 (exp10 NO_SHIP; congestion signal is noise, permutation p=0.04). Added a permutation robustness gate to the lab.
+4. ✅ **Season-transition verification harness (§1)** — BUILT 2026-06-15 (STH-01, `pipeline/season_transition_smoke.py`). `python -m season_transition_smoke` proves the off-season→2026/27 flip is clean + prints the alias/asset-table patch checklist. Finding: `SUN` missing from `TEAM_BADGE_CODE`.
+5. **ML groundwork (§3)** — stand up the feature-extraction + training/eval harness against the archive so it's ready to validate the moment season 2 accrues. **← the remaining build-now item.**
 
 **Sequencing recommendation:** #1 first (highest value, self-contained), then #2 (real model upside), then #4 (cheap insurance) before July, then #3, with #5 as ongoing groundwork. Each follows the proven discipline: spec → plan → subagent build → review → lab-validate-before-promote.
 
