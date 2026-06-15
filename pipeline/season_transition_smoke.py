@@ -8,8 +8,10 @@ temp output dir, all fetchers + side-effects stubbed, no network, no Blob.
 CLI:  cd pipeline; python -m season_transition_smoke
 """
 import copy
+import json
 import os
 import re
+import sys
 import tempfile
 
 _MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -153,9 +155,6 @@ def coverage_report(bootstrap: dict) -> dict:
     }
 
 
-import json
-
-
 # Expected not-off-season artefacts that must exist + be non-empty after a live run.
 _EXPECTED_ARTEFACTS = [
     'fpl_bootstrap.json', 'fpl_fixtures.json', 'merged_players.json',
@@ -167,8 +166,12 @@ _EXPECTED_ARTEFACTS = [
 
 def _run_pipeline_isolated(bootstrap, fixtures, summaries, tmp_dir) -> dict:
     """Run run.run() against synthetic data in tmp_dir. Returns {'raised': exc-or-None}."""
+    # Import every module we patch BEFORE applying any patch, so an import failure
+    # can never leave a partially-applied (leaked) monkeypatch before the try/finally.
     import run as run_mod
     import upload as upload_mod
+    import notify as notify_mod
+    import lineup_news as lineup_news_mod
     from upload import save_local
 
     def _save_to_tmp(name, data):
@@ -190,17 +193,15 @@ def _run_pipeline_isolated(bootstrap, fixtures, summaries, tmp_dir) -> dict:
     run_mod.save = _save_to_tmp
     run_mod._get_cache_dir = lambda: tmp_dir
 
-    # Also patch upload.save directly so sub-modules that do their own
-    # `from upload import save` (e.g. data_health, price_baseline) also write to tmp_dir.
+    # Also patch upload.save directly so the run module and any module that
+    # re-resolves upload.save at call time (e.g. data_health's function-local
+    # `from upload import save`) write to tmp_dir rather than the real cache.
     saved['upload_save'] = upload_mod.save
     upload_mod.save = _save_to_tmp
 
     # neutralize outbound side-effects (network/push/scrape) that run always.
     # run_notify is imported locally inside run.run() so we monkeypatch notify module directly.
     # compute_lineup_news makes HTTP calls and is not env-gated, so stub at module level.
-    import notify as notify_mod
-    import lineup_news as lineup_news_mod
-
     saved['notify_run_notify'] = notify_mod.run_notify
     notify_mod.run_notify = lambda *a, **k: None
 
@@ -269,7 +270,8 @@ def _hard_checks(syn, tmp_dir, run_result, archive) -> dict:
     # COLD-01: >=1 returning player (in the 2025/26 archive by code) has non-zero xg/xmins
     prior_codes = {el.get('code') for el in archive['bootstrap'].get('elements', [])}
     checks['coldstart_engaged'] = any(
-        p.get('code') in prior_codes and (p.get('xg_per90') or 0) > 0 and (p.get('xmins') or 0) > 0
+        p.get('code') and p['code'] in prior_codes
+        and (p.get('xg_per90') or 0) > 0 and (p.get('xmins') or 0) > 0
         for p in merged)
 
     return checks
@@ -311,7 +313,6 @@ def _print_report(result: dict) -> None:
 
 
 if __name__ == '__main__':
-    import sys
     res = run_smoke()
     _print_report(res)
     sys.exit(0 if res['ok'] else 1)
