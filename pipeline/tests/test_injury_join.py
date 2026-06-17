@@ -20,6 +20,20 @@ def test_normalize_strips_accents_and_punctuation():
     assert injury_join._norm('Vitaly Janelt') == ['vitaly', 'janelt']
 
 
+def test_normalize_folds_non_decomposing_diacritics():
+    # ø/ð/þ/ł have no NFKD decomposition; without folding they'd be dropped,
+    # breaking matches against api-football's ascii forms.
+    assert injury_join._norm('Højlund') == ['hojlund']
+    assert injury_join._norm('Ødegaard') == ['odegaard']
+    assert injury_join._norm('Sigurðsson') == ['sigurdsson']
+
+
+def test_match_player_folds_diacritic_surname():
+    els = [{'id': 555, 'web_name': 'Ødegaard', 'first_name': 'Martin',
+            'second_name': 'Ødegaard', 'team': 1}]
+    assert injury_join._match_player('M. Odegaard', els) == 555
+
+
 def test_match_player_by_surname():
     els = [e for e in _bootstrap()['elements'] if e['team'] == 35]
     assert injury_join._match_player('R. Christie', els) == 200

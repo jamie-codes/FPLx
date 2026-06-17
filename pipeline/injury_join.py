@@ -39,10 +39,19 @@ OVERRIDES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 
 _TYPE_TO_RISK = {'Missing Fixture': 'out', 'Questionable': 'doubt'}
 
+# Letters that NFKD does NOT decompose; a bare encode('ascii','ignore') would DELETE
+# them, mangling surnames (Højlund -> 'hjlund') so they can never match api-football's
+# ascii forms ('hojlund'). Fold them explicitly before normalising.
+_FOLD = str.maketrans({
+    'ø': 'o', 'Ø': 'o', 'ð': 'd', 'Ð': 'd',
+    'þ': 'th', 'Þ': 'th', 'ł': 'l', 'Ł': 'l', 'ı': 'i',
+})
+
 
 def _norm(name: str) -> list[str]:
-    """Lowercase, strip accents/punctuation -> significant tokens."""
-    s = unicodedata.normalize('NFKD', name or '').encode('ascii', 'ignore').decode()
+    """Lowercase, fold non-decomposing diacritics, strip accents/punctuation -> tokens."""
+    s = unicodedata.normalize('NFKD', (name or '').translate(_FOLD))
+    s = s.encode('ascii', 'ignore').decode()
     s = re.sub(r'[^a-z ]', ' ', s.lower())
     return [t for t in s.split() if t]
 
