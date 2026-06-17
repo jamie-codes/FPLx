@@ -526,3 +526,17 @@ def test_injury_lookup_absent_is_noop():
     result = _compute_player_xmins(element, summary, 10, next_fixture_difficulty=3,
                                    injury_lookup=None)
     assert result['availability_risk'] == 'unknown'
+
+
+def test_injury_lookup_gates_positive_xmins_to_zero():
+    # Real start history -> base xmins > 0. status 'a', chance None -> gap bucket.
+    # An 'out' injury must multiply xmins_adjusted through to 0.0 (proves the factor
+    # applies, vs the gap-bucket test above where base xmins is 0 anyway).
+    history = [_hist(90, 1)] * 10
+    element = _element(element_type=3, starts=10, minutes=900)  # id=1, status='a', chance=None
+    result = _compute_player_xmins(
+        element, _summary(history), 10, next_fixture_difficulty=3,
+        injury_lookup={1: {'risk': 'out', 'reason': 'knee'}})
+    assert result['xmins'] > 0                      # base is positive (guards trivial pass)
+    assert result['availability_factor'] == 0.0
+    assert result['xmins_adjusted'] == 0.0          # factor applied through
