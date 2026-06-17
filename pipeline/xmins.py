@@ -111,6 +111,7 @@ def compute_xmins_stats(
     next_gw_id: int | None = None,   # MIN-02: for rotation risk (optional, backward-compat)
     sub_appear_window_gws: int = 15,   # APM-01: sub appearance history window
     start_seed: dict | None = None,    # COLD-01: code→{start_rate,mins_per_start} prior seed
+    injury_lookup: dict | None = None, # AVAIL-01: {fpl_element_id: {'risk', 'reason'}}
 ) -> dict:
     """
     Compute xmins, start_prob, mins_risk for every player.
@@ -149,6 +150,7 @@ def compute_xmins_stats(
             element, summaries.get(player_id), finished_gws, next_fixture_difficulty,
             sub_appear_window_gws=sub_appear_window_gws,   # APM-01
             prior_start=prior_start,                        # COLD-01
+            injury_lookup=injury_lookup,                    # AVAIL-01
         )
 
     return results
@@ -161,6 +163,7 @@ def _compute_player_xmins(
     next_fixture_difficulty: int | None = None,   # MIN-02: for rotation risk
     sub_appear_window_gws: int = 15,              # APM-01: sub appearance history window
     prior_start: dict | None = None,              # COLD-01: {start_rate, mins_per_start}
+    injury_lookup: dict | None = None,            # AVAIL-01: {fpl_element_id: {'risk', 'reason'}}
 ) -> dict:
     """Compute xmins stats for a single player."""
     starts = element.get('starts', 0)
@@ -266,6 +269,7 @@ def _compute_player_xmins(
         status=element.get('status', 'a'),
         chance=element.get('chance_of_playing_next_round'),
         news_text=element.get('news', ''),
+        injury=(injury_lookup or {}).get(element.get('id')),   # AVAIL-01 gap-fill
     )
 
     # Combined xmins adjustment.

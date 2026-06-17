@@ -497,3 +497,32 @@ def test_cold_bootstrap_branch_with_prior_start():
     assert result['start_prob'] == expected, (
         f"Expected prior start_prob={expected} in bootstrap cold branch, got {result['start_prob']}"
     )
+
+
+# ── AVAIL-01: injury_lookup threading tests ───────────────────────────────────
+
+def test_injury_lookup_gates_gap_bucket_player():
+    # status 'a', no chance, no news -> normally 'unknown'/factor 1.0.
+    # With an injury record for this element id, it becomes 'out'.
+    element = {'id': 4242, 'element_type': 3, 'status': 'a',
+               'chance_of_playing_next_round': None, 'news': ''}
+    summary = {'history': [
+        {'round': r, 'minutes': 90, 'starts': 1, 'total_points': 3} for r in range(1, 6)
+    ]}
+    result = _compute_player_xmins(
+        element, summary, 10, next_fixture_difficulty=3,
+        injury_lookup={4242: {'risk': 'out', 'reason': 'knee'}})
+    assert result['availability_risk'] == 'out'
+    assert result['availability_factor'] == 0.0
+    assert result['xmins_adjusted'] == 0.0
+
+
+def test_injury_lookup_absent_is_noop():
+    element = {'id': 4242, 'element_type': 3, 'status': 'a',
+               'chance_of_playing_next_round': None, 'news': ''}
+    summary = {'history': [
+        {'round': r, 'minutes': 90, 'starts': 1, 'total_points': 3} for r in range(1, 6)
+    ]}
+    result = _compute_player_xmins(element, summary, 10, next_fixture_difficulty=3,
+                                   injury_lookup=None)
+    assert result['availability_risk'] == 'unknown'
