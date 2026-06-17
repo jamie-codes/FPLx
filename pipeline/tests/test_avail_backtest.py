@@ -41,6 +41,18 @@ def test_out_factor_zero_zeroes_flagged_player_only():
     assert unflagged and unflagged[0]['xpts_pred'] > 0.0
 
 
+def test_doubt_factor_reduces_flagged_player_prediction():
+    # exp12 uses avail_doubt_factor=0.5 in production, so exercise the 'doubt' branch:
+    # a doubt-flagged player's prediction is reduced (not zeroed) vs the unflagged peer.
+    arch = _archive()
+    lookup = {(8, 10): 'doubt'}  # flag player 10 doubtful for GW8 only
+    res = run_backtest(arch, params={'avail_doubt_factor': 0.5}, mode='deploy',
+                       first_gw=7, last_gw=10, injury_lookup=lookup)
+    flagged = [r for r in res['rows'] if r['player_id'] == 10 and r['gw'] == 8][0]
+    unflagged = [r for r in res['rows'] if r['player_id'] == 20 and r['gw'] == 8][0]
+    assert 0.0 < flagged['xpts_pred'] < unflagged['xpts_pred']
+
+
 def test_avail_params_exist_and_default_to_one():
     assert DEFAULT_PARAMS['avail_out_factor'] == 1.0
     assert DEFAULT_PARAMS['avail_doubt_factor'] == 1.0
