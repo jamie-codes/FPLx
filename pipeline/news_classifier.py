@@ -4,7 +4,8 @@ MIN-02: Availability classifier for FPL players.
 Priority order:
   1. FPL status codes ('i', 'u', 's') → out immediately.
   2. FPL chance_of_playing_next_round (numeric) → fit / doubt / out.
-  3. Keyword scan of FPL news text (fallback when chance is null).
+  3. AVAIL-01 structured injury data (gap-fill: only when FPL is silent).
+  4. Keyword scan of FPL news text (fallback when chance is null).
 
 Pure functions, no side effects, no API calls.
 """
@@ -18,6 +19,7 @@ def classify_availability(
     status: str,
     chance: int | float | None,
     news_text: str = '',
+    injury: dict | None = None,
 ) -> dict:
     """Classify a player's availability risk.
 
@@ -25,6 +27,9 @@ def classify_availability(
         status:    FPL status code ('a', 'd', 'i', 's', 'u', 'n').
         chance:    FPL chance_of_playing_next_round (0–100) or None.
         news_text: FPL news text from bootstrap element['news'].
+        injury:    AVAIL-01 gap-fill injury record {'risk': 'out'|'doubt', ...} or None.
+                   Consulted ONLY when FPL is silent (status='a', chance=None);
+                   never overrides an FPL status code or numeric chance.
 
     Returns dict with keys:
         availability_risk:   'out' | 'doubt' | 'fit' | 'unknown'
@@ -45,7 +50,15 @@ def classify_availability(
         # chance > 0 but < 25 — too low to expect meaningful minutes
         return {'availability_risk': 'out', 'availability_factor': 0.0}
 
-    # Priority 3: keyword scan of news text (first match wins).
+    # Priority 3 (AVAIL-01): structured injury data — gap-fill only. Reached only
+    # when FPL gave no status flag (handled above) and chance is None.
+    if injury is not None:
+        if injury.get('risk') == 'out':
+            return {'availability_risk': 'out', 'availability_factor': 0.0}
+        if injury.get('risk') == 'doubt':
+            return {'availability_risk': 'doubt', 'availability_factor': 0.5}
+
+    # Priority 4: keyword scan of news text (first match wins).
     lower = (news_text or '').lower()
     for kw in _OUT_KEYWORDS:
         if kw in lower:
