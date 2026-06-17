@@ -90,7 +90,9 @@ def get_live_injuries(fixture_ids: list[int]) -> list[dict]:
     players keep their FPL-derived availability)."""
     if _cache_fresh():
         with open(CACHE_PATH, 'r', encoding='utf-8') as f:
-            return json.load(f)['records']
+            # .get keeps the documented "returns []" guarantee even if a fresh
+            # cache file is missing the 'records' key (interrupted/partial write).
+            return json.load(f).get('records', [])
     records = []
     try:
         for fid in fixture_ids:
