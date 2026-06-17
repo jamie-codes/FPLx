@@ -32,7 +32,7 @@ All ingestion lives in `pipeline/`. New modules are small and single-responsibil
 - HTTP via the same library the existing `*_client.py` modules use (match the codebase; do not introduce a new dependency).
 
 ### `pipeline/injury_join.py` — join api-football → FPL
-- `APIFOOTBALL_TEAM_TO_FPL: dict[str, str]` — api-football team name → FPL `short_name` (20 entries; mirrors `FOOTBALL_DATA_TO_FPL` in `odds_join.py`).
+- `APIFOOTBALL_TEAM_TO_FPL: dict[str, str]` — api-football team name → FPL bootstrap `name` (20 entries; mirrors `FOOTBALL_DATA_TO_FPL` in `odds_join.py`).
 - `normalize_name(name) -> str` — lowercase, strip accents/punctuation, collapse "C. Gakpo" / "Cody Gakpo" toward a comparable key (last name + first initial).
 - Persistent `pipeline/data/apifootball_id_map.json` — `{api_football_player_id: fpl_element_id}`, seeded by team-first then within-team normalised-name match, manual-override capable (mirrors the Understat `player_id_map.json`).
 - `build_injury_lookup(records, bootstrap) -> dict[int, dict]` — live: `{fpl_element_id: {'risk': 'out'|'doubt', 'reason': str}}`. Uses the most-recent / upcoming-fixture records.
