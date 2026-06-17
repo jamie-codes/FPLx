@@ -109,6 +109,17 @@ def test_injury_does_not_override_fpl_chance():
     assert result['availability_risk'] == 'fit'  # P2 wins, injury ignored
 
 
+def test_injury_unknown_or_empty_falls_through_to_keyword_scan():
+    # A malformed/unknown injury dict must NOT classify; it falls through to the
+    # keyword scan (here 'ruled out' -> out), and an empty dict -> unknown.
+    out_via_news = classify_availability(status='a', chance=None,
+                                         news_text='Player ruled out for six weeks.',
+                                         injury={'risk': 'unknown'})
+    assert out_via_news['availability_risk'] == 'out'
+    empty = classify_availability(status='a', chance=None, news_text='', injury={})
+    assert empty['availability_risk'] == 'unknown'
+
+
 def test_injury_takes_priority_over_news_keywords():
     result = classify_availability(status='a', chance=None,
                                    news_text='fully fit and available',
