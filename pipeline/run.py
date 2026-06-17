@@ -27,6 +27,14 @@ from accuracy import compute_accuracy_backtest, build_predictions_snapshot
 from data_health import _sanitize_error
 
 
+# AVAIL-01: shadow-first live injury availability gate (default OFF — flip on after sanity check).
+def _avail_enabled() -> bool:
+    return os.environ.get('AVAIL_ENABLED', '').lower() in ('1', 'true', 'yes')
+
+
+AVAIL_ENABLED = _avail_enabled()  # AVAIL-01 shadow-first
+
+
 def _get_cache_dir() -> str:
     """Return the local cache directory path (mirroring save_local logic)."""
     return 'pipeline/cache'
@@ -514,12 +522,36 @@ def run(dry_run: bool = False):
                 (e['id'] for e in bootstrap.get('events', []) if e.get('is_next')),
                 None,
             )
+
+            # AVAIL-01: structured injury availability (gap-fill). Shadow-first: when the flag
+            # is off, attach info for inspection but DON'T let it change xmins.
+            injury_lookup = None
+            try:
+                from injury_client import get_live_injuries
+                from injury_join import build_injury_lookup
+                _upcoming_fixture_ids = [
+                    f['id'] for f in fixtures
+                    if f.get('event') == _next_gw_id
+                ] if _next_gw_id else []
+                _injury_records = get_live_injuries(_upcoming_fixture_ids)
+                _built = build_injury_lookup(_injury_records, bootstrap)
+                for _el in bootstrap['elements']:
+                    _info = _built.get(_el['id'])
+                    if _info:
+                        _el['apifootball_injury'] = _info   # attach for inspection regardless of flag
+                if AVAIL_ENABLED:
+                    injury_lookup = _built                  # active: feeds xmins
+            except Exception as exc:
+                print(f'AVAIL-01: injury layer unavailable this run ({exc}); continuing')
+                injury_lookup = None
+
             xmins_stats = compute_xmins_stats(
                 bootstrap, summaries, finished_gws,
                 fixtures=fixtures,
                 next_gw_id=_next_gw_id,
                 sub_appear_window_gws=sub_appear_window_gws_used,   # APM-01
                 start_seed=start_seed,                               # COLD-01
+                injury_lookup=injury_lookup,                         # AVAIL-01
             )
             print(f"xmins stats: {len(xmins_stats)} players")
 
