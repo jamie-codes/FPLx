@@ -49,6 +49,8 @@ DEFAULT_PARAMS = {
     'odds_cs_weight': 0.0,        # ODDS-01: blend market CS-prob into cs_prob_raw
     'odds_goalexp_weight': 0.0,   # ODDS-01: blend market attack-difficulty into attack scaling
     'congestion_penalty': 0.0,    # EUR-01: xmins penalty when a midweek-congestion clash precedes the GW
+    'avail_out_factor': 1.0,      # AVAIL-01: xmins multiplier when injury-flagged 'out' (1.0 = no-op)
+    'avail_doubt_factor': 1.0,    # AVAIL-01: xmins multiplier when injury-flagged 'doubt' (1.0 = no-op)
 }
 
 HAUL_THRESHOLD = 10
@@ -367,7 +369,8 @@ def compute_metrics(rows: list):
 def run_backtest(archive: dict | None = None, params: dict | None = None,
                  mode: str = 'deploy', first_gw: int = 7,
                  last_gw: int = 38, odds_lookup: dict | None = None,
-                 congestion_clashes: set | None = None) -> dict:
+                 congestion_clashes: set | None = None,
+                 injury_lookup: dict | None = None) -> dict:
     """Leakage-free backtest over the season archive. See module docstring."""
     from accuracy import build_team_def_form_lookup, build_team_atf_lookup
     from merge import _compute_xpts_fixture
@@ -462,6 +465,13 @@ def run_backtest(archive: dict | None = None, params: dict | None = None,
                     if congestion_clashes is not None and (team_id, gw) in congestion_clashes:
                         row_clash = True
                         xm = xm * (1.0 - p['congestion_penalty'])
+                    # AVAIL-01: gate xmins by injury availability (no-op at factor 1.0).
+                    if injury_lookup is not None:
+                        _risk = injury_lookup.get((gw, pid))
+                        if _risk == 'out':
+                            xm = xm * p['avail_out_factor']
+                        elif _risk == 'doubt':
+                            xm = xm * p['avail_doubt_factor']
                 else:
                     m = e.get('minutes', 0) or 0
                     if m < 45:
