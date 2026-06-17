@@ -1,0 +1,140 @@
+{
+  "baseline_metrics": {
+    "n_rows": 10333,
+    "n_gws": 32,
+    "haul_hit_rate": 0.09579439252336448,
+    "haul_capture_20": 0.16355140186915887,
+    "mid_tier_hit_rate": 0.1962931760741365,
+    "captain_hit_rate": 0.0,
+    "captain_return_rate": 0.46875,
+    "top10_mean_pts": 4.753124999999999,
+    "rmse": 2.9943,
+    "mae": 2.2111,
+    "spearman": 0.3297,
+    "by_position": {
+      "GKP": {
+        "n": 722,
+        "rmse": 2.7201,
+        "n_haulers": 25
+      },
+      "DEF": {
+        "n": 3799,
+        "rmse": 3.1157,
+        "n_haulers": 134
+      },
+      "MID": {
+        "n": 4711,
+        "rmse": 2.8821,
+        "n_haulers": 216
+      },
+      "FWD": {
+        "n": 1101,
+        "rmse": 3.2022,
+        "n_haulers": 53
+      }
+    },
+    "n_haulers_total": 428
+  },
+  "treatment_metrics": {
+    "n_rows": 10333,
+    "n_gws": 32,
+    "haul_hit_rate": 0.09813084112149532,
+    "haul_capture_20": 0.16822429906542055,
+    "mid_tier_hit_rate": 0.2038753159224937,
+    "captain_hit_rate": 0.0,
+    "captain_return_rate": 0.5,
+    "top10_mean_pts": 4.943749999999999,
+    "rmse": 2.896,
+    "mae": 2.0255,
+    "spearman": 0.4379,
+    "by_position": {
+      "GKP": {
+        "n": 722,
+        "rmse": 2.6524,
+        "n_haulers": 25
+      },
+      "DEF": {
+        "n": 3799,
+        "rmse": 3.0007,
+        "n_haulers": 134
+      },
+      "MID": {
+        "n": 4711,
+        "rmse": 2.7848,
+        "n_haulers": 216
+      },
+      "FWD": {
+        "n": 1101,
+        "rmse": 3.1375,
+        "n_haulers": 53
+      }
+    },
+    "n_haulers_total": 428
+  },
+  "placebo_metrics": {
+    "n_rows": 10333,
+    "n_gws": 32,
+    "haul_hit_rate": 0.08411214953271028,
+    "haul_capture_20": 0.14018691588785046,
+    "mid_tier_hit_rate": 0.17270429654591407,
+    "captain_hit_rate": 0.0,
+    "captain_return_rate": 0.5,
+    "top10_mean_pts": 4.4750000000000005,
+    "rmse": 3.3245,
+    "mae": 2.308,
+    "spearman": 0.1832,
+    "by_position": {
+      "GKP": {
+        "n": 722,
+        "rmse": 3.1049,
+        "n_haulers": 25
+      },
+      "DEF": {
+        "n": 3799,
+        "rmse": 3.4019,
+        "n_haulers": 134
+      },
+      "MID": {
+        "n": 4711,
+        "rmse": 3.2122,
+        "n_haulers": 216
+      },
+      "FWD": {
+        "n": 1101,
+        "rmse": 3.6497,
+        "n_haulers": 53
+      }
+    },
+    "n_haulers_total": 428
+  },
+  "n_flagged": 3021,
+  "coverage": {
+    "matched": 3337,
+    "unmatched": 80,
+    "unmatched_names": [
+      "",
+      "A. Semenyo",
+      "Adam Aznou Ben Cheikh",
+      "Alexander Isak",
+      "C. Scanlon",
+      "D. Ings",
+      "Damian Emiliano Martinez Romer",
+      "Douglas Luiz",
+      "E. Guessand",
+      "F. Buonanotte",
+      "Igor",
+      "Joshua Wilson Esbrand",
+      "L. Chambers",
+      "M. Guehi",
+      "Marc Guiu",
+      "O. Bobb",
+      "Yoane Wissa"
+    ]
+  },
+  "verdict": "SHIP",
+  "config": {
+    "avail_out_factor": 0.0,
+    "avail_doubt_factor": 0.5,
+    "placebo_seed": 42
+  }
+}
