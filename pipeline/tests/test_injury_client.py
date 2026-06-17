@@ -16,6 +16,20 @@ def test_parse_records_extracts_fields():
     }]
 
 
+def test_parse_records_coerces_null_string_fields():
+    # api-football returns explicit null for name/type/reason on some real records;
+    # parse_records must coerce these to '' so downstream sorting/matching never sees None.
+    raw = {'response': [
+        {'player': {'id': 5, 'name': None, 'type': None, 'reason': None},
+         'team': {'id': 1, 'name': 'Arsenal'},
+         'fixture': {'id': 9, 'date': '2025-08-15T19:00:00+00:00'}},
+    ]}
+    rec = injury_client.parse_records(raw)[0]
+    assert rec['player_name'] == ''
+    assert rec['type'] == ''
+    assert rec['reason'] == ''
+
+
 def test_parse_records_empty_on_missing_response():
     assert injury_client.parse_records({}) == []
     assert injury_client.parse_records({'response': []}) == []

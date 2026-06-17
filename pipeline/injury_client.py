@@ -29,11 +29,13 @@ def parse_records(raw: dict) -> list[dict]:
         date = (fixture.get('date') or '')[:10]
         out.append({
             'player_id': player.get('id'),
-            'player_name': player.get('name', ''),
-            'type': player.get('type', ''),
-            'reason': player.get('reason', ''),
+            # `or ''` (not just a default): api-football returns explicit null for
+            # name/type/reason on some records, which a bare .get(k, '') would pass through.
+            'player_name': player.get('name') or '',
+            'type': player.get('type') or '',
+            'reason': player.get('reason') or '',
             'team_id': team.get('id'),
-            'team_name': team.get('name', ''),
+            'team_name': team.get('name') or '',
             'date': date,
         })
     return out
