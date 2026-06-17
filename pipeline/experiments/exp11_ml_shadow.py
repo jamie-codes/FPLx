@@ -28,6 +28,10 @@ CAVEAT = ("IN-SAMPLE shadow over one season — train/test share players across 
 def run():
     archive = load_season_archive()
     params = dict(DEFAULT_PARAMS)
+    # No odds_lookup here by design: the ODDS-01 features (odds_cs_prob, attack_difficulty)
+    # stay at their neutral constants for this groundwork run, so their feature_importances
+    # below are necessarily ~0 (xgboost ignores constant features) — not a real signal.
+    # Pass an odds_lookup to activate them when the cold 2026/27 cross-season test runs.
     rows, names = build_dataset(archive, params, first_gw=7, last_gw=38)
 
     train = [r for r in rows if r['gw'] <= _TRAIN_LAST]
