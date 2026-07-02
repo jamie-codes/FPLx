@@ -771,6 +771,14 @@ def run(dry_run: bool = False):
             from transfer_snapshots import write_transfer_slim_snapshot
             write_transfer_slim_snapshot(merged, current_gw)
 
+            # DEC-02: per-GW decision ledger — freezes the model's XI, bench,
+            # captain policy variants and chip signals at decision time, so
+            # next season's DECISIONS (not just predictions) are backtestable.
+            from decision_ledger import build_decision_ledger, write_decision_ledger
+            ledger = build_decision_ledger(merged, captain_picks, current_gw)
+            save('decision_ledger.json', ledger)
+            write_decision_ledger(ledger, current_gw)
+
             # Phase 67 NLP-01/NLP-02 — LLM prose summary (Claude call; guardrail-protected).
             # Pitfall 8: a Claude failure must NOT poison the rest of the pipeline.
             print("Generating weekly prose summary...")
