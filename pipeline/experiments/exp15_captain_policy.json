@@ -1,0 +1,21 @@
+{
+ "experiment": "exp15_captain_policy",
+ "verdict": "NO_SHIP",
+ "n_gws": 32,
+ "top_xpts_mean": 6.19,
+ "top_attacker_mean": 6.5,
+ "placebo_top5_mean": 4.85,
+ "mean_diff": 0.312,
+ "p_attacker_better": 0.756,
+ "diff_ci95": [
+  -0.25,
+  1.12
+ ],
+ "ship_rule": "P(diff>0) >= 0.8 AND beats placebo mean",
+ "config": {
+  "first_gw": 7,
+  "last_gw": 38,
+  "bootstrap_n": 10000,
+  "placebo_seeds": 100
+ }
+}
