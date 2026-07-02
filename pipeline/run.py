@@ -779,6 +779,32 @@ def run(dry_run: bool = False):
             save('decision_ledger.json', ledger)
             write_decision_ledger(ledger, current_gw)
 
+            # TRF-01: transfer advisor — model-squad trajectory + this GW's best
+            # swaps (exp14: +136 pts vs hold, +197 vs placebo on 2025/26).
+            # Non-fatal by design: an advisor failure must not poison the run.
+            try:
+                from datetime import datetime as _dt, timezone as _tz
+                from transfer_advisor import (advance_and_advise,
+                                              load_advisor_state,
+                                              merged_to_candidates)
+                adv_state = load_advisor_state(cache_dir)
+                adv_state, advice = advance_and_advise(
+                    adv_state, merged_to_candidates(merged), current_gw)
+                advice_doc = {
+                    'gw': current_gw,
+                    'generated_at': _dt.now(_tz.utc).isoformat(timespec='seconds'),
+                    **advice,
+                }
+                save('transfer_advisor_state.json', adv_state)
+                save('transfer_advice.json', advice_doc)
+                if os.getenv('USE_BLOB', '').lower() == 'true':
+                    from upload import upload_json
+                    upload_json(f'transfer_advice_gw{current_gw}.json', advice_doc)
+                print(f"Transfer advice written: {len(advice['moves'])} move(s), "
+                      f"net {advice['net_gain']:+.1f}.")
+            except Exception as adv_exc:
+                print(f"[transfer_advisor] non-fatal error: {adv_exc}", file=sys.stderr)
+
             # Phase 67 NLP-01/NLP-02 — LLM prose summary (Claude call; guardrail-protected).
             # Pitfall 8: a Claude failure must NOT poison the rest of the pipeline.
             print("Generating weekly prose summary...")

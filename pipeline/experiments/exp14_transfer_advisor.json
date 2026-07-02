@@ -1,0 +1,219 @@
+{
+ "experiment": "exp14_transfer_advisor",
+ "verdict": "SHIP",
+ "results": {
+  "hold": {
+   "season_points": 1417.0,
+   "transfers_made": 0,
+   "hit_points_paid": 0
+  },
+  "advisor": {
+   "season_points": 1553.0,
+   "transfers_made": 33,
+   "hit_points_paid": 8
+  },
+  "placebo": {
+   "season_points": 1356.0,
+   "transfers_made": 31,
+   "hit_points_paid": 0
+  }
+ },
+ "margins": {
+  "vs_hold": 136.0,
+  "vs_placebo": 197.0
+ },
+ "per_gw": [
+  {
+   "gw": 8,
+   "hold": 83,
+   "advisor": 87,
+   "placebo": 65
+  },
+  {
+   "gw": 9,
+   "hold": 37,
+   "advisor": 34,
+   "placebo": 45
+  },
+  {
+   "gw": 10,
+   "hold": 79,
+   "advisor": 79,
+   "placebo": 47
+  },
+  {
+   "gw": 11,
+   "hold": 41,
+   "advisor": 46,
+   "placebo": 28
+  },
+  {
+   "gw": 12,
+   "hold": 59,
+   "advisor": 61,
+   "placebo": 48
+  },
+  {
+   "gw": 13,
+   "hold": 46,
+   "advisor": 47,
+   "placebo": 38
+  },
+  {
+   "gw": 14,
+   "hold": 69,
+   "advisor": 67,
+   "placebo": 45
+  },
+  {
+   "gw": 15,
+   "hold": 49,
+   "advisor": 37,
+   "placebo": 68
+  },
+  {
+   "gw": 16,
+   "hold": 55,
+   "advisor": 59,
+   "placebo": 66
+  },
+  {
+   "gw": 17,
+   "hold": 74,
+   "advisor": 58,
+   "placebo": 35
+  },
+  {
+   "gw": 18,
+   "hold": 19,
+   "advisor": 29,
+   "placebo": 15
+  },
+  {
+   "gw": 19,
+   "hold": 41,
+   "advisor": 48,
+   "placebo": 18
+  },
+  {
+   "gw": 20,
+   "hold": 35,
+   "advisor": 80,
+   "placebo": 77
+  },
+  {
+   "gw": 21,
+   "hold": 49,
+   "advisor": 47,
+   "placebo": 64
+  },
+  {
+   "gw": 22,
+   "hold": 36,
+   "advisor": 45,
+   "placebo": 47
+  },
+  {
+   "gw": 23,
+   "hold": 0.0,
+   "advisor": 35,
+   "placebo": 18
+  },
+  {
+   "gw": 24,
+   "hold": 52,
+   "advisor": 41,
+   "placebo": 29
+  },
+  {
+   "gw": 25,
+   "hold": 50,
+   "advisor": 40,
+   "placebo": 43
+  },
+  {
+   "gw": 26,
+   "hold": 42,
+   "advisor": 64,
+   "placebo": 44
+  },
+  {
+   "gw": 27,
+   "hold": 41,
+   "advisor": 45,
+   "placebo": 32
+  },
+  {
+   "gw": 28,
+   "hold": 57,
+   "advisor": 42,
+   "placebo": 52
+  },
+  {
+   "gw": 29,
+   "hold": 49,
+   "advisor": 68,
+   "placebo": 63
+  },
+  {
+   "gw": 30,
+   "hold": 49,
+   "advisor": 50,
+   "placebo": 45
+  },
+  {
+   "gw": 31,
+   "hold": 0.0,
+   "advisor": 0.0,
+   "placebo": 52
+  },
+  {
+   "gw": 32,
+   "hold": 31,
+   "advisor": 46,
+   "placebo": 36
+  },
+  {
+   "gw": 33,
+   "hold": 58,
+   "advisor": 69,
+   "placebo": 34
+  },
+  {
+   "gw": 34,
+   "hold": 0.0,
+   "advisor": 0.0,
+   "placebo": 0.0
+  },
+  {
+   "gw": 35,
+   "hold": 39,
+   "advisor": 58,
+   "placebo": 51
+  },
+  {
+   "gw": 36,
+   "hold": 77,
+   "advisor": 80,
+   "placebo": 46
+  },
+  {
+   "gw": 37,
+   "hold": 55,
+   "advisor": 47,
+   "placebo": 48
+  },
+  {
+   "gw": 38,
+   "hold": 45,
+   "advisor": 52,
+   "placebo": 57
+  }
+ ],
+ "config": {
+  "first_gw": 7,
+  "last_gw": 38,
+  "seed": 42,
+  "budget": 1000
+ }
+}
