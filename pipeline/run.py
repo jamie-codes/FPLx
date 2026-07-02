@@ -779,6 +779,19 @@ def run(dry_run: bool = False):
             save('decision_ledger.json', ledger)
             write_decision_ledger(ledger, current_gw)
 
+            # CHP-01: chip advisor — is this the GW to play BB/TC/FH? Values
+            # come from the just-written decision ledger; DGW/BGW from fixtures.
+            try:
+                from chip_advisor import build_chip_advice
+                chip_advice = build_chip_advice(merged, ledger, current_gw)
+                save('chip_advice.json', chip_advice)
+                if os.getenv('USE_BLOB', '').lower() == 'true':
+                    from upload import upload_json
+                    upload_json(f'chip_advice_gw{current_gw}.json', chip_advice)
+                print("Chip advice written.")
+            except Exception as chip_exc:
+                print(f"[chip_advisor] non-fatal error: {chip_exc}", file=sys.stderr)
+
             # TRF-01: transfer advisor — model-squad trajectory + this GW's best
             # swaps (exp14: +136 pts vs hold, +197 vs placebo on 2025/26).
             # Non-fatal by design: an advisor failure must not poison the run.
