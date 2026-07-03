@@ -105,6 +105,14 @@ vi.mock('@/components/home/HomeTab', () => ({
   ),
 }))
 
+// Product-audit 2026-07: CockpitTab composes TanStack Query hooks — mocked like
+// every other tab (page.test.tsx renders without a QueryClientProvider).
+vi.mock('@/components/cockpit/CockpitTab', () => ({
+  CockpitTab: (_props: { submittedId: string | null; selectTool: (t: string) => void }) => (
+    <div data-testid="cockpit-tab" />
+  ),
+}))
+
 import Home from '@/app/page'
 import { ALL_TOOL_IDS, GROUPS, groupOf } from '@/lib/navigation'
 import type { ToolId } from '@/lib/navigation'
@@ -146,6 +154,7 @@ describe('UIX-01: shell state in page.tsx', () => {
 
   it('every one of the 27 legacy tools renders its component when selected (keep-all-features)', () => {
     const TOOL_TESTID: Record<Exclude<ToolId, 'home'>, string> = {
+      'cockpit': 'cockpit-tab',
       'picks': 'weekly-picks-tab',
       'decision': 'decision-summary-tab',
       'lineup': 'lineup-tab',
@@ -314,10 +323,10 @@ describe('UIX-01: shell state in page.tsx', () => {
     }
   })
 
-  it('sidebar exposes all 6 groups and 29 tools (navigation.ts is the source of truth)', () => {
+  it('sidebar exposes all 6 groups and 30 tools (navigation.ts is the source of truth)', () => {
     const { container } = render(<Home />)
     const sidebar = container.querySelector('nav[aria-label="Primary navigation"]')!
-    expect(sidebar.querySelectorAll('a')).toHaveLength(29)
+    expect(sidebar.querySelectorAll('a')).toHaveLength(30)
     for (const group of GROUPS) {
       expect(sidebar.textContent).toContain(group.label)
     }

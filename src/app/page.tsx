@@ -50,6 +50,7 @@ import { MobileBar } from '@/components/shell/MobileBar'
 import { MoreSheet } from '@/components/shell/MoreSheet'
 import { Tabs } from '@/components/ui/Tabs'
 import { HomeTab } from '@/components/home/HomeTab'
+import { CockpitTab } from '@/components/cockpit/CockpitTab'
 
 class DecisionErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -229,6 +230,9 @@ export default function Home() {
               onSubmit={handleTeamIdSubmit}
               selectTool={selectTool}
             />
+          )}
+          {activeTool === 'cockpit' && (
+            <CockpitTab submittedId={submittedId} selectTool={selectTool} />
           )}
           {activeTool === 'decision' && (
             <DecisionErrorBoundary>

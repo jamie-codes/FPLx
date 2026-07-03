@@ -14,9 +14,9 @@ const LEGACY_27 = [
 ] as const
 
 describe('navigation.ts completeness (UIX-01)', () => {
-  it('has exactly 29 tool ids (27 legacy + home + transfers-confirmed) with no duplicates', () => {
-    expect(ALL_TOOL_IDS).toHaveLength(29)
-    expect(new Set(ALL_TOOL_IDS).size).toBe(29)
+  it('has exactly 30 tool ids (27 legacy + home + transfers-confirmed + cockpit) with no duplicates', () => {
+    expect(ALL_TOOL_IDS).toHaveLength(30)
+    expect(new Set(ALL_TOOL_IDS).size).toBe(30)
   })
 
   it('contains every one of the 27 legacy SubTab ids exactly once', () => {
@@ -27,6 +27,12 @@ describe('navigation.ts completeness (UIX-01)', () => {
 
   it('includes the new home id', () => {
     expect(ALL_TOOL_IDS).toContain('home')
+  })
+
+  it('includes cockpit at the top of This Week (product-audit 2026-07)', () => {
+    expect(ALL_TOOL_IDS).toContain('cockpit')
+    const thisWeek = GROUPS.find((g) => g.id === 'this-week')!
+    expect(thisWeek.tools[0].id).toBe('cockpit')
   })
 
   it('exposes the 6 groups in sidebar order', () => {

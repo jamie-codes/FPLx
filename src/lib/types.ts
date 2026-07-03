@@ -1315,3 +1315,58 @@ export interface ConfirmedTransfers {
   chronological: ChronoTransfer[]
   counts: { deals: number; loans: number }
 }
+
+// TRF-01/CHP-01: pipeline advisor artifacts (transfer_advice.json / chip_advice.json).
+// Shapes mirror pipeline/transfer_advisor.py and pipeline/chip_advisor.py exactly.
+
+export interface AdviceMovePlayer {
+  id: number
+  name: string
+  element_type: 1 | 2 | 3 | 4
+  cost: number
+  value: number
+  available?: boolean
+}
+
+export interface AdviceMove {
+  out: AdviceMovePlayer
+  in: AdviceMovePlayer
+  gain: number
+  hit: boolean
+  reason: string
+}
+
+export interface TransferAdvice {
+  gw: number
+  generated_at: string
+  moves: AdviceMove[]
+  n_free_used: number
+  n_hits: number
+  predicted_gain: number
+  net_gain: number
+  hold: boolean
+  new_squad_ids: number[]
+}
+
+export type ChipSignal = 'play' | 'consider' | 'hold' | 'informational'
+
+export interface ChipAdviceEntry {
+  signal: ChipSignal
+  value?: number
+  captain?: string | null
+  reason: string
+}
+
+export interface ChipAdvice {
+  gw: number
+  generated_at: string
+  dgw_team_count: number
+  bgw_team_count: number
+  chips: {
+    bench_boost: ChipAdviceEntry
+    triple_captain: ChipAdviceEntry
+    free_hit: ChipAdviceEntry
+    wildcard: ChipAdviceEntry
+  }
+  note: string
+}
