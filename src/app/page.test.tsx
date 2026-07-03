@@ -169,7 +169,6 @@ describe('UIX-01: shell state in page.tsx', () => {
       'defcon': 'defcon',
       'set-pieces': 'set-piece-taker',
       'club-form': 'club-form-tab',
-      'perfect-gw': 'perfect-gw-tab',
       'planner': 'planner',
       'manual-plan': 'manual-plan-tab',
       'route-tree': 'route-tree-tab',
@@ -217,6 +216,7 @@ describe('UIX-01: shell state in page.tsx', () => {
       ['window', 'pre-season-tab'],
       ['transfers-confirmed', 'pre-season-tab'],
       ['next-season', 'pre-season-tab'],
+      ['perfect-gw', 'review-hub'],
     ]
     for (const [legacy, testid] of ALIASES) {
       window.history.replaceState(null, '', `/?t=${legacy}`)
@@ -263,7 +263,7 @@ describe('UIX-01: shell state in page.tsx', () => {
     const pillRow = container.querySelector('nav[aria-label="Research tools"]')
     expect(pillRow).not.toBeNull()
     const pillLabels = Array.from(pillRow!.querySelectorAll('[role="tab"]')).map((b) => b.textContent)
-    expect(pillLabels).toEqual(['Gems', 'Insights', 'DefCon', 'SP', 'Form', 'Perfect'])
+    expect(pillLabels).toEqual(['Gems', 'Insights', 'DefCon', 'SP', 'Form'])
     // abbreviations, never the desktop labels
     expect(pillRow!.textContent).not.toContain('Gem Ratings')
     expect(pillRow!.textContent).not.toContain('DefCon Analysis')
@@ -336,10 +336,10 @@ describe('UIX-01: shell state in page.tsx', () => {
     }
   })
 
-  it('sidebar exposes all 6 groups and 25 tools (navigation.ts is the source of truth)', () => {
+  it('sidebar exposes all 6 groups and 24 tools (navigation.ts is the source of truth)', () => {
     const { container } = render(<Home />)
     const sidebar = container.querySelector('nav[aria-label="Primary navigation"]')!
-    expect(sidebar.querySelectorAll('a')).toHaveLength(25)
+    expect(sidebar.querySelectorAll('a')).toHaveLength(24)
     for (const group of GROUPS) {
       expect(sidebar.textContent).toContain(group.label)
     }

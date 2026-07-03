@@ -15,7 +15,7 @@ export type ToolId =
   | 'transfers' | 'optimiser' | 'watchlist' | 'rank-sim' | 'rivals'
   // merges (product-audit 2026-07): value-gems -> gems section; window/
   // transfers-confirmed/next-season -> pre-season; price-reset/price-changes -> prices
-  | 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'club-form' | 'perfect-gw'
+  | 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'club-form'   // perfect-gw -> review section
   | 'planner' | 'manual-plan' | 'route-tree' | 'wildcard' | 'pre-season' | 'prices'
   | 'accuracy' | 'season'
 
@@ -46,7 +46,6 @@ export const GROUPS: Group[] = [
     { id: 'defcon',     label: 'DefCon Analysis', mobileLabel: 'DefCon' },
     { id: 'set-pieces', label: 'Set Pieces',      mobileLabel: 'SP' },
     { id: 'club-form',  label: 'Club Form',       mobileLabel: 'Form' },
-    { id: 'perfect-gw', label: 'Perfect GW',      mobileLabel: 'Perfect' },
   ]},
   { id: 'planning', label: 'Planning', icon: CalendarDays, tools: [
     { id: 'planner',       label: 'Planner',       mobileLabel: 'Planner' },

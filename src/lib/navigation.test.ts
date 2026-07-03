@@ -11,18 +11,19 @@ import { GROUPS, ALL_TOOL_IDS, groupOf } from './navigation'
 //   'value-gems'          -> gems (section of GemsHub)
 //   'price-reset'/'price-changes'                   -> prices (PricesTab sections)
 //   'window'/'transfers-confirmed'/'next-season'    -> pre-season (PreSeasonTab sections)
+//   'perfect-gw'          -> review (Perfect XI section of ReviewHub)
 const LEGACY_27 = [
   'gems', 'picks', 'insights', 'defcon', 'set-pieces', 'planner', 'manual-plan',
   'route-tree', 'club-form', 'accuracy', 'season',
   'transfers', 'optimiser',
   'rivals', 'lineup', 'review', 'rank-sim', 'watchlist',
-  'perfect-gw', 'live', 'wildcard',
+  'live', 'wildcard',
 ] as const
 
 describe('navigation.ts completeness (UIX-01)', () => {
-  it('has exactly 25 tool ids (21 surviving legacy + home + cockpit + prices + pre-season) with no duplicates', () => {
-    expect(ALL_TOOL_IDS).toHaveLength(25)
-    expect(new Set(ALL_TOOL_IDS).size).toBe(25)
+  it('has exactly 24 tool ids (20 surviving legacy + home + cockpit + prices + pre-season) with no duplicates', () => {
+    expect(ALL_TOOL_IDS).toHaveLength(24)
+    expect(new Set(ALL_TOOL_IDS).size).toBe(24)
   })
 
   it('contains every surviving legacy SubTab id exactly once', () => {

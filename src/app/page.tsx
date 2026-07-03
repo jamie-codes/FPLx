@@ -24,7 +24,6 @@ import { CaptainPicksPanel } from '@/components/captaincy/CaptainPicksPanel'
 import { InsightsTab } from '@/components/insights/InsightsTab'
 import { AccuracyTab } from '@/components/accuracy/AccuracyTab'
 import { SeasonReviewTab } from '@/components/season-review/SeasonReviewTab'
-import { PerfectGWTab } from '@/components/perfect-gw/PerfectGWTab'
 import { PricesTab } from '@/components/price-changes/PricesTab'
 import { PreSeasonTab } from '@/components/next-season/PreSeasonTab'
 import { RivalsTab } from '@/components/rivals/RivalsTab'
@@ -33,7 +32,7 @@ import { WildcardBuilderTab } from '@/components/planner/WildcardBuilderTab'
 import { useWatchlist } from '@/lib/hooks/useWatchlist'
 import { OptimiserPanel } from '@/components/optimiser/OptimiserPanel'
 import { LineupTab } from '@/components/squad/LineupTab'
-import { GwReviewTab } from '@/components/squad/GwReviewTab'
+import { ReviewHub } from '@/components/squad/ReviewHub'
 import { LiveGwTab } from '@/components/squad/LiveGwTab'
 import { useSettledGws } from '@/lib/hooks/useSettledGws'
 import { DeadlineBanner } from '@/components/DeadlineBanner'
@@ -105,6 +104,7 @@ export default function Home() {
       'decision': 'cockpit', 'value-gems': 'gems',
       'price-reset': 'prices', 'price-changes': 'prices',
       'window': 'pre-season', 'transfers-confirmed': 'pre-season', 'next-season': 'pre-season',
+      'perfect-gw': 'review',
     }
     const t = raw !== null ? (LEGACY_ALIASES[raw] ?? raw) : raw
     if (t !== null && (ALL_TOOL_IDS as string[]).includes(t)) {
@@ -259,7 +259,7 @@ export default function Home() {
             <LineupTab teamId={submittedId ?? ''} />
           )}
           {activeTool === 'review' && (
-            <GwReviewTab teamId={submittedId ?? ''} settledGws={settledGws} />
+            <ReviewHub teamId={submittedId ?? ''} settledGws={settledGws} />
           )}
           {activeTool === 'live' && (
             <LiveGwTab teamId={submittedId != null && /^\d+$/.test(submittedId) ? parseInt(submittedId, 10) : null} />
@@ -278,7 +278,6 @@ export default function Home() {
           {activeTool === 'season' && <SeasonReviewTab teamId={submittedId} />}
           {activeTool === 'pre-season' && <PreSeasonTab />}
           {activeTool === 'prices' && <PricesTab />}
-          {activeTool === 'perfect-gw' && <PerfectGWTab />}
           {activeTool === 'rivals' && (
             <RivalsTab submittedId={submittedId} />
           )}
