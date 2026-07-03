@@ -291,11 +291,11 @@ export function HomeTab({ teamId, onTeamIdChange, submittedId, onSubmit, selectT
         <button
           type="button"
           data-testid="risk-flag-chip"
-          onClick={() => selectTool('decision')}
+          onClick={() => selectTool('cockpit')}
           className="inline-flex min-h-[44px] items-center self-start"
-          aria-label={`${riskN} player${riskN === 1 ? '' : 's'} flagged — open Decision`}>
+          aria-label={`${riskN} player${riskN === 1 ? '' : 's'} flagged — open the Cockpit`}>
           <Chip intent="warning" size="md">
-            {riskN} player{riskN === 1 ? '' : 's'} flagged → Decision
+            {riskN} player{riskN === 1 ? '' : 's'} flagged → Cockpit
           </Chip>
         </button>
       )}

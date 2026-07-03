@@ -38,7 +38,6 @@ import { useWatchlist } from '@/lib/hooks/useWatchlist'
 import { OptimiserPanel } from '@/components/optimiser/OptimiserPanel'
 import { LineupTab } from '@/components/squad/LineupTab'
 import { GwReviewTab } from '@/components/squad/GwReviewTab'
-import { DecisionSummaryTab } from '@/components/squad/DecisionSummaryTab'
 import { LiveGwTab } from '@/components/squad/LiveGwTab'
 import { useSettledGws } from '@/lib/hooks/useSettledGws'
 import { DeadlineBanner } from '@/components/DeadlineBanner'
@@ -104,7 +103,9 @@ export default function Home() {
   // UIX-01 URL sync — read ?t= once after mount (SSR-safe: avoids hydration
   // mismatch that occurs when reading window.location in useState initialiser).
   useEffect(() => {
-    const t = new URLSearchParams(window.location.search).get('t')
+    const raw = new URLSearchParams(window.location.search).get('t')
+    // decision folded into cockpit (product-audit 2026-07) — honour old links.
+    const t = raw === 'decision' ? 'cockpit' : raw
     if (t !== null && (ALL_TOOL_IDS as string[]).includes(t)) {
       const toolId = t as ToolId
       setActiveTool(toolId)
@@ -232,15 +233,13 @@ export default function Home() {
             />
           )}
           {activeTool === 'cockpit' && (
-            <CockpitTab submittedId={submittedId} selectTool={selectTool} />
-          )}
-          {activeTool === 'decision' && (
             <DecisionErrorBoundary>
-              <DecisionSummaryTab
+              <CockpitTab
                 teamId={teamId}
                 onTeamIdChange={setTeamId}
                 submittedId={submittedId}
                 onSubmit={handleTeamIdSubmit}
+                selectTool={selectTool}
               />
             </DecisionErrorBoundary>
           )}

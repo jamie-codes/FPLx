@@ -186,13 +186,13 @@ describe('ActionCards', () => {
   const transfer = { sellName: 'Selman', buyName: 'Buyer', gain: 1.4, costLabel: 'Free transfer' }
   const lineup = { formation: '4-3-3', xiXpts: 61.2 }
 
-  it('captain card shows name and doubled points; routes to decision', () => {
+  it('captain card shows name and doubled points; routes to cockpit', () => {
     const onGo = vi.fn()
     render(<ActionCards captain={captain} transfer={transfer} lineup={lineup} onGo={onGo} />)
     expect(screen.getByText('Haaland')).toBeTruthy()
     expect(screen.getByText(/14\.4/)).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: /decision/i }))
-    expect(onGo).toHaveBeenCalledWith('decision')
+    fireEvent.click(screen.getByRole('button', { name: /cockpit/i }))
+    expect(onGo).toHaveBeenCalledWith('cockpit')
   })
 
   it('transfer card shows sell ➜ buy headline, gain, and cost label; routes to transfers', () => {
@@ -340,11 +340,11 @@ describe('HomeTab — state 2: squad loaded', () => {
     expect(screen.getByTestId('risk-flag-chip').textContent).toContain('1 player flagged')
   })
 
-  it('risk chip routes to Decision on click', () => {
+  it('risk chip routes to the Cockpit on click', () => {
     loadedSetup()
     const props = renderHome({ submittedId: '123' })
     fireEvent.click(screen.getByTestId('risk-flag-chip'))
-    expect(props.selectTool).toHaveBeenCalledWith('decision')
+    expect(props.selectTool).toHaveBeenCalledWith('cockpit')
   })
 
   it('pins the suggestTransfers wiring: horizon 1, ftCount 1, public bank', () => {
@@ -371,7 +371,7 @@ describe('HomeTab — state 2: squad loaded', () => {
 
     expect(screen.getByText('My Squad')).toBeTruthy()
     expect(screen.queryByRole('button', { name: /→ lineup/i })).toBeNull()
-    expect(screen.getByRole('button', { name: /→ decision/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /→ cockpit/i })).toBeTruthy()
   })
 })
 

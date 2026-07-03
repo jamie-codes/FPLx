@@ -10,8 +10,8 @@ import { House, Zap, Shirt, Search, CalendarDays, ChartColumn, type LucideIcon }
 
 export type ToolId =
   | 'home'
-  | 'cockpit'
-  | 'picks' | 'decision' | 'lineup' | 'live' | 'review'
+  | 'cockpit'   // absorbs the retired 'decision' tab (product-audit 2026-07)
+  | 'picks' | 'lineup' | 'live' | 'review'
   | 'transfers' | 'optimiser' | 'watchlist' | 'rank-sim' | 'rivals'
   | 'gems' | 'value-gems' | 'insights' | 'defcon' | 'set-pieces' | 'club-form' | 'perfect-gw'
   | 'planner' | 'manual-plan' | 'route-tree' | 'wildcard' | 'window' | 'transfers-confirmed' | 'next-season' | 'price-reset' | 'price-changes'
@@ -27,7 +27,6 @@ export const GROUPS: Group[] = [
   { id: 'this-week', label: 'This Week', icon: Zap, tools: [
     { id: 'cockpit',  label: 'Cockpit',      mobileLabel: 'Cockpit' },
     { id: 'picks',    label: 'Weekly Picks', mobileLabel: 'Picks' },
-    { id: 'decision', label: 'Decision',     mobileLabel: 'Decision' },
     { id: 'lineup',   label: 'Lineup',       mobileLabel: 'Lineup' },
     { id: 'live',     label: 'Live',         mobileLabel: 'Live' },
     { id: 'review',   label: 'Review',       mobileLabel: 'Review' },

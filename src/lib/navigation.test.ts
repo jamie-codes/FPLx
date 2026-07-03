@@ -5,21 +5,24 @@
 import { describe, it, expect } from 'vitest'
 import { GROUPS, ALL_TOOL_IDS, groupOf } from './navigation'
 
+// 'decision' was folded into 'cockpit' (product-audit 2026-07, owner-approved):
+// DecisionSummaryTab renders inside CockpitTab and ?t=decision aliases to it,
+// so the FEATURE survives — only the standalone nav entry retired.
 const LEGACY_27 = [
   'gems', 'picks', 'insights', 'defcon', 'set-pieces', 'planner', 'manual-plan',
   'route-tree', 'club-form', 'value-gems', 'accuracy', 'season', 'window',
-  'decision', 'transfers', 'optimiser', 'price-reset', 'price-changes',
+  'transfers', 'optimiser', 'price-reset', 'price-changes',
   'rivals', 'lineup', 'review', 'rank-sim', 'next-season', 'watchlist',
   'perfect-gw', 'live', 'wildcard',
 ] as const
 
 describe('navigation.ts completeness (UIX-01)', () => {
-  it('has exactly 30 tool ids (27 legacy + home + transfers-confirmed + cockpit) with no duplicates', () => {
-    expect(ALL_TOOL_IDS).toHaveLength(30)
-    expect(new Set(ALL_TOOL_IDS).size).toBe(30)
+  it('has exactly 29 tool ids (26 legacy + home + transfers-confirmed + cockpit) with no duplicates', () => {
+    expect(ALL_TOOL_IDS).toHaveLength(29)
+    expect(new Set(ALL_TOOL_IDS).size).toBe(29)
   })
 
-  it('contains every one of the 27 legacy SubTab ids exactly once', () => {
+  it('contains every surviving legacy SubTab id exactly once', () => {
     for (const id of LEGACY_27) {
       expect(ALL_TOOL_IDS.filter((t) => t === id), `legacy id ${id}`).toHaveLength(1)
     }

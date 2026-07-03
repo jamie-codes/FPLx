@@ -23,7 +23,8 @@ export interface LineupCardData {
   xiXpts: number
 }
 
-export type ActionTool = 'decision' | 'transfers' | 'lineup'
+// 'decision' folded into 'cockpit' (product-audit 2026-07)
+export type ActionTool = 'cockpit' | 'transfers' | 'lineup'
 
 function ActionCard({
   title,
@@ -75,7 +76,7 @@ export function ActionCards({
           support={`${captain.team} · ${captain.projectedPts.toFixed(1)} pts as (C) · ${
             captain.captainType === 'safe' ? 'safe pick' : 'upside pick'
           }`}
-          go={{ label: 'Decision', tool: 'decision' }}
+          go={{ label: 'Cockpit', tool: 'cockpit' }}
           onGo={onGo}
         />
       )}

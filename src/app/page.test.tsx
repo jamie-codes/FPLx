@@ -156,7 +156,6 @@ describe('UIX-01: shell state in page.tsx', () => {
     const TOOL_TESTID: Record<Exclude<ToolId, 'home'>, string> = {
       'cockpit': 'cockpit-tab',
       'picks': 'weekly-picks-tab',
-      'decision': 'decision-summary-tab',
       'lineup': 'lineup-tab',
       'live': 'live-gw-tab',
       'review': 'gw-review-tab-mock',
@@ -213,6 +212,12 @@ describe('UIX-01: shell state in page.tsx', () => {
     expect(sidebar.querySelector('a[aria-current="page"]')?.textContent).toBe('Insights')
   })
 
+  it('aliases the retired ?t=decision deep link to the cockpit', () => {
+    window.history.replaceState(null, '', '/?t=decision')
+    const { container } = render(<Home />)
+    expect(container.querySelector('[data-testid="cockpit-tab"]')).not.toBeNull()
+  })
+
   it('ignores an invalid ?t= value and stays on Home', () => {
     window.history.replaceState(null, '', '/?t=not-a-tool')
     const { container } = render(<Home />)
@@ -221,11 +226,11 @@ describe('UIX-01: shell state in page.tsx', () => {
 
   it('restores the remembered tool when re-entering a group via the MobileBar (D-05 port)', () => {
     const { container } = render(<Home />)
-    // Visit Research > Insights, then leave for This Week > Decision
+    // Visit Research > Insights, then leave for This Week > Cockpit
     clickSidebarTool(container, 'Insights')
     expect(container.querySelector('[data-testid="insights"]')).not.toBeNull()
-    clickSidebarTool(container, 'Decision')
-    expect(container.querySelector('[data-testid="decision-summary-tab"]')).not.toBeNull()
+    clickSidebarTool(container, 'Cockpit')
+    expect(container.querySelector('[data-testid="cockpit-tab"]')).not.toBeNull()
     expect(container.querySelector('[data-testid="insights"]')).toBeNull()
     // Re-enter Research from the mobile bar — Insights restored, not Gem Ratings
     const mobileNav = container.querySelector('nav[aria-label="Mobile navigation"]')!
@@ -323,10 +328,10 @@ describe('UIX-01: shell state in page.tsx', () => {
     }
   })
 
-  it('sidebar exposes all 6 groups and 30 tools (navigation.ts is the source of truth)', () => {
+  it('sidebar exposes all 6 groups and 29 tools (navigation.ts is the source of truth)', () => {
     const { container } = render(<Home />)
     const sidebar = container.querySelector('nav[aria-label="Primary navigation"]')!
-    expect(sidebar.querySelectorAll('a')).toHaveLength(30)
+    expect(sidebar.querySelectorAll('a')).toHaveLength(29)
     for (const group of GROUPS) {
       expect(sidebar.textContent).toContain(group.label)
     }

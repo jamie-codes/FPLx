@@ -1,11 +1,14 @@
 'use client'
 
 // This Week cockpit (product-audit 2026-07): ONE view answering "what should I
-// do this week?", in decision order — transfers, captain, chip, deadline.
-// Additive: composes the pipeline advisors (TRF-01/CHP-01) with the existing
-// CaptainPicksPanel; the deeper tools stay one click away.
+// do this week?", in decision order — deadline, transfers, chips, then the
+// full user-squad decision summary (captain / transfers / chips / risk / prose),
+// absorbed from the retired `decision` tab. The pipeline advisor cards
+// (TRF-01/CHP-01) advise on the model trajectory; DecisionSummaryTab advises
+// on YOUR squad — both belong in the same glance. Power tools stay one click
+// away.
 import { useNextDeadline } from '@/lib/hooks/useNextDeadline'
-import { CaptainPicksPanel } from '@/components/captaincy/CaptainPicksPanel'
+import { DecisionSummaryTab } from '@/components/squad/DecisionSummaryTab'
 import { TransferAdviceCard } from './TransferAdviceCard'
 import { ChipAdviceCard } from './ChipAdviceCard'
 import { Card } from '@/components/ui/Card'
@@ -25,8 +28,11 @@ function deadlineParts(iso: string): { label: string; countdown: string } {
   return { label, countdown: days >= 1 ? `${days}d ${h % 24}h` : `${h}h ${Math.floor((ms % 3_600_000) / 60_000)}m` }
 }
 
-export function CockpitTab({ submittedId, selectTool }: {
+export function CockpitTab({ teamId, onTeamIdChange, submittedId, onSubmit, selectTool }: {
+  teamId: string
+  onTeamIdChange: (id: string) => void
   submittedId: string | null
+  onSubmit: () => void
   selectTool: (tool: ToolId) => void
 }) {
   const { data: deadline } = useNextDeadline()
@@ -56,14 +62,19 @@ export function CockpitTab({ submittedId, selectTool }: {
         </div>
       </Card>
 
-      {/* 1. Transfers · 2. Chip — the two pipeline advisors side by side */}
+      {/* Pipeline advisors — model-trajectory transfers + chip signals */}
       <div className="grid gap-4 lg:grid-cols-2">
         <TransferAdviceCard />
         <ChipAdviceCard />
       </div>
 
-      {/* 3. Captain — the existing ranked candidates panel, unified here */}
-      <CaptainPicksPanel submittedId={submittedId} />
+      {/* Your squad's decision summary — captain, transfers, chips, risk, prose */}
+      <DecisionSummaryTab
+        teamId={teamId}
+        onTeamIdChange={onTeamIdChange}
+        submittedId={submittedId}
+        onSubmit={onSubmit}
+      />
     </div>
   )
 }
