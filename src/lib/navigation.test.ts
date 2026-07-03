@@ -5,21 +5,24 @@
 import { describe, it, expect } from 'vitest'
 import { GROUPS, ALL_TOOL_IDS, groupOf } from './navigation'
 
-// 'decision' was folded into 'cockpit' (product-audit 2026-07, owner-approved):
-// DecisionSummaryTab renders inside CockpitTab and ?t=decision aliases to it,
-// so the FEATURE survives — only the standalone nav entry retired.
+// Product-audit 2026-07 folds (owner-approved) — every FEATURE survives inside
+// its merge host; only the standalone nav entries retired. ?t= deep links alias.
+//   'decision'            -> cockpit (DecisionSummaryTab renders inside it)
+//   'value-gems'          -> gems (section of GemsHub)
+//   'price-reset'/'price-changes'                   -> prices (PricesTab sections)
+//   'window'/'transfers-confirmed'/'next-season'    -> pre-season (PreSeasonTab sections)
 const LEGACY_27 = [
   'gems', 'picks', 'insights', 'defcon', 'set-pieces', 'planner', 'manual-plan',
-  'route-tree', 'club-form', 'value-gems', 'accuracy', 'season', 'window',
-  'transfers', 'optimiser', 'price-reset', 'price-changes',
-  'rivals', 'lineup', 'review', 'rank-sim', 'next-season', 'watchlist',
+  'route-tree', 'club-form', 'accuracy', 'season',
+  'transfers', 'optimiser',
+  'rivals', 'lineup', 'review', 'rank-sim', 'watchlist',
   'perfect-gw', 'live', 'wildcard',
 ] as const
 
 describe('navigation.ts completeness (UIX-01)', () => {
-  it('has exactly 29 tool ids (26 legacy + home + transfers-confirmed + cockpit) with no duplicates', () => {
-    expect(ALL_TOOL_IDS).toHaveLength(29)
-    expect(new Set(ALL_TOOL_IDS).size).toBe(29)
+  it('has exactly 25 tool ids (21 surviving legacy + home + cockpit + prices + pre-season) with no duplicates', () => {
+    expect(ALL_TOOL_IDS).toHaveLength(25)
+    expect(new Set(ALL_TOOL_IDS).size).toBe(25)
   })
 
   it('contains every surviving legacy SubTab id exactly once', () => {

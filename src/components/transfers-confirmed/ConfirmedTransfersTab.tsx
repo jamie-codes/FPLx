@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/Button'
 import { SegmentedToggle } from '@/components/ui/SegmentedToggle'
 import { TeamBadge } from '@/components/shared/TeamBadge'
 import type { TransferDeal, TransferGroup, ChronoTransfer } from '@/lib/types'
-import type { ToolId } from '@/lib/navigation'
 
 type View = 'by-club' | 'most-recent'
 
@@ -92,7 +91,7 @@ function ChronoRow({ transfer }: { transfer: ChronoTransfer }) {
 
 // ─── Tab ──────────────────────────────────────────────────────────────────────
 
-export function ConfirmedTransfersTab({ selectTool }: { selectTool: (tool: ToolId) => void }) {
+export function ConfirmedTransfersTab({ onOpenWindow }: { onOpenWindow: () => void }) {
   const { data, isNotAvailable } = useConfirmedTransfers()
   const [view, setView] = useState<View>('by-club')
 
@@ -115,7 +114,7 @@ export function ConfirmedTransfersTab({ selectTool }: { selectTool: (tool: ToolI
   if (data.chronological.length === 0) {
     return (
       <section aria-label="Confirmed transfers">
-        <Header data={data} selectTool={selectTool} />
+        <Header data={data} onOpenWindow={onOpenWindow} />
         <EmptyState
           title="No confirmed deals yet"
           hint="No Premier League deals confirmed yet this window"
@@ -126,7 +125,7 @@ export function ConfirmedTransfersTab({ selectTool }: { selectTool: (tool: ToolI
 
   return (
     <section aria-label="Confirmed transfers" className="space-y-4">
-      <Header data={data} selectTool={selectTool} />
+      <Header data={data} onOpenWindow={onOpenWindow} />
       <SegmentedToggle
         options={VIEW_OPTIONS}
         value={view}
@@ -156,10 +155,10 @@ export function ConfirmedTransfersTab({ selectTool }: { selectTool: (tool: ToolI
 
 function Header({
   data,
-  selectTool,
+  onOpenWindow,
 }: {
   data: { scraped_at: string; window: string }
-  selectTool: (tool: ToolId) => void
+  onOpenWindow: () => void
 }) {
   return (
     <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -174,7 +173,7 @@ function Header({
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => selectTool('window')}
+        onClick={onOpenWindow}
       >
         Rumours &amp; speculation →
       </Button>

@@ -5,7 +5,7 @@ import type { ReactNode, ErrorInfo } from 'react'
 import { HorizonSelector } from '@/components/planner/HorizonSelector'
 import { loadManualPlan } from '@/lib/manual-plan'
 import type { PlannerHorizon } from '@/lib/types'
-import { GemTable } from '@/components/gem-table/GemTable'
+import { GemsHub } from '@/components/gem-table/GemsHub'
 import type { ViewPreset } from '@/components/gem-table/GwToggle'
 import type { ScoredPlayer } from '@/lib/types'
 import { PlayerComparisonModal } from '@/components/gem-table/PlayerComparisonModal'
@@ -15,7 +15,6 @@ import { ClubFormTab } from '@/components/club-form/ClubFormTab'
 import { LastUpdated } from '@/components/LastUpdated'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { BellNotificationButton } from '@/components/push/BellNotificationButton'
-import { ValueGemsTable } from '@/components/value-gems/ValueGemsTable'
 import { PlannerTab } from '@/components/planner/PlannerTab'
 import { ManualPlanTab } from '@/components/planner/ManualPlanTab'
 import { RouteTreeTab } from '@/components/planner/RouteTreeTab'
@@ -25,13 +24,10 @@ import { CaptainPicksPanel } from '@/components/captaincy/CaptainPicksPanel'
 import { InsightsTab } from '@/components/insights/InsightsTab'
 import { AccuracyTab } from '@/components/accuracy/AccuracyTab'
 import { SeasonReviewTab } from '@/components/season-review/SeasonReviewTab'
-import { SummerWindowTab } from '@/components/news/SummerWindowTab'
-import { ConfirmedTransfersTab } from '@/components/transfers-confirmed/ConfirmedTransfersTab'
-import { PriceChangePanel } from '@/components/price-changes/PriceChangePanel'
 import { PerfectGWTab } from '@/components/perfect-gw/PerfectGWTab'
-import { PriceResetTab } from '@/components/price-reset/PriceResetTab'
+import { PricesTab } from '@/components/price-changes/PricesTab'
+import { PreSeasonTab } from '@/components/next-season/PreSeasonTab'
 import { RivalsTab } from '@/components/rivals/RivalsTab'
-import { NextSeasonPlannerTab } from '@/components/next-season/NextSeasonPlannerTab'
 import { WatchlistTab } from '@/components/watchlist/WatchlistTab'
 import { WildcardBuilderTab } from '@/components/planner/WildcardBuilderTab'
 import { useWatchlist } from '@/lib/hooks/useWatchlist'
@@ -104,8 +100,13 @@ export default function Home() {
   // mismatch that occurs when reading window.location in useState initialiser).
   useEffect(() => {
     const raw = new URLSearchParams(window.location.search).get('t')
-    // decision folded into cockpit (product-audit 2026-07) — honour old links.
-    const t = raw === 'decision' ? 'cockpit' : raw
+    // Retired tool ids alias to their merge hosts (product-audit 2026-07).
+    const LEGACY_ALIASES: Record<string, string> = {
+      'decision': 'cockpit', 'value-gems': 'gems',
+      'price-reset': 'prices', 'price-changes': 'prices',
+      'window': 'pre-season', 'transfers-confirmed': 'pre-season', 'next-season': 'pre-season',
+    }
+    const t = raw !== null ? (LEGACY_ALIASES[raw] ?? raw) : raw
     if (t !== null && (ALL_TOOL_IDS as string[]).includes(t)) {
       const toolId = t as ToolId
       setActiveTool(toolId)
@@ -264,7 +265,7 @@ export default function Home() {
             <LiveGwTab teamId={submittedId != null && /^\d+$/.test(submittedId) ? parseInt(submittedId, 10) : null} />
           )}
           {activeTool === 'gems' && (
-            <GemTable preset={gemPreset} onPresetChange={setGemPreset} onCompare={handleCompare} watchlistIds={watchlistIds} toggleWatchlist={toggleWatchlist} />
+            <GemsHub preset={gemPreset} onPresetChange={setGemPreset} onCompare={handleCompare} watchlistIds={watchlistIds} toggleWatchlist={toggleWatchlist} />
           )}
           {activeTool === 'picks' && <WeeklyPicksTab />}
           {activeTool === 'defcon' && <DefConTables />}
@@ -275,19 +276,11 @@ export default function Home() {
           {activeTool === 'insights' && <InsightsTab />}
           {activeTool === 'accuracy' && <AccuracyTab teamId={submittedId} />}
           {activeTool === 'season' && <SeasonReviewTab teamId={submittedId} />}
-          {activeTool === 'window' && <SummerWindowTab />}
-          {activeTool === 'transfers-confirmed' && (
-            <ConfirmedTransfersTab selectTool={selectTool} />
-          )}
-          {activeTool === 'price-reset' && <PriceResetTab />}
-          {activeTool === 'price-changes' && <PriceChangePanel />}
+          {activeTool === 'pre-season' && <PreSeasonTab />}
+          {activeTool === 'prices' && <PricesTab />}
           {activeTool === 'perfect-gw' && <PerfectGWTab />}
-          {activeTool === 'value-gems' && <ValueGemsTable />}
           {activeTool === 'rivals' && (
             <RivalsTab submittedId={submittedId} />
-          )}
-          {activeTool === 'next-season' && (
-            <NextSeasonPlannerTab />
           )}
           {activeTool === 'watchlist' && (
             <WatchlistTab watchlistIds={watchlistIds} toggleWatchlist={toggleWatchlist} />

@@ -64,7 +64,7 @@ const POPULATED_DATA = {
   isNotAvailable: false,
 }
 
-const mockSelectTool = vi.fn()
+const mockOnOpenWindow = vi.fn()
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -73,19 +73,19 @@ beforeEach(() => {
 describe('ConfirmedTransfersTab', () => {
   it('(a) enabled:false shows empty state "appear when the window is active"', () => {
     mockUseConfirmedTransfers.mockReturnValue(DISABLED_DATA as any)
-    render(<ConfirmedTransfersTab selectTool={mockSelectTool} />)
+    render(<ConfirmedTransfersTab onOpenWindow={mockOnOpenWindow} />)
     expect(screen.getByText(/appear when the window is active/i)).toBeInTheDocument()
   })
 
   it('(b) loaded + empty groups shows "No Premier League deals confirmed yet"', () => {
     mockUseConfirmedTransfers.mockReturnValue(LOADED_EMPTY_DATA as any)
-    render(<ConfirmedTransfersTab selectTool={mockSelectTool} />)
+    render(<ConfirmedTransfersTab onOpenWindow={mockOnOpenWindow} />)
     expect(screen.getByText(/No Premier League deals confirmed yet/i)).toBeInTheDocument()
   })
 
   it('(c) populated: shows group TeamBadge + Ins player + fee chip', () => {
     mockUseConfirmedTransfers.mockReturnValue(POPULATED_DATA as any)
-    render(<ConfirmedTransfersTab selectTool={mockSelectTool} />)
+    render(<ConfirmedTransfersTab onOpenWindow={mockOnOpenWindow} />)
     expect(screen.getByTestId('team-badge-ARS')).toBeInTheDocument()
     expect(screen.getByText('Player One')).toBeInTheDocument()
     expect(screen.getByText('£40m')).toBeInTheDocument()
@@ -93,14 +93,14 @@ describe('ConfirmedTransfersTab', () => {
 
   it('(d) a loan deal shows a "LOAN" chip', () => {
     mockUseConfirmedTransfers.mockReturnValue(POPULATED_DATA as any)
-    render(<ConfirmedTransfersTab selectTool={mockSelectTool} />)
+    render(<ConfirmedTransfersTab onOpenWindow={mockOnOpenWindow} />)
     // Player Two is a loan out
     expect(screen.getAllByText('LOAN').length).toBeGreaterThan(0)
   })
 
   it('(e) toggle to "Most recent" shows the chronological list', () => {
     mockUseConfirmedTransfers.mockReturnValue(POPULATED_DATA as any)
-    render(<ConfirmedTransfersTab selectTool={mockSelectTool} />)
+    render(<ConfirmedTransfersTab onOpenWindow={mockOnOpenWindow} />)
     // Default is by-club; toggle to Most recent
     const toggleBtn = screen.getByRole('button', { name: /most recent/i })
     fireEvent.click(toggleBtn)
@@ -111,11 +111,11 @@ describe('ConfirmedTransfersTab', () => {
     expect(screen.getByTestId('team-badge-WOL')).toBeInTheDocument()
   })
 
-  it('(f) "Rumours" button calls selectTool("window")', () => {
+  it('(f) "Rumours" button calls onOpenWindow (section switch in PreSeasonTab)', () => {
     mockUseConfirmedTransfers.mockReturnValue(POPULATED_DATA as any)
-    render(<ConfirmedTransfersTab selectTool={mockSelectTool} />)
+    render(<ConfirmedTransfersTab onOpenWindow={mockOnOpenWindow} />)
     const rumoursBtn = screen.getByRole('button', { name: /rumours/i })
     fireEvent.click(rumoursBtn)
-    expect(mockSelectTool).toHaveBeenCalledWith('window')
+    expect(mockOnOpenWindow).toHaveBeenCalled()
   })
 })

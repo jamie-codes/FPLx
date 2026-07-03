@@ -13,8 +13,10 @@ export type ToolId =
   | 'cockpit'   // absorbs the retired 'decision' tab (product-audit 2026-07)
   | 'picks' | 'lineup' | 'live' | 'review'
   | 'transfers' | 'optimiser' | 'watchlist' | 'rank-sim' | 'rivals'
-  | 'gems' | 'value-gems' | 'insights' | 'defcon' | 'set-pieces' | 'club-form' | 'perfect-gw'
-  | 'planner' | 'manual-plan' | 'route-tree' | 'wildcard' | 'window' | 'transfers-confirmed' | 'next-season' | 'price-reset' | 'price-changes'
+  // merges (product-audit 2026-07): value-gems -> gems section; window/
+  // transfers-confirmed/next-season -> pre-season; price-reset/price-changes -> prices
+  | 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'club-form' | 'perfect-gw'
+  | 'planner' | 'manual-plan' | 'route-tree' | 'wildcard' | 'pre-season' | 'prices'
   | 'accuracy' | 'season'
 
 export interface Tool { id: ToolId; label: string; mobileLabel: string }
@@ -40,7 +42,6 @@ export const GROUPS: Group[] = [
   ]},
   { id: 'research', label: 'Research', icon: Search, tools: [
     { id: 'gems',       label: 'Gem Ratings',     mobileLabel: 'Gems' },
-    { id: 'value-gems', label: 'Value Gems',      mobileLabel: 'Values' },
     { id: 'insights',   label: 'Insights',        mobileLabel: 'Insights' },
     { id: 'defcon',     label: 'DefCon Analysis', mobileLabel: 'DefCon' },
     { id: 'set-pieces', label: 'Set Pieces',      mobileLabel: 'SP' },
@@ -51,12 +52,9 @@ export const GROUPS: Group[] = [
     { id: 'planner',       label: 'Planner',       mobileLabel: 'Planner' },
     { id: 'manual-plan',   label: 'Manual Plan',   mobileLabel: 'Manual' },
     { id: 'route-tree',    label: 'Route Tree',    mobileLabel: 'Routes' },
-    { id: 'wildcard',             label: 'Wildcard',             mobileLabel: 'Wildcard'   },
-    { id: 'window',              label: 'Summer Window',        mobileLabel: 'Window'     },
-    { id: 'transfers-confirmed', label: 'Confirmed Transfers',  mobileLabel: 'Transfers'  },
-    { id: 'next-season',         label: 'Next Season',          mobileLabel: 'Pre-Season' },
-    { id: 'price-reset',   label: 'Price Reset',   mobileLabel: 'Resets' },
-    { id: 'price-changes', label: 'Price Changes', mobileLabel: 'Prices' },
+    { id: 'wildcard',   label: 'Wildcard',   mobileLabel: 'Wildcard' },
+    { id: 'pre-season', label: 'Pre-Season', mobileLabel: 'Pre-Season' },
+    { id: 'prices',     label: 'Prices',     mobileLabel: 'Prices' },
   ]},
   { id: 'model', label: 'Model', icon: ChartColumn, tools: [
     { id: 'accuracy', label: 'Accuracy', mobileLabel: 'Acc' },

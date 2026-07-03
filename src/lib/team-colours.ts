@@ -22,6 +22,7 @@ export const TEAM_BADGE_CODE: Record<string, number> = {
   NFO: 17,
   SHU: 49,
   SOU: 20,
+  SUN: 56,
   TOT: 6,
   WHU: 21,
   WOL: 39,

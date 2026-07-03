@@ -92,7 +92,7 @@ vi.mock('@/components/price-reset/PriceResetTab', () => ({
   PriceResetTab: () => <div data-testid="price-reset-tab" />,
 }))
 vi.mock('@/components/transfers-confirmed/ConfirmedTransfersTab', () => ({
-  ConfirmedTransfersTab: (_props: { selectTool: (t: string) => void }) => <div data-testid="confirmed-transfers-tab" />,
+  ConfirmedTransfersTab: (_props: { onOpenWindow: () => void }) => <div data-testid="confirmed-transfers-tab" />,
 }))
 // UIX-02: HomeTab orchestrates TanStack Query hooks + engines — mocked here like
 // every other tab (page.test.tsx renders without a QueryClientProvider). The
@@ -165,7 +165,6 @@ describe('UIX-01: shell state in page.tsx', () => {
       'rank-sim': 'rank-sim-tab-mock',
       'rivals': 'rivals-tab',
       'gems': 'gem-table',
-      'value-gems': 'value-gems',
       'insights': 'insights',
       'defcon': 'defcon',
       'set-pieces': 'set-piece-taker',
@@ -175,11 +174,8 @@ describe('UIX-01: shell state in page.tsx', () => {
       'manual-plan': 'manual-plan-tab',
       'route-tree': 'route-tree-tab',
       'wildcard': 'wildcard-builder-tab',
-      'window': 'summer-window-tab',
-      'transfers-confirmed': 'confirmed-transfers-tab',
-      'next-season': 'next-season-planner-tab',
-      'price-reset': 'price-reset-tab',
-      'price-changes': 'price-change-panel',
+      'pre-season': 'pre-season-tab',
+      'prices': 'prices-tab',
       'accuracy': 'accuracy-tab',
       'season': 'season-review-tab',
     }
@@ -212,10 +208,22 @@ describe('UIX-01: shell state in page.tsx', () => {
     expect(sidebar.querySelector('a[aria-current="page"]')?.textContent).toBe('Insights')
   })
 
-  it('aliases the retired ?t=decision deep link to the cockpit', () => {
-    window.history.replaceState(null, '', '/?t=decision')
-    const { container } = render(<Home />)
-    expect(container.querySelector('[data-testid="cockpit-tab"]')).not.toBeNull()
+  it('aliases every retired ?t= deep link to its merge host', () => {
+    const ALIASES: Array<[string, string]> = [
+      ['decision', 'cockpit-tab'],
+      ['value-gems', 'gem-table'],          // gems hub, ratings section default
+      ['price-reset', 'prices-tab'],
+      ['price-changes', 'prices-tab'],
+      ['window', 'pre-season-tab'],
+      ['transfers-confirmed', 'pre-season-tab'],
+      ['next-season', 'pre-season-tab'],
+    ]
+    for (const [legacy, testid] of ALIASES) {
+      window.history.replaceState(null, '', `/?t=${legacy}`)
+      const { container, unmount } = render(<Home />)
+      expect(container.querySelector(`[data-testid="${testid}"]`), `?t=${legacy}`).not.toBeNull()
+      unmount()
+    }
   })
 
   it('ignores an invalid ?t= value and stays on Home', () => {
@@ -255,7 +263,7 @@ describe('UIX-01: shell state in page.tsx', () => {
     const pillRow = container.querySelector('nav[aria-label="Research tools"]')
     expect(pillRow).not.toBeNull()
     const pillLabels = Array.from(pillRow!.querySelectorAll('[role="tab"]')).map((b) => b.textContent)
-    expect(pillLabels).toEqual(['Gems', 'Values', 'Insights', 'DefCon', 'SP', 'Form', 'Perfect'])
+    expect(pillLabels).toEqual(['Gems', 'Insights', 'DefCon', 'SP', 'Form', 'Perfect'])
     // abbreviations, never the desktop labels
     expect(pillRow!.textContent).not.toContain('Gem Ratings')
     expect(pillRow!.textContent).not.toContain('DefCon Analysis')
@@ -319,7 +327,7 @@ describe('UIX-01: shell state in page.tsx', () => {
       ).not.toBeNull()
     }
     // Planning-group tools that do NOT take the prop don't get the selector
-    for (const label of ['Price Changes', 'Summer Window', 'Gem Ratings']) {
+    for (const label of ['Prices', 'Pre-Season', 'Gem Ratings']) {
       clickSidebarTool(container, label)
       expect(
         container.querySelector('[data-testid="plan-section-horizon"]'),
@@ -328,10 +336,10 @@ describe('UIX-01: shell state in page.tsx', () => {
     }
   })
 
-  it('sidebar exposes all 6 groups and 29 tools (navigation.ts is the source of truth)', () => {
+  it('sidebar exposes all 6 groups and 25 tools (navigation.ts is the source of truth)', () => {
     const { container } = render(<Home />)
     const sidebar = container.querySelector('nav[aria-label="Primary navigation"]')!
-    expect(sidebar.querySelectorAll('a')).toHaveLength(29)
+    expect(sidebar.querySelectorAll('a')).toHaveLength(25)
     for (const group of GROUPS) {
       expect(sidebar.textContent).toContain(group.label)
     }
