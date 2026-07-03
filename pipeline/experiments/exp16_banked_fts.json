@@ -1,0 +1,35 @@
+{
+ "experiment": "exp16_banked_fts",
+ "verdict": "NO_SHIP",
+ "results": {
+  "hold": {
+   "season_points": 1417.0,
+   "transfers_made": 0,
+   "hit_points_paid": 0
+  },
+  "spend1": {
+   "season_points": 1553.0,
+   "transfers_made": 33,
+   "hit_points_paid": 8
+  },
+  "bank_smart": {
+   "season_points": 1553.0,
+   "transfers_made": 33,
+   "hit_points_paid": 8,
+   "max_bank_seen": 1
+  },
+  "bank_patient": {
+   "season_points": 1485.0,
+   "transfers_made": 29,
+   "hit_points_paid": 4,
+   "max_bank_seen": 5
+  }
+ },
+ "margin_best_bank_vs_spend1": 0.0,
+ "config": {
+  "first_gw": 7,
+  "last_gw": 38,
+  "ft_cap": 5,
+  "patience_bar": 2.5
+ }
+}
