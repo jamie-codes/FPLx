@@ -10,6 +10,7 @@
 import { useNextDeadline } from '@/lib/hooks/useNextDeadline'
 import { DecisionSummaryTab } from '@/components/squad/DecisionSummaryTab'
 import { TransferAdviceCard } from './TransferAdviceCard'
+import { UserTransferAdviceCard } from './UserTransferAdviceCard'
 import { ChipAdviceCard } from './ChipAdviceCard'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -62,9 +63,10 @@ export function CockpitTab({ teamId, onTeamIdChange, submittedId, onSubmit, sele
         </div>
       </Card>
 
-      {/* Pipeline advisors — model-trajectory transfers + chip signals */}
+      {/* Advisors: YOUR squad when a team is loaded (TRF-02), else the model
+          trajectory (TRF-01) — plus the chip signals. */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <TransferAdviceCard />
+        {submittedId ? <UserTransferAdviceCard submittedId={submittedId} /> : <TransferAdviceCard />}
         <ChipAdviceCard />
       </div>
 
