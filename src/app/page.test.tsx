@@ -113,6 +113,40 @@ vi.mock('@/components/cockpit/CockpitTab', () => ({
   ),
 }))
 
+// PERF-01: page.tsx pulls tabs through @/app/dynamic-tabs (next/dynamic).
+// Re-export the per-component mocks (and the real section-hub wrappers, whose
+// children are mocked) synchronously so the all-tools sweep needs no lazy await.
+vi.mock('@/app/dynamic-tabs', async () => {
+  const mods = await Promise.all([
+    import('@/components/cockpit/CockpitTab'),
+    import('@/components/weekly-picks/WeeklyPicksTab'),
+    import('@/components/squad/LineupTab'),
+    import('@/components/squad/LiveGwTab'),
+    import('@/components/squad/ReviewHub'),
+    import('@/components/transfers/TransferPanel'),
+    import('@/components/optimiser/OptimiserPanel'),
+    import('@/components/watchlist/WatchlistTab'),
+    import('@/components/planner/RankSimTab'),
+    import('@/components/rivals/RivalsTab'),
+    import('@/components/gem-table/GemsHub'),
+    import('@/components/insights/InsightsTab'),
+    import('@/components/defcon/DefConTables'),
+    import('@/components/set-pieces/SetPieceTakerPanel'),
+    import('@/components/club-form/ClubFormTab'),
+    import('@/components/planner/PlannerTab'),
+    import('@/components/planner/ManualPlanTab'),
+    import('@/components/planner/RouteTreeTab'),
+    import('@/components/planner/WildcardBuilderTab'),
+    import('@/components/next-season/PreSeasonTab'),
+    import('@/components/price-changes/PricesTab'),
+    import('@/components/accuracy/AccuracyTab'),
+    import('@/components/season-review/SeasonReviewTab'),
+    import('@/components/captaincy/CaptainPicksPanel'),
+    import('@/components/gem-table/PlayerComparisonModal'),
+  ])
+  return Object.assign({}, ...mods)
+})
+
 import Home from '@/app/page'
 import { ALL_TOOL_IDS, GROUPS, groupOf } from '@/lib/navigation'
 import type { ToolId } from '@/lib/navigation'
