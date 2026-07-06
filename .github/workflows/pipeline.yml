@@ -34,6 +34,7 @@ jobs:
       USE_BLOB: 'true'
       BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}  # AVAIL-01 injuries + ODDS-02 pre-match odds
       MC_ITERATIONS: 10000
       MC_SEED: 42
       TRANSFER_NEWS_ENABLED: 'true'
