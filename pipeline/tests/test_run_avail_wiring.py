@@ -1,14 +1,16 @@
-"""AVAIL-01: live injury wiring is OFF by default (shadow-first)."""
+"""AVAIL-01: live injury wiring — default ON since the 2026-07 promotion
+(exp12 SHIP); AVAIL_ENABLED=false remains the kill-switch."""
 import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 
-def test_avail_enabled_helper_defaults_off(monkeypatch):
+def test_avail_enabled_helper_defaults_on(monkeypatch):
+    # Promoted default-ON at the 2026-07 system audit (exp12 verdict SHIP).
     monkeypatch.delenv('AVAIL_ENABLED', raising=False)
     import run
-    assert run._avail_enabled() is False
+    assert run._avail_enabled() is True
 
 
 def test_avail_enabled_helper_true(monkeypatch):
@@ -36,11 +38,9 @@ def test_avail_enabled_helper_false_string(monkeypatch):
 
 
 def test_avail_enabled_module_constant_exists():
-    """AVAIL-01: AVAIL_ENABLED module-level constant must exist and default to False."""
+    """AVAIL-01: AVAIL_ENABLED module-level constant must exist."""
     import run
     assert hasattr(run, 'AVAIL_ENABLED'), "run.py must expose AVAIL_ENABLED at module level"
-    # In a normal environment (no env var set), it must default to False
-    # (this test relies on AVAIL_ENABLED not being set in the test environment)
 
 
 def test_run_py_avail_block_present():

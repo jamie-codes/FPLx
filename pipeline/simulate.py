@@ -29,7 +29,7 @@ BGW gap (Pitfall 1): fewer than 5 fixture groups -> missing GWs padded with np.z
 D-05 invariant: p90_pts overwrites the analytical xPts_90th_1gw (sigma-derived) field
 written by merge.py at line 1122.
 
-D-02: N_SIMS = max(1000, int(os.environ.get('MC_ITERATIONS', 1000))) — env-var configurable
+D-02: N_SIMS = max(1000, int(os.environ.get('MC_ITERATIONS', 10_000)))  # 2026-07 audit: default matches the documented 10k — env-var configurable
       with hardcoded 1000-iteration floor; MC_SEED = int(os.environ.get('MC_SEED', 42))
       seeded for reproducible CI runs.
 D-04: _cs_prob is re-implemented inline as _cs_prob_sim — no import from merge.py.
@@ -43,7 +43,7 @@ import numpy as np
 
 # Phase 90 MC-01 — env-var configurable simulation budget; minimum 1000 enforced (D-02)
 # Replaces the Phase 61 hardcoded N_SIMS = 10_000.
-N_SIMS = max(1000, int(os.environ.get('MC_ITERATIONS', 1000)))
+N_SIMS = max(1000, int(os.environ.get('MC_ITERATIONS', 10_000)))  # 2026-07 audit: default matches the documented 10k
 # Phase 90 MC-01 — seeded for reproducible CI runs (D-02)
 MC_SEED = int(os.environ.get('MC_SEED', 42))
 

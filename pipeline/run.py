@@ -27,9 +27,11 @@ from accuracy import compute_accuracy_backtest, build_predictions_snapshot
 from data_health import _sanitize_error
 
 
-# AVAIL-01: shadow-first live injury availability gate (default OFF — flip on after sanity check).
+# AVAIL-01: live injury availability gate. exp12 verdict SHIP (spearman 0.33->0.44,
+# RMSE 2.994->2.896, beats placebo); promoted default-ON at the 2026-07 system audit.
+# AVAIL_ENABLED=false remains the kill-switch.
 def _avail_enabled() -> bool:
-    return os.environ.get('AVAIL_ENABLED', '').lower() in ('1', 'true', 'yes')
+    return os.environ.get('AVAIL_ENABLED', 'true').lower() in ('1', 'true', 'yes')
 
 
 AVAIL_ENABLED = _avail_enabled()  # AVAIL-01 shadow-first
@@ -456,7 +458,11 @@ def run(dry_run: bool = False):
 
             # Phase 42 ACC-03: read form-signal gate from previous run's accuracy_backtest.json.
             # Default (False, 0.4) on cold start (file absent) or corrupt JSON — preserves baseline.
-            form_signal_enabled = False
+            # BT-02/exp05 SHIP: blend validated at alpha=0.2/window=4 (val top10
+            # 5.18->5.45, captain 50->60%) — cold-start default is now ON at the
+            # validated alpha (2026-07 system audit). A FRESH in-season summary
+            # can still disable it if live evidence degrades.
+            form_signal_enabled = True
             blend_alpha_used = accuracy.BLEND_ALPHA
             xmins_v2_enabled = False  # Phase 52 D-02 — default OFF; flips ON after non-regression shadow run
             bonus_predictor_enabled = True   # Phase 53 BPS-01 — permanently ON (BPS-01 hard-enable; override block removed; accuracy.py still writes flag for telemetry)
@@ -479,7 +485,19 @@ def run(dry_run: bool = False):
             try:
                 with open(backtest_path, 'r', encoding='utf-8') as f:
                     prev_backtest = json.load(f)
-                form_signal_enabled = prev_backtest.get('summary', {}).get('form_signal_enabled', False)
+                # Season-staleness guard (2026-07 audit): a summary whose covered
+                # GWs exceed the CURRENT season's finished count is from a previous
+                # season (the May-2026 cache was silently forcing form OFF at
+                # alpha 0.4 all through the BT-02 era). Stale -> keep validated
+                # defaults instead of consuming it.
+                _summary_gws = [g.get('gw', 0) for g in
+                                prev_backtest.get('summary', {}).get('gws', [])]
+                if _summary_gws and min(_summary_gws) > finished_gws:
+                    print(f"accuracy_backtest.json summary covers GW{min(_summary_gws)}-"
+                          f"{max(_summary_gws)} but only {finished_gws} GWs are finished "
+                          f"this season — stale (previous season); using validated defaults.")
+                    raise FileNotFoundError('stale prior-season summary')
+                form_signal_enabled = prev_backtest.get('summary', {}).get('form_signal_enabled', True)
                 blend_alpha_used = prev_backtest.get('summary', {}).get('blend_alpha_used', accuracy.BLEND_ALPHA)
                 xmins_v2_enabled = prev_backtest.get('summary', {}).get('xmins_v2_enabled', False)
                 save_predictor_enabled = prev_backtest.get('summary', {}).get('save_predictor_enabled', False)
