@@ -578,6 +578,20 @@ def run(dry_run: bool = False):
             bonus_stats = compute_bonus_predictions(bootstrap, summaries, finished_gws)
             print(f"bonus stats: {len(bonus_stats)} players")
 
+            # ODDS-02: live pre-match odds -> ODDS-01 blend (exp09 SHIP, cs
+            # weight 1.0). Non-fatal: no key / API down / no odds published yet
+            # -> None and the model CS-prob runs unblended, exactly as before.
+            odds_lookup = None
+            if os.environ.get('ODDS_ENABLED', 'true').lower() in ('1', 'true', 'yes'):
+                try:
+                    from odds_live import get_live_odds_lookup
+                    _season = int((bootstrap.get('events') or [{}])[0]
+                                  .get('deadline_time', '2026')[:4])
+                    odds_lookup = get_live_odds_lookup(bootstrap, fixtures, season=_season)
+                    print(f"Live odds: {len(odds_lookup) // 2} fixture(s) priced.")
+                except Exception as odds_exc:
+                    print(f"[odds_live] non-fatal: {odds_exc}")
+
             merged, captain_picks = merge_players(
                 bootstrap, fixtures, understat, id_map,
                 xmins_stats=xmins_stats, summaries=summaries,
@@ -601,6 +615,8 @@ def run(dry_run: bool = False):
                 defcon_scale=defcon_scale_used, # DC-01
                 prior_lookup=prior_lookup,      # COLD-01
                 bucket_priors=bucket_priors,    # COLD-01
+                odds_lookup=odds_lookup,        # ODDS-02 (live pre-match)
+                odds_cs_weight=1.0 if odds_lookup else 0.0,  # exp09 SHIP weight
             )
             if mc_enabled:
                 merged = compute_simulations(merged, xmins_v2_enabled,

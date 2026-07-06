@@ -443,6 +443,9 @@ def _xpts_ngw(
     fas_slope: float = 0.0,                 # FAS-01
     defcon_rate: float = 0.0,               # DC-01 (player-level, not per-fixture)
     defcon_scale: float = 0.0,              # DC-01
+    odds_lookup: dict | None = None,        # ODDS-01: (fixture_id, team_id) -> {cs_prob,...}
+    odds_cs_weight: float = 0.0,            # ODDS-01: 0 = no-op
+    team_id: int | None = None,             # ODDS-01: this player's team (lookup key)
 ) -> tuple:
     """Project xPts across N upcoming GWs, DGW-aware (Phase 28 DATA-02 D-04, D-06).
 
@@ -471,6 +474,11 @@ def _xpts_ngw(
             norm_concede_rate = fix.get('team_def_form', 0.5)   # CSF-01
             norm_attack_rate = fix.get('team_atf_form', 0.5)    # ATF-01
             attack_difficulty = fix.get('attacking_difficulty', 0.5)   # FAS-01
+            # ODDS-01: market CS-prob for THIS fixture (per-fixture keys make
+            # DGWs correct; fixtures without published odds simply miss).
+            _od = None
+            if odds_lookup is not None and odds_cs_weight > 0.0:
+                _od = odds_lookup.get((fix.get('fixture_id'), team_id))
             result = _compute_xpts_fixture(
                 xg_per90 if xg_per90 is not None else 0.0,
                 xa_per90 if xa_per90 is not None else 0.0,
@@ -495,6 +503,8 @@ def _xpts_ngw(
                 fas_slope=fas_slope,                                                     # FAS-01
                 defcon_rate=defcon_rate,                                                 # DC-01
                 defcon_scale=defcon_scale,                                               # DC-01
+                odds_cs_prob=(_od.get('cs_prob') if _od else None),                      # ODDS-01
+                odds_cs_weight=odds_cs_weight,                                           # ODDS-01
             )
             total += result['total']
             if gw_idx == 0 and n_gws == 1:
@@ -963,6 +973,8 @@ def merge_players(
     defcon_scale: float = 0.0,              # DC-01: tuner-controlled
     prior_lookup: dict | None = None,       # COLD-01: code→prior dict (build_prior_lookup)
     bucket_priors: dict | None = None,      # COLD-01: (et,band)→prior dict (build_bucket_priors)
+    odds_lookup: dict | None = None,        # ODDS-01: (fixture_id, team_id) -> {cs_prob,...}
+    odds_cs_weight: float = 0.0,            # ODDS-01: exp09 SHIP weight is 1.0; 0 = no-op
 ) -> tuple[list, dict]:
     """Merge FPL bootstrap + Understat xG/xA into a unified player list.
 
@@ -1188,6 +1200,7 @@ def merge_players(
                 'opponent_team': teams[opp_id]['short_name'] if opp_id in teams else str(opp_id),
                 'is_home': True,
                 'event_id': event_id,
+                'fixture_id': fix.get('id'),  # ODDS-01: join key for market odds
                 'difficulty_score': difficulty_scores.get(opp_id, 0.5),                      # UNCHANGED
                 'difficulty_tier': difficulty_tiers.get(opp_id, 'medium'),                   # UNCHANGED
                 'attacking_difficulty': difficulty_scores.get(opp_id, 0.5),                  # NEW (DATA-01, D-01) — same as difficulty_score
@@ -1204,6 +1217,7 @@ def merge_players(
                 'opponent_team': teams[opp_id]['short_name'] if opp_id in teams else str(opp_id),
                 'is_home': False,
                 'event_id': event_id,
+                'fixture_id': fix.get('id'),  # ODDS-01: join key for market odds
                 'difficulty_score': difficulty_scores.get(opp_id, 0.5),                      # UNCHANGED
                 'difficulty_tier': difficulty_tiers.get(opp_id, 'medium'),                   # UNCHANGED
                 'attacking_difficulty': difficulty_scores.get(opp_id, 0.5),                  # NEW
@@ -1502,6 +1516,7 @@ def merge_players(
         xpts_1gw, xpts_components_1gw = _xpts_ngw(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 1,
+            odds_lookup=odds_lookup, odds_cs_weight=odds_cs_weight, team_id=team_id,  # ODDS-01
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
             bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
             save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
@@ -1516,6 +1531,7 @@ def merge_players(
         xpts_3gw, _ = _xpts_ngw(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 3,
+            odds_lookup=odds_lookup, odds_cs_weight=odds_cs_weight, team_id=team_id,  # ODDS-01
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
             bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
             save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
@@ -1530,6 +1546,7 @@ def merge_players(
         xpts_5gw, _ = _xpts_ngw(
             xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
             element['element_type'], player_fixtures, 5,
+            odds_lookup=odds_lookup, odds_cs_weight=odds_cs_weight, team_id=team_id,  # ODDS-01
             xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
             bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
             save_predictor_enabled=save_predictor_enabled,   # Phase 83 GK-01
