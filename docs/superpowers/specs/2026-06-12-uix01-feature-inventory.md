@@ -318,10 +318,13 @@ Other persistent client state that must survive: `theme`, `fpl_team_id`, `fplx_m
 
 ## Vestigial / watch items (known oddities, not features to keep)
 
-- `/api/auth/fpl-login` — dead credential endpoint (ENDPOINT_GONE by design, Phase 130).
-- WatchlistTab voids `toggleWatchlist` — unpin-from-card reserved but unshipped.
-- RankSimTab receives `horizon` but ignores it (fixed 5 GWs, D-06).
-- NextSeasonPlannerTab fixture heatmap is a deferred placeholder; `extractSquad()` legacy-shape helper marked for deletion.
-- TransferPlanTable still checks deprecated `unconfirmedFixtures`.
-- FtToggle.tsx kept but used only by OptimiserPanel (removed from TransferPanel in Phase 74).
+_Reviewed in the 2026-07 season-readiness audit — several 2026-06 "vestigial" notes were stale; corrected below._
+
+- `/api/auth/fpl-login` — dead credential endpoint (ENDPOINT_GONE by design, Phase 130). **Still dead — genuinely vestigial.**
+- WatchlistTab `toggleWatchlist` — **SHIPPED (2026-07)**: unpin-from-card ✕ now wired on every `WatchlistPlayerCard` (present + departed). No longer voided.
+- NextSeasonPlannerTab fixture heatmap — **FIXED (2026-07)**: renders the real `FixtureHeatMap` (2026/27 fixtures published; `/api/club-form` computes on demand). No longer a placeholder.
+- RankSimTab receives `horizon` but ignores it (fixed 5 GWs, D-06). **NOT vestigial — intentional API parity** so page.tsx threads `planHorizon` uniformly to all Plan tabs. Leave.
+- `extractSquad()` (WatchlistTab) — **NOT dead — actively used** compat shim for the legacy vs envelope squad shape. Safe to simplify only once `usePreSeasonSquad` fully returns the envelope; until then, leave.
+- TransferPlanTable `unconfirmedFixtures` — **NOT deprecated — live**: computed in `planning-engine.ts`, typed in `types.ts`, rendered as a "no fixture data for this GW" marker. The 2026-06 "deprecated" label was wrong. Leave.
+- FtToggle.tsx kept but used only by OptimiserPanel (removed from TransferPanel in Phase 74). Harmless.
 - Price Reset tab is seasonally dormant ("Prices not yet published") outside the reset window — intentional, not broken.

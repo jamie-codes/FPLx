@@ -14,6 +14,20 @@ export interface WatchlistPlayerCardProps {
   hasNews: boolean
   inSquad: boolean
   confirmedSigningTooltip?: string
+  onUnpin?: () => void
+}
+
+function UnpinButton({ onUnpin }: { onUnpin: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onUnpin}
+      aria-label="Remove from watchlist"
+      className="ml-auto text-ink-muted hover:text-negative text-xs leading-none px-1"
+    >
+      ✕
+    </button>
+  )
 }
 
 export function WatchlistPlayerCard({
@@ -22,6 +36,7 @@ export function WatchlistPlayerCard({
   hasNews,
   inSquad,
   confirmedSigningTooltip,
+  onUnpin,
 }: WatchlistPlayerCardProps) {
   // UIX-04: 48h lineup-news border → warning token (D-13 amber semantics)
   const borderClass = departed
@@ -38,6 +53,7 @@ export function WatchlistPlayerCard({
           <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-surface-2 text-ink-muted">
             Departed
           </span>
+          {onUnpin && <UnpinButton onUnpin={onUnpin} />}
         </div>
       </div>
     )
@@ -67,6 +83,7 @@ export function WatchlistPlayerCard({
             className="inline-block w-2 h-2 rounded-full bg-positive ml-1"
           />
         )}
+        {onUnpin && <UnpinButton onUnpin={onUnpin} />}
       </div>
 
       {/* Player name */}

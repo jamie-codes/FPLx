@@ -46,9 +46,7 @@ function extractSquad(data: unknown): PreSeasonSquad | null {
 }
 
 export function WatchlistTab({ watchlistIds, toggleWatchlist }: WatchlistTabProps) {
-  // Satisfy noUnusedParameters for toggleWatchlist (reserved for Phase 128+ unpin-from-card UX)
-  void toggleWatchlist
-
+  // WATCH: unpin-from-card — each card's ✕ calls toggleWatchlist(id) to remove it.
   const { data: playersData, isLoading, isError } = usePlayers()
   const { data: lineupNewsMap } = useLineupNews()
   const { data: squadData } = usePreSeasonSquad()
@@ -143,6 +141,7 @@ export function WatchlistTab({ watchlistIds, toggleWatchlist }: WatchlistTabProp
           hasNews={hasNewsFor(player.id, lineupNewsMap)}
           inSquad={squadIds.has(player.id)}
           confirmedSigningTooltip={confirmedSigningMap.get(player.id)}
+          onUnpin={() => toggleWatchlist(player.id)}
         />
       ))}
       {sortedDepartedIds.map(id => (
@@ -152,6 +151,7 @@ export function WatchlistTab({ watchlistIds, toggleWatchlist }: WatchlistTabProp
           departed={true}
           hasNews={false}
           inSquad={false}
+          onUnpin={() => toggleWatchlist(id)}
         />
       ))}
     </div>

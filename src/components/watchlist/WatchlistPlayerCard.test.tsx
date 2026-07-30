@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // Phase 127 WATCH-02: WatchlistPlayerCard component tests.
-import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
 import type { MergedPlayer } from '@/lib/types'
 import { WatchlistPlayerCard } from './WatchlistPlayerCard'
 
@@ -123,6 +123,31 @@ describe('WatchlistPlayerCard', () => {
     expect(card.className).toContain('border-line')
     expect(card.className).not.toContain('opacity-50')
     expect(card.className).not.toContain('border-warning')
+  })
+
+  it('shows an unpin ✕ and calls onUnpin when clicked (present card)', () => {
+    const onUnpin = vi.fn()
+    render(
+      <WatchlistPlayerCard player={makePlayer()} departed={false} hasNews={false} inSquad={false} onUnpin={onUnpin} />
+    )
+    fireEvent.click(screen.getByLabelText('Remove from watchlist'))
+    expect(onUnpin).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows an unpin ✕ on a departed card and calls onUnpin when clicked', () => {
+    const onUnpin = vi.fn()
+    render(
+      <WatchlistPlayerCard player={{ id: 99 }} departed={true} hasNews={false} inSquad={false} onUnpin={onUnpin} />
+    )
+    fireEvent.click(screen.getByLabelText('Remove from watchlist'))
+    expect(onUnpin).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders no unpin button when onUnpin is not provided (backward-compat)', () => {
+    render(
+      <WatchlistPlayerCard player={makePlayer()} departed={false} hasNews={false} inSquad={false} />
+    )
+    expect(screen.queryByLabelText('Remove from watchlist')).toBeNull()
   })
 
   it('renders the ConfirmedSigningBadge when confirmedSigningTooltip is a non-empty string and departed=false', () => {
