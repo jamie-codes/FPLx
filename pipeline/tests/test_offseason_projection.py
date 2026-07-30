@@ -77,3 +77,36 @@ def test_offseason_flag_off_is_noop():
     pa = next(p for p in a if p['id'] == 1)
     pb = next(p for p in b if p['id'] == 1)
     assert pa['xPts_5gw'] == pb['xPts_5gw']
+
+
+def test_offseason_no_prior_zeroes_per90():
+    """Guard (merge.py: `if off_season and prior is None`) must zero xg/xa_per90
+    for a player with no code-match AND no bucket-match prior — not leak the
+    player's high current-season residual per-90 into an off-season projection.
+    """
+    # code=999 is absent from both prior_lookup and bucket_priors below, so
+    # prior_for() falls through to None. _element's defaults (minutes=2953,
+    # goals_scored=20, expected_goals='18.0') yield a high residual per-90
+    # via the DQ-01 Layer-2 goals/minutes fallback (no expected_goals_per_90
+    # field set, so Layer 1 is skipped).
+    el = _element(2, code=999)
+    bs, fx = _offseason_bootstrap([el]), _fixtures()
+    id_map = {'2': {'understat_id': None}}
+    xmins = {2: {'xmins': 80.0, 'start_prob': 0.9, 'mins_risk': 'nailed'}}
+    common = dict(
+        xmins_stats=xmins, summaries=None,
+        prior_lookup={}, bucket_priors={},  # empty -> prior_for() returns None for any code/bucket
+    )
+
+    on, _ = merge_players(bs, fx, {}, id_map, off_season=True, **common)
+    off, _ = merge_players(bs, fx, {}, id_map, off_season=False, **common)
+    p_on = next(p for p in on if p['id'] == 2)
+    p_off = next(p for p in off if p['id'] == 2)
+
+    # Guard fires: no prior -> zeroed per-90, not the high residual.
+    assert p_on['xg_per90'] == 0.0
+    assert p_on['xa_per90'] == 0.0
+
+    # Proves it's the off_season guard doing the zeroing, not something else:
+    # with the flag off, the same inputs retain the (high) residual per-90.
+    assert p_off['xg_per90'] > 0.0
