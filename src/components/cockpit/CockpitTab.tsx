@@ -9,6 +9,7 @@
 // away.
 import { useNextDeadline } from '@/lib/hooks/useNextDeadline'
 import { DecisionSummaryTab } from '@/components/squad/DecisionSummaryTab'
+import { CockpitVerdictBanner } from './CockpitVerdictBanner'
 import { TransferAdviceCard } from './TransferAdviceCard'
 import { UserTransferAdviceCard } from './UserTransferAdviceCard'
 import { ChipAdviceCard } from './ChipAdviceCard'
@@ -41,6 +42,9 @@ export function CockpitTab({ teamId, onTeamIdChange, submittedId, onSubmit, sele
 
   return (
     <div className="space-y-4">
+      {/* Card 1 (redesign Phase 3): one-sentence verdict — transfer + captain + chip */}
+      <CockpitVerdictBanner />
+
       {/* Deadline strip + power-tool links */}
       <Card padding="sm">
         <div className="flex flex-wrap items-center gap-3">
