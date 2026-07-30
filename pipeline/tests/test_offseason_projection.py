@@ -168,3 +168,27 @@ def test_offseason_merge_produces_nonzero_xpts():
     merged, caps = _offseason_merge(bs, fx, id_map, prior, buckets, start_seed)
     p = next(p for p in merged if p['id'] == 1)
     assert p['xPts_5gw'] > 0
+
+
+def test_offseason_projection_enabled_kill_switch(monkeypatch):
+    """OFFSEASON-01: OFFSEASON_PROJECTION_ENABLED parsing — default ON, explicit
+    false/0 disables, true/yes/1 (any case-insensitive truthy token) keeps it enabled."""
+    from run import _offseason_projection_enabled
+
+    monkeypatch.delenv('OFFSEASON_PROJECTION_ENABLED', raising=False)
+    assert _offseason_projection_enabled() is True
+
+    monkeypatch.setenv('OFFSEASON_PROJECTION_ENABLED', 'false')
+    assert _offseason_projection_enabled() is False
+
+    monkeypatch.setenv('OFFSEASON_PROJECTION_ENABLED', '0')
+    assert _offseason_projection_enabled() is False
+
+    monkeypatch.setenv('OFFSEASON_PROJECTION_ENABLED', 'true')
+    assert _offseason_projection_enabled() is True
+
+    monkeypatch.setenv('OFFSEASON_PROJECTION_ENABLED', 'yes')
+    assert _offseason_projection_enabled() is True
+
+    monkeypatch.setenv('OFFSEASON_PROJECTION_ENABLED', '1')
+    assert _offseason_projection_enabled() is True

@@ -101,14 +101,19 @@ def test_run_py_uses_gate_read_pattern():
     assert 'accuracy_backtest.json' in src, \
         "run.py must reference accuracy_backtest.json (gate-read source)"
     assert 'merge_players(' in src
-    # Coarse ordering check: gate-read must occur before the in-season merge_players
-    # call. Search for merge_players( starting at the gate-read position so this isn't
-    # confused by the unrelated merge_players( call inside _offseason_merge (OFFSEASON-01),
-    # which sits earlier in the file and intentionally bypasses this gate (off_season=True,
-    # form_signal_enabled=False hardcoded to the validated defaults).
-    gate_idx = src.find('form_signal_enabled =')
-    merge_idx = src.find('merge_players(', gate_idx)
-    assert gate_idx != -1 and gate_idx < merge_idx, \
+    # Ordering check: gate-read must occur before the in-season merge_players call.
+    # Both searches are anchored to the start of `def run(` so the unrelated
+    # merge_players( call inside _offseason_merge (OFFSEASON-01) — which is defined
+    # BEFORE def run( and intentionally bypasses this gate (off_season=True,
+    # form_signal_enabled=False hardcoded to the validated defaults) — is excluded
+    # from both searches. Without this anchor, str.find(sub, start) can never return
+    # an index below `start`, so anchoring only the merge search at gate_idx would
+    # make the ordering assertion vacuously true.
+    run_start = src.find('\ndef run(')
+    gate_idx = src.find('form_signal_enabled =', run_start)
+    merge_idx = src.find('merge_players(', run_start)
+    assert run_start != -1 and gate_idx != -1 and merge_idx != -1
+    assert gate_idx < merge_idx, \
         "Gate must be read BEFORE merge_players is called"
 
 

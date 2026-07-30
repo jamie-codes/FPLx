@@ -266,6 +266,12 @@ def _offseason_merge(bootstrap, fixtures, id_map, prior_lookup, bucket_priors, s
     return merged, captain_picks
 
 
+def _offseason_projection_enabled() -> bool:
+    """OFFSEASON-01 kill switch. Default ON; set OFFSEASON_PROJECTION_ENABLED=false to skip."""
+    import os
+    return os.getenv('OFFSEASON_PROJECTION_ENABLED', 'true').lower() in ('1', 'true', 'yes')
+
+
 def run(dry_run: bool = False):
     """Fetch FPL data and write to cache. On failure, write stale last_updated.json."""
     if dry_run:
@@ -979,7 +985,7 @@ def run(dry_run: bool = False):
         else:
             # IS_OFF_SEASON=True — no current GW; skip all GW-dependent pipeline steps.
             # D-06: exactly one print per skipped step, verbatim format.
-            _off_enabled = os.getenv('OFFSEASON_PROJECTION_ENABLED', 'true').lower() in ('1', 'true', 'yes')
+            _off_enabled = _offseason_projection_enabled()
             _pl, _bp, _ss = _build_cold_start_prior()
             if _off_enabled and _pl:
                 print("[pipeline] IS_OFF_SEASON: cold-start projection ENABLED")
