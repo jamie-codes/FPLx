@@ -53,11 +53,19 @@ def main():
     if 'Haaland' not in top5_names:
         fails.append(f"Haaland not in top5: {sorted(top5_names)}")
 
-    # B. no <500-min (last season) cameo in the top 20
+    # B. no <500-min (last season, from the archive) cameo in the top 20.
+    # NOTE: the live bootstrap `minutes` field is NOT a valid proxy here — a
+    # player who transferred clubs this summer gets a fresh element with
+    # minutes=0 even if they played heavily last season. Use the archive
+    # (COLD-01 prior) last-season minutes, keyed by the player's code.
     for p in top20:
-        mins = by_id.get(p['id'], {}).get('minutes', 0)
-        if mins < 500:
-            fails.append(f"cameo in top20: {p['web_name']} ({mins} min, x5={p.get('xPts_5gw')})")
+        code = by_id.get(p['id'], {}).get('code')
+        last_season_mins = prior_lookup.get(code, {}).get('total_minutes', 0)
+        if last_season_mins < 500:
+            fails.append(
+                f"cameo in top20: {p['web_name']} "
+                f"({last_season_mins} last-season/archive min, x5={p.get('xPts_5gw')})"
+            )
 
     # C. at least 6 of the top 20 are mid-premium (now_cost >= 75)
     n_premium = sum(1 for p in top20 if by_id.get(p['id'], {}).get('now_cost', 0) >= 75)
