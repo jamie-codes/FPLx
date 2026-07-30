@@ -28,9 +28,9 @@ def _fixtures():
     ]
 
 
-def _element(pid, code, now_cost=70, minutes=2953, starts=34, element_type=3):
+def _element(pid, code, now_cost=70, minutes=2953, starts=34, element_type=3, web_name=None):
     return {
-        'id': pid, 'code': code, 'web_name': f'P{pid}', 'element_type': element_type,
+        'id': pid, 'code': code, 'web_name': web_name or f'P{pid}', 'element_type': element_type,
         'team': 14, 'now_cost': now_cost, 'selected_by_percent': '5.0', 'form': '0',
         'status': 'a', 'minutes': minutes, 'starts': starts, 'total_points': 150,
         'goals_scored': 20, 'assists': 5, 'expected_goals': '18.0', 'expected_assists': '4.0',
@@ -170,40 +170,63 @@ def test_offseason_merge_produces_nonzero_xpts():
     assert p['xPts_5gw'] > 0
 
 
-def test_offseason_merge_drops_recycled_code_prior():
-    """OFFSEASON-01 robustness fix: a code with a last-season prior but 0 LIVE
-    minutes is a recycled code (FPL reassigns element codes across seasons) —
-    the archived prior belongs to a different player and must be dropped, not
-    inherited. The live player should fall back to the price-band default
-    (~20 xmins for a budget-band player), not the nailed prior (~90).
+def _archive(elements):
+    """Synthetic season-archive shape returned by capture_season.load_season_archive()."""
+    return {'bootstrap': {'elements': elements}}
+
+
+def test_offseason_merge_drops_recycled_code_prior(monkeypatch):
+    """OFFSEASON-01 identity fix: a code whose archive web_name differs from the
+    live web_name has been reassigned to a different player (FPL recycles element
+    codes across seasons) -- e.g. archive code 220362 = "Webster" but live code
+    220362 = "Disasi". The archived prior belongs to the old player and must be
+    dropped, regardless of the live player's minutes (0 OR non-zero) -- minutes
+    alone can't be trusted as the discriminator (see the State-B test below,
+    where every live player reads 0 minutes after the pre-season stat reset).
     """
     from run import _offseason_merge
+    import capture_season
 
-    # now_cost=45 -> price_band 0 (budget): start=0.30, mins_per_start=68 -> xmins ~20.4
-    el = _element(1, code=100, now_cost=45, minutes=0, starts=0)
-    bs, fx = _offseason_bootstrap([el]), _fixtures()
+    monkeypatch.setattr(
+        capture_season, 'load_season_archive',
+        lambda: _archive([{'code': 100, 'web_name': 'Webster'}]),
+    )
+
     prior = {100: {'xg_per90': 0.5, 'xa_per90': 0.1, 'total_minutes': 1254,
                    'start_rate': 1.0, 'mins_per_start': 90}}
     buckets = {(3, 0): {'xg_per90': 0.1, 'xa_per90': 0.02}}
     start_seed = {100: {'start_rate': 1.0, 'mins_per_start': 90}}
     id_map = {'1': {'understat_id': None}}
 
-    merged, _ = _offseason_merge(bs, fx, id_map, prior, buckets, start_seed)
-    p = next(p for p in merged if p['id'] == 1)
+    for minutes, starts in [(0, 0), (900, 10)]:
+        # now_cost=45 -> price_band 0 (budget): falls back to ~20 xmins if prior dropped.
+        # Live web_name 'Disasi' != archive web_name 'Webster' for code=100 -> recycled.
+        el = _element(1, code=100, now_cost=45, minutes=minutes, starts=starts, web_name='Disasi')
+        bs, fx = _offseason_bootstrap([el]), _fixtures()
 
-    # Recycled prior dropped -> falls to price-band default, nowhere near the
-    # nailed 90-minute profile the stale prior would have granted.
-    assert p['xmins'] < 30
+        merged, _ = _offseason_merge(bs, fx, id_map, prior, buckets, start_seed)
+        p = next(p for p in merged if p['id'] == 1)
+
+        # Recycled prior dropped (identity mismatch) -> falls to price-band default,
+        # nowhere near the nailed 90-minute profile the stale prior would have granted.
+        assert p['xmins'] < 30, f"minutes={minutes}: recycled prior was not dropped"
 
 
-def test_offseason_merge_keeps_prior_for_live_returning_player():
-    """Companion case: same code, but the live player DID play minutes this
-    season -> the prior is legitimately theirs and must still be applied
-    (guard only fires on the 0-live-minutes recycled-code signal).
+def test_offseason_merge_keeps_prior_for_live_returning_player(monkeypatch):
+    """Companion case: same code, archive web_name MATCHES live web_name -> the
+    prior is legitimately the live player's and must still be applied, even
+    though this test uses non-zero live minutes (the historically 'safe' case
+    under the old minutes-based guard too).
     """
     from run import _offseason_merge
+    import capture_season
 
-    el = _element(1, code=100, now_cost=45, minutes=2000, starts=25)
+    monkeypatch.setattr(
+        capture_season, 'load_season_archive',
+        lambda: _archive([{'code': 100, 'web_name': 'P1'}]),
+    )
+
+    el = _element(1, code=100, now_cost=45, minutes=2000, starts=25, web_name='P1')
     bs, fx = _offseason_bootstrap([el]), _fixtures()
     prior = {100: {'xg_per90': 0.5, 'xa_per90': 0.1, 'total_minutes': 1254,
                    'start_rate': 1.0, 'mins_per_start': 90}}
@@ -216,6 +239,51 @@ def test_offseason_merge_keeps_prior_for_live_returning_player():
 
     # Prior still applies -> nailed profile, xmins near the 90-minute ceiling.
     assert p['xmins'] > 80
+
+
+def test_offseason_merge_state_b_retains_prior_when_all_minutes_zero(monkeypatch):
+    """CRITICAL REGRESSION (State B): after FPL's pre-season stat reset (~1-2 weeks
+    before GW1), EVERY player's live `minutes` reads 0 -- not just recycled codes.
+    The old minutes==0 discriminator treated this as "every code is recycled" and
+    dropped the ENTIRE prior_lookup/start_seed, gutting the feature in its primary
+    window. The identity-based fix must retain the prior for an established player
+    whose live web_name matches the archive web_name for that code, even though
+    live minutes reads 0.
+
+    This test FAILS against the old minutes-based guard and PASSES after the fix.
+    """
+    from run import _offseason_merge
+    import capture_season
+
+    monkeypatch.setattr(
+        capture_season, 'load_season_archive',
+        lambda: _archive([{'code': 100, 'web_name': 'Nailed'}]),
+    )
+
+    # State B: ALL elements read minutes=0 (simulating the pre-season reset).
+    nailed = _element(1, code=100, now_cost=140, minutes=0, starts=0, web_name='Nailed')
+    bucket_only = _element(2, code=999, now_cost=140, minutes=0, starts=0, web_name='NewGuy')
+    bs, fx = _offseason_bootstrap([nailed, bucket_only]), _fixtures()
+
+    # Nailed established player: high-quality prior + nailed start_seed.
+    prior = {100: {'xg_per90': 0.6, 'xa_per90': 0.15, 'total_minutes': 3200,
+                   'start_rate': 0.95, 'mins_per_start': 88}}
+    # Bucket fallback for the premium band (now_cost=140 -> band 2) is deliberately
+    # modest, and code 999 has no prior/start_seed entry at all -> pure bucket/
+    # price-band player.
+    buckets = {(3, 2): {'xg_per90': 0.15, 'xa_per90': 0.05}}
+    start_seed = {100: {'start_rate': 0.95, 'mins_per_start': 88}}
+    id_map = {'1': {'understat_id': None}, '2': {'understat_id': None}}
+
+    merged, _ = _offseason_merge(bs, fx, id_map, prior, buckets, start_seed)
+    p_nailed = next(p for p in merged if p['id'] == 1)
+    p_bucket = next(p for p in merged if p['id'] == 2)
+
+    # The prior must be RETAINED -- nailed xmins profile, not gutted to the
+    # price-band/bucket default.
+    assert p_nailed['xmins'] > 70
+    # And it must clearly out-project the bucket-only player on expected points.
+    assert p_nailed['xPts_5gw'] > p_bucket['xPts_5gw']
 
 
 def test_offseason_projection_enabled_kill_switch(monkeypatch):

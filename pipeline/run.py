@@ -243,16 +243,49 @@ def _offseason_merge(bootstrap, fixtures, id_map, prior_lookup, bucket_priors, s
     events = bootstrap.get('events', [])
     next_gw_id = next((e['id'] for e in events if e.get('is_next')), None)
 
-    # OFFSEASON-01: guard against FPL code recycling. A code with a last-season
-    # prior but 0 live minutes is a reassigned code — the prior belongs to a
-    # different player. Drop it so the live player falls to the bucket/price-band
-    # fallback instead of inheriting a stale nailed profile. bucket_priors is left
-    # unchanged (it's keyed by (element_type, band), not by code, so it isn't
-    # contaminated by recycling). Rebuilt as local dicts — callers' originals
-    # are left untouched.
-    live_zero_codes = {e['code'] for e in bootstrap.get('elements', []) if (e.get('minutes') or 0) == 0}
-    prior_lookup = {c: v for c, v in prior_lookup.items() if c not in live_zero_codes}
-    start_seed = {c: v for c, v in start_seed.items() if c not in live_zero_codes}
+    # OFFSEASON-01: guard against FPL code recycling. A code whose archive identity
+    # differs from its live identity has been reassigned to a different player, so its
+    # last-season prior is contaminating. Detect by web_name mismatch (state-independent:
+    # works both when the live bootstrap still holds last-season stats and after the
+    # pre-season reset). Do NOT key on live minutes — every player reads 0 minutes after
+    # the reset, which would drop the entire prior.
+    #
+    # web_name is display text, not a stable key: FPL re-derives it every season (adds/drops
+    # a disambiguating "X." initial as other same-surname players arrive/leave the league,
+    # and diacritics are inconsistently stripped between seasons/providers -- e.g. archive
+    # "Dúbravka"/live "Dubravka", archive "J.Gomes"/live "Gomes"). Comparing raw strings
+    # would misfire "recycled" on those real, continuing players. Normalize (strip
+    # diacritics, casefold) and treat a match if either normalized name contains the other,
+    # so disambiguation-prefix churn doesn't trip the guard.
+    import unicodedata
+
+    def _norm_name(n):
+        if not n:
+            return ''
+        n = unicodedata.normalize('NFKD', n)
+        n = ''.join(ch for ch in n if not unicodedata.combining(ch))
+        return n.casefold().strip()
+
+    def _same_identity(archive_name, live_name):
+        a, l = _norm_name(archive_name), _norm_name(live_name)
+        if not a or not l:
+            return False
+        return a == l or a in l or l in a
+
+    from capture_season import load_season_archive
+    try:
+        _arch_elems = load_season_archive().get('bootstrap', {}).get('elements', [])
+        archive_names = {e['code']: e.get('web_name') for e in _arch_elems}
+    except Exception:
+        archive_names = {}
+    live_names = {e['code']: e.get('web_name') for e in bootstrap.get('elements', [])}
+    recycled = {
+        c for c in prior_lookup
+        if archive_names.get(c) is not None and live_names.get(c) is not None
+        and not _same_identity(archive_names[c], live_names[c])
+    }
+    prior_lookup = {c: v for c, v in prior_lookup.items() if c not in recycled}
+    start_seed = {c: v for c, v in start_seed.items() if c not in recycled}
 
     xmins_stats = compute_xmins_stats(
         bootstrap, {}, 0, fixtures=fixtures, next_gw_id=next_gw_id,
