@@ -2,38 +2,42 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ── UIX-01 Slate Pro tokens ─ tier 1 primitives live only in this :root block ── */
-/* Light ink/accent values darkened for WCAG AA (UIX-01 audit): every intent
+/* ── Matchday Fintech tokens ─ tier 1 primitives live only in these blocks ── */
+/* Recolour of the Slate Pro system (2026-07 redesign): dark matchday palette +
+   volt accent, plus a light theme. Variable NAMES + the @theme mapping are
+   unchanged so components need no edits. WCAG gate still holds: every intent
    colour must hit 4.5:1 as 12.5px chip text over its -soft fill composited on
-   surface-1, and on-accent ink must hit 4.5:1 on accent/negative button fills. */
+   surface-1, and on-accent ink must hit 4.5:1 on accent/negative button fills.
+   In LIGHT, --sp-accent is pitch-green (volt fails text contrast on white);
+   volt #c8f542 is used only as a FILL with dark ink (logo mark / active nav
+   pill soft / mobile tab) — a follow-up token, not part of this value swap. */
 :root {
-  --sp-surface-0: #f8fafc; --sp-surface-1: #ffffff; --sp-surface-2: #eef1f5;
-  --sp-line: #e4e7ec; --sp-ink: #1a1f29; --sp-ink-muted: #5d6779;
-  --sp-accent: #1d4ed8; --sp-accent-soft: rgba(29, 78, 216, 0.10);
-  --sp-accent-hover: #1e40af;
+  --sp-surface-0: #f6f8f4; --sp-surface-1: #ffffff; --sp-surface-2: #f4f8ee;
+  --sp-line: #e2e7de; --sp-ink: #171c14; --sp-ink-muted: #5f6a58;
+  --sp-accent: #3f6d1d; --sp-accent-soft: #eef4e6;
+  --sp-accent-hover: #345a18;
   --sp-on-accent: #ffffff;
-  --sp-positive: #166534; --sp-positive-soft: rgba(22, 163, 74, 0.12);
-  --sp-warning: #92600a; --sp-warning-soft: rgba(217, 119, 6, 0.14);
+  --sp-positive: #3d6412; --sp-positive-soft: #edf5e2;
+  --sp-warning: #92600a; --sp-warning-soft: rgba(217, 119, 6, 0.12);
   --sp-negative: #b91c1c; --sp-negative-soft: rgba(220, 38, 38, 0.12);
   --sp-negative-hover: #991b1b;
-  /* UIX-03: violet intent (Chip violet / VarianceBadge ceiling / xA route pill).
-     AA-verified by scripts/contrast-check.mjs: 4.91:1 on violet-soft∘surface-1. */
+  /* violet intent (Chip violet / VarianceBadge ceiling / xA route pill). */
   --sp-violet: #7c3aed; --sp-violet-soft: rgba(124, 58, 237, 0.10);
-  --sp-focus-ring: rgba(29, 78, 216, 0.4);
+  --sp-focus-ring: rgba(63, 109, 29, 0.4);
 }
 .dark {
-  --sp-surface-0: #0f1115; --sp-surface-1: #171a21; --sp-surface-2: #1e232d;
-  --sp-line: #262b36; --sp-ink: #e7e9ee; --sp-ink-muted: #8a93a6;
-  --sp-accent: #5b8cff; --sp-accent-soft: rgba(91, 140, 255, 0.14);
-  --sp-accent-hover: #6f9aff;
-  --sp-on-accent: #0f1115;
-  --sp-positive: #4ade80; --sp-positive-soft: rgba(74, 222, 128, 0.14);
-  --sp-warning: #fbbf24; --sp-warning-soft: rgba(251, 191, 36, 0.16);
-  --sp-negative: #f87171; --sp-negative-soft: rgba(248, 113, 113, 0.14);
-  --sp-negative-hover: #fa8a8a;
-  /* UIX-03 violet, dark: AA-verified 5.12:1 on violet-soft∘surface-1. */
-  --sp-violet: #a78bfa; --sp-violet-soft: rgba(167, 139, 250, 0.14);
-  --sp-focus-ring: rgba(91, 140, 255, 0.45);
+  --sp-surface-0: #0c0e0d; --sp-surface-1: #101311; --sp-surface-2: #12160f;
+  --sp-line: #242a25; --sp-ink: #e8ece6; --sp-ink-muted: #8a9484;
+  --sp-accent: #c8f542; --sp-accent-soft: #1a2113;
+  --sp-accent-hover: #d4fa5f;
+  --sp-on-accent: #0c0e0d;
+  --sp-positive: #a9c46a; --sp-positive-soft: #1a2113;
+  --sp-warning: #e0a83e; --sp-warning-soft: #211a0f;
+  --sp-negative: #f08a8a; --sp-negative-soft: #2b1414;
+  --sp-negative-hover: #f5a0a0;
+  /* volt-family chips/ceiling → violet stays for chip/ceiling/xA semantics. */
+  --sp-violet: #b9a3f5; --sp-violet-soft: #191323;
+  --sp-focus-ring: rgba(200, 245, 66, 0.45);
 }
 
 :root {
