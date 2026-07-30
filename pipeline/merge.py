@@ -975,6 +975,7 @@ def merge_players(
     bucket_priors: dict | None = None,      # COLD-01: (et,band)→prior dict (build_bucket_priors)
     odds_lookup: dict | None = None,        # ODDS-01: (fixture_id, team_id) -> {cs_prob,...}
     odds_cs_weight: float = 0.0,            # ODDS-01: exp09 SHIP weight is 1.0; 0 = no-op
+    off_season: bool = False,               # OFFSEASON-01: pure-prior per-90 + prior xMins
 ) -> tuple[list, dict]:
     """Merge FPL bootstrap + Understat xG/xA into a unified player list.
 
@@ -1302,7 +1303,10 @@ def merge_players(
                 prior_lookup or {}, bucket_priors or {},
             )
             cur_minutes = element.get('minutes', 0)
-            w = max(0.0, min(1.0, cur_minutes / SEED_MINUTES)) if SEED_MINUTES > 0 else 1.0
+            if off_season:
+                w = 0.0   # OFFSEASON-01: ignore residual/zeroed current-season minutes
+            else:
+                w = max(0.0, min(1.0, cur_minutes / SEED_MINUTES)) if SEED_MINUTES > 0 else 1.0
             if prior is not None and w < 1.0:
                 prior_xg90 = prior.get('xg_per90', 0.0)
                 prior_xa90 = prior.get('xa_per90', 0.0)
@@ -1314,6 +1318,9 @@ def merge_players(
                 share = (1 - w) * prior_share + w * cur_share
                 xg_per90 = round(blended_total * share, 4)
                 xa_per90 = round(blended_total * (1 - share), 4)
+            if off_season and prior is None:
+                xg_per90 = 0.0   # OFFSEASON-01: no prior -> no trustworthy per-90 signal
+                xa_per90 = 0.0
 
         # VG-01: Historical points from element-summary
         pts_last3gw = 0
