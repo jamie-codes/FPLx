@@ -7,6 +7,23 @@ from news_classifier import classify_availability
 # Phase 52 D-06: position-prior fallback for new signings / post-injury return
 POSITION_PRIOR = {1: 0.90, 2: 0.75, 3: 0.65, 4: 0.60}
 
+# OFFSEASON-01: price-band start/minutes defaults for players with no COLD-01 prior.
+_OFFSEASON_BAND_START = {2: 0.90, 1: 0.62, 0: 0.30}   # premium / mid / budget
+_OFFSEASON_BAND_MINS = {2: 85.0, 1: 78.0, 0: 68.0}
+
+
+def _offseason_start_estimate(element: dict, prior_start: dict | None, availability: float):
+    """Return (start_prob, avg_mins_started) for off-season from prior or price band."""
+    from season_prior import price_band
+    et = element.get('element_type', 3)
+    if prior_start is not None:
+        band = price_band(element.get('now_cost', 0))
+        sr = prior_start.get('start_rate', POSITION_PRIOR.get(et, 0.65))
+        mps = prior_start.get('mins_per_start', 0.0) or _OFFSEASON_BAND_MINS[band]
+        return round(sr * availability, 4), mps
+    band = price_band(element.get('now_cost', 0))
+    return round(_OFFSEASON_BAND_START[band] * availability, 4), _OFFSEASON_BAND_MINS[band]
+
 
 def build_next_gw_team_fdr(fixtures: list, next_gw_id: int) -> dict:
     """Build a mapping of team_id → fixture_difficulty for the given gameweek.
@@ -112,6 +129,7 @@ def compute_xmins_stats(
     sub_appear_window_gws: int = 15,   # APM-01: sub appearance history window
     start_seed: dict | None = None,    # COLD-01: code→{start_rate,mins_per_start} prior seed
     injury_lookup: dict | None = None, # AVAIL-01: {fpl_element_id: {'risk', 'reason'}}
+    off_season: bool = False,          # OFFSEASON-01: prior-driven minutes, ignore in-season evidence
 ) -> dict:
     """
     Compute xmins, start_prob, mins_risk for every player.
@@ -151,6 +169,7 @@ def compute_xmins_stats(
             sub_appear_window_gws=sub_appear_window_gws,   # APM-01
             prior_start=prior_start,                        # COLD-01
             injury_lookup=injury_lookup,                    # AVAIL-01
+            off_season=off_season,                          # OFFSEASON-01
         )
 
     return results
@@ -164,6 +183,7 @@ def _compute_player_xmins(
     sub_appear_window_gws: int = 15,              # APM-01: sub appearance history window
     prior_start: dict | None = None,              # COLD-01: {start_rate, mins_per_start}
     injury_lookup: dict | None = None,            # AVAIL-01: {fpl_element_id: {'risk', 'reason'}}
+    off_season: bool = False,                     # OFFSEASON-01
 ) -> dict:
     """Compute xmins stats for a single player."""
     starts = element.get('starts', 0)
@@ -172,7 +192,12 @@ def _compute_player_xmins(
     availability = (chance / 100.0) if chance is not None else 1.0
 
     # Per-match data from element-summary (preferred when available)
-    if summary and starts > 0:
+    if off_season:
+        # OFFSEASON-01: drive minutes from the COLD-01 prior (or price band), not
+        # residual last-season starts / finished_gws (which collapses to 0 pre-season).
+        start_prob, avg_mins_started = _offseason_start_estimate(element, prior_start, availability)
+        mins_60_prob = 0.0
+    elif summary and starts > 0:
         history = summary.get('history', [])
         recent = history[-10:]  # last 10 GW entries
         starts_in_recent = [m for m in recent if m.get('starts') == 1]

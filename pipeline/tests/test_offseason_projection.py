@@ -1,6 +1,7 @@
 """Off-season projection mode: merge/xmins off_season flag + run wiring."""
 import pytest
 from merge import merge_players
+from xmins import _compute_player_xmins
 
 
 def _offseason_bootstrap(elements):
@@ -110,3 +111,25 @@ def test_offseason_no_prior_zeroes_per90():
     # Proves it's the off_season guard doing the zeroing, not something else:
     # with the flag off, the same inputs retain the (high) residual per-90.
     assert p_off['xg_per90'] > 0.0
+
+
+def test_offseason_established_not_zeroed():
+    """Residual starts>=3 + finished_gws=0 must NOT zero xmins in off_season mode."""
+    el = _element(1, code=100, minutes=2953, starts=34)
+    prior_start = {'start_rate': 0.9, 'mins_per_start': 85}
+    r = _compute_player_xmins(el, None, finished_gws=0, prior_start=prior_start, off_season=True)
+    assert r['start_prob'] > 0.5
+    assert r['xmins'] > 50
+    # Document the in-season bug this fixes: same inputs, off_season=False -> collapses to 0
+    r_bug = _compute_player_xmins(el, None, finished_gws=0, prior_start=prior_start, off_season=False)
+    assert r_bug['xmins'] == 0.0
+
+
+def test_offseason_no_prior_uses_price_band():
+    """No prior: premium price band gets higher start_prob/xmins than budget."""
+    prem = _element(2, code=0, now_cost=95, minutes=0, starts=0)
+    budg = _element(3, code=0, now_cost=45, minutes=0, starts=0)
+    rp = _compute_player_xmins(prem, None, 0, prior_start=None, off_season=True)
+    rb = _compute_player_xmins(budg, None, 0, prior_start=None, off_season=True)
+    assert rp['start_prob'] > rb['start_prob']
+    assert rp['xmins'] > rb['xmins']
