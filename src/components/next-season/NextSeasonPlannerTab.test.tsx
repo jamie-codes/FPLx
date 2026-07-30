@@ -20,6 +20,12 @@ vi.mock('@/lib/hooks/usePreSeasonActive', () => ({
   usePreSeasonActive: () => usePreSeasonActiveMock(),
 }))
 
+// FixtureHeatMap is self-contained (fetches club-form/players/squad internally). Stub it so
+// these planner tests stay focused and don't depend on unmocked data hooks.
+vi.mock('@/components/club-form/FixtureHeatMap', () => ({
+  FixtureHeatMap: () => <div data-testid="fixture-heatmap">Fixture Difficulty heatmap</div>,
+}))
+
 // Import AFTER mocks
 import { NextSeasonPlannerTab } from './NextSeasonPlannerTab'
 
@@ -154,11 +160,13 @@ describe('NextSeasonPlannerTab', () => {
     })
   })
 
-  it('renders "Fixtures not yet published" when next-season fixtures hook returns empty', () => {
+  it('renders the GW1-8 fixture-difficulty heatmap section (fixtures now published)', () => {
     const envelope = makeEnvelope()
     usePreSeasonSquadMock.mockReturnValue({ data: envelope, isLoading: false, isError: false })
-    const { container } = render(<NextSeasonPlannerTab />)
-    expect(container.textContent).toMatch(/fixtures not yet published/i)
+    const { container, getByTestId } = render(<NextSeasonPlannerTab />)
+    expect(container.textContent).toMatch(/fixture difficulty/i)
+    expect(getByTestId('fixture-heatmap')).toBeTruthy()
+    expect(container.textContent).not.toMatch(/fixtures not yet published/i)
   })
 
   it('renders error copy "Failed to load pre-season squad" when isError is true', () => {

@@ -17,10 +17,7 @@ import { Fragment, useState, useDeferredValue, useMemo, useRef, useEffect } from
 import type { ReactNode } from 'react'
 import { usePreSeasonSquad } from '@/lib/hooks/usePreSeasonSquad'
 import { usePreSeasonActive } from '@/lib/hooks/usePreSeasonActive'
-// HeatMapRow imported but fixture data is deferred (GW1-8-FIXTURES deferred item in CONTEXT.md).
-// The populated code path is future-ready; the empty-state path is the expected render at ship time.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { HeatMapRow } from '@/components/club-form/FixtureHeatMap'
+import { FixtureHeatMap } from '@/components/club-form/FixtureHeatMap'
 import { buildPreSeasonSquad } from '@/lib/pre-season-squad'
 import { buildPreSeasonArchetypes } from '@/lib/pre-season-archetypes'
 import type { PreSeasonPlayer, PreSeasonSquad, SquadHealth } from '@/lib/types'
@@ -316,29 +313,10 @@ export function NextSeasonPlannerTab() {
   }
 
   // --- SECTION B: GW1-8 FDR Heatmap (NSP-03) ---
-  // GW1-8-FIXTURES is a known deferred condition: next-season fixture data is not available until
-  // FPL publishes the schedule (typically late June). The empty-state branch is the expected render
-  // path at ship time. The populated branch (HeatMapRow table) is the future-ready code path.
-  // TODO(GW1-8-FIXTURES): when next-season fixture data is available, fetch it here and render
-  // HeatMapRow rows inside a <table> instead of the empty-state paragraph below.
-  const nextSeasonFixtures: unknown[] = [] // deferred: no fixture data available until FPL publishes
-  const hasFixtures = nextSeasonFixtures.length > 0
-
-  const heatmapSection: ReactNode = hasFixtures ? (
-    // Future-ready: HeatMapRow is imported; populate grid/tierMap/ownedTeamIds from fixture data.
-    <p className="text-sm text-ink-muted py-2">
-      Fixture data ready — heatmap rendering.
-    </p>
-  ) : (
-    <>
-      <p className="text-sm text-ink-muted py-2">
-        Fixtures not yet published for next season.
-      </p>
-      <p className="text-sm text-ink-muted">
-        Next season&apos;s fixture list hasn&apos;t been released yet. Check back in late June.
-      </p>
-    </>
-  )
+  // 2026/27 fixtures are published; /api/club-form computes fixture difficulty on demand from
+  // fpl_fixtures.json + fpl_bootstrap.json (both saved year-round, before the off-season gate),
+  // so the self-contained FixtureHeatMap renders real fixture difficulty during pre-season.
+  const heatmapSection: ReactNode = <FixtureHeatMap />
 
   return (
     <div className="space-y-4">
