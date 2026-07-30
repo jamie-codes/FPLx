@@ -242,6 +242,18 @@ def _offseason_merge(bootstrap, fixtures, id_map, prior_lookup, bucket_priors, s
     import accuracy
     events = bootstrap.get('events', [])
     next_gw_id = next((e['id'] for e in events if e.get('is_next')), None)
+
+    # OFFSEASON-01: guard against FPL code recycling. A code with a last-season
+    # prior but 0 live minutes is a reassigned code — the prior belongs to a
+    # different player. Drop it so the live player falls to the bucket/price-band
+    # fallback instead of inheriting a stale nailed profile. bucket_priors is left
+    # unchanged (it's keyed by (element_type, band), not by code, so it isn't
+    # contaminated by recycling). Rebuilt as local dicts — callers' originals
+    # are left untouched.
+    live_zero_codes = {e['code'] for e in bootstrap.get('elements', []) if (e.get('minutes') or 0) == 0}
+    prior_lookup = {c: v for c, v in prior_lookup.items() if c not in live_zero_codes}
+    start_seed = {c: v for c, v in start_seed.items() if c not in live_zero_codes}
+
     xmins_stats = compute_xmins_stats(
         bootstrap, {}, 0, fixtures=fixtures, next_gw_id=next_gw_id,
         sub_appear_window_gws=accuracy.SUB_APPEAR_WINDOW_GWS,

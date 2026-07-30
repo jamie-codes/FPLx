@@ -170,6 +170,54 @@ def test_offseason_merge_produces_nonzero_xpts():
     assert p['xPts_5gw'] > 0
 
 
+def test_offseason_merge_drops_recycled_code_prior():
+    """OFFSEASON-01 robustness fix: a code with a last-season prior but 0 LIVE
+    minutes is a recycled code (FPL reassigns element codes across seasons) —
+    the archived prior belongs to a different player and must be dropped, not
+    inherited. The live player should fall back to the price-band default
+    (~20 xmins for a budget-band player), not the nailed prior (~90).
+    """
+    from run import _offseason_merge
+
+    # now_cost=45 -> price_band 0 (budget): start=0.30, mins_per_start=68 -> xmins ~20.4
+    el = _element(1, code=100, now_cost=45, minutes=0, starts=0)
+    bs, fx = _offseason_bootstrap([el]), _fixtures()
+    prior = {100: {'xg_per90': 0.5, 'xa_per90': 0.1, 'total_minutes': 1254,
+                   'start_rate': 1.0, 'mins_per_start': 90}}
+    buckets = {(3, 0): {'xg_per90': 0.1, 'xa_per90': 0.02}}
+    start_seed = {100: {'start_rate': 1.0, 'mins_per_start': 90}}
+    id_map = {'1': {'understat_id': None}}
+
+    merged, _ = _offseason_merge(bs, fx, id_map, prior, buckets, start_seed)
+    p = next(p for p in merged if p['id'] == 1)
+
+    # Recycled prior dropped -> falls to price-band default, nowhere near the
+    # nailed 90-minute profile the stale prior would have granted.
+    assert p['xmins'] < 30
+
+
+def test_offseason_merge_keeps_prior_for_live_returning_player():
+    """Companion case: same code, but the live player DID play minutes this
+    season -> the prior is legitimately theirs and must still be applied
+    (guard only fires on the 0-live-minutes recycled-code signal).
+    """
+    from run import _offseason_merge
+
+    el = _element(1, code=100, now_cost=45, minutes=2000, starts=25)
+    bs, fx = _offseason_bootstrap([el]), _fixtures()
+    prior = {100: {'xg_per90': 0.5, 'xa_per90': 0.1, 'total_minutes': 1254,
+                   'start_rate': 1.0, 'mins_per_start': 90}}
+    buckets = {(3, 0): {'xg_per90': 0.1, 'xa_per90': 0.02}}
+    start_seed = {100: {'start_rate': 1.0, 'mins_per_start': 90}}
+    id_map = {'1': {'understat_id': None}}
+
+    merged, _ = _offseason_merge(bs, fx, id_map, prior, buckets, start_seed)
+    p = next(p for p in merged if p['id'] == 1)
+
+    # Prior still applies -> nailed profile, xmins near the 90-minute ceiling.
+    assert p['xmins'] > 80
+
+
 def test_offseason_projection_enabled_kill_switch(monkeypatch):
     """OFFSEASON-01: OFFSEASON_PROJECTION_ENABLED parsing — default ON, explicit
     false/0 disables, true/yes/1 (any case-insensitive truthy token) keeps it enabled."""
