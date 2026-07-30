@@ -233,6 +233,39 @@ def _build_cold_start_prior():
     return prior_lookup, bucket_priors, start_seed
 
 
+def _offseason_merge(bootstrap, fixtures, id_map, prior_lookup, bucket_priors, start_seed):
+    """OFFSEASON-01: run xmins + merge in off_season mode with validated default params.
+
+    Returns (merged_players, captain_picks). Pre-season backtest is stale, so we use
+    the accuracy.* defaults exactly as run.py's stale-summary fallback does.
+    """
+    import accuracy
+    events = bootstrap.get('events', [])
+    next_gw_id = next((e['id'] for e in events if e.get('is_next')), None)
+    xmins_stats = compute_xmins_stats(
+        bootstrap, {}, 0, fixtures=fixtures, next_gw_id=next_gw_id,
+        sub_appear_window_gws=accuracy.SUB_APPEAR_WINDOW_GWS,
+        start_seed=start_seed, injury_lookup=None, off_season=True,
+    )
+    merged, captain_picks = merge_players(
+        bootstrap, fixtures, {}, id_map,
+        xmins_stats=xmins_stats, summaries=None,
+        form_signal_enabled=False, blend_alpha=accuracy.BLEND_ALPHA,
+        cs_prob_base=0.40, cs_prob_slope=0.30,
+        form_window_gws=accuracy.FORM_WINDOW_GWS,
+        form_actual_beta=accuracy.FORM_ACTUAL_BETA,
+        form_difficulty_gamma=accuracy.FORM_DIFFICULTY_GAMMA,
+        sub_appear_window_gws=accuracy.SUB_APPEAR_WINDOW_GWS,
+        cs_team_form_slope=accuracy.CS_TEAM_FORM_SLOPE,
+        cs_def_form_window_gws=accuracy.CS_DEF_FORM_WINDOW_GWS,
+        atf_slope=accuracy.ATF_SLOPE, atf_window_gws=accuracy.ATF_WINDOW_GWS,
+        fas_slope=accuracy.FAS_SLOPE, defcon_scale=accuracy.DEFCON_SCALE,
+        prior_lookup=prior_lookup, bucket_priors=bucket_priors,
+        odds_lookup=None, odds_cs_weight=0.0, off_season=True,
+    )
+    return merged, captain_picks
+
+
 def run(dry_run: bool = False):
     """Fetch FPL data and write to cache. On failure, write stale last_updated.json."""
     if dry_run:
@@ -946,9 +979,18 @@ def run(dry_run: bool = False):
         else:
             # IS_OFF_SEASON=True — no current GW; skip all GW-dependent pipeline steps.
             # D-06: exactly one print per skipped step, verbatim format.
-            print("[pipeline] IS_OFF_SEASON: skipping xmins")
+            _off_enabled = os.getenv('OFFSEASON_PROJECTION_ENABLED', 'true').lower() in ('1', 'true', 'yes')
+            _pl, _bp, _ss = _build_cold_start_prior()
+            if _off_enabled and _pl:
+                print("[pipeline] IS_OFF_SEASON: cold-start projection ENABLED")
+                merged, captain_picks = _offseason_merge(bootstrap, fixtures, id_map, _pl, _bp, _ss)
+                save('merged_players.json', merged)
+                timestamps['merged_players.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
+                save('captain_picks.json', captain_picks)
+                print(f"[pipeline] off-season projection: {len(merged)} players merged")
+            else:
+                print("[pipeline] IS_OFF_SEASON: skipping merge (cold-start disabled or no archive)")
             print("[pipeline] IS_OFF_SEASON: skipping bonus")
-            print("[pipeline] IS_OFF_SEASON: skipping merge")
             print("[pipeline] IS_OFF_SEASON: skipping mc_simulations")
             print("[pipeline] IS_OFF_SEASON: skipping rotation_risk")
             print("[pipeline] IS_OFF_SEASON: skipping set_piece_quality")

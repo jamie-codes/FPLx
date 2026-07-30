@@ -153,3 +153,18 @@ def test_offseason_nailed_starter_gets_nailed_sub_risk_label():
         el_fringe, None, finished_gws=0, prior_start=prior_fringe, off_season=True
     )
     assert r_fringe['sub_risk_label'] != 'nailed'
+
+
+def test_offseason_merge_produces_nonzero_xpts():
+    from run import _offseason_merge
+    el = _element(1, code=100, minutes=2953, starts=34)  # now_cost 70 -> band 1
+    bs, fx = _offseason_bootstrap([el]), _fixtures()
+    prior = {100: {'xg_per90': 0.5, 'xa_per90': 0.1, 'total_minutes': 3000,
+                   'start_rate': 0.9, 'mins_per_start': 85}}
+    buckets = {(3, 1): {'xg_per90': 0.15, 'xa_per90': 0.05}}
+    start_seed = {100: {'start_rate': 0.9, 'mins_per_start': 85}}
+    id_map = {'1': {'understat_id': None}}
+
+    merged, caps = _offseason_merge(bs, fx, id_map, prior, buckets, start_seed)
+    p = next(p for p in merged if p['id'] == 1)
+    assert p['xPts_5gw'] > 0
