@@ -133,3 +133,23 @@ def test_offseason_no_prior_uses_price_band():
     rb = _compute_player_xmins(budg, None, 0, prior_start=None, off_season=True)
     assert rp['start_prob'] > rb['start_prob']
     assert rp['xmins'] > rb['xmins']
+
+
+def test_offseason_nailed_starter_gets_nailed_sub_risk_label():
+    """OFFSEASON-01 fix: a nailed prior (start_rate=0.9, mins_per_start=85) must derive
+    mins_60_prob from expected minutes-per-start, not hardcode 0.0 — otherwise
+    sub_risk_label ('sub_risk') contradicts mins_risk ('nailed') for the same player.
+    """
+    el = _element(1, code=100, minutes=2953, starts=34)
+    prior_start = {'start_rate': 0.9, 'mins_per_start': 85}
+    r = _compute_player_xmins(el, None, finished_gws=0, prior_start=prior_start, off_season=True)
+    assert r['mins_risk'] == 'nailed'
+    assert r['sub_risk_label'] == 'nailed'
+
+    # Low-minutes fringe player must NOT read 'nailed' for sub_risk_label.
+    el_fringe = _element(4, code=101, minutes=2953, starts=34)
+    prior_fringe = {'start_rate': 0.9, 'mins_per_start': 50}
+    r_fringe = _compute_player_xmins(
+        el_fringe, None, finished_gws=0, prior_start=prior_fringe, off_season=True
+    )
+    assert r_fringe['sub_risk_label'] != 'nailed'

@@ -196,7 +196,9 @@ def _compute_player_xmins(
         # OFFSEASON-01: drive minutes from the COLD-01 prior (or price band), not
         # residual last-season starts / finished_gws (which collapses to 0 pre-season).
         start_prob, avg_mins_started = _offseason_start_estimate(element, prior_start, availability)
-        mins_60_prob = 0.0
+        # OFFSEASON-01: estimate P(>=60 min | start) from expected minutes-per-start,
+        # so sub_risk_label stays consistent with mins_risk in off-season.
+        mins_60_prob = round(min(1.0, max(0.0, (avg_mins_started - 45) / 30)), 4)
     elif summary and starts > 0:
         history = summary.get('history', [])
         recent = history[-10:]  # last 10 GW entries
