@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react'
 import { useSquad } from '@/lib/hooks/useSquad'
+import { deriveFreeTransfers } from '@/lib/free-transfers'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useClubForm } from '@/lib/hooks/useClubForm'
 import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
@@ -226,13 +227,11 @@ export function DecisionSummaryTab({
     return computeLifecycleLabels(squadData.picks, scoredPlayers, clubFormMap)
   }, [squadData, scoredPlayers, clubFormMap])
 
-  // derivedFtCount — verbatim from TransferPanel.tsx lines 87-92
-  const derivedFtCount: 1 | 2 = useMemo(() => {
-    if (!isAuthenticated || !myTeamData) return 1
-    const chip = squadData?.active_chip
-    if (chip === 'wildcard' || chip === 'freehit') return 1
-    return myTeamData.entry_history.event_transfers === 0 ? 2 : 1
-  }, [isAuthenticated, myTeamData, squadData])
+  // derivedFtCount — shared rule (deriveFreeTransfers); unauthenticated → 1.
+  const derivedFtCount: 1 | 2 = useMemo(
+    () => deriveFreeTransfers(isAuthenticated ? myTeamData : null, squadData?.active_chip),
+    [isAuthenticated, myTeamData, squadData],
+  )
 
   const exactSellPrices = useMemo<Map<number, number>>(() => {
     if (!myTeamData) return new Map()

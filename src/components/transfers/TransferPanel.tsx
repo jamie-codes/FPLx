@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useSquad } from '@/lib/hooks/useSquad'
+import { deriveFreeTransfers } from '@/lib/free-transfers'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
@@ -117,9 +118,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
     if (!isAuthenticated || !myTeamData) {
       return (freeTransfers >= 2 ? 2 : 1) as 1 | 2
     }
-    const chip = squadData?.active_chip
-    if (chip === 'wildcard' || chip === 'freehit') return 1
-    return myTeamData.entry_history.event_transfers === 0 ? 2 : 1
+    return deriveFreeTransfers(myTeamData, squadData?.active_chip)
   }, [isAuthenticated, myTeamData, squadData, freeTransfers])
 
   // Pre-fill manualBank from FPL when authenticated. DO NOT include manualBank in deps (Pitfall 5)
