@@ -32,4 +32,12 @@ describe('WhyOverCard', () => {
     const { container } = render(<WhyOverCard x={mk({ haul_prob: 0.2 })} y={mk({ haul_prob: 0.2 })} />)
     expect(container.firstChild).toBeNull()
   })
+
+  it('renders nothing when x has a risk but no positive reason (avoids a downside-only card)', () => {
+    // x carries a risk (rotation) but is not better than y on any positive axis.
+    const { container } = render(
+      <WhyOverCard x={mk({ haul_prob: 0.2, mins_risk: 'rotation_risk' })} y={mk({ haul_prob: 0.2 })} />,
+    )
+    expect(container.firstChild).toBeNull()
+  })
 })

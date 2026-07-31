@@ -1,14 +1,16 @@
 'use client'
 
 // Redesign §4 (Transfers): the "Why X over Y?" explainer — numbered comparative
-// reasons + an amber risk line, from compareTransfers(). Renders nothing when
-// there is nothing to say (e.g. two near-identical candidates).
+// reasons + an amber risk line, from compareTransfers(). Requires at least one
+// POSITIVE reason to render: a "Why X over Y?" card carrying only a downside
+// (risk but no reason) argues against its own header, so it's suppressed. The
+// risk line then shows only as a caveat alongside the positive case.
 import type { MergedPlayer } from '@/lib/types'
 import { compareTransfers } from '@/lib/compare-transfers'
 
 export function WhyOverCard({ x, y }: { x: MergedPlayer; y: MergedPlayer }) {
   const { reasons, risk } = compareTransfers(x, y)
-  if (reasons.length === 0 && !risk) return null
+  if (reasons.length === 0) return null
 
   return (
     <div className="rounded-lg border border-line bg-surface-1 p-4">
