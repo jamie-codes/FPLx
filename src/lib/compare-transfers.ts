@@ -9,6 +9,9 @@ export interface TransferComparison {
   risk: string | null
 }
 
+// Signed one-decimal format — avoids "+-0.7" when the delta is negative.
+const signed = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}`
+
 export function compareTransfers(x: MergedPlayer, y: MergedPlayer): TransferComparison {
   const reasons: string[] = []
 
@@ -21,7 +24,7 @@ export function compareTransfers(x: MergedPlayer, y: MergedPlayer): TransferComp
   const d1 = (x.xPts_1gw ?? 0) - (y.xPts_1gw ?? 0)
   const d5 = (x.xPts_5gw ?? 0) - (y.xPts_5gw ?? 0)
   if (d5 > d1 && d5 > 0) {
-    reasons.push(`xPts gap grows: +${d1.toFixed(1)} (1GW) → +${d5.toFixed(1)} (5GW)`)
+    reasons.push(`xPts gap grows: ${signed(d1)} (1GW) → ${signed(d5)} (5GW)`)
   }
 
   // Penalty edge.

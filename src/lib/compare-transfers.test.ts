@@ -47,4 +47,19 @@ describe('compareTransfers', () => {
     const r = compareTransfers(mk({ haul_prob: 0.2 }), mk({ haul_prob: 0.2 }))
     expect(r.reasons).toEqual([])
   })
+
+  it('formats a negative 1GW delta with a leading minus, not "+-"', () => {
+    const r = compareTransfers(
+      mk({ xPts_1gw: 4, xPts_5gw: 22, haul_prob: 0.2 }),     // trails at 1GW, leads at 5GW
+      mk({ web_name: 'Gordon', xPts_1gw: 4.7, xPts_5gw: 19.7, haul_prob: 0.2 }),
+    )
+    const horizon = r.reasons.find(s => s.startsWith('xPts gap grows'))
+    expect(horizon).toContain('-0.7 (1GW)')
+    expect(horizon).not.toContain('+-')
+  })
+
+  it('yields a null risk when x has no risks', () => {
+    const r = compareTransfers(mk({ mins_risk: 'nailed', status: 'a' }), mk({ web_name: 'Gordon' }))
+    expect(r.risk).toBeNull()
+  })
 })
