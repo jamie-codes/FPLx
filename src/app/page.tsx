@@ -224,6 +224,7 @@ export default function Home() {
                 submittedId={submittedId}
                 onSubmit={handleTeamIdSubmit}
                 selectTool={selectTool}
+                watchlistIds={watchlistIds}
               />
             </DecisionErrorBoundary>
           )}

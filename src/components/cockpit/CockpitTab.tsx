@@ -10,6 +10,7 @@
 import { useNextDeadline } from '@/lib/hooks/useNextDeadline'
 import { DecisionSummaryTab } from '@/components/squad/DecisionSummaryTab'
 import { CockpitVerdictBanner } from './CockpitVerdictBanner'
+import { GemWatchCard } from './GemWatchCard'
 import { TransferAdviceCard } from './TransferAdviceCard'
 import { UserTransferAdviceCard } from './UserTransferAdviceCard'
 import { ChipAdviceCard } from './ChipAdviceCard'
@@ -30,12 +31,13 @@ function deadlineParts(iso: string): { label: string; countdown: string } {
   return { label, countdown: days >= 1 ? `${days}d ${h % 24}h` : `${h}h ${Math.floor((ms % 3_600_000) / 60_000)}m` }
 }
 
-export function CockpitTab({ teamId, onTeamIdChange, submittedId, onSubmit, selectTool }: {
+export function CockpitTab({ teamId, onTeamIdChange, submittedId, onSubmit, selectTool, watchlistIds }: {
   teamId: string
   onTeamIdChange: (id: string) => void
   submittedId: string | null
   onSubmit: () => void
   selectTool: (tool: ToolId) => void
+  watchlistIds: number[]
 }) {
   const { data: deadline } = useNextDeadline()
   const dl = deadline ? deadlineParts(deadline.deadline_time) : null
@@ -73,6 +75,9 @@ export function CockpitTab({ teamId, onTeamIdChange, submittedId, onSubmit, sele
         {submittedId ? <UserTransferAdviceCard submittedId={submittedId} /> : <TransferAdviceCard />}
         <ChipAdviceCard />
       </div>
+
+      {/* Card 5 (redesign Phase 3): Gem watch — watchlisted gems / top gems */}
+      <GemWatchCard watchlistIds={watchlistIds} selectTool={selectTool} />
 
       {/* Your squad's decision summary — captain, transfers, chips, risk, prose */}
       <DecisionSummaryTab
