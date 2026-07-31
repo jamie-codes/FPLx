@@ -30,7 +30,7 @@ export function CockpitCaptaincyCard() {
           const fx = c.fixtures?.length ? [...c.fixtures].sort((a, b) => a.event_id - b.event_id)[0] : undefined
           const opp = fx ? `${fx.is_home ? 'vs' : 'at'} ${fx.opponent_team} (${fx.is_home ? 'H' : 'A'})` : ''
           const haul = c.haul_prob != null ? Math.round(c.haul_prob * 100) : null
-          const barPct = Math.max(0, Math.min(100, (c.xPts_1gw / maxXpts) * 100))
+          const barPct = Math.max(0, Math.min(100, ((c.xPts_1gw ?? 0) / maxXpts) * 100))
           return (
             <li
               key={c.id}
@@ -53,7 +53,7 @@ export function CockpitCaptaincyCard() {
                   {haul != null && <span className="text-data text-ink-muted tabular shrink-0">haul {haul}%</span>}
                 </div>
               </div>
-              <span className="text-h3 font-semibold text-ink tabular shrink-0">{c.xPts_1gw.toFixed(1)}</span>
+              <span className="text-h3 font-semibold text-ink tabular shrink-0">{(c.xPts_1gw ?? 0).toFixed(1)}</span>
             </li>
           )
         })}
