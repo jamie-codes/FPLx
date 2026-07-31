@@ -25,6 +25,23 @@ const POS_LABEL: Record<number, string> = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD
 // Format score as 0-100 integer for display
 export const fmtScore = (v: number) => (v * 100).toFixed(0)
 export const fmtScoreNull = (v: number | null) => (v === null ? '\u2014' : (v * 100).toFixed(0))
+
+// Redesign Phase 3 (Gem Ratings \u00a74): gem score as number + gradient bar
+// (positive\u2192accent, theme-aware). Bar hidden on mobile to keep dense rows tight.
+export function GemScoreCell({ value }: { value: number }) {
+  const pct = Math.max(0, Math.min(100, value * 100))
+  return (
+    <div className="flex items-center gap-2">
+      <span className="tabular text-ink font-medium w-6 text-right">{fmtScore(value)}</span>
+      <span className="h-1.5 w-14 rounded bg-surface-2 overflow-hidden hidden sm:inline-block" aria-hidden>
+        <span
+          className="block h-full rounded"
+          style={{ width: `${pct}%`, background: 'linear-gradient(90deg, var(--sp-positive), var(--sp-accent))' }}
+        />
+      </span>
+    </div>
+  )
+}
 const fmtDec2 = (v: number | null) => (v === null ? '\u2014' : v.toFixed(2))
 
 // Column header with hover tooltip
@@ -223,7 +240,7 @@ export function createColumns(
   }),
   col.accessor('gem_score', {
     header: H('Gem', 'Composite Gem score (0–100): weighted blend of FDR, form, xG/90, xA/90, differential ownership, minutes reliability, and set-piece role'),
-    cell: (info) => fmtScore(info.getValue()),
+    cell: (info) => <GemScoreCell value={info.getValue()} />,
   }),
   col.accessor('fdr_score', {
     header: H('FDR', 'Fixture Difficulty Rating score (0–100): higher = easier upcoming fixtures'),
