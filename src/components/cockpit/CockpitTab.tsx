@@ -11,6 +11,7 @@ import { useNextDeadline } from '@/lib/hooks/useNextDeadline'
 import { DecisionSummaryTab } from '@/components/squad/DecisionSummaryTab'
 import { CockpitHeader } from './CockpitHeader'
 import { CockpitVerdictBanner } from './CockpitVerdictBanner'
+import { CockpitCaptaincyCard } from './CockpitCaptaincyCard'
 import { GemWatchCard } from './GemWatchCard'
 import { TransferAdviceCard } from './TransferAdviceCard'
 import { UserTransferAdviceCard } from './UserTransferAdviceCard'
@@ -77,11 +78,14 @@ export function CockpitTab({ teamId, onTeamIdChange, submittedId, onSubmit, sele
           trajectory (TRF-01) — plus the chip signals. */}
       <div className="grid gap-4 lg:grid-cols-2">
         {submittedId ? <UserTransferAdviceCard submittedId={submittedId} /> : <TransferAdviceCard />}
-        <ChipAdviceCard />
+        <CockpitCaptaincyCard />
       </div>
 
-      {/* Card 5 (redesign Phase 3): Gem watch — watchlisted gems / top gems */}
-      <GemWatchCard watchlistIds={watchlistIds} selectTool={selectTool} />
+      {/* Cards 4 + 5 (redesign Phase 3): chip advisor + gem watch */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ChipAdviceCard />
+        <GemWatchCard watchlistIds={watchlistIds} selectTool={selectTool} />
+      </div>
 
       {/* Your squad's decision summary — captain, transfers, chips, risk, prose */}
       <DecisionSummaryTab
