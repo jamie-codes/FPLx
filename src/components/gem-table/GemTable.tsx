@@ -334,7 +334,7 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
                               onClick={() => toggleWatchlist?.(row.original.id)}
                               className={`text-xs cursor-pointer ${
                                 watchlistIds.includes(row.original.id)
-                                  ? 'text-warning'
+                                  ? 'text-accent'
                                   : 'text-ink-muted'
                               }`}
                             >
@@ -425,7 +425,7 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
                               onClick={() => toggleWatchlist?.(row.original.id)}
                               className={`text-xs cursor-pointer ${
                                 watchlistIds.includes(row.original.id)
-                                  ? 'text-warning'
+                                  ? 'text-accent'
                                   : 'text-ink-muted'
                               }`}
                             >
