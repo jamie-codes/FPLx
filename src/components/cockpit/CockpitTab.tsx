@@ -9,6 +9,7 @@
 // away.
 import { useNextDeadline } from '@/lib/hooks/useNextDeadline'
 import { DecisionSummaryTab } from '@/components/squad/DecisionSummaryTab'
+import { CockpitHeader } from './CockpitHeader'
 import { CockpitVerdictBanner } from './CockpitVerdictBanner'
 import { GemWatchCard } from './GemWatchCard'
 import { TransferAdviceCard } from './TransferAdviceCard'
@@ -44,6 +45,9 @@ export function CockpitTab({ teamId, onTeamIdChange, submittedId, onSubmit, sele
 
   return (
     <div className="space-y-4">
+      {/* Header (redesign Phase 3): title + squad Value/Bank */}
+      <CockpitHeader submittedId={submittedId} gw={deadline?.id ?? null} />
+
       {/* Card 1 (redesign Phase 3): one-sentence verdict — transfer + captain + chip */}
       <CockpitVerdictBanner />
 
