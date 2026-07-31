@@ -28,6 +28,7 @@ import type { OptimiserHorizon, TransferSuggestion } from '@/lib/types'
 // Phase 74 D-03: import of OCS-header toggle removed — engine uses derivedFtCount directly (toggle file preserved in OptimiserPanel)
 import { GwToggle } from '@/components/gem-table/GwToggle'
 import { OpportunityCostTable } from '@/components/transfers/OpportunityCostTable'
+import { WhyOverCard } from '@/components/transfers/WhyOverCard'
 import { capByPosition } from '@/lib/cap-transfer-suggestions'
 import { useTransferNews } from '@/lib/hooks/useTransferNews'
 import { buildConfirmedSigningMap } from '@/lib/buildConfirmedSigningMap'
@@ -154,6 +155,17 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
     () => computeOpportunityCostRows(ocsSuggestions, derivedFtCount, Math.round(manualBank * 10)),
     [ocsSuggestions, derivedFtCount, manualBank],
   )
+
+  // Redesign §4: top-2 distinct buy candidates for the Why-over-Y explainer.
+  const [whyX, whyY] = useMemo(() => {
+    const buys = ocsSuggestions
+      .filter((s): s is Extract<TransferSuggestion, { kind: 'single' }> => s.kind === 'single')
+      .sort((a, b) => b.xPtsGain - a.xPtsGain)
+      .map((s) => s.buy)
+    const first = buys[0]
+    const second = buys.find((b) => b.id !== first?.id)
+    return [first, second] as const
+  }, [ocsSuggestions])
 
   // Phase 65 WHY-02 (D-11..D-14): top-3 high-ownership players absent from OCS suggestions.
   // Filter: selected_by_percent > 20 (parseFloat per Pitfall 2) AND id not in suggestedBuyIds.
@@ -386,80 +398,86 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
 
       {/* Squad and suggestions (only when data is loaded) */}
       {squadData && scoredPlayers.length > 0 && (
-        <>
-          {/* Squad display */}
-          <div className="rounded border border-line p-4">
-            <h2 className="text-base font-semibold text-ink mb-3">Your Squad</h2>
+        <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+          {/* Left pane: your squad + captaincy */}
+          <div className="space-y-4">
+            {/* Squad display */}
+            <div className="rounded border border-line p-4">
+              <h2 className="text-base font-semibold text-ink mb-3">Your Squad</h2>
 
-            <SquadView
-              picks={squadData.picks}
-              allPlayers={scoredPlayers}
-              entryHistory={effectiveEntryHistory ?? squadData.entry_history}
-              labels={lifecycleLabels}
-              exactSellPrices={exactSellPrices}
-              isAuthenticated={isAuthenticated}
-              verdicts={verdicts}
-              captaincyCandidates={captaincyCandidates}
-            />
-          </div>
-
-          {/* Captaincy picks */}
-          {captaincyCandidates.length > 0 && (
-            <CaptaincyPanel candidates={captaincyCandidates} nextGw={nextGw} />
-          )}
-
-          {/* Phase 65 WHY-02: callout above OCS section (D-11) — visible only when entries non-empty. */}
-          <HighOwnershipCallout entries={highOwnershipAbsent} />
-
-          {/* OCS section */}
-          <div className="rounded border border-line p-4 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-base font-semibold text-ink">
-                Transfer Opportunity Cost
-              </h2>
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Phase 74 D-03: OCS header toggle removed — engine uses derivedFtCount directly */}
-                <GwToggle value={ocsHorizon} onChange={setOcsHorizon} disabled={!!targetGw} />
-                {/* Phase 101 GWT-01: Target GW dropdown (D-01, D-02, D-03) */}
-                <select
-                  aria-label="Target gameweek"
-                  value={targetGw ?? ''}
-                  onChange={e => setTargetGw(e.target.value ? Number(e.target.value) : null)}
-                  className="border border-line rounded-md min-h-[44px] text-sm text-ink bg-surface-1 px-2 py-1"
-                >
-                  <option value="">Target GW</option>
-                  {availableGws.map(gw => (
-                    <option key={gw} value={gw}>GW{gw}</option>
-                  ))}
-                </select>
-              </div>
+              <SquadView
+                picks={squadData.picks}
+                allPlayers={scoredPlayers}
+                entryHistory={effectiveEntryHistory ?? squadData.entry_history}
+                labels={lifecycleLabels}
+                exactSellPrices={exactSellPrices}
+                isAuthenticated={isAuthenticated}
+                verdicts={verdicts}
+                captaincyCandidates={captaincyCandidates}
+              />
             </div>
-            {isAuthenticated && myTeamData && (
-              <p className="text-xs text-ink-muted italic">
-                Detected from your FPL team — override if needed.
-              </p>
+
+            {/* Captaincy picks */}
+            {captaincyCandidates.length > 0 && (
+              <CaptaincyPanel candidates={captaincyCandidates} nextGw={nextGw} />
             )}
-            {/* Phase 101 GWT-01: ranked-by sub-label when GWT mode active (D-05 + UI-SPEC §GWT Active Mode Sub-Label) */}
-            {targetGw !== null && (
-              <p className="text-xs text-ink-muted italic">
-                Ranked by GW{targetGw} xPts
-              </p>
-            )}
-            <OpportunityCostTable
-              rows={ocsRows}
-              horizon={ocsHorizon}
-              targetGw={targetGw ?? undefined}
-              gw={nextGw}
-              allPlayers={scoredPlayers}
-              lifecycleLabels={lifecycleLabels}
-              lineupNewsMap={lineupNewsMap}
-              totalsByPosition={ocsTotalsByPosition}
-              confirmedSigningMap={confirmedSigningMap}
-            />
           </div>
 
-          {/* Phase 74 D-02: legacy section removed */}
-        </>
+          {/* Right pane: high-ownership callout + best moves (OCS) + why-over-Y */}
+          <div className="space-y-4">
+            {/* Phase 65 WHY-02: callout above OCS section (D-11) — visible only when entries non-empty. */}
+            <HighOwnershipCallout entries={highOwnershipAbsent} />
+
+            {/* OCS section */}
+            <div className="rounded border border-line p-4 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-base font-semibold text-ink">
+                  Transfer Opportunity Cost
+                </h2>
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Phase 74 D-03: OCS header toggle removed — engine uses derivedFtCount directly */}
+                  <GwToggle value={ocsHorizon} onChange={setOcsHorizon} disabled={!!targetGw} />
+                  {/* Phase 101 GWT-01: Target GW dropdown (D-01, D-02, D-03) */}
+                  <select
+                    aria-label="Target gameweek"
+                    value={targetGw ?? ''}
+                    onChange={e => setTargetGw(e.target.value ? Number(e.target.value) : null)}
+                    className="border border-line rounded-md min-h-[44px] text-sm text-ink bg-surface-1 px-2 py-1"
+                  >
+                    <option value="">Target GW</option>
+                    {availableGws.map(gw => (
+                      <option key={gw} value={gw}>GW{gw}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {isAuthenticated && myTeamData && (
+                <p className="text-xs text-ink-muted italic">
+                  Detected from your FPL team — override if needed.
+                </p>
+              )}
+              {/* Phase 101 GWT-01: ranked-by sub-label when GWT mode active (D-05 + UI-SPEC §GWT Active Mode Sub-Label) */}
+              {targetGw !== null && (
+                <p className="text-xs text-ink-muted italic">
+                  Ranked by GW{targetGw} xPts
+                </p>
+              )}
+              <OpportunityCostTable
+                rows={ocsRows}
+                horizon={ocsHorizon}
+                targetGw={targetGw ?? undefined}
+                gw={nextGw}
+                allPlayers={scoredPlayers}
+                lifecycleLabels={lifecycleLabels}
+                lineupNewsMap={lineupNewsMap}
+                totalsByPosition={ocsTotalsByPosition}
+                confirmedSigningMap={confirmedSigningMap}
+              />
+            </div>
+
+            {whyX && whyY && <WhyOverCard x={whyX} y={whyY} />}
+          </div>
+        </div>
       )}
     </div>
   )
