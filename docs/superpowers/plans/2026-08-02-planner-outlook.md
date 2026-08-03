@@ -11,14 +11,95 @@
 ## Global Constraints
 
 - **Keep-all-features (UIX-01):** the existing generator (Generate button, `ChipStrategyPanel`, `TransferPlanTable` with chip toggles + manual overrides + restore, the chips `<details>`) all survive unchanged.
-- Reuse: `FixtureHeatMap` (self-contained), `MergedPlayer.gw_xpts` (per-GW xPts), `getTeamColour`. No plan-engine change.
-- `gw_xpts[i]` aligns with plan step index `i` (step 0 = the next GW, matching `gw_xpts[0]`). Guard `gw_xpts?.[i] ?? 0`.
-- No `Co-Authored-By` trailers. Do NOT use `git stash` for verification — run `npx vitest` directly.
-- Tests: `npx vitest run <path>`. Work on branch `redesign/planner-outlook`.
+- Reuse: `FixtureHeatMap` (self-contained), `getTeamColour`. No plan-engine change (the pipeline change in Task 1 is a xPts-exposure add, not an engine change).
+- **`MergedPlayer.gw_xpts` does NOT exist yet** — Task 1 adds it (per-GW xPts via merge.py's existing `_xpts_per_gw`). Downstream, `gw_xpts[i]` aligns with plan step index `i` (step 0 = the next GW, matching `gw_xpts[0]`). Guard `gw_xpts?.[i] ?? 0`.
+- No `Co-Authored-By` trailers. Do NOT use `git stash` for verification — run `npx vitest`/`pytest` directly.
+- JS tests: `npx vitest run <path>`. Python tests: `cd pipeline && PYTHONIOENCODING=utf-8 python -m pytest <path>`. Work on branch `redesign/planner-outlook`.
 
 ---
 
-### Task 1: `bestCaptainPerGw` helper
+### Task 1: Attach per-GW xPts (`gw_xpts`) to merged players [pipeline]
+
+**Files:**
+- Modify: `pipeline/merge.py` (call `_xpts_per_gw`, attach `player['gw_xpts']`, after the `xPts_5gw` assignment ~line 1570)
+- Modify: `src/lib/types.ts` (add `gw_xpts?: number[]` to `MergedPlayer`)
+- Test: `pipeline/tests/test_merge.py` (append a gw_xpts test)
+
+**Interfaces:**
+- Consumes: `_xpts_per_gw(xg_per90, xa_per90, start_prob, xmins, element_type, fixtures, n_gws, ...) -> list[float]` (merge.py:521; per-GW xPts, DGW-combined; length ≤ n_gws).
+- Produces: `player['gw_xpts']: list[float]` (per-GW xPts, next 5 GWs); `MergedPlayer.gw_xpts?: number[]`.
+
+- [ ] **Step 1: Write the failing test**
+
+Append to `pipeline/tests/test_merge.py` (reuse the existing `_build_minimal_inputs` + `_hist` helpers; players get fixtures over the finished+5 GWs):
+
+```python
+def test_merge_writes_gw_xpts_per_gw():
+    """GWI-04: each merged player gets a gw_xpts list — per-GW xPts, len <= 5."""
+    history = [_hist(gw, 90, 6, xg=0.4, xa=0.2) for gw in range(1, 11)]
+    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_minimal_inputs({1: history})
+    merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                              xmins_stats=xmins_stats, summaries=summaries)
+    p = next(pl for pl in merged if pl['id'] == 1)
+    assert 'gw_xpts' in p
+    assert isinstance(p['gw_xpts'], list)
+    assert 0 < len(p['gw_xpts']) <= 5
+    assert all(isinstance(x, (int, float)) for x in p['gw_xpts'])
+    assert p['gw_xpts'][0] > 0
+```
+
+- [ ] **Step 2: Run to verify fail**
+
+Run: `cd pipeline && PYTHONIOENCODING=utf-8 python -m pytest tests/test_merge.py::test_merge_writes_gw_xpts_per_gw -v`
+Expected: FAIL — `'gw_xpts' not in p`.
+
+- [ ] **Step 3: Attach gw_xpts in merge.py**
+
+In `pipeline/merge.py`, immediately after `player['xPts_5gw'] = xpts_5gw` (~line 1570), add a call to `_xpts_per_gw` mirroring the `_xpts_ngw` per-player variables and attach the rounded result:
+
+```python
+        gw_xpts = _xpts_per_gw(
+            xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
+            element['element_type'], player_fixtures, 5,
+            xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
+            bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
+            save_predictor_enabled=save_predictor_enabled,
+            cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,
+            sub_appear_prob=player_sub_appear_prob,
+            cs_team_form_slope=cs_team_form_slope,
+            atf_slope=atf_slope, fas_slope=fas_slope,
+            defcon_rate=player_defcon_rate, defcon_scale=defcon_scale,
+        )
+        player['gw_xpts'] = [round(x, 4) for x in gw_xpts]
+```
+
+`_xpts_per_gw` has NO `odds_lookup`/`team_id` params — do not pass them; the per-GW breakdown omits the ODDS-01 blend, which is acceptable for the captain-plan use. Confirm the per-player variable names against the adjacent `_xpts_ngw` calls (`player_start_prob`, `player_xmins`, `player_fixtures`, `player_mins_60_prob`, `player_bonus_ev`, `player_sub_appear_prob`, `player_defcon_rate`) before editing; if any differ, STOP and report.
+
+- [ ] **Step 4: Add the type field**
+
+In `src/lib/types.ts`, inside the `MergedPlayer` interface (near `xPts_5gw?`), add:
+
+```ts
+  gw_xpts?: number[]          // per-GW xPts, next 5 GWs (DGW-combined). GWI-04 helper; absent pre-merge.
+```
+
+- [ ] **Step 5: Run tests + tsc**
+
+Run: `cd pipeline && PYTHONIOENCODING=utf-8 python -m pytest tests/test_merge.py -q` → PASS (new + existing merge tests).
+Run: `npx tsc --noEmit` → 0 errors.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add pipeline/merge.py src/lib/types.ts pipeline/tests/test_merge.py
+git commit -m "feat(pipeline): expose per-GW xPts (gw_xpts) on merged players"
+```
+
+Note: production `merged_players.json` gains `gw_xpts` on the next pipeline run; the frontend guards on absence (`gw_xpts?.[i] ?? 0`), so nothing breaks before then.
+
+---
+
+### Task 2: `bestCaptainPerGw` helper
 
 **Files:**
 - Create: `src/lib/captain-plan.ts`
@@ -157,14 +238,14 @@ git commit -m "feat(planner): bestCaptainPerGw helper (per-GW best captain from 
 
 ---
 
-### Task 2: `CaptainPlanStrip` component
+### Task 3: `CaptainPlanStrip` component
 
 **Files:**
 - Create: `src/components/planner/CaptainPlanStrip.tsx`
 - Test: `src/components/planner/CaptainPlanStrip.test.tsx`
 
 **Interfaces:**
-- Consumes: `bestCaptainPerGw` (Task 1), `getTeamColour` (`@/lib/team-colours`), `MergedPlayer`/`PlanStep`.
+- Consumes: `bestCaptainPerGw` (Task 2), `getTeamColour` (`@/lib/team-colours`), `MergedPlayer`/`PlanStep`.
 - Produces: `CaptainPlanStrip({ steps, playerMap })`. Renders `null` when `bestCaptainPerGw` returns `[]`.
 
 - [ ] **Step 1: Write the failing test**
@@ -277,13 +358,13 @@ git commit -m "feat(planner): CaptainPlanStrip per-GW captain cards"
 
 ---
 
-### Task 3: Wire into `PlannerTab` (fixture outlook + captain strip)
+### Task 4: Wire into `PlannerTab` (fixture outlook + captain strip)
 
 **Files:**
 - Modify: `src/components/planner/PlannerTab.tsx`
 
 **Interfaces:**
-- Consumes: `FixtureHeatMap` (`@/components/club-form/FixtureHeatMap`, props `{ submittedId?: string | null }`), `CaptainPlanStrip` (Task 2). `PlannerTab` has local `teamId: string | null`, `scoredPlayers: ScoredPlayer[]`, `planResult: PlanResult | null` with `planResult.steps: PlanStep[]`.
+- Consumes: `FixtureHeatMap` (`@/components/club-form/FixtureHeatMap`, props `{ submittedId?: string | null }`), `CaptainPlanStrip` (Task 3). `PlannerTab` has local `teamId: string | null`, `scoredPlayers: ScoredPlayer[]`, `planResult: PlanResult | null` with `planResult.steps: PlanStep[]`.
 
 - [ ] **Step 1: Add imports**
 

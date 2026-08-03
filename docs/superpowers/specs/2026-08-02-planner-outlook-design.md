@@ -18,9 +18,13 @@ per-step chip toggles, manual overrides via `PlayerPickerModal`, `ChipStrategyPa
 new captain-plan strip — around the existing generator, which serves as the "transfer
 route". No engine changes; nothing removed.
 
-Data feasibility confirmed: `MergedPlayer.gw_xpts: number[]` (types.ts:949, written by
-merge.py `_xpts_per_gw`) gives precise per-GW xPts, so a real best-captain-per-GW is
-buildable.
+Data source (corrected 2026-08-03): per-GW xPts is NOT currently on `MergedPlayer` —
+`gw_xpts` at types.ts:949 belongs to `FixtureRunCard`, and `merge.py::merge_players`
+never attaches a per-GW array to the player (the `gw_xpts` at merge.py:521 `_xpts_per_gw`
+helper exists but is only consumed by gw_intel). Per the owner's decision, a
+prerequisite pipeline task adds real per-GW xPts to the player (`player['gw_xpts']` via
+`_xpts_per_gw`, + `MergedPlayer.gw_xpts?: number[]`), so the captain strip uses genuine
+per-GW projections. See the plan's Task 1.
 
 ## Design
 
