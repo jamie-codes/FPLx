@@ -158,6 +158,7 @@ export interface MergedPlayer {
   xPts_1gw?: number           // expected pts next 1 GW (Poisson goals/assists, Bernoulli CS, flat bonus)
   xPts_3gw?: number           // expected pts next 3 GWs (DGW-aware sum)
   xPts_5gw?: number           // expected pts next 5 GWs (DGW-aware sum)
+  gw_xpts?: number[]          // per-GW xPts, next 5 GWs (DGW-combined). GWI-04 helper; absent pre-merge.
   xPts_ceiling_1gw?: boolean  // true = top-tercile sigma in 1 GW window (high-ceiling)
   xPts_ceiling_3gw?: boolean  // true = top-tercile sigma in 3 GW window
   xPts_ceiling_5gw?: boolean  // true = top-tercile sigma in 5 GW window

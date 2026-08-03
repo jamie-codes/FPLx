@@ -685,3 +685,17 @@ class TestCold01PriorBlend:
         expected_xa = round(prior_total * (1 - share), 4)
         assert abs(p['xg_per90'] - expected_xg) < 1e-4
         assert abs(p['xa_per90'] - expected_xa) < 1e-4
+
+
+def test_merge_writes_gw_xpts_per_gw():
+    """GWI-04: each merged player gets a gw_xpts list — per-GW xPts, len <= 5."""
+    history = [_hist(gw, 90, 6, xg=0.4, xa=0.2) for gw in range(1, 11)]
+    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_minimal_inputs({1: history})
+    merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                              xmins_stats=xmins_stats, summaries=summaries)
+    p = next(pl for pl in merged if pl['id'] == 1)
+    assert 'gw_xpts' in p
+    assert isinstance(p['gw_xpts'], list)
+    assert 0 < len(p['gw_xpts']) <= 5
+    assert all(isinstance(x, (int, float)) for x in p['gw_xpts'])
+    assert p['gw_xpts'][0] > 0
