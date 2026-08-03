@@ -32,9 +32,9 @@ export function bestCaptainPerGw(
       let xpts: number
       if (playedGws.length === 0) {
         // No fixtures to align by value (e.g. data not wired up) — fall back
-        // to position indexing. Harmless in practice: when fixtures is empty,
-        // gw_xpts is empty too (both come from the same per-player fixture
-        // grouping), so this resolves to 0 either way.
+        // to position indexing. Harmless in practice: with no fixtures the
+        // pipeline emits gw_xpts as all-zeros ([0.0]*n_gws), so any index
+        // resolves to 0 regardless of position.
         xpts = p.gw_xpts?.[i] ?? 0
       } else {
         const k = playedGws.indexOf(step.gw)
