@@ -4,6 +4,8 @@ import { useState, useMemo } from 'react'
 import { useImmer } from 'use-immer'
 import { TransferPlanTable } from './TransferPlanTable'
 import { ChipStrategyPanel } from './ChipStrategyPanel'
+import { FixtureHeatMap } from '@/components/club-form/FixtureHeatMap'
+import { CaptainPlanStrip } from './CaptainPlanStrip'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useSquad } from '@/lib/hooks/useSquad'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
@@ -70,6 +72,12 @@ export function PlannerTab({ horizon }: PlannerTabProps) {
     const banked: 0 | 1 = available === 2 ? 1 : 0
     return { available, banked }
   }, [isAuthenticated, myTeamData, squadData])
+
+  // Render-time player lookup for CaptainPlanStrip (handlers build their own locally).
+  const playerMapForStrip = useMemo(
+    () => new Map(scoredPlayers.map((p) => [p.id, p])),
+    [scoredPlayers],
+  )
 
   // Button enabled when squad picks and player scores are both loaded
   const canGenerate =
@@ -327,6 +335,9 @@ export function PlannerTab({ horizon }: PlannerTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Redesign §4: fixture outlook (self-contained; owned rows highlighted via teamId) */}
+      <FixtureHeatMap submittedId={teamId} />
+
       <ChipStrategyPanel
         teamId={teamId}
         scoredPlayers={scoredPlayers}
@@ -360,13 +371,17 @@ export function PlannerTab({ horizon }: PlannerTabProps) {
       </details>
 
       {planResult && (
-        <TransferPlanTable
-          planResult={planResult}
-          scoredPlayers={scoredPlayers}
-          onChipToggle={handleChipToggle}
-          onManualEdit={handleManualEdit}
-          onRestoreSuggested={handleRestoreSuggested}
-        />
+        <>
+          {/* Redesign §4: per-GW captain plan along the generated route */}
+          <CaptainPlanStrip steps={planResult.steps} playerMap={playerMapForStrip} />
+          <TransferPlanTable
+            planResult={planResult}
+            scoredPlayers={scoredPlayers}
+            onChipToggle={handleChipToggle}
+            onManualEdit={handleManualEdit}
+            onRestoreSuggested={handleRestoreSuggested}
+          />
+        </>
       )}
     </div>
   )

@@ -1568,6 +1568,19 @@ def merge_players(
         player['xPts_1gw'] = xpts_1gw
         player['xPts_3gw'] = xpts_3gw
         player['xPts_5gw'] = xpts_5gw
+        gw_xpts = _xpts_per_gw(
+            xpts_xg_per90, xpts_xa_per90, player_start_prob, player_xmins,
+            element['element_type'], player_fixtures, 5,
+            xmins_v2_enabled=xmins_v2_enabled, mins_60_prob=player_mins_60_prob,
+            bonus_predictor_enabled=bonus_predictor_enabled, bonus_ev=player_bonus_ev,
+            save_predictor_enabled=save_predictor_enabled,
+            cs_prob_base=cs_prob_base, cs_prob_slope=cs_prob_slope,
+            sub_appear_prob=player_sub_appear_prob,
+            cs_team_form_slope=cs_team_form_slope,
+            atf_slope=atf_slope, fas_slope=fas_slope,
+            defcon_rate=player_defcon_rate, defcon_scale=defcon_scale,
+        )
+        player['gw_xpts'] = [round(x, 4) for x in gw_xpts]
         player['xPts_components_1gw'] = xpts_components_1gw  # may be None for BGW
         # Phase 47 CS-01/CS-02 (D-08/D-10): expose cs_prob_1gw alongside xPts_1gw.
         # BGW players: 0.0 (no fixture). DGW players: combined 1-(1-p1)*(1-p2).
