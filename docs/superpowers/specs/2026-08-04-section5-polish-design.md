@@ -49,8 +49,10 @@ Add to both theme blocks (light `:root`, dark `.dark`) and the `@theme inline` m
 Deadline-card *text* uses the existing `text-accent` (volt in dark, pitch-green in light — both
 pass 4.5:1 on their card bg). No new text token needed.
 
-After the swap, run `node scripts/contrast-check.mjs` — on-volt `#0c0e0d` on volt `#c8f542` is a
-high-contrast pair and passes. The existing 30 gates must stay green.
+Contrast: on-volt `#0c0e0d` on volt `#c8f542` is ~16:1 (near-black on bright volt), far above 4.5.
+Note `scripts/contrast-check.mjs` is a stale throwaway — it hardcodes the pre-redesign Slate-Pro
+blue primitives, not the current tokens — so it is **not** the gate here; verify the pair with a
+direct WCAG computation instead (the plan includes a self-contained one-liner).
 
 ### 2. `Brand` component (`src/components/shell/Brand.tsx`, new)
 
@@ -87,8 +89,8 @@ untouched.
 - `ms >= 1 day`: `"{d}d {hh}:{mm}:{ss}"` when `showSeconds`, else `"{d}d {hh}:{mm}"`.
 - `ms < 1 day`: `"{hh}:{mm}:{ss}"` when `showSeconds`, else `"{hh}:{mm}"`.
 - `hh`/`mm`/`ss` zero-padded to 2 digits; days not padded.
-- `ms <= 0` → `"0d 00:00:00"` / `"0d 00:00"` (component render-gates on `ms > 0`, so this is a
-  defensive floor, never shown).
+- `ms <= 0` → floored to 0; since 0 is sub-day the day part is dropped → `"00:00:00"` / `"00:00"`
+  (components render-gate on `ms > 0`, so this defensive floor is never actually shown).
 
 **4b. `useDeadlineCountdown(): { id: number; ms: number } | null`** — hook, new file
 `src/lib/hooks/useDeadlineCountdown.ts`.
