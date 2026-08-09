@@ -58,6 +58,14 @@ vi.mock('@/lib/hooks/useSettledGws', () => ({
 vi.mock('@/components/DeadlineBanner', () => ({
   DeadlineBanner: () => null,
 }))
+// §5 Task 6: SidebarDeadlineCard + MobileDeadlinePill both call
+// useDeadlineCountdown -> useNextDeadline -> useQuery, which needs a
+// QueryClientProvider this page-level test doesn't set up. Mock the hook
+// (same pattern as shell.test.tsx) so both render null here; their own
+// behavior is covered by SidebarDeadlineCard.test.tsx / MobileDeadlinePill.test.tsx.
+vi.mock('@/lib/hooks/useDeadlineCountdown', () => ({
+  useDeadlineCountdown: () => null,
+}))
 vi.mock('@/components/squad/GwReviewTab', () => ({
   GwReviewTab: (props: { teamId: string; settledGws: number[] }) => (
     <div data-testid="gw-review-tab-mock" data-settled={JSON.stringify(props.settledGws)} />

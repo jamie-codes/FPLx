@@ -5,6 +5,13 @@
 // is a proper modal (escape, focus trap, focus return, scroll lock).
 import { describe, it, expect, vi } from 'vitest'
 import { render, fireEvent } from '@testing-library/react'
+
+// Sidebar now mounts SidebarDeadlineCard (§5 Task 6), which calls
+// useDeadlineCountdown -> useNextDeadline -> useQuery. Mock it so these
+// shell-shape tests don't need a QueryClientProvider; card behavior itself
+// is covered by SidebarDeadlineCard.test.tsx.
+vi.mock('@/lib/hooks/useDeadlineCountdown', () => ({ useDeadlineCountdown: () => null }))
+
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 import { MobileBar } from './MobileBar'

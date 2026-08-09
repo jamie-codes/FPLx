@@ -5,6 +5,7 @@
 // work; plain click is intercepted for the SPA select (UIX-01 audit).
 import { GROUPS, type ToolId } from '@/lib/navigation'
 import { Brand } from './Brand'
+import { SidebarDeadlineCard } from './SidebarDeadlineCard'
 
 export function Sidebar({ active, onSelect }: {
   active: ToolId
@@ -45,6 +46,7 @@ export function Sidebar({ active, onSelect }: {
           </div>
         ))}
       </nav>
+      <SidebarDeadlineCard />
     </aside>
   )
 }
