@@ -115,8 +115,8 @@ describe('MobileBar', () => {
     expect(moreBtn.getAttribute('aria-haspopup')).toBe('dialog')
     expect(moreBtn.getAttribute('aria-expanded')).toBe('false')
     expect(moreBtn.getAttribute('aria-current')).toBeNull()
-    // still visually highlighted when a Planning/Model tool is active
-    expect(moreBtn.className).toContain('text-ink')
+    // highlighted with volt pill when a Planning/Model tool is active
+    expect(moreBtn.querySelector('.bg-volt.text-on-volt')).not.toBeNull()
     rerender(<MobileBar active="wildcard" onSelect={() => {}} onMore={() => {}} moreOpen />)
     expect(moreBtn.getAttribute('aria-expanded')).toBe('true')
   })
