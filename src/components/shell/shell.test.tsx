@@ -116,9 +116,20 @@ describe('MobileBar', () => {
     expect(moreBtn.getAttribute('aria-expanded')).toBe('false')
     expect(moreBtn.getAttribute('aria-current')).toBeNull()
     // still visually highlighted when a Planning/Model tool is active
-    expect(moreBtn.className).toContain('text-accent')
+    expect(moreBtn.className).toContain('text-ink')
     rerender(<MobileBar active="wildcard" onSelect={() => {}} onMore={() => {}} moreOpen />)
     expect(moreBtn.getAttribute('aria-expanded')).toBe('true')
+  })
+
+  it('MobileBar wraps the active tab icon in a volt fill pill', () => {
+    const { container } = render(
+      <MobileBar active="cockpit" onSelect={() => {}} onMore={() => {}} />,
+    )
+    // The active group's icon sits inside a bg-volt/text-on-volt pill.
+    const pill = container.querySelector('.bg-volt.text-on-volt')
+    expect(pill).not.toBeNull()
+    // Exactly one active pill is rendered.
+    expect(container.querySelectorAll('.bg-volt').length).toBe(1)
   })
 })
 

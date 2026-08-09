@@ -20,6 +20,10 @@ const SHEET_GROUP_IDS = ['planning', 'model']
 const BTN_CLS =
   'flex-1 min-h-[48px] flex flex-col items-center justify-center gap-0.5 text-data font-medium transition-colors duration-150 ease-out'
 
+// §5: active tab = icon in a volt fill pill (fill + dark ink, both themes),
+// label below in ink. Inactive = muted, no pill. Keeps the icon+label shape.
+const ICON_PILL = 'rounded-lg p-1 transition-colors duration-150 ease-out'
+
 export function MobileBar({ active, onSelect, onMore, moreOpen = false }: {
   active: ToolId
   onSelect: (t: ToolId) => void
@@ -44,8 +48,10 @@ export function MobileBar({ active, onSelect, onMore, moreOpen = false }: {
               onSelect(group.tools[0].id)
             }}
             aria-current={isActive ? 'page' : undefined}
-            className={`${BTN_CLS} ${isActive ? 'text-accent' : 'text-ink-muted'}`}>
-            <group.icon size={20} strokeWidth={2} aria-hidden />
+            className={`${BTN_CLS} ${isActive ? 'text-ink' : 'text-ink-muted'}`}>
+            <span className={`${ICON_PILL} ${isActive ? 'bg-volt text-on-volt' : ''}`}>
+              <group.icon size={20} strokeWidth={2} aria-hidden />
+            </span>
             {label}
           </a>
         )
@@ -55,8 +61,10 @@ export function MobileBar({ active, onSelect, onMore, moreOpen = false }: {
         onClick={onMore}
         aria-haspopup="dialog"
         aria-expanded={moreOpen}
-        className={`${BTN_CLS} ${moreActive ? 'text-accent' : 'text-ink-muted'}`}>
-        <Ellipsis size={20} strokeWidth={2} aria-hidden />
+        className={`${BTN_CLS} ${moreActive ? 'text-ink' : 'text-ink-muted'}`}>
+        <span className={`${ICON_PILL} ${moreActive ? 'bg-volt text-on-volt' : ''}`}>
+          <Ellipsis size={20} strokeWidth={2} aria-hidden />
+        </span>
         More
       </button>
     </nav>
