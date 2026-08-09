@@ -25,6 +25,7 @@ import { useSeasonAnalytics } from '@/lib/hooks/useSeasonAnalytics'
 import { computeSeasonSummary, computeTransferSeasonSummary } from '@/lib/regret'
 import type { ChipRoiEntry, HitTrackingEntry, RegretEntry, TransferRegretEntry } from '@/lib/types'
 import { SegmentedToggle } from '@/components/ui/SegmentedToggle'
+import { CHART_TICK } from '@/lib/chart-theme'
 
 // Locked table-chrome classes — duplicated from AccuracyTab.tsx lines 101–104
 // (PATTERNS.md §BackTab.tsx requires local copies, not re-exports). Tokenized UIX-05.
@@ -334,13 +335,13 @@ function RegretChart({ entries }: { entries: RegretEntry[] }) {
             type="number"
             domain={['dataMin', 'dataMax']}
             tickFormatter={(v: number) => `GW${v}`}
-            tick={{ fontSize: 12, fill: 'currentColor' }}
+            tick={CHART_TICK}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
             tickFormatter={(v: number) => (v >= 0 ? `+${v}` : `${v}`)}
-            tick={{ fontSize: 12, fill: 'currentColor' }}
+            tick={CHART_TICK}
             axisLine={false}
             tickLine={false}
             width={40}
@@ -400,13 +401,13 @@ function TransferRegretChart({ entries }: { entries: TransferRegretEntry[] }) {
             type="number"
             domain={['dataMin', 'dataMax']}
             tickFormatter={(v: number) => `GW${v}`}
-            tick={{ fontSize: 12, fill: 'currentColor' }}
+            tick={CHART_TICK}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
             tickFormatter={(v: number) => (v >= 0 ? `+${v}` : `${v}`)}
-            tick={{ fontSize: 12, fill: 'currentColor' }}
+            tick={CHART_TICK}
             axisLine={false}
             tickLine={false}
             width={40}

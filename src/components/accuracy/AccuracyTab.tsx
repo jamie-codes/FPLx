@@ -3,6 +3,7 @@
 import { Fragment, useMemo, useState } from 'react'
 import { useAccuracy } from '@/lib/hooks/useAccuracy'
 import { useDataHealth } from '@/lib/hooks/useDataHealth'
+import { CHART_GRID_STROKE, CHART_GRID_DASH, CHART_TICK } from '@/lib/chart-theme'
 import type {
   AccuracyBacktest,
   AccuracyHaulter,
@@ -407,14 +408,14 @@ function CalibrationSection({ data }: { data: AccuracyBacktest }) {
       >
         <ResponsiveContainer width="100%" height={288}>
           <ComposedChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--color-ink-muted) 30%, transparent)" />
+            <CartesianGrid strokeDasharray={CHART_GRID_DASH} stroke={CHART_GRID_STROKE} />
             <XAxis
               type="number"
               dataKey="bucket_mid"
               domain={[0, 1]}
               ticks={[0, 0.2, 0.4, 0.6, 0.8, 1.0]}
               tickFormatter={(v: number) => `${Math.round(v * 100)}%`}
-              tick={{ fontSize: 12, fill: 'currentColor' }}
+              tick={CHART_TICK}
               axisLine={false}
               tickLine={false}
             />
@@ -423,7 +424,7 @@ function CalibrationSection({ data }: { data: AccuracyBacktest }) {
               domain={[0, 1]}
               ticks={[0, 0.2, 0.4, 0.6, 0.8, 1.0]}
               tickFormatter={(v: number) => `${Math.round(v * 100)}%`}
-              tick={{ fontSize: 12, fill: 'currentColor' }}
+              tick={CHART_TICK}
               axisLine={false}
               tickLine={false}
               width={40}
@@ -499,19 +500,19 @@ function CalibrationSection({ data }: { data: AccuracyBacktest }) {
         >
           <ResponsiveContainer width="100%" height={288}>
             <ComposedChart data={xptsData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--color-ink-muted) 30%, transparent)" />
+              <CartesianGrid strokeDasharray={CHART_GRID_DASH} stroke={CHART_GRID_STROKE} />
               <XAxis
                 type="number"
                 dataKey="predicted_mean"
                 tickFormatter={(v: number) => v.toFixed(1)}
-                tick={{ fontSize: 12, fill: 'currentColor' }}
+                tick={CHART_TICK}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
                 type="number"
                 tickFormatter={(v: number) => v.toFixed(1)}
-                tick={{ fontSize: 12, fill: 'currentColor' }}
+                tick={CHART_TICK}
                 axisLine={false}
                 tickLine={false}
                 width={40}
