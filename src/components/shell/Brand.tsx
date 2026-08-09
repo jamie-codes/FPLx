@@ -4,7 +4,7 @@
 // defined in globals.css; only these two logo usages drop it.
 export function Brand({ className }: { className?: string }) {
   return (
-    <span className={`inline-flex items-center gap-2 leading-none ${className ?? ''}`}>
+    <span className={`inline-flex items-center gap-2 leading-none ${className ?? ''}`.trim()}>
       <span className="bg-volt text-on-volt rounded-md px-1.5 py-1 text-body font-bold leading-none">
         Fx
       </span>
