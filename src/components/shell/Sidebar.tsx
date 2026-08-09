@@ -4,6 +4,7 @@
 // Items are real links (?t=<id>) so middle-click/ctrl-click/open-in-new-tab
 // work; plain click is intercepted for the SPA select (UIX-01 audit).
 import { GROUPS, type ToolId } from '@/lib/navigation'
+import { Brand } from './Brand'
 
 export function Sidebar({ active, onSelect }: {
   active: ToolId
@@ -12,9 +13,7 @@ export function Sidebar({ active, onSelect }: {
   return (
     <aside className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-[var(--sidebar-w)] flex-col bg-surface-1 border-r border-line">
       <div className="px-4 pt-4 pb-2 shrink-0">
-        <span className="font-[family-name:var(--font-honk)] text-display text-ink leading-none">
-          FPLx
-        </span>
+        <Brand />
       </div>
       <nav aria-label="Primary navigation" className="flex-1 overflow-y-auto pb-4">
         {GROUPS.map((group) => (
