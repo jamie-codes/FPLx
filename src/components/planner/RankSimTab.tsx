@@ -29,6 +29,7 @@ import {
   type ChartPoint,
 } from '@/lib/rank-sim'
 import type { MergedPlayer } from '@/lib/types'
+import { CHART_GRID_STROKE, CHART_GRID_DASH, CHART_TICK } from '@/lib/chart-theme'
 
 // ---------------------------------------------------------------------------
 // Props
@@ -274,9 +275,9 @@ export function RankSimTab({ submittedId }: RankSimTabProps) {
         <ResponsiveContainer width="100%" height={256}>
           <ComposedChart data={chartData}>
             {/* UIX-04 ruling 5: grid/band strokes built on the muted ink token (theme-aware) */}
-            <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--color-ink-muted) 30%, transparent)" />
-            <XAxis dataKey="gw" tick={{ fontSize: 12, fill: 'currentColor' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 12, fill: 'currentColor' }} axisLine={false} tickLine={false} width={32} />
+            <CartesianGrid strokeDasharray={CHART_GRID_DASH} stroke={CHART_GRID_STROKE} />
+            <XAxis dataKey="gw" tick={CHART_TICK} axisLine={false} tickLine={false} />
+            <YAxis tick={CHART_TICK} axisLine={false} tickLine={false} width={32} />
             <Tooltip content={CustomTooltip} />
             {/* Confidence band — current XI only. Pitfall 1: ComposedChart not AreaChart. */}
             {/* Pitfall 6: hide={true} not tooltipType="none" (v2-only prop). */}

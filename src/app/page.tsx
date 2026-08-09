@@ -13,6 +13,7 @@ import { BellNotificationButton } from '@/components/push/BellNotificationButton
 import { useWatchlist } from '@/lib/hooks/useWatchlist'
 import { useSettledGws } from '@/lib/hooks/useSettledGws'
 import { DeadlineBanner } from '@/components/DeadlineBanner'
+import { MobileDeadlinePill } from '@/components/shell/MobileDeadlinePill'
 import { ALL_TOOL_IDS, groupOf, type ToolId } from '@/lib/navigation'
 import { Sidebar } from '@/components/shell/Sidebar'
 import { TopBar } from '@/components/shell/TopBar'
@@ -172,6 +173,7 @@ export default function Home() {
         {/* Top bar — the right-cluster slot hosts the page's EXISTING chrome,
             relocated unchanged (UIX-01: moved, not recreated). */}
         <TopBar>
+          <MobileDeadlinePill />
           <DeadlineBanner />
           <LastUpdated />
           <BellNotificationButton />

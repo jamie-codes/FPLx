@@ -24,6 +24,11 @@
   /* violet intent (Chip violet / VarianceBadge ceiling / xA route pill). */
   --sp-violet: #7c3aed; --sp-violet-soft: rgba(124, 58, 237, 0.10);
   --sp-focus-ring: rgba(63, 109, 29, 0.4);
+  /* §5: fill-only volt — logo badge + mobile active tab. Volt fails as TEXT on
+     white, so it is used only as a FILL with dark ink, identical in both themes. */
+  --sp-volt: #c8f542; --sp-on-volt: #0c0e0d;
+  /* §5: deadline-card surfaces (text uses the theme-adaptive --sp-accent). */
+  --sp-deadline-bg: #eef4e6; --sp-deadline-border: #e2e7de;
 }
 .dark {
   --sp-surface-0: #0c0e0d; --sp-surface-1: #101311; --sp-surface-2: #12160f;
@@ -38,6 +43,8 @@
   /* volt-family chips/ceiling → violet stays for chip/ceiling/xA semantics. */
   --sp-violet: #b9a3f5; --sp-violet-soft: #191323;
   --sp-focus-ring: rgba(200, 245, 66, 0.45);
+  /* §5: deadline-card surfaces (dark). */
+  --sp-deadline-bg: #12150f; --sp-deadline-border: #2b331f;
 }
 
 :root {
@@ -68,6 +75,9 @@
   --color-warning: var(--sp-warning); --color-warning-soft: var(--sp-warning-soft);
   --color-negative: var(--sp-negative); --color-negative-soft: var(--sp-negative-soft);
   --color-violet: var(--sp-violet); --color-violet-soft: var(--sp-violet-soft);
+  /* §5 fill-only volt + deadline surfaces */
+  --color-volt: var(--sp-volt); --color-on-volt: var(--sp-on-volt);
+  --color-deadline-bg: var(--sp-deadline-bg); --color-deadline-border: var(--sp-deadline-border);
   /* type ramp — 1.2 minor third */
   --text-data: 12.5px; --text-data--line-height: 1.2;
   --text-body: 15px;  --text-body--line-height: 1.45;

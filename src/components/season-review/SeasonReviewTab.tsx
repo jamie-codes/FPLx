@@ -26,6 +26,7 @@ import { useDecisionHistory } from '@/lib/hooks/useDecisionHistory'
 import { computeSeasonSummary } from '@/lib/regret'
 import { computeDecisionGrade, type GradeLabel } from '@/lib/season-review'
 import type { SeasonGwEntry } from '@/lib/types'
+import { CHART_GRID_STROKE, CHART_GRID_DASH, CHART_TICK } from '@/lib/chart-theme'
 
 // ---------------------------------------------------------------------------
 // Module-level constants
@@ -375,18 +376,18 @@ export function SeasonReviewTab({ teamId = null }: { teamId?: string | null }) {
         </div>
         <ResponsiveContainer width="100%" height={288}>
           <ComposedChart data={reviewData.gwData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--color-ink-muted) 30%, transparent)" />
+            <CartesianGrid strokeDasharray={CHART_GRID_DASH} stroke={CHART_GRID_STROKE} />
             <XAxis
               dataKey="gw"
               tickFormatter={(v: number) => `GW${v}`}
-              tick={{ fontSize: 12, fill: 'currentColor' }}
+              tick={CHART_TICK}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
               domain={[0, 'auto']}
               width={40}
-              tick={{ fontSize: 12, fill: 'currentColor' }}
+              tick={CHART_TICK}
               axisLine={false}
               tickLine={false}
             />
