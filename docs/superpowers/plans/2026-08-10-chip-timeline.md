@@ -214,7 +214,7 @@ Then in the returned dict: add `'horizon_start': current_gw,` and `'horizon_end'
 - [ ] **Step 6: Run the tests to verify they pass**
 
 Run: `cd pipeline && python -m pytest test_chip_advisor.py -q`
-Expected: all 14 tests PASS (8 existing + 6 new).
+Expected: all 12 tests PASS (7 existing + 5 new).
 
 - [ ] **Step 7: Commit**
 
@@ -631,7 +631,7 @@ git commit -m "feat(chip-timeline): render window bars in the chip advisor rows"
 
 ## Final Verification (after all tasks)
 
-- [ ] `cd pipeline && python -m pytest test_chip_advisor.py -q` → 14 pass
+- [ ] `cd pipeline && python -m pytest test_chip_advisor.py -q` → 12 pass
 - [ ] `npx tsc --noEmit` → 0 errors
 - [ ] `npx vitest run src/components/cockpit/` → cockpit suite green (incl. ChipTimelineBar + ChipAdviceCard)
 - [ ] `npx vitest run` → full suite green
