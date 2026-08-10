@@ -124,6 +124,22 @@ def test_no_windows_on_flat_calendar():
     assert advice['chips']['free_hit']['windows'] == []
 
 
+def test_no_false_blank_from_truncated_team_horizon():
+    # 15 singles teams have fixtures every GW30..38 (one each) — real horizon to 38.
+    # 5 "doubled-early" teams' fixture lists end at GW34 (e.g. an early confirmed
+    # double consumed list capacity) — nothing scheduled at GW35-38 for them, but
+    # that's list truncation, NOT a real blank: those teams simply aren't in the
+    # scanned range past their own horizon.
+    merged = [_team_with_calendar(t, {g: 1 for g in range(30, 39)}) for t in range(1, 16)]
+    merged += [_team_with_calendar(t, {g: 1 for g in range(30, 35)}) for t in range(16, 21)]
+    advice = build_chip_advice(merged, _ledger(), 30)
+    assert advice['horizon_end'] == 38            # global max still spans to GW38
+    fh = advice['chips']['free_hit']['windows']
+    # The 5 short-horizon teams must NOT be counted as blanks at GW35-38, so no
+    # false Free Hit window should appear in that tail.
+    assert not any(w['start_gw'] >= 35 for w in fh)
+
+
 def test_wildcard_never_gets_windows():
     merged = []
     for t in range(1, 21):

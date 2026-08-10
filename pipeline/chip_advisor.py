@@ -83,17 +83,43 @@ def _merge_runs(qualifying: list) -> list:
     return windows
 
 
+def _team_max_gw(merged: list) -> dict:
+    """Highest event_id scheduled per team (one representative player per team,
+    matching _detect_dgw_bgw's dedup style).
+
+    This is each team's own confirmed horizon: past it, a 0-fixture GW reflects
+    fixture-list truncation (e.g. an early double consumed list capacity), not a
+    real blank.
+    """
+    team_seen: set = set()
+    out: dict = {}
+    for p in merged:
+        tid = p.get('team')
+        if tid is None or tid in team_seen:
+            continue
+        team_seen.add(tid)
+        gws = [f.get('event_id') for f in (p.get('fixtures') or []) if f.get('event_id') is not None]
+        if gws:
+            out[tid] = max(gws)
+    return out
+
+
 def _chip_windows(merged: list, current_gw: int, max_gw: int):
     """Scan current_gw..max_gw for DGW/BGW-driven chip windows.
 
     Returns (bb_windows, tc_windows, fh_windows) as lists of
     {start_gw, end_gw, strength, reason} dicts.
     """
+    team_max_gw = _team_max_gw(merged)
     bb_q, tc_q, fh_q = [], [], []
     for gw in range(current_gw, max_gw + 1):
         kinds = _detect_dgw_bgw(merged, gw)
         n_dgw = sum(1 for k in kinds.values() if k == 'dgw')
-        n_bgw = sum(1 for k in kinds.values() if k == 'bgw')
+        # A team only counts as a real blank if it has a fixture scheduled BEYOND
+        # this GW in its own list — proving this GW is inside its confirmed
+        # horizon. Teams whose list ends at/before `gw` are truncated, not blank.
+        n_bgw = sum(1 for tid, k in kinds.items()
+                    if k == 'bgw' and team_max_gw.get(tid, 0) > gw)
         if n_dgw >= BB_WIN_DGW:
             bb_q.append((gw, 'play' if n_dgw >= BB_WIN_DGW_STRONG else 'consider'))
         if n_dgw >= TC_WIN_DGW:
