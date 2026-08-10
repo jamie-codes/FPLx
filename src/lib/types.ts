@@ -1351,11 +1351,20 @@ export interface TransferAdvice {
 
 export type ChipSignal = 'play' | 'consider' | 'hold' | 'informational'
 
+// Chip-timeline: a recommended GW window for a chip, from confirmed fixture shape.
+export interface ChipWindow {
+  start_gw: number
+  end_gw: number
+  strength: 'play' | 'consider'
+  reason: string
+}
+
 export interface ChipAdviceEntry {
   signal: ChipSignal
   value?: number
   captain?: string | null
   reason: string
+  windows?: ChipWindow[]
 }
 
 export interface ChipAdvice {
@@ -1370,4 +1379,6 @@ export interface ChipAdvice {
     wildcard: ChipAdviceEntry
   }
   note: string
+  horizon_start?: number
+  horizon_end?: number
 }
