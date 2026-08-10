@@ -31,6 +31,16 @@ TC_PLAY = 9.0
 TC_CONSIDER = 7.5
 FH_BGW_TEAMS = 4          # this many blanking teams = Free Hit territory
 
+# Forward-window thresholds (fixture-shape, tuned to the same DGW/BGW basis as
+# the single-GW signals). A GW joins a chip's window when its DGW/BGW team count
+# clears these; 'strong' upgrades the merged window to 'play'.
+BB_WIN_DGW = 4          # DGW teams that make a GW Bench-Boost territory
+BB_WIN_DGW_STRONG = 6
+TC_WIN_DGW = 4          # DGW rounds are Triple-Captain territory
+TC_WIN_DGW_STRONG = 6
+FH_WIN_BGW = 4          # blanking teams that make a GW Free-Hit territory (== FH_BGW_TEAMS)
+FH_WIN_DGW = 8          # a very large double is a softer Free-Hit case
+
 
 def _signal(value, play_at, consider_at):
     if value >= play_at:
@@ -38,6 +48,72 @@ def _signal(value, play_at, consider_at):
     if value >= consider_at:
         return 'consider'
     return 'hold'
+
+
+def _max_scheduled_gw(merged: list, current_gw: int) -> int:
+    """Highest event_id present in any player's fixtures, clamped to >= current_gw.
+
+    This is the honesty horizon: past this GW the calendar isn't scheduled, so a
+    team with zero fixtures there is NOT a real blank and must not create a window.
+    """
+    max_gw = current_gw
+    for p in merged:
+        for f in (p.get('fixtures') or []):
+            eid = f.get('event_id')
+            if eid is not None and eid > max_gw:
+                max_gw = eid
+    return max_gw
+
+
+def _merge_runs(qualifying: list) -> list:
+    """qualifying: sorted list of (gw, strength). Merge contiguous GWs into windows.
+
+    Returns list of (start_gw, end_gw, strength) where strength is the strongest
+    ('play' > 'consider') across the run.
+    """
+    rank = {'consider': 0, 'play': 1}
+    windows = []
+    for gw, strength in qualifying:
+        if windows and gw == windows[-1][1] + 1:
+            s, e, st = windows[-1]
+            best = st if rank[st] >= rank[strength] else strength
+            windows[-1] = (s, gw, best)
+        else:
+            windows.append((gw, gw, strength))
+    return windows
+
+
+def _chip_windows(merged: list, current_gw: int, max_gw: int):
+    """Scan current_gw..max_gw for DGW/BGW-driven chip windows.
+
+    Returns (bb_windows, tc_windows, fh_windows) as lists of
+    {start_gw, end_gw, strength, reason} dicts.
+    """
+    bb_q, tc_q, fh_q = [], [], []
+    for gw in range(current_gw, max_gw + 1):
+        kinds = _detect_dgw_bgw(merged, gw)
+        n_dgw = sum(1 for k in kinds.values() if k == 'dgw')
+        n_bgw = sum(1 for k in kinds.values() if k == 'bgw')
+        if n_dgw >= BB_WIN_DGW:
+            bb_q.append((gw, 'play' if n_dgw >= BB_WIN_DGW_STRONG else 'consider'))
+        if n_dgw >= TC_WIN_DGW:
+            tc_q.append((gw, 'play' if n_dgw >= TC_WIN_DGW_STRONG else 'consider'))
+        if n_bgw >= FH_WIN_BGW:
+            fh_q.append((gw, 'play'))
+        elif n_dgw >= FH_WIN_DGW:
+            fh_q.append((gw, 'consider'))
+
+    def _fmt(runs, kind):
+        out = []
+        for s, e, st in runs:
+            span = f"GW{s}" if s == e else f"GW{s}-{e}"
+            out.append({'start_gw': s, 'end_gw': e, 'strength': st,
+                        'reason': f"{kind} — {span}"})
+        return out
+
+    return (_fmt(_merge_runs(bb_q), 'DGW cluster'),
+            _fmt(_merge_runs(tc_q), 'DGW round'),
+            _fmt(_merge_runs(fh_q), 'blank/large-double'))
 
 
 def build_chip_advice(merged: list, ledger: dict, current_gw: int) -> dict:
@@ -50,6 +126,9 @@ def build_chip_advice(merged: list, ledger: dict, current_gw: int) -> dict:
     dgw_bgw = _detect_dgw_bgw(merged, current_gw)
     dgw_teams = sorted(t for t, k in dgw_bgw.items() if k == 'dgw')
     bgw_teams = sorted(t for t, k in dgw_bgw.items() if k == 'bgw')
+
+    max_gw = _max_scheduled_gw(merged, current_gw)
+    bb_windows, tc_windows, fh_windows = _chip_windows(merged, current_gw, max_gw)
 
     bench = (ledger or {}).get('bench') or []
     xi = (ledger or {}).get('model_xi') or []
@@ -73,6 +152,8 @@ def build_chip_advice(merged: list, ledger: dict, current_gw: int) -> dict:
 
     return {
         'gw': current_gw,
+        'horizon_start': current_gw,
+        'horizon_end': max_gw,
         'generated_at': datetime.now(timezone.utc).isoformat(timespec='seconds'),
         'dgw_team_count': len(dgw_teams),
         'bgw_team_count': len(bgw_teams),
@@ -85,6 +166,7 @@ def build_chip_advice(merged: list, ledger: dict, current_gw: int) -> dict:
                               if dgw_teams else "")
                            + f" (2025/26's best BB weeks predicted 14+; "
                              f"hindsight best benches scored 30-46)."),
+                'windows': bb_windows,
             },
             'triple_captain': {
                 'signal': tc_sig,
@@ -94,11 +176,13 @@ def build_chip_advice(merged: list, ledger: dict, current_gw: int) -> dict:
                            f"{tc_value:.1f} xPts — TC adds one more multiple of "
                            f"that. Elite weeks (9+ predicted) usually mean a "
                            f"premium on a double or a cupcake fixture."),
+                'windows': tc_windows,
             },
             'free_hit': {
                 'signal': fh_sig,
                 'value': round(xi_xpts, 1),
                 'reason': fh_reason,
+                'windows': fh_windows,
             },
             'wildcard': {
                 'signal': 'informational',
@@ -106,6 +190,7 @@ def build_chip_advice(merged: list, ledger: dict, current_gw: int) -> dict:
                            'single-GW — play it when your squad needs 4+ '
                            'changes (see the transfer advisor: repeated '
                            'multi-move recommendations are the tell).'),
+                'windows': [],
             },
         },
         'note': ('Generic advice — the pipeline cannot see which chips you '
