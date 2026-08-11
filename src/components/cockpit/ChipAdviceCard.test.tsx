@@ -13,12 +13,14 @@ const DATA: ChipAdvice = {
   gw: 12, generated_at: '2026-07-03T00:00:00+00:00',
   dgw_team_count: 4, bgw_team_count: 0,
   chips: {
-    bench_boost: { signal: 'play', value: 15.2, reason: 'Predicted bench = 15.2 xPts with 4 DGW teams' },
-    triple_captain: { signal: 'consider', value: 8.1, captain: 'Haaland', reason: 'Top captain projects 8.1' },
-    free_hit: { signal: 'hold', value: 61.0, reason: 'No blank-GW pressure' },
-    wildcard: { signal: 'informational', reason: 'Fixture-swing driven' },
+    bench_boost: { signal: 'play', value: 15.2, reason: 'Predicted bench = 15.2 xPts with 4 DGW teams',
+      windows: [{ start_gw: 34, end_gw: 35, strength: 'play', reason: 'DGW cluster — GW34-35' }] },
+    triple_captain: { signal: 'consider', value: 8.1, captain: 'Haaland', reason: 'Top captain projects 8.1', windows: [] },
+    free_hit: { signal: 'hold', value: 61.0, reason: 'No blank-GW pressure', windows: [] },
+    wildcard: { signal: 'informational', reason: 'Fixture-swing driven', windows: [] },
   },
   note: 'Generic advice',
+  horizon_start: 12, horizon_end: 38,
 }
 
 type HookResult = ReturnType<typeof useChipAdvice>
@@ -49,5 +51,20 @@ describe('ChipAdviceCard', () => {
     mockHook.mockReturnValue(asResult({ data: DATA, isLoading: false, isError: false }))
     render(<ChipAdviceCard />)
     expect(screen.getAllByText(/4 DGW teams/).length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('draws a window segment for a chip that has one', () => {
+    mockHook.mockReturnValue(asResult({ data: DATA, isLoading: false, isError: false }))
+    const { container } = render(<ChipAdviceCard />)
+    const segs = container.querySelectorAll('[data-window]')
+    expect(segs.length).toBe(1)                       // only bench_boost has a window
+    expect(container.textContent).toContain('GW34-35')
+  })
+
+  it('does not render a timeline bar for Wildcard', () => {
+    mockHook.mockReturnValue(asResult({ data: DATA, isLoading: false, isError: false }))
+    const { container } = render(<ChipAdviceCard />)
+    // 3 bars (BB/TC/FH) — Wildcard row has none.
+    expect(container.querySelectorAll('[role="img"]').length).toBe(3)
   })
 })
