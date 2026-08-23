@@ -16,32 +16,56 @@ import {
 
 describe('badgeFor', () => {
   it('risk label beats verdict: sell_soon + hold verdict → SELL SOON warning', () => {
-    expect(badgeFor('hold', 'sell_soon')).toEqual({ text: 'SELL SOON', intent: 'warning' })
+    expect(badgeFor('hold', 'sell_soon')).toMatchObject({ text: 'SELL SOON', intent: 'warning' })
   })
 
   it('risk label sell → negative even when verdict is buy', () => {
-    expect(badgeFor('buy', 'sell')).toEqual({ text: 'SELL', intent: 'negative' })
+    expect(badgeFor('buy', 'sell')).toMatchObject({ text: 'SELL', intent: 'negative' })
   })
 
   it('minutes_trap and fixture_trap map to warning', () => {
-    expect(badgeFor(undefined, 'minutes_trap')).toEqual({ text: 'MINS TRAP', intent: 'warning' })
-    expect(badgeFor(undefined, 'fixture_trap')).toEqual({ text: 'FIX TRAP', intent: 'warning' })
+    expect(badgeFor(undefined, 'minutes_trap')).toMatchObject({ text: 'MINS TRAP', intent: 'warning' })
+    expect(badgeFor(undefined, 'fixture_trap')).toMatchObject({ text: 'FIX TRAP', intent: 'warning' })
   })
 
-  it('verdict-only paths: sell → negative, buy → positive, hold → neutral', () => {
-    expect(badgeFor('sell', undefined)).toEqual({ text: 'SELL', intent: 'negative' })
-    expect(badgeFor('buy', undefined)).toEqual({ text: 'BUY', intent: 'positive' })
-    expect(badgeFor('hold', undefined)).toEqual({ text: 'HOLD', intent: 'neutral' })
+  it('verdict-only paths: sell → negative, hold → neutral', () => {
+    expect(badgeFor('sell', undefined)).toMatchObject({ text: 'SELL', intent: 'negative' })
+    expect(badgeFor('hold', undefined)).toMatchObject({ text: 'HOLD', intent: 'neutral' })
+  })
+
+  it('owned player with buy verdict shows HOLD (positive) — never BUY', () => {
+    // Season-start fix: every squad-strip row is already owned, so "BUY" is
+    // nonsensical there. Above-average keeps read as a strong (positive) hold.
+    expect(badgeFor('buy', undefined)).toMatchObject({ text: 'HOLD', intent: 'positive' })
+    expect(badgeFor('buy', 'hold')).toMatchObject({ text: 'HOLD', intent: 'positive' })
+  })
+
+  it('every badge carries a hover explanation (title)', () => {
+    const cases = [
+      badgeFor('sell', undefined),
+      badgeFor('buy', undefined),
+      badgeFor('hold', undefined),
+      badgeFor(undefined, 'sell'),
+      badgeFor(undefined, 'sell_soon'),
+      badgeFor(undefined, 'minutes_trap'),
+      badgeFor(undefined, 'fixture_trap'),
+    ]
+    for (const badge of cases) {
+      expect(badge.title.length).toBeGreaterThan(10)
+    }
+    // The SELL hover must say why (position-average shortfall), with the
+    // percentage interpolated from the engine's threshold constant.
+    expect(badgeFor(undefined, 'sell').title).toContain('15% below the position average')
+    expect(badgeFor('sell', undefined).title).toContain('10% below the position average')
   })
 
   it('non-risk lifecycle labels (hold, buy_next_week, hold_one_more) fall through to verdict', () => {
-    expect(badgeFor('buy', 'hold')).toEqual({ text: 'BUY', intent: 'positive' })
-    expect(badgeFor('sell', 'buy_next_week')).toEqual({ text: 'SELL', intent: 'negative' })
-    expect(badgeFor('hold', 'hold_one_more')).toEqual({ text: 'HOLD', intent: 'neutral' })
+    expect(badgeFor('sell', 'buy_next_week')).toMatchObject({ text: 'SELL', intent: 'negative' })
+    expect(badgeFor('hold', 'hold_one_more')).toMatchObject({ text: 'HOLD', intent: 'neutral' })
   })
 
   it('no verdict, no label → HOLD neutral', () => {
-    expect(badgeFor(undefined, undefined)).toEqual({ text: 'HOLD', intent: 'neutral' })
+    expect(badgeFor(undefined, undefined)).toMatchObject({ text: 'HOLD', intent: 'neutral' })
   })
 })
 

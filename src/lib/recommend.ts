@@ -21,6 +21,12 @@ export const BUY_THRESHOLD = 1.0
 /** A player is a Sell if their gem_score is more than 10% below the position average. */
 export const SELL_THRESHOLD = 0.90
 
+/** Bench enablers (≤ £4.5m, positions 12-15) are exempt from the sell bands.
+ * Standard bench fodder scores near zero on most gem dimensions by design —
+ * without this gate every squad would show permanent SELL chips on players
+ * that are correct to keep (mirrors MINUTES_TRAP_MIN_COST's misfire guard). */
+export const BENCH_ENABLER_MAX_COST = 45
+
 // ---------------------------------------------------------------------------
 // Helper: computePositionAverages
 // Exported for reuse by captaincy-engine.ts (Plan 02).
@@ -59,12 +65,12 @@ export function computePositionAverages(
 // ---------------------------------------------------------------------------
 
 /**
- * Compute Buy/Hold/Sell verdicts for all starting-XI squad players.
+ * Compute Buy/Hold/Sell verdicts for all 15 squad players (XI + bench).
  *
  * Algorithm:
  * 1. Build a lookup map from allPlayers by id.
  * 2. Compute position averages from ALL allPlayers (not squad members only).
- * 3. For each squadPick where position < 12 (starting XI):
+ * 3. For each squadPick:
  *    - Find the player in the lookup map.
  *    - Compare gem_score to positionAvg:
  *      - Buy:  gem_score > positionAvg                  (above average)
@@ -72,13 +78,14 @@ export function computePositionAverages(
  *      - Hold: everything else                          (within 0-10% below)
  * 4. Return the verdicts Map.
  *
- * Bench players (position >= 12) are excluded from verdicts.
+ * Bench players (position >= 12) are rated like starters — a dud on the bench
+ * is still squad value at risk (season-start fix: bench was previously unrated).
  * Players with null xG/xA are handled correctly because the algorithm
  * uses gem_score only — not raw xg_per90/xa_per90.
  *
  * @param squadPicks  The manager's 15-player squad picks for the current GW.
  * @param allPlayers  Full scored player population (used for position averages).
- * @returns           Map<playerId, Verdict> for starting-XI picks only.
+ * @returns           Map<playerId, Verdict> for all squad picks.
  */
 export function computeVerdicts(
   squadPicks: SquadPick[],
@@ -97,13 +104,16 @@ export function computeVerdicts(
   // Step 2: Compute position averages from full population
   const positionAverages = computePositionAverages(allPlayers)
 
-  // Step 3: Classify each starting XI pick
+  // Step 3: Classify every pick — bench (positions 12-15) included
   for (const pick of squadPicks) {
-    // Exclude bench (positions 12-15)
-    if (pick.position >= 12) continue
-
     const player = playerById.get(pick.element)
     if (!player) continue
+
+    // Cheap bench enablers are a Hold by definition — see BENCH_ENABLER_MAX_COST.
+    if (pick.position >= 12 && player.now_cost <= BENCH_ENABLER_MAX_COST) {
+      verdicts.set(pick.element, 'hold')
+      continue
+    }
 
     const positionAvg = positionAverages.get(player.element_type) ?? 0.5
     const gem = player.gem_score

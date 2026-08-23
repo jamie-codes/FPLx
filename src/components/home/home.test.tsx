@@ -145,32 +145,38 @@ beforeEach(() => {
 
 describe('SquadStrip', () => {
   const xi = [
-    { player: mkPlayer({ id: 1, web_name: 'Haaland', element_type: 4 }), badge: { text: 'BUY', intent: 'positive' as const }, isCaptain: true },
-    { player: mkPlayer({ id: 2, web_name: 'Saka' }), badge: { text: 'SELL SOON', intent: 'warning' as const }, isCaptain: false },
+    { player: mkPlayer({ id: 1, web_name: 'Haaland', element_type: 4 }), badge: { text: 'HOLD', intent: 'positive' as const, title: 'Above the position average — a keeper.' }, isCaptain: true },
+    { player: mkPlayer({ id: 2, web_name: 'Saka' }), badge: { text: 'SELL SOON', intent: 'warning' as const, title: 'Gem score 10–15% below the position average.' }, isCaptain: false },
   ]
   const bench = [
-    mkPlayer({ id: 12, web_name: 'BenchOne', element_type: 1 }),
-    mkPlayer({ id: 13, web_name: 'BenchTwo' }),
-    mkPlayer({ id: 14, web_name: 'BenchThree' }),
-    mkPlayer({ id: 15, web_name: 'BenchFour' }),
+    { player: mkPlayer({ id: 12, web_name: 'BenchOne', element_type: 1 }), badge: { text: 'HOLD', intent: 'neutral' as const, title: 'Within the normal band.' }, isCaptain: false },
+    { player: mkPlayer({ id: 13, web_name: 'BenchTwo' }), badge: { text: 'SELL', intent: 'negative' as const, title: 'More than 15% below the position average.' }, isCaptain: false },
+    { player: mkPlayer({ id: 14, web_name: 'BenchThree' }), badge: { text: 'HOLD', intent: 'neutral' as const, title: 'Within the normal band.' }, isCaptain: false },
+    { player: mkPlayer({ id: 15, web_name: 'BenchFour' }), badge: { text: 'HOLD', intent: 'neutral' as const, title: 'Within the normal band.' }, isCaptain: false },
   ]
 
   it('renders XI rows with badge chips and the captain C chip', () => {
     render(<SquadStrip xi={xi} bench={bench} />)
     expect(screen.getByText('My Squad')).toBeTruthy()
     expect(screen.getByText('Haaland')).toBeTruthy()
-    expect(screen.getByText('BUY')).toBeTruthy()
     expect(screen.getByText('SELL SOON')).toBeTruthy()
     // exactly one captain chip, on Haaland's row
     expect(screen.getAllByTitle('Optimised captain').length).toBe(1)
     expect(screen.getByTestId('squad-row-1').textContent).toContain('C')
   })
 
-  it('renders all 4 bench players', () => {
+  it('badge chips expose their reasoning as a hover title', () => {
+    render(<SquadStrip xi={xi} bench={bench} />)
+    expect(screen.getByTitle('Gem score 10–15% below the position average.').textContent).toBe('SELL SOON')
+  })
+
+  it('renders all 4 bench players with badge chips', () => {
     render(<SquadStrip xi={xi} bench={bench} />)
     for (const name of ['BenchOne', 'BenchTwo', 'BenchThree', 'BenchFour']) {
       expect(screen.getByText(name)).toBeTruthy()
     }
+    // Bench is rated too (season-start fix) — its SELL chip renders.
+    expect(screen.getByTestId('squad-bench').textContent).toContain('SELL')
   })
 
   it('renders nothing when xi is empty (parent decides states)', () => {

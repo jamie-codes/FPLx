@@ -155,6 +155,20 @@ def _difficulty_tier(score: float, easy_threshold: float, hard_threshold: float)
         return 'medium'
 
 
+def _official_fdr_fallback(fpl_difficulty) -> tuple[float, str]:
+    """Season cold-start fallback: FPL official difficulty (1-5) → (score, tier).
+
+    With zero finished fixtures the rolling goals-conceded proxy is 0.0 for every
+    team, min == max collapses every score AND both percentile thresholds to 0.5,
+    and _difficulty_tier's `score <= easy_threshold` marks EVERY fixture 'easy'.
+    FPL's own team-strength ratings are the best available prior until real
+    results exist. Thresholds mirror src/lib/club-form.ts tier():
+    <= 0.4 easy (FPL 1-2), >= 0.6 hard (FPL 4-5), else medium.
+    """
+    score = (float(fpl_difficulty or 3) - 1.0) / 4.0
+    return score, _difficulty_tier(score, 0.4, 0.6)
+
+
 def _compute_difficulty_scores(bootstrap: dict, fixtures: list) -> dict[int, float]:
     """Compute team difficulty scores from rolling xGA. Exported for defcon.py.
 
@@ -1176,6 +1190,11 @@ def merge_players(
         hard_score = _compute_difficulty_score(hard_xga_threshold, min_xga, max_xga)
         difficulty_tiers[t_id] = _difficulty_tier(score, easy_score, hard_score)
 
+    # Season cold start: no finished fixtures (or a fully degenerate xGA spread)
+    # means the rolling proxy carries no signal — fall back to FPL's official
+    # per-fixture difficulty ratings for score/tier until results arrive.
+    fdr_cold_start = len(finished) == 0 or (max_xga - min_xga) < 1e-9
+
     # ------------------------------------------------------------------ #
     # 5. Build upcoming fixtures per team (D-03, D-04)
     # ------------------------------------------------------------------ #
@@ -1189,6 +1208,32 @@ def merge_players(
     # Per team: next 32 upcoming fixture dicts
     team_fixtures: dict[int, list[dict]] = {t_id: [] for t_id in teams}
 
+    # Cold-start opponent-xG prior: with zero finished fixtures team_xgs is 0.0
+    # everywhere, which would zero every GK's save-point Poisson lambda. Anchor
+    # to the league-average ~1.4 goals/game at official difficulty 3, spanning
+    # 0.9 (weakest opponents) to 1.9 (strongest).
+    COLDSTART_OPP_XG_BASE = 0.9
+    COLDSTART_OPP_XG_SLOPE = 1.0
+
+    def _fixture_difficulty(opp_id: int, own_official_difficulty) -> tuple[float, str, float, float]:
+        """(attacking score, tier, defensive score, opponent xG/game) for one upcoming fixture.
+
+        Cold start: FPL's single official difficulty rating is a direction-agnostic
+        team-strength prior, so it deliberately stands in for BOTH attacking and
+        defensive difficulty (and scales the opponent-xG prior) until real
+        results exist. Warm path is the rolling goals-based proxy — UNCHANGED.
+        """
+        if fdr_cold_start:
+            att_score, att_tier = _official_fdr_fallback(own_official_difficulty)
+            opp_xg = COLDSTART_OPP_XG_BASE + COLDSTART_OPP_XG_SLOPE * att_score
+            return att_score, att_tier, att_score, opp_xg
+        return (
+            difficulty_scores.get(opp_id, 0.5),                       # UNCHANGED
+            difficulty_tiers.get(opp_id, 'medium'),                   # UNCHANGED
+            defensive_difficulty_scores.get(opp_id, 0.5),             # NEW (DATA-01, D-02)
+            team_xgs.get(opp_id, 0.0),                                # Phase 83 GK-01
+        )
+
     for fix in upcoming:
         h_id = fix['team_h']
         a_id = fix['team_a']
@@ -1197,35 +1242,39 @@ def merge_players(
         # Home team perspective
         if h_id in team_fixtures and len(team_fixtures[h_id]) < FIXTURE_LOOKAHEAD:
             opp_id = a_id
+            att_score, att_tier, def_score, opp_xg = \
+                _fixture_difficulty(opp_id, fix.get('team_h_difficulty'))
             team_fixtures[h_id].append({
                 'opponent_team': teams[opp_id]['short_name'] if opp_id in teams else str(opp_id),
                 'is_home': True,
                 'event_id': event_id,
                 'fixture_id': fix.get('id'),  # ODDS-01: join key for market odds
-                'difficulty_score': difficulty_scores.get(opp_id, 0.5),                      # UNCHANGED
-                'difficulty_tier': difficulty_tiers.get(opp_id, 'medium'),                   # UNCHANGED
-                'attacking_difficulty': difficulty_scores.get(opp_id, 0.5),                  # NEW (DATA-01, D-01) — same as difficulty_score
-                'defensive_difficulty': defensive_difficulty_scores.get(opp_id, 0.5),        # NEW (DATA-01, D-02)
-                'opponent_xg_per_game': round(team_xgs.get(opp_id, 0.0) * AWAY_FACTOR, 4),  # Phase 83 GK-01 / D-02 — opponent is traveling (is_home=True for our team)
-                'team_def_form': norm_def_form.get(h_id, 0.5),                              # CSF-01
-                'team_atf_form': norm_atf_form.get(h_id, 0.5),                              # ATF-01
+                'difficulty_score': att_score,
+                'difficulty_tier': att_tier,
+                'attacking_difficulty': att_score,                    # NEW (DATA-01, D-01) — same as difficulty_score
+                'defensive_difficulty': def_score,
+                'opponent_xg_per_game': round(opp_xg * AWAY_FACTOR, 4),  # Phase 83 GK-01 / D-02 — opponent is traveling (is_home=True for our team)
+                'team_def_form': norm_def_form.get(h_id, 0.5),        # CSF-01
+                'team_atf_form': norm_atf_form.get(h_id, 0.5),        # ATF-01
             })
 
         # Away team perspective
         if a_id in team_fixtures and len(team_fixtures[a_id]) < FIXTURE_LOOKAHEAD:
             opp_id = h_id
+            att_score, att_tier, def_score, opp_xg = \
+                _fixture_difficulty(opp_id, fix.get('team_a_difficulty'))
             team_fixtures[a_id].append({
                 'opponent_team': teams[opp_id]['short_name'] if opp_id in teams else str(opp_id),
                 'is_home': False,
                 'event_id': event_id,
                 'fixture_id': fix.get('id'),  # ODDS-01: join key for market odds
-                'difficulty_score': difficulty_scores.get(opp_id, 0.5),                      # UNCHANGED
-                'difficulty_tier': difficulty_tiers.get(opp_id, 'medium'),                   # UNCHANGED
-                'attacking_difficulty': difficulty_scores.get(opp_id, 0.5),                  # NEW
-                'defensive_difficulty': defensive_difficulty_scores.get(opp_id, 0.5),        # NEW
-                'opponent_xg_per_game': round(team_xgs.get(opp_id, 0.0) * HOME_FACTOR, 4),  # Phase 83 GK-01 / D-02 — opponent is at home (is_home=False for our team)
-                'team_def_form': norm_def_form.get(a_id, 0.5),                              # CSF-01
-                'team_atf_form': norm_atf_form.get(a_id, 0.5),                              # ATF-01
+                'difficulty_score': att_score,
+                'difficulty_tier': att_tier,
+                'attacking_difficulty': att_score,
+                'defensive_difficulty': def_score,
+                'opponent_xg_per_game': round(opp_xg * HOME_FACTOR, 4),  # Phase 83 GK-01 / D-02 — opponent is at home (is_home=False for our team)
+                'team_def_form': norm_def_form.get(a_id, 0.5),        # CSF-01
+                'team_atf_form': norm_atf_form.get(a_id, 0.5),        # ATF-01
             })
 
     # ------------------------------------------------------------------ #

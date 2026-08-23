@@ -1,8 +1,8 @@
 // UIX-02 Task 1: the only real logic on Home — pure, React-free, unit-tested.
 // Everything else on Home is composition of existing engines (spec anti-goal:
 // no new computation; these helpers only map/format engine outputs).
-import type { LifecycleLabel } from '@/lib/lifecycle-label'
-import type { Verdict } from '@/lib/recommend'
+import { LABEL_EXPLANATIONS, type LifecycleLabel } from '@/lib/lifecycle-label'
+import { SELL_THRESHOLD as VERDICT_SELL_THRESHOLD, type Verdict } from '@/lib/recommend'
 import type { OCSRow } from '@/lib/opportunity-cost'
 import type { MergedPlayer } from '@/lib/types'
 import type { ChipIntent } from '@/components/ui/Chip'
@@ -10,20 +10,25 @@ import type { ChipIntent } from '@/components/ui/Chip'
 export interface PlayerBadge {
   text: string
   intent: ChipIntent
+  /** Hover explanation — WHY this badge (rendered as the Chip's title). */
+  title: string
 }
 
 // Risk subset per spec: sell, sell_soon, minutes_trap, fixture_trap.
 // Other lifecycle labels (hold / buy_next_week / hold_one_more) are not risk
 // signals — those rows fall through to the verdict badge.
+// Hover titles come from the shared LABEL_EXPLANATIONS map (threshold-
+// interpolated) so this strip and LifecycleLabelBadge explain identically.
 const RISK_BADGE: Partial<Record<LifecycleLabel, PlayerBadge>> = {
-  sell:         { text: 'SELL',      intent: 'negative' },
-  sell_soon:    { text: 'SELL SOON', intent: 'warning' },
-  minutes_trap: { text: 'MINS TRAP', intent: 'warning' },
-  fixture_trap: { text: 'FIX TRAP',  intent: 'warning' },
+  sell:         { text: 'SELL',      intent: 'negative', title: LABEL_EXPLANATIONS.sell },
+  sell_soon:    { text: 'SELL SOON', intent: 'warning',  title: LABEL_EXPLANATIONS.sell_soon },
+  minutes_trap: { text: 'MINS TRAP', intent: 'warning',  title: LABEL_EXPLANATIONS.minutes_trap },
+  fixture_trap: { text: 'FIX TRAP',  intent: 'warning',  title: LABEL_EXPLANATIONS.fixture_trap },
 }
 
 /** Spec chip-precedence rule: ONE Chip per squad row — risk label wins over
- * verdict; verdict sell→negative, buy→positive, hold→neutral. */
+ * verdict. Every row here is a player the manager already OWNS, so an
+ * above-average verdict reads HOLD (positive), never BUY (season-start fix). */
 export function badgeFor(
   verdict: Verdict | undefined,
   label: LifecycleLabel | undefined,
@@ -32,9 +37,15 @@ export function badgeFor(
     const risk = RISK_BADGE[label]
     if (risk) return risk
   }
-  if (verdict === 'sell') return { text: 'SELL', intent: 'negative' }
-  if (verdict === 'buy') return { text: 'BUY', intent: 'positive' }
-  return { text: 'HOLD', intent: 'neutral' }
+  if (verdict === 'sell') {
+    return { text: 'SELL', intent: 'negative',
+             title: `Sell: gem score more than ${Math.round((1 - VERDICT_SELL_THRESHOLD) * 100)}% below the position average — consider transferring out.` }
+  }
+  if (verdict === 'buy') {
+    return { text: 'HOLD', intent: 'positive',
+             title: 'Hold: gem score above the position average — a keeper.' }
+  }
+  return { text: 'HOLD', intent: 'neutral', title: LABEL_EXPLANATIONS.hold }
 }
 
 /** Count of risk-subset labels across the squad (drives the "N players flagged

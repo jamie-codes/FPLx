@@ -311,12 +311,13 @@ export function DecisionSummaryTab({
     [chipHistory],
   )
 
-  // Risk rows — starting XI only (D-14), urgency-sorted
+  // Risk rows — full 15-man squad, urgency-sorted. (Was XI-only per D-14;
+  // season-start fix rates the bench too, and Home's "N flagged → Cockpit"
+  // count includes bench, so this destination must show the same set.)
   const riskRows = useMemo(() => {
     if (!squadData) return [] as Array<{ player: typeof scoredPlayers[number]; label: LifecycleLabel }>
     const playerById = new Map(scoredPlayers.map(p => [p.id, p]))
     return squadData.picks
-      .filter(pick => pick.position < 12)
       .map(pick => ({ pick, label: lifecycleLabels.get(pick.element) ?? null }))
       .filter((r): r is { pick: typeof r.pick; label: LifecycleLabel } => r.label !== null && RISK_LABELS.has(r.label))
       .sort((a, b) => URGENCY_ORDER[a.label] - URGENCY_ORDER[b.label])

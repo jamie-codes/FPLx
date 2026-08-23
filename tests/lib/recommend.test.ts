@@ -119,16 +119,40 @@ describe('computeVerdicts', () => {
     expect(verdicts.get(77)).toBe('hold')
   })
 
-  it('excludes bench players (position >= 12) from verdicts', () => {
+  it('rates bench players (position >= 12) too — season-start fix', () => {
     const bgPlayers = Array.from({ length: 10 }, (_, i) =>
       makeScoredPlayer({ id: i + 10, element_type: 3, gem_score: 0.50 }),
     )
-    const benchPlayer = makeScoredPlayer({ id: 55, element_type: 3, gem_score: 0.90 })
-    const allPlayers = [...bgPlayers, benchPlayer]
-    const picks = [makeSquadPick({ element: 55, position: 12 })]
+    const benchBuy = makeScoredPlayer({ id: 55, element_type: 3, gem_score: 0.90 })
+    const benchSell = makeScoredPlayer({ id: 56, element_type: 3, gem_score: 0.30 })
+    const allPlayers = [...bgPlayers, benchBuy, benchSell]
+    const picks = [
+      makeSquadPick({ element: 55, position: 12 }),
+      makeSquadPick({ element: 56, position: 15 }),
+    ]
 
     const verdicts = computeVerdicts(picks, allPlayers)
-    expect(verdicts.has(55)).toBe(false)
+    expect(verdicts.get(55)).toBe('buy')
+    expect(verdicts.get(56)).toBe('sell')
+  })
+
+  it('cheap bench enablers (≤ £4.5m, position ≥ 12) are always hold', () => {
+    const bgPlayers = Array.from({ length: 10 }, (_, i) =>
+      makeScoredPlayer({ id: i + 10, element_type: 3, gem_score: 0.50 }),
+    )
+    // Standard £4.0m fodder: gem score far below the position average by design.
+    const enabler = makeScoredPlayer({ id: 57, element_type: 3, gem_score: 0.10, now_cost: 40 })
+    // Same profile in the XI still sells — the exemption is bench-only.
+    const starter = makeScoredPlayer({ id: 58, element_type: 3, gem_score: 0.10, now_cost: 40 })
+    const allPlayers = [...bgPlayers, enabler, starter]
+    const picks = [
+      makeSquadPick({ element: 57, position: 15 }),
+      makeSquadPick({ element: 58, position: 8 }),
+    ]
+
+    const verdicts = computeVerdicts(picks, allPlayers)
+    expect(verdicts.get(57)).toBe('hold')
+    expect(verdicts.get(58)).toBe('sell')
   })
 
   it('no contradictory verdicts: Sell player gem_score < Buy player gem_score at same position', () => {

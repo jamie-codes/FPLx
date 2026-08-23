@@ -11,7 +11,8 @@ import { SquadPickSchema } from '@/lib/squad-adapter'
  * `entry` is the manager's team ID (used to fetch picks/history).
  */
 export const LeagueStandingsEntrySchema = z.object({
-  id:           z.number().int(),
+  // NOTE: the 2026/27 API dropped the `id` field from standings entries — do not
+  // require fields this app never consumes, or the whole parse fails.
   entry:        z.number().int(),    // FPL team/manager ID
   entry_name:   z.string(),
   player_name:  z.string(),
@@ -41,8 +42,10 @@ export const RivalPicksResponseSchema = z.object({
  */
 export const ChipHistoryEntrySchema = z.object({
   name:  z.string(),       // 'bboost' | '3xc' | 'freehit' | 'wildcard'
-  time:  z.string(),
-  event: z.number().int(),
+  // Only `name` is consumed (chipsRemaining derivation). `time`/`event` stay
+  // optional so an API field rename can't fail the parse like standings `id` did.
+  time:  z.string().optional(),
+  event: z.number().int().optional(),
 })
 
 export const RivalHistoryResponseSchema = z.object({

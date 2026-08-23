@@ -1,7 +1,7 @@
 import type { ScoredPlayer } from '@/lib/types'
 import type { ClubForm } from '@/lib/types'
 import type { SquadPick } from '@/lib/squad-adapter'
-import { computePositionAverages } from '@/lib/recommend'
+import { computePositionAverages, BENCH_ENABLER_MAX_COST } from '@/lib/recommend'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -62,6 +62,26 @@ export const MINUTES_TRAP_MIN_COST = 70
  * is not reliably starting. Cross-references MinsRiskBadge and explain.ts START_PROB_LOW.
  */
 export const MINUTES_TRAP_START_PROB = 0.65
+
+// ---------------------------------------------------------------------------
+// Shared label explanations (single source of truth for hover tooltips)
+//
+// Interpolated from the threshold constants above so a retune can never leave
+// the UI quoting numbers the engine no longer uses. Consumed by
+// LifecycleLabelBadge (Transfers/Cockpit) and home-logic badgeFor (Home strip).
+// ---------------------------------------------------------------------------
+
+const pctBelow = (threshold: number) => Math.round((1 - threshold) * 100)
+
+export const LABEL_EXPLANATIONS: Record<LifecycleLabel, string> = {
+  buy_next_week: 'Buy Next Week: hold-band gem score but immediate fixture improvement incoming.',
+  hold_one_more: 'Hold One More: fixtures improving over 3 GWs — gem score may recover.',
+  sell_soon: `Sell Soon: gem score ${pctBelow(SELL_SOON_THRESHOLD)}–${pctBelow(SELL_THRESHOLD)}% below the position average — consider timing your exit.`,
+  minutes_trap: `Minutes Trap: £${(MINUTES_TRAP_MIN_COST / 10).toFixed(1)}m+ player with rotation risk — start probability under ${Math.round(MINUTES_TRAP_START_PROB * 100)}%.`,
+  fixture_trap: 'Fixture Trap: high-ownership player with below-average returns and fixtures worsening over the next 3 GWs.',
+  hold: 'Hold: gem score within the normal band for this position — no action needed.',
+  sell: `Sell: gem score more than ${pctBelow(SELL_THRESHOLD)}% below the position average — transfer out candidate.`,
+}
 
 // ---------------------------------------------------------------------------
 // Core function: computeLifecycleLabel
@@ -161,16 +181,17 @@ export function computeLifecycleLabel(
 // ---------------------------------------------------------------------------
 
 /**
- * Compute lifecycle labels for all starting-XI squad players.
+ * Compute lifecycle labels for all 15 squad players (XI + bench).
  *
- * Mirrors computeVerdicts() in structure: same bench exclusion logic (position >= 12),
- * same playerById + positionAverages pattern. The computeVerdicts function and Verdict
- * type are preserved in recommend.ts for Phase 51 (Decision Summary).
+ * Mirrors computeVerdicts() in structure: same playerById + positionAverages
+ * pattern, bench included (season-start fix: bench was previously unrated).
+ * The computeVerdicts function and Verdict type are preserved in recommend.ts
+ * for Phase 51 (Decision Summary).
  *
  * @param squadPicks  - SquadPick[] (15 players; bench are position >= 12)
  * @param allPlayers  - ScoredPlayer[] (full population for position averages)
  * @param clubFormMap - Map<teamId, ClubForm> pre-built by the caller (TransferPanel)
- * @returns           Map<playerId, LifecycleLabel> for starting-XI picks only
+ * @returns           Map<playerId, LifecycleLabel> for all squad picks
  */
 export function computeLifecycleLabels(
   squadPicks: SquadPick[],
@@ -184,11 +205,17 @@ export function computeLifecycleLabels(
   const positionAverages = computePositionAverages(allPlayers)
 
   for (const pick of squadPicks) {
-    // Exclude bench (positions 12-15) — matching computeVerdicts convention
-    if (pick.position >= 12) continue
-
+    // Bench (positions 12-15) rated too — matching computeVerdicts convention
     const player = playerById.get(pick.element)
     if (!player) continue
+
+    // Cheap bench enablers are a Hold by definition (see BENCH_ENABLER_MAX_COST):
+    // their gem scores sit far below position averages by design, so the sell
+    // bands would flag standard fodder permanently.
+    if (pick.position >= 12 && player.now_cost <= BENCH_ENABLER_MAX_COST) {
+      labels.set(pick.element, 'hold')
+      continue
+    }
 
     const posAvg = positionAverages.get(player.element_type) ?? 0.5
     const clubForm = clubFormMap.get(player.team) ?? null

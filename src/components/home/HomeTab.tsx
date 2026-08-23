@@ -20,7 +20,7 @@ import { computeOpportunityCostRows } from '@/lib/opportunity-cost'
 import { optimiseLineup } from '@/lib/optimise-lineup'
 import { isOffSeason } from '@/lib/picks'
 import { computeUrgency, formatCountdown } from '@/components/DeadlineBanner'
-import type { ClubForm, MergedPlayer } from '@/lib/types'
+import type { ClubForm } from '@/lib/types'
 import type { ToolId } from '@/lib/navigation'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -123,23 +123,21 @@ export function HomeTab({ teamId, onTeamIdChange, submittedId, onSubmit, selectT
 
   const { xiRows, bench } = useMemo(() => {
     const xi: SquadRow[] = []
-    const benchPlayers: MergedPlayer[] = []
-    if (!squadData || scored.length === 0) return { xiRows: xi, bench: benchPlayers }
+    const benchRows: SquadRow[] = []
+    if (!squadData || scored.length === 0) return { xiRows: xi, bench: benchRows }
     const byId = new Map(scored.map((p) => [p.id, p]))
     for (const pick of [...squadData.picks].sort((a, b) => a.position - b.position)) {
       const player = byId.get(pick.element)
       if (!player) continue
-      if (pick.position <= 11) {
-        xi.push({
-          player,
-          badge: badgeFor(verdicts.get(pick.element), labels.get(pick.element)),
-          isCaptain: lineup?.captainId === pick.element,
-        })
-      } else {
-        benchPlayers.push(player)
+      const row: SquadRow = {
+        player,
+        badge: badgeFor(verdicts.get(pick.element), labels.get(pick.element)),
+        isCaptain: pick.position <= 11 && lineup?.captainId === pick.element,
       }
+      if (pick.position <= 11) xi.push(row)
+      else benchRows.push(row)
     }
-    return { xiRows: xi, bench: benchPlayers }
+    return { xiRows: xi, bench: benchRows }
   }, [squadData, scored, verdicts, labels, lineup])
 
   const riskN = useMemo(() => riskCount(labels), [labels])

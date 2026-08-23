@@ -16,7 +16,7 @@ export interface SquadRow {
   isCaptain: boolean
 }
 
-export function SquadStrip({ xi, bench }: { xi: SquadRow[]; bench: MergedPlayer[] }) {
+export function SquadStrip({ xi, bench }: { xi: SquadRow[]; bench: SquadRow[] }) {
   if (xi.length === 0) return null
   return (
     <Card title="My Squad">
@@ -41,7 +41,7 @@ export function SquadStrip({ xi, bench }: { xi: SquadRow[]; bench: MergedPlayer[
                   C
                 </Chip>
               )}
-              <Chip intent={badge.intent} size="sm">
+              <Chip intent={badge.intent} size="sm" title={badge.title}>
                 {badge.text}
               </Chip>
             </span>
@@ -54,15 +54,19 @@ export function SquadStrip({ xi, bench }: { xi: SquadRow[]; bench: MergedPlayer[
           data-testid="squad-bench"
         >
           <span className="text-data font-medium uppercase tracking-wide text-ink-muted">Bench</span>
-          {bench.map((p) => (
-            <PlayerCell
-              key={p.id}
-              size="sm"
-              code={p.code}
-              webName={p.web_name}
-              teamCode={p.team_code}
-              teamShort={p.team_short_name}
-            />
+          {bench.map(({ player: p, badge }) => (
+            <span key={p.id} className="flex items-center gap-1.5">
+              <PlayerCell
+                size="sm"
+                code={p.code}
+                webName={p.web_name}
+                teamCode={p.team_code}
+                teamShort={p.team_short_name}
+              />
+              <Chip intent={badge.intent} size="sm" title={badge.title}>
+                {badge.text}
+              </Chip>
+            </span>
           ))}
         </div>
       )}

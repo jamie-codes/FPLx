@@ -340,8 +340,8 @@ describe('computeLifecycleLabel — priority cascade', () => {
 describe('computeLifecycleLabels', () => {
   const posAvg = 0.5
 
-  it('Test 12: Bench player (position=12) excluded from returned map', () => {
-    const player = makePlayer({ id: 99, team: 10, gem_score: posAvg * 0.84 }) // would be 'sell'
+  it('Test 12: Bench player (position=12) is rated too — season-start fix', () => {
+    const player = makePlayer({ id: 99, team: 10, gem_score: posAvg * 0.84 }) // 'sell' band
     const allPlayers = [
       ...Array.from({ length: 5 }, (_, i) =>
         makePlayer({ id: i + 1, element_type: 1, gem_score: 0.5 }),
@@ -355,11 +355,28 @@ describe('computeLifecycleLabels', () => {
       player,
     ]
     const picks: SquadPick[] = [
-      makePick(99, 12), // bench position — should be excluded
+      makePick(99, 12), // bench position — rated like a starter
     ]
     const clubFormMap = new Map<number, ClubForm>()
     const labels = computeLifecycleLabels(picks, allPlayers, clubFormMap)
-    expect(labels.has(99)).toBe(false)
+    // Below-average bench player lands in the sell warning bands, not unrated.
+    expect(['sell', 'sell_soon']).toContain(labels.get(99))
+  })
+
+  it('Cheap bench enabler (≤ £4.5m, position ≥ 12) is always hold', () => {
+    // Standard £4.0m fodder: gem far below position average by design — the
+    // sell bands must not flag it (BENCH_ENABLER_MAX_COST exemption).
+    const player = makePlayer({ id: 98, team: 10, gem_score: 0.10, now_cost: 40 })
+    const allPlayers = [
+      ...Array.from({ length: 5 }, (_, i) =>
+        makePlayer({ id: i + 20, element_type: 3, gem_score: 0.5 }),
+      ),
+      player,
+    ]
+    const labels = computeLifecycleLabels(
+      [makePick(98, 13)], allPlayers, new Map<number, ClubForm>(),
+    )
+    expect(labels.get(98)).toBe('hold')
   })
 
   it('Starting XI player (position=1) is included in returned map', () => {

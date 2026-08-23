@@ -159,15 +159,13 @@ export function SquadView({ picks, allPlayers, entryHistory, labels, exactSellPr
                           <div className="flex items-center gap-2">
                             <PlayerAvatar code={player.code} webName={player.web_name} teamShortName={player.team_short_name} width={28} height={35} />
                             <div>
-                              {!isBench && (
-                                <button
-                                  onClick={() => toggleExpand(pick.element)}
-                                  className="inline-flex items-center mr-1 text-ink-muted hover:text-ink"
-                                  aria-label={expandedIds.has(pick.element) ? 'Collapse details' : 'Expand details'}
-                                >
-                                  <span className="text-xs">{expandedIds.has(pick.element) ? '\u25BC' : '\u25B6'}</span>
-                                </button>
-                              )}
+                              <button
+                                onClick={() => toggleExpand(pick.element)}
+                                className="inline-flex items-center mr-1 text-ink-muted hover:text-ink"
+                                aria-label={expandedIds.has(pick.element) ? 'Collapse details' : 'Expand details'}
+                              >
+                                <span className="text-xs">{expandedIds.has(pick.element) ? '\u25BC' : '\u25B6'}</span>
+                              </button>
                               <span>{player.web_name}</span>
                               {/* Phase 88 SCRAPER-01: inline news banner for flagged owned players (D-08) */}
                               <NewsBanner
@@ -224,12 +222,12 @@ export function SquadView({ picks, allPlayers, entryHistory, labels, exactSellPr
                           <MinsRiskBadge minsRisk={player.mins_risk} />
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap">
-                          {!isBench ? (
-                            <LifecycleLabelBadge label={labels?.get(pick.element) ?? null} />
-                          ) : null}
+                          {/* Season-start fix: bench rows carry a lifecycle badge too,
+                              matching the rated bench on the Home squad strip. */}
+                          <LifecycleLabelBadge label={labels?.get(pick.element) ?? null} />
                         </td>
                       </tr>
-                      {!isBench && expandedIds.has(pick.element) && (() => {
+                      {expandedIds.has(pick.element) && (() => {
                         const reasons = computeExplanations(player)
                         const label = labels?.get(pick.element)
                         const shortlist = (label === 'sell' || label === 'sell_soon')
