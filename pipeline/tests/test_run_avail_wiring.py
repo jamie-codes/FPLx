@@ -63,3 +63,14 @@ def test_run_py_avail_block_present():
         "run.py must attach apifootball_injury for shadow inspection"
     assert 'AVAIL-01' in src, \
         "run.py must contain the AVAIL-01 comment tag"
+
+
+def test_run_py_logs_injury_mapping_counts():
+    """AVAIL-01 observability (2026-08-28): every run must print a definitive
+    record/mapped-count line so success is distinguishable from a silent no-op
+    (previously only failures logged; a dead key looked like 'no injuries')."""
+    run_path = os.path.join(os.path.dirname(__file__), '..', 'run.py')
+    with open(run_path, 'r', encoding='utf-8') as f:
+        src = f.read()
+    assert 'FPL players mapped' in src, \
+        "run.py must log injury record -> mapped player counts on success"

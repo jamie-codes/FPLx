@@ -58,7 +58,14 @@ def _get(endpoint: str, params: dict) -> dict:
     resp = requests.get(f'{_BASE}/{endpoint}', params=params,
                         headers={'x-apisports-key': _api_key()}, timeout=30)
     resp.raise_for_status()
-    return resp.json()
+    data = resp.json()
+    # api-football signals bad keys / plan limits via HTTP 200 + a non-empty
+    # `errors` body (healthy responses carry {} or []). Raising here routes it
+    # through the caller's failure logging instead of parsing as "no injuries".
+    errs = data.get('errors')
+    if errs:
+        raise RuntimeError(f'AVAIL-01: api-football error response: {errs}')
+    return data
 
 
 def fetch_season_injuries(season: int = 2025, league: int = _PL_LEAGUE) -> list[dict]:
@@ -88,20 +95,35 @@ def _cache_fresh() -> bool:
 def get_live_injuries(fixture_ids: list[int]) -> list[dict]:
     """Fetch+cache projected absentees across the given upcoming fixtures.
 
-    Returns parsed records. On any HTTP error returns [] (safe no-op: affected
-    players keep their FPL-derived availability)."""
+    Returns parsed records. Failures are per-fixture (review 2026-08-28): a
+    rate-limit tripping mid-batch keeps the fixtures already fetched. A total
+    failure — or an empty fixture list — returns [] WITHOUT writing the 24h
+    cache, so an outage can't masquerade as an injury-free league. Affected
+    players keep their FPL-derived availability either way (safe no-op)."""
+    if not fixture_ids:
+        return []
     if _cache_fresh():
         with open(CACHE_PATH, 'r', encoding='utf-8') as f:
             # .get keeps the documented "returns []" guarantee even if a fresh
             # cache file is missing the 'records' key (interrupted/partial write).
-            return json.load(f).get('records', [])
-    records = []
-    try:
-        for fid in fixture_ids:
+            records = json.load(f).get('records', [])
+        print(f'AVAIL-01: injuries served from cache ({len(records)} records)')
+        return records
+    records: list[dict] = []
+    failed = 0
+    last_exc: Exception | None = None
+    for fid in fixture_ids:
+        try:
             records.extend(fetch_fixture_injuries(fid))
-    except Exception as exc:
-        print(f'AVAIL-01: live injury fetch failed ({exc}); no injury data this run')
-        return []
+        except Exception as exc:
+            failed += 1
+            last_exc = exc
+    if failed:
+        kept = 'keeping partial batch' if records else 'no injury data this run'
+        print(f'AVAIL-01: live injury fetch failed for {failed}/{len(fixture_ids)} '
+              f'fixtures ({last_exc}); {kept}')
+        if not records:
+            return []   # total failure — never cache an outage as "no injuries"
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
     with open(CACHE_PATH, 'w', encoding='utf-8') as f:
         json.dump({'_cached_at': datetime.now(timezone.utc).isoformat(),

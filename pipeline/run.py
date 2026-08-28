@@ -635,12 +635,20 @@ def run(dry_run: bool = False):
                     f['id'] for f in fixtures
                     if f.get('event') == _next_gw_id
                 ] if _next_gw_id else []
+                if not _upcoming_fixture_ids:
+                    # Distinct from a genuine 0-injury fetch (review 2026-08-28):
+                    # season rollover / post-final-GW windows resolve no fixtures.
+                    print('AVAIL-01: no upcoming fixtures resolved for the next GW — injury fetch skipped')
                 _injury_records = get_live_injuries(_upcoming_fixture_ids)
                 _built = build_injury_lookup(_injury_records, bootstrap)
                 for _el in bootstrap['elements']:
                     _info = _built.get(_el['id'])
                     if _info:
                         _el['apifootball_injury'] = _info   # attach for inspection regardless of flag
+                # Observability (2026-08-28): a definitive per-run line — success
+                # was previously silent and indistinguishable from a dead key.
+                print(f"AVAIL-01: {len(_injury_records)} injury records -> "
+                      f"{len(_built)} FPL players mapped (gate {'ON' if AVAIL_ENABLED else 'OFF'})")
                 if AVAIL_ENABLED:
                     injury_lookup = _built                  # active: feeds xmins
             except Exception as exc:

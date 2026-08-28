@@ -56,6 +56,41 @@ def test_coldstart_uses_official_fdr_not_all_easy():
     assert player['fixtures'][1]['defensive_difficulty'] == 1.0
 
 
+def test_early_season_blends_official_prior_with_rolling_proxy():
+    """FDR blend (2026-08-28): with 2 of 6 window games played, the fixture
+    score is 1/3 rolling + 2/3 official prior — not a hard cutover to a noisy
+    tiny-sample proxy the moment the first result lands."""
+    history = [_hist(gw, 90, 6, xg=0.4, xa=0.2) for gw in range(1, 11)]
+    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = \
+        _build_minimal_inputs({1: history}, finished_gws=2)
+
+    # Non-degenerate spread: team 14 wins 3-0 twice → opponent (team 1) has the
+    # max xGA (rolling score 0.0 = easiest) but only 2 games of evidence.
+    for f in fixtures:
+        if f['finished']:
+            f['team_h_score'] = 3
+            f['team_a_score'] = 0
+    # Official rating says hardest (5 → prior score 1.0).
+    upcoming = [f for f in fixtures if not f['finished']]
+    upcoming[0]['team_h_difficulty'] = 5
+
+    merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                              xmins_stats=xmins_stats, summaries=summaries)
+    player = next(p for p in merged if p['id'] == 1)
+    first = player['fixtures'][0]
+
+    # w = 2/6: score = (1/3)*0.0 + (2/3)*1.0 = 2/3, prior-leaning.
+    assert abs(first['difficulty_score'] - 2 / 3) < 1e-9
+    # Tier thresholds interpolate with the same w (continuity — no game-count
+    # cliff). In this 2-team synthetic the percentile bands degenerate to the
+    # extremes (easy=0.0, hard=1.0), so thr_hard = (1/3)*1.0 + (2/3)*0.6 =
+    # 0.7333 and the 2/3 score lands 'medium'.
+    assert first['difficulty_tier'] == 'medium'
+    # Opponent-xG blend (3-game window, 2 played): rolling 0.0, prior 1.9 →
+    # (1/3)*1.9 scaled by the venue factor — must stay positive, below prior.
+    assert 0 < first['opponent_xg_per_game'] < 1.9
+
+
 def test_with_real_results_and_spread_rolling_proxy_still_used():
     """Once finished fixtures produce a non-degenerate xGA spread, the rolling
     proxy (not the official rating) drives score/tier — unchanged behavior."""

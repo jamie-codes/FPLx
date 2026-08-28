@@ -48,7 +48,15 @@ def _get(endpoint: str, params: dict) -> dict:
     resp = requests.get(f'{_BASE}/{endpoint}', params=params,
                         headers={'x-apisports-key': _api_key()}, timeout=30)
     resp.raise_for_status()
-    return resp.json()
+    data = resp.json()
+    # api-football signals bad keys / plan limits via HTTP 200 + a non-empty
+    # `errors` body (healthy responses carry {} or []). Raising routes it to
+    # the caller's failure logging instead of a silent "no odds published yet"
+    # (mirrors injury_client._get, review 2026-08-28).
+    errs = data.get('errors')
+    if errs:
+        raise RuntimeError(f'ODDS-02: api-football error response: {errs}')
+    return data
 
 
 def fetch_upcoming_odds(season: int, next_n: int = 20) -> list[dict]:

@@ -155,6 +155,13 @@ def _difficulty_tier(score: float, easy_threshold: float, hard_threshold: float)
         return 'medium'
 
 
+# Official-FDR tier bands (mirror src/lib/club-form.ts tier()): score <= EASY
+# is 'easy' (FPL 1-2), >= HARD is 'hard' (FPL 4-5). Shared by the cold-start
+# fallback below and merge_players' early-season threshold interpolation.
+OFFICIAL_EASY_BAND = 0.4
+OFFICIAL_HARD_BAND = 0.6
+
+
 def _official_fdr_fallback(fpl_difficulty) -> tuple[float, str]:
     """Season cold-start fallback: FPL official difficulty (1-5) → (score, tier).
 
@@ -162,15 +169,21 @@ def _official_fdr_fallback(fpl_difficulty) -> tuple[float, str]:
     team, min == max collapses every score AND both percentile thresholds to 0.5,
     and _difficulty_tier's `score <= easy_threshold` marks EVERY fixture 'easy'.
     FPL's own team-strength ratings are the best available prior until real
-    results exist. Thresholds mirror src/lib/club-form.ts tier():
-    <= 0.4 easy (FPL 1-2), >= 0.6 hard (FPL 4-5), else medium.
+    results exist.
     """
     score = (float(fpl_difficulty or 3) - 1.0) / 4.0
-    return score, _difficulty_tier(score, 0.4, 0.6)
+    return score, _difficulty_tier(score, OFFICIAL_EASY_BAND, OFFICIAL_HARD_BAND)
 
 
 def _compute_difficulty_scores(bootstrap: dict, fixtures: list) -> dict[int, float]:
     """Compute team difficulty scores from rolling xGA. Exported for defcon.py.
+
+    DELIBERATE divergence from merge_players' fixture path (review 2026-08-28):
+    this helper carries NO official-FDR prior blend. Its only consumer is the
+    defcon fixture-correlation bucketing, which needs a body of historical
+    samples to mean anything — early-season, when the blend matters, defcon is
+    weak regardless, so blending here would add coupling for negligible gain.
+    Revisit if defcon gains an early-season role (BT queue).
 
     Args:
         bootstrap: FPL bootstrap-static JSON (used for teams dict).
@@ -1112,8 +1125,13 @@ def merge_players(
         last_n = scored_list[-OFFENSIVE_ROLLING:]
         team_xgs[t_id] = sum(last_n) / len(last_n) if last_n else 0.0
 
-    # Independent normalization across xgs values (D-04)
-    xgs_values = sorted(team_xgs.values())
+    # Independent normalization across xgs values (D-04).
+    # Played-only pool (review 2026-08-28): teams with zero finished games have
+    # a phantom 0.0 that would drag min_xgs down and skew every real team's
+    # normalised score. Unplayed teams still get a (possibly out-of-range)
+    # score below, but the early-season blend gives it zero weight.
+    played_ids = {t_id for t_id, gc in team_goals_conceded.items() if gc}
+    xgs_values = sorted(team_xgs[t_id] for t_id in played_ids)
     min_xgs = min(xgs_values) if xgs_values else 0.0
     max_xgs = max(xgs_values) if xgs_values else 1.0
 
@@ -1156,9 +1174,12 @@ def merge_players(
     # ─────────────────────────────────────────────────────────────────────── #
 
     # ------------------------------------------------------------------ #
-    # 4. Compute difficulty tiers (D-05) via percentile thresholds
+    # 4. Compute difficulty scores + percentile tier thresholds (D-05)
     # ------------------------------------------------------------------ #
-    xga_values = sorted(team_xga.values())
+    # Played-only pool (review 2026-08-28): a zero-game team's phantom 0.0 xGA
+    # would pin min_xga at 0.0 and bias every real team's normalised score and
+    # the tercile thresholds toward 'easy'.
+    xga_values = sorted(team_xga[t_id] for t_id in played_ids)
     n = len(xga_values)
 
     if n >= 3:
@@ -1176,24 +1197,27 @@ def merge_players(
     min_xga = min(xga_values) if xga_values else 0.0
     max_xga = max(xga_values) if xga_values else 1.0
 
-    # Precompute per-team difficulty score and tier
+    # Precompute per-team difficulty scores; convert the xGA thresholds to
+    # score thresholds ONCE (high xGA = easy fixture → low score → 'easy').
+    # Tiers themselves are derived per fixture in _fixture_difficulty, where
+    # the thresholds interpolate with the blend weight.
     difficulty_scores: dict[int, float] = {}
-    difficulty_tiers: dict[int, str] = {}
     for t_id in teams:
-        xga = team_xga.get(t_id, 0.0)
-        score = _compute_difficulty_score(xga, min_xga, max_xga)
-        difficulty_scores[t_id] = score
+        difficulty_scores[t_id] = _compute_difficulty_score(
+            team_xga.get(t_id, 0.0), min_xga, max_xga)
+    easy_score = _compute_difficulty_score(easy_xga_threshold, min_xga, max_xga)
+    hard_score = _compute_difficulty_score(hard_xga_threshold, min_xga, max_xga)
 
-        # Convert xGA thresholds to score thresholds for tier classification:
-        # high xGA (easy fixture) → low score → 'easy'
-        easy_score = _compute_difficulty_score(easy_xga_threshold, min_xga, max_xga)
-        hard_score = _compute_difficulty_score(hard_xga_threshold, min_xga, max_xga)
-        difficulty_tiers[t_id] = _difficulty_tier(score, easy_score, hard_score)
-
-    # Season cold start: no finished fixtures (or a fully degenerate xGA spread)
-    # means the rolling proxy carries no signal — fall back to FPL's official
-    # per-fixture difficulty ratings for score/tier until results arrive.
-    fdr_cold_start = len(finished) == 0 or (max_xga - min_xga) < 1e-9
+    # Early-season blending (2026-08-28, extends the GW1 cold-start fix): the
+    # rolling proxies carry little signal until each team has a few games, so
+    # blend FPL's official per-fixture difficulty prior with the rolling score,
+    # weighted by how many games the OPPONENT has played — fully official at 0,
+    # fully rolling once the window is filled. A degenerate spread (all teams
+    # equal, e.g. zero finished fixtures) forces the prior outright.
+    FDR_PRIOR_WINDOW = ROLLING_WINDOW        # 6 — matches the xGA rolling window
+    OPP_XG_PRIOR_WINDOW = OFFENSIVE_ROLLING  # 3 — matches the goals-scored window
+    xga_degenerate = n == 0 or (max_xga - min_xga) < 1e-9
+    xgs_degenerate = not played_ids or (max_xgs - min_xgs) < 1e-9
 
     # ------------------------------------------------------------------ #
     # 5. Build upcoming fixtures per team (D-03, D-04)
@@ -1215,24 +1239,41 @@ def merge_players(
     COLDSTART_OPP_XG_BASE = 0.9
     COLDSTART_OPP_XG_SLOPE = 1.0
 
+    def _blend(w: float, rolling: float, prior: float) -> float:
+        return w * rolling + (1 - w) * prior
+
     def _fixture_difficulty(opp_id: int, own_official_difficulty) -> tuple[float, str, float, float]:
         """(attacking score, tier, defensive score, opponent xG/game) for one upcoming fixture.
 
-        Cold start: FPL's single official difficulty rating is a direction-agnostic
-        team-strength prior, so it deliberately stands in for BOTH attacking and
-        defensive difficulty (and scales the opponent-xG prior) until real
-        results exist. Warm path is the rolling goals-based proxy — UNCHANGED.
+        FPL's single official difficulty rating is a direction-agnostic
+        team-strength prior, blended out linearly as the opponent's rolling
+        sample grows. The tier thresholds interpolate from the official bands
+        to the league-percentile bands with the SAME weight, so the tier is
+        continuous in w — at a full window this reproduces the warm percentile
+        path exactly, with no game-count cliff (review 2026-08-28).
         """
-        if fdr_cold_start:
-            att_score, att_tier = _official_fdr_fallback(own_official_difficulty)
-            opp_xg = COLDSTART_OPP_XG_BASE + COLDSTART_OPP_XG_SLOPE * att_score
-            return att_score, att_tier, att_score, opp_xg
-        return (
-            difficulty_scores.get(opp_id, 0.5),                       # UNCHANGED
-            difficulty_tiers.get(opp_id, 'medium'),                   # UNCHANGED
-            defensive_difficulty_scores.get(opp_id, 0.5),             # NEW (DATA-01, D-02)
-            team_xgs.get(opp_id, 0.0),                                # Phase 83 GK-01
+        official_score, _ = _official_fdr_fallback(own_official_difficulty)
+        opp_games = len(team_goals_conceded.get(opp_id, []))
+
+        w_att = 0.0 if xga_degenerate else min(opp_games, FDR_PRIOR_WINDOW) / FDR_PRIOR_WINDOW
+        att_score = _blend(w_att, difficulty_scores.get(opp_id, 0.5), official_score)
+        att_tier = _difficulty_tier(
+            att_score,
+            _blend(w_att, easy_score, OFFICIAL_EASY_BAND),
+            _blend(w_att, hard_score, OFFICIAL_HARD_BAND),
         )
+
+        # Defensive + opponent-xG proxies run on the 3-game goals-scored window.
+        w_gs = 0.0 if xgs_degenerate else min(opp_games, OPP_XG_PRIOR_WINDOW) / OPP_XG_PRIOR_WINDOW
+        def_score = _blend(w_gs, defensive_difficulty_scores.get(opp_id, 0.5),   # NEW (DATA-01, D-02)
+                           official_score)
+        # NOTE (review 2026-08-28): at w_gs == 1 a genuinely scoreless 3-game
+        # opponent still yields opp_xg = 0.0 — that is the pre-existing,
+        # backtest-validated warm-path behaviour; flooring it would change
+        # validated model inputs and needs lab evidence first (BT queue).
+        opp_xg = _blend(w_gs, team_xgs.get(opp_id, 0.0),                         # Phase 83 GK-01
+                        COLDSTART_OPP_XG_BASE + COLDSTART_OPP_XG_SLOPE * official_score)
+        return att_score, att_tier, def_score, opp_xg
 
     for fix in upcoming:
         h_id = fix['team_h']
