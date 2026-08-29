@@ -92,10 +92,10 @@ describe('FixtureHeatMap', () => {
     const bodyRows = container.querySelectorAll('tbody tr')
     expect(bodyRows.length).toBe(20)
     const colHeaders = container.querySelectorAll('thead th')
-    expect(colHeaders.length).toBe(9)  // 1 team-name + 8 GW columns
+    expect(colHeaders.length).toBe(11)  // 1 team-name + 8 GW columns + Ease + Fx (planner)
     bodyRows.forEach(row => {
       const cells = row.querySelectorAll('th, td')
-      expect(cells.length).toBe(9)
+      expect(cells.length).toBe(11)
     })
   })
 
@@ -192,7 +192,7 @@ describe('FixtureHeatMap', () => {
     mockUseClubForm.mockReturnValue({ data, isLoading: false, error: null })
     const { container } = render(<FixtureHeatMap />)
     const colHeaders = Array.from(container.querySelectorAll('thead th')).slice(1).map(h => h.textContent?.trim())
-    expect(colHeaders).toEqual(['GW34', 'GW35', 'GW36', 'GW37', 'GW38', 'GW39', 'GW40', 'GW41'])
+    expect(colHeaders).toEqual(['GW34', 'GW35', 'GW36', 'GW37', 'GW38', 'GW39', 'GW40', 'GW41', 'Ease', 'Fx'])
   })
 
   it('default sort: rows ordered alphabetically by team_short_name', () => {
@@ -294,12 +294,12 @@ describe('FixtureHeatMap', () => {
     ))
     mockUseClubForm.mockReturnValue({ data, isLoading: false, error: null })
     const { container } = render(<FixtureHeatMap />)
-    expect(container.querySelectorAll('thead th').length).toBe(9)
+    expect(container.querySelectorAll('thead th').length).toBe(11)
     const button = Array.from(container.querySelectorAll('button')).find(
       b => b.textContent?.trim() === '16 GW'
     )!
     fireEvent.click(button)
-    expect(container.querySelectorAll('thead th').length).toBe(17)
+    expect(container.querySelectorAll('thead th').length).toBe(19)
   })
 
   it('HEAT-07: ATT mode uses difficulty_tier; DEF mode applies tier() to defensive_difficulty', () => {
@@ -367,13 +367,81 @@ describe('FixtureHeatMap', () => {
       error: null,
     })
     const { container } = render(<FixtureHeatMap submittedId="123" />)
-    expect(container.querySelectorAll('thead th').length).toBe(9)
+    expect(container.querySelectorAll('thead th').length).toBe(11)
     const ownedBtn = Array.from(container.querySelectorAll('button')).find(
       b => b.textContent?.trim() === 'Owned only'
     )!
     fireEvent.click(ownedBtn)
-    expect(container.querySelectorAll('thead th').length).toBe(9)
+    expect(container.querySelectorAll('thead th').length).toBe(11)
     expect(container.querySelectorAll('tbody tr').length).toBe(1)
+  })
+
+  // ===========================================================================
+  // Planner (2026-08-29): GW window + best-run ranking + Ease/Fx columns
+  // ===========================================================================
+
+  it('PLAN-01: From-GW select shifts the window start (GW36 → columns GW36..41)', () => {
+    const data: ClubForm[] = [
+      team(1, 'ARS', [34,35,36,37,38,39,40,41].map(gw => fix({ opp:'X', home:true, gw, tier:'easy' }))),
+    ]
+    mockUseClubForm.mockReturnValue({ data, isLoading: false, error: null })
+    const { container } = render(<FixtureHeatMap />)
+    const select = container.querySelector('select[aria-label="From gameweek"]')!
+    expect(select).not.toBeNull()
+    fireEvent.change(select, { target: { value: '36' } })
+    const colHeaders = Array.from(container.querySelectorAll('thead th')).slice(1).map(h => h.textContent?.trim())
+    expect(colHeaders).toEqual(['GW36', 'GW37', 'GW38', 'GW39', 'GW40', 'GW41', 'Ease', 'Fx'])
+  })
+
+  it('PLAN-02: "Best run" sort ranks teams easiest window first; default stays A–Z', () => {
+    const data: ClubForm[] = [
+      team(1, 'AVL', [fix({ opp:'X', home:true, gw:34, tier:'hard', ad:0.71 })]),
+      team(2, 'WHU', [fix({ opp:'X', home:true, gw:34, tier:'easy', ad:0.28 })]),
+      team(3, 'MCI', [fix({ opp:'X', home:true, gw:34, tier:'medium', ad:0.5 })]),
+    ]
+    mockUseClubForm.mockReturnValue({ data, isLoading: false, error: null })
+    const { container } = render(<FixtureHeatMap />)
+    const heads = () => Array.from(container.querySelectorAll('tbody tr th[scope="row"]')).map(h => h.textContent?.trim())
+    expect(heads()).toEqual(['AVL', 'MCI', 'WHU'])   // default alphabetical
+    const btn = Array.from(container.querySelectorAll('button')).find(
+      b => b.textContent?.trim() === 'Best run'
+    )!
+    fireEvent.click(btn)
+    expect(heads()).toEqual(['WHU', 'MCI', 'AVL'])   // easiest run first
+  })
+
+  it('PLAN-03: Ease and Fx columns render per team (ease bar + window fixture count)', () => {
+    const data: ClubForm[] = [
+      team(1, 'ARS', [
+        fix({ opp:'X', home:true, gw:34, tier:'easy', ad:0.28 }),
+        fix({ opp:'Y', home:false, gw:35, tier:'easy', ad:0.28 }),
+      ]),
+    ]
+    mockUseClubForm.mockReturnValue({ data, isLoading: false, error: null })
+    const { container } = render(<FixtureHeatMap />)
+    const row = container.querySelector('tbody tr:nth-child(1)')!
+    expect(row.querySelector('[data-testid="ease-bar"]')).not.toBeNull()
+    const cells = row.querySelectorAll('td')
+    // trailing cells: [..., ease, fx]
+    expect(cells[cells.length - 1].textContent?.trim()).toBe('2')
+  })
+
+  it('PLAN-04: team with no fixtures in the window shows — and sorts last under Best run', () => {
+    const data: ClubForm[] = [
+      team(1, 'ARS', []),   // nothing upcoming in window
+      team(2, 'WHU', [fix({ opp:'X', home:true, gw:34, tier:'hard', ad:0.71 })]),
+    ]
+    mockUseClubForm.mockReturnValue({ data, isLoading: false, error: null })
+    const { container } = render(<FixtureHeatMap />)
+    const btn = Array.from(container.querySelectorAll('button')).find(
+      b => b.textContent?.trim() === 'Best run'
+    )!
+    fireEvent.click(btn)
+    const heads = Array.from(container.querySelectorAll('tbody tr th[scope="row"]')).map(h => h.textContent?.trim())
+    expect(heads).toEqual(['WHU', 'ARS'])   // fixture-less team last despite alphabet
+    const arsRow = container.querySelector('tbody tr:nth-child(2)')!
+    const arsCells = arsRow.querySelectorAll('td')
+    expect(arsCells[arsCells.length - 2].textContent?.trim()).toBe('—')
   })
 
   // ===========================================================================

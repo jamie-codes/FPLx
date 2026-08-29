@@ -19,15 +19,18 @@ function tierFromEase(ease: number): DifficultyTier {
 }
 
 interface Props {
-  /** 0.0 = hardest fixture run, 1.0 = easiest. */
+  /** 0.0 = hardest fixture run, 1.0 = easiest. Values outside [0,1] are clamped. */
   ease: number
+  /** Render the clamped percentage as text beside the bar (aria-hidden — the
+   * bar's own aria-label already announces it; review 2026-08-29). */
+  showLabel?: boolean
 }
 
-export function EaseBar({ ease }: Props) {
+export function EaseBar({ ease, showLabel = false }: Props) {
   const clamped = Math.max(0, Math.min(1, ease))
   const tier = tierFromEase(clamped)
   const pct = (clamped * 100).toFixed(0)
-  return (
+  const bar = (
     <div
       className="flex-1 h-3 bg-surface-2 rounded overflow-hidden"
       role="img"
@@ -40,5 +43,14 @@ export function EaseBar({ ease }: Props) {
         style={{ width: `${clamped * 100}%` }}
       />
     </div>
+  )
+  if (!showLabel) return bar
+  return (
+    <span className="flex flex-1 items-center gap-1.5">
+      {bar}
+      <span aria-hidden className="text-xs font-mono tabular-nums text-ink-muted w-6 text-right">
+        {pct}
+      </span>
+    </span>
   )
 }

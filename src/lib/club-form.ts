@@ -9,6 +9,31 @@ export function tier(diff: number): DifficultyTier {
   return 'medium'
 }
 
+/** Planner (2026-08-29): per-team ease/count over an explicit GW window.
+ *
+ * ease = sum(1 - difficulty) / windowIds.size — "easy-fixture volume per GW
+ * slot": blank GWs drag the score toward 0 and DGWs boost it, which is what a
+ * wildcard/bench-boost planner actually ranks by (a team with one easy game
+ * and seven blanks is NOT the best run). ease is null when the team has no
+ * upcoming fixtures in the window. Single source of truth for the heat map's
+ * Ease column and its Best-run sort.
+ */
+export function windowEaseStats(
+  fixtures: ClubFormFixture[],
+  windowIds: ReadonlySet<number>,
+  key: 'attacking_difficulty' | 'defensive_difficulty',
+): { ease: number | null; count: number } {
+  let sum = 0
+  let count = 0
+  for (const f of fixtures) {
+    if (!windowIds.has(f.event_id)) continue
+    sum += 1 - f[key]
+    count++
+  }
+  if (count === 0 || windowIds.size === 0) return { ease: null, count: 0 }
+  return { ease: sum / windowIds.size, count }
+}
+
 function meanEase(
   fixtures: ClubFormFixture[],
   n: number,

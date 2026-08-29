@@ -1,7 +1,48 @@
 // @vitest-environment node
 // Phase 111 FIX-01: unit tests for computeClubForm current_gw_played builder.
 import { describe, it, expect } from 'vitest'
-import { computeClubForm } from './club-form'
+import { computeClubForm, windowEaseStats } from './club-form'
+import type { ClubFormFixture } from '@/lib/types'
+
+// --- Planner (2026-08-29): windowEaseStats — per-GW-slot ease over a window ---
+
+function wf(gw: number, att: number): ClubFormFixture {
+  return {
+    opponent_team: 'OPP', is_home: true, event_id: gw,
+    difficulty_score: att, difficulty_tier: 'medium',
+    attacking_difficulty: att, defensive_difficulty: att,
+  } as ClubFormFixture
+}
+
+describe('windowEaseStats', () => {
+  it('averages ease over window SLOTS, so blank GWs drag the score down', () => {
+    // one fixture at ease 0.8 across a 4-slot window → 0.2, not 0.8
+    const { ease, count } = windowEaseStats([wf(4, 0.2)], new Set([4, 5, 6, 7]), 'attacking_difficulty')
+    expect(count).toBe(1)
+    expect(ease).toBeCloseTo(0.2)
+  })
+
+  it('DGWs boost the score above a single fixture ease', () => {
+    const { ease, count } = windowEaseStats(
+      [wf(4, 0.4), wf(4, 0.4)], new Set([4]), 'attacking_difficulty')
+    expect(count).toBe(2)
+    expect(ease).toBeCloseTo(1.2)   // two 0.6-ease games in one slot
+  })
+
+  it('ignores fixtures outside the window and supports the DEF key', () => {
+    const { ease, count } = windowEaseStats(
+      [wf(4, 0.5), wf(99, 0.0)], new Set([4, 5]), 'defensive_difficulty')
+    expect(count).toBe(1)
+    expect(ease).toBeCloseTo(0.25)
+  })
+
+  it('returns null ease / 0 count when no fixtures fall inside the window', () => {
+    expect(windowEaseStats([wf(99, 0.5)], new Set([4]), 'attacking_difficulty'))
+      .toEqual({ ease: null, count: 0 })
+    expect(windowEaseStats([], new Set([4]), 'attacking_difficulty'))
+      .toEqual({ ease: null, count: 0 })
+  })
+})
 
 // ---------------------------------------------------------------------------
 // Test data factories (mirror internal shapes from club-form.ts)

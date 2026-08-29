@@ -77,7 +77,6 @@ export function FixtureEaseRankingPanel() {
       <ul className="space-y-1">
         {ranked.map((team, i) => {
           const ease = team[key] as number
-          const pct = (ease * 100).toFixed(0)
           const isTarget = team.upcoming_fixtures
             .slice(0, 5)
             .filter((f) => f.attacking_difficulty < 0.5).length >= 4
@@ -112,8 +111,8 @@ export function FixtureEaseRankingPanel() {
               >
                 <span className="w-6 text-right text-ink-muted">{i + 1}</span>
                 <span className="w-12 font-mono">{team.team_short_name}</span>
-                <EaseBar ease={ease} />
-                <span className="w-10 text-right text-xs text-ink-muted">{pct}</span>
+                {/* review 2026-08-29: label folded into EaseBar (clamped, aria-hidden) */}
+                <EaseBar ease={ease} showLabel />
                 {isTarget && (
                   <>
                     <span

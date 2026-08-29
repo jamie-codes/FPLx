@@ -5,10 +5,13 @@ import { useClubForm } from '@/lib/hooks/useClubForm'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useSquad } from '@/lib/hooks/useSquad'
 import { useTeamBadge } from '@/lib/hooks/useTeamBadge'
-import { tier } from '@/lib/club-form'
+import { tier, windowEaseStats } from '@/lib/club-form'
 import { AttDefToggle } from './AttDefToggle'
 import { HorizonToggle } from './HorizonToggle'
 import { OwnedFilterToggle } from './OwnedFilterToggle'
+import { FromGwSelect } from './FromGwSelect'
+import { RunSortToggle, type RunSortMode } from './RunSortToggle'
+import { EaseBar } from './EaseBar'
 import type { ClubForm, ClubFormFixture, DifficultyTier } from '@/lib/types'
 
 // UIX-04 ruling 1: FDR/difficulty scales are data, not chrome — the tiers map to
@@ -42,16 +45,24 @@ interface Props {
 export interface HeatMapRowProps {
   t: ClubForm
   grid: {
-    allEventIds: number[]
+    windowEventIds: number[]
     byTeamGw: Map<number, Map<number, ClubFormFixture[]>>
     byTeamGwPlayed: Map<number, Map<number, ClubFormFixture[]>>
   }
   mode: 'ATT' | 'DEF'
   tierMap: Record<DifficultyTier, string>
   ownedTeamIds: Set<number>
+  /** Planner: mean ease over the window (1 = easiest run); null = no fixtures. */
+  windowEase: number | null
+  /** Planner: number of fixtures inside the window (DGWs count double). */
+  windowFxCount: number
 }
 
-export function HeatMapRow({ t, grid, mode, tierMap, ownedTeamIds }: HeatMapRowProps) {
+// React.memo (review 2026-08-29): sort/window toggles reorder rows with
+// referentially-stable props — memo makes reorder-only updates near-free.
+export const HeatMapRow = React.memo(function HeatMapRow(
+  { t, grid, mode, tierMap, ownedTeamIds, windowEase, windowFxCount }: HeatMapRowProps,
+) {
   const { src, onError, showFallback, fallbackColour, initial } = useTeamBadge(t.team_short_name)
   const isOwned = ownedTeamIds.has(t.team_id)
   // UIX-04: owned-row highlight blue → accent tokens
@@ -84,7 +95,7 @@ export function HeatMapRow({ t, grid, mode, tierMap, ownedTeamIds }: HeatMapRowP
           <span>{t.team_short_name}</span>
         </span>
       </th>
-      {grid.allEventIds.map(gw => {
+      {grid.windowEventIds.map(gw => {
         const fixtures = grid.byTeamGw.get(t.team_id)?.get(gw) ?? []
         const playedFixtures = grid.byTeamGwPlayed.get(t.team_id)?.get(gw) ?? []
         if (fixtures.length === 0 && playedFixtures.length === 0) {
@@ -184,9 +195,20 @@ export function HeatMapRow({ t, grid, mode, tierMap, ownedTeamIds }: HeatMapRowP
           </td>
         )
       })}
+      {/* Planner columns: window ease per GW slot + upcoming fixture count */}
+      <td className="px-2 py-1 h-8 min-w-[72px]" data-testid="window-ease-cell">
+        {windowEase === null ? (
+          <span className="text-ink-muted">—</span>
+        ) : (
+          <EaseBar ease={windowEase} showLabel />
+        )}
+      </td>
+      <td className="px-2 py-1 text-center h-8 text-xs font-mono text-ink-muted" data-testid="window-fx-cell">
+        {windowFxCount}
+      </td>
     </tr>
   )
-}
+})
 
 export function FixtureHeatMap({ submittedId = null }: Props) {
   const { data, isLoading, error } = useClubForm()
@@ -196,6 +218,9 @@ export function FixtureHeatMap({ submittedId = null }: Props) {
   const [horizon, setHorizon] = useState<8 | 12 | 16>(8)
   const [mode, setMode] = useState<'ATT' | 'DEF'>('ATT')
   const [ownedOnly, setOwnedOnly] = useState(false)
+  // Planner (2026-08-29): window start (null = first available GW) + row order.
+  const [fromGw, setFromGw] = useState<number | null>(null)
+  const [sortMode, setSortMode] = useState<RunSortMode>('alpha')
 
   useEffect(() => {
     setOwnedOnly(false)
@@ -212,7 +237,9 @@ export function FixtureHeatMap({ submittedId = null }: Props) {
     return set
   }, [squad, players])
 
-  const grid = useMemo(() => {
+  // Data-only memo — independent of the planner window so From-GW changes
+  // don't rebuild the fixture maps (review 2026-08-29).
+  const dataGrid = useMemo(() => {
     if (!data || data.length === 0) return null
     // Phase 111 FIX-01: include current_gw_played event_ids so played-GW column always appears.
     const allEventIds = Array.from(
@@ -220,7 +247,7 @@ export function FixtureHeatMap({ submittedId = null }: Props) {
         ...data.flatMap(t => t.upcoming_fixtures.map(f => f.event_id)),
         ...data.flatMap(t => (t.current_gw_played ?? []).map(f => f.event_id)),
       ])
-    ).sort((a, b) => a - b).slice(0, horizon)
+    ).sort((a, b) => a - b)
     const byTeamGw = new Map<number, Map<number, ClubFormFixture[]>>()
     for (const t of data) {
       const m = new Map<number, ClubFormFixture[]>()
@@ -246,7 +273,56 @@ export function FixtureHeatMap({ submittedId = null }: Props) {
       a.team_short_name.localeCompare(b.team_short_name)
     )
     return { allEventIds, byTeamGw, byTeamGwPlayed, sortedTeams }
-  }, [data, horizon])
+  }, [data])
+
+  // Planner: a stale pin (GW no longer in the data) falls back to auto so the
+  // select and the rendered window can never disagree (review 2026-08-29).
+  const effectiveFromGw =
+    dataGrid && fromGw !== null && dataGrid.allEventIds.includes(fromGw) ? fromGw : null
+
+  const windowEventIds = useMemo(() => {
+    if (!dataGrid) return []
+    return dataGrid.allEventIds
+      .filter(id => effectiveFromGw === null || id >= effectiveFromGw)
+      .slice(0, horizon)
+  }, [dataGrid, effectiveFromGw, horizon])
+
+  const grid = useMemo(
+    () => (dataGrid ? { ...dataGrid, windowEventIds } : null),
+    [dataGrid, windowEventIds],
+  )
+
+  // Planner: per-team ease/count over the visible window (UPCOMING fixtures
+  // only — played games aren't part of the run being planned), in the current
+  // ATT/DEF mode. Semantics live in windowEaseStats (single source of truth).
+  const windowStats = useMemo(() => {
+    const stats = new Map<number, { ease: number | null; count: number }>()
+    if (!grid) return stats
+    const idSet = new Set(grid.windowEventIds)
+    const key = mode === 'ATT' ? ('attacking_difficulty' as const) : ('defensive_difficulty' as const)
+    for (const t of grid.sortedTeams) {
+      stats.set(t.team_id, windowEaseStats(t.upcoming_fixtures, idSet, key))
+    }
+    return stats
+  }, [grid, mode])
+
+  // Planner: "Best run" ranks by window ease (desc), fixture-less teams last,
+  // alphabetical tiebreak (sortedTeams is already A–Z, and sort is stable).
+  const visibleTeams = useMemo(() => {
+    if (!grid) return []
+    const filtered = ownedOnly && submittedId !== null
+      ? grid.sortedTeams.filter(t => ownedTeamIds.has(t.team_id))
+      : grid.sortedTeams
+    if (sortMode !== 'ease') return filtered
+    return [...filtered].sort((a, b) => {
+      const ea = windowStats.get(a.team_id)?.ease ?? null
+      const eb = windowStats.get(b.team_id)?.ease ?? null
+      if (ea === null && eb === null) return 0
+      if (ea === null) return 1
+      if (eb === null) return -1
+      return eb - ea
+    })
+  }, [grid, ownedOnly, submittedId, ownedTeamIds, sortMode, windowStats])
 
   if (isLoading) {
     return <p className="text-ink-muted">Loading fixture heat map...</p>
@@ -266,9 +342,6 @@ export function FixtureHeatMap({ submittedId = null }: Props) {
     )
   }
 
-  const visibleTeams = ownedOnly && submittedId !== null
-    ? grid.sortedTeams.filter(t => ownedTeamIds.has(t.team_id))
-    : grid.sortedTeams
 
   // UIX-04: gradient fills come from theme-following CSS vars (one map for both themes)
   const tierMap = TIER_FILL
@@ -278,7 +351,9 @@ export function FixtureHeatMap({ submittedId = null }: Props) {
       <div className="mb-3 flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-xl font-bold">Fixture Heat Map</h2>
         <div className="flex flex-wrap items-center gap-2">
+          <FromGwSelect options={grid.allEventIds} value={effectiveFromGw} onChange={setFromGw} />
           <HorizonToggle value={horizon} onChange={setHorizon} />
+          <RunSortToggle value={sortMode} onChange={setSortMode} />
           <AttDefToggle value={mode} onChange={setMode} />
           <OwnedFilterToggle
             value={ownedOnly}
@@ -296,7 +371,7 @@ export function FixtureHeatMap({ submittedId = null }: Props) {
                 aria-label="Team"
                 className="px-2 py-1 text-left font-mono text-xs text-ink-muted w-20"
               ></th>
-              {grid.allEventIds.map(gw => (
+              {grid.windowEventIds.map(gw => (
                 <th
                   key={gw}
                   scope="col"
@@ -305,13 +380,27 @@ export function FixtureHeatMap({ submittedId = null }: Props) {
                   GW{gw}
                 </th>
               ))}
+              <th
+                scope="col"
+                className="px-2 py-1 text-left font-mono text-xs text-ink-muted min-w-[72px]"
+                title="Ease of UPCOMING fixtures per gameweek slot in the window (100 = easiest run; blank GWs drag it down, doubles boost it)"
+              >
+                Ease
+              </th>
+              <th
+                scope="col"
+                className="px-2 py-1 text-center font-mono text-xs text-ink-muted"
+                title="Upcoming fixtures in the window (DGWs count double; mind blanks when bench boosting)"
+              >
+                Fx
+              </th>
             </tr>
           </thead>
           <tbody>
             {ownedOnly && submittedId !== null && visibleTeams.length === 0 ? (
               <tr>
                 <td
-                  colSpan={grid.allEventIds.length + 1}
+                  colSpan={grid.windowEventIds.length + 3}
                   className="text-sm text-ink-muted px-4 py-6 text-center"
                 >
                   No fixtures for owned teams in this window. Try a longer horizon or turn off the filter.
@@ -326,6 +415,8 @@ export function FixtureHeatMap({ submittedId = null }: Props) {
                   mode={mode}
                   tierMap={tierMap}
                   ownedTeamIds={ownedTeamIds}
+                  windowEase={windowStats.get(t.team_id)?.ease ?? null}
+                  windowFxCount={windowStats.get(t.team_id)?.count ?? 0}
                 />
               ))
             )}
