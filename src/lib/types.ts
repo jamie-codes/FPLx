@@ -468,6 +468,11 @@ export type SanityCheckId =
   | 'pipeline_stale'
   | 'sp_unmatched_ids'  // Phase 84 SPQ-01: set-piece delivery quality unmatched IDs
   | 'xpts_max'          // DQ-01: model output sanity — highest xPts_1gw across all players
+  // 2026-08-30: external-layer liveness. Each of these layers spent time
+  // silently returning nothing, which looked identical to a quiet week.
+  | 'injury_players_mapped'
+  | 'odds_fixtures_priced'
+  | 'fdr_tier_spread'
 
 export type SanityCheckStatus = 'ok' | 'warn' | 'error'
 

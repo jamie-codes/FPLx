@@ -87,6 +87,10 @@ const SANITY_CHECK_LABELS: Record<SanityCheck['id'], string> = {
   pipeline_stale:       'Pipeline stale',
   sp_unmatched_ids:     'Set-piece unmatched IDs',  // Phase 84 SPQ-01
   xpts_max:             'xPts max',                 // DQ-01: model output sanity
+  // 2026-08-30: external-layer liveness checks.
+  injury_players_mapped: 'Injury data (players mapped)',
+  odds_fixtures_priced:  'Market odds (fixtures priced)',
+  fdr_tier_spread:       'Fixture difficulty spread',
 }
 
 // DQ-01: human-readable labels for known pipeline artifact filenames.

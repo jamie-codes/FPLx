@@ -102,6 +102,67 @@ def _check_sp_unmatched(count: int) -> dict:
     return {'id': 'sp_unmatched_ids', 'status': status, 'value': count, 'threshold': '<= 5'}
 
 
+# ---------------------------------------------------------------------------
+# External-layer checks (2026-08-30)
+#
+# AVAIL-01 and ODDS-02 both spent the season silently returning nothing: a dead
+# layer is indistinguishable from a quiet one unless something asserts on the
+# counts. These surface that in data_health.json rather than leaving it to
+# whoever happens to read a CI log.
+# ---------------------------------------------------------------------------
+
+def _check_injury_mapped(count: int) -> dict:
+    """Injury records joined to FPL players. Zero mid-season means the layer is
+    dark — a whole league never has zero absentees."""
+    if count >= 10:
+        status = 'ok'
+    elif count > 0:
+        status = 'warn'
+    else:
+        status = 'error'
+    return {'id': 'injury_players_mapped', 'status': status, 'value': count,
+            'threshold': '>= 10'}
+
+
+def _check_odds_priced(count: int) -> dict:
+    """Fixtures with market odds joined. A gameweek is ~10 fixtures, so a
+    handful means partial coverage and zero means the join is broken."""
+    if count >= 5:
+        status = 'ok'
+    elif count > 0:
+        status = 'warn'
+    else:
+        status = 'error'
+    return {'id': 'odds_fixtures_priced', 'status': status, 'value': count,
+            'threshold': '>= 5'}
+
+
+def _check_fdr_spread(merged: list) -> dict | None:
+    """Guard the original all-green bug: with no games played, every fixture
+    tiered 'easy'. A real league always spans several tiers, so a single-tier
+    (or near-single-tier) distribution means the difficulty model has
+    collapsed. Returns None when there is no fixture data to judge.
+    """
+    counts: dict[str, int] = {}
+    for p in merged:
+        for f in (p.get('fixtures') or [])[:5]:
+            tier = f.get('difficulty_tier')
+            if tier:
+                counts[tier] = counts.get(tier, 0) + 1
+    total = sum(counts.values())
+    if total == 0:
+        return None
+    top_share = max(counts.values()) / total
+    if len(counts) <= 1:
+        status = 'error'
+    elif top_share > 0.90:
+        status = 'warn'
+    else:
+        status = 'ok'
+    return {'id': 'fdr_tier_spread', 'status': status,
+            'value': round(top_share, 3), 'threshold': '<= 0.90 in one tier'}
+
+
 def _append_history(prior_history: list, overall_status: str, generated_at: str) -> list:
     """Append new status entry; cap FIFO at 7 items.
 
@@ -139,6 +200,8 @@ def compute_data_health(
     cache_dir: str,
     pipeline_stale: bool = False,
     sp_unmatched_count: int | None = None,
+    injury_mapped_count: int | None = None,
+    odds_priced_count: int | None = None,
 ) -> dict:
     """Compute data_health.json artifact and write via save().
 
@@ -204,6 +267,17 @@ def compute_data_health(
     # When None (failure case from run_sp_quality), entry is omitted (D-05 / Pitfall 6).
     if sp_unmatched_count is not None:
         sanity_checks.append(_check_sp_unmatched(sp_unmatched_count))
+    # External-layer checks (2026-08-30). Same None-means-omit convention as
+    # sp_unmatched_count: the caller passes None when the layer is disabled or
+    # legitimately inapplicable (off-season, no upcoming fixtures), so a quiet
+    # period can't masquerade as a failure — or vice versa.
+    if injury_mapped_count is not None:
+        sanity_checks.append(_check_injury_mapped(injury_mapped_count))
+    if odds_priced_count is not None:
+        sanity_checks.append(_check_odds_priced(odds_priced_count))
+    fdr_check = _check_fdr_spread(merged)
+    if fdr_check is not None:
+        sanity_checks.append(fdr_check)
 
     result = {
         'generated_at': datetime.now(timezone.utc).isoformat(),

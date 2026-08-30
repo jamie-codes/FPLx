@@ -533,6 +533,11 @@ def run(dry_run: bool = False):
         # merged defaults to [] so downstream references (last_updated, data_health) are safe.
         merged: list = []
         sp_unmatched_count = None
+        # External-layer health counts (2026-08-30). None = layer not exercised
+        # this run (off-season, or the block raised) so data_health omits the
+        # check rather than reporting a false failure.
+        injury_mapped_count = None
+        odds_priced_count = None
         if not IS_OFF_SEASON:
             # Count finished gameweeks for xmins start_rate fallback
             finished_gws = sum(1 for e in bootstrap.get('events', []) if e.get('finished'))
@@ -656,6 +661,7 @@ def run(dry_run: bool = False):
                     print(f"AVAIL-01 coverage: {_cov['matched']} matched / "
                           f"{_cov['unmatched']} unmatched records; unmatched names: "
                           f"{', '.join(_cov['unmatched_names'][:40])}")
+                injury_mapped_count = len(_built)
                 if AVAIL_ENABLED:
                     injury_lookup = _built                  # active: feeds xmins
             except Exception as exc:
@@ -687,7 +693,8 @@ def run(dry_run: bool = False):
                     _season = int((bootstrap.get('events') or [{}])[0]
                                   .get('deadline_time', '2026')[:4])
                     odds_lookup = get_live_odds_lookup(bootstrap, fixtures, season=_season)
-                    print(f"Live odds: {len(odds_lookup) // 2} fixture(s) priced.")
+                    odds_priced_count = len(odds_lookup) // 2
+                    print(f"Live odds: {odds_priced_count} fixture(s) priced.")
                 except Exception as odds_exc:
                     print(f"[odds_live] non-fatal: {odds_exc}")
 
@@ -1110,7 +1117,9 @@ def run(dry_run: bool = False):
         try:
             from data_health import compute_data_health
             compute_data_health(merged, timestamps, cache_dir, pipeline_stale=False,
-                                sp_unmatched_count=sp_unmatched_count)
+                                sp_unmatched_count=sp_unmatched_count,
+                                injury_mapped_count=injury_mapped_count,
+                                odds_priced_count=odds_priced_count)
             print("Data health written.")
         except Exception as dh_exc:
             print(f"[data_health] non-fatal error: {dh_exc}", file=sys.stderr)
