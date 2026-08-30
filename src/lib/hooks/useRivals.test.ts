@@ -120,6 +120,16 @@ describe('useRivals', () => {
     expect((result.current.error as RivalsError).kind).toBe('upstream')
   })
 
+  it('classifies a bootstrap outage as upstream, not a bad league ID', async () => {
+    // Bootstrap runs BEFORE standings, so during a real FPL outage it fails
+    // first — the user must not be told to re-check a valid league ID.
+    const fetchMock = vi.fn(async () => new Response('{}', { status: 503 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const { result } = renderHook(() => useRivals('314', null), { wrapper: makeWrapper() })
+    await waitFor(() => expect(result.current.isError).toBe(true), { timeout: 5000 })
+    expect((result.current.error as RivalsError).kind).toBe('upstream')
+  })
+
   it('surfaces a shape RivalsError when standings JSON does not match', async () => {
     installFetchMock({
       'bootstrap-static': () => bootstrapPayload('2099-01-01T00:00:00Z'),

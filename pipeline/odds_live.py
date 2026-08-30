@@ -86,31 +86,27 @@ def fetch_upcoming_fixtures(season: int, next_n: int = 20,
     return meta
 
 
-def fetch_upcoming_odds(season: int, next_n: int = 20) -> list[dict]:
-    """Raw API-Football odds responses for the next PL fixtures (paged)."""
-    out: list[dict] = []
-    page = 1
-    while True:
-        payload = _get('odds', {'league': _PL_LEAGUE, 'season': season,
-                                'bet': MATCH_WINNER_BET_ID, 'page': page})
-        out.extend(payload.get('response') or [])
-        paging = payload.get('paging') or {}
-        if page >= int(paging.get('total') or 1) or len(out) >= next_n * 4:
-            break
-        page += 1
-    # Over/Under odds arrive in the same records when bet filter is omitted;
-    # with the bet filter we need a second sweep for totals.
-    totals: list[dict] = []
-    page = 1
-    while True:
-        payload = _get('odds', {'league': _PL_LEAGUE, 'season': season,
-                                'bet': OVER_UNDER_BET_ID, 'page': page})
-        totals.extend(payload.get('response') or [])
-        paging = payload.get('paging') or {}
-        if page >= int(paging.get('total') or 1) or len(totals) >= next_n * 4:
-            break
-        page += 1
-    return _merge_bets(out, totals)
+def fetch_odds_for_fixtures(fixture_ids: list[int]) -> list[dict]:
+    """Raw odds pairs for specific API-FOOTBALL fixture ids — one call each.
+
+    Replaces a season-wide paged sweep that stopped after 80 records (review
+    2026-08-30). Because /odds pages from the start of the season, that cap
+    was a dated time bomb: once ~80 fixtures had been played the window of
+    fetched records no longer reached any upcoming fixture, and the layer
+    would have printed "0 fixture(s) priced" again with no error. Scoping by
+    fixture id is deterministic and independent of how far the season has run.
+
+    Omitting the `bet` filter returns every market on one record, so the
+    match-winner and over/under values come from a SINGLE bookmaker list —
+    which also removes the old two-sweep merge (and its risk of pairing the
+    two markets across different bookmakers' overrounds).
+    """
+    rows: list[dict] = []
+    for fid in fixture_ids:
+        payload = _get('odds', {'fixture': fid})
+        for rec in payload.get('response') or []:
+            rows.append({'winner': rec, 'totals': rec})
+    return rows
 
 
 def _first_bookmaker_values(record: dict, bet_id: int) -> list[dict] | None:
@@ -119,16 +115,6 @@ def _first_bookmaker_values(record: dict, bet_id: int) -> list[dict] | None:
             if bet.get('id') == bet_id and bet.get('values'):
                 return bet['values']
     return None
-
-
-def _merge_bets(winner_records: list[dict], totals_records: list[dict]) -> list[dict]:
-    """Combine the two sweeps into per-fixture raw rows."""
-    totals_by_fx = {r.get('fixture', {}).get('id'): r for r in totals_records}
-    rows = []
-    for r in winner_records:
-        fx = r.get('fixture') or {}
-        rows.append({'winner': r, 'totals': totals_by_fx.get(fx.get('id'))})
-    return rows
 
 
 def parse_rows(raw_rows: list[dict], fixture_meta: dict[int, dict]) -> list[dict]:
@@ -246,7 +232,8 @@ def get_live_odds_lookup(bootstrap: dict, fixtures: list[dict],
     except (OSError, json.JSONDecodeError):
         rows = None
     if rows is None:
-        rows = parse_rows(fetch_upcoming_odds(season), fetch_upcoming_fixtures(season))
+        meta = fetch_upcoming_fixtures(season)
+        rows = parse_rows(fetch_odds_for_fixtures(list(meta)), meta)
         try:
             os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
             with open(CACHE_PATH, 'w', encoding='utf-8') as f:

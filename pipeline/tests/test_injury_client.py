@@ -113,34 +113,68 @@ def _rec(player, team, date, rtype='Missing Fixture'):
 # players, since that lookup dedupes by player but has no notion of recency.
 # ---------------------------------------------------------------------------
 
+TODAY = '2026-09-03'
+
+
 class TestSelectCurrentRecords:
     def test_keeps_only_each_teams_latest_matchday(self):
         recs = [
             _rec(1, 'Arsenal', '2026-08-15'),    # stale — recovered since
             _rec(2, 'Arsenal', '2026-08-29'),    # current
             _rec(3, 'Arsenal', '2026-08-29'),    # current
-            _rec(4, 'Liverpool', '2026-08-22'),  # Liverpool's latest
+            _rec(4, 'Liverpool', '2026-08-30'),  # Liverpool's latest
         ]
-        got = {r['player_id'] for r in injury_client.select_current_records(recs)}
+        got = {r['player_id'] for r in injury_client.select_current_records(recs, today=TODAY)}
         assert got == {2, 3, 4}
 
     def test_per_team_recency_is_independent(self):
         # Teams play on different days — one team's newer fixture must not
         # discard another team's latest snapshot.
         recs = [_rec(1, 'Arsenal', '2026-08-30'), _rec(2, 'Burnley', '2026-08-28')]
-        got = {r['player_id'] for r in injury_client.select_current_records(recs)}
+        got = {r['player_id'] for r in injury_client.select_current_records(recs, today=TODAY)}
         assert got == {1, 2}
 
-    def test_keeps_future_dated_records(self):
-        # Records for an upcoming fixture appear as kickoff nears — those are
-        # the most forward-looking signal available and must survive.
-        recs = [_rec(1, 'Arsenal', '2026-08-29'), _rec(2, 'Arsenal', '2026-09-05')]
-        got = {r['player_id'] for r in injury_client.select_current_records(recs)}
+    def test_future_records_ADD_to_the_latest_matchday(self):
+        """Review 2026-08-30: the first version took the max over ALL dates, so
+        a single early entry for the NEXT fixture replaced the whole current
+        snapshot — silently un-flagging genuinely injured players inside the
+        deadline window. Upcoming-fixture lists populate gradually, so they
+        must ADD to the latest played matchday, never replace it."""
+        recs = [
+            _rec(1, 'Arsenal', '2026-08-29'),   # last matchday — still injured
+            _rec(2, 'Arsenal', '2026-08-29'),
+            _rec(3, 'Arsenal', '2026-09-05'),   # partial early entry for next
+        ]
+        got = {r['player_id'] for r in injury_client.select_current_records(recs, today=TODAY)}
+        assert got == {1, 2, 3}
+
+    def test_postponed_fixture_far_ahead_does_not_freeze_the_picture(self):
+        # A rescheduled fixture months out must not become the anchor date.
+        recs = [
+            _rec(1, 'Arsenal', '2027-02-10'),   # postponed game, 2 stale records
+            _rec(2, 'Arsenal', '2026-08-29'),   # the real current picture
+        ]
+        got = {r['player_id'] for r in injury_client.select_current_records(recs, today=TODAY)}
+        assert got == {1, 2}
+
+    def test_drops_a_stalled_teams_stale_block(self):
+        # If a club's feed stops publishing, its months-old flags must not be
+        # served as current. International breaks (~2 weeks) stay inside the cap.
+        recs = [
+            _rec(1, 'Arsenal', '2026-06-01'),   # way past the staleness cap
+            _rec(2, 'Liverpool', '2026-08-22'),  # 12 days — normal break gap
+        ]
+        got = {r['player_id'] for r in injury_client.select_current_records(recs, today=TODAY)}
         assert got == {2}
+
+    def test_team_with_only_future_records_is_kept(self):
+        recs = [_rec(1, 'Arsenal', '2026-09-05')]
+        got = {r['player_id'] for r in injury_client.select_current_records(recs, today=TODAY)}
+        assert got == {1}
 
     def test_ignores_records_missing_team_or_date(self):
         recs = [_rec(1, '', '2026-08-29'), _rec(2, 'Arsenal', '')]
-        assert injury_client.select_current_records(recs) == []
+        assert injury_client.select_current_records(recs, today=TODAY) == []
 
 
 def test_get_live_injuries_failure_writes_no_cache(tmp_path, monkeypatch, capsys):

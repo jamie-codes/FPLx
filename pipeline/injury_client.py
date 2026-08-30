@@ -6,7 +6,7 @@ so the join can map them to a GW via the archive fixtures.
 """
 import json
 import os
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
 import requests
 
@@ -68,9 +68,30 @@ def _get(endpoint: str, params: dict) -> dict:
     return data
 
 
+MAX_PAGES = 30
+
+
 def fetch_season_injuries(season: int = 2025, league: int = _PL_LEAGUE) -> list[dict]:
-    """Whole-season injury records (snapshotting, lab reconstruction, live sweep)."""
-    return parse_records(_get('injuries', {'league': league, 'season': season}))
+    """Whole-season injury records (snapshotting, lab reconstruction, live sweep).
+
+    Pages until exhausted: a full season is ~3400 records, so relying on a
+    single response would silently truncate to page 1 if api-football ever caps
+    the page size — and because records are fixture-date ordered, truncation
+    would look like every club's feed stalling in August rather than failing
+    loudly (review 2026-08-30).
+    """
+    out: list[dict] = []
+    page = 1
+    while page <= MAX_PAGES:
+        payload = _get('injuries', {'league': league, 'season': season, 'page': page})
+        out.extend(parse_records(payload))
+        total = int(((payload.get('paging') or {}).get('total')) or 1)
+        if page >= total:
+            break
+        page += 1
+    else:
+        print(f'AVAIL-01: injury paging hit the {MAX_PAGES}-page cap — records may be truncated')
+    return out
 
 
 def fetch_fixture_injuries(fixture_id: int) -> list[dict]:
@@ -109,27 +130,55 @@ def _cache_fresh() -> bool:
         return False
 
 
-def select_current_records(records: list[dict]) -> list[dict]:
+# A club's own feed can legitimately go quiet for an international break
+# (~2 weeks), so the staleness cap sits comfortably beyond that. Past this,
+# a club's block is assumed abandoned rather than "everyone still injured".
+STALE_AFTER_DAYS = 21
+
+
+def select_current_records(records: list[dict], today: str | None = None,
+                           stale_after_days: int = STALE_AFTER_DAYS) -> list[dict]:
     """Reduce a season sweep to the CURRENT injury picture.
 
     api-football attaches each injury record to a fixture, so a season sweep
     contains every matchday's snapshot back to GW1 — feeding all of it to
     build_injury_lookup would keep flagging players who have long since
-    recovered. Keep, per team, only records from that team's most recent
-    matchday plus any future-dated ones (which appear as kickoff nears).
+    recovered. Per team, keep the most recent PLAYED matchday's snapshot and
+    ADD every future-dated record.
+
+    The past/future split is load-bearing (review 2026-08-30): anchoring on the
+    max over all dates let a single early entry for the next fixture replace
+    the whole current snapshot — upcoming-fixture lists populate gradually as
+    kickoff nears, so they are additive evidence, never a full picture. It also
+    stops a postponed fixture months ahead from freezing a club's block.
+
+    A club whose latest played matchday is older than `stale_after_days` has
+    stopped publishing; its block is dropped rather than served as current.
     """
-    latest_by_team: dict[str, str] = {}
+    today = today or datetime.now(timezone.utc).date().isoformat()
+    cutoff = (datetime.fromisoformat(today).date()
+              - timedelta(days=stale_after_days)).isoformat()
+
+    latest_played: dict[str, str] = {}
+    for r in records:
+        team, date = r.get('team_name') or '', r.get('date') or ''
+        if not team or not date or date > today:
+            continue
+        if date > latest_played.get(team, ''):
+            latest_played[team] = date
+
+    out = []
     for r in records:
         team, date = r.get('team_name') or '', r.get('date') or ''
         if not team or not date:
             continue
-        if date > latest_by_team.get(team, ''):
-            latest_by_team[team] = date
-    return [
-        r for r in records
-        if (r.get('team_name') or '') in latest_by_team
-        and (r.get('date') or '') >= latest_by_team[r['team_name']]
-    ]
+        if date > today:
+            out.append(r)                       # forward-looking: always additive
+            continue
+        anchor = latest_played.get(team)
+        if anchor and date == anchor and anchor >= cutoff:
+            out.append(r)                       # the club's current snapshot
+    return out
 
 
 def get_live_injuries(season: int) -> list[dict]:
@@ -158,6 +207,12 @@ def get_live_injuries(season: int) -> list[dict]:
     except Exception as exc:
         print(f'AVAIL-01: live injury fetch failed ({exc}); no injury data this run')
         return []   # never cache an outage as "no injuries"
+    if not swept:
+        # A successful-but-empty 200 is the signature of a wrong season/league
+        # param (the 76d95a7 bug), not an injury-free league. Don't cache it.
+        print('AVAIL-01: season sweep returned 0 records — not cached '
+              '(empty response is a param/upstream smell, not an injury-free league)')
+        return []
     records = select_current_records(swept)
     print(f'AVAIL-01: season sweep {len(swept)} records -> {len(records)} current')
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)

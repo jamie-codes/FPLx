@@ -69,15 +69,21 @@ export function useRivals(
 
       // Step 1: bootstrap — for current event + deadline_time (D-05).
       // CLIENT-SIDE deadline gate per <deviation_rationale> in this plan.
+      // Classify bootstrap failures too (review 2026-08-30): this step runs
+      // BEFORE standings, so during a real FPL outage it failed first and fell
+      // through to the generic "check your league ID" — sending the user after
+      // a perfectly valid ID in exactly the case the typing was meant to fix.
       const bootstrapRes = await fetch('/api/fpl/bootstrap-static/')
-      if (!bootstrapRes.ok) throw new Error(`bootstrap fetch failed: ${bootstrapRes.status}`)
+      if (!bootstrapRes.ok) {
+        throw new RivalsError('upstream', `bootstrap fetch failed: ${bootstrapRes.status}`)
+      }
       const bootstrapRaw = await bootstrapRes.json()
       const bootstrapParsed = parseFPLBootstrap(bootstrapRaw)
-      if (!bootstrapParsed.success) throw new Error('bootstrap shape invalid')
+      if (!bootstrapParsed.success) throw new RivalsError('shape', 'bootstrap shape invalid')
       const events = bootstrapParsed.data.events
       const currentEvent =
         events.find(e => e.is_current) ?? events.find(e => e.is_next)
-      if (!currentEvent) throw new Error('No active gameweek found')
+      if (!currentEvent) throw new RivalsError('upstream', 'No active gameweek found')
       const currentGw = currentEvent.id
       const deadlineMs = Date.parse(currentEvent.deadline_time)
       const isPostDeadline = !Number.isNaN(deadlineMs) && Date.now() >= deadlineMs
@@ -172,6 +178,9 @@ export function useRivals(
     },
     enabled: !!leagueId && /^\d+$/.test(leagueId),
     staleTime: 1000 * 60 * 5,
-    retry: 1,
+    // Don't retry a 404 — a missing league is permanent, and retrying only
+    // delays the "your league ID is from last season" message.
+    retry: (failureCount, error) =>
+      error instanceof RivalsError && error.kind === 'not_found' ? false : failureCount < 1,
   })
 }

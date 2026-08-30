@@ -88,6 +88,25 @@ def test_fetch_upcoming_fixtures_queries_league_season_next(monkeypatch):
                               'date': '2026-09-05'}}
 
 
+def test_fetch_odds_for_fixtures_scopes_by_fixture_id(monkeypatch):
+    """Deterministic scoping (review 2026-08-30): the old season-wide sweep
+    capped at 80 records and would have silently priced nothing once ~80
+    fixtures had been played."""
+    calls = []
+
+    def fake_get(endpoint, params):
+        calls.append((endpoint, params))
+        return {'response': [_winner_record(2.0, 3.5, 4.0, fixture_id=params['fixture'])]}
+
+    monkeypatch.setattr(odds_live, '_get', fake_get)
+    rows = odds_live.fetch_odds_for_fixtures([111, 222])
+    assert calls == [('odds', {'fixture': 111}), ('odds', {'fixture': 222})]
+    # No bet filter -> both markets ride on the same record, so winner and
+    # totals are one and the same (no cross-bookmaker pairing).
+    assert len(rows) == 2
+    assert rows[0]['winner'] is rows[0]['totals']
+
+
 def test_fetch_upcoming_fixtures_skips_incomplete_records(monkeypatch):
     monkeypatch.setattr(odds_live, '_get', lambda e, p: {'response': [
         {'fixture': {'id': None, 'date': '2026-09-05T14:00:00+00:00'},
