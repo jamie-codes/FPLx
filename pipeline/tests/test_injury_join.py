@@ -68,6 +68,64 @@ def test_build_injury_lookup_unmapped_team_is_skipped():
     assert injury_join.build_injury_lookup(recs, _bootstrap()) == {}
 
 
+# ---------------------------------------------------------------------------
+# Promoted-club resolution (2026-08-30)
+#
+# The join is TEAM-FIRST, so a club missing from APIFOOTBALL_TEAM_TO_FPL loses
+# every one of its players at once. The table still held the 2025/26 league, so
+# all 28 unmatched live records belonged to the three promoted clubs (Coventry,
+# Hull, Ipswich) — 14 confirmed real FPL players. Resolution now falls back to
+# a tolerant name match so a promotion can't silently disable a whole club.
+# ---------------------------------------------------------------------------
+
+def _promoted_bootstrap():
+    return {'teams': [
+        {'id': 40, 'name': 'Coventry City', 'short_name': 'COV'},
+        {'id': 41, 'name': 'Hull City', 'short_name': 'HUL'},
+        {'id': 42, 'name': 'Ipswich Town', 'short_name': 'IPS'},
+    ], 'elements': [
+        {'id': 180, 'web_name': 'Woolfenden', 'first_name': 'Luke',
+         'second_name': 'Woolfenden', 'team': 40},
+        {'id': 274, 'web_name': 'Butland', 'first_name': 'Jack',
+         'second_name': 'Butland', 'team': 41},
+        {'id': 318, 'web_name': 'Philogene', 'first_name': 'Jaden',
+         'second_name': 'Philogene', 'team': 42},
+    ]}
+
+
+def test_promoted_clubs_resolve_without_a_table_entry():
+    boot = _promoted_bootstrap()
+    recs = [
+        {'player_id': 1, 'player_name': 'L. Woolfenden', 'type': 'Missing Fixture',
+         'reason': 'knee', 'team_id': 1, 'team_name': 'Coventry', 'date': '2026-08-29'},
+        {'player_id': 2, 'player_name': 'J. Butland', 'type': 'Questionable',
+         'reason': 'knock', 'team_id': 2, 'team_name': 'Hull City', 'date': '2026-08-29'},
+        {'player_id': 3, 'player_name': 'J. Philogene', 'type': 'Missing Fixture',
+         'reason': 'hamstring', 'team_id': 3, 'team_name': 'Ipswich', 'date': '2026-08-29'},
+    ]
+    lookup = injury_join.build_injury_lookup(recs, boot)
+    assert lookup[180]['risk'] == 'out'
+    assert lookup[274]['risk'] == 'doubt'
+    assert lookup[318]['risk'] == 'out'
+
+
+def test_coverage_report_counts_promoted_clubs_as_matched():
+    boot = _promoted_bootstrap()
+    recs = [{'player_id': 1, 'player_name': 'L. Woolfenden', 'type': 'Missing Fixture',
+             'reason': 'knee', 'team_id': 1, 'team_name': 'Coventry', 'date': '2026-08-29'}]
+    report = injury_join.coverage_report(recs, boot)
+    assert report['matched'] == 1
+    assert report['unmatched'] == 0
+
+
+def test_unknown_club_still_unmatched():
+    # The fallback must stay tolerant, not indiscriminate.
+    boot = _promoted_bootstrap()
+    recs = [{'player_id': 9, 'player_name': 'A. Nobody', 'type': 'Missing Fixture',
+             'reason': 'x', 'team_id': 9, 'team_name': 'Real Madrid', 'date': '2026-08-29'}]
+    assert injury_join.build_injury_lookup(recs, boot) == {}
+
+
 def test_build_backtest_lookup_keys_on_gw():
     archive = {'bootstrap': _bootstrap(), 'fixtures': [
         {'id': 500, 'event': 1, 'kickoff_time': '2025-08-15T19:00:00Z', 'team_h': 35, 'team_a': 1},

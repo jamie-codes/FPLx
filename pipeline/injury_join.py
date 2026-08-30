@@ -9,6 +9,8 @@ import os
 import re
 import unicodedata
 
+from odds_join import _team_matches
+
 # api-football PL team name -> FPL bootstrap team `name`.
 # Names that already match FPL exactly are still listed for an explicit, auditable table.
 APIFOOTBALL_TEAM_TO_FPL = {
@@ -87,6 +89,25 @@ def _team_name_to_id(bootstrap: dict) -> dict[str, int]:
     return out
 
 
+def _resolve_team_id(api_team_name: str, table: dict[str, int],
+                     teams: list[dict]) -> int | None:
+    """api-football team name -> FPL team id, table first then tolerant match.
+
+    The join is TEAM-FIRST: an unresolved club loses every one of its players.
+    The explicit table above cannot cover clubs promoted after it was written,
+    which is exactly what happened for 2026/27 (Coventry/Hull/Ipswich — all 28
+    unmatched live records, 2026-08-30). The fallback keeps the audit table
+    authoritative while letting a promotion resolve on its own.
+    """
+    tid = table.get(api_team_name)
+    if tid is not None:
+        return tid
+    for t in teams:
+        if _team_matches(api_team_name, t.get('name') or '', t.get('short_name') or ''):
+            return t['id']
+    return None
+
+
 def load_overrides(path: str = OVERRIDES_PATH) -> dict[int, int]:
     """Load the manual {api_player_id: fpl_element_id} override map ({} if absent)."""
     if not os.path.exists(path):
@@ -96,10 +117,10 @@ def load_overrides(path: str = OVERRIDES_PATH) -> dict[int, int]:
 
 
 def _resolve_fpl_id(rec: dict, team_name_to_id: dict, elements_by_team: dict,
-                    overrides: dict) -> int | None:
+                    overrides: dict, teams: list[dict] | None = None) -> int | None:
     if rec['player_id'] in overrides:
         return overrides[rec['player_id']]
-    fpl_team = team_name_to_id.get(rec['team_name'])
+    fpl_team = _resolve_team_id(rec['team_name'], team_name_to_id, teams or [])
     if fpl_team is None:
         return None
     return _match_player(rec['player_name'], elements_by_team.get(fpl_team, []))
@@ -124,7 +145,8 @@ def build_injury_lookup(records: list[dict], bootstrap: dict,
         risk = _TYPE_TO_RISK.get(rec['type'])
         if risk is None:
             continue
-        fpl_id = _resolve_fpl_id(rec, team_name_to_id, elements_by_team, overrides)
+        fpl_id = _resolve_fpl_id(rec, team_name_to_id, elements_by_team, overrides,
+                                 bootstrap.get('teams') or [])
         if fpl_id is None:
             continue
         prev = out.get(fpl_id)
@@ -152,13 +174,15 @@ def build_backtest_injury_lookup(records: list[dict], archive: dict,
         risk = _TYPE_TO_RISK.get(rec['type'])
         if risk is None:
             continue
-        fpl_team = team_name_to_id.get(rec['team_name'])
+        fpl_team = _resolve_team_id(rec['team_name'], team_name_to_id,
+                                    bootstrap.get('teams') or [])
         if fpl_team is None:
             continue
         gw = date_team_gw.get((rec['date'], fpl_team))
         if gw is None:
             continue
-        fpl_id = _resolve_fpl_id(rec, team_name_to_id, elements_by_team, overrides)
+        fpl_id = _resolve_fpl_id(rec, team_name_to_id, elements_by_team, overrides,
+                                 bootstrap.get('teams') or [])
         if fpl_id is None:
             continue
         key = (gw, fpl_id)
@@ -175,7 +199,8 @@ def coverage_report(records: list[dict], bootstrap: dict,
     elements_by_team = _index_elements(bootstrap)
     matched, unmatched_names = 0, []
     for rec in records:
-        if _resolve_fpl_id(rec, team_name_to_id, elements_by_team, overrides) is not None:
+        if _resolve_fpl_id(rec, team_name_to_id, elements_by_team, overrides,
+                           bootstrap.get('teams') or []) is not None:
             matched += 1
         else:
             unmatched_names.append(rec['player_name'])
