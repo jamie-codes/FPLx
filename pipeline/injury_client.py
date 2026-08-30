@@ -74,8 +74,25 @@ def fetch_season_injuries(season: int = 2025, league: int = _PL_LEAGUE) -> list[
 
 
 def fetch_fixture_injuries(fixture_id: int) -> list[dict]:
-    """Projected absentees for one upcoming fixture (the live per-GW path)."""
+    """Projected absentees for one fixture — takes an API-FOOTBALL fixture id.
+
+    NOT usable with FPL fixture ids (see fetch_date_injuries): the id spaces are
+    disjoint (api-football 7-digit globals vs FPL 1-380), and a wrong-namespace
+    id returns an empty 200 rather than an error. Kept for callers that already
+    hold a real api-football id; the live per-GW path uses dates.
+    """
     return parse_records(_get('injuries', {'fixture': fixture_id}))
+
+
+def fetch_date_injuries(date: str, season: int, league: int = _PL_LEAGUE) -> list[dict]:
+    """Projected absentees for one match date (the live per-GW path).
+
+    Queries the league/season/date namespace — the only fixture-scoping the FPL
+    side can express, since it has no api-football fixture ids. The downstream
+    join (injury_join.build_injury_lookup) matches on team + player name, so
+    fixture identity is never needed.
+    """
+    return parse_records(_get('injuries', {'league': league, 'season': season, 'date': date}))
 
 
 def _cache_fresh() -> bool:
@@ -92,16 +109,21 @@ def _cache_fresh() -> bool:
         return False
 
 
-def get_live_injuries(fixture_ids: list[int]) -> list[dict]:
-    """Fetch+cache projected absentees across the given upcoming fixtures.
+def get_live_injuries(dates: list[str], season: int) -> list[dict]:
+    """Fetch+cache projected absentees across the given match dates.
 
-    Returns parsed records. Failures are per-fixture (review 2026-08-28): a
-    rate-limit tripping mid-batch keeps the fixtures already fetched. A total
-    failure — or an empty fixture list — returns [] WITHOUT writing the 24h
+    `dates` are 'YYYY-MM-DD' kickoff dates for the upcoming GW (deduped here);
+    `season` is the api-football season year. Queries by league/season/date —
+    NOT by fixture id, whose namespace the FPL side cannot express (2026-08-30).
+
+    Returns parsed records. Failures are per-request (review 2026-08-28): a
+    rate-limit tripping mid-batch keeps the dates already fetched. A total
+    failure — or an empty date list — returns [] WITHOUT writing the 24h
     cache, so an outage can't masquerade as an injury-free league. Affected
     players keep their FPL-derived availability either way (safe no-op)."""
-    if not fixture_ids:
+    if not dates:
         return []
+    unique_dates = sorted(set(dates))
     if _cache_fresh():
         with open(CACHE_PATH, 'r', encoding='utf-8') as f:
             # .get keeps the documented "returns []" guarantee even if a fresh
@@ -112,16 +134,16 @@ def get_live_injuries(fixture_ids: list[int]) -> list[dict]:
     records: list[dict] = []
     failed = 0
     last_exc: Exception | None = None
-    for fid in fixture_ids:
+    for date in unique_dates:
         try:
-            records.extend(fetch_fixture_injuries(fid))
+            records.extend(fetch_date_injuries(date, season))
         except Exception as exc:
             failed += 1
             last_exc = exc
     if failed:
         kept = 'keeping partial batch' if records else 'no injury data this run'
-        print(f'AVAIL-01: live injury fetch failed for {failed}/{len(fixture_ids)} '
-              f'fixtures ({last_exc}); {kept}')
+        print(f'AVAIL-01: live injury fetch failed for {failed}/{len(unique_dates)} '
+              f'dates ({last_exc}); {kept}')
         if not records:
             return []   # total failure — never cache an outage as "no injuries"
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
