@@ -116,6 +116,20 @@ def test_build_lookup_joins_and_computes_cs_prob():
     assert lookup[(501, 1)]['cs_prob'] > lookup[(501, 2)]['cs_prob']
 
 
+def test_resolve_team_handles_apifootball_long_names():
+    """2026-08-30: these three silently dropped from the live lookup because
+    _team_matches alone can't bridge api-football's names to FPL's."""
+    teams = [
+        {'id': 1, 'name': 'Man Utd', 'short_name': 'MUN'},
+        {'id': 2, 'name': "Nott'm Forest", 'short_name': 'NFO'},
+        {'id': 3, 'name': 'Spurs', 'short_name': 'TOT'},
+    ]
+    assert odds_live._resolve_fpl_team('Manchester United', teams) == 1
+    assert odds_live._resolve_fpl_team('Nottingham Forest', teams) == 2
+    assert odds_live._resolve_fpl_team('Tottenham', teams) == 3
+    assert odds_live._resolve_fpl_team('Real Madrid', teams) is None
+
+
 def test_build_lookup_skips_unjoinable_rows():
     rows = [{'home': 'Real Madrid', 'away': 'Everton', 'date': '2026-08-15',
              'odds_1x2': [1.3, 5.5, 9.0], 'odds_ou25': [1.55, 2.4]},

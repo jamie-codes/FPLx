@@ -28,6 +28,7 @@ from collections import defaultdict
 
 from odds_model import lambdas_from_odds, cs_prob
 from odds_join import _team_matches
+from injury_join import APIFOOTBALL_TEAM_TO_FPL
 
 _MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 CACHE_PATH = os.path.join(_MODULE_DIR, 'cache', 'odds_live.json')
@@ -172,9 +173,22 @@ def parse_rows(raw_rows: list[dict], fixture_meta: dict[int, dict]) -> list[dict
 
 
 def _resolve_fpl_team(name: str, teams: list[dict]) -> int | None:
-    for t in teams:
-        if _team_matches(name, t.get('name') or '', t.get('short_name') or ''):
-            return t['id']
+    """api-football team name -> FPL team id.
+
+    Translate through AVAIL-01's api-football name table first (2026-08-30):
+    _team_matches alone could not resolve 'Manchester United' -> 'Man Utd',
+    'Nottingham Forest' -> "Nott'm Forest" or 'Tottenham' -> 'Spurs', silently
+    dropping those fixtures. Both layers consume the same api-football name
+    space, so the table is shared rather than duplicated.
+    """
+    candidates = [name]
+    mapped = APIFOOTBALL_TEAM_TO_FPL.get(name)
+    if mapped:
+        candidates.append(mapped)
+    for cand in candidates:
+        for t in teams:
+            if _team_matches(cand, t.get('name') or '', t.get('short_name') or ''):
+                return t['id']
     return None
 
 
