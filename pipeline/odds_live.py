@@ -8,10 +8,12 @@ the exp09-validated odds_model maths, and emits the same lookup shape
 odds_join produces: {(fpl_fixture_id, fpl_team_id): {cs_prob, goal_exp,
 attack_difficulty}}.
 
-Fixture join: API-Football fixtures are matched to FPL fixtures by kickoff
-DATE + both team names (reusing odds_join's tolerant _team_matches). Unmatched
-fixtures are skipped with a warning — a partial lookup is still useful; merge
-falls back to the model CS-prob wherever no odds entry exists.
+Fixture join: /odds records identify a fixture only by API-Football id, so
+team names + kickoff are resolved through a /fixtures lookup (2026-08-30);
+those are then matched to FPL fixtures by kickoff DATE + both team names
+(reusing odds_join's tolerant _team_matches). Unmatched fixtures are skipped
+with a warning — a partial lookup is still useful; merge falls back to the
+model CS-prob wherever no odds entry exists.
 
 Snapshot-cached (3h) at cache/odds_live.json to bound API usage across the
 4x-daily + deadline-window pipeline schedule. All failures are non-fatal by
@@ -59,6 +61,30 @@ def _get(endpoint: str, params: dict) -> dict:
     return data
 
 
+def fetch_upcoming_fixtures(season: int, next_n: int = 20,
+                            league: int = _PL_LEAGUE) -> dict[int, dict]:
+    """{api_football_fixture_id: {home, away, date}} for the next `next_n` games.
+
+    Required because /odds records carry NO team names or kickoff (verified
+    against the live API 2026-08-30: their keys are league/fixture/update/
+    bookmakers only). /fixtures is the sole source of that metadata, and its
+    id set doubles as the upcoming-fixture filter for the odds sweep.
+    """
+    payload = _get('fixtures', {'league': league, 'season': season, 'next': next_n})
+    meta: dict[int, dict] = {}
+    for rec in payload.get('response') or []:
+        fx = rec.get('fixture') or {}
+        teams = rec.get('teams') or {}
+        fid = fx.get('id')
+        home = (teams.get('home') or {}).get('name')
+        away = (teams.get('away') or {}).get('name')
+        date = (fx.get('date') or '')[:10]
+        if not (fid and home and away and date):
+            continue
+        meta[fid] = {'home': home, 'away': away, 'date': date}
+    return meta
+
+
 def fetch_upcoming_odds(season: int, next_n: int = 20) -> list[dict]:
     """Raw API-Football odds responses for the next PL fixtures (paged)."""
     out: list[dict] = []
@@ -104,21 +130,23 @@ def _merge_bets(winner_records: list[dict], totals_records: list[dict]) -> list[
     return rows
 
 
-def parse_rows(raw_rows: list[dict]) -> list[dict]:
+def parse_rows(raw_rows: list[dict], fixture_meta: dict[int, dict]) -> list[dict]:
     """Raw record pairs -> {home, away, date, odds_1x2, odds_ou25} rows.
 
-    API-Football /odds records carry fixture.id + league but the TEAM NAMES and
-    kickoff live under `teams`/`fixture.date` on the odds record itself.
-    Rows missing either market are dropped (both are needed for the lambdas).
+    API-Football /odds records carry ONLY fixture.id + league + bookmakers —
+    no `teams`, no reliable kickoff (2026-08-30). Team names and date come from
+    `fixture_meta` (see fetch_upcoming_fixtures), which also scopes the sweep:
+    an odds record whose fixture is not in the map is a past game and is
+    dropped. Rows missing either market are dropped (both feed the lambdas).
     """
     out = []
     for pair in raw_rows:
         rec = pair.get('winner') or {}
         fx = rec.get('fixture') or {}
-        teams = rec.get('teams') or {}
-        home = (teams.get('home') or {}).get('name')
-        away = (teams.get('away') or {}).get('name')
-        date = (fx.get('date') or '')[:10]      # YYYY-MM-DD
+        meta = fixture_meta.get(fx.get('id')) or {}
+        home = meta.get('home')
+        away = meta.get('away')
+        date = meta.get('date') or ''
         mw = _first_bookmaker_values(rec, MATCH_WINNER_BET_ID)
         tot_rec = pair.get('totals') or {}
         ou = _first_bookmaker_values(tot_rec, OVER_UNDER_BET_ID) if tot_rec else None
@@ -204,7 +232,7 @@ def get_live_odds_lookup(bootstrap: dict, fixtures: list[dict],
     except (OSError, json.JSONDecodeError):
         rows = None
     if rows is None:
-        rows = parse_rows(fetch_upcoming_odds(season))
+        rows = parse_rows(fetch_upcoming_odds(season), fetch_upcoming_fixtures(season))
         try:
             os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
             with open(CACHE_PATH, 'w', encoding='utf-8') as f:

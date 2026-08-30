@@ -4,14 +4,28 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import odds_live
 from odds_live import build_live_odds_lookup, parse_rows
 from odds_model import cs_prob, lambdas_from_odds
 
+# Fixture metadata as /fixtures returns it, keyed by API-FOOTBALL fixture id.
+META = {9001: {'home': 'Manchester City', 'away': 'Everton', 'date': '2026-08-15'}}
 
-def _winner_record(home, away, date, h, d, a):
+
+def _winner_record(h, d, a, fixture_id=9001):
+    """An /odds record shaped like the REAL API.
+
+    Regression origin (2026-08-30): this helper used to synthesise a `teams`
+    object and a fixture `date`. The live endpoint returns neither — its keys
+    are league/fixture/update/bookmakers — so parse_rows dropped every row and
+    production printed "Live odds: 0 fixture(s) priced" indefinitely. The test
+    passed because the fixture was wrong about the API, so keep this shape
+    faithful: identity comes from fixture.id alone.
+    """
     return {
-        'fixture': {'id': 9001, 'date': f'{date}T15:00:00+00:00'},
-        'teams': {'home': {'name': home}, 'away': {'name': away}},
+        'league': {'id': 39},
+        'fixture': {'id': fixture_id, 'timezone': 'UTC'},
+        'update': '2026-08-15T00:00:00+00:00',
         'bookmakers': [{'bets': [{'id': 1, 'values': [
             {'value': 'Home', 'odd': str(h)},
             {'value': 'Draw', 'odd': str(d)},
@@ -20,9 +34,9 @@ def _winner_record(home, away, date, h, d, a):
     }
 
 
-def _totals_record(over, under):
+def _totals_record(over, under, fixture_id=9001):
     return {
-        'fixture': {'id': 9001},
+        'fixture': {'id': fixture_id},
         'bookmakers': [{'bets': [{'id': 5, 'values': [
             {'value': 'Over 2.5', 'odd': str(over)},
             {'value': 'Under 2.5', 'odd': str(under)},
@@ -31,21 +45,56 @@ def _totals_record(over, under):
 
 
 def test_parse_rows_happy_path():
-    raw = [{'winner': _winner_record('Manchester City', 'Everton', '2026-08-15',
-                                     1.30, 5.5, 9.0),
+    raw = [{'winner': _winner_record(1.30, 5.5, 9.0),
             'totals': _totals_record(1.55, 2.40)}]
-    rows = parse_rows(raw)
+    rows = parse_rows(raw, META)
     assert len(rows) == 1
     r = rows[0]
-    assert r['home'] == 'Manchester City' and r['date'] == '2026-08-15'
+    # Team names + date come from the /fixtures lookup, not the odds record.
+    assert r['home'] == 'Manchester City' and r['away'] == 'Everton'
+    assert r['date'] == '2026-08-15'
     assert r['odds_1x2'] == [1.30, 5.5, 9.0]
     assert r['odds_ou25'] == [1.55, 2.40]
 
 
 def test_parse_rows_drops_when_totals_missing():
-    raw = [{'winner': _winner_record('Arsenal', 'Fulham', '2026-08-15', 1.5, 4.2, 6.5),
-            'totals': None}]
-    assert parse_rows(raw) == []
+    raw = [{'winner': _winner_record(1.5, 4.2, 6.5), 'totals': None}]
+    assert parse_rows(raw, META) == []
+
+
+def test_parse_rows_drops_fixtures_not_in_upcoming_meta():
+    """/odds paging reaches back over the season; records outside the upcoming
+    fixture map are played games and must be skipped."""
+    raw = [{'winner': _winner_record(1.5, 4.2, 6.5, fixture_id=999999),
+            'totals': _totals_record(1.55, 2.40, fixture_id=999999)}]
+    assert parse_rows(raw, META) == []
+
+
+def test_fetch_upcoming_fixtures_queries_league_season_next(monkeypatch):
+    seen = {}
+
+    def fake_get(endpoint, params):
+        seen['endpoint'], seen['params'] = endpoint, params
+        return {'response': [{
+            'fixture': {'id': 1557379, 'date': '2026-09-05T14:00:00+00:00'},
+            'teams': {'home': {'name': 'Chelsea'}, 'away': {'name': 'Fulham'}},
+        }]}
+
+    monkeypatch.setattr(odds_live, '_get', fake_get)
+    meta = odds_live.fetch_upcoming_fixtures(season=2026, next_n=10)
+    assert seen['endpoint'] == 'fixtures'
+    assert seen['params'] == {'league': 39, 'season': 2026, 'next': 10}
+    assert meta == {1557379: {'home': 'Chelsea', 'away': 'Fulham',
+                              'date': '2026-09-05'}}
+
+
+def test_fetch_upcoming_fixtures_skips_incomplete_records(monkeypatch):
+    monkeypatch.setattr(odds_live, '_get', lambda e, p: {'response': [
+        {'fixture': {'id': None, 'date': '2026-09-05T14:00:00+00:00'},
+         'teams': {'home': {'name': 'A'}, 'away': {'name': 'B'}}},
+        {'fixture': {'id': 5, 'date': '2026-09-05T14:00:00+00:00'}, 'teams': {}},
+    ]})
+    assert odds_live.fetch_upcoming_fixtures(season=2026) == {}
 
 
 BOOTSTRAP = {'teams': [
