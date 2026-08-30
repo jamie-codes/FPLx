@@ -15,11 +15,33 @@ export type Verdict = 'buy' | 'hold' | 'sell'
 // Everything else falls into the Hold band.
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Gem bands — THE single source of truth for both scoring engines.
+//
+// recommend.ts (3-way Buy/Hold/Sell) and lifecycle-label.ts (7-label ladder)
+// are the same bands at different granularity, not rival models:
+//
+//   gem / posAvg:   < 0.85          0.85–0.90        0.90–1.0       > 1.0
+//   lifecycle:      sell            sell_soon        hold           hold
+//   verdict:        sell            sell             hold           buy
+//
+// The two files previously each declared 0.90 under a different name
+// (SELL_THRESHOLD here, SELL_SOON_THRESHOLD there), so a retune could move one
+// and silently split the engines apart. lifecycle-label.ts now imports these.
+// ---------------------------------------------------------------------------
+
 /** A player is a Buy if their gem_score exceeds the position average (strictly above). */
 export const BUY_THRESHOLD = 1.0
 
-/** A player is a Sell if their gem_score is more than 10% below the position average. */
+/** The sell line: gem_score more than 10% below the position average.
+ *  Same line as lifecycle's SELL_SOON_THRESHOLD — a verdict of 'sell' covers
+ *  the lifecycle 'sell' and 'sell_soon' bands together. */
 export const SELL_THRESHOLD = 0.90
+
+/** The hard-sell line inside the sell band (lifecycle splits 'sell' from
+ *  'sell_soon' here). Exported from this module so both engines read one
+ *  ladder; lifecycle-label.ts re-exports it as its SELL_THRESHOLD. */
+export const HARD_SELL_THRESHOLD = 0.85
 
 /** Bench enablers (≤ £4.5m, positions 12-15) are exempt from the sell bands.
  * Standard bench fodder scores near zero on most gem dimensions by design —

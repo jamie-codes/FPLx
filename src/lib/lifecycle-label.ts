@@ -1,7 +1,12 @@
 import type { ScoredPlayer } from '@/lib/types'
 import type { ClubForm } from '@/lib/types'
 import type { SquadPick } from '@/lib/squad-adapter'
-import { computePositionAverages, BENCH_ENABLER_MAX_COST } from '@/lib/recommend'
+import {
+  computePositionAverages,
+  BENCH_ENABLER_MAX_COST,
+  HARD_SELL_THRESHOLD,
+  SELL_THRESHOLD as VERDICT_SELL_THRESHOLD,
+} from '@/lib/recommend'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -34,15 +39,20 @@ export type LifecycleLabel =
 
 /**
  * Hard Sell line — gem_score < posAvg * SELL_THRESHOLD triggers 'sell'.
- * Replaces recommend.ts 0.90 for this engine (wider hysteresis per ROADMAP §Phase 49).
+ *
+ * Both band constants now come from recommend.ts, which owns the single gem
+ * ladder shared by the 3-way verdict and this 7-label engine. They were
+ * previously declared independently here, with this file's SELL_SOON_THRESHOLD
+ * and recommend's SELL_THRESHOLD both hard-coding 0.90 — retuning one would
+ * have split the two engines apart silently.
  */
-export const SELL_THRESHOLD = 0.85
+export const SELL_THRESHOLD = HARD_SELL_THRESHOLD
 
 /**
  * Warning band entry — gem_score < posAvg * SELL_SOON_THRESHOLD && >= posAvg * SELL_THRESHOLD
- * triggers 'sell_soon'.
+ * triggers 'sell_soon'. Identical to the verdict engine's sell line.
  */
-export const SELL_SOON_THRESHOLD = 0.90
+export const SELL_SOON_THRESHOLD = VERDICT_SELL_THRESHOLD
 
 /**
  * Fixture swing threshold — Phase 47 D-01 confirmed (0.20 delta).
