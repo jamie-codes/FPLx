@@ -630,7 +630,7 @@ def run(dry_run: bool = False):
             injury_lookup = None
             try:
                 from injury_client import get_live_injuries
-                from injury_join import build_injury_lookup
+                from injury_join import build_injury_lookup, coverage_report
                 # Season sweep, reduced to each team's latest matchday (2026-08-30):
                 # FPL fixture ids are a foreign namespace to api-football, and
                 # upcoming-date queries return empty until kickoff nears — both
@@ -647,6 +647,15 @@ def run(dry_run: bool = False):
                 # was previously silent and indistinguishable from a dead key.
                 print(f"AVAIL-01: {len(_injury_records)} injury records -> "
                       f"{len(_built)} FPL players mapped (gate {'ON' if AVAIL_ENABLED else 'OFF'})")
+                # Coverage report (2026-08-30): most unmatched records are players
+                # outside FPL squads (youth/departed) and are correctly ignored,
+                # but a real regular appearing here needs an
+                # apifootball_id_map.json override — so name them in the log.
+                _cov = coverage_report(_injury_records, bootstrap)
+                if _cov['unmatched']:
+                    print(f"AVAIL-01 coverage: {_cov['matched']} matched / "
+                          f"{_cov['unmatched']} unmatched records; unmatched names: "
+                          f"{', '.join(_cov['unmatched_names'][:40])}")
                 if AVAIL_ENABLED:
                     injury_lookup = _built                  # active: feeds xmins
             except Exception as exc:
