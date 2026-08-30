@@ -62,7 +62,7 @@ def _get(endpoint: str, params: dict) -> dict:
     return data
 
 
-def fetch_upcoming_fixtures(season: int, next_n: int = 20,
+def fetch_upcoming_fixtures(season: int, next_n: int = 30,
                             league: int = _PL_LEAGUE) -> dict[int, dict]:
     """{api_football_fixture_id: {home, away, date}} for the next `next_n` games.
 

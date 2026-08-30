@@ -68,30 +68,17 @@ def _get(endpoint: str, params: dict) -> dict:
     return data
 
 
-MAX_PAGES = 30
-
-
 def fetch_season_injuries(season: int = 2025, league: int = _PL_LEAGUE) -> list[dict]:
     """Whole-season injury records (snapshotting, lab reconstruction, live sweep).
 
-    Pages until exhausted: a full season is ~3400 records, so relying on a
-    single response would silently truncate to page 1 if api-football ever caps
-    the page size — and because records are fixture-date ordered, truncation
-    would look like every club's feed stalling in August rather than failing
-    loudly (review 2026-08-30).
+    Single unpaged call — /injuries has NO `page` parameter. A review suggested
+    paging to guard against page-1 truncation; sending `page` returned
+    {'page': 'The Page field do not exist.'} and, because that arrives as an
+    HTTP-200 errors body, took the whole layer dark for a run (2026-08-30).
+    The endpoint returns the full set in one response: 3417 records for the
+    committed 2025/26 season, so there is no cap to work around.
     """
-    out: list[dict] = []
-    page = 1
-    while page <= MAX_PAGES:
-        payload = _get('injuries', {'league': league, 'season': season, 'page': page})
-        out.extend(parse_records(payload))
-        total = int(((payload.get('paging') or {}).get('total')) or 1)
-        if page >= total:
-            break
-        page += 1
-    else:
-        print(f'AVAIL-01: injury paging hit the {MAX_PAGES}-page cap — records may be truncated')
-    return out
+    return parse_records(_get('injuries', {'league': league, 'season': season}))
 
 
 def fetch_fixture_injuries(fixture_id: int) -> list[dict]:

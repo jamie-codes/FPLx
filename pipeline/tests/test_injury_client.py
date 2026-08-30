@@ -218,6 +218,23 @@ def test_fetch_date_injuries_queries_league_season_date(monkeypatch):
     assert 'fixture' not in seen['params']
 
 
+def test_fetch_season_injuries_sends_no_page_param(monkeypatch):
+    """/injuries has no `page` field — sending one returns an HTTP-200 errors
+    body, which (correctly) raises and took the layer dark for a run on
+    2026-08-30. Pin the param set so paging can't be reintroduced."""
+    seen = {}
+
+    def fake_get(endpoint, params):
+        seen['endpoint'], seen['params'] = endpoint, params
+        return {'response': []}
+
+    monkeypatch.setattr(injury_client, '_get', fake_get)
+    injury_client.fetch_season_injuries(season=2026)
+    assert seen['endpoint'] == 'injuries'
+    assert seen['params'] == {'league': 39, 'season': 2026}
+    assert 'page' not in seen['params']
+
+
 def test_get_live_injuries_sweeps_by_season_and_selects_current(tmp_path, monkeypatch):
     """Live path: ONE league/season call, then per-team recency selection.
 
