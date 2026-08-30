@@ -1,0 +1,20 @@
+name: Diagnose AVAIL/ODDS
+
+# TEMPORARY (2026-08-30): manual-only probe to explain zero injury/odds records.
+# Delete this workflow and pipeline/diagnose_avail.py once the cause is known.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    env:
+      APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests==2.32.3
+      - run: python pipeline/diagnose_avail.py
