@@ -631,22 +631,13 @@ def run(dry_run: bool = False):
             try:
                 from injury_client import get_live_injuries
                 from injury_join import build_injury_lookup
-                # Query by kickoff DATE, not fixture id (2026-08-30): FPL fixture
-                # ids (1-380) are a different namespace from api-football's
-                # 7-digit globals, and a wrong-namespace id returns an empty 200
-                # — which silently produced 0 injury records every run.
-                _upcoming_dates = sorted({
-                    (f.get('kickoff_time') or '')[:10]
-                    for f in fixtures
-                    if f.get('event') == _next_gw_id and f.get('kickoff_time')
-                }) if _next_gw_id else []
-                if not _upcoming_dates:
-                    # Distinct from a genuine 0-injury fetch (review 2026-08-28):
-                    # season rollover / post-final-GW windows resolve no fixtures.
-                    print('AVAIL-01: no upcoming fixture dates resolved for the next GW — injury fetch skipped')
+                # Season sweep, reduced to each team's latest matchday (2026-08-30):
+                # FPL fixture ids are a foreign namespace to api-football, and
+                # upcoming-date queries return empty until kickoff nears — both
+                # produced a silent 0-record fetch every run.
                 _injury_season = int((bootstrap.get('events') or [{}])[0]
                                      .get('deadline_time', '2026')[:4])
-                _injury_records = get_live_injuries(_upcoming_dates, season=_injury_season)
+                _injury_records = get_live_injuries(season=_injury_season)
                 _built = build_injury_lookup(_injury_records, bootstrap)
                 for _el in bootstrap['elements']:
                     _info = _built.get(_el['id'])

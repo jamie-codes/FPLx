@@ -83,9 +83,7 @@ def test_run_py_fetches_injuries_by_date_not_fpl_fixture_id():
     run_path = os.path.join(os.path.dirname(__file__), '..', 'run.py')
     with open(run_path, 'r', encoding='utf-8') as f:
         src = f.read()
-    assert 'kickoff_time' in src, \
-        "run.py must derive injury query dates from fixture kickoff_time"
-    assert 'get_live_injuries(_upcoming_dates' in src, \
-        "run.py must pass kickoff dates (not FPL fixture ids) to get_live_injuries"
+    assert 'get_live_injuries(season=' in src, \
+        "run.py must call get_live_injuries with the api-football season"
     assert "f['id'] for f in fixtures" not in src.split('get_live_injuries')[0][-800:], \
         "run.py must not collect FPL fixture ids for the injury fetch"

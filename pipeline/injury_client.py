@@ -69,7 +69,7 @@ def _get(endpoint: str, params: dict) -> dict:
 
 
 def fetch_season_injuries(season: int = 2025, league: int = _PL_LEAGUE) -> list[dict]:
-    """Whole-season injury records (for snapshotting / lab reconstruction)."""
+    """Whole-season injury records (snapshotting, lab reconstruction, live sweep)."""
     return parse_records(_get('injuries', {'league': league, 'season': season}))
 
 
@@ -109,21 +109,43 @@ def _cache_fresh() -> bool:
         return False
 
 
-def get_live_injuries(dates: list[str], season: int) -> list[dict]:
-    """Fetch+cache projected absentees across the given match dates.
+def select_current_records(records: list[dict]) -> list[dict]:
+    """Reduce a season sweep to the CURRENT injury picture.
 
-    `dates` are 'YYYY-MM-DD' kickoff dates for the upcoming GW (deduped here);
-    `season` is the api-football season year. Queries by league/season/date —
-    NOT by fixture id, whose namespace the FPL side cannot express (2026-08-30).
+    api-football attaches each injury record to a fixture, so a season sweep
+    contains every matchday's snapshot back to GW1 — feeding all of it to
+    build_injury_lookup would keep flagging players who have long since
+    recovered. Keep, per team, only records from that team's most recent
+    matchday plus any future-dated ones (which appear as kickoff nears).
+    """
+    latest_by_team: dict[str, str] = {}
+    for r in records:
+        team, date = r.get('team_name') or '', r.get('date') or ''
+        if not team or not date:
+            continue
+        if date > latest_by_team.get(team, ''):
+            latest_by_team[team] = date
+    return [
+        r for r in records
+        if (r.get('team_name') or '') in latest_by_team
+        and (r.get('date') or '') >= latest_by_team[r['team_name']]
+    ]
 
-    Returns parsed records. Failures are per-request (review 2026-08-28): a
-    rate-limit tripping mid-batch keeps the dates already fetched. A total
-    failure — or an empty date list — returns [] WITHOUT writing the 24h
-    cache, so an outage can't masquerade as an injury-free league. Affected
-    players keep their FPL-derived availability either way (safe no-op)."""
-    if not dates:
-        return []
-    unique_dates = sorted(set(dates))
+
+def get_live_injuries(season: int) -> list[dict]:
+    """Fetch+cache the current injury picture for the season (one API call).
+
+    Queries league/season — NOT fixture ids (a foreign namespace, 2026-08-30)
+    and NOT upcoming dates: api-football only populates a fixture's injuries as
+    kickoff nears, so querying the next GW's dates days ahead returns an empty
+    200 (verified 2026-08-30: date=+6d → 0 records, season sweep → 304). The
+    sweep is then reduced to each team's latest matchday by
+    select_current_records.
+
+    On failure returns [] WITHOUT writing the 24h cache, so an outage can't
+    masquerade as an injury-free league. Affected players keep their
+    FPL-derived availability either way (safe no-op).
+    """
     if _cache_fresh():
         with open(CACHE_PATH, 'r', encoding='utf-8') as f:
             # .get keeps the documented "returns []" guarantee even if a fresh
@@ -131,21 +153,13 @@ def get_live_injuries(dates: list[str], season: int) -> list[dict]:
             records = json.load(f).get('records', [])
         print(f'AVAIL-01: injuries served from cache ({len(records)} records)')
         return records
-    records: list[dict] = []
-    failed = 0
-    last_exc: Exception | None = None
-    for date in unique_dates:
-        try:
-            records.extend(fetch_date_injuries(date, season))
-        except Exception as exc:
-            failed += 1
-            last_exc = exc
-    if failed:
-        kept = 'keeping partial batch' if records else 'no injury data this run'
-        print(f'AVAIL-01: live injury fetch failed for {failed}/{len(unique_dates)} '
-              f'dates ({last_exc}); {kept}')
-        if not records:
-            return []   # total failure — never cache an outage as "no injuries"
+    try:
+        swept = fetch_season_injuries(season=season)
+    except Exception as exc:
+        print(f'AVAIL-01: live injury fetch failed ({exc}); no injury data this run')
+        return []   # never cache an outage as "no injuries"
+    records = select_current_records(swept)
+    print(f'AVAIL-01: season sweep {len(swept)} records -> {len(records)} current')
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
     with open(CACHE_PATH, 'w', encoding='utf-8') as f:
         json.dump({'_cached_at': datetime.now(timezone.utc).isoformat(),

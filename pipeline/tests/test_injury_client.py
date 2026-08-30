@@ -97,37 +97,63 @@ def test_get_live_injuries_bad_key_logs_failure_and_writes_no_cache(tmp_path, mo
     monkeypatch.setenv('APIFOOTBALL_KEY', 'dead-key')
     monkeypatch.setattr(injury_client.requests, 'get', lambda *a, **kw: _FakeResp(
         {'errors': {'token': 'invalid'}, 'response': []}))
-    assert injury_client.get_live_injuries(['2026-09-05'], season=2026) == []
+    assert injury_client.get_live_injuries(season=2026) == []
     assert 'injury fetch failed' in capsys.readouterr().out
     assert not cache.exists()   # a failed fetch must not poison the 24h cache
 
 
-def test_get_live_injuries_keeps_partial_batch_on_midloop_failure(tmp_path, monkeypatch, capsys):
-    # Review 2026-08-28: a rate-limit tripping on request N must not discard
-    # the N-1 dates already fetched — keep and cache the partial batch.
+def _rec(player, team, date, rtype='Missing Fixture'):
+    return {'player_id': player, 'player_name': str(player), 'type': rtype,
+            'reason': 'knock', 'team_id': 1, 'team_name': team, 'date': date}
+
+
+# ---------------------------------------------------------------------------
+# select_current_records — a season sweep spans every matchday back to GW1;
+# feeding all of it to build_injury_lookup would keep flagging recovered
+# players, since that lookup dedupes by player but has no notion of recency.
+# ---------------------------------------------------------------------------
+
+class TestSelectCurrentRecords:
+    def test_keeps_only_each_teams_latest_matchday(self):
+        recs = [
+            _rec(1, 'Arsenal', '2026-08-15'),    # stale — recovered since
+            _rec(2, 'Arsenal', '2026-08-29'),    # current
+            _rec(3, 'Arsenal', '2026-08-29'),    # current
+            _rec(4, 'Liverpool', '2026-08-22'),  # Liverpool's latest
+        ]
+        got = {r['player_id'] for r in injury_client.select_current_records(recs)}
+        assert got == {2, 3, 4}
+
+    def test_per_team_recency_is_independent(self):
+        # Teams play on different days — one team's newer fixture must not
+        # discard another team's latest snapshot.
+        recs = [_rec(1, 'Arsenal', '2026-08-30'), _rec(2, 'Burnley', '2026-08-28')]
+        got = {r['player_id'] for r in injury_client.select_current_records(recs)}
+        assert got == {1, 2}
+
+    def test_keeps_future_dated_records(self):
+        # Records for an upcoming fixture appear as kickoff nears — those are
+        # the most forward-looking signal available and must survive.
+        recs = [_rec(1, 'Arsenal', '2026-08-29'), _rec(2, 'Arsenal', '2026-09-05')]
+        got = {r['player_id'] for r in injury_client.select_current_records(recs)}
+        assert got == {2}
+
+    def test_ignores_records_missing_team_or_date(self):
+        recs = [_rec(1, '', '2026-08-29'), _rec(2, 'Arsenal', '')]
+        assert injury_client.select_current_records(recs) == []
+
+
+def test_get_live_injuries_failure_writes_no_cache(tmp_path, monkeypatch, capsys):
+    # An outage must not be cached as "injury-free league" for 24h.
     cache = tmp_path / 'apifootball_injuries.json'
     monkeypatch.setattr(injury_client, 'CACHE_PATH', str(cache))
-    monkeypatch.setenv('APIFOOTBALL_KEY', 'k')
 
-    def fake_fetch(date, season, league=39):
-        if date == '2026-09-06':
-            raise RuntimeError('rate limit reached')
-        return [{'player_id': date}]
+    def boom(season, league=39):
+        raise RuntimeError('rate limit reached')
 
-    monkeypatch.setattr(injury_client, 'fetch_date_injuries', fake_fetch)
-    recs = injury_client.get_live_injuries(
-        ['2026-09-05', '2026-09-06', '2026-09-07'], season=2026)
-    assert [r['player_id'] for r in recs] == ['2026-09-05', '2026-09-07']
-    assert 'failed for 1/3' in capsys.readouterr().out
-    assert cache.exists()
-
-
-def test_get_live_injuries_empty_date_list_writes_no_cache(tmp_path, monkeypatch):
-    # Review 2026-08-28: an empty request list must not write a 0-record cache
-    # that then masquerades as "injury-free league" for 24h.
-    cache = tmp_path / 'apifootball_injuries.json'
-    monkeypatch.setattr(injury_client, 'CACHE_PATH', str(cache))
-    assert injury_client.get_live_injuries([], season=2026) == []
+    monkeypatch.setattr(injury_client, 'fetch_season_injuries', boom)
+    assert injury_client.get_live_injuries(season=2026) == []
+    assert 'injury fetch failed' in capsys.readouterr().out
     assert not cache.exists()
 
 
@@ -158,35 +184,26 @@ def test_fetch_date_injuries_queries_league_season_date(monkeypatch):
     assert 'fixture' not in seen['params']
 
 
-def test_get_live_injuries_fetches_by_date_not_fpl_fixture_id(tmp_path, monkeypatch):
+def test_get_live_injuries_sweeps_by_season_and_selects_current(tmp_path, monkeypatch):
+    """Live path: ONE league/season call, then per-team recency selection.
+
+    Verified against the live API 2026-08-30: season sweep -> 304 records,
+    while the upcoming GW's dates (+6 days) -> 0, because api-football only
+    populates a fixture's injuries as kickoff nears.
+    """
     cache = tmp_path / 'apifootball_injuries.json'
     monkeypatch.setattr(injury_client, 'CACHE_PATH', str(cache))
     calls = []
 
-    def fake_fetch(date, season, league=39):
-        calls.append((date, season))
-        return [{'player_id': 1, 'date': date}]
+    def fake_sweep(season, league=39):
+        calls.append(season)
+        return [_rec(1, 'Arsenal', '2026-08-15'), _rec(2, 'Arsenal', '2026-08-29')]
 
-    monkeypatch.setattr(injury_client, 'fetch_date_injuries', fake_fetch)
-    recs = injury_client.get_live_injuries(['2026-09-05', '2026-09-06'], season=2026)
-    assert calls == [('2026-09-05', 2026), ('2026-09-06', 2026)]
-    assert len(recs) == 2
-
-
-def test_get_live_injuries_dedupes_repeated_dates(tmp_path, monkeypatch):
-    # Several fixtures share a kickoff date — one API call per distinct date.
-    cache = tmp_path / 'apifootball_injuries.json'
-    monkeypatch.setattr(injury_client, 'CACHE_PATH', str(cache))
-    calls = []
-
-    def fake_fetch(date, season, league=39):
-        calls.append(date)
-        return []
-
-    monkeypatch.setattr(injury_client, 'fetch_date_injuries', fake_fetch)
-    injury_client.get_live_injuries(
-        ['2026-09-05', '2026-09-05', '2026-09-06'], season=2026)
-    assert calls == ['2026-09-05', '2026-09-06']
+    monkeypatch.setattr(injury_client, 'fetch_season_injuries', fake_sweep)
+    recs = injury_client.get_live_injuries(season=2026)
+    assert calls == [2026]                       # exactly one API call
+    assert [r['player_id'] for r in recs] == [2]  # stale record dropped
+    assert cache.exists()
 
 
 def test_get_live_injuries_logs_cache_serve(tmp_path, monkeypatch, capsys):
@@ -196,7 +213,7 @@ def test_get_live_injuries_logs_cache_serve(tmp_path, monkeypatch, capsys):
         'records': [{'player_id': 1}],
     }), encoding='utf-8')
     monkeypatch.setattr(injury_client, 'CACHE_PATH', str(cache))
-    recs = injury_client.get_live_injuries(['2026-09-05', '2026-09-06'], season=2026)
+    recs = injury_client.get_live_injuries(season=2026)
     assert len(recs) == 1
     out = capsys.readouterr().out
     assert 'cache' in out and '1' in out
