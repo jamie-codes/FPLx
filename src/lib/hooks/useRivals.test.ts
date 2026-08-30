@@ -6,7 +6,7 @@ import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { createElement } from 'react'
-import { useRivals } from './useRivals'
+import { useRivals, RivalsError } from './useRivals'
 
 function makeWrapper() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: 0, gcTime: 0 } } })
@@ -86,6 +86,50 @@ describe('useRivals', () => {
     const { result } = renderHook(() => useRivals('314', null), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/api/fpl/leagues-classic/314/standings/'))
+  })
+
+  // Season-start UX (2026-08-30): classic league IDs are reissued every
+  // season, so a 404 on standings is overwhelmingly a stale ID from last
+  // season — the single generic message sent users hunting the wrong problem.
+  it('surfaces a not_found RivalsError when standings 404s (stale league ID)', async () => {
+    installFetchMock({
+      'bootstrap-static': () => bootstrapPayload('2099-01-01T00:00:00Z'),
+      // no standings route -> mock returns 404
+    })
+    const { result } = renderHook(() => useRivals('999999', null), { wrapper: makeWrapper() })
+    // useRivals sets retry: 1 (overriding the client default), so the error
+    // state only settles after the retry delay — past waitFor's 1s default.
+    await waitFor(() => expect(result.current.isError).toBe(true), { timeout: 5000 })
+    const err = result.current.error as RivalsError
+    expect(err).toBeInstanceOf(RivalsError)
+    expect(err.kind).toBe('not_found')
+  })
+
+  it('surfaces an upstream RivalsError for non-404 standings failures', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.includes('bootstrap-static')) {
+        return new Response(JSON.stringify(bootstrapPayload('2099-01-01T00:00:00Z')), { status: 200 })
+      }
+      return new Response('{}', { status: 503 })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const { result } = renderHook(() => useRivals('314', null), { wrapper: makeWrapper() })
+    // useRivals sets retry: 1 (overriding the client default), so the error
+    // state only settles after the retry delay — past waitFor's 1s default.
+    await waitFor(() => expect(result.current.isError).toBe(true), { timeout: 5000 })
+    expect((result.current.error as RivalsError).kind).toBe('upstream')
+  })
+
+  it('surfaces a shape RivalsError when standings JSON does not match', async () => {
+    installFetchMock({
+      'bootstrap-static': () => bootstrapPayload('2099-01-01T00:00:00Z'),
+      'leagues-classic/314/standings': () => ({ unexpected: true }),
+    })
+    const { result } = renderHook(() => useRivals('314', null), { wrapper: makeWrapper() })
+    // useRivals sets retry: 1 (overriding the client default), so the error
+    // state only settles after the retry delay — past waitFor's 1s default.
+    await waitFor(() => expect(result.current.isError).toBe(true), { timeout: 5000 })
+    expect((result.current.error as RivalsError).kind).toBe('shape')
   })
 
   it('ML-08: caps at 20 rivals and sets leagueTruncated when league is larger', async () => {

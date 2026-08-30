@@ -9,7 +9,7 @@
 //
 // Layout: League ID input form → progress note (loading) → summary table → detail panel.
 import { useState, useMemo, useCallback } from 'react'
-import { useRivals } from '@/lib/hooks/useRivals'
+import { useRivals, RivalsError } from '@/lib/hooks/useRivals'
 import { useSquad } from '@/lib/hooks/useSquad'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { computePositionMedians } from '@/lib/rival-intel'
@@ -146,11 +146,7 @@ export function RivalsTab({ submittedId }: RivalsTabProps) {
         </p>
       )}
 
-      {rivalsError && (
-        <p className="text-sm text-negative">
-          Failed to load rivals. Check your league ID and try again.
-        </p>
-      )}
+      {rivalsError && <RivalsErrorNotice error={rivalsError} />}
 
       {rivalsData && (
         <>
@@ -182,6 +178,26 @@ export function RivalsTab({ submittedId }: RivalsTabProps) {
         </>
       )}
     </div>
+  )
+}
+
+/** Season-start UX (2026-08-30): FPL reissues classic league IDs every season,
+ * so a saved ID goes stale each August and 404s. Naming that case separately
+ * stops users re-checking a correct ID during a genuine outage, and vice versa. */
+function RivalsErrorNotice({ error }: { error: unknown }) {
+  const kind = error instanceof RivalsError ? error.kind : null
+  const message =
+    kind === 'not_found'
+      ? 'No league found with that ID. FPL issues new league IDs each season — copy this season’s ID from the league page on the FPL site.'
+      : kind === 'upstream'
+        ? 'The FPL API did not respond. This is usually temporary, especially around a deadline — try again shortly.'
+        : kind === 'shape'
+          ? 'The FPL API returned data in an unexpected format. The league ID is probably fine; this needs a fix on our side.'
+          : 'Failed to load rivals. Check your league ID and try again.'
+  return (
+    <p className="text-sm text-negative" data-testid="rivals-error">
+      {message}
+    </p>
   )
 }
 

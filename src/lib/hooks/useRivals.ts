@@ -29,6 +29,23 @@ import type { RivalEntry, RivalLeagueResult, RivalPick } from '@/lib/types'
 const MAX_RIVALS = 20
 const CONCURRENCY = 3
 
+/** Why a rivals load failed, so the UI can say something actionable.
+ *
+ * `not_found` matters most at season start (2026-08-30): FPL reissues classic
+ * league IDs every season, so a saved ID goes stale each August and 404s. The
+ * old single "check your league ID" message covered that case and genuine
+ * outages alike, which sent users hunting the wrong problem. */
+export type RivalsErrorKind = 'not_found' | 'upstream' | 'shape'
+
+export class RivalsError extends Error {
+  readonly kind: RivalsErrorKind
+  constructor(kind: RivalsErrorKind, message: string) {
+    super(message)
+    this.name = 'RivalsError'
+    this.kind = kind
+  }
+}
+
 /**
  * Fetch the user's mini-league rivals (up to 20), each with picks + chip history,
  * and apply the post-deadline captain gate (D-05).
@@ -67,10 +84,15 @@ export function useRivals(
 
       // Step 2: standings.
       const stRes = await fetch(`/api/fpl/leagues-classic/${leagueId}/standings/`)
-      if (!stRes.ok) throw new Error(`standings fetch failed: ${stRes.status}`)
+      if (!stRes.ok) {
+        throw new RivalsError(
+          stRes.status === 404 ? 'not_found' : 'upstream',
+          `standings fetch failed: ${stRes.status}`,
+        )
+      }
       const stRaw = await stRes.json()
       const stParsed = parseLeagueStandings(stRaw)
-      if (!stParsed.success) throw new Error('standings shape invalid')
+      if (!stParsed.success) throw new RivalsError('shape', 'standings shape invalid')
       const page1 = stParsed.data.standings
 
       // ML-02: extract user's rank from the SAME standings response (no extra fetch).
