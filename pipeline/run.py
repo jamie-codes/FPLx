@@ -1142,7 +1142,8 @@ def run(dry_run: bool = False):
             compute_data_health(merged, timestamps, cache_dir, pipeline_stale=False,
                                 sp_unmatched_count=sp_unmatched_count,
                                 injury_mapped_count=injury_mapped_count,
-                                odds_priced_count=odds_priced_count)
+                                odds_priced_count=odds_priced_count,
+                                summaries=summaries)
             print("Data health written.")
         except Exception as dh_exc:
             print(f"[data_health] non-fatal error: {dh_exc}", file=sys.stderr)

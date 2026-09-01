@@ -163,6 +163,47 @@ def _check_fdr_spread(merged: list) -> dict | None:
             'value': round(top_share, 3), 'threshold': '<= 0.90 in one tier'}
 
 
+def _check_start_prob_staleness(merged: list, summaries: dict | None) -> dict | None:
+    """Are ever-present players still being rated as benchwarmers?
+
+    STALE-01 (2026-09-01): the cold-start prior used to REPLACE this season's
+    starts below a 3-start threshold, so two GWs in, 112 of 172 ever-present
+    players carried a start_prob under 80% — Kinsky at 18% after starting every
+    game. start_prob feeds xmins -> xPts -> every recommendation, so this was
+    silently distorting the whole model. Blending fixed it; this check makes a
+    regression (or any future prior that overpowers evidence) visible.
+
+    Returns None when there is not enough history to judge.
+    """
+    if not summaries:
+        return None
+    ever_present, understated = 0, 0
+    for p in merged:
+        s = summaries.get(p['id']) or summaries.get(str(p['id']))
+        if not s:
+            continue
+        hist = s.get('history') or []
+        if len(hist) < 2:
+            continue
+        starts = [h for h in hist if h.get('starts') == 1]
+        if len(starts) != len(hist):
+            continue                      # not ever-present
+        ever_present += 1
+        if (p.get('start_prob') or 0) < 0.80:
+            understated += 1
+    if ever_present < 20:
+        return None                       # too early to judge
+    share = understated / ever_present
+    if share > 0.50:
+        status = 'error'
+    elif share > 0.25:
+        status = 'warn'
+    else:
+        status = 'ok'
+    return {'id': 'start_prob_staleness', 'status': status,
+            'value': round(share, 3), 'threshold': '<= 0.25 of ever-presents under 80%'}
+
+
 def _append_history(prior_history: list, overall_status: str, generated_at: str) -> list:
     """Append new status entry; cap FIFO at 7 items.
 
@@ -202,6 +243,7 @@ def compute_data_health(
     sp_unmatched_count: int | None = None,
     injury_mapped_count: int | None = None,
     odds_priced_count: int | None = None,
+    summaries: dict | None = None,
 ) -> dict:
     """Compute data_health.json artifact and write via save().
 
@@ -278,6 +320,9 @@ def compute_data_health(
     fdr_check = _check_fdr_spread(merged)
     if fdr_check is not None:
         sanity_checks.append(fdr_check)
+    stale_check = _check_start_prob_staleness(merged, summaries)
+    if stale_check is not None:
+        sanity_checks.append(stale_check)
 
     result = {
         'generated_at': datetime.now(timezone.utc).isoformat(),

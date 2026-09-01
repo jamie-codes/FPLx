@@ -11,6 +11,12 @@ POSITION_PRIOR = {1: 0.90, 2: 0.75, 3: 0.65, 4: 0.60}
 _OFFSEASON_BAND_START = {2: 0.90, 1: 0.62, 0: 0.30}   # premium / mid / budget
 _OFFSEASON_BAND_MINS = {2: 85.0, 1: 78.0, 0: 68.0}
 
+# STALE-01: how many games of evidence the COLD-01 prior is worth when blending
+# it with the current season's starts. Small on purpose — the prior exists to
+# cover the first weeks, not to outvote what a player is actually doing. At 2
+# it still shades a 1-game sample but is outweighed from ~3 games on.
+PRIOR_PSEUDO_GAMES = 2.0
+
 
 def _offseason_start_estimate(element: dict, prior_start: dict | None, availability: float):
     """Return (start_prob, avg_mins_started) for off-season from prior or price band."""
@@ -213,15 +219,29 @@ def _compute_player_xmins(
             avg_mins_started = 0.0
 
         if len(starts_in_recent) < 3:
-            # COLD-01: use prior start_rate when available; else flat POSITION_PRIOR
-            if prior_start is not None:
-                start_prob = round(
-                    prior_start.get('start_rate', POSITION_PRIOR.get(element_type, 0.65)) * availability, 4
-                )
-                if avg_mins_started == 0.0:
-                    avg_mins_started = prior_start.get('mins_per_start', 0.0)
-            else:
-                start_prob = round(POSITION_PRIOR.get(element_type, 0.65) * availability, 4)
+            # STALE-01 (2026-09-01): the prior now BLENDS with this season's
+            # record instead of replacing it. The old branch returned the prior
+            # outright, so two GWs in — when nobody has 3 starts — 112 of 172
+            # ever-present players were still rated on last season: Kinsky 18%
+            # and Isak 21% after starting every game. It bites hardest exactly
+            # where the prior is least trustworthy (transfers, promotions,
+            # breakthroughs), i.e. when a player's role has just changed.
+            #
+            # The prior is worth PRIOR_PSEUDO_GAMES games of evidence, so a
+            # 2-of-2 starter lands near 60% rather than 18%, and observed games
+            # outvote it from ~3 on. The warm branch below is untouched: once a
+            # player has 3+ starts the prior has no influence at all (COLD-01's
+            # self-deactivation contract).
+            prior_rate = (
+                prior_start.get('start_rate', POSITION_PRIOR.get(element_type, 0.65))
+                if prior_start is not None
+                else POSITION_PRIOR.get(element_type, 0.65)
+            )
+            blended = ((len(starts_in_recent) + prior_rate * PRIOR_PSEUDO_GAMES)
+                       / (len(recent) + PRIOR_PSEUDO_GAMES))
+            start_prob = round(blended * availability, 4)
+            if avg_mins_started == 0.0 and prior_start is not None:
+                avg_mins_started = prior_start.get('mins_per_start', 0.0)
         else:
             recent_start_rate = len(starts_in_recent) / max(len(recent), 1)
             start_prob = round(recent_start_rate * availability, 4)

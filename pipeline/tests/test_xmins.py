@@ -31,26 +31,32 @@ def test_returns_mins_60_prob_and_sub_risk_label():
     assert {'xmins_adjusted', 'difficulty_rotation_risk', 'difficulty_rotation_factor', 'availability_risk', 'availability_factor'}.issubset(result.keys())
 
 
-def test_new_signing_fallback_uses_position_prior():
-    """With only 2 starts in recent 10, start_prob == POSITION_PRIOR[element_type] * availability."""
+def test_new_signing_fallback_blends_position_prior_with_evidence():
+    """STALE-01: with 2 starts in the recent 10, the position prior is BLENDED
+    with the observed rate, not returned outright.
+
+    The old contract returned the flat prior (0.65-0.90), rating a player who
+    started 2 of 10 games as a 65-90% starter. Blending pulls that down toward
+    the evidence — the same mechanism that pulls a 2-of-2 starter UP instead of
+    leaving them on last season's rate."""
     # Build summary: 2 entries with starts=1, 8 with starts=0
     history = [_hist(90, 1)] * 2 + [_hist(0, 0)] * 8
 
     # GK (element_type=1) -> prior 0.90, no chance flag -> availability=1.0
     result = _compute_player_xmins(_element(element_type=1, starts=2, minutes=180), _summary(history), 10)
-    assert result['start_prob'] == round(0.90 * 1.0, 4), f"GK: expected 0.9, got {result['start_prob']}"
+    assert result['start_prob'] == round((2 + 0.90 * 2) / 12, 4), f"GK: got {result['start_prob']}"
 
     # DEF (element_type=2) -> prior 0.75
     result = _compute_player_xmins(_element(element_type=2, starts=2, minutes=180), _summary(history), 10)
-    assert result['start_prob'] == round(0.75 * 1.0, 4), f"DEF: expected 0.75, got {result['start_prob']}"
+    assert result['start_prob'] == round((2 + 0.75 * 2) / 12, 4), f"DEF: got {result['start_prob']}"
 
     # MID (element_type=3) -> prior 0.65
     result = _compute_player_xmins(_element(element_type=3, starts=2, minutes=180), _summary(history), 10)
-    assert result['start_prob'] == round(0.65 * 1.0, 4), f"MID: expected 0.65, got {result['start_prob']}"
+    assert result['start_prob'] == round((2 + 0.65 * 2) / 12, 4), f"MID: got {result['start_prob']}"
 
     # FWD (element_type=4) -> prior 0.60
     result = _compute_player_xmins(_element(element_type=4, starts=2, minutes=180), _summary(history), 10)
-    assert result['start_prob'] == round(0.60 * 1.0, 4), f"FWD: expected 0.60, got {result['start_prob']}"
+    assert result['start_prob'] == round((2 + 0.60 * 2) / 12, 4), f"FWD: got {result['start_prob']}"
 
 
 def test_starts_field_used_exclusively():
@@ -59,9 +65,11 @@ def test_starts_field_used_exclusively():
     history = [_hist(90, 1)] * 2 + [_hist(70, 0)] * 8
     # Only 2 starts qualify -> falls into position-prior branch (< 3 starts)
     result = _compute_player_xmins(_element(element_type=3, starts=2, minutes=250), _summary(history), 10)
-    # Should use POSITION_PRIOR[3]=0.65, not starts_in_recent/recent ratio
-    assert result['start_prob'] == round(0.65 * 1.0, 4), (
-        f"Expected position-prior 0.65 but got {result['start_prob']} — minutes>60 proxy still active?"
+    # Only the 2 real starts count. If the minutes>60 proxy were still active
+    # there would be 10 starts and start_prob would be ~1.0, not the blended
+    # 2-of-10 value below (STALE-01 changed the number, not this contract).
+    assert result['start_prob'] == round((2 + 0.65 * 2) / 12, 4), (
+        f"Expected blended 2-of-10 value but got {result['start_prob']} — minutes>60 proxy still active?"
     )
 
 
@@ -137,7 +145,8 @@ def test_sub_risk_label_cameo_low_start_prob():
         _summary(history),
         10,
     )
-    assert result['start_prob'] == round(0.60 * 0.20, 4), f"Expected 0.12, got {result['start_prob']}"
+    expected = round(((2 + 0.60 * 2) / 12) * 0.20, 4)
+    assert result['start_prob'] == expected, f"Expected {expected}, got {result['start_prob']}"
     assert result['sub_risk_label'] == 'cameo', f"Expected 'cameo', got {result['sub_risk_label']}"
 
 
@@ -409,7 +418,7 @@ def test_sub_appear_prob_dgw_counts_two():
 # ── COLD-01: prior start seed tests ──────────────────────────────────────────
 
 def test_cold_player_with_prior_start_uses_prior_start_rate():
-    """COLD-01: cold player (starts<3) with prior_start → start_prob = start_rate * availability."""
+    """COLD-01 + STALE-01: cold player blends prior_start with observed starts."""
     from xmins import _compute_player_xmins
     prior_start = {'start_rate': 0.88, 'mins_per_start': 85.0}
     # 2 starts in recent → position-prior branch normally; prior should override
@@ -420,9 +429,10 @@ def test_cold_player_with_prior_start_uses_prior_start_rate():
         10,
         prior_start=prior_start,
     )
-    expected = round(0.88 * 1.0, 4)  # availability=1.0
+    # 2 starts of 10 observed, prior 0.88 worth 2 pseudo-games.
+    expected = round((2 + 0.88 * 2) / 12, 4)
     assert result['start_prob'] == expected, (
-        f"Expected start_prob={expected} (prior), got {result['start_prob']}"
+        f"Expected blended start_prob={expected}, got {result['start_prob']}"
     )
 
 
@@ -443,7 +453,7 @@ def test_cold_player_with_prior_start_seeds_avg_mins():
 
 
 def test_cold_player_without_prior_start_uses_position_prior():
-    """COLD-01: cold player with no prior_start → unchanged flat POSITION_PRIOR behaviour."""
+    """COLD-01 + STALE-01: with no prior_start the POSITION_PRIOR is blended in."""
     from xmins import _compute_player_xmins, POSITION_PRIOR
     history = [_hist(90, 1)] * 2 + [_hist(0, 0)] * 8
     result = _compute_player_xmins(
@@ -452,9 +462,9 @@ def test_cold_player_without_prior_start_uses_position_prior():
         10,
         prior_start=None,
     )
-    expected = round(POSITION_PRIOR[3] * 1.0, 4)
+    expected = round((2 + POSITION_PRIOR[3] * 2) / 12, 4)
     assert result['start_prob'] == expected, (
-        f"Expected POSITION_PRIOR start_prob={expected}, got {result['start_prob']}"
+        f"Expected blended POSITION_PRIOR start_prob={expected}, got {result['start_prob']}"
     )
 
 

@@ -68,6 +68,40 @@ class TestFdrSpreadCheck:
         assert data_health._check_fdr_spread([{'fixtures': []}]) is None
 
 
+class TestStartProbStaleness:
+    """STALE-01: ever-present players rated as benchwarmers means the prior is
+    overpowering this season's evidence — the Kinsky-at-18% failure."""
+
+    def _squad(self, n, start_prob):
+        merged = [{'id': i, 'start_prob': start_prob} for i in range(n)]
+        summaries = {i: {'history': [{'starts': 1}, {'starts': 1}]} for i in range(n)}
+        return merged, summaries
+
+    def test_majority_understated_is_an_error(self):
+        merged, summaries = self._squad(30, 0.18)
+        c = data_health._check_start_prob_staleness(merged, summaries)
+        assert c['id'] == 'start_prob_staleness'
+        assert c['status'] == 'error'
+
+    def test_healthy_ratings_are_ok(self):
+        merged, summaries = self._squad(30, 0.95)
+        assert data_health._check_start_prob_staleness(merged, summaries)['status'] == 'ok'
+
+    def test_omitted_when_too_few_ever_presents_to_judge(self):
+        merged, summaries = self._squad(5, 0.18)
+        assert data_health._check_start_prob_staleness(merged, summaries) is None
+
+    def test_rotated_players_are_not_counted_as_ever_present(self):
+        # A player who genuinely did not start every game must not make a low
+        # start_prob look like a fault.
+        merged = [{'id': i, 'start_prob': 0.2} for i in range(30)]
+        summaries = {i: {'history': [{'starts': 1}, {'starts': 0}]} for i in range(30)}
+        assert data_health._check_start_prob_staleness(merged, summaries) is None
+
+    def test_omitted_without_summaries(self):
+        assert data_health._check_start_prob_staleness([{'id': 1}], None) is None
+
+
 class TestWiring:
     def _ts(self):
         return {'merged_players.json': '2026-01-01T00:00:00+00:00'}
