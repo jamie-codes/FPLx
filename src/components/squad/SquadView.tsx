@@ -157,7 +157,7 @@ export function SquadView({ picks, allPlayers, entryHistory, labels, exactSellPr
                       >
                         <td className="px-3 py-2 whitespace-nowrap font-medium text-ink sticky left-0 z-10 bg-surface-1">
                           <div className="flex items-center gap-2">
-                            <PlayerAvatar code={player.code} webName={player.web_name} teamShortName={player.team_short_name} width={28} height={35} />
+                            <PlayerAvatar code={player.code} webName={player.web_name} teamShortName={player.team_short_name} photoUrl={player.photo_url} width={28} height={35} />
                             <div>
                               <button
                                 onClick={() => toggleExpand(pick.element)}

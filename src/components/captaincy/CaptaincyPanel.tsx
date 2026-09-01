@@ -57,7 +57,7 @@ export function CaptaincyPanel({ candidates, nextGw }: CaptaincyPanelProps) {
             {/* Rank + avatar + player name row */}
             <div className="flex items-center gap-2">
               <span className="text-sm text-ink-muted w-4 shrink-0">{i + 1}</span>
-              <PlayerAvatar code={c.player.code} webName={c.player.web_name} teamShortName={c.player.team_short_name} width={32} height={40} />
+              <PlayerAvatar code={c.player.code} webName={c.player.web_name} teamShortName={c.player.team_short_name} photoUrl={c.player.photo_url} width={32} height={40} />
               <span className="text-sm font-medium text-ink sm:flex-1">{c.player.web_name}</span>
             </div>
             {/* Team badge + fixture row */}

@@ -98,6 +98,10 @@ export interface MergedPlayer {
   // FPL core fields (from Phase 1 FPLElement)
   id: number
   code?: number         // stable player photo code (p{code}.png); absent on pre-pipeline cache
+  // PHOTO-01: fresher api-football headshot (media.api-sports.io, no key needed).
+  // null/absent for unmapped players and on pre-PHOTO-01 cache — callers fall
+  // back to the PL CDN photo, whose shoot dates from Aug 2024.
+  photo_url?: string | null
   web_name: string
   team: number
   team_short_name: string

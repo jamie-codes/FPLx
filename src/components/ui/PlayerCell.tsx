@@ -4,9 +4,8 @@
 // while it loads; initials avatar on photo error.
 import Image from 'next/image'
 import { useState } from 'react'
+import { playerImageUrl } from '@/lib/fpl-images'
 
-const PHOTO = (code: number) =>
-  `https://resources.premierleague.com/premierleague/photos/players/110x140/p${code}.png`
 const BADGE = (teamCode: number) =>
   `https://resources.premierleague.com/premierleague/badges/70/t${teamCode}.png`
 
@@ -15,7 +14,7 @@ function initials(name: string): string {
     .map((w) => w[0]?.toUpperCase() ?? '').join('')
 }
 
-export function PlayerCell({ code, webName, teamCode, teamShort, pos, price, size = 'md' }: {
+export function PlayerCell({ code, webName, teamCode, teamShort, pos, price, size = 'md', photoUrl }: {
   code?: number | null
   webName: string
   teamCode?: number | null
@@ -23,6 +22,8 @@ export function PlayerCell({ code, webName, teamCode, teamShort, pos, price, siz
   pos?: string
   price?: string
   size?: 'sm' | 'md'
+  /** PHOTO-01: fresher api-football headshot; falls back to the PL CDN. */
+  photoUrl?: string | null
 }) {
   const [photoErr, setPhotoErr] = useState(false)
   const [badgeErr, setBadgeErr] = useState(false)
@@ -31,7 +32,7 @@ export function PlayerCell({ code, webName, teamCode, teamShort, pos, price, siz
   return (
     <span className="inline-flex items-center gap-2 min-w-0">
       {code && !photoErr ? (
-        <Image src={PHOTO(code)} alt="" width={img.w} height={img.h}
+        <Image src={playerImageUrl(code, photoUrl)} alt="" width={img.w} height={img.h}
           className="rounded-md bg-surface-2 object-cover shrink-0"
           onError={() => setPhotoErr(true)} unoptimized />
       ) : (

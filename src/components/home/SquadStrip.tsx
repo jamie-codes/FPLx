@@ -31,6 +31,7 @@ export function SquadStrip({ xi, bench }: { xi: SquadRow[]; bench: SquadRow[] })
               code={player.code}
               webName={player.web_name}
               teamCode={player.team_code}
+              photoUrl={player.photo_url}
               teamShort={player.team_short_name}
               pos={POS[player.element_type]}
               price={formatBank(player.now_cost)}
@@ -61,6 +62,7 @@ export function SquadStrip({ xi, bench }: { xi: SquadRow[]; bench: SquadRow[] })
                 code={p.code}
                 webName={p.web_name}
                 teamCode={p.team_code}
+                photoUrl={p.photo_url}
                 teamShort={p.team_short_name}
               />
               <Chip intent={badge.intent} size="sm" title={badge.title}>

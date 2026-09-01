@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { playerImageUrl } from '@/lib/fpl-images'
 import { getTeamColour } from '@/lib/team-colours'
+import { TeamBadge } from '@/components/shared/TeamBadge'
 
 interface PlayerAvatarProps {
   code: number | undefined
@@ -11,6 +12,8 @@ interface PlayerAvatarProps {
   width?: number
   height?: number
   className?: string
+  /** PHOTO-01: fresher api-football headshot; falls back to the PL CDN. */
+  photoUrl?: string | null
 }
 
 export function PlayerAvatar({
@@ -20,6 +23,7 @@ export function PlayerAvatar({
   width = 55,
   height = 70,
   className = '',
+  photoUrl,
 }: PlayerAvatarProps) {
   const [error, setError] = useState(false)
   const colour = getTeamColour(teamShortName)
@@ -50,16 +54,31 @@ export function PlayerAvatar({
     )
   }
 
+  // PHOTO-01: the club badge is overlaid on the headshot because photos can
+  // lag a transfer by a season or more — the badge is always current, so the
+  // player's actual club is unambiguous even when the kit in the photo isn't.
+  const badgeSize = Math.max(Math.round(width * 0.38), 14)
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={playerImageUrl(code)}
-      alt={webName}
-      title={webName}
-      width={width}
-      height={height}
-      className={`inline-block object-cover object-top rounded shrink-0 ${className}`}
-      onError={() => setError(true)}
-    />
+    <span
+      className={`relative inline-block shrink-0 ${className}`}
+      style={{ width, height }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={playerImageUrl(code, photoUrl)}
+        alt={webName}
+        title={webName}
+        width={width}
+        height={height}
+        className="inline-block object-cover object-top rounded w-full h-full"
+        onError={() => setError(true)}
+      />
+      <span
+        className="absolute -bottom-0.5 -right-0.5 rounded-full bg-surface-1 p-[1px] leading-none shadow-sm"
+        aria-hidden
+      >
+        <TeamBadge shortName={teamShortName} size={badgeSize} />
+      </span>
+    </span>
   )
 }

@@ -90,6 +90,7 @@ export function PicksTable({ title, players, horizon }: {
                         webName={p.web_name}
                         code={p.code}
                         teamCode={p.team_code}
+                        photoUrl={p.photo_url}
                         pos={POS_LABEL[p.element_type]}
                         teamShort={p.team_short_name}
                       />

@@ -728,6 +728,29 @@ def run(dry_run: bool = False):
                 merged = compute_simulations(merged, xmins_v2_enabled,
                                              cs_prob_base=cs_prob_base_used,
                                              cs_prob_slope=cs_prob_slope_used)
+            # PHOTO-01: attach fresher api-football headshots. The PL CDN has
+            # not reshot players since Aug 2024, so transfers show the old
+            # club's kit. Non-fatal: an unmapped player gets photo_url=None and
+            # the UI falls back to the PL photo exactly as before.
+            try:
+                from player_photos import refresh_photo_map
+                # Derived here rather than reusing _injury_season, which is only
+                # bound if the AVAIL block got that far.
+                _photo_season = int((bootstrap.get('events') or [{}])[0]
+                                    .get('deadline_time', '2026')[:4])
+                _photos = refresh_photo_map(bootstrap, _photo_season)
+                _hit = 0
+                for _p in merged:
+                    _url = _photos.get(str(_p['id']))
+                    _p['photo_url'] = _url
+                    if _url:
+                        _hit += 1
+                print(f'PHOTO-01: {_hit}/{len(merged)} players have an api-football headshot')
+            except Exception as _ph_exc:
+                print(f'[player_photos] non-fatal: {_ph_exc}', file=sys.stderr)
+                for _p in merged:
+                    _p.setdefault('photo_url', None)
+
             save('merged_players.json', merged)
             timestamps['merged_players.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
             save('captain_picks.json', captain_picks)  # Phase 31 CAP-03/CAP-04

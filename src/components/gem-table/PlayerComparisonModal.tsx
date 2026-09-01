@@ -86,7 +86,7 @@ export function PlayerComparisonModal({ open, playerA, onClose }: PlayerComparis
       <div className="grid grid-cols-3 gap-2 mb-1">
         <div />
         <div className="flex items-center gap-2 min-w-0">
-          <PlayerAvatar code={pA.code} webName={pA.web_name} teamShortName={pA.team_short_name} width={40} height={50} className="rounded" />
+          <PlayerAvatar code={pA.code} webName={pA.web_name} teamShortName={pA.team_short_name} photoUrl={pA.photo_url} width={40} height={50} className="rounded" />
           <div className="min-w-0">
             <p className="text-sm font-semibold text-ink truncate">{pA.web_name}</p>
             <div className="flex items-center gap-1 mt-0.5">
@@ -97,7 +97,7 @@ export function PlayerComparisonModal({ open, playerA, onClose }: PlayerComparis
         </div>
         {pB ? (
           <div className="flex items-center gap-2 min-w-0">
-            <PlayerAvatar code={pB.code} webName={pB.web_name} teamShortName={pB.team_short_name} width={40} height={50} className="rounded" />
+            <PlayerAvatar code={pB.code} webName={pB.web_name} teamShortName={pB.team_short_name} photoUrl={pB.photo_url} width={40} height={50} className="rounded" />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-ink truncate">{pB.web_name}</p>
               <div className="flex items-center gap-1 mt-0.5">

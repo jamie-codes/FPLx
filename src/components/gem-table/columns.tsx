@@ -206,6 +206,7 @@ export function createColumns(
             webName={row.original.web_name}
             code={row.original.code}
             teamCode={row.original.team_code}
+            photoUrl={row.original.photo_url}
           />
           <button
             type="button"

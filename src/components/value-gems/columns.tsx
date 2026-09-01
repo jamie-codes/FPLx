@@ -22,6 +22,7 @@ export const columns = [
         webName={info.getValue()}
         code={info.row.original.code}
         teamCode={info.row.original.team_code}
+        photoUrl={info.row.original.photo_url}
       />
     ),
   }),

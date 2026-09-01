@@ -25,6 +25,7 @@ export function createDefconColumns(playerById: Map<number, MergedPlayer>) {
             webName={info.getValue()}
             code={merged?.code}
             teamCode={merged?.team_code}
+            photoUrl={merged?.photo_url}
           />
         )
       },
