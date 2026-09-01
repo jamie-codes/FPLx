@@ -756,7 +756,20 @@ def run(dry_run: bool = False):
             save('captain_picks.json', captain_picks)  # Phase 31 CAP-03/CAP-04
 
             # Phase 80 GWI-01 (D-02/D-03): rotation_risk flag per player from cup-fixture clash.
-            merged = _apply_rotation_risk(merged, fixtures, EUROPEAN_CUP_DATES)
+            # CUP-01 (2026-09-01): cup dates are fetched and refreshed weekly.
+            # EUROPEAN_CUP_DATES was an empty hand-maintained dict, so this flag
+            # was False for every team all season; it stays as the fallback.
+            try:
+                from cup_fixtures import refresh_cup_dates
+                _cup_season = int((bootstrap.get('events') or [{}])[0]
+                                  .get('deadline_time', '2026')[:4])
+                _cup_dates = refresh_cup_dates(bootstrap, _cup_season) or EUROPEAN_CUP_DATES
+            except Exception as _cup_exc:
+                print(f'[cup_fixtures] non-fatal: {_cup_exc}', file=sys.stderr)
+                _cup_dates = EUROPEAN_CUP_DATES
+            merged = _apply_rotation_risk(merged, fixtures, _cup_dates)
+            _rot = sum(1 for p in merged if p.get('rotation_risk'))
+            print(f'CUP-01: rotation_risk flagged on {_rot}/{len(merged)} players')
             save('merged_players.json', merged)  # re-save to persist rotation_risk field
             timestamps['merged_players.json'] = _dt_dh.now(_tz_dh.utc).isoformat()
 
