@@ -57,6 +57,8 @@ export interface AnchoredSquadResult {
   startGw: number | null
   /** How many bench-fodder slots were reserved (WC-03). */
   benchFodderUsed: number
+  /** WC-04: window xPts across ALL 15 — what a bench boost actually scores. */
+  squadXPts: number
 }
 
 export interface BuildSquadOptions {
@@ -67,6 +69,15 @@ export interface BuildSquadOptions {
   /** Deliberately fill this many slots with the cheapest players who still
    *  PLAY, concentrating budget in the XI (WC-03). 0 = off. */
   benchFodderCount?: number
+  /** WC-04: optimise for ALL 15 rather than the best XI. On a bench boost
+   *  every player scores, so leaving weak bodies on the bench — which the XI
+   *  objective is happy to do — is exactly the wrong squad. Ignores
+   *  benchFodderCount, which buys non-scoring bodies by design. */
+  benchBoost?: boolean
+  /** The gameweek the boost is actually played, when it differs from the one
+   *  being built for (wildcard GW4 -> boost GW5). Every player must have a
+   *  fixture then, or they score nothing on the week all 15 count. */
+  benchBoostGw?: number
 }
 
 /** Minimum expected minutes for a player to count as usable bench fodder.
@@ -85,7 +96,10 @@ export function buildAnchoredSquad(
 ): AnchoredSquadResult | null {
   const legacyHorizon: OptimiserHorizon = horizon <= 1 ? 1 : horizon <= 3 ? 3 : 5
   const field = HORIZON_FIELD[legacyHorizon]
-  const { startGw, benchFodderCount = 0 } = options
+  const { startGw, benchBoost = false, benchBoostGw } = options
+  // Fodder and a bench boost are contradictory: one buys bodies that will not
+  // play, the other scores all 15. Boost wins.
+  const benchFodderCount = benchBoost ? 0 : (options.benchFodderCount ?? 0)
 
   // WC-03: window scoring. With a startGw the squad is scored on
   // [startGw, startGw+horizon-1] via per-GW xPts; without one it keeps using
@@ -99,9 +113,15 @@ export function buildAnchoredSquad(
       : ((p[field] as number | undefined) ?? 0)
   /** The gameweek a player must have a fixture in to be selectable. */
   const eligibilityGw = startGw ?? nextGameweekId(players)
-  const playsInWindow = (p: MergedPlayer): boolean =>
-    eligibilityGw === null ||
-    (p.fixtures ?? []).some(f => f.event_id === eligibilityGw)
+  const boostGw = benchBoost ? (benchBoostGw ?? startGw ?? null) : null
+  const playsInWindow = (p: MergedPlayer): boolean => {
+    const fixtures = p.fixtures ?? []
+    if (eligibilityGw !== null && !fixtures.some(f => f.event_id === eligibilityGw)) return false
+    // On a bench boost every one of the 15 scores, so a blank in the boost
+    // week disqualifies a player even if they play the week being built for.
+    if (boostGw !== null && !fixtures.some(f => f.event_id === boostGw)) return false
+    return true
+  }
   const playerMap = new Map<number, MergedPlayer>(players.map(p => [p.id, p]))
   const anchorConflicts: AnchorConflict[] = []
   const squad: ChipSquadPlayer[] = []
@@ -199,21 +219,36 @@ export function buildAnchoredSquad(
     }
   }
 
-  // Cheapest eligible price per position, so the fill can reserve enough to
-  // finish the squad rather than stranding itself on premiums.
-  const cheapestByPos = new Map<number, number>()
+  // Cheapest eligible prices per position, ascending. Reserving `k x cheapest`
+  // is too optimistic when only ONE player sits at that price — the fill then
+  // overspends on premiums and strands itself unable to complete the squad
+  // (which is how a realistic pool returned null). Reserve the k cheapest
+  // DISTINCT players instead.
+  const costsByPos = new Map<number, MergedPlayer[]>()
   for (const p of eligible) {
-    const cur = cheapestByPos.get(p.element_type)
-    if (cur === undefined || p.now_cost < cur) cheapestByPos.set(p.element_type, p.now_cost)
+    const list = costsByPos.get(p.element_type) ?? []
+    list.push(p)
+    costsByPos.set(p.element_type, list)
   }
-  /** Minimum spend still required to fill every remaining slot, excluding `skipPos`
-   *  by one seat (the player being considered). */
-  const reserveNeeded = (skipPos: number): number => {
+  for (const list of costsByPos.values()) list.sort((a, b) => a.now_cost - b.now_cost)
+
+  /** Minimum spend still required to fill every remaining slot, excluding
+   *  `skipPos` by one seat (the player being considered). */
+  const reserveNeeded = (skipPos: number, skipId: number): number => {
     let need = 0
     for (const pos of [1, 2, 3, 4] as const) {
       let remaining = MAX_SLOTS[pos] - (filledSlots[pos] ?? 0)
       if (pos === skipPos) remaining -= 1
-      if (remaining > 0) need += remaining * (cheapestByPos.get(pos) ?? 0)
+      if (remaining <= 0) continue
+      let taken = 0
+      for (const cand of costsByPos.get(pos) ?? []) {
+        if (taken >= remaining) break
+        if (cand.id === skipId || seatedIds.has(cand.id)) continue
+        need += cand.now_cost
+        taken++
+      }
+      // Not enough bodies left to fill the position at any price.
+      if (taken < remaining) return Number.POSITIVE_INFINITY
     }
     return need
   }
@@ -226,7 +261,7 @@ export function buildAnchoredSquad(
     if ((teamCount.get(player.team) ?? 0) >= 3) continue
     if (runningCost + player.now_cost > budget) continue
     // Don't spend into a corner: keep enough for the slots still to fill.
-    if (runningCost + player.now_cost + reserveNeeded(pos) > budget) continue
+    if (runningCost + player.now_cost + reserveNeeded(pos, player.id) > budget) continue
     squad.push({
       id: player.id,
       web_name: player.web_name,
@@ -308,5 +343,12 @@ export function buildAnchoredSquad(
       : (legacyHorizon === 1 ? xPts1gw : legacyHorizon === 3 ? xPts3gw : xPts5gw),
     startGw: startGw ?? null,
     benchFodderUsed,
+    squadXPts: squad.reduce((sum, p) => {
+      const full = playerMap.get(p.id)
+      if (!full) return sum
+      return sum + (windowGws
+        ? windowGws.reduce((s2, gw) => s2 + computeGwXpts(full, gw), 0)
+        : ((full[field] as number | undefined) ?? 0))
+    }, 0),
   }
 }

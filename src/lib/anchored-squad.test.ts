@@ -425,3 +425,106 @@ describe('buildAnchoredSquad — target gameweek + bench fodder', () => {
     expect(built.squad.every(p => p.now_cost !== 39)).toBe(true)
   })
 })
+
+// ---------------------------------------------------------------------------
+// WC-04 (2026-09-01): bench-boost mode.
+//
+// The builder scores and reports the best XI. On a bench boost all 15 players
+// score, so the XI objective is wrong: it will happily leave four weak bodies
+// on the bench, which is exactly the squad you must not take into a boost.
+// ---------------------------------------------------------------------------
+describe('buildAnchoredSquad — bench boost mode', () => {
+  function mkBB(id: number, pos: 1 | 2 | 3 | 4, cost: number, team: number,
+                xg: number, gws: number[] = [5]): MergedPlayer {
+    return {
+      id, web_name: `P${id}`, element_type: pos, now_cost: cost, team, status: 'a',
+      xmins: 85, start_prob: 0.95, xg_per90: xg, xa_per90: 0.1,
+      xPts_1gw: xg * 5, xPts_3gw: xg * 15, xPts_5gw: xg * 25,
+      fixtures: gws.map((event_id) => ({
+        opponent_team: 'OPP', is_home: true, event_id,
+        difficulty_score: 0.5, difficulty_tier: 'medium' as const,
+        attacking_difficulty: 0.5, defensive_difficulty: 0.5,
+      })),
+    } as unknown as MergedPlayer
+  }
+
+  /** Enough bodies to fill a squad, with a clear quality gradient. */
+  function pool(): MergedPlayer[] {
+    const out: MergedPlayer[] = []
+    let id = 1
+    const per: Record<number, number> = { 1: 2, 2: 5, 3: 5, 4: 3 }
+    for (const pos of [1, 2, 3, 4] as const) {
+      for (let i = 0; i < per[pos] * 4; i++) {
+        // cost rises with quality so the budget actually binds
+        out.push(mkBB(id++, pos, 45 + i * 5, (id % 19) + 1, 0.2 + i * 0.15))
+      }
+    }
+    return out
+  }
+
+  it('reports a squad total distinct from the XI total', () => {
+    const r = buildAnchoredSquad([], pool(), 1000, 1,
+                                 { startGw: 5, benchBoost: true })!
+    expect(r.squadXPts).toBeGreaterThan(r.windowXPts)   // 15 players > 11
+  })
+
+  it('produces a stronger FIFTEEN than XI-mode does', () => {
+    const players = pool()
+    const xiMode = buildAnchoredSquad([], players, 1000, 1, { startGw: 5 })!
+    const bbMode = buildAnchoredSquad([], players, 1000, 1,
+                                      { startGw: 5, benchBoost: true })!
+    expect(bbMode.squadXPts).toBeGreaterThanOrEqual(xiMode.squadXPts)
+  })
+
+  it('refuses to pair bench boost with bench fodder', () => {
+    // Fodder deliberately buys non-scoring bodies — the opposite of what a
+    // boost needs. Guard rather than silently producing a bad squad.
+    const r = buildAnchoredSquad([], pool(), 1000, 1,
+                                 { startGw: 5, benchBoost: true, benchFodderCount: 4 })!
+    expect(r.benchFodderUsed).toBe(0)
+  })
+})
+
+describe('buildAnchoredSquad — bench boost in a LATER gameweek than the wildcard', () => {
+  // The user's actual plan: wildcard in GW4, bench boost in GW5. Building for
+  // GW4 only guarantees GW4 fixtures — a club blanking in GW5 would sail
+  // through and then score nothing on the week all 15 count.
+  function mk(id: number, pos: 1 | 2 | 3 | 4, gws: number[], team: number): MergedPlayer {
+    return {
+      id, web_name: `P${id}`, element_type: pos, now_cost: 50, team, status: 'a',
+      xmins: 85, start_prob: 0.95, xg_per90: 0.5, xa_per90: 0.2,
+      xPts_1gw: 5, xPts_3gw: 15, xPts_5gw: 25,
+      fixtures: gws.map((event_id) => ({
+        opponent_team: 'OPP', is_home: true, event_id,
+        difficulty_score: 0.5, difficulty_tier: 'medium' as const,
+        attacking_difficulty: 0.5, defensive_difficulty: 0.5,
+      })),
+    } as unknown as MergedPlayer
+  }
+
+  function pool(): MergedPlayer[] {
+    const out: MergedPlayer[] = []
+    let id = 1
+    const per: Record<number, number> = { 1: 2, 2: 5, 3: 5, 4: 3 }
+    for (const pos of [1, 2, 3, 4] as const) {
+      for (let i = 0; i < per[pos] * 3; i++) out.push(mk(id++, pos, [4, 5, 6], (id % 19) + 1))
+    }
+    return out
+  }
+
+  it('excludes a club that plays the wildcard GW but blanks the boost GW', () => {
+    const blanksBoost = mk(9100, 3, [4, 6], 20)     // plays GW4, blank GW5
+    const players = [...pool(), blanksBoost]
+    const built = buildAnchoredSquad([], players, 1000, 3,
+                                     { startGw: 4, benchBoost: true, benchBoostGw: 5 })!
+    expect(built.squad.map(p => p.id)).not.toContain(9100)
+  })
+
+  it('still allows that player when no bench boost is planned', () => {
+    const blanksBoost = mk(9100, 3, [4, 6], 20)
+    const players = [blanksBoost, ...pool()]
+    const built = buildAnchoredSquad([], players, 1000, 3, { startGw: 4 })!
+    // eligible for a normal wildcard — he plays the gameweek being built for
+    expect(built).not.toBeNull()
+  })
+})

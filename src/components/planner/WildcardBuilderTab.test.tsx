@@ -56,6 +56,7 @@ function makeResult(overrides: Partial<AnchoredSquadResult> = {}): AnchoredSquad
     windowXPts: 170.0,
     startGw: null,
     benchFodderUsed: 0,
+    squadXPts: 200.0,
     captainCandidates: [
       { id: 1, web_name: 'Salah', xPts_1gw: 8.5, ceiling: 12.0 },
       { id: 2, web_name: 'Haaland', xPts_1gw: 8.0, ceiling: 11.5 },

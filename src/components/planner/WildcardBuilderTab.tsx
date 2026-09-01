@@ -267,6 +267,9 @@ export function WildcardBuilderTab({ submittedId, horizon }: WildcardBuilderTabP
   // spend on cheap-but-playing bench cover.
   const [startGw, setStartGw] = useState<number | null>(null)
   const [benchFodder, setBenchFodder] = useState(0)
+  // WC-04: planning a bench boost changes the objective — all 15 score, so
+  // every player must play in the boost week and fodder is disabled.
+  const [boostGw, setBoostGw] = useState<number | null>(null)
 
   const { isAuthenticated } = useAuthStatus()
   const { data: playersData, isLoading: playersLoading, error: playersError } = usePlayers()
@@ -324,9 +327,11 @@ export function WildcardBuilderTab({ submittedId, horizon }: WildcardBuilderTabP
       playersData
         ? buildAnchoredSquad(selectedA.map(p => p.id), playersData, budget, effectiveHorizon,
                              { startGw: effectiveStartGw ?? undefined,
-                               benchFodderCount: benchFodder })
+                               benchFodderCount: benchFodder,
+                               benchBoost: boostGw !== null,
+                               benchBoostGw: boostGw ?? undefined })
         : null,
-    [selectedA, playersData, budget, effectiveHorizon, effectiveStartGw, benchFodder],
+    [selectedA, playersData, budget, effectiveHorizon, effectiveStartGw, benchFodder, boostGw],
   )
 
   const resultB = useMemo(
@@ -334,9 +339,11 @@ export function WildcardBuilderTab({ submittedId, horizon }: WildcardBuilderTabP
       playersData
         ? buildAnchoredSquad(selectedB.map(p => p.id), playersData, budget, effectiveHorizon,
                              { startGw: effectiveStartGw ?? undefined,
-                               benchFodderCount: benchFodder })
+                               benchFodderCount: benchFodder,
+                               benchBoost: boostGw !== null,
+                               benchBoostGw: boostGw ?? undefined })
         : null,
-    [selectedB, playersData, budget, effectiveHorizon, effectiveStartGw, benchFodder],
+    [selectedB, playersData, budget, effectiveHorizon, effectiveStartGw, benchFodder, boostGw],
   )
 
   if (playersLoading) {
@@ -382,8 +389,25 @@ export function WildcardBuilderTab({ submittedId, horizon }: WildcardBuilderTabP
             onChange={e => setBenchFodder(Number(e.target.value))}
             className="border border-line bg-surface-1 text-ink rounded px-2 min-h-[44px] sm:min-h-0 sm:py-1 text-sm cursor-pointer"
           >
-            {[0, 1, 2, 3, 4].map(n => (
+            {boostGw !== null && <option value={0}>Off (bench boost)</option>}
+            {boostGw === null && [0, 1, 2, 3, 4].map(n => (
               <option key={n} value={n}>{n === 0 ? 'None' : `${n} player${n === 1 ? '' : 's'}`}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-ink-muted" title="All 15 players score, so everyone must have a fixture that week">
+            Bench boost
+          </span>
+          <select
+            aria-label="Bench boost gameweek"
+            value={boostGw ?? ''}
+            onChange={e => setBoostGw(e.target.value === '' ? null : Number(e.target.value))}
+            className="border border-line bg-surface-1 text-ink rounded px-2 min-h-[44px] sm:min-h-0 sm:py-1 text-sm cursor-pointer"
+          >
+            <option value="">Not planned</option>
+            {gwOptions.map(gw => (
+              <option key={gw} value={gw}>GW{gw}</option>
             ))}
           </select>
         </label>
