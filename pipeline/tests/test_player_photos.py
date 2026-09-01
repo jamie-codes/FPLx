@@ -69,6 +69,55 @@ class TestBuildPhotoMap:
         assert player_photos.build_photo_map(recs, BOOTSTRAP) == {}
 
 
+class TestThrottling:
+    """CI 2026-09-01: paging the league back-to-back tripped api-football's
+    per-minute cap and the whole refresh aborted (it degraded safely to the PL
+    photos, but never produced a map)."""
+
+    def test_backs_off_and_retries_a_rate_limited_page(self, monkeypatch):
+        monkeypatch.setattr(player_photos.time, 'sleep', lambda _s: None)
+        calls = {'n': 0}
+
+        def flaky(endpoint, params):
+            calls['n'] += 1
+            if calls['n'] == 1:
+                raise RuntimeError("PHOTO-01: api-football error response: "
+                                   "{'rateLimit': 'Too many requests.'}")
+            return {'response': [_api_player(1, 'A. B', 'Man City')], 'paging': {'total': 1}}
+
+        monkeypatch.setattr(player_photos, '_get', flaky)
+        recs = player_photos.fetch_all_players(season=2026)
+        assert calls['n'] == 2          # retried after the limit
+        assert len(recs) == 1
+
+    def test_non_rate_limit_errors_still_propagate(self, monkeypatch):
+        monkeypatch.setattr(player_photos.time, 'sleep', lambda _s: None)
+
+        def dead_key(endpoint, params):
+            raise RuntimeError("PHOTO-01: api-football error response: {'token': 'invalid'}")
+
+        monkeypatch.setattr(player_photos, '_get', dead_key)
+        try:
+            player_photos.fetch_all_players(season=2026)
+            raise AssertionError('expected the dead-key error to propagate')
+        except RuntimeError as exc:
+            assert 'token' in str(exc)
+
+    def test_pages_until_paging_total(self, monkeypatch):
+        monkeypatch.setattr(player_photos.time, 'sleep', lambda _s: None)
+        seen = []
+
+        def paged(endpoint, params):
+            seen.append(params['page'])
+            return {'response': [_api_player(params['page'], f'P{params["page"]}', 'Man City')],
+                    'paging': {'total': 3}}
+
+        monkeypatch.setattr(player_photos, '_get', paged)
+        recs = player_photos.fetch_all_players(season=2026)
+        assert seen == [1, 2, 3]
+        assert len(recs) == 3
+
+
 class TestRefreshPolicy:
     def test_refreshes_when_file_missing(self, tmp_path):
         assert player_photos._needs_refresh(str(tmp_path / 'nope.json'), season=2026) is True

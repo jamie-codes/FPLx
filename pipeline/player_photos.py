@@ -16,6 +16,7 @@ player transfers, so a weekly refresh is ample.
 """
 import json
 import os
+import time
 from datetime import datetime, timedelta, timezone
 
 from injury_join import (
@@ -32,6 +33,9 @@ _BASE = 'https://v3.football.api-sports.io'
 _PL_LEAGUE = 39
 MAX_AGE_DAYS = 7
 MAX_PAGES = 40
+PAGE_DELAY_S = 1.5          # per-minute cap is shared with the injury/odds layers
+RATE_LIMIT_BACKOFF_S = 20
+RATE_LIMIT_RETRIES = 2
 
 
 def _api_key() -> str:
@@ -74,17 +78,38 @@ def parse_players(response: list) -> list[dict]:
     return out
 
 
+def _get_page_throttled(params: dict) -> dict:
+    """One /players page, backing off on api-football's per-minute cap.
+
+    Paging the whole league back-to-back trips the per-minute limit (observed
+    in CI 2026-09-01), and the injury and odds layers spend from the same
+    budget in the same run. Rate-limit responses arrive as an HTTP-200 errors
+    body, so they surface here as RuntimeError from _get.
+    """
+    for attempt in range(RATE_LIMIT_RETRIES + 1):
+        try:
+            return _get('players', params)
+        except RuntimeError as exc:
+            if 'rateLimit' not in str(exc) or attempt == RATE_LIMIT_RETRIES:
+                raise
+            print(f'PHOTO-01: rate limited on page {params.get("page")}; '
+                  f'backing off {RATE_LIMIT_BACKOFF_S}s')
+            time.sleep(RATE_LIMIT_BACKOFF_S)
+    raise RuntimeError('unreachable')
+
+
 def fetch_all_players(season: int, league: int = _PL_LEAGUE) -> list[dict]:
-    """Every player in the league for a season (paged)."""
+    """Every player in the league for a season (paged, throttled)."""
     out: list[dict] = []
     page = 1
     while page <= MAX_PAGES:
-        payload = _get('players', {'league': league, 'season': season, 'page': page})
+        payload = _get_page_throttled({'league': league, 'season': season, 'page': page})
         out.extend(parse_players(payload.get('response') or []))
         total = int(((payload.get('paging') or {}).get('total')) or 1)
         if page >= total:
             break
         page += 1
+        time.sleep(PAGE_DELAY_S)   # stay under the per-minute cap
     return out
 
 
