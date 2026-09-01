@@ -14,11 +14,12 @@ import json
 import cup_fixtures
 
 
-def _fx(team_h, team_a, date, league=2):
+def _fx(team_h, team_a, date, league=2, h_id=None, a_id=None):
     return {
         'fixture': {'id': 1, 'date': date},
         'league': {'id': league},
-        'teams': {'home': {'name': team_h}, 'away': {'name': team_a}},
+        'teams': {'home': {'name': team_h, 'id': h_id},
+                  'away': {'name': team_a, 'id': a_id}},
     }
 
 
@@ -35,9 +36,13 @@ BOOTSTRAP = {
 class TestParse:
     def test_extracts_both_teams_and_the_date(self):
         rows = cup_fixtures.parse_cup_fixtures([
-            _fx('Manchester City', 'Real Madrid', '2026-10-13T20:00:00+00:00')])
-        assert rows == [{'team_name': 'Manchester City', 'date': '2026-10-13', 'league_id': 2},
-                        {'team_name': 'Real Madrid', 'date': '2026-10-13', 'league_id': 2}]
+            _fx('Manchester City', 'Real Madrid', '2026-10-13T20:00:00+00:00',
+                h_id=50, a_id=541)])
+        assert rows == [
+            {'team_name': 'Manchester City', 'team_af_id': 50,
+             'date': '2026-10-13', 'league_id': 2},
+            {'team_name': 'Real Madrid', 'team_af_id': 541,
+             'date': '2026-10-13', 'league_id': 2}]
 
     def test_skips_records_missing_a_date_or_teams(self):
         assert cup_fixtures.parse_cup_fixtures([
@@ -68,6 +73,34 @@ class TestBuildMap:
         ])
         assert cup_fixtures.build_cup_date_map(rows, BOOTSTRAP)['14'] == \
             ['2026-10-13', '2026-11-03']
+
+
+class TestNamesakeRejection:
+    """The live map put a cup date on 2026-09-05 for Man City — the same day as
+    their league game, which no club can play. Name matching had let a namesake
+    (women's/youth) side through. Matching on api-football team id fixes it."""
+
+    PL_IDS = {50: 'Manchester City'}       # the real men's club
+
+    def test_namesake_with_a_different_id_is_rejected(self):
+        rows = cup_fixtures.parse_cup_fixtures([
+            _fx('Manchester City W', 'Chelsea W', '2026-09-05T13:00:00+00:00',
+                h_id=9999, a_id=9998)])
+        assert cup_fixtures.build_cup_date_map(rows, BOOTSTRAP, self.PL_IDS) == {}
+
+    def test_the_real_club_still_maps(self):
+        rows = cup_fixtures.parse_cup_fixtures([
+            _fx('Manchester City', 'Real Madrid', '2026-10-13T20:00:00+00:00',
+                h_id=50, a_id=541)])
+        assert cup_fixtures.build_cup_date_map(rows, BOOTSTRAP, self.PL_IDS) == \
+            {'14': ['2026-10-13']}
+
+    def test_falls_back_to_name_matching_without_ids(self):
+        rows = cup_fixtures.parse_cup_fixtures([
+            _fx('Manchester City', 'Real Madrid', '2026-10-13T20:00:00+00:00',
+                h_id=50, a_id=541)])
+        assert cup_fixtures.build_cup_date_map(rows, BOOTSTRAP, None) == \
+            {'14': ['2026-10-13']}
 
 
 class TestLoad:

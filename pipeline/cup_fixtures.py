@@ -58,19 +58,43 @@ def _get(endpoint: str, params: dict) -> dict:
 
 
 def parse_cup_fixtures(response: list) -> list[dict]:
-    """Flatten /fixtures records to one row per TEAM per fixture."""
+    """Flatten /fixtures records to one row per TEAM per fixture.
+
+    Carries the api-football team id as well as the name: matching on name
+    alone picked up namesakes (a women's or youth side sharing a club name),
+    which put a cup date on 2026-09-05 for Man City — the same day as their
+    league game, which no club can play (found 2026-09-01).
+    """
     out = []
     for rec in response or []:
         fx = rec.get('fixture') or {}
         teams = rec.get('teams') or {}
         league_id = (rec.get('league') or {}).get('id')
         date = (fx.get('date') or '')[:10]
-        home = (teams.get('home') or {}).get('name')
-        away = (teams.get('away') or {}).get('name')
-        if not (date and home and away):
+        home = teams.get('home') or {}
+        away = teams.get('away') or {}
+        if not (date and home.get('name') and away.get('name')):
             continue
-        for name in (home, away):
-            out.append({'team_name': name, 'date': date, 'league_id': league_id})
+        for side in (home, away):
+            out.append({'team_name': side.get('name'), 'team_af_id': side.get('id'),
+                        'date': date, 'league_id': league_id})
+    return out
+
+
+def fetch_pl_team_ids(season: int, league: int = 39) -> dict[int, str]:
+    """{api_football_team_id: team_name} for the actual PL men's clubs.
+
+    Derived from the league's own fixtures, so it is exactly the set of clubs
+    that play in the competition FPL models — the reliable way to reject
+    same-named women's/youth sides in the cup feeds.
+    """
+    payload = _get('fixtures', {'league': league, 'season': season})
+    out: dict[int, str] = {}
+    for rec in payload.get('response') or []:
+        teams = rec.get('teams') or {}
+        for side in (teams.get('home') or {}, teams.get('away') or {}):
+            if side.get('id') and side.get('name'):
+                out[side['id']] = side['name']
     return out
 
 
@@ -90,13 +114,26 @@ def fetch_cup_fixtures(season: int) -> list[dict]:
     return out
 
 
-def build_cup_date_map(rows: list[dict], bootstrap: dict) -> dict[str, list[str]]:
-    """{str(fpl_team_id): sorted unique ISO dates}. Non-PL clubs are dropped."""
+def build_cup_date_map(rows: list[dict], bootstrap: dict,
+                       pl_team_ids: dict[int, str] | None = None) -> dict[str, list[str]]:
+    """{str(fpl_team_id): sorted unique ISO dates}. Non-PL clubs are dropped.
+
+    When `pl_team_ids` is supplied (the api-football ids of the real PL clubs),
+    a row must match one of those ids to count — names alone let namesake
+    women's/youth sides through. Falls back to name matching without it.
+    """
     table = _team_name_to_id(bootstrap)
     teams = bootstrap.get('teams') or []
     by_team: dict[str, set] = {}
     for r in rows:
-        team_id = _resolve_team_id(r['team_name'], table, teams)
+        if pl_team_ids is not None:
+            af_id = r.get('team_af_id')
+            if af_id not in pl_team_ids:
+                continue
+            name = pl_team_ids[af_id]
+        else:
+            name = r['team_name']
+        team_id = _resolve_team_id(name, table, teams)
         if team_id is None:
             continue
         by_team.setdefault(str(team_id), set()).add(r['date'])
@@ -140,8 +177,10 @@ def refresh_cup_dates(bootstrap: dict, season: int, path: str = MAP_PATH) -> dic
     if not _needs_refresh(path, season):
         return load_cup_dates(path)
     try:
+        pl_team_ids = fetch_pl_team_ids(season)
+        print(f'CUP-01: {len(pl_team_ids)} PL club ids resolved for id-matching')
         rows = fetch_cup_fixtures(season)
-        dates = build_cup_date_map(rows, bootstrap)
+        dates = build_cup_date_map(rows, bootstrap, pl_team_ids or None)
         if not dates:
             print('CUP-01: refresh produced no PL club dates — keeping existing map')
             return load_cup_dates(path)
