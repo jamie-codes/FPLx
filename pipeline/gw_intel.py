@@ -17,7 +17,7 @@ def _apply_rotation_risk(
     fixtures: list,
     european_cup_dates: dict[int, list[str]],
 ) -> list:
-    """Flag players whose team has a cup/European fixture within +-3 days of an upcoming PL fixture (GWI-01, D-03).
+    """Flag players whose team has a cup/European fixture within +-3 days of its NEXT PL fixture (GWI-01, D-03).
 
     In-place mutation: writes player['rotation_risk'] = True/False.
     Returns merged (for chaining).
@@ -26,22 +26,35 @@ def _apply_rotation_risk(
         f for f in fixtures
         if not f.get('finished') and f.get('kickoff_time')
     ]
-    rotation_teams: set[int] = set()
-    for pl_fix in upcoming_pl:
-        try:
-            pl_date = datetime.fromisoformat(pl_fix['kickoff_time'][:10])
-        except (ValueError, TypeError):
-            continue
-        for team_id in (pl_fix.get('team_h'), pl_fix.get('team_a')):
+    # Scope to each team's NEXT league fixture (CUP-01, 2026-09-01). This used
+    # to scan every remaining fixture of the season, which was harmless while
+    # european_cup_dates was empty but flagged 569 of 626 players the moment
+    # real dates arrived — over a whole season nearly every club has some cup
+    # game within 3 days of some league game. "Rotation risk" only means
+    # anything about the round being picked right now.
+    next_pl_by_team: dict[int, str] = {}
+    for f in upcoming_pl:
+        for team_id in (f.get('team_h'), f.get('team_a')):
             if team_id is None:
                 continue
-            for cup_date_str in european_cup_dates.get(team_id, []):
-                try:
-                    cup_date = datetime.fromisoformat(cup_date_str)
-                except ValueError:
-                    continue
-                if abs((cup_date - pl_date).days) <= 3:
-                    rotation_teams.add(team_id)
+            ko = f['kickoff_time']
+            if team_id not in next_pl_by_team or ko < next_pl_by_team[team_id]:
+                next_pl_by_team[team_id] = ko
+
+    rotation_teams: set[int] = set()
+    for team_id, kickoff in next_pl_by_team.items():
+        try:
+            pl_date = datetime.fromisoformat(kickoff[:10])
+        except (ValueError, TypeError):
+            continue
+        for cup_date_str in european_cup_dates.get(team_id, []):
+            try:
+                cup_date = datetime.fromisoformat(cup_date_str)
+            except ValueError:
+                continue
+            if abs((cup_date - pl_date).days) <= 3:
+                rotation_teams.add(team_id)
+                break
     for player in merged:
         player['rotation_risk'] = player.get('team') in rotation_teams
     return merged

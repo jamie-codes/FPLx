@@ -103,3 +103,28 @@ def test_rotation_risk_consumer_accepts_the_built_map():
     out = _apply_rotation_risk(merged, fixtures, dates)
     assert out[0]['rotation_risk'] is True     # City: UCL Wed -> PL Sat
     assert out[1]['rotation_risk'] is False    # Liverpool: no cup date
+
+
+def test_rotation_risk_only_considers_the_next_league_fixture():
+    """CUP-01: scoping to the NEXT fixture is what makes the flag mean anything.
+
+    Scanning every remaining fixture of the season flagged 569 of 626 players
+    the moment real cup dates arrived — over a season almost every club has a
+    cup game within 3 days of some league game.
+    """
+    from gw_intel import _apply_rotation_risk
+    merged = [{'id': 1, 'team': 14}]
+    fixtures = [
+        # Next up: a clean weekend, nothing midweek before it.
+        {'finished': False, 'kickoff_time': '2026-09-05T14:00:00Z',
+         'team_h': 14, 'team_a': 1},
+        # Months away, right after a cup date — must NOT flag today.
+        {'finished': False, 'kickoff_time': '2026-10-17T14:00:00Z',
+         'team_h': 14, 'team_a': 1},
+    ]
+    out = _apply_rotation_risk(merged, fixtures, {14: ['2026-10-14']})
+    assert out[0]['rotation_risk'] is False
+
+    # Once that congested round IS next, the flag fires.
+    out = _apply_rotation_risk(merged, fixtures[1:], {14: ['2026-10-14']})
+    assert out[0]['rotation_risk'] is True
