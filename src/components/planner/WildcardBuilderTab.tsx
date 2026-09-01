@@ -263,6 +263,10 @@ export function WildcardBuilderTab({ submittedId, horizon }: WildcardBuilderTabP
   // searchKey forces PlayerSearchInput to remount (reset its query) after each anchor add.
   const [searchKeyA, setSearchKeyA] = useState(0)
   const [searchKeyB, setSearchKeyB] = useState(0)
+  // WC-03: which GW the wildcard is actually played on, and how many slots to
+  // spend on cheap-but-playing bench cover.
+  const [startGw, setStartGw] = useState<number | null>(null)
+  const [benchFodder, setBenchFodder] = useState(0)
 
   const { isAuthenticated } = useAuthStatus()
   const { data: playersData, isLoading: playersLoading, error: playersError } = usePlayers()
@@ -298,22 +302,41 @@ export function WildcardBuilderTab({ submittedId, horizon }: WildcardBuilderTabP
     return b
   }, [squadData, myTeamData, exactSellPrices, playerMap])
 
-  const effectiveHorizon = toOptimiserHorizon(horizon)
+  // WC-03: offer the next 8 gameweeks present in the fixture data.
+  const gwOptions = useMemo(() => {
+    const ids = new Set<number>()
+    for (const p of playersData ?? []) {
+      for (const f of p.fixtures ?? []) ids.add(f.event_id)
+    }
+    return [...ids].sort((a, b) => a - b).slice(0, 8)
+  }, [playersData])
+
+  const effectiveStartGw = startGw ?? gwOptions[0] ?? null
+
+  // Window scoring supports any horizon exactly; only the legacy no-startGw
+  // path has to collapse to the precomputed 1/3/5 fields.
+  const effectiveHorizon = effectiveStartGw !== null
+    ? (horizon as unknown as OptimiserHorizon)
+    : toOptimiserHorizon(horizon)
 
   const resultA = useMemo(
     () =>
       playersData
-        ? buildAnchoredSquad(selectedA.map(p => p.id), playersData, budget, effectiveHorizon)
+        ? buildAnchoredSquad(selectedA.map(p => p.id), playersData, budget, effectiveHorizon,
+                             { startGw: effectiveStartGw ?? undefined,
+                               benchFodderCount: benchFodder })
         : null,
-    [selectedA, playersData, budget, effectiveHorizon],
+    [selectedA, playersData, budget, effectiveHorizon, effectiveStartGw, benchFodder],
   )
 
   const resultB = useMemo(
     () =>
       playersData
-        ? buildAnchoredSquad(selectedB.map(p => p.id), playersData, budget, effectiveHorizon)
+        ? buildAnchoredSquad(selectedB.map(p => p.id), playersData, budget, effectiveHorizon,
+                             { startGw: effectiveStartGw ?? undefined,
+                               benchFodderCount: benchFodder })
         : null,
-    [selectedB, playersData, budget, effectiveHorizon],
+    [selectedB, playersData, budget, effectiveHorizon, effectiveStartGw, benchFodder],
   )
 
   if (playersLoading) {
@@ -333,6 +356,45 @@ export function WildcardBuilderTab({ submittedId, horizon }: WildcardBuilderTabP
 
   return (
     <div>
+      {/* WC-03 controls: which GW the wildcard is played on, and how much of
+          the squad to deliberately spend on cheap bench cover. */}
+      <div className="mb-4 flex flex-wrap items-end gap-4">
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-ink-muted">Wildcard on</span>
+          <select
+            aria-label="Wildcard gameweek"
+            value={effectiveStartGw ?? ''}
+            onChange={e => setStartGw(Number(e.target.value))}
+            className="border border-line bg-surface-1 text-ink rounded px-2 min-h-[44px] sm:min-h-0 sm:py-1 text-sm cursor-pointer"
+          >
+            {gwOptions.map(gw => (
+              <option key={gw} value={gw}>GW{gw}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-ink-muted" title="Cheap players who still get minutes, so the rest of the budget goes into your XI">
+            Bench fodder
+          </span>
+          <select
+            aria-label="Bench fodder count"
+            value={benchFodder}
+            onChange={e => setBenchFodder(Number(e.target.value))}
+            className="border border-line bg-surface-1 text-ink rounded px-2 min-h-[44px] sm:min-h-0 sm:py-1 text-sm cursor-pointer"
+          >
+            {[0, 1, 2, 3, 4].map(n => (
+              <option key={n} value={n}>{n === 0 ? 'None' : `${n} player${n === 1 ? '' : 's'}`}</option>
+            ))}
+          </select>
+        </label>
+        {effectiveStartGw !== null && (
+          <p className="text-xs text-ink-muted pb-2">
+            Scoring GW{effectiveStartGw}
+            {horizon > 1 ? `–${effectiveStartGw + horizon - 1}` : ''}
+          </p>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <StructurePanel
           label="Structure A"

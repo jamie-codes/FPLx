@@ -300,3 +300,128 @@ describe('buildAnchoredSquad — completes a squad on a realistic pool', () => {
     expect(buildAnchoredSquad([], pool(), 100, 1)).toBeNull()
   })
 })
+
+// ---------------------------------------------------------------------------
+// WC-03 (2026-09-01): wildcard on a CHOSEN gameweek + explicit bench fodder.
+//
+// Scoring used the precomputed xPts_1gw/3gw/5gw fields, which always start at
+// the NEXT gameweek — so "I'm wildcarding in GW4" could not be expressed.
+// Summing computeGwXpts across [startGw, startGw+horizon-1] fixes that and, as
+// a side effect, makes horizons of 2 and 4 exact instead of being rounded to
+// 1/3/5.
+// ---------------------------------------------------------------------------
+describe('buildAnchoredSquad — target gameweek + bench fodder', () => {
+  function mkGw(
+    id: number, pos: 1 | 2 | 3 | 4, cost: number, team: number,
+    opts: { gws: number[]; xmins?: number; startProb?: number; xg?: number } = { gws: [] },
+  ): MergedPlayer {
+    return {
+      id, web_name: `P${id}`, element_type: pos, now_cost: cost, team, status: 'a',
+      xmins: opts.xmins ?? 80, start_prob: opts.startProb ?? 0.9,
+      xg_per90: opts.xg ?? 0.3, xa_per90: 0.2,
+      xPts_1gw: 5, xPts_3gw: 15, xPts_5gw: 25,
+      fixtures: opts.gws.map((event_id) => ({
+        opponent_team: 'OPP', is_home: true, event_id,
+        difficulty_score: 0.5, difficulty_tier: 'medium' as const,
+        attacking_difficulty: 0.5, defensive_difficulty: 0.5,
+      })),
+    } as unknown as MergedPlayer
+  }
+
+  /** Pool where everyone plays GW3-8, plus one club that blanks in GW4. */
+  function pool(): MergedPlayer[] {
+    const out: MergedPlayer[] = []
+    let id = 1
+    const per: Record<number, number> = { 1: 2, 2: 5, 3: 5, 4: 3 }
+    for (const pos of [1, 2, 3, 4] as const) {
+      // premiums: expensive AND genuinely higher scoring
+      for (let i = 0; i < per[pos] * 3; i++) {
+        out.push(mkGw(id++, pos, 100, (id % 19) + 1, { gws: [3, 4, 5, 6, 7, 8], xg: 1.2 }))
+      }
+      // cheap players who DO play, but score far less
+      for (let i = 0; i < per[pos] * 3; i++) {
+        out.push(mkGw(id++, pos, 40, (id % 19) + 1,
+                      { gws: [3, 4, 5, 6, 7, 8], xmins: 75, xg: 0.05 }))
+      }
+      // cheap players who do NOT play — never acceptable as fodder
+      for (let i = 0; i < per[pos] * 2; i++) {
+        out.push(mkGw(id++, pos, 39, (id % 19) + 1,
+                      { gws: [3, 4, 5, 6, 7, 8], xmins: 0, startProb: 0 }))
+      }
+    }
+    return out
+  }
+
+  it('scores against the chosen gameweek window, not always the next GW', () => {
+    const players = pool()
+    // A standout who ONLY plays in GW4 must be picked for a GW4 window...
+    const gw4Only = mkGw(9001, 4, 100, 20, { gws: [4], xg: 3.0 })
+    const withSpike = [...players, gw4Only]
+    const forGw4 = buildAnchoredSquad([], withSpike, 1000, 1, { startGw: 4 })
+    expect(forGw4).not.toBeNull()
+    expect(forGw4!.squad.map(p => p.id)).toContain(9001)
+
+    // ...and must NOT be picked for a GW3 window, where he has no fixture.
+    const forGw3 = buildAnchoredSquad([], withSpike, 1000, 1, { startGw: 3 })
+    expect(forGw3!.squad.map(p => p.id)).not.toContain(9001)
+  })
+
+  it('excludes a club blanking in the chosen gameweek', () => {
+    const players = pool()
+    const blanksGw4 = mkGw(9002, 3, 40, 20, { gws: [3, 5, 6], xg: 5.0 })
+    const built = buildAnchoredSquad([], [...players, blanksGw4], 1000, 1, { startGw: 4 })
+    expect(built!.squad.map(p => p.id)).not.toContain(9002)
+  })
+
+  it('honours horizons of 2 and 4 exactly rather than rounding to 1/3/5', () => {
+    const players = pool()
+    const twoGw = buildAnchoredSquad([], players, 1000, 2, { startGw: 3 })!
+    const fourGw = buildAnchoredSquad([], players, 1000, 4, { startGw: 3 })!
+    // A wider window accumulates more projected points.
+    expect(fourGw.windowXPts).toBeGreaterThan(twoGw.windowXPts)
+  })
+
+  it('reserves the requested number of bench fodder slots', () => {
+    const built = buildAnchoredSquad([], pool(), 1000, 3,
+                                     { startGw: 3, benchFodderCount: 4 })!
+    const cheap = built.squad.filter(p => p.now_cost <= 40)
+    expect(cheap.length).toBeGreaterThanOrEqual(4)
+  })
+
+  it('every fodder slot is a cheap player who actually plays', () => {
+    // The requirement in the user's words: "very low cost players but that do
+    // actually get minutes". Cheapness alone is not enough — the pool contains
+    // cheaper (39) bodies with zero minutes, and picking those is what leaves
+    // an autosub unable to fire.
+    const players = pool()
+    const four = buildAnchoredSquad([], players, 1000, 3,
+                                    { startGw: 3, benchFodderCount: 4 })!
+    expect(four.benchFodderUsed).toBe(4)
+    const cheapest = [...four.squad].sort((a, b) => a.now_cost - b.now_cost).slice(0, 4)
+    for (const p of cheapest) {
+      const full = players.find(q => q.id === p.id)!
+      expect(full.xmins, `${p.web_name} must actually play`).toBeGreaterThan(0)
+      expect(p.now_cost).toBeLessThanOrEqual(40)
+    }
+  })
+
+  it('keeps the fodder slots cheap so the rest of the budget is free', () => {
+    const four = buildAnchoredSquad([], pool(), 1000, 3,
+                                    { startGw: 3, benchFodderCount: 4 })!
+    // Four cheapest playing bodies cost 4 x 40; the remaining 11 slots then
+    // carry the overwhelming majority of the spend.
+    const cheapSpend = four.squad
+      .filter(p => p.now_cost <= 40)
+      .slice(0, 4)
+      .reduce((s, p) => s + p.now_cost, 0)
+    expect(cheapSpend).toBeLessThanOrEqual(4 * 40)
+    expect(four.budgetUsed - cheapSpend).toBeGreaterThan(four.budgetUsed / 2)
+  })
+
+  it('never uses a zero-minute player as fodder', () => {
+    const built = buildAnchoredSquad([], pool(), 1000, 3,
+                                     { startGw: 3, benchFodderCount: 4 })!
+    // The 39-cost players in the pool have xmins 0 — cheaper, but they do not play.
+    expect(built.squad.every(p => p.now_cost !== 39)).toBe(true)
+  })
+})
