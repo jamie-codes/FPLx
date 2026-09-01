@@ -231,9 +231,18 @@ describe('Phase 43: optimise-lineup', () => {
     })
 
     it('returns null when fewer than 11 BGW-eligible players remain', () => {
-      // Mark 5 players as BGW (xPts_1gw === 0). 15 - 5 = 10 < 11 -> null.
+      // BGW-02 (2026-09-01): a blank is signalled by having NO FIXTURE in the
+      // gameweek, not by a zero projection. This test used `xPts_1gw: 0`,
+      // which also describes a player who simply is not expected to play —
+      // conflating the two dropped squad fillers from the XI and broke the
+      // wildcard builder. 15 - 5 = 10 eligible < 11 -> null.
+      const fx = [{ opponent_team: 'TST', is_home: true, event_id: 30,
+                    difficulty_score: 0.5, difficulty_tier: 'medium' as const }]
+      const blanks = new Set([1, 3, 8, 9, 13])
       const overrides: Record<number, Partial<MergedPlayer>> = {}
-      for (const id of [1, 3, 8, 9, 13]) overrides[id] = { xPts_1gw: 0 }
+      for (let id = 1; id <= 15; id++) {
+        overrides[id] = { fixtures: blanks.has(id) ? [] : fx }
+      }
       const { picks, players } = makeSquad(overrides)
       const result = optimiseLineup(picks, players, 1)
       expect(result).toBeNull()

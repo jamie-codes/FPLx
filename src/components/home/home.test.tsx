@@ -368,9 +368,14 @@ describe('HomeTab — state 2: squad loaded', () => {
 
   it('guards a null optimiseLineup result — lineup card absent, page still renders', () => {
     const fx = makeSquadFixture()
-    // 5 of the 15 squad players have xPts 0 → <11 eligible → optimiseLineup null.
+    // BGW-02: 5 of the 15 have NO FIXTURE → <11 eligible → optimiseLineup null.
+    // (Was `xPts_1gw: 0`, which also describes a player simply not expected to
+    // play — that conflation is what broke the wildcard builder.)
+    const fxEntry = [{ opponent_team: 'TST', is_home: true, event_id: 30, difficulty_score: 0.5, difficulty_tier: 'medium' as const }]
     const players = fx.players.map((p) =>
-      p.id >= 11 && p.id <= 15 ? { ...p, xPts_1gw: 0 } : p,
+      p.id >= 11 && p.id <= 15
+        ? { ...p, fixtures: [] }
+        : { ...p, fixtures: fxEntry },
     )
     setHooks({ players, squad: fx.squadResp, deadline: FUTURE_DEADLINE })
     renderHome({ submittedId: '123' })

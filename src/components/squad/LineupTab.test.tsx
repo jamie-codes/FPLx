@@ -131,9 +131,14 @@ describe('Phase 72: LineupTab', () => {
       for (let i = 0; i < 15; i++) {
         const id = i + 1
         picks.push(makePick(id, i + 1))
-        // First 5 players keep xPts_1gw = 5.0 (default); remaining 10 get xPts_1gw = 0 (BGW)
-        const xPts = i < 5 ? 5.0 : 0
-        players.push(makePlayer({ id, element_type: elementTypes[i], xPts_1gw: xPts }))
+        // BGW-02: first 5 have a fixture; the remaining 10 blank. A blank is
+        // the absence of a FIXTURE — `xPts_1gw: 0` also describes a player
+        // simply not expected to play, which is a different thing.
+        players.push(makePlayer({
+          id, element_type: elementTypes[i], xPts_1gw: 5.0,
+          fixtures: i < 5 ? [{ opponent_team: 'TST', is_home: true, event_id: 30,
+                               difficulty_score: 0.5, difficulty_tier: 'medium' as const }] : [],
+        }))
       }
       const squadResp: SquadPicksResponse = {
         active_chip: null,

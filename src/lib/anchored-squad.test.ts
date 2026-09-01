@@ -232,3 +232,71 @@ describe('buildAnchoredSquad', () => {
     expect(result!.anchorConflicts).toHaveLength(0)
   })
 })
+
+// ---------------------------------------------------------------------------
+// WC-02 (2026-09-01): "Could not build a valid squad — try removing an anchor
+// or checking budget" appeared on every page load, with no anchors set.
+//
+// Two causes, both in the greedy fill:
+//   1. Eligibility used `xPts_1gw !== 0`, which excluded exactly the cheap
+//      enablers a 15-man squad needs — a £4.0m player with no minutes yet
+//      projects 0 but is perfectly selectable.
+//   2. The fill was budget-blind: it seated the highest-xPts players first and
+//      could strand itself unable to afford the remaining slots.
+// ---------------------------------------------------------------------------
+describe('buildAnchoredSquad — completes a squad on a realistic pool', () => {
+  function mk(id: number, pos: 1 | 2 | 3 | 4, cost: number, xp: number, team: number): MergedPlayer {
+    return {
+      id, web_name: `P${id}`, element_type: pos, now_cost: cost, team,
+      status: 'a', xPts_1gw: xp, xPts_3gw: xp * 3, xPts_5gw: xp * 5,
+      fixtures: [{ opponent_team: 'OPP', is_home: true, event_id: 3,
+                   difficulty_score: 0.5, difficulty_tier: 'medium',
+                   attacking_difficulty: 0.5, defensive_difficulty: 0.5 }],
+    } as unknown as MergedPlayer
+  }
+
+  /** Premium-heavy pool plus zero-projection budget fillers — the shape of the
+   *  real player list, where enablers are cheap AND project nothing yet. */
+  function pool(): MergedPlayer[] {
+    const out: MergedPlayer[] = []
+    let id = 1
+    const perPos: Record<number, number> = { 1: 2, 2: 5, 3: 5, 4: 3 }
+    for (const pos of [1, 2, 3, 4] as const) {
+      // expensive, high-scoring options (enough to blow the budget)
+      for (let i = 0; i < perPos[pos] * 3; i++) {
+        out.push(mk(id++, pos, 110, 9, (id % 19) + 1))
+      }
+      // cheap enablers that project exactly 0 (no minutes yet)
+      for (let i = 0; i < perPos[pos] * 3; i++) {
+        out.push(mk(id++, pos, 40, 0, (id % 19) + 1))
+      }
+    }
+    return out
+  }
+
+  it('builds a full 15 within budget instead of returning null', () => {
+    const result = buildAnchoredSquad([], pool(), 1000, 1)
+    expect(result).not.toBeNull()
+    expect(result!.squad).toHaveLength(15)
+    expect(result!.budgetUsed).toBeLessThanOrEqual(1000)
+  })
+
+  it('respects the exact position quotas', () => {
+    const result = buildAnchoredSquad([], pool(), 1000, 1)!
+    const count = (pos: number) => result.squad.filter((p) => p.element_type === pos).length
+    expect([count(1), count(2), count(3), count(4)]).toEqual([2, 5, 5, 3])
+  })
+
+  it('still honours an anchor while completing the squad', () => {
+    const players = pool()
+    const anchor = players.find((p) => p.element_type === 4 && p.now_cost === 110)!
+    const result = buildAnchoredSquad([anchor.id], players, 1000, 1)
+    expect(result).not.toBeNull()
+    expect(result!.squad.map((p) => p.id)).toContain(anchor.id)
+    expect(result!.squad).toHaveLength(15)
+  })
+
+  it('returns null only when the budget genuinely cannot seat 15', () => {
+    expect(buildAnchoredSquad([], pool(), 100, 1)).toBeNull()
+  })
+})

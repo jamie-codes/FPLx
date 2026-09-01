@@ -19,6 +19,7 @@ import { buildOptimalSquad, computeBenchBoostXPts, CHIP_DEFAULT_BUDGET_TENTHS } 
 import { ChipModeToggle } from './ChipModeToggle'
 import { ChipSquadView } from './ChipSquadView'
 import { capByPosition } from '@/lib/cap-transfer-suggestions'
+import { countPlayersWithFixture } from '@/lib/blank-gameweek'
 import { TableShell, Th, Td } from '@/components/ui/Table'
 
 interface OptimiserPanelProps {
@@ -262,12 +263,9 @@ export function OptimiserPanel({ teamId }: OptimiserPanelProps) {
       return { playerMap: new Map<number, MergedPlayer>(), lineup: null, eligibleCount: 0, totalPlayersInSquad: 0 }
     }
     const map = new Map<number, MergedPlayer>(playersData.map(p => [p.id, p]))
-    // BGW-eligible count: same logic as the engine (Pitfall 1 — undefined != BGW; only === 0 excludes).
-    const eligible = squadData.picks.filter(pick => {
-      const p = map.get(pick.element)
-      if (!p) return false
-      return p.xPts_1gw !== 0
-    }).length
+    // BGW-02 (2026-09-01): count players with an actual FIXTURE, not a non-zero
+    // projection — see src/lib/blank-gameweek.ts.
+    const eligible = countPlayersWithFixture(squadData.picks, map)
     const result = optimiseLineup(squadData.picks, playersData, horizon)
     return { playerMap: map, lineup: result, eligibleCount: eligible, totalPlayersInSquad: squadData.picks.length }
   }, [hasRun, squadData, playersData, horizon])

@@ -4,6 +4,7 @@
 // xPts, return highest-scoring subset with bench, captain, VC, formation string.
 import type { MergedPlayer, OptimiserHorizon, OptimisedLineup, LineupNewsPlayer } from './types'
 import type { SquadPick } from './squad-adapter'
+import { nextGameweekId } from './blank-gameweek'
 
 // Map horizon (1 | 3 | 5) to MergedPlayer field name. Object map preferred over switch (RESEARCH).
 export const HORIZON_FIELD: Record<OptimiserHorizon, 'xPts_1gw' | 'xPts_3gw' | 'xPts_5gw'> = {
@@ -49,10 +50,17 @@ export function optimiseLineup(
   // Phase 118 ENGN-02 (D-05, D-07, D-08): also exclude confirmed_absent players when
   // lineupNewsMap is provided. Doubted players (status_label !== 'confirmed_absent') are
   // NOT excluded — they remain in starter enumeration.
+  // BGW-02 (2026-09-01): a blank is decided by the FIXTURE LIST, not by a zero
+  // projection. `xPts_1gw === 0` also matches players the model expects not to
+  // play (a squad filler with no minutes), which wrongly dropped them from the
+  // XI and made buildAnchoredSquad unable to complete a squad at all. This file
+  // already used fixtures as the BGW signal further down (the BGW/active
+  // partition), so the two tests now agree.
+  const nextGw = nextGameweekId(players)
   const eligible = picks.filter(pick => {
     const p = playerMap.get(pick.element)
     if (!p) return false
-    if (p.xPts_1gw === 0) return false          // existing BGW exclusion
+    if (nextGw !== null && !(p.fixtures ?? []).some(f => f.event_id === nextGw)) return false
     if (lineupNewsMap) {
       const news = lineupNewsMap.get(pick.element)
       if (news?.status_label === 'confirmed_absent') return false  // D-05, D-08

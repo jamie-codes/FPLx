@@ -9,6 +9,7 @@ import type { OptimisedLineup, MergedPlayer } from '@/lib/types'
 import { teamKitUrl } from '@/lib/fpl-images'
 import { TEAM_BADGE_CODE } from '@/lib/team-colours'
 import { useTeamBadge } from '@/lib/hooks/useTeamBadge'
+import { countPlayersWithFixture } from '@/lib/blank-gameweek'
 
 // Position codes (mirrors src/lib/optimise-lineup.ts internals)
 const GK = 1
@@ -225,13 +226,11 @@ export function LineupTab({ teamId }: LineupTabProps) {
       }
     }
     const map = new Map<number, MergedPlayer>(playersData.map(p => [p.id, p]))
-    // CRITICAL (Pitfall 1): BGW filter is `xPts_1gw !== 0` (NOT `!== undefined`).
-    // undefined means "no pipeline data"; only exact 0 indicates a confirmed BGW.
-    const eligible = squadData.picks.filter(pick => {
-      const p = map.get(pick.element)
-      if (!p) return false
-      return p.xPts_1gw !== 0
-    }).length
+    // BGW-02 (2026-09-01): count players with an actual FIXTURE. This used to
+    // test `xPts_1gw !== 0`, which is a projection, not a fixture — two squad
+    // fillers with no expected minutes made a normal gameweek report "only 13
+    // of your 15 players have a fixture".
+    const eligible = countPlayersWithFixture(squadData.picks, map)
     const result = optimiseLineup(squadData.picks, playersData, 1)   // horizon=1 per D-02
     return {
       initialLineup: result,

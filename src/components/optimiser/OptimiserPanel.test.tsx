@@ -437,7 +437,7 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
   })
 
   describe('OPT-05 BGW critical banner', () => {
-    it('renders amber critical banner when more than 4 players have xPts_1gw === 0 (engine returns null)', () => {
+    it('renders amber critical banner when more than 4 players have no fixture (engine returns null)', () => {
       // 5 BGW players -> 10 eligible -> engine returns null
       const { picks } = makeValidSquad()
       const players: MergedPlayer[] = []
@@ -448,7 +448,9 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
         players.push(makePlayer({
           id,
           element_type: elementTypes[i],
-          xPts_1gw: isBgw ? 0 : 5.0,
+          xPts_1gw: 5.0,
+          // BGW-02: a blank is NO FIXTURE, not a zero projection.
+          fixtures: isBgw ? [] : [{ opponent_team: 'TST', is_home: true, event_id: 30, difficulty_score: 0.5, difficulty_tier: 'medium' as const }],
         }))
       }
       const squadResp: SquadPicksResponse = {
@@ -476,7 +478,9 @@ describe('Phase 44: OptimiserPanel (comparison table)', () => {
         players.push(makePlayer({
           id,
           element_type: elementTypes[i],
-          xPts_1gw: isBgw ? 0 : 5.0,
+          xPts_1gw: 5.0,
+          // BGW-02: a blank is NO FIXTURE, not a zero projection.
+          fixtures: isBgw ? [] : [{ opponent_team: 'TST', is_home: true, event_id: 30, difficulty_score: 0.5, difficulty_tier: 'medium' as const }],
         }))
       }
       const squadResp: SquadPicksResponse = {
@@ -630,7 +634,12 @@ describe('Phase 45: Transfer-aware mode (transfer suggestions)', () => {
     for (let i = 0; i < 15; i++) {
       const id = i + 1
       const isBgw = [1, 3, 5, 8, 13].includes(id)
-      players.push(makePlayer({ id, element_type: elementTypes[i], xPts_1gw: isBgw ? 0 : 5.0 }))
+      // BGW-02: blank == no fixture, not a zero projection.
+      players.push(makePlayer({
+        id, element_type: elementTypes[i], xPts_1gw: 5.0,
+        fixtures: isBgw ? [] : [{ opponent_team: 'TST', is_home: true, event_id: 30,
+                                  difficulty_score: 0.5, difficulty_tier: 'medium' as const }],
+      }))
     }
     const squadResp: SquadPicksResponse = {
       active_chip: null,

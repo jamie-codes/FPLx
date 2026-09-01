@@ -9,6 +9,22 @@ import type { SquadPick } from './squad-adapter'
 const MIN_SLOTS: Record<number, number> = { 1: 2, 2: 3, 3: 2, 4: 1 }
 const MAX_SLOTS: Record<number, number> = { 1: 2, 2: 5, 3: 5, 4: 3 }
 
+/** Does this player's club play in the next gameweek?
+ *
+ * The next gameweek is the earliest event id anyone still has a fixture for.
+ * With no fixture data at all, everyone is eligible — absence of data is not
+ * evidence of a blank (WC-02). */
+function hasUpcomingFixture(player: MergedPlayer, allPlayers: MergedPlayer[]): boolean {
+  let earliest: number | null = null
+  for (const p of allPlayers) {
+    for (const f of p.fixtures ?? []) {
+      if (earliest === null || f.event_id < earliest) earliest = f.event_id
+    }
+  }
+  if (earliest === null) return true
+  return (player.fixtures ?? []).some(f => f.event_id === earliest)
+}
+
 export interface CaptainCandidate {
   id: number
   web_name: string
@@ -88,9 +104,16 @@ export function buildAnchoredSquad(
     seatedIds.add(anchorId)
   }
 
-  // Step 2: Greedy fill — eligible = available, non-BGW proxy, not already seated.
+  // Step 2: Greedy fill.
+  //
+  // WC-02 (2026-09-01): eligibility used to require `xPts_1gw !== 0` as a BGW
+  // proxy. That excluded every cheap enabler — a £4.0m player with no minutes
+  // yet projects exactly 0 — which are precisely the players needed to fit 15
+  // into the budget. Combined with the budget-blind fill below it meant the
+  // builder returned null on a normal pool, i.e. every page load. A blank
+  // gameweek is a fixture question, so ask the fixtures.
   const eligible = players
-    .filter(p => p.status === 'a' && p.xPts_1gw !== 0 && !seatedIds.has(p.id))
+    .filter(p => p.status === 'a' && !seatedIds.has(p.id) && hasUpcomingFixture(p, players))
     .sort((a, b) => {
       const diff =
         ((b[field] as number | undefined) ?? 0) -
@@ -99,12 +122,33 @@ export function buildAnchoredSquad(
       return diff !== 0 ? diff : a.now_cost - b.now_cost
     })
 
+  // Cheapest eligible price per position, so the fill can reserve enough to
+  // finish the squad rather than stranding itself on premiums.
+  const cheapestByPos = new Map<number, number>()
+  for (const p of eligible) {
+    const cur = cheapestByPos.get(p.element_type)
+    if (cur === undefined || p.now_cost < cur) cheapestByPos.set(p.element_type, p.now_cost)
+  }
+  /** Minimum spend still required to fill every remaining slot, excluding `skipPos`
+   *  by one seat (the player being considered). */
+  const reserveNeeded = (skipPos: number): number => {
+    let need = 0
+    for (const pos of [1, 2, 3, 4] as const) {
+      let remaining = MAX_SLOTS[pos] - (filledSlots[pos] ?? 0)
+      if (pos === skipPos) remaining -= 1
+      if (remaining > 0) need += remaining * (cheapestByPos.get(pos) ?? 0)
+    }
+    return need
+  }
+
   for (const player of eligible) {
     if (squad.length >= 15) break
     const pos = player.element_type
     if ((filledSlots[pos] ?? 0) >= MAX_SLOTS[pos]) continue
     if ((teamCount.get(player.team) ?? 0) >= 3) continue
     if (runningCost + player.now_cost > budget) continue
+    // Don't spend into a corner: keep enough for the slots still to fill.
+    if (runningCost + player.now_cost + reserveNeeded(pos) > budget) continue
     squad.push({
       id: player.id,
       web_name: player.web_name,
