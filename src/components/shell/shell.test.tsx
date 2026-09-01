@@ -24,14 +24,16 @@ function sidebarLinks(container: HTMLElement): HTMLAnchorElement[] {
 }
 
 describe('Sidebar', () => {
-  it('renders all 6 group labels and all 28 tool links', () => {
+  it('renders all 6 group labels and every visible tool link', () => {
     const { container } = render(<Sidebar active="gems" onSelect={() => {}} />)
     const nav = container.querySelector('nav[aria-label="Primary navigation"]')
     expect(nav).not.toBeNull()
     for (const group of GROUPS) {
       expect(nav!.textContent).toContain(group.label)
     }
-    expect(sidebarLinks(container)).toHaveLength(ALL_TOOL_IDS.length) // 28
+    // Hidden tools (Pre-Season) are routable but intentionally not rendered.
+    const visibleCount = GROUPS.flatMap((g) => g.tools).filter((t) => !t.hidden).length
+    expect(sidebarLinks(container)).toHaveLength(visibleCount)
   })
 
   it('clicking a tool fires onSelect with its id and prevents native navigation', () => {
@@ -157,6 +159,12 @@ describe('MoreSheet', () => {
     for (const groupId of ['planning', 'model']) {
       const group = GROUPS.find((g) => g.id === groupId)!
       for (const tool of group.tools) {
+        // Hidden tools (Pre-Season) must NOT be offered in the sheet — they
+        // stay reachable by deep link only.
+        if (tool.hidden) {
+          expect(dialog.textContent).not.toContain(tool.label)
+          continue
+        }
         expect(dialog.textContent).toContain(tool.label)
       }
     }

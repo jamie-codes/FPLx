@@ -3,7 +3,7 @@
 // nav groups as headed lists of tools. page.tsx owns the active-tool state.
 // Items are real links (?t=<id>) so middle-click/ctrl-click/open-in-new-tab
 // work; plain click is intercepted for the SPA select (UIX-01 audit).
-import { GROUPS, type ToolId } from '@/lib/navigation'
+import { GROUPS, visibleTools, type ToolId } from '@/lib/navigation'
 import { Brand } from './Brand'
 import { SidebarDeadlineCard } from './SidebarDeadlineCard'
 
@@ -23,7 +23,7 @@ export function Sidebar({ active, onSelect }: {
               <group.icon size={16} strokeWidth={2} aria-hidden className="shrink-0" />
               {group.label}
             </div>
-            {group.tools.map((tool) => {
+            {visibleTools(group).map((tool) => {
               const isActive = tool.id === active
               return (
                 <a

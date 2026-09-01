@@ -6,7 +6,7 @@
 // moves to the first tool on open and back to the trigger on close, Tab is
 // trapped within the sheet, and body scroll is locked while open.
 import { useEffect, useRef } from 'react'
-import { GROUPS, type ToolId } from '@/lib/navigation'
+import { GROUPS, visibleTools, type ToolId } from '@/lib/navigation'
 
 const SHEET_GROUP_IDS = ['planning', 'model']
 
@@ -87,7 +87,7 @@ function SheetPanel({ onClose, active, onSelect }: {
               {group.label}
             </div>
             <div className="grid grid-cols-2 gap-1">
-              {group.tools.map((tool) => {
+              {visibleTools(group).map((tool) => {
                 const isActive = tool.id === active
                 return (
                   <a

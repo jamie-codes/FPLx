@@ -7,7 +7,7 @@
 // it opens the MoreSheet dialog (Planning + Model groups), so it gets
 // aria-haspopup/aria-expanded rather than aria-current (UIX-01 audit).
 import { Ellipsis } from 'lucide-react'
-import { GROUPS, groupOf, type ToolId } from '@/lib/navigation'
+import { GROUPS, groupOf, visibleTools, type ToolId } from '@/lib/navigation'
 
 const BAR_GROUPS: { groupId: string; label: string }[] = [
   { groupId: 'home', label: 'Home' },
@@ -38,14 +38,17 @@ export function MobileBar({ active, onSelect, onMore, moreOpen = false }: {
       className="lg:hidden fixed bottom-0 inset-x-0 z-50 flex bg-surface-1 border-t border-line pb-[env(safe-area-inset-bottom)]">
       {BAR_GROUPS.map(({ groupId, label }) => {
         const group = GROUPS.find((g) => g.id === groupId)!
+        // A group's entry point must be a VISIBLE tool — landing someone on a
+        // hidden one (e.g. Pre-Season) would defeat hiding it.
+        const entryTool = (visibleTools(group)[0] ?? group.tools[0]).id
         const isActive = groupId === activeGroupId
         return (
           <a
             key={groupId}
-            href={`?t=${group.tools[0].id}`}
+            href={`?t=${entryTool}`}
             onClick={(e) => {
               e.preventDefault()
-              onSelect(group.tools[0].id)
+              onSelect(entryTool)
             }}
             aria-current={isActive ? 'page' : undefined}
             className={`${BTN_CLS} ${isActive ? 'text-ink' : 'text-ink-muted'}`}>

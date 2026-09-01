@@ -106,10 +106,19 @@ export default function Home() {
   // Phase 98 PGW-04: auto-surface the Review tool when a new GW has settled and
   // the user has not yet seen it. One-time per GW (D-03); flag is written
   // synchronously at the moment of navigation (D-04); localStorage key format
-  // documented in D-05. Runs after mount, so the once-per-GW surface wins over
-  // the ?t= deep link on first visit (pre-shell behaviour: it overrode landing).
+  // documented in D-05.
+  //
+  // An EXPLICIT ?t= deep link now wins (2026-09-01). It used to be the other
+  // way round, which made every deep link look broken: a new GW settles, the
+  // user opens ?t=wildcard, the surface redirects them to Review AND
+  // selectTool rewrites the URL to ?t=review, so the link they clicked leaves
+  // no trace. It re-armed every gameweek, so shared and bookmarked links
+  // appeared to "never work". Auto-surfacing still happens on a plain visit,
+  // which is the case it was designed for.
   useEffect(() => {
     if (settledGws.length === 0) return
+    const deepLinked = new URLSearchParams(window.location.search).get('t')
+    if (deepLinked !== null && deepLinked !== '') return
     const latestGw = settledGws[settledGws.length - 1]
     const key = `pgw-reviewed:GW${latestGw}`
     try {

@@ -19,7 +19,15 @@ export type ToolId =
   | 'planner' | 'manual-plan' | 'route-tree' | 'wildcard' | 'pre-season' | 'prices'
   | 'accuracy' | 'season'
 
-export interface Tool { id: ToolId; label: string; mobileLabel: string }
+export interface Tool {
+  id: ToolId
+  label: string
+  mobileLabel: string
+  /** Kept routable (deep links, legacy aliases) but omitted from the nav.
+   * Used for tools that are only relevant in part of the season — hiding
+   * beats deleting, because old links keep working (2026-09-01). */
+  hidden?: boolean
+}
 export interface Group { id: string; label: string; icon: LucideIcon; tools: Tool[] }
 
 export const GROUPS: Group[] = [
@@ -52,7 +60,10 @@ export const GROUPS: Group[] = [
     { id: 'manual-plan',   label: 'Manual Plan',   mobileLabel: 'Manual' },
     { id: 'route-tree',    label: 'Route Tree',    mobileLabel: 'Routes' },
     { id: 'wildcard',   label: 'Wildcard',   mobileLabel: 'Wildcard' },
-    { id: 'pre-season', label: 'Pre-Season', mobileLabel: 'Pre-Season' },
+    // Hidden from 2026-09-01: the season is underway, so pre-season planning
+    // is noise. Still routable via ?t=pre-season and the window /
+    // transfers-confirmed / next-season legacy aliases.
+    { id: 'pre-season', label: 'Pre-Season', mobileLabel: 'Pre-Season', hidden: true },
     { id: 'prices',     label: 'Prices',     mobileLabel: 'Prices' },
   ]},
   { id: 'model', label: 'Model', icon: ChartColumn, tools: [
@@ -61,7 +72,12 @@ export const GROUPS: Group[] = [
   ]},
 ]
 
+/** Every tool id, including hidden ones — deep links and the ?t= parser must
+ * still resolve a hidden tool. */
 export const ALL_TOOL_IDS: ToolId[] = GROUPS.flatMap((g) => g.tools.map((t) => t.id))
+
+/** What the navigation should actually render. */
+export const visibleTools = (group: Group): Tool[] => group.tools.filter((t) => !t.hidden)
 
 export function groupOf(toolId: ToolId): Group {
   return GROUPS.find((g) => g.tools.some((t) => t.id === toolId)) ?? GROUPS[0]

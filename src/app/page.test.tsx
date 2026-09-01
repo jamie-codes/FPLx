@@ -2,7 +2,7 @@
 // landing, URL sync, all-27-tools re-home, mobile pill labels (D-04 port).
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, fireEvent } from '@testing-library/react'
+import { render, fireEvent, cleanup } from '@testing-library/react'
 
 vi.mock('@/components/gem-table/GemTable', () => ({
   GemTable: ({ onCompare }: { onCompare?: (p: any) => void }) => (
@@ -220,12 +220,27 @@ describe('UIX-01: shell state in page.tsx', () => {
       'accuracy': 'accuracy-tab',
       'season': 'season-review-tab',
     }
-    const { container } = render(<Home />)
     const allTools = GROUPS.flatMap((g) => g.tools)
     for (const toolId of ALL_TOOL_IDS) {
       if (toolId === 'home') continue
-      const label = allTools.find((t) => t.id === toolId)!.label
-      clickSidebarTool(container, label)
+      const tool = allTools.find((t) => t.id === toolId)!
+      if (tool.hidden) {
+        // Hidden tools (Pre-Season) are deliberately absent from the nav but
+        // must stay reachable by deep link — that is the whole point of
+        // hiding rather than deleting them.
+        cleanup()
+        window.history.replaceState(null, '', `/?t=${toolId}`)
+        const { container: deep } = render(<Home />)
+        expect(
+          deep.querySelector(`[data-testid="${TOOL_TESTID[toolId]}"]`),
+          `hidden tool ${toolId} must still deep-link`
+        ).not.toBeNull()
+        continue
+      }
+      cleanup()
+      window.history.replaceState(null, '', '/')
+      const { container } = render(<Home />)
+      clickSidebarTool(container, tool.label)
       expect(
         container.querySelector(`[data-testid="${TOOL_TESTID[toolId]}"]`),
         `tool ${toolId} → ${TOOL_TESTID[toolId]}`
@@ -239,6 +254,27 @@ describe('UIX-01: shell state in page.tsx', () => {
     clickSidebarTool(container, 'Planner')
     expect(container.querySelector('[data-testid="planner"]')).not.toBeNull()
     expect(container.querySelector('[data-testid="captain-picks"]')).not.toBeNull()
+  })
+
+  // Reported 2026-09-01: ?t=wildcard and ?t=optimiser "never work". They were
+  // not broken — the PGW-04 auto-surface redirected to Review on any visit
+  // with an unseen settled GW, and rewrote the URL to ?t=review on the way, so
+  // the requested tool left no trace. It re-armed every gameweek, which is why
+  // shared and bookmarked links appeared permanently broken.
+  it('an explicit ?t= deep link is NOT hijacked by the GW auto-surface', () => {
+    window.localStorage.clear()          // no GW marked as seen -> surface armed
+    window.history.replaceState(null, '', '/?t=wildcard')
+    const { container } = render(<Home />)
+    expect(container.querySelector('[data-testid="wildcard-builder-tab"]')).not.toBeNull()
+    expect(container.querySelector('[data-testid="gw-review-tab-mock"]')).toBeNull()
+    expect(window.location.search).toBe('?t=wildcard')
+  })
+
+  it('auto-surface still fires on a plain visit with no ?t=', () => {
+    window.localStorage.clear()
+    window.history.replaceState(null, '', '/')
+    const { container } = render(<Home />)
+    expect(container.querySelector('[data-testid="gw-review-tab-mock"]')).not.toBeNull()
   })
 
   it('reads ?t=<toolId> from the URL once on mount (deep link)', () => {
@@ -369,7 +405,7 @@ describe('UIX-01: shell state in page.tsx', () => {
       ).not.toBeNull()
     }
     // Planning-group tools that do NOT take the prop don't get the selector
-    for (const label of ['Prices', 'Pre-Season', 'Gem Ratings']) {
+    for (const label of ['Prices', 'Gem Ratings']) {
       clickSidebarTool(container, label)
       expect(
         container.querySelector('[data-testid="plan-section-horizon"]'),
@@ -378,10 +414,12 @@ describe('UIX-01: shell state in page.tsx', () => {
     }
   })
 
-  it('sidebar exposes all 6 groups and 24 tools (navigation.ts is the source of truth)', () => {
+  it('sidebar exposes all 6 groups and every VISIBLE tool (navigation.ts is the source of truth)', () => {
     const { container } = render(<Home />)
     const sidebar = container.querySelector('nav[aria-label="Primary navigation"]')!
-    expect(sidebar.querySelectorAll('a')).toHaveLength(24)
+    // Hidden tools (Pre-Season) stay routable but are not rendered.
+    const visibleCount = GROUPS.flatMap((g) => g.tools).filter((t) => !t.hidden).length
+    expect(sidebar.querySelectorAll('a')).toHaveLength(visibleCount)
     for (const group of GROUPS) {
       expect(sidebar.textContent).toContain(group.label)
     }

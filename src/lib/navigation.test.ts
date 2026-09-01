@@ -22,7 +22,7 @@ const LEGACY_27 = [
 
 describe('navigation.ts completeness (UIX-01)', () => {
   it('has exactly 24 tool ids (20 surviving legacy + home + cockpit + prices + pre-season) with no duplicates', () => {
-    expect(ALL_TOOL_IDS).toHaveLength(24)
+    expect(ALL_TOOL_IDS).toHaveLength(24)   // includes hidden tools
     expect(new Set(ALL_TOOL_IDS).size).toBe(24)
   })
 
