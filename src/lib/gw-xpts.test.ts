@@ -164,3 +164,48 @@ describe('computeHoldLabel', () => {
     expect(computeHoldLabel(p, 33)).toBeNull()
   })
 })
+
+// ---------------------------------------------------------------------------
+// FAS-02 (2026-09-02): computeGwXpts ignored fixture difficulty for attacking
+// returns. Only the clean-sheet term looked at the opponent, so a midfielder
+// with strong xG scored identically against the best and worst defence in the
+// league. The wildcard builder scores its window with this function, which is
+// why it picked Bruno and Mbeumo into a hard run.
+//
+// pipeline/merge.py applies FAS-01: attacking EV is scaled by
+// fas_scale = 1 + (0.5 - attack_difficulty) * FAS_SLOPE, FAS_SLOPE = 0.4.
+// ---------------------------------------------------------------------------
+describe('computeGwXpts fixture sensitivity (FAS-02)', () => {
+  function attacker(attackingDifficulty: number): MergedPlayer {
+    return {
+      id: 1, web_name: 'Mid', element_type: 3, team: 1, status: 'a',
+      xg_per90: 0.6, xa_per90: 0.3, xmins: 85, start_prob: 0.95,
+      fixtures: [{
+        opponent_team: 'OPP', is_home: true, event_id: 7,
+        difficulty_score: attackingDifficulty,
+        difficulty_tier: 'medium' as const,
+        attacking_difficulty: attackingDifficulty,
+        defensive_difficulty: 0.5,
+      }],
+    } as unknown as MergedPlayer
+  }
+
+  it('scores an easy fixture above a hard one for the same player', () => {
+    const easy = computeGwXpts(attacker(0.1), 7)
+    const hard = computeGwXpts(attacker(0.9), 7)
+    expect(easy).toBeGreaterThan(hard)
+  })
+
+  it('is neutral at mid difficulty (matches the pipeline fast path)', () => {
+    const neutral = computeGwXpts(attacker(0.5), 7)
+    // 0.5 difficulty -> fas_scale 1.0, so no scaling either way.
+    const easy = computeGwXpts(attacker(0.1), 7)
+    const hard = computeGwXpts(attacker(0.9), 7)
+    expect(neutral).toBeLessThan(easy)
+    expect(neutral).toBeGreaterThan(hard)
+  })
+
+  it('never scales attacking EV below zero', () => {
+    expect(computeGwXpts(attacker(1.0), 7)).toBeGreaterThanOrEqual(0)
+  })
+})

@@ -528,3 +528,57 @@ describe('buildAnchoredSquad — bench boost in a LATER gameweek than the wildca
     expect(built).not.toBeNull()
   })
 })
+
+// ---------------------------------------------------------------------------
+// WC-05 (2026-09-02): the builder left £3.5m unspent. The greedy fill stops as
+// soon as the next-best affordable player fails its reserve check, so leftover
+// cash simply sits there — but in FPL an unspent million is a wasted million.
+// ---------------------------------------------------------------------------
+describe('buildAnchoredSquad — spends the budget', () => {
+  function mk(id: number, pos: 1 | 2 | 3 | 4, cost: number, xg: number, team: number): MergedPlayer {
+    return {
+      id, web_name: `P${id}`, element_type: pos, now_cost: cost, team, status: 'a',
+      xmins: 85, start_prob: 0.95, xg_per90: xg, xa_per90: 0.1,
+      xPts_1gw: xg * 10, xPts_3gw: xg * 30, xPts_5gw: xg * 50,
+      fixtures: [4, 5, 6].map(event_id => ({
+        opponent_team: 'OPP', is_home: true, event_id,
+        difficulty_score: 0.5, difficulty_tier: 'medium' as const,
+        attacking_difficulty: 0.5, defensive_difficulty: 0.5,
+      })),
+    } as unknown as MergedPlayer
+  }
+
+  /** A continuous price ladder per position so upgrades are always available. */
+  function pool(): MergedPlayer[] {
+    const out: MergedPlayer[] = []
+    let id = 1
+    const per: Record<number, number> = { 1: 2, 2: 5, 3: 5, 4: 3 }
+    for (const pos of [1, 2, 3, 4] as const) {
+      for (let i = 0; i < per[pos] * 6; i++) {
+        // price and quality rise together, in small steps
+        out.push(mk(id++, pos, 40 + i * 5, 0.1 + i * 0.08, (id % 19) + 1))
+      }
+    }
+    return out
+  }
+
+  it('leaves only a small remainder rather than millions', () => {
+    const r = buildAnchoredSquad([], pool(), 1000, 3, { startGw: 4 })!
+    expect(r.budgetUsed).toBeLessThanOrEqual(1000)
+    // Under £1.0m left over; the reported bug was £3.5m.
+    expect(r.budgetRemaining).toBeLessThan(10)
+  })
+
+  it('does not overspend while chasing utilisation', () => {
+    const r = buildAnchoredSquad([], pool(), 1000, 3, { startGw: 4 })!
+    expect(r.budgetRemaining).toBeGreaterThanOrEqual(0)
+    expect(r.squad).toHaveLength(15)
+  })
+
+  it('upgrading never lowers the squad projection', () => {
+    const r = buildAnchoredSquad([], pool(), 1000, 3, { startGw: 4 })!
+    // 800 is feasible here; 700 is below the cheapest valid 15 in this pool.
+    const cheap = buildAnchoredSquad([], pool(), 800, 3, { startGw: 4 })!
+    expect(r.squadXPts).toBeGreaterThan(cheap.squadXPts)
+  })
+})

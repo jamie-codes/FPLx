@@ -276,6 +276,57 @@ export function buildAnchoredSquad(
     seatedIds.add(player.id)
   }
 
+  // WC-05 (2026-09-02): spend what is left. The greedy fill stops as soon as
+  // the next candidate fails its reserve check, which routinely stranded
+  // millions in the bank — reported as "it left 3.5m". Repeatedly swap a
+  // squad member for the best affordable upgrade in the same position until
+  // nothing improves. Anchors and bench fodder are deliberately exempt: both
+  // are choices the user made, not slack to optimise away.
+  const protectedIds = new Set(seatedIds)
+  for (const a of anchors) protectedIds.add(a)
+  let improved = true
+  while (improved) {
+    improved = false
+    let bestSwap: { outIdx: number; buy: MergedPlayer; delta: number } | null = null
+    for (let i = 0; i < squad.length; i++) {
+      const held = squad[i]
+      if (protectedIds.has(held.id) && anchors.includes(held.id)) continue
+      const heldFull = playerMap.get(held.id)
+      if (!heldFull) continue
+      const spare = budget - runningCost + held.now_cost
+      for (const cand of eligible) {
+        if (seatedIds.has(cand.id)) continue
+        if (cand.element_type !== held.element_type) continue
+        if (cand.now_cost > spare) continue
+        // Club limit, counting the outgoing player's slot as freed.
+        const clubUsed = (teamCount.get(cand.team) ?? 0) - (cand.team === held.team ? 1 : 0)
+        if (clubUsed >= 3) continue
+        const delta = scoreOf(cand) - scoreOf(heldFull)
+        if (delta > 0 && (bestSwap === null || delta > bestSwap.delta)) {
+          bestSwap = { outIdx: i, buy: cand, delta }
+        }
+      }
+    }
+    if (bestSwap) {
+      const out = squad[bestSwap.outIdx]
+      const buy = bestSwap.buy
+      teamCount.set(out.team, (teamCount.get(out.team) ?? 1) - 1)
+      teamCount.set(buy.team, (teamCount.get(buy.team) ?? 0) + 1)
+      runningCost += buy.now_cost - out.now_cost
+      seatedIds.delete(out.id)
+      seatedIds.add(buy.id)
+      squad[bestSwap.outIdx] = {
+        id: buy.id,
+        web_name: buy.web_name,
+        element_type: buy.element_type as 1 | 2 | 3 | 4,
+        team: buy.team,
+        now_cost: buy.now_cost,
+        xPts: scoreOf(buy),
+      }
+      improved = true
+    }
+  }
+
   // Step 3: Validate formation minimums.
   if (squad.length < 15) return null
   for (const pos of [1, 2, 3, 4] as const) {

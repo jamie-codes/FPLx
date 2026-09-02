@@ -10,6 +10,10 @@ const GOAL_PTS: Record<number, number>   = { 1: 6, 2: 6, 3: 5, 4: 4 }
 const ASSIST_PTS = 3
 const CS_PTS: Record<number, number>     = { 1: 6, 2: 6, 3: 1, 4: 0 }
 const BONUS_RATE: Record<number, number> = { 1: 0.30, 2: 0.40, 3: 0.60, 4: 0.70 }
+// FAS-01 (pipeline/accuracy.py FAS_SLOPE, validated in the BT-02 honest
+// backtest). Attacking EV scales with opponent strength; without it a striker
+// scores the same against the best and worst defence in the league.
+const FAS_SLOPE = 0.4
 
 /** CS probability for a single fixture.
  * NOTE: xmins is the player-level aggregate (probability-weighted across horizon).
@@ -34,11 +38,15 @@ function fixtureXpts(
   xmins: number,
   element_type: number,
   defensiveDifficulty: number,
+  attackingDifficulty: number,
 ): number {
   if (xmins <= 0 || start_prob <= 0) return 0
   const scale = xmins / 90
-  const goalPts   = xg * scale * (GOAL_PTS[element_type] ?? 4)
-  const assistPts = xa * scale * ASSIST_PTS
+  // FAS-02: symmetric around 0.5 — easier fixture scales attacking EV up,
+  // harder scales it down. Clamped at 0 like the pipeline's max(0.0, ...).
+  const fasScale = Math.max(0, 1 + (0.5 - attackingDifficulty) * FAS_SLOPE)
+  const goalPts   = xg * scale * fasScale * (GOAL_PTS[element_type] ?? 4)
+  const assistPts = xa * scale * fasScale * ASSIST_PTS
   const csPts     = csProb(defensiveDifficulty, xmins) * (CS_PTS[element_type] ?? 0)
   const bonusPts  = (BONUS_RATE[element_type] ?? 0.5) * scale
   const appPts    = start_prob * 2   // appearance points: per START, NOT per minute
@@ -60,6 +68,7 @@ export function computeGwXpts(player: MergedPlayer, targetGw: number): number {
       player.xmins,
       player.element_type,
       f.defensive_difficulty ?? 0.5,
+      f.attacking_difficulty ?? f.difficulty_score ?? 0.5,
     ),
     0,
   )
