@@ -26,6 +26,7 @@ import { PresetToggle } from './PresetToggle'
 import { LandscapeTip } from '@/components/set-pieces/LandscapeTip'
 import { computeRejection } from '@/lib/explain'
 import { computeFragility } from '@/lib/sensitivity'
+import { RecentFormStrip } from '@/components/shared/RecentFormStrip'
 import { FragilityBadge } from '@/components/shared/FragilityBadge'
 import { ComparisonSearch } from '@/components/gem-table/ComparisonSearch'
 import { PlayerInsightSection } from '@/components/shared/PlayerInsightSection'
@@ -383,6 +384,13 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
                             }
                           </dl>
                           {/* NEW: rejection panel appended below dl (D-03) */}
+                          {/* LAST5-01: the last five matches, per game. The table
+                              carries the 5-GW sum; the sum can't tell a steady
+                              4-a-week from one haul and four blanks. */}
+                          <div className="mb-2">
+                            <p className="text-ink-muted text-xs mb-1">Last 5 games</p>
+                            <RecentFormStrip recentGws={row.original.recent_gws} />
+                          </div>
                           <RejectionPanelInline
                             reasons={rejection.reasons}
                             xPtsRank={rejection.xPtsRank}
@@ -431,6 +439,13 @@ export function GemTable({ preset = 'default', onPresetChange, onCompare, watchl
                             >
                               {watchlistIds.includes(row.original.id) ? '⭐ Pinned' : '⭐ Pin to watchlist'}
                             </button>
+                          </div>
+                          {/* LAST5-01: the last five matches, per game. The table
+                              carries the 5-GW sum; the sum can't tell a steady
+                              4-a-week from one haul and four blanks. */}
+                          <div className="mb-2">
+                            <p className="text-ink-muted text-xs mb-1">Last 5 games</p>
+                            <RecentFormStrip recentGws={row.original.recent_gws} />
                           </div>
                           <RejectionPanelInline
                             reasons={rejection.reasons}

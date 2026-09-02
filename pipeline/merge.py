@@ -1416,6 +1416,7 @@ def merge_players(
         pts_last3gw = 0
         pts_last5gw = 0
         total_gws_available = 0
+        recent_gws = []
         if summaries and fpl_id in summaries:
             history = summaries[fpl_id].get('history', [])
             # history is chronological — take last N entries
@@ -1425,6 +1426,21 @@ def merge_players(
                 last5 = history[-5:] if len(history) >= 5 else history
                 pts_last3gw = sum(m.get('total_points', 0) for m in last3)
                 pts_last5gw = sum(m.get('total_points', 0) for m in last5)
+                # LAST5-01: the same five matches, per game rather than summed.
+                # The aggregate hides the shape — 4/4/4/4/4 and 0/0/0/0/20 are
+                # both 20, and they are not the same player to own. One DGW
+                # gameweek contributes two entries, as it did to the sum.
+                # Keys are short because this rides on every player in
+                # merged_players.json.
+                for m in last5:
+                    opp_id = m.get('opponent_team')
+                    recent_gws.append({
+                        'gw': m.get('round'),
+                        'pts': m.get('total_points', 0),
+                        'min': m.get('minutes', 0),
+                        'opp': teams[opp_id]['short_name'] if opp_id in teams else None,
+                        'home': m.get('was_home'),
+                    })
 
         # Per-90 form metrics (D-01)
         minutes = element.get('minutes', 0)
@@ -1485,6 +1501,8 @@ def merge_players(
             'pts_last3gw': pts_last3gw,
             'pts_last5gw': pts_last5gw,
             'pts_gw_count': total_gws_available,
+            # LAST5-01: per-game breakdown of the pts_last5gw window
+            'recent_gws': recent_gws,
             # Next 5 fixtures (D-03)
             'fixtures': team_fixtures.get(team_id, []),
         }

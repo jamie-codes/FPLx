@@ -94,6 +94,18 @@ export type MinsRisk = 'nailed' | 'likely_start' | 'rotation_risk' | 'cameo' | '
 export type SubRiskLabel = 'nailed' | 'sub_risk' | 'rotation_risk' | 'cameo' | 'injured'
 
 // Merged player from pipeline (D-06): FPL fields + Understat + form + fixtures
+/** LAST5-01: one appearance in a player's last-5 window. Keys are short
+ *  because this rides on every player in merged_players.json. A double
+ *  gameweek contributes two entries, exactly as it does to pts_last5gw. */
+export interface RecentGw {
+  gw: number
+  pts: number
+  min: number
+  /** Opponent short name, null when the source history predates the field. */
+  opp: string | null
+  home: boolean | null
+}
+
 export interface MergedPlayer {
   // FPL core fields (from Phase 1 FPLElement)
   id: number
@@ -126,6 +138,9 @@ export interface MergedPlayer {
   pts_last3gw: number        // sum of points over last 3 GWs (partial if fewer GWs available)
   pts_last5gw: number        // sum of points over last 5 GWs (partial if fewer GWs available)
   pts_gw_count: number       // number of GWs of history available (for partial window asterisk)
+  // LAST5-01: the pts_last5gw window, per game. Optional because artifacts
+  // written before this field shipped are still served from cache/blob.
+  recent_gws?: RecentGw[] | null
   defensive_contribution: number | null
   clearances_blocks_interceptions: number | null
   direct_freekicks_order: number | null

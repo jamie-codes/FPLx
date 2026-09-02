@@ -11,6 +11,7 @@ import { RegressionSignalBadge } from '@/components/gem-table/RegressionSignalBa
 import { DifferentialBadge } from '@/components/gem-table/DifferentialBadge'
 import { fmtScore, fmtScoreNull } from '@/components/gem-table/columns'
 import { PlayerAvatar } from '@/components/shared/PlayerAvatar'
+import { RecentFormStrip } from '@/components/shared/RecentFormStrip'
 import { TeamBadge } from '@/components/shared/TeamBadge'
 
 interface PlayerComparisonModalProps {
@@ -133,6 +134,12 @@ export function PlayerComparisonModal({ open, playerA, onClose }: PlayerComparis
         <span className="text-ink-muted text-xs">Ceiling (90th)</span>
         <span>{pA.xPts_90th_1gw?.toFixed(1) ?? '—'}</span>
         {pB ? <span>{pB.xPts_90th_1gw?.toFixed(1) ?? '—'}</span> : <span className="text-ink-muted">—</span>}
+      </div>
+      {/* LAST5-01: what actually happened, next to what the model expects. */}
+      <div className="grid grid-cols-3 gap-2 items-start">
+        <span className="text-ink-muted text-xs">Last 5</span>
+        <RecentFormStrip recentGws={pA.recent_gws} />
+        {pB ? <RecentFormStrip recentGws={pB.recent_gws} /> : <span className="text-ink-muted">—</span>}
       </div>
     </div>
   )

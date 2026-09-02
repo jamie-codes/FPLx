@@ -699,3 +699,53 @@ def test_merge_writes_gw_xpts_per_gw():
     assert 0 < len(p['gw_xpts']) <= 5
     assert all(isinstance(x, (int, float)) for x in p['gw_xpts'])
     assert p['gw_xpts'][0] > 0
+
+
+def _hist_with_opponent(round_, minutes, total_points, opponent_team, was_home):
+    h = _hist(round_, minutes, total_points)
+    h['opponent_team'] = opponent_team
+    h['was_home'] = was_home
+    return h
+
+
+def test_merge_writes_recent_gws_matching_the_pts_last5_window():
+    """LAST5-01: recent_gws is the per-game breakdown of the pts_last5gw sum.
+
+    The aggregate hides the shape of a player's recent returns, which is what
+    the popup needs to show, so the same five matches ship individually.
+    """
+    history = [_hist_with_opponent(gw, 90, gw, opponent_team=1, was_home=gw % 2 == 0)
+               for gw in range(1, 11)]
+    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_minimal_inputs({1: history})
+    merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                              xmins_stats=xmins_stats, summaries=summaries)
+    p = next(pl for pl in merged if pl['id'] == 1)
+
+    assert [g['gw'] for g in p['recent_gws']] == [6, 7, 8, 9, 10]
+    assert [g['pts'] for g in p['recent_gws']] == [6, 7, 8, 9, 10]
+    assert sum(g['pts'] for g in p['recent_gws']) == p['pts_last5gw']
+    assert p['recent_gws'][0]['min'] == 90
+    # opponent_team resolves to the short name the UI renders
+    assert p['recent_gws'][0]['opp'] == 'ARS'
+    assert p['recent_gws'][0]['home'] is True    # gw 6
+
+
+def test_merge_recent_gws_survives_history_without_opponent_fields():
+    """Archived/partial history has no opponent_team — emit null, never crash."""
+    history = [_hist(gw, 90, 4) for gw in range(1, 4)]
+    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_minimal_inputs({1: history})
+    merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                              xmins_stats=xmins_stats, summaries=summaries)
+    p = next(pl for pl in merged if pl['id'] == 1)
+
+    assert len(p['recent_gws']) == 3          # short history is not padded
+    assert all(g['opp'] is None for g in p['recent_gws'])
+
+
+def test_merge_recent_gws_is_empty_without_summaries():
+    """No element-summary (pre-season, unmatched player) -> empty list, not None."""
+    bootstrap, fixtures, understat, id_map, xmins_stats, _ = _build_minimal_inputs({1: []})
+    merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                              xmins_stats=xmins_stats, summaries=None)
+    p = next(pl for pl in merged if pl['id'] == 1)
+    assert p['recent_gws'] == []
