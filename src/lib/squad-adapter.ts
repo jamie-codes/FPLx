@@ -52,6 +52,17 @@ export const MyTeamPickSchema = SquadPickSchema.extend({
 export const MyTeamResponseSchema = z.object({
   picks: z.array(MyTeamPickSchema),
   entry_history: EntryHistorySchema,
+  // FT-01 (2026-09-02): /my-team/ reports the real free-transfer count in
+  // `transfers.limit`. It was being dropped, so the app inferred 1 or 2 from
+  // last week's transfer count — which cannot represent the banked transfers
+  // FPL has allowed since the 5-transfer rule. Optional: absent on older
+  // cached payloads, and the caller falls back to the old inference.
+  transfers: z.object({
+    limit: z.number().int().nullable().optional(),
+    made: z.number().int().optional(),
+    bank: z.number().int().optional(),
+    value: z.number().int().optional(),
+  }).optional(),
 })
 
 export type MyTeamPick = z.infer<typeof MyTeamPickSchema>

@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useSquad } from '@/lib/hooks/useSquad'
-import { deriveFreeTransfers } from '@/lib/free-transfers'
+import { deriveFreeTransfers, bankedFreeTransfers, MAX_BANKED_FREE_TRANSFERS } from '@/lib/free-transfers'
+import { FundingPlanPanel } from '@/components/transfers/FundingPlanPanel'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
 import { useMyTeam } from '@/lib/hooks/useMyTeam'
@@ -108,6 +109,13 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
     return computeVerdicts(squadData.picks, scoredPlayers)
   }, [squadData, scoredPlayers])
 
+  // FUND-01: gameweeks the rebuild can be planned for, from the fixture data.
+  const fundingGwOptions = useMemo(() => {
+    const ids = new Set<number>()
+    for (const p of scoredPlayers) for (const f of p.fixtures ?? []) ids.add(f.event_id)
+    return [...ids].sort((a, b) => a - b).slice(0, 10)
+  }, [scoredPlayers])
+
   const exactSellPrices = useMemo(() => {
     if (!myTeamData) return new Map<number, number>()
     return new Map(myTeamData.picks.map(p => [p.element, p.selling_price]))
@@ -116,10 +124,12 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
   const derivedFtCount: 1 | 2 = useMemo(() => {
     // CR-02 (gap-closure 074-05): unauthenticated path now reads the manual freeTransfers input.
     // Authenticated path still derives from FPL myTeamData / chip state.
+    // suggestTransfers only enumerates 1-2 transfer combinations, so it is
+    // clamped here. The funding planner below uses the true banked count.
     if (!isAuthenticated || !myTeamData) {
       return (freeTransfers >= 2 ? 2 : 1) as 1 | 2
     }
-    return deriveFreeTransfers(myTeamData, squadData?.active_chip)
+    return Math.min(bankedFreeTransfers(myTeamData, squadData?.active_chip), 2) as 1 | 2
   }, [isAuthenticated, myTeamData, squadData, freeTransfers])
 
   // Pre-fill manualBank from FPL when authenticated. DO NOT include manualBank in deps (Pitfall 5)
@@ -265,7 +275,7 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
               Free transfers:{' '}
               <span
                 className="text-ink-muted cursor-help underline underline-offset-2 decoration-dotted"
-                title="Enter your available free transfers (check FPL app)"
+                title="Your banked free transfers (FPL allows up to 5). Read from FPL when connected."
               >
                 ?
               </span>
@@ -274,9 +284,10 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
               id="freeTransfers"
               type="number"
               min={1}
-              max={2}
+              max={MAX_BANKED_FREE_TRANSFERS}
               value={freeTransfers}
-              onChange={e => setFreeTransfers(Math.max(1, Math.min(2, Number(e.target.value))))}
+              onChange={e => setFreeTransfers(
+                Math.max(1, Math.min(MAX_BANKED_FREE_TRANSFERS, Number(e.target.value))))}
               className="border border-line rounded-md min-h-[44px] px-3 py-1.5 text-base sm:text-sm text-ink bg-surface-1 w-full sm:w-20"
             />
           </div>
@@ -476,6 +487,23 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
             </div>
 
             {whyX && whyY && <WhyOverCard x={whyX} y={whyY} />}
+
+            {/* FUND-01: plan a funded rebuild — sells and bench downgrades
+                that free cash, within the free transfers banked. */}
+            {squadData && (
+              <FundingPlanPanel
+                picks={squadData.picks}
+                players={scoredPlayers}
+                sellPrices={exactSellPrices.size > 0 ? exactSellPrices : undefined}
+                bank={squadData.entry_history.bank}
+                freeTransfers={
+                  isAuthenticated
+                    ? bankedFreeTransfers(myTeamData, squadData.active_chip)
+                    : freeTransfers
+                }
+                gwOptions={fundingGwOptions}
+              />
+            )}
           </div>
         </div>
       )}

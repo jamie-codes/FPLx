@@ -14,3 +14,19 @@ export function deriveFreeTransfers(
   if (activeChip === 'wildcard' || activeChip === 'freehit') return 1
   return myTeam.entry_history.event_transfers === 0 ? 2 : 1
 }
+
+/** FPL 2026/27 banks up to five free transfers, and keeps them through a chip.
+ * Prefer the authoritative `transfers.limit` from /my-team/; fall back to the
+ * legacy 1-or-2 inference when it is absent (unauthenticated or old cache). */
+export const MAX_BANKED_FREE_TRANSFERS = 5
+
+export function bankedFreeTransfers(
+  myTeam: MyTeamResponse | null | undefined,
+  activeChip: string | null | undefined,
+): number {
+  const limit = myTeam?.transfers?.limit
+  if (typeof limit === 'number' && limit >= 0) {
+    return Math.min(limit, MAX_BANKED_FREE_TRANSFERS)
+  }
+  return deriveFreeTransfers(myTeam, activeChip)
+}
