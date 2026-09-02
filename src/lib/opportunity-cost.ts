@@ -12,7 +12,11 @@
 //     Fix: gap-closure plan 074-05 (CR-01).
 import type { TransferSuggestion, MergedPlayer } from './types'
 
+// OCS-06 (2026-09-02): 'multi-*' rows cover plans of 3+ transfers, for
+// managers who have rolled free transfers (FPL banks five). Without them the
+// table stopped at two and never showed the option actually being chosen.
 export type OCSRowKind = 'roll' | 'single-free' | 'single-hit' | 'combo-free' | 'combo-hit' | 'combo-hit-8'
+  | 'multi-free' | 'multi-hit'
 
 export const MARGINAL_THRESHOLD = 1.0
 
@@ -23,7 +27,7 @@ export interface OCSRow {
   xPtsGainNet: number
   xPtsGainPerGw: number
   breakEvenGws: number | null
-  cost: 0 | 4 | 8                        // widened from 0|4
+  cost: number                           // 0 | 4 | 8, or 4 * hits for a multi-leg plan
   transfers?: Array<{ sell: MergedPlayer; buy: MergedPlayer }>
   isMarginal?: boolean
   bankAfter: number                       // bank remaining after this move, in tenths of £1m
@@ -33,9 +37,8 @@ export interface OCSRow {
 
 export function computeOpportunityCostRows(
   suggestions: TransferSuggestion[],
-  // FT-02: accepts the true banked count (up to 5). This table compares the
-  // roll / 1-transfer / 2-transfer decision, so anything >= 2 behaves like 2
-  // here; deeper plans surface as kind:'multi' suggestions instead of new rows.
+  // FT-02: the true banked count (up to 5). The single/combo rows below still
+  // model the roll / 1 / 2 decision; 3+ plans get their own rows (OCS-06).
   ftCountRaw: number,
   bank: number,                           // in tenths of £1m
 ): OCSRow[] {
@@ -185,6 +188,39 @@ export function computeOpportunityCostRows(
       bankAfter: bankAfter8,
       isAffordable: bankAfter8 >= 0,
       disabledReason: formatDisabledReason(bankAfter8),
+    })
+  }
+
+  // Best multi-leg plan (OCS-06). The engine emits one entry per depth, so
+  // take the highest-gain plan and report its cost honestly: free when it fits
+  // inside the transfers banked, or netted against the hits it needs.
+  const bestMulti = suggestions
+    .filter((s): s is Extract<TransferSuggestion, { kind: 'multi' }> => s.kind === 'multi')
+    .sort((a, b) => (b.xPtsGain - b.cost) - (a.xPtsGain - a.cost))[0]
+  if (bestMulti) {
+    const legs = bestMulti.transfers.length
+    const bankAfterMulti = bestMulti.transfers.reduce(
+      (acc, t) => acc + sellValueFor(t.sell) - t.buy.now_cost,
+      bank,
+    )
+    const hits = bestMulti.cost / 4
+    rows.push({
+      kind: bestMulti.cost === 0 ? 'multi-free' : 'multi-hit',
+      label: bestMulti.cost === 0
+        ? `${legs} FT`
+        : `${legs} transfers · −${bestMulti.cost}`,
+      xPtsGain: bestMulti.xPtsGain,
+      xPtsGainNet: bestMulti.xPtsGain - bestMulti.cost,
+      xPtsGainPerGw: bestMulti.xPtsGainPerGw,
+      breakEvenGws: bestMulti.cost > 0 && bestMulti.xPtsGainPerGw > 0
+        ? Math.max(1, Math.ceil(bestMulti.cost / bestMulti.xPtsGainPerGw))
+        : null,
+      cost: bestMulti.cost,
+      transfers: bestMulti.transfers,
+      bankAfter: bankAfterMulti,
+      isAffordable: bankAfterMulti >= 0,
+      disabledReason: formatDisabledReason(bankAfterMulti),
+      isMarginal: hits > 0 && bestMulti.xPtsGain - bestMulti.cost < MARGINAL_THRESHOLD,
     })
   }
 

@@ -56,6 +56,19 @@ const BADGE_BY_KIND: Record<OCSRowKind, BadgeConfig> = {
     label: 'Baseline',
     title: 'Roll your free transfer — no points spent and no transfer made.',
   },
+  // OCS-06: plans of 3+ transfers, for managers with rolled free transfers.
+  'multi-free': {
+    bg: 'bg-positive-soft',
+    text: 'text-positive',
+    label: 'Free',
+    title: 'Uses the free transfers you have banked — no points cost.',
+  },
+  'multi-hit': {
+    bg: 'bg-negative-soft',
+    text: 'text-negative',
+    label: 'Hit',
+    title: 'More transfers than you have banked — each extra one costs -4pts.',
+  },
   'single-free': {
     bg: 'bg-positive-soft',
     text: 'text-positive',
