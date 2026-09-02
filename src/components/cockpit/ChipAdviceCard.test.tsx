@@ -6,6 +6,11 @@ import { ChipAdviceCard } from './ChipAdviceCard'
 import type { ChipAdvice } from '@/lib/types'
 
 vi.mock('@/lib/hooks/useChipAdvice', () => ({ useChipAdvice: vi.fn() }))
+// CHIP-02: the card now re-judges the squad-dependent signals against the
+// loaded squad, so it reads these too. Empty by default → falls back to the
+// pipeline advice, which is what these existing cases assert.
+vi.mock('@/lib/hooks/useSquad', () => ({ useSquad: () => ({ data: undefined }) }))
+vi.mock('@/lib/hooks/usePlayers', () => ({ usePlayers: () => ({ data: undefined }) }))
 import { useChipAdvice } from '@/lib/hooks/useChipAdvice'
 const mockHook = vi.mocked(useChipAdvice)
 
@@ -66,5 +71,18 @@ describe('ChipAdviceCard', () => {
     const { container } = render(<ChipAdviceCard />)
     // 3 bars (BB/TC/FH) — Wildcard row has none.
     expect(container.querySelectorAll('[role="img"]').length).toBe(3)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// CHIP-02: with a squad loaded, the Bench Boost and Triple Captain rows must
+// describe THAT squad rather than the pipeline's simulated one.
+// ---------------------------------------------------------------------------
+describe('ChipAdviceCard — squad-aware signals', () => {
+  it('labels whose squad the advice is about', () => {
+    mockHook.mockReturnValue({ data: DATA, isLoading: false, isError: false } as never)
+    render(<ChipAdviceCard />)
+    // No squad mocked in this file, so it must say model squad.
+    expect(screen.getByText(/model squad/)).toBeTruthy()
   })
 })

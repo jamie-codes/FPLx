@@ -83,7 +83,7 @@ export function CockpitTab({ teamId, onTeamIdChange, submittedId, onSubmit, sele
 
       {/* Cards 4 + 5 (redesign Phase 3): chip advisor + gem watch */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <ChipAdviceCard />
+        <ChipAdviceCard submittedId={submittedId} />
         <GemWatchCard watchlistIds={watchlistIds} selectTool={selectTool} />
       </div>
 

@@ -2,7 +2,17 @@
 
 // CHP-01: pre-deadline chip signals from the decision ledger + fixture shape.
 // Generic advice — the pipeline cannot see which chips the user still holds.
+//
+// CHIP-02 (2026-09-02): the squad-dependent signals (Bench Boost, Triple
+// Captain) come from the pipeline's SIMULATED squad, so a bench of zero-minute
+// fillers was being recommended for a boost. When a team is loaded those two
+// are recomputed against it; the fixture-shape parts (DGW/BGW counts, windows)
+// are genuinely global and left as they are.
+import { useMemo } from 'react'
 import { useChipAdvice } from '@/lib/hooks/useChipAdvice'
+import { useSquad } from '@/lib/hooks/useSquad'
+import { usePlayers } from '@/lib/hooks/usePlayers'
+import { computeSquadChipSignals } from '@/lib/squad-chip-advice'
 import { Card } from '@/components/ui/Card'
 import { Chip, type ChipIntent } from '@/components/ui/Chip'
 import { Skeleton } from '@/components/ui/Skeleton'
@@ -58,15 +68,46 @@ function ChipRow({
   )
 }
 
-export function ChipAdviceCard() {
+export function ChipAdviceCard({ submittedId = null }: { submittedId?: string | null }) {
   const { data, isLoading, isError } = useChipAdvice()
+  const { data: squadData } = useSquad(submittedId)
+  const { data: playersData } = usePlayers()
+
+  const squadSignals = useMemo(
+    () => computeSquadChipSignals(squadData?.picks ?? [], playersData ?? []),
+    [squadData, playersData],
+  )
+
+  /** Prefer the loaded squad for the signals that depend on a squad. */
+  const entryFor = (id: string, entry: ChipAdviceEntry): ChipAdviceEntry => {
+    if (!squadSignals) return entry
+    if (id === 'bench_boost') {
+      return {
+        ...entry,
+        signal: squadSignals.benchBoost,
+        value: Number(squadSignals.benchXPts.toFixed(1)),
+        reason: `Your bench projects ${squadSignals.benchXPts.toFixed(1)} xPts this GW.`,
+      }
+    }
+    if (id === 'triple_captain') {
+      return {
+        ...entry,
+        signal: squadSignals.tripleCaptain,
+        value: Number(squadSignals.captainCeiling.toFixed(1)),
+        reason: squadSignals.captainName
+          ? `Your best captain is ${squadSignals.captainName} (ceiling ${squadSignals.captainCeiling.toFixed(1)} xPts).`
+          : entry.reason,
+      }
+    }
+    return entry
+  }
 
   return (
     <Card
       title="Chips"
       subtitle={
         data
-          ? `GW${data.gw}${data.dgw_team_count ? ` · ${data.dgw_team_count} DGW teams` : ''}${data.bgw_team_count ? ` · ${data.bgw_team_count} blanking` : ''}`
+          ? `GW${data.gw}${squadSignals ? ' · your squad' : ' · model squad'}${data.dgw_team_count ? ` · ${data.dgw_team_count} DGW teams` : ''}${data.bgw_team_count ? ` · ${data.bgw_team_count} blanking` : ''}`
           : undefined
       }
     >
@@ -78,7 +119,7 @@ export function ChipAdviceCard() {
         <>
           <ul className="space-y-2.5" data-testid="chip-rows">
             {(['bench_boost', 'triple_captain', 'free_hit', 'wildcard'] as const).map((id) => (
-              <ChipRow key={id} id={id} entry={data.chips[id]} horizonStart={data.horizon_start} horizonEnd={data.horizon_end} />
+              <ChipRow key={id} id={id} entry={entryFor(id, data.chips[id])} horizonStart={data.horizon_start} horizonEnd={data.horizon_end} />
             ))}
           </ul>
           <p className="mt-3 text-data text-ink-muted">
