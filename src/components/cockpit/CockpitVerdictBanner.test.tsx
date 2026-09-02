@@ -74,3 +74,45 @@ describe('buildVerdict', () => {
     expect(buildVerdict(undefined, undefined, undefined)).toBeNull()
   })
 })
+
+// ---------------------------------------------------------------------------
+// VERDICT-01 (2026-09-02): the banner named a player the user has never owned.
+//
+// It read transfer_advice.json, which the pipeline generates from its own
+// SIMULATED model squad (transfer_advisor advance_and_advise). Presented under
+// "This week's verdict" that reads as personal advice. When a team is loaded
+// the verdict must come from that squad; the model advice is only a fallback,
+// and must say so.
+// ---------------------------------------------------------------------------
+describe('buildVerdict — whose squad is it about', () => {
+  const captain = { ceiling: { name: 'B.Fernandes' } } as never
+  const chip = { chips: { bench_boost: { signal: 'play' } } } as never
+
+  const userAdvice = {
+    hold: false,
+    moves: [{ out: { name: 'Mukiele' }, in: { name: 'Gabriel' } }],
+    predicted_gain: 4.2,
+  } as never
+
+  const modelAdvice = {
+    hold: false,
+    moves: [{ out: { name: 'Georginio' }, in: { name: 'João Pedro' } }],
+    predicted_gain: 9.9,
+  } as never
+
+  it('names players from the loaded squad, not the model squad', () => {
+    const v = buildVerdict(userAdvice, chip, captain)!
+    expect(v.sentence).toContain('Mukiele')
+    expect(v.sentence).not.toContain('Georginio')
+  })
+
+  it('marks model-squad advice as such so it cannot read as personal', () => {
+    const v = buildVerdict(modelAdvice, chip, captain, { isModelSquad: true })!
+    expect(v.sentence.toLowerCase()).toContain('model squad')
+  })
+
+  it('does not add that caveat for the user is own squad', () => {
+    const v = buildVerdict(userAdvice, chip, captain)!
+    expect(v.sentence.toLowerCase()).not.toContain('model squad')
+  })
+})

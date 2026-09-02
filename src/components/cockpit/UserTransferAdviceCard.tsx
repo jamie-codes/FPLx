@@ -21,6 +21,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { SegmentedToggle } from '@/components/ui/SegmentedToggle'
 import { ArrowRight } from 'lucide-react'
 import type { MergedPlayer } from '@/lib/types'
+import { bankedFreeTransfers } from '@/lib/free-transfers'
 
 const POS = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' } as const
 
@@ -41,7 +42,12 @@ export function UserTransferAdviceCard({ submittedId }: { submittedId: string | 
   const { data: playersData, isLoading: playersLoading } = usePlayers()
   const { isAuthenticated } = useAuthStatus()
   const { data: myTeam } = useMyTeam(isAuthenticated && !!submittedId)
-  const [ft, setFt] = useState<'1' | '2'>('1')
+  // FT-02 (2026-09-02): FPL banks up to five free transfers, so the toggle
+  // offered 1-2 only. Defaults to the real banked count when connected.
+  const [ft, setFt] = useState<string | null>(null)
+
+  const detectedFt = bankedFreeTransfers(myTeam, squadData?.active_chip)
+  const effectiveFt = ft ?? String(detectedFt)
 
   const advice = useMemo(() => {
     if (!squadData?.picks?.length || !playersData?.length) return null
@@ -53,9 +59,9 @@ export function UserTransferAdviceCard({ submittedId }: { submittedId: string | 
     const bank = squadData.entry_history?.bank ?? 0
     const budget = squad.reduce((s, p) => s + p.cost, 0) + bank
     return suggestValidatedTransfers(squad, pool, {
-      freeTransfers: Number(ft), budget,
+      freeTransfers: Number(effectiveFt), budget,
     })
-  }, [squadData, playersData, myTeam, ft])
+  }, [squadData, playersData, myTeam, effectiveFt])
 
   const playerMap = useMemo(
     () => new Map<number, MergedPlayer>((playersData ?? []).map((p) => [p.id, p])),
@@ -73,9 +79,9 @@ export function UserTransferAdviceCard({ submittedId }: { submittedId: string | 
           <SegmentedToggle
             ariaLabel="Free transfers available"
             size="sm"
-            options={[{ id: '1', label: '1 FT' }, { id: '2', label: '2 FT' }]}
-            value={ft}
-            onChange={(id) => setFt(id as '1' | '2')}
+            options={[1, 2, 3, 4, 5].map((n) => ({ id: String(n), label: `${n} FT` }))}
+            value={effectiveFt}
+            onChange={setFt}
           />
           {advice && !advice.hold && (
             <Chip intent={advice.netGain > 0 ? 'positive' : 'warning'}>

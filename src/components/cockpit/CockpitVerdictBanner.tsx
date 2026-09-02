@@ -4,9 +4,18 @@
 // verdict, composed from transfer advice (TRF-01), captain picks, and chip
 // advice (CHP-01). Volt left border + projected-gain sub-line. buildVerdict is
 // a pure function so the composition logic is unit-testable without hook mocks.
+import { useMemo } from 'react'
 import { useTransferAdvice } from '@/lib/hooks/useTransferAdvice'
 import { useChipAdvice } from '@/lib/hooks/useChipAdvice'
 import { useCaptainPicks } from '@/lib/hooks/useCaptainPicks'
+import { useSquad } from '@/lib/hooks/useSquad'
+import { usePlayers } from '@/lib/hooks/usePlayers'
+import { useMyTeam } from '@/lib/hooks/useMyTeam'
+import { useAuthStatus } from '@/lib/hooks/useAuthStatus'
+import { bankedFreeTransfers } from '@/lib/free-transfers'
+import {
+  suggestValidatedTransfers, picksToSquadCandidates, mergedToCandidates,
+} from '@/lib/validated-transfer-advisor'
 import type { TransferAdvice, ChipAdvice, CaptainPicks, ChipAdviceEntry } from '@/lib/types'
 
 const CHIP_LABELS: Record<string, string> = {
@@ -16,10 +25,18 @@ const CHIP_LABELS: Record<string, string> = {
   wildcard: 'Wildcard',
 }
 
+/** Minimal shape shared by the pipeline advice and the user-squad advisor. */
+type VerdictTransfer = {
+  hold: boolean
+  moves: Array<{ out: { name: string }; in: { name: string } }>
+  predicted_gain: number
+}
+
 export function buildVerdict(
-  transfer: TransferAdvice | undefined,
+  transfer: VerdictTransfer | TransferAdvice | undefined,
   chip: ChipAdvice | undefined,
   captain: CaptainPicks | undefined,
+  opts: { isModelSquad?: boolean } = {},
 ): { sentence: string; gain: number | null } | null {
   const clauses: string[] = []
 
@@ -31,7 +48,11 @@ export function buildVerdict(
       const first = transfer.moves[0]
       const count = n === 1 ? 'one' : String(n)
       const extra = n > 1 ? ', …' : ''
-      clauses.push(`make ${count} transfer${n > 1 ? 's' : ''} (${first.out.name} → ${first.in.name}${extra})`)
+      // VERDICT-01: say whose squad this is about. Unqualified, model-squad
+      // advice reads as personal and names players the user does not own.
+      const whose = opts.isModelSquad ? ' for the model squad' : ''
+      clauses.push(
+        `make ${count} transfer${n > 1 ? 's' : ''}${whose} (${first.out.name} → ${first.in.name}${extra})`)
     }
   }
 
@@ -52,12 +73,39 @@ export function buildVerdict(
   return { sentence, gain }
 }
 
-export function CockpitVerdictBanner() {
+export function CockpitVerdictBanner({ submittedId = null }: { submittedId?: string | null }) {
   const { data: transfer } = useTransferAdvice()
   const { data: chip } = useChipAdvice()
   const { data: captain } = useCaptainPicks()
+  const { data: squadData } = useSquad(submittedId)
+  const { data: playersData } = usePlayers()
+  const { isAuthenticated } = useAuthStatus()
+  const { data: myTeam } = useMyTeam(isAuthenticated && !!submittedId)
 
-  const verdict = buildVerdict(transfer, chip, captain)
+  // VERDICT-01 (2026-09-02): when a team is loaded, the verdict must be about
+  // THAT squad. It previously always used transfer_advice.json, which the
+  // pipeline builds from its own simulated model squad — so the headline named
+  // players the user had never owned.
+  const userAdvice = useMemo(() => {
+    if (!squadData?.picks?.length || !playersData?.length) return null
+    const sellPrices = myTeam?.picks
+      ? new Map(myTeam.picks.map(p => [p.element, p.selling_price]))
+      : undefined
+    const squad = picksToSquadCandidates(squadData.picks, playersData, sellPrices)
+    const bank = squadData.entry_history?.bank ?? 0
+    const advice = suggestValidatedTransfers(squad, mergedToCandidates(playersData), {
+      freeTransfers: bankedFreeTransfers(myTeam, squadData.active_chip),
+      budget: squad.reduce((sum, p) => sum + p.cost, 0) + bank,
+    })
+    return {
+      hold: advice.hold,
+      moves: advice.moves,
+      predicted_gain: advice.predictedGain,
+    }
+  }, [squadData, playersData, myTeam])
+
+  const isModelSquad = userAdvice === null
+  const verdict = buildVerdict(userAdvice ?? transfer, chip, captain, { isModelSquad })
   if (!verdict) return null
 
   return (

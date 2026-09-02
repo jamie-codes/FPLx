@@ -50,7 +50,7 @@ export function CockpitTab({ teamId, onTeamIdChange, submittedId, onSubmit, sele
       <CockpitHeader submittedId={submittedId} gw={deadline?.id ?? null} />
 
       {/* Card 1 (redesign Phase 3): one-sentence verdict — transfer + captain + chip */}
-      <CockpitVerdictBanner />
+      <CockpitVerdictBanner submittedId={submittedId} />
 
       {/* Deadline strip + power-tool links */}
       <Card padding="sm">
