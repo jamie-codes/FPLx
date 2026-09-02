@@ -42,6 +42,10 @@ export function buildVerdict(
      *  signal is computed from the model squad's bench, so it must not be
      *  asserted over a bench it has never seen. */
     userBenchXPts?: number
+    /** VERDICT-03: best captain within the LOADED squad. captain_picks.json
+     *  ranks the entire player pool, so without this the verdict can name
+     *  someone the manager does not own. */
+    userCaptainName?: string
   } = {},
 ): { sentence: string; gain: number | null } | null {
   const clauses: string[] = []
@@ -62,7 +66,8 @@ export function buildVerdict(
     }
   }
 
-  if (captain?.ceiling) clauses.push(`captain ${captain.ceiling.name}`)
+  const captainName = opts.userCaptainName ?? captain?.ceiling?.name
+  if (captainName) clauses.push(`captain ${captainName}`)
 
   if (chip) {
     const playing = (Object.entries(chip.chips) as [string, ChipAdviceEntry][])
@@ -128,9 +133,22 @@ export function CockpitVerdictBanner({ submittedId = null }: { submittedId?: str
       .reduce((sum, pick) => sum + (byId.get(pick.element)?.xPts_1gw ?? 0), 0)
   }, [squadData, playersData])
 
+  // VERDICT-03: best captain among the players actually owned.
+  const userCaptainName = useMemo(() => {
+    if (!squadData?.picks?.length || !playersData?.length) return undefined
+    const byId = new Map(playersData.map(p => [p.id, p]))
+    const owned = squadData.picks
+      .map(pick => byId.get(pick.element))
+      .filter((p): p is NonNullable<typeof p> => !!p && p.status === 'a')
+    if (owned.length === 0) return undefined
+    const best = owned.reduce((a, b) =>
+      ((b.xPts_90th_1gw ?? b.xPts_1gw ?? 0) > (a.xPts_90th_1gw ?? a.xPts_1gw ?? 0) ? b : a))
+    return best.web_name
+  }, [squadData, playersData])
+
   const isModelSquad = userAdvice === null
   const verdict = buildVerdict(userAdvice ?? transfer, chip, captain,
-                               { isModelSquad, userBenchXPts })
+                               { isModelSquad, userBenchXPts, userCaptainName })
   if (!verdict) return null
 
   return (

@@ -143,3 +143,24 @@ describe('buildVerdict — bench boost must reflect the loaded bench', () => {
     expect(v.sentence).toContain('Bench Boost')
   })
 })
+
+// ---------------------------------------------------------------------------
+// VERDICT-03 (2026-09-02): third instance of the same defect. captain_picks.json
+// is computed from the WHOLE player pool (merge._compute_captain_picks), so the
+// verdict could tell a manager to captain someone they do not own.
+// ---------------------------------------------------------------------------
+describe('buildVerdict — captain must come from the loaded squad', () => {
+  const hold = { hold: true, moves: [], predicted_gain: 0 } as never
+  const globalPick = { ceiling: { name: "O'Reilly" } } as never
+
+  it('names the squad captain when one is supplied', () => {
+    const v = buildVerdict(hold, undefined, globalPick, { userCaptainName: 'Haaland' })!
+    expect(v.sentence).toContain('Haaland')
+    expect(v.sentence).not.toContain("O'Reilly")
+  })
+
+  it('falls back to the global pick, flagged as not owned', () => {
+    const v = buildVerdict(hold, undefined, globalPick, { isModelSquad: true })!
+    expect(v.sentence).toContain("O'Reilly")
+  })
+})
