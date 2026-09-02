@@ -16,6 +16,7 @@ export type ToolId =
   // merges (product-audit 2026-07): value-gems -> gems section; window/
   // transfers-confirmed/next-season -> pre-season; price-reset/price-changes -> prices
   | 'gems' | 'insights' | 'defcon' | 'set-pieces' | 'club-form'   // perfect-gw -> review section
+  | 'news'          // NEWS-01: transfer/squad news, promoted out of the hidden Pre-Season tool
   | 'planner' | 'manual-plan' | 'route-tree' | 'wildcard' | 'pre-season' | 'prices'
   | 'accuracy' | 'season'
 
@@ -54,6 +55,7 @@ export const GROUPS: Group[] = [
     { id: 'defcon',     label: 'DefCon Analysis', mobileLabel: 'DefCon' },
     { id: 'set-pieces', label: 'Set Pieces',      mobileLabel: 'SP' },
     { id: 'club-form',  label: 'Club Form',       mobileLabel: 'Form' },
+    { id: 'news',       label: 'Transfer News',   mobileLabel: 'News' },
   ]},
   { id: 'planning', label: 'Planning', icon: CalendarDays, tools: [
     { id: 'planner',       label: 'Planner',       mobileLabel: 'Planner' },

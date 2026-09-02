@@ -25,7 +25,7 @@ import {
   TransferPanel, OptimiserPanel, WatchlistTab, RankSimTab, RivalsTab,
   GemsHub, InsightsTab, DefConTables, SetPieceTakerPanel, ClubFormTab,
   PlannerTab, ManualPlanTab, RouteTreeTab, WildcardBuilderTab,
-  PreSeasonTab, PricesTab, AccuracyTab, SeasonReviewTab, PlayerComparisonModal,
+  TransferNewsTab, PreSeasonTab, PricesTab, AccuracyTab, SeasonReviewTab, PlayerComparisonModal,
   CaptainPicksPanel,
 } from './dynamic-tabs'
 import { HomeTab } from '@/components/home/HomeTab'
@@ -87,7 +87,9 @@ export default function Home() {
     const LEGACY_ALIASES: Record<string, string> = {
       'decision': 'cockpit', 'value-gems': 'gems',
       'price-reset': 'prices', 'price-changes': 'prices',
-      'window': 'pre-season', 'transfers-confirmed': 'pre-season', 'next-season': 'pre-season',
+      // NEWS-01: the two news surfaces now live in Research, so their legacy
+      // ids point there rather than at the hidden Pre-Season planner.
+      'window': 'news', 'transfers-confirmed': 'news', 'next-season': 'pre-season',
       'perfect-gw': 'review',
     }
     const t = raw !== null ? (LEGACY_ALIASES[raw] ?? raw) : raw
@@ -294,6 +296,7 @@ export default function Home() {
               <CaptainPicksPanel submittedId={submittedId} />
             </>
           )}
+          {activeTool === 'news' && <TransferNewsTab />}
           {activeTool === 'wildcard' && (
             <WildcardBuilderTab submittedId={submittedId} horizon={planHorizon} />
           )}

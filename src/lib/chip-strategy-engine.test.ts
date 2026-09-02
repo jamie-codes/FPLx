@@ -85,6 +85,7 @@ function makePlayer(overrides: Partial<ScoredPlayer> & { id: number; element_typ
     xmins: 90,
     start_prob: 1.0,
     gem_score: 0.5,
+    merit_score: 0.5,
     fdr_score: 0.5,
     form_score: 0.5,
     xg_score: null,

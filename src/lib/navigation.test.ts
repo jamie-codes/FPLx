@@ -3,14 +3,17 @@
 // (docs/superpowers/specs/2026-06-12-uix01-feature-inventory.md); if any tool
 // is dropped from GROUPS this fails before the UI can lose a feature.
 import { describe, it, expect } from 'vitest'
-import { GROUPS, ALL_TOOL_IDS, groupOf } from './navigation'
+import { GROUPS, ALL_TOOL_IDS, groupOf, visibleTools } from './navigation'
 
 // Product-audit 2026-07 folds (owner-approved) — every FEATURE survives inside
 // its merge host; only the standalone nav entries retired. ?t= deep links alias.
 //   'decision'            -> cockpit (DecisionSummaryTab renders inside it)
 //   'value-gems'          -> gems (section of GemsHub)
 //   'price-reset'/'price-changes'                   -> prices (PricesTab sections)
-//   'window'/'transfers-confirmed'/'next-season'    -> pre-season (PreSeasonTab sections)
+//   'next-season'         -> pre-season (PreSeasonTab section)
+//   'window'/'transfers-confirmed'  -> news (NEWS-01: the two news surfaces
+//     came back out of the hidden Pre-Season tool into Research, because who
+//     is sold/loaned/injured stays relevant once the season is under way)
 //   'perfect-gw'          -> review (Perfect XI section of ReviewHub)
 const LEGACY_27 = [
   'gems', 'picks', 'insights', 'defcon', 'set-pieces', 'planner', 'manual-plan',
@@ -21,9 +24,19 @@ const LEGACY_27 = [
 ] as const
 
 describe('navigation.ts completeness (UIX-01)', () => {
-  it('has exactly 24 tool ids (20 surviving legacy + home + cockpit + prices + pre-season) with no duplicates', () => {
-    expect(ALL_TOOL_IDS).toHaveLength(24)   // includes hidden tools
-    expect(new Set(ALL_TOOL_IDS).size).toBe(24)
+  it('has exactly 25 tool ids (20 surviving legacy + home + cockpit + prices + pre-season + news) with no duplicates', () => {
+    expect(ALL_TOOL_IDS).toHaveLength(25)   // includes hidden tools
+    expect(new Set(ALL_TOOL_IDS).size).toBe(25)
+  })
+
+  it('surfaces the news tool in Research, unhidden (NEWS-01)', () => {
+    const research = GROUPS.find((g) => g.id === 'research')!
+    const news = research.tools.find((t) => t.id === 'news')
+    expect(news, 'news tool lives in Research').toBeDefined()
+    // The point of NEWS-01 is visibility — a hidden entry would reproduce the
+    // bug it fixes (the news vanished when Pre-Season was hidden).
+    expect(news!.hidden).toBeUndefined()
+    expect(visibleTools(research).map((t) => t.id)).toContain('news')
   })
 
   it('contains every surviving legacy SubTab id exactly once', () => {

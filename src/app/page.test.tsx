@@ -1,5 +1,5 @@
 // Phase 36 → UIX-01: page.tsx state — per-group memory (port of D-05), home
-// landing, URL sync, all-27-tools re-home, mobile pill labels (D-04 port).
+// landing, URL sync, all-tools re-home, mobile pill labels (D-04 port).
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, fireEvent, cleanup } from '@testing-library/react'
@@ -83,7 +83,7 @@ vi.mock('@/components/next-season/NextSeasonPlannerTab', () => ({
 vi.mock('@/components/season-review/SeasonReviewTab', () => ({
   SeasonReviewTab: (_props: { teamId: string | null }) => <div data-testid="season-review-tab" />,
 }))
-// UIX-01: tools never mounted by the pre-shell tests now get the all-27 sweep
+// UIX-01: tools never mounted by the pre-shell tests now get the all-tools sweep
 vi.mock('@/components/weekly-picks/WeeklyPicksTab', () => ({
   WeeklyPicksTab: () => <div data-testid="weekly-picks-tab" />,
 }))
@@ -145,6 +145,7 @@ vi.mock('@/app/dynamic-tabs', async () => {
     import('@/components/planner/ManualPlanTab'),
     import('@/components/planner/RouteTreeTab'),
     import('@/components/planner/WildcardBuilderTab'),
+    import('@/components/news/TransferNewsTab'),
     import('@/components/next-season/PreSeasonTab'),
     import('@/components/price-changes/PricesTab'),
     import('@/components/accuracy/AccuracyTab'),
@@ -194,7 +195,7 @@ describe('UIX-01: shell state in page.tsx', () => {
     expect(window.location.search).toBe('?t=picks')
   })
 
-  it('every one of the 27 legacy tools renders its component when selected (keep-all-features)', () => {
+  it('every one of the 28 tools renders its component when selected (keep-all-features)', () => {
     const TOOL_TESTID: Record<Exclude<ToolId, 'home'>, string> = {
       'cockpit': 'cockpit-tab',
       'picks': 'weekly-picks-tab',
@@ -211,6 +212,7 @@ describe('UIX-01: shell state in page.tsx', () => {
       'defcon': 'defcon',
       'set-pieces': 'set-piece-taker',
       'club-form': 'club-form-tab',
+      'news': 'transfer-news-tab',
       'planner': 'planner',
       'manual-plan': 'manual-plan-tab',
       'route-tree': 'route-tree-tab',
@@ -291,8 +293,10 @@ describe('UIX-01: shell state in page.tsx', () => {
       ['value-gems', 'gem-table'],          // gems hub, ratings section default
       ['price-reset', 'prices-tab'],
       ['price-changes', 'prices-tab'],
-      ['window', 'pre-season-tab'],
-      ['transfers-confirmed', 'pre-season-tab'],
+      // NEWS-01: these two used to land on Pre-Season, which is hidden during
+      // the season — the news went with it. They now open the News tool.
+      ['window', 'transfer-news-tab'],
+      ['transfers-confirmed', 'transfer-news-tab'],
       ['next-season', 'pre-season-tab'],
       ['perfect-gw', 'review-hub'],
     ]
@@ -341,7 +345,7 @@ describe('UIX-01: shell state in page.tsx', () => {
     const pillRow = container.querySelector('nav[aria-label="Research tools"]')
     expect(pillRow).not.toBeNull()
     const pillLabels = Array.from(pillRow!.querySelectorAll('[role="tab"]')).map((b) => b.textContent)
-    expect(pillLabels).toEqual(['Gems', 'Insights', 'DefCon', 'SP', 'Form'])
+    expect(pillLabels).toEqual(['Gems', 'Insights', 'DefCon', 'SP', 'Form', 'News'])
     // abbreviations, never the desktop labels
     expect(pillRow!.textContent).not.toContain('Gem Ratings')
     expect(pillRow!.textContent).not.toContain('DefCon Analysis')

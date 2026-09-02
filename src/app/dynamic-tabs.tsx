@@ -70,6 +70,9 @@ export const RouteTreeTab = dynamic(
 export const WildcardBuilderTab = dynamic(
   () => import('@/components/planner/WildcardBuilderTab').then(m => m.WildcardBuilderTab),
   { ssr: false, loading })
+export const TransferNewsTab = dynamic(
+  () => import('@/components/news/TransferNewsTab').then(m => m.TransferNewsTab),
+  { ssr: false, loading })
 export const PreSeasonTab = dynamic(
   () => import('@/components/next-season/PreSeasonTab').then(m => m.PreSeasonTab),
   { ssr: false, loading })
