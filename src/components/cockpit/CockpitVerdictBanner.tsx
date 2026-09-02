@@ -36,7 +36,13 @@ export function buildVerdict(
   transfer: VerdictTransfer | TransferAdvice | undefined,
   chip: ChipAdvice | undefined,
   captain: CaptainPicks | undefined,
-  opts: { isModelSquad?: boolean } = {},
+  opts: {
+    isModelSquad?: boolean
+    /** VERDICT-02: bench xPts for the LOADED squad. The pipeline's bench-boost
+     *  signal is computed from the model squad's bench, so it must not be
+     *  asserted over a bench it has never seen. */
+    userBenchXPts?: number
+  } = {},
 ): { sentence: string; gain: number | null } | null {
   const clauses: string[] = []
 
@@ -60,7 +66,15 @@ export function buildVerdict(
 
   if (chip) {
     const playing = (Object.entries(chip.chips) as [string, ChipAdviceEntry][])
-      .filter(([, e]) => e.signal === 'play')
+      .filter(([k, e]) => {
+        if (e.signal !== 'play') return false
+        // Only the model's bench justified this; re-judge it against the real
+        // one when we have it (BB_PLAY = 14.0 xPts in chip_advisor.py).
+        if (k === 'bench_boost' && opts.userBenchXPts !== undefined) {
+          return opts.userBenchXPts >= 14.0
+        }
+        return true
+      })
       .map(([k]) => CHIP_LABELS[k] ?? k)
     clauses.push(playing.length ? `play ${playing.join(' + ')}` : 'hold all chips')
   }
@@ -104,8 +118,19 @@ export function CockpitVerdictBanner({ submittedId = null }: { submittedId?: str
     }
   }, [squadData, playersData, myTeam])
 
+  // VERDICT-02: the loaded squad's own bench value, so the bench-boost signal
+  // is judged against the bench that would actually be boosted.
+  const userBenchXPts = useMemo(() => {
+    if (!squadData?.picks?.length || !playersData?.length) return undefined
+    const byId = new Map(playersData.map(p => [p.id, p]))
+    return squadData.picks
+      .filter(pick => pick.position >= 12)
+      .reduce((sum, pick) => sum + (byId.get(pick.element)?.xPts_1gw ?? 0), 0)
+  }, [squadData, playersData])
+
   const isModelSquad = userAdvice === null
-  const verdict = buildVerdict(userAdvice ?? transfer, chip, captain, { isModelSquad })
+  const verdict = buildVerdict(userAdvice ?? transfer, chip, captain,
+                               { isModelSquad, userBenchXPts })
   if (!verdict) return null
 
   return (

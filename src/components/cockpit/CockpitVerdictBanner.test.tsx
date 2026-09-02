@@ -116,3 +116,30 @@ describe('buildVerdict — whose squad is it about', () => {
     expect(v.sentence.toLowerCase()).not.toContain('model squad')
   })
 })
+
+// ---------------------------------------------------------------------------
+// VERDICT-02 (2026-09-02): the chip clause had the same defect as the transfer
+// clause. build_chip_advice reads ledger['bench'] / model_xi, so "play Bench
+// Boost" reflects the MODEL squad's bench. A user whose own bench is two
+// zero-minute fillers would be told to boost it.
+// ---------------------------------------------------------------------------
+describe('buildVerdict — bench boost must reflect the loaded bench', () => {
+  const captain = { ceiling: { name: 'B.Fernandes' } } as never
+  const modelSaysPlay = { chips: { bench_boost: { signal: 'play' } } } as never
+  const hold = { hold: true, moves: [], predicted_gain: 0 } as never
+
+  it('drops the boost recommendation when the loaded bench is weak', () => {
+    const v = buildVerdict(hold, modelSaysPlay, captain, { userBenchXPts: 3.2 })!
+    expect(v.sentence).not.toContain('Bench Boost')
+  })
+
+  it('keeps it when the loaded bench is genuinely strong', () => {
+    const v = buildVerdict(hold, modelSaysPlay, captain, { userBenchXPts: 18.0 })!
+    expect(v.sentence).toContain('Bench Boost')
+  })
+
+  it('defers to the model signal when no squad is loaded', () => {
+    const v = buildVerdict(hold, modelSaysPlay, captain, { isModelSquad: true })!
+    expect(v.sentence).toContain('Bench Boost')
+  })
+})
