@@ -3,6 +3,9 @@ import type { ClubForm, ClubFormFixture, DifficultyTier } from '@/lib/types'
 // Phase 75 HEAT-07: lifted from inner scope so FixtureHeatMap can import.
 // Tier classification uses FPL-difficulty-scale (fplToAttDiff 0–1).
 // attDiff <= 0.4 → easy (FPL 1–2), attDiff >= 0.6 → hard (FPL 4–5), else medium.
+/** Finished games needed before a fixture-swing baseline means anything. */
+export const MIN_PAST_FIXTURES = 2
+
 export function tier(diff: number): DifficultyTier {
   if (diff <= 0.4) return 'easy'
   if (diff >= 0.6) return 'hard'
@@ -237,7 +240,13 @@ export function computeClubForm(bootstrap: RawBootstrap, fixtures: RawFixture[])
     // meanEase returns null only when no fixtures have a numeric attacking_difficulty.
     // fplToAttDiff always produces a number, so null here is only possible if finishedFx
     // is built from an external source with missing values. Swing fields null-guard downstream.
-    const past_ease_3gw = finishedFx.length >= 3
+    // SWING-02 (2026-09-02): the baseline needs at least MIN_PAST_FIXTURES
+    // finished games, not exactly three. Requiring three meant every swing was
+    // null until GW4 and the Fixture Swing Detector showed nothing at all —
+    // reported as "doesn't work" while Newcastle's fixtures were visibly
+    // improving. Two games is a thin baseline but it is a real one, and
+    // meanEase averages however many are present (up to three).
+    const past_ease_3gw = finishedFx.length >= MIN_PAST_FIXTURES
       ? meanEase(finishedFx, 3, 'attacking_difficulty')
       : null
 

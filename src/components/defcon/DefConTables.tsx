@@ -17,6 +17,7 @@ import type { DefConPlayer, MergedPlayer } from '@/lib/types'
 import { createDefconColumns } from './columns'
 import { LandscapeTip } from '@/components/set-pieces/LandscapeTip'
 import { TableShell, Th, Td, TABLE_CLS, TR_CLS } from '@/components/ui/Table'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 function renderTable(table: Table<DefConPlayer>) {
   return (
@@ -59,6 +60,9 @@ function renderTable(table: Table<DefConPlayer>) {
     </TableShell>
   )
 }
+
+/** Mirrors the `games_played < 5` gate in pipeline/defcon.py — keep in step. */
+const MIN_GAMES = 5
 
 export function DefConTables() {
   const { data, isLoading, error } = useDefCon()
@@ -124,6 +128,22 @@ export function DefConTables() {
 
   if (isLoading) return <div className="text-center py-8 text-ink-muted">Loading DefCon data...</div>
   if (error) return <div className="text-center py-8 text-negative">Failed to load DefCon data</div>
+
+  // DEFCON-02 (2026-09-02): reported as "the tab is blank". The data was
+  // correct — pipeline/defcon.py needs MIN_GAMES appearances per player before
+  // a hit rate means anything, so early in a season the artifact is legitimately
+  // empty. The UI rendered two headers reading "0 players" above empty tables,
+  // which looks broken rather than not-yet-available. Say which it is.
+  if (defPlayers.length === 0 && midFwdPlayers.length === 0) {
+    return (
+      <div className="py-8" data-testid="defcon-empty">
+        <EmptyState
+          title="Not enough games played yet"
+          hint={`DefCon hit rates need at least ${MIN_GAMES} appearances per player to mean anything, so this fills in once the season has run that far. Nothing is broken — check back around GW${MIN_GAMES}.`}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">

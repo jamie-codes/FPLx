@@ -246,3 +246,55 @@ describe('computeClubForm — current_gw_played (Phase 111 FIX-01)', () => {
     expect(tA.current_gw_played[0].event_id).toBe(36)
   })
 })
+
+// ---------------------------------------------------------------------------
+// SWING-02 (2026-09-02): the Fixture Swing Detector was empty all season.
+// past_ease_3gw required exactly three finished fixtures, so two gameweeks in
+// every team's swing was null, every row was filtered out, and the panel
+// rendered nothing — while Newcastle's fixtures were plainly improving.
+// ---------------------------------------------------------------------------
+describe('fixture swing baseline (SWING-02)', () => {
+  function inputs(finishedCount: number) {
+    const teams = [{ id: 1, name: 'Newcastle', short_name: 'NEW' },
+                   { id: 2, name: 'Leeds', short_name: 'LEE' }]
+    const fixtures: Parameters<typeof computeClubForm>[1] = []
+    for (let gw = 1; gw <= finishedCount; gw++) {
+      fixtures.push({
+        event: gw, team_h: 1, team_a: 2, finished: true,
+        team_h_score: 1, team_a_score: 1,
+        team_h_difficulty: 5, team_a_difficulty: 2,   // NEW hard, LEE easy so far
+      })
+    }
+    for (let gw = finishedCount + 1; gw <= finishedCount + 5; gw++) {
+      fixtures.push({
+        event: gw, team_h: 1, team_a: 2, finished: false,
+        team_h_score: null, team_a_score: null,
+        team_h_difficulty: 2, team_a_difficulty: 5,   // now NEW easy, LEE hard
+      })
+    }
+    return { bootstrap: { teams, events: [] }, fixtures }
+  }
+
+  it('produces a swing after two finished games, not three', () => {
+    const { bootstrap, fixtures } = inputs(2)
+    const [newcastle] = computeClubForm(bootstrap, fixtures)
+    expect(newcastle.past_ease_3gw).not.toBeNull()
+    expect(newcastle.swing_3gw).not.toBeNull()
+  })
+
+  it('signs the swing correctly: improving positive, worsening negative', () => {
+    const { bootstrap, fixtures } = inputs(2)
+    const form = computeClubForm(bootstrap, fixtures)
+    const newcastle = form.find(t => t.team_short_name === 'NEW')!
+    const leeds = form.find(t => t.team_short_name === 'LEE')!
+    expect(newcastle.swing_3gw!).toBeGreaterThan(0)   // hard -> easy
+    expect(leeds.swing_3gw!).toBeLessThan(0)          // easy -> hard
+  })
+
+  it('still withholds a swing with only one game played', () => {
+    const { bootstrap, fixtures } = inputs(1)
+    const [team] = computeClubForm(bootstrap, fixtures)
+    expect(team.past_ease_3gw).toBeNull()
+    expect(team.swing_3gw).toBeNull()
+  })
+})

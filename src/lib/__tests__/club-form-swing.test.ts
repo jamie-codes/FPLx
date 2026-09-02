@@ -184,16 +184,18 @@ describe('computeClubForm swing fields', () => {
   // -------------------------------------------------------------------------
   // Test 5: Team with 2 finished fixtures (fewer than 3).
   // The implementation guards: `finishedFx.length >= 3`, so past_ease_3gw = null
-  // when fewer than 3 finished fixtures exist. This is the actual production
-  // behaviour — past_ease_3gw requires exactly 3 finished fixtures to be non-null.
-  // swing_1gw is therefore also null (past_ease_3gw side is null).
+  // SWING-02 (2026-09-02): the guard is now MIN_PAST_FIXTURES (2), not 3.
+  // Requiring three meant every swing stayed null until GW4, so the Fixture
+  // Swing Detector showed nothing for the first month of a season while
+  // fixtures were visibly swinging. Two games is a thin baseline but a real
+  // one; ONE game is still withheld.
   // -------------------------------------------------------------------------
-  it('Test 5: team with 2 finished fixtures gets past_ease_3gw=null (< 3 guard)', () => {
+  it('Test 5: two finished fixtures now yield a baseline; one does not', () => {
     const FOCAL = 1
     const OPP = 2
     const bootstrap = makeBootstrap([FOCAL, OPP])
 
-    // 2 finished fixtures (not enough to satisfy the >= 3 guard)
+    // 2 finished fixtures — enough for a baseline under MIN_PAST_FIXTURES
     const finished = [
       makeFixture({ team_h: FOCAL, team_a: OPP, event: 1, finished: true, team_h_difficulty: 2, team_a_difficulty: 2 }),
       makeFixture({ team_h: FOCAL, team_a: OPP, event: 2, finished: true, team_h_difficulty: 2, team_a_difficulty: 2 }),
@@ -206,14 +208,18 @@ describe('computeClubForm swing fields', () => {
     const result = computeClubForm(bootstrap, [...finished, ...upcoming])
     const team = result.find(r => r.team_id === FOCAL)!
 
-    // Implementation requires >= 3 finished fixtures for past_ease_3gw to be non-null.
-    // With only 2 finished fixtures, past_ease_3gw is null.
-    expect(team.past_ease_3gw).toBeNull()
+    // Two finished fixtures now give a baseline, so a swing is measurable.
+    expect(team.past_ease_3gw).not.toBeNull()
+    expect(team.swing_1gw).not.toBeNull()
+    expect(team.swing_3gw).not.toBeNull()
+    // Past games were difficulty 2, upcoming are difficulty 1 — improving.
+    expect(team.swing_3gw!).toBeGreaterThan(0)
 
-    // swing values are null because past_ease_3gw is null
-    expect(team.swing_1gw).toBeNull()
-    expect(team.swing_3gw).toBeNull()
-    expect(team.swing_5gw).toBeNull()
+    // One game is still too thin to compare against.
+    const onlyOne = computeClubForm(bootstrap, [finished[0], ...upcoming])
+      .find(r => r.team_id === FOCAL)!
+    expect(onlyOne.past_ease_3gw).toBeNull()
+    expect(onlyOne.swing_3gw).toBeNull()
   })
 
   // -------------------------------------------------------------------------

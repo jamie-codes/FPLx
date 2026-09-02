@@ -221,14 +221,27 @@ export function FixtureSwingDetector() {
     )
   }
 
+  // SWING-02 (2026-09-02): "no teams with improving fixtures" and "we cannot
+  // tell yet" are different statements, and the panel used to make the first
+  // when it meant the second — every swing was null before GW4, so both
+  // sections read as a confident "none" while fixtures were visibly swinging.
+  const noBaselineYet = withSwing.length === 0
+
   return (
     <section className="mb-6" data-testid="fixture-swing-panel">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <h2 className="text-xl font-bold">Fixture Swing Detector</h2>
         <GwToggle value={win} onChange={setWin} />
       </div>
+      {noBaselineYet && (
+        <p className="text-ink-muted text-sm" data-testid="swing-no-baseline">
+          Not enough played fixtures yet to measure a swing — this compares the
+          upcoming run against recent games, so it needs a couple of gameweeks
+          on the board first.
+        </p>
+      )}
       {/* Improving section */}
-      <div className="mb-4">
+      <div className="mb-4" hidden={noBaselineYet}>
         <h3 className="text-sm font-semibold mb-2 text-positive">Improving</h3>
         {improving.length === 0 ? (
           <p className="text-ink-muted text-sm">
@@ -241,7 +254,7 @@ export function FixtureSwingDetector() {
         )}
       </div>
       {/* Worsening section */}
-      <div>
+      <div hidden={noBaselineYet}>
         <h3 className="text-sm font-semibold mb-2 text-warning">Worsening</h3>
         {worsening.length === 0 ? (
           <p className="text-ink-muted text-sm">
