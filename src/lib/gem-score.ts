@@ -91,7 +91,6 @@ export function computeAllGemScores(players: MergedPlayer[]): ScoredPlayer[] {
 
     const ownershipRaw = 1.0 - parseFloat(player.selected_by_percent) / 100
     const ownership_score = normalise(ownershipRaw, stats.ownership)
-    dims.push(ownership_score)
 
     const minutes_score = normalise(player.minutes_per90, stats.minutes)
     dims.push(minutes_score)
@@ -100,11 +99,21 @@ export function computeAllGemScores(players: MergedPlayer[]): ScoredPlayer[] {
     const set_piece_score = normalise(spRank, stats.setpiece)
     dims.push(set_piece_score)
 
+    // MERIT-01 (2026-09-02): Merit is the same blend WITHOUT the differential-
+    // ownership dimension — how good the player is regardless of how many
+    // people own him. Gem deliberately rewards being under-owned, which is the
+    // right question when chasing rank and the wrong one when you simply want
+    // the best player. Both are means over their dimensions, so dropping one
+    // renormalises on its own and the two stay directly comparable.
+    const merit_score = dims.reduce((s, d) => s + d, 0) / dims.length
+
+    dims.push(ownership_score)
     const gem_score = dims.reduce((s, d) => s + d, 0) / dims.length
 
     return {
       ...player,
       gem_score,
+      merit_score,
       fdr_score,
       form_score,
       xg_score,

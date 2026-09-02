@@ -354,6 +354,9 @@ export interface DefConPlayer {
 // Scored player with Gem composite and dimension scores (Phase 3)
 export interface ScoredPlayer extends MergedPlayer {
   gem_score: number           // 0.0-1.0 normalised composite
+  // MERIT-01: the same composite with differential ownership removed — player
+  // quality irrespective of how many managers own him. Same 0-1 scale as gem.
+  merit_score: number
   fdr_score: number           // fixture difficulty (inverted: easy fixtures = high score)
   form_score: number          // per-90 form points
   xg_score: number | null     // xG/90 (null when xg_per90 is null)

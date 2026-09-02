@@ -57,6 +57,7 @@ function makeScoredPlayer(overrides: Partial<ScoredPlayer> = {}): ScoredPlayer {
     mins_risk: 'nailed' as const,
     // ScoredPlayer dimensions
     gem_score: 0.5,
+    merit_score: 0.5,
     fdr_score: 0.5,
     form_score: 0.5,
     xg_score: 0.5,

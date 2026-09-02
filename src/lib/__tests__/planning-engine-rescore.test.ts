@@ -54,6 +54,7 @@ function makePlayer(overrides: Partial<ScoredPlayer> & { id: number; element_typ
     start_prob: 1.0,
     mins_risk: 'nailed',
     gem_score: overrides.gem_score ?? 0.5,
+    merit_score: 0.5,
     fdr_score: 0.5,
     form_score: 0.5,
     xg_score: null,

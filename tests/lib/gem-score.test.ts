@@ -144,3 +144,60 @@ describe('computeAllGemScores', () => {
     }
   })
 })
+
+// ---------------------------------------------------------------------------
+// MERIT-01 (2026-09-02): Merit score — the Gem blend with differential
+// ownership removed. Gem rewards being under-owned, which is what you want
+// when hunting rank; Merit answers the other question: how good is this player
+// regardless of how many people own him.
+//
+// gem_score is an unweighted mean of its dimensions, so dropping one
+// renormalises automatically — Merit stays on the same 0-1 scale as Gem.
+// ---------------------------------------------------------------------------
+describe('merit_score', () => {
+  it('is emitted on every scored player, on the same 0-1 scale as gem', () => {
+    const scored = computeAllGemScores([
+      makeMergedPlayer({ id: 1, selected_by_percent: '2.0' }),
+      makeMergedPlayer({ id: 2, selected_by_percent: '60.0' }),
+    ])
+    for (const p of scored) {
+      expect(p.merit_score).toBeGreaterThanOrEqual(0)
+      expect(p.merit_score).toBeLessThanOrEqual(1)
+    }
+  })
+
+  it('is identical for two players who differ ONLY in ownership', () => {
+    const [low, high] = computeAllGemScores([
+      makeMergedPlayer({ id: 1, selected_by_percent: '1.0' }),
+      makeMergedPlayer({ id: 2, selected_by_percent: '75.0' }),
+    ])
+    // Gem separates them (that is its job); Merit must not.
+    expect(low.merit_score).toBeCloseTo(high.merit_score, 10)
+  })
+
+  it('still separates players who differ on football quality', () => {
+    const [weak, strong] = computeAllGemScores([
+      makeMergedPlayer({ id: 1, form_pts_per90: 1.0, xg_per90: 0.05, xa_per90: 0.02 }),
+      makeMergedPlayer({ id: 2, form_pts_per90: 9.0, xg_per90: 0.9, xa_per90: 0.6 }),
+    ])
+    expect(strong.merit_score).toBeGreaterThan(weak.merit_score)
+  })
+
+  it('ranks a heavily-owned strong player above an unowned weak one, unlike gem', () => {
+    const [popular, hidden] = computeAllGemScores([
+      makeMergedPlayer({ id: 1, selected_by_percent: '70.0',
+                         form_pts_per90: 9.0, xg_per90: 0.9, xa_per90: 0.6 }),
+      makeMergedPlayer({ id: 2, selected_by_percent: '0.5',
+                         form_pts_per90: 1.0, xg_per90: 0.05, xa_per90: 0.02 }),
+    ])
+    expect(popular.merit_score).toBeGreaterThan(hidden.merit_score)
+  })
+
+  it('leaves gem_score itself unchanged (ownership still counts there)', () => {
+    const [lowOwned, highOwned] = computeAllGemScores([
+      makeMergedPlayer({ id: 1, selected_by_percent: '1.0' }),
+      makeMergedPlayer({ id: 2, selected_by_percent: '75.0' }),
+    ])
+    expect(lowOwned.gem_score).toBeGreaterThan(highOwned.gem_score)
+  })
+})

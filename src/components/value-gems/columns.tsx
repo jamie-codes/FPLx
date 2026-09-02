@@ -68,6 +68,11 @@ export const columns = [
     header: H('Gem', 'Composite Gem score (0–100): weighted blend of FDR, form, xG/90, xA/90, differential ownership, minutes reliability, and set-piece role'),
     cell: (info) => fmtScore(info.getValue()),
   }),
+  // MERIT-01: Gem without the differential-ownership dimension.
+  col.accessor('merit_score', {
+    header: H('Merit', 'Merit score (0–100): the same blend as Gem but with differential ownership removed — how good the player is regardless of how widely owned.'),
+    cell: (info) => fmtScore(info.getValue()),
+  }),
   col.display({
     id: 'trend',
     header: 'Trend',

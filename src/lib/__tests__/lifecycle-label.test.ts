@@ -62,6 +62,7 @@ function makePlayer(overrides: Partial<ScoredPlayer> = {}): ScoredPlayer {
     start_prob: 0.85,
     mins_risk: 'likely_start',
     gem_score: 0.5,
+    merit_score: 0.5,
     fdr_score: 0.5,
     form_score: 0.5,
     xg_score: 0.5,

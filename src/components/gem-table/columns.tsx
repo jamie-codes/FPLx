@@ -243,6 +243,13 @@ export function createColumns(
     header: H('Gem', 'Composite Gem score (0–100): weighted blend of FDR, form, xG/90, xA/90, differential ownership, minutes reliability, and set-piece role'),
     cell: (info) => <GemScoreCell value={info.getValue()} />,
   }),
+  // MERIT-01 (2026-09-02): Gem without the differential-ownership dimension —
+  // the same football signal, judged on its own rather than on how many people
+  // have spotted it. Sits beside Gem so the pair reads as one comparison.
+  col.accessor('merit_score', {
+    header: H('Merit', 'Merit score (0–100): the same blend as Gem but with differential ownership removed — how good the player is regardless of how widely owned. Use Gem when hunting rank, Merit when you just want the best player.'),
+    cell: (info) => <GemScoreCell value={info.getValue()} />,
+  }),
   col.accessor('fdr_score', {
     header: H('FDR', 'Fixture Difficulty Rating score (0–100): higher = easier upcoming fixtures'),
     cell: (info) => fmtScore(info.getValue()),
