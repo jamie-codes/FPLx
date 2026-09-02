@@ -288,6 +288,20 @@ export type TransferSuggestion =
       xPtsGainPerGw: number
       breakEvenGws: number | null
     }
+  // FT-02 (2026-09-02): three or more legs, for managers who have rolled free
+  // transfers (FPL banks up to 5). Deliberately a SEPARATE kind rather than
+  // widening `combo`: consumers filter on `kind === 'combo'` and then read
+  // transfers[0] and [1], so a 3-leg suggestion arriving as a combo would be
+  // silently truncated. Exhaustive enumeration is impossible at this depth —
+  // these are assembled greedily from the best individually-positive legs.
+  | {
+      kind: 'multi'
+      transfers: Array<{ sell: MergedPlayer; buy: MergedPlayer }>   // length >= 3
+      cost: number             // 4 * max(0, legs - ftCount)
+      xPtsGain: number
+      xPtsGainPerGw: number
+      breakEvenGws: number | null
+    }
 
 // Chip modes (Phase 46 CHIP-01..CHIP-03) — selector state in OptimiserPanel (D-04).
 // 'none' = current behaviour; 'wildcard' / 'free-hit' call buildOptimalSquad();

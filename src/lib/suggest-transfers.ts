@@ -48,7 +48,8 @@ export interface SuggestTransfersParams {
   currentPicks: SquadPick[]
   players: MergedPlayer[]
   horizon: OptimiserHorizon
-  ftCount: 1 | 2
+  /** Free transfers banked (FPL allows up to 5). Legs beyond this cost 4pts each. */
+  ftCount: number
   bank: number
   sellPrices?: Map<number, number>
   targetGw?: number   // Phase 101 GWT-01: when set, bypasses HORIZON_FIELD; uses computeGwXpts
@@ -82,7 +83,7 @@ function sellValueFor(
  *
  * Widened to accept cost: 0 | 4 | 8 (Phase 74 TFX plan) — formula generalises to cost=8.
  */
-function breakEven(cost: 0 | 4 | 8, xPtsGainPerGw: number): number | null {
+function breakEven(cost: number, xPtsGainPerGw: number): number | null {
   if (cost === 0) return null
   if (xPtsGainPerGw <= 0) return null
   return Math.max(1, Math.ceil(cost / xPtsGainPerGw))
@@ -194,7 +195,7 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
 
       // HIT variant — only relevant when ftCount=1 (spending the FT elsewhere means this costs -4pts).
       // When ftCount=2, every single transfer is free — no hit entries needed.
-      if (ftCount === 1) {
+      if (ftCount <= 1) {
         singles.push({
           kind: 'single',
           sell,
@@ -247,7 +248,7 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
           const xPtsGainPerGw = xPtsGain / denominator
           // cost:0 when ftCount=2 (both transfers covered by free transfers)
           // cost:4 when ftCount=1 (second transfer is a −4pt hit)
-          const cost: 0 | 4 = ftCount === 2 ? 0 : 4
+          const cost: 0 | 4 = ftCount >= 2 ? 0 : 4
           combos.push({
             kind: 'combo',
             transfers: [
@@ -264,9 +265,60 @@ export function suggestTransfers(params: SuggestTransfersParams): TransferSugges
     }
   }
 
+  // ---------- 3+ leg assembly (FT-02) ----------
+  // Exhaustive enumeration is out of the question past two legs (a third nested
+  // loop is ~10^7 combinations), so plans of 3..5 are assembled GREEDILY from
+  // the best individually-positive legs: take the highest-gain leg, then the
+  // next whose sell, buy and budget do not clash, and so on. Each leg must
+  // improve the squad on its own, which is the same rule the 2-leg path uses.
+  const multis: TransferSuggestion[] = []
+  // Always consider at least three legs, matching the 2-leg path which is
+  // enumerated regardless of ftCount so the UI can price a hit (D-06).
+  // Cost, not availability, is what reflects the transfers banked.
+  const maxLegs = Math.min(5, Math.max(ftCount, 3))
+  {
+    // One best buy per owned player, highest gain first.
+    const bestLegs = [...singles]
+      .filter(s => s.kind === 'single' && s.cost === 0)
+      .sort((a, b) => b.xPtsGain - a.xPtsGain) as Extract<TransferSuggestion, { kind: 'single' }>[]
+
+    const chosen: { sell: MergedPlayer; buy: MergedPlayer; gain: number }[] = []
+    const usedSells = new Set<number>()
+    const usedBuys = new Set<number>()
+    let pot = bank
+    for (const leg of bestLegs) {
+      if (chosen.length >= maxLegs) break
+      if (usedSells.has(leg.sell.id) || usedBuys.has(leg.buy.id)) continue
+      const proceeds = pot + sellValueFor(leg.sell.id, sellPrices, playerById)
+      if (proceeds < leg.buy.now_cost) continue      // budget across all legs
+      pot = proceeds - leg.buy.now_cost
+      usedSells.add(leg.sell.id)
+      usedBuys.add(leg.buy.id)
+      chosen.push({ sell: leg.sell, buy: leg.buy, gain: leg.xPtsGain })
+    }
+
+    // Emit every depth from 3 up, so the UI can compare "3 free" against
+    // "4 with a hit" rather than only seeing the deepest plan.
+    for (let legs = 3; legs <= chosen.length; legs++) {
+      const slice = chosen.slice(0, legs)
+      const xPtsGain = slice.reduce((sum, c) => sum + c.gain, 0)
+      if (xPtsGain <= 0) continue
+      const cost = 4 * Math.max(0, legs - ftCount)
+      const xPtsGainPerGw = xPtsGain / denominator
+      multis.push({
+        kind: 'multi',
+        transfers: slice.map(c => ({ sell: c.sell, buy: c.buy })),
+        cost,
+        xPtsGain,
+        xPtsGainPerGw,
+        breakEvenGws: breakEven(cost, xPtsGainPerGw),
+      })
+    }
+  }
+
   // Sort all suggestions by xPtsGain descending (highest gain first).
   // Tie-breaker: lower cost wins (FREE preferred over hit).
-  const all: TransferSuggestion[] = [...singles, ...combos]
+  const all: TransferSuggestion[] = [...singles, ...combos, ...multis]
   all.sort((a, b) => {
     if (b.xPtsGain !== a.xPtsGain) return b.xPtsGain - a.xPtsGain
     return a.cost - b.cost

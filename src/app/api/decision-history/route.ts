@@ -393,7 +393,8 @@ export async function GET(request: NextRequest) {
       // combo kind has two transfers [{sell, buy}, {sell, buy}]; single kind has one sell/buy.
       let engineOutIds: number[]
       let engineInIds: number[]
-      if (top.kind === 'combo') {
+      if (top.kind === 'combo' || top.kind === 'multi') {
+        // FT-02: 'multi' carries 3+ legs for managers with rolled transfers.
         engineOutIds = top.transfers.map((t) => t.sell.id)
         engineInIds = top.transfers.map((t) => t.buy.id)
       } else {

@@ -33,9 +33,13 @@ export interface OCSRow {
 
 export function computeOpportunityCostRows(
   suggestions: TransferSuggestion[],
-  ftCount: 1 | 2,
+  // FT-02: accepts the true banked count (up to 5). This table compares the
+  // roll / 1-transfer / 2-transfer decision, so anything >= 2 behaves like 2
+  // here; deeper plans surface as kind:'multi' suggestions instead of new rows.
+  ftCountRaw: number,
   bank: number,                           // in tenths of £1m
 ): OCSRow[] {
+  const ftCount: 1 | 2 = ftCountRaw >= 2 ? 2 : 1
   // Sell value for a player: the mapper does not receive the sellPrices map — it uses
   // the player's now_cost as a conservative proxy (same as the engine's fallback).
   const sellValueFor = (p: MergedPlayer): number => p.now_cost

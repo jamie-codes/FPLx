@@ -121,15 +121,13 @@ export function TransferPanel({ teamId, onTeamIdChange, submittedId, onSubmit }:
     return new Map(myTeamData.picks.map(p => [p.element, p.selling_price]))
   }, [myTeamData])
 
-  const derivedFtCount: 1 | 2 = useMemo(() => {
+  const derivedFtCount: number = useMemo(() => {
     // CR-02 (gap-closure 074-05): unauthenticated path now reads the manual freeTransfers input.
     // Authenticated path still derives from FPL myTeamData / chip state.
-    // suggestTransfers only enumerates 1-2 transfer combinations, so it is
-    // clamped here. The funding planner below uses the true banked count.
-    if (!isAuthenticated || !myTeamData) {
-      return (freeTransfers >= 2 ? 2 : 1) as 1 | 2
-    }
-    return Math.min(bankedFreeTransfers(myTeamData, squadData?.active_chip), 2) as 1 | 2
+    // FT-02: suggestTransfers now reasons about rolled transfers (up to 5),
+    // so the true banked count is passed through rather than clamped to 2.
+    if (!isAuthenticated || !myTeamData) return freeTransfers
+    return bankedFreeTransfers(myTeamData, squadData?.active_chip)
   }, [isAuthenticated, myTeamData, squadData, freeTransfers])
 
   // Pre-fill manualBank from FPL when authenticated. DO NOT include manualBank in deps (Pitfall 5)
