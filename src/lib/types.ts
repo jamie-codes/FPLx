@@ -625,7 +625,11 @@ export interface ClubForm {
 // Planner types (Phase 21+)
 // ---------------------------------------------------------------------------
 
-export type PlannerHorizon = 1 | 2 | 3 | 4 | 5
+// PLAN-01 (2026-09-03): 8 added on owner request — "maximum 5, sometimes 8".
+// Safe at 8: planning-engine scores each step as xPts_1gw * fixtureCountForGw,
+// reading the 32-gameweek fixture list rather than the 5-entry gw_xpts, and
+// transfer-route-tree is linear in horizon (3 roots x horizon x 15 x 20).
+export type PlannerHorizon = 1 | 2 | 3 | 4 | 5 | 8
 
 export type PlannerChip = 'wildcard' | 'freehit' | 'bboost' | '3xc' | null
 

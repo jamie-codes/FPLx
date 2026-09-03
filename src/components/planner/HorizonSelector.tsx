@@ -2,7 +2,7 @@
 
 import type { PlannerHorizon } from '@/lib/types'
 
-const HORIZONS: PlannerHorizon[] = [1, 2, 3, 4, 5]
+const HORIZONS: PlannerHorizon[] = [1, 2, 3, 4, 5, 8]
 
 interface Props {
   value: PlannerHorizon

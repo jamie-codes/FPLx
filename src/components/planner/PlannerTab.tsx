@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useImmer } from 'use-immer'
 import { TransferPlanTable } from './TransferPlanTable'
 import { ChipStrategyPanel } from './ChipStrategyPanel'
@@ -82,6 +82,18 @@ export function PlannerTab({ horizon }: PlannerTabProps) {
   // Button enabled when squad picks and player scores are both loaded
   const canGenerate =
     picks != null && picks.length > 0 && scoredPlayers.length > 0 && startingGw !== null
+
+  // PLAN-01 (2026-09-03): the horizon selector appeared inert. `horizon` is only
+  // read inside handleGeneratePlan, so changing it left an already-generated plan
+  // on screen unchanged — the buttons moved but nothing did. Regenerate when it
+  // changes, which also discards per-step edits: the horizon is the plan's
+  // defining input, so a new horizon is a new plan.
+  const lastHorizon = useRef(horizon)
+  useEffect(() => {
+    if (lastHorizon.current === horizon) return
+    lastHorizon.current = horizon
+    if (planResult && canGenerate) handleGeneratePlan()
+  })
 
   function handleGeneratePlan() {
     if (!picks || !startingGw) return

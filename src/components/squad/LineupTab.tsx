@@ -8,7 +8,7 @@ import { isLegalSwap, applySwap } from '@/lib/lineup-swap'
 import type { OptimisedLineup, MergedPlayer, FixtureEntry, LineupNewsPlayer } from '@/lib/types'
 import { useLineupNews } from '@/lib/hooks/useLineupNews'
 import { StatusLabelBadge } from '@/components/shared/StatusLabelBadge'
-import { teamKitUrl } from '@/lib/fpl-images'
+import { teamKitUrl, playerImageUrl } from '@/lib/fpl-images'
 import { TEAM_BADGE_CODE } from '@/lib/team-colours'
 import { useTeamBadge } from '@/lib/hooks/useTeamBadge'
 import { countPlayersWithFixture, nextGameweekId } from '@/lib/blank-gameweek'
@@ -91,22 +91,38 @@ function FixtureChip({ fixture, className = '' }: { fixture: NextFixture | null;
 
 // ─── Kit / photo tile ───────────────────────────────────────────────────────
 
-/** The tile shows a player photo when we have one, otherwise the team kit,
- *  otherwise a flat team colour — never one stacked over another.
- *  photo_url is the api-football headshot (PHOTO-01); it is frequently null, so
- *  the kit is chosen up front rather than after a failed request. */
+/** One image per tile — a photo or the kit, never one stacked over the other.
+ *
+ *  Source order matters and is the opposite of playerImageUrl's default. The two
+ *  photo sources are different pictures, not different sizes of one:
+ *
+ *    PL 110x140   portrait, head at the top and the current shirt filling the
+ *                 lower two thirds, badge and sponsor legible. 220x280 actual,
+ *                 which is almost exactly the tile's 11:13.
+ *    api-football 150x150 head-only crop — a collar is all the shirt there is.
+ *
+ *  The kit is what makes a pitch readable at a glance, so the PL portrait leads
+ *  and the headshot backs it up. That reverses the brief's "do not wire this to
+ *  resources.premierleague.com" on the owner's explicit request (2026-09-03);
+ *  the brief's concern was staleness, which the headshot fallback covers — a
+ *  new signing with no PL photo yet still gets a face rather than a blank. */
 function KitTile({ id, player, size }: { id: number; player: MergedPlayer; size: 'pitch' | 'bench' }) {
   const { onError, showFallback, fallbackColour } = useTeamBadge(player.team_short_name)
-  const [photoFailed, setPhotoFailed] = useState(false)
+  const [step, setStep] = useState(0)
   const teamCode = TEAM_BADGE_CODE[player.team_short_name]
-  const usePhoto = Boolean(player.photo_url) && !photoFailed
-  const src = usePhoto ? player.photo_url! : teamKitUrl(teamCode!)
+
+  const ladder: { src: string; kind: 'photo' | 'kit' }[] = [
+    ...(player.code ? [{ src: playerImageUrl(player.code), kind: 'photo' as const }] : []),
+    ...(player.photo_url ? [{ src: player.photo_url, kind: 'photo' as const }] : []),
+    ...(teamCode ? [{ src: teamKitUrl(teamCode), kind: 'kit' as const }] : []),
+  ]
+  const current = ladder[Math.min(step, ladder.length - 1)]
 
   const box = size === 'pitch'
     ? 'w-full max-w-[72px] aspect-[11/13] rounded-t-lg'
     : 'w-[30px] h-[36px] shrink-0 rounded-[5px]'
 
-  if (showFallback) {
+  if (showFallback || !current) {
     return (
       <div
         role="img"
@@ -121,14 +137,15 @@ function KitTile({ id, player, size }: { id: number; player: MergedPlayer; size:
     <div className={`relative ${box} bg-white dark:bg-[#1b201a] overflow-hidden`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={src}
-        alt={usePhoto ? player.web_name : `${player.team_short_name} kit`}
+        src={current.src}
+        alt={current.kind === 'photo' ? player.web_name : `${player.team_short_name} kit`}
         data-testid={`pitch-card-kit-${id}`}
-        className="w-full h-full object-contain object-bottom"
-        // Two-stage fallback: a dead photo drops to the kit, a dead kit drops to
-        // the flat team colour. object-bottom keeps heads and shirts at the same
-        // height across both, so the swap causes no reflow.
-        onError={usePhoto ? () => setPhotoFailed(true) : onError}
+        // A photo fills the tile anchored at the head, so the shirt occupies the
+        // space the eye lands on. A kit graphic is contained instead — cropping
+        // a shirt icon just clips the sleeves off.
+        className={`w-full h-full ${current.kind === 'photo' ? 'object-cover object-top' : 'object-contain object-bottom'}`}
+        // Walk the ladder on failure, then hand off to the flat team colour.
+        onError={step < ladder.length - 1 ? () => setStep(s => s + 1) : onError}
       />
     </div>
   )

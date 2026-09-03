@@ -637,4 +637,54 @@ describe('Phase 72: LineupTab', () => {
       expect(tiles()).toContain('14.0')
     })
   })
+  describe('PITCH-01: card image source ladder', () => {
+    // The two photo sources are different pictures, not two sizes of one: the PL
+    // 110x140 is a portrait showing the current shirt, api-football's 150x150 is
+    // a head-only crop. The shirt is what makes a pitch readable at a glance, so
+    // the portrait has to lead.
+    function renderOne(over: Partial<MergedPlayer>) {
+      const { players, squadResp } = makeValidSquad()
+      // A real short name so TEAM_BADGE_CODE resolves and useTeamBadge does not
+      // short-circuit to the flat-colour fallback before an image is attempted.
+      const patched = players.map(p => (p.id === 1 ? { ...p, team_short_name: 'MUN', ...over } : p))
+      useSquadMock.mockReturnValue({ data: squadResp, isLoading: false, error: null })
+      usePlayersMock.mockReturnValue({ data: patched, isLoading: false })
+      return render(<LineupTab teamId="123" />).container
+    }
+
+    it('leads with the Premier League kit portrait, not the headshot', () => {
+      const c = renderOne({ code: 223094, photo_url: 'https://media.api-sports.io/x.png' })
+      const img = c.querySelector('[data-testid="pitch-card-kit-1"]') as HTMLImageElement
+      expect(img.getAttribute('src')).toContain('resources.premierleague.com')
+      expect(img.getAttribute('src')).toContain('223094')
+      // A photo fills the tile from the head down so the shirt reads.
+      expect(img.className).toContain('object-cover')
+      expect(img.className).toContain('object-top')
+    })
+
+    it('falls back to the headshot when the portrait 404s, then to the kit', () => {
+      const c = renderOne({ code: 223094, photo_url: 'https://media.api-sports.io/x.png' })
+      const img = () => c.querySelector('[data-testid="pitch-card-kit-1"]') as HTMLImageElement
+      fireEvent.error(img())
+      expect(img().getAttribute('src')).toBe('https://media.api-sports.io/x.png')
+      fireEvent.error(img())
+      const src = img().getAttribute('src')!
+      expect(src).toContain('shirt_')
+      // The kit is a graphic, not a photo — cropping it clips the sleeves.
+      expect(img().className).toContain('object-contain')
+    })
+
+    it('skips straight to the kit for a player with no photo of either kind', () => {
+      const c = renderOne({ code: 0, photo_url: null })
+      const img = c.querySelector('[data-testid="pitch-card-kit-1"]') as HTMLImageElement
+      expect(img.getAttribute('src')).toContain('shirt_')
+    })
+
+    it('a new signing with no PL portrait still gets a face', () => {
+      // The brief warned PL photos go stale; the headshot fallback is the answer.
+      const c = renderOne({ code: 0, photo_url: 'https://media.api-sports.io/new.png' })
+      const img = c.querySelector('[data-testid="pitch-card-kit-1"]') as HTMLImageElement
+      expect(img.getAttribute('src')).toBe('https://media.api-sports.io/new.png')
+    })
+  })
 })
