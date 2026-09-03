@@ -29,6 +29,21 @@
   --sp-volt: #c8f542; --sp-on-volt: #0c0e0d;
   /* §5: deadline-card surfaces (text uses the theme-adaptive --sp-accent). */
   --sp-deadline-bg: #eef4e6; --sp-deadline-border: #e2e7de;
+  /* PITCH-01: turf surface. These are NOT semantic tokens — nothing else in the
+     app sits on grass, and the name plate over them is its own contrast case
+     (see the fdr ramp note below). */
+  --sp-turf: #2f7a34; --sp-turf-edge: #256428;
+  --sp-turf-stripe-a: rgba(255, 255, 255, 0.06);
+  --sp-turf-stripe-b: rgba(255, 255, 255, 0.13);
+  --sp-chalk: rgba(255, 255, 255, 0.55);
+  /* PITCH-01: FDR ramp, 1 (easiest) to 5 (hardest). Theme-paired rather than a
+     single fixed ramp, because a chip that reads on white is a glare on turf.
+     Every pair clears 4.5:1 on its own background. */
+  --sp-fdr-1-bg: #d9f2c4; --sp-fdr-1-ink: #2f5411;
+  --sp-fdr-2-bg: #e6f6d6; --sp-fdr-2-ink: #3d6412;
+  --sp-fdr-3-bg: #f0efe4; --sp-fdr-3-ink: #5f6a58;
+  --sp-fdr-4-bg: #fbe2d6; --sp-fdr-4-ink: #9a3412;
+  --sp-fdr-5-bg: #f7d5d5; --sp-fdr-5-ink: #b91c1c;
 }
 .dark {
   --sp-surface-0: #0c0e0d; --sp-surface-1: #101311; --sp-surface-2: #12160f;
@@ -45,6 +60,16 @@
   --sp-focus-ring: rgba(200, 245, 66, 0.45);
   /* §5: deadline-card surfaces (dark). */
   --sp-deadline-bg: #12150f; --sp-deadline-border: #2b331f;
+  /* PITCH-01: turf goes near-black in dark so the kit tiles carry the contrast. */
+  --sp-turf: #0f2a12; --sp-turf-edge: #1c2a1a;
+  --sp-turf-stripe-a: rgba(255, 255, 255, 0.035);
+  --sp-turf-stripe-b: rgba(255, 255, 255, 0.075);
+  --sp-chalk: rgba(255, 255, 255, 0.22);
+  --sp-fdr-1-bg: #22350f; --sp-fdr-1-ink: #a9c46a;
+  --sp-fdr-2-bg: #1d2b10; --sp-fdr-2-ink: #a9c46a;
+  --sp-fdr-3-bg: #232720; --sp-fdr-3-ink: #8a9484;
+  --sp-fdr-4-bg: #2e1a12; --sp-fdr-4-ink: #e0a83e;
+  --sp-fdr-5-bg: #2b1414; --sp-fdr-5-ink: #f08a8a;
 }
 
 :root {
@@ -78,6 +103,16 @@
   /* §5 fill-only volt + deadline surfaces */
   --color-volt: var(--sp-volt); --color-on-volt: var(--sp-on-volt);
   --color-deadline-bg: var(--sp-deadline-bg); --color-deadline-border: var(--sp-deadline-border);
+  /* PITCH-01 turf + chalk + FDR ramp */
+  --color-turf: var(--sp-turf); --color-turf-edge: var(--sp-turf-edge);
+  --color-turf-stripe-a: var(--sp-turf-stripe-a);
+  --color-turf-stripe-b: var(--sp-turf-stripe-b);
+  --color-chalk: var(--sp-chalk);
+  --color-fdr-1-bg: var(--sp-fdr-1-bg); --color-fdr-1-ink: var(--sp-fdr-1-ink);
+  --color-fdr-2-bg: var(--sp-fdr-2-bg); --color-fdr-2-ink: var(--sp-fdr-2-ink);
+  --color-fdr-3-bg: var(--sp-fdr-3-bg); --color-fdr-3-ink: var(--sp-fdr-3-ink);
+  --color-fdr-4-bg: var(--sp-fdr-4-bg); --color-fdr-4-ink: var(--sp-fdr-4-ink);
+  --color-fdr-5-bg: var(--sp-fdr-5-bg); --color-fdr-5-ink: var(--sp-fdr-5-ink);
   /* type ramp — 1.2 minor third */
   --text-data: 12.5px; --text-data--line-height: 1.2;
   --text-body: 15px;  --text-body--line-height: 1.45;

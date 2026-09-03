@@ -34,14 +34,42 @@ const FWD = 4
  *
  * Returns null when fewer than 11 BGW-eligible players remain.
  */
+/** An FPL shape as `DEF-MID-FWD`, outfield only — the GK is implicit. */
+export type Formation = `${number}-${number}-${number}`
+
+/** The seven legal FPL shapes: 1 GK, 3-5 DEF, 2-5 MID, 1-3 FWD, 10 outfield. */
+export const FORMATIONS = [
+  '3-4-3', '3-5-2', '4-4-2', '4-3-3', '4-5-1', '5-3-2', '5-4-1',
+] as const
+
+/** Parse `"4-4-2"` into counts. Returns null for anything not a legal FPL shape,
+ *  so a bad value narrows nothing rather than silently selecting an illegal XI. */
+export function parseFormation(f: string): { def: number; mid: number; fwd: number } | null {
+  const parts = f.split('-')
+  if (parts.length !== 3) return null
+  const [def, mid, fwd] = parts.map(Number)
+  if (![def, mid, fwd].every(n => Number.isInteger(n))) return null
+  if (def < 3 || def > 5 || mid < 2 || mid > 5 || fwd < 1 || fwd > 3) return null
+  if (def + mid + fwd !== 10) return null
+  return { def, mid, fwd }
+}
+
 export function optimiseLineup(
   picks: SquadPick[],
   players: MergedPlayer[],
   horizon: OptimiserHorizon,
   lineupNewsMap?: Map<number, LineupNewsPlayer>,  // Phase 118 ENGN-02 / D-05 / D-08
+  // PITCH-01: when set, only this shape is considered. Scoring, tie-breaks and
+  // bench ordering are unchanged — the candidate set narrows, nothing else. It
+  // is the FIFTH parameter, not the fourth the brief suggested: lineupNewsMap
+  // already occupies that slot and every existing caller passes it positionally.
+  forcedFormation?: Formation,
 ): OptimisedLineup | null {
   const playerMap = new Map<number, MergedPlayer>(players.map(p => [p.id, p]))
   const field = HORIZON_FIELD[horizon]
+  // An unparseable forced shape is treated as "no constraint" rather than as a
+  // shape no subset can match, which would silently return null.
+  const forced = forcedFormation ? parseFormation(forcedFormation) : null
 
   // BGW filter: exclude picks whose corresponding player has xPts_1gw === 0.
   // CRITICAL (Pitfall 1): undefined xPts_1gw means "no pipeline data", NOT "BGW".
@@ -104,12 +132,16 @@ export function optimiseLineup(
       score += horizonScore(p)
     }
 
-    // Validate formation rules
+    // Validate formation rules. PITCH-01: a forced shape replaces the ranges
+    // with equality — an unsatisfiable shape then finds no subset and the
+    // function returns null, which the caller surfaces as a disabled pill.
     const valid = (
       gkCount === 1 &&
-      defCount >= 3 && defCount <= 5 &&
-      midCount >= 2 && midCount <= 5 &&
-      fwdCount >= 1 && fwdCount <= 3 &&
+      (forced
+        ? defCount === forced.def && midCount === forced.mid && fwdCount === forced.fwd
+        : defCount >= 3 && defCount <= 5 &&
+          midCount >= 2 && midCount <= 5 &&
+          fwdCount >= 1 && fwdCount <= 3) &&
       (defCount + midCount + fwdCount) === 10
     )
 

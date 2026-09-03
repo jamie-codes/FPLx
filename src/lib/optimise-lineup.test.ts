@@ -2,7 +2,7 @@
 // Mirrors src/lib/chip-strategy-engine.test.ts pattern.
 // @vitest-environment node
 import { describe, it, expect } from 'vitest'
-import { optimiseLineup, benchOrder } from './optimise-lineup'
+import { optimiseLineup, benchOrder, FORMATIONS, parseFormation } from './optimise-lineup'
 import type { MergedPlayer, LineupNewsPlayer, StatusLabel } from './types'
 import type { SquadPick } from './squad-adapter'
 
@@ -446,5 +446,77 @@ describe('Phase 118 ENGN-02: benchOrder absent-player zero EV', () => {
     const result = benchOrder([healthyP, doubtedQ], startersBase, 1, newsMap)
     // doubtedQ (higher EV) must still rank first — doubted players are NOT zeroed (D-08).
     expect(result.map(p => p.id)).toEqual([602, 601])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// PITCH-01: forced formation (optional 5th arg)
+// ---------------------------------------------------------------------------
+
+describe('PITCH-01: forcedFormation', () => {
+  it('parseFormation accepts the seven legal FPL shapes', () => {
+    for (const f of FORMATIONS) {
+      const parsed = parseFormation(f)
+      expect(parsed, f).not.toBeNull()
+      expect(parsed!.def + parsed!.mid + parsed!.fwd).toBe(10)
+    }
+  })
+
+  it('parseFormation rejects shapes FPL does not allow', () => {
+    // 2 defenders, 6 midfielders, 0 forwards, a non-shape, and a shape that
+    // sums to 10 but breaks a per-position bound.
+    for (const bad of ['2-5-3', '3-6-1', '4-6-0', 'not-a-shape', '4-4', '5-5-0']) {
+      expect(parseFormation(bad), bad).toBeNull()
+    }
+  })
+
+  it('returns exactly the requested shape when one is forced', () => {
+    const { picks, players } = makeSquad()
+    for (const f of ['3-4-3', '4-4-2', '5-3-2', '4-5-1'] as const) {
+      const result = optimiseLineup(picks, players, 1, undefined, f)
+      expect(result, f).not.toBeNull()
+      expect(result!.formation).toBe(f)
+    }
+  })
+
+  it('a forced shape scores at or below the optimiser own choice', () => {
+    // Forcing narrows the candidate set, so it can never beat the free search.
+    const { picks, players } = makeSquad()
+    const free = optimiseLineup(picks, players, 1)!
+    const score = (ids: number[]) => ids.reduce((a, id) =>
+      a + (players.find(p => p.id === id)!.xPts_1gw ?? 0), 0)
+    for (const f of FORMATIONS) {
+      const forced = optimiseLineup(picks, players, 1, undefined, f)
+      if (forced) expect(score(forced.starters), f).toBeLessThanOrEqual(score(free.starters) + 1e-9)
+    }
+  })
+
+  it('returns null for a shape the squad cannot field', () => {
+    // Only 3 forwards are owned and a GK is required, so 3-4-3 is reachable but
+    // a shape needing more of a position than the squad holds is not. Build a
+    // squad with just 3 defenders to make 5-3-2 unsatisfiable.
+    const elementTypes: (1 | 2 | 3 | 4)[] = [1, 1, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4]
+    const picks: SquadPick[] = []
+    const players: MergedPlayer[] = []
+    for (let i = 0; i < 15; i++) {
+      picks.push(makePick(i + 1, i + 1))
+      players.push(makePlayer({ id: i + 1, element_type: elementTypes[i] }))
+    }
+    expect(optimiseLineup(picks, players, 1, undefined, '5-3-2')).toBeNull()
+    expect(optimiseLineup(picks, players, 1, undefined, '3-4-3')).not.toBeNull()
+  })
+
+  it('omitting the argument leaves every existing caller unchanged', () => {
+    const { picks, players } = makeSquad()
+    expect(optimiseLineup(picks, players, 1, undefined, undefined))
+      .toEqual(optimiseLineup(picks, players, 1))
+  })
+
+  it('an unparseable shape falls back to the free search rather than returning null', () => {
+    // Defence in depth: a bad value must not silently blank the lineup.
+    const { picks, players } = makeSquad()
+    const bogus = optimiseLineup(picks, players, 1, undefined, '9-9-9' as never)
+    expect(bogus).not.toBeNull()
+    expect(bogus).toEqual(optimiseLineup(picks, players, 1))
   })
 })

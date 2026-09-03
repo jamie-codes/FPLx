@@ -346,115 +346,96 @@ describe('Phase 72: LineupTab', () => {
     })
   })
 
+  // -- PITCH-01 helpers -------------------------------------------------------
+  // The C / VC pills used to sit on all 15 cards. They now render only beneath
+  // the armed card, so a test that wants a pill must arm that card first. This
+  // is the one test change the redesign brief sanctions (HANDOFF.md section 4)
+  // -- both handlers and both data-testids are unchanged.
+  function armCard(container: HTMLElement, cardId: string) {
+    const body = container.querySelector('[data-testid="pitch-card-body-' + cardId + '"]') as HTMLButtonElement
+    expect(body, 'card ' + cardId + ' must exist to be armed').not.toBeNull()
+    fireEvent.click(body)
+    return body
+  }
+  function pillsOf(container: HTMLElement, cardId: string) {
+    return {
+      setC: container.querySelector('[data-testid="set-c-' + cardId + '"]') as HTMLButtonElement,
+      setVc: container.querySelector('[data-testid="set-vc-' + cardId + '"]') as HTMLButtonElement,
+    }
+  }
+  /** id of the pitch-card wrapper an element sits inside */
+  function cardIdOf(el: Element | null): string | null {
+    const card = el?.closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])')
+    return card ? card.getAttribute('data-testid')!.replace('pitch-card-', '') : null
+  }
+  /** ids of the XI, in pitch order -- the bench now lives outside [data-testid="pitch"] */
+  function starterIds(container: HTMLElement): string[] {
+    return Array.from(container.querySelectorAll('[data-testid="pitch"] [data-testid^="pitch-card-body-"]'))
+      .map(b => b.getAttribute('data-testid')!.replace('pitch-card-body-', ''))
+  }
+
   describe('Phase 76 OPT-01: captain override', () => {
     it('Set C pill commits captain to a non-captain starter', () => {
       setupValidLineup()
       const { container } = render(<LineupTab teamId="123" />)
-      // Find current captain via the badge.
-      const initialBadge = container.querySelector('[data-testid="captain-badge"]') as HTMLElement
-      expect(initialBadge).not.toBeNull()
-      const initialCaptainCard = initialBadge.closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
-      const initialCaptainId = initialCaptainCard.getAttribute('data-testid')!.replace('pitch-card-', '')
-      // Find a starter who is NOT the captain.
-      const allCards = Array.from(container.querySelectorAll('[data-testid^="pitch-card-"]')) as HTMLElement[]
-      const otherCard = allCards.find(c => {
-        const id = c.getAttribute('data-testid')!.replace('pitch-card-', '')
-        return id !== initialCaptainId
-          && c.querySelector('[data-testid^="set-c-"]') !== null
-          && !(c.querySelector('[data-testid^="set-c-"]') as HTMLButtonElement).disabled
-      }) as HTMLElement
-      const setCBtn = otherCard.querySelector('[data-testid^="set-c-"]') as HTMLButtonElement
-      const newCaptainId = setCBtn.getAttribute('data-testid')!.replace('set-c-', '')
+      const initialCaptainId = cardIdOf(container.querySelector('[data-testid="captain-badge"]'))
+      expect(initialCaptainId).not.toBeNull()
+      const newCaptainId = starterIds(container).find(id => id !== initialCaptainId)!
+      armCard(container, newCaptainId)
+      const setCBtn = pillsOf(container, newCaptainId).setC
+      expect(setCBtn).not.toBeNull()
+      expect(setCBtn.disabled).toBe(false)
       fireEvent.click(setCBtn)
-      // C badge should now be inside the new captain's card.
-      const newBadge = container.querySelector('[data-testid="captain-badge"]') as HTMLElement
-      expect(newBadge).not.toBeNull()
-      const newBadgeParent = newBadge.closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
-      expect(newBadgeParent.getAttribute('data-testid')).toBe(`pitch-card-${newCaptainId}`)
+      expect(cardIdOf(container.querySelector('[data-testid="captain-badge"]'))).toBe(newCaptainId)
     })
 
     it('Set VC pill commits VC to a non-VC, non-captain starter', () => {
       setupValidLineup()
       const { container } = render(<LineupTab teamId="123" />)
-      const captainCard = (container.querySelector('[data-testid="captain-badge"]') as HTMLElement)
-        .closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
-      const vcCard = (container.querySelector('[data-testid="vc-badge"]') as HTMLElement)
-        .closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
-      const captainId = captainCard.getAttribute('data-testid')!.replace('pitch-card-', '')
-      const vcId = vcCard.getAttribute('data-testid')!.replace('pitch-card-', '')
-      const allCards = Array.from(container.querySelectorAll('[data-testid^="pitch-card-"]')) as HTMLElement[]
-      const targetCard = allCards.find(c => {
-        const id = c.getAttribute('data-testid')!.replace('pitch-card-', '')
-        if (id === captainId || id === vcId) return false
-        const btn = c.querySelector('[data-testid^="set-vc-"]') as HTMLButtonElement | null
-        return btn !== null && !btn.disabled
-      }) as HTMLElement
-      const setVcBtn = targetCard.querySelector('[data-testid^="set-vc-"]') as HTMLButtonElement
-      const newVcId = setVcBtn.getAttribute('data-testid')!.replace('set-vc-', '')
+      const captainId = cardIdOf(container.querySelector('[data-testid="captain-badge"]'))
+      const vcId = cardIdOf(container.querySelector('[data-testid="vc-badge"]'))
+      const newVcId = starterIds(container).find(id => id !== captainId && id !== vcId)!
+      armCard(container, newVcId)
+      const setVcBtn = pillsOf(container, newVcId).setVc
+      expect(setVcBtn.disabled).toBe(false)
       fireEvent.click(setVcBtn)
-      const newVcBadge = container.querySelector('[data-testid="vc-badge"]') as HTMLElement
-      const newVcParent = newVcBadge.closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
-      expect(newVcParent.getAttribute('data-testid')).toBe(`pitch-card-${newVcId}`)
+      expect(cardIdOf(container.querySelector('[data-testid="vc-badge"]'))).toBe(newVcId)
     })
 
     it('Set C on the current VC auto-shuffles: VC moves to the previous captain', () => {
       setupValidLineup()
       const { container } = render(<LineupTab teamId="123" />)
-      const prevCaptainCard = (container.querySelector('[data-testid="captain-badge"]') as HTMLElement)
-        .closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
-      const prevVcCard = (container.querySelector('[data-testid="vc-badge"]') as HTMLElement)
-        .closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
-      const prevCaptainId = prevCaptainCard.getAttribute('data-testid')!.replace('pitch-card-', '')
-      const prevVcId = prevVcCard.getAttribute('data-testid')!.replace('pitch-card-', '')
-      const setCOnVc = prevVcCard.querySelector('[data-testid^="set-c-"]') as HTMLButtonElement
-      fireEvent.click(setCOnVc)
-      const newCaptainBadge = container.querySelector('[data-testid="captain-badge"]') as HTMLElement
-      const newVcBadge = container.querySelector('[data-testid="vc-badge"]') as HTMLElement
-      expect(newCaptainBadge.closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])')!.getAttribute('data-testid'))
-        .toBe(`pitch-card-${prevVcId}`)
-      expect(newVcBadge.closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])')!.getAttribute('data-testid'))
-        .toBe(`pitch-card-${prevCaptainId}`)
+      const prevCaptainId = cardIdOf(container.querySelector('[data-testid="captain-badge"]'))!
+      const prevVcId = cardIdOf(container.querySelector('[data-testid="vc-badge"]'))!
+      armCard(container, prevVcId)
+      fireEvent.click(pillsOf(container, prevVcId).setC)
+      expect(cardIdOf(container.querySelector('[data-testid="captain-badge"]'))).toBe(prevVcId)
+      expect(cardIdOf(container.querySelector('[data-testid="vc-badge"]'))).toBe(prevCaptainId)
     })
 
     it('Set VC on the current captain is disabled / no-op', () => {
       setupValidLineup()
       const { container } = render(<LineupTab teamId="123" />)
-      const captainCard = (container.querySelector('[data-testid="captain-badge"]') as HTMLElement)
-        .closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
-      const captainId = captainCard.getAttribute('data-testid')!.replace('pitch-card-', '')
-      const setVcOnCaptain = captainCard.querySelector('[data-testid^="set-vc-"]') as HTMLButtonElement
-      // disabled OR aria-disabled="true" — both are valid per UI-SPEC §Interaction States
+      const captainId = cardIdOf(container.querySelector('[data-testid="captain-badge"]'))!
+      armCard(container, captainId)
+      const setVcOnCaptain = pillsOf(container, captainId).setVc
+      // disabled OR aria-disabled="true" -- both valid per UI-SPEC Interaction States
       const isInert = setVcOnCaptain.disabled || setVcOnCaptain.getAttribute('aria-disabled') === 'true'
       expect(isInert).toBe(true)
       fireEvent.click(setVcOnCaptain)
-      // C badge still on captain; VC badge NOT on captain.
-      const captainBadge = container.querySelector('[data-testid="captain-badge"]')!
-        .closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
-      expect(captainBadge.getAttribute('data-testid')).toBe(`pitch-card-${captainId}`)
-      const vcBadgeAfter = container.querySelector('[data-testid="vc-badge"]') as HTMLElement
-      const vcBadgeParent = vcBadgeAfter.closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
-      expect(vcBadgeParent.getAttribute('data-testid')).not.toBe(`pitch-card-${captainId}`)
+      expect(cardIdOf(container.querySelector('[data-testid="captain-badge"]'))).toBe(captainId)
+      expect(cardIdOf(container.querySelector('[data-testid="vc-badge"]'))).not.toBe(captainId)
     })
 
     it('Reset clears captain override and restores algorithm captain', () => {
       setupValidLineup()
       const { container } = render(<LineupTab teamId="123" />)
-      const initialCaptainCard = (container.querySelector('[data-testid="captain-badge"]') as HTMLElement)
-        .closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
-      const initialCaptainId = initialCaptainCard.getAttribute('data-testid')!
-      // Reassign captain to a different player.
-      const otherSetC = Array.from(container.querySelectorAll('[data-testid^="set-c-"]'))
-        .find(b => {
-          const id = b.getAttribute('data-testid')!.replace('set-c-', '')
-          return `pitch-card-${id}` !== initialCaptainId && !(b as HTMLButtonElement).disabled
-        }) as HTMLButtonElement
-      fireEvent.click(otherSetC)
-      // Click Reset.
-      const resetBtn = container.querySelector('[data-testid="lineup-reset"]') as HTMLButtonElement
-      fireEvent.click(resetBtn)
-      const finalCaptainCard = (container.querySelector('[data-testid="captain-badge"]') as HTMLElement)
-        .closest('[data-testid^="pitch-card-"]:not([data-testid^="pitch-card-body-"])') as HTMLElement
-      expect(finalCaptainCard.getAttribute('data-testid')).toBe(initialCaptainId)
+      const initialCaptainId = cardIdOf(container.querySelector('[data-testid="captain-badge"]'))!
+      const otherId = starterIds(container).find(id => id !== initialCaptainId)!
+      armCard(container, otherId)
+      fireEvent.click(pillsOf(container, otherId).setC)
+      fireEvent.click(container.querySelector('[data-testid="lineup-reset"]') as HTMLButtonElement)
+      expect(cardIdOf(container.querySelector('[data-testid="captain-badge"]'))).toBe(initialCaptainId)
     })
 
     it('Squad refresh clears captain override (Pitfall 2)', async () => {
@@ -463,8 +444,10 @@ describe('Phase 72: LineupTab', () => {
       const { rerenderWithDifferentSquad } = setupValidLineup() as ReturnType<typeof setupValidLineup> & { rerenderWithDifferentSquad?: () => void }
       const { container, rerender } = render(<LineupTab teamId="123" />)
       // Override captain to any non-captain starter.
-      const firstSetC = container.querySelector('[data-testid^="set-c-"]:not([disabled])') as HTMLButtonElement
-      fireEvent.click(firstSetC)
+      const capId = cardIdOf(container.querySelector('[data-testid="captain-badge"]'))
+      const overrideId = starterIds(container).find(id => id !== capId)!
+      armCard(container, overrideId)
+      fireEvent.click(pillsOf(container, overrideId).setC)
       // Trigger squad refresh — the helper must mutate mocked useSquad to return a different squad,
       // then the component rerender propagates initialLineup change.
       if (typeof rerenderWithDifferentSquad === 'function') {
@@ -490,10 +473,14 @@ describe('Phase 72: LineupTab', () => {
       const setItemSpy = vi.spyOn(Storage.prototype, 'setItem')
       const { container } = render(<LineupTab teamId="123" />)
       // Perform a captain override + a VC override.
-      const someSetC = container.querySelector('[data-testid^="set-c-"]:not([disabled])') as HTMLButtonElement
-      fireEvent.click(someSetC)
-      const someSetVc = container.querySelector('[data-testid^="set-vc-"]:not([disabled])') as HTMLButtonElement
-      fireEvent.click(someSetVc)
+      const capId = cardIdOf(container.querySelector('[data-testid="captain-badge"]'))
+      const vcId = cardIdOf(container.querySelector('[data-testid="vc-badge"]'))
+      const cTarget = starterIds(container).find(id => id !== capId)!
+      armCard(container, cTarget)
+      fireEvent.click(pillsOf(container, cTarget).setC)
+      const vcTarget = starterIds(container).find(id => id !== cTarget && id !== vcId)!
+      armCard(container, vcTarget)
+      fireEvent.click(pillsOf(container, vcTarget).setVc)
       const overrideCalls = setItemSpy.mock.calls.filter(([k]) =>
         typeof k === 'string' && /lineup|override|swap|captain|vc/i.test(k)
       )
@@ -513,6 +500,115 @@ describe('Phase 72: LineupTab', () => {
       const pending = parent.getAttribute('data-pending') === 'true'
         || someBody.getAttribute('data-pending') === 'true'
       expect(pending).toBe(true)
+    })
+  })
+  describe('PITCH-01: pitch surface, bench tray and formation switcher', () => {
+    it('the pitch holds only the XI; the bench tray sits outside it', () => {
+      setupValidLineup()
+      const { container } = render(<LineupTab teamId="123" />)
+      // The bench is no longer a fifth pitch row -- a bench is not on the pitch.
+      const pitch = container.querySelector('[data-testid="pitch"]')!
+      expect(pitch.querySelector('[data-testid="pitch-row-bench"]')).toBeNull()
+      expect(container.querySelector('[data-testid="pitch-row-bench"]')).not.toBeNull()
+      expect(starterIds(container)).toHaveLength(11)
+    })
+
+    it('drops the GK / DEF / MID / FWD label column -- the shape communicates it', () => {
+      setupValidLineup()
+      const { container } = render(<LineupTab teamId="123" />)
+      for (const row of ['gk', 'def', 'mid', 'fwd']) {
+        const el = container.querySelector('[data-testid="pitch-row-' + row + '"]')!
+        expect(el.textContent, row).not.toContain(row.toUpperCase())
+      }
+    })
+
+    it('C / VC pills exist only under the armed card', () => {
+      setupValidLineup()
+      const { container } = render(<LineupTab teamId="123" />)
+      // This is the point of the redesign: 22 permanent buttons became 0.
+      expect(container.querySelectorAll('[data-testid^="set-c-"]')).toHaveLength(0)
+      expect(container.querySelectorAll('[data-testid^="set-vc-"]')).toHaveLength(0)
+      const id = starterIds(container)[0]
+      armCard(container, id)
+      expect(container.querySelectorAll('[data-testid^="set-c-"]')).toHaveLength(1)
+      expect(pillsOf(container, id).setC).not.toBeNull()
+    })
+
+    it('renders all seven legal shapes in the switcher', () => {
+      setupValidLineup()
+      const { container } = render(<LineupTab teamId="123" />)
+      const sw = container.querySelector('[data-testid="formation-switcher"]')!
+      expect(sw.querySelectorAll('[role="radio"]')).toHaveLength(7)
+      expect(container.querySelector('[data-testid="formation-4-4-2"]')).not.toBeNull()
+    })
+
+    it('picking a formation re-renders the pitch in that shape', () => {
+      setupValidLineup()
+      const { container } = render(<LineupTab teamId="123" />)
+      fireEvent.click(container.querySelector('[data-testid="formation-5-3-2"]') as HTMLButtonElement)
+      expect(container.querySelectorAll('[data-testid="pitch-row-def"] [data-testid^="pitch-card-body-"]')).toHaveLength(5)
+      expect(container.querySelectorAll('[data-testid="pitch-row-mid"] [data-testid^="pitch-card-body-"]')).toHaveLength(3)
+      expect(container.querySelectorAll('[data-testid="pitch-row-fwd"] [data-testid^="pitch-card-body-"]')).toHaveLength(2)
+      expect(container.querySelector('[data-testid="formation-5-3-2"]')!.getAttribute('aria-checked')).toBe('true')
+    })
+
+    it('Reset returns the shape to the optimiser own choice', () => {
+      setupValidLineup()
+      const { container } = render(<LineupTab teamId="123" />)
+      const before = container.querySelectorAll('[data-testid="pitch-row-def"] [data-testid^="pitch-card-body-"]').length
+      fireEvent.click(container.querySelector('[data-testid="formation-5-3-2"]') as HTMLButtonElement)
+      fireEvent.click(container.querySelector('[data-testid="lineup-reset"]') as HTMLButtonElement)
+      expect(container.querySelectorAll('[data-testid="pitch-row-def"] [data-testid^="pitch-card-body-"]')).toHaveLength(before)
+      // No shape is force-selected once Reset has run.
+      const checked = Array.from(container.querySelectorAll('[data-testid="formation-switcher"] [role="radio"]'))
+        .filter(b => b.getAttribute('aria-checked') === 'true')
+      expect(checked).toHaveLength(0)
+    })
+
+    it('disables a shape the squad cannot field', () => {
+      // 3 defenders owned, so 5-3-2 and 5-4-1 are unreachable.
+      const elementTypes: (1 | 2 | 3 | 4)[] = [1, 1, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4]
+      const picks: SquadPick[] = []
+      const players: MergedPlayer[] = []
+      for (let i = 0; i < 15; i++) {
+        picks.push(makePick(i + 1, i + 1))
+        players.push(makePlayer({ id: i + 1, element_type: elementTypes[i] }))
+      }
+      useSquadMock.mockReturnValue({
+        data: { active_chip: null, picks, entry_history: { event: 30, bank: 0, event_transfers: 0, event_transfers_cost: 0, value: 1000 } },
+        isLoading: false, error: null,
+      })
+      usePlayersMock.mockReturnValue({ data: players, isLoading: false })
+      const { container } = render(<LineupTab teamId="123" />)
+      expect((container.querySelector('[data-testid="formation-5-3-2"]') as HTMLButtonElement).disabled).toBe(true)
+      expect((container.querySelector('[data-testid="formation-3-4-3"]') as HTMLButtonElement).disabled).toBe(false)
+    })
+
+    it('shows the cost of a forced shape against the optimiser choice', () => {
+      // Make the optimum unambiguous: three strong forwards mean the free search
+      // takes all three, so forcing 5-4-1 (one forward) must cost real points.
+      const elementTypes: (1 | 2 | 3 | 4)[] = [1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4]
+      const picks: SquadPick[] = []
+      const players: MergedPlayer[] = []
+      for (let i = 0; i < 15; i++) {
+        const et = elementTypes[i]
+        picks.push(makePick(i + 1, i + 1))
+        players.push(makePlayer({ id: i + 1, element_type: et, xPts_1gw: et === 4 ? 9 : 2 }))
+      }
+      useSquadMock.mockReturnValue({
+        data: { active_chip: null, picks, entry_history: { event: 30, bank: 0, event_transfers: 0, event_transfers_cost: 0, value: 1000 } },
+        isLoading: false, error: null,
+      })
+      usePlayersMock.mockReturnValue({ data: players, isLoading: false })
+      const { container } = render(<LineupTab teamId="123" />)
+      const tiles = () => container.querySelector('[data-testid="lineup-headline-row"]')!.textContent!
+
+      // Nothing to compare against until the user overrides the optimiser.
+      expect(tiles()).not.toContain('vs optimal')
+      fireEvent.click(container.querySelector('[data-testid="formation-5-4-1"]') as HTMLButtonElement)
+      // Dropping two 9-point forwards for two 2-point outfielders is -14.
+      expect(tiles()).toContain('vs optimal')
+      expect(tiles()).toContain('14.0')
     })
   })
 })
