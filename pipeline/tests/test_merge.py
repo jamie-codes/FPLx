@@ -749,3 +749,131 @@ def test_merge_recent_gws_is_empty_without_summaries():
                               xmins_stats=xmins_stats, summaries=None)
     p = next(pl for pl in merged if pl['id'] == 1)
     assert p['recent_gws'] == []
+
+
+# ---------------------------------------------------------------------------
+# TEAM-01: rolling-weight cap + direction-specific venue-split team prior
+# ---------------------------------------------------------------------------
+
+def _team01_inputs(finished_gws=10):
+    """A league where the rolling proxy and the official prior DISAGREE.
+
+    _build_minimal_inputs draws every game 1-1 at official difficulty 3, so the
+    rolling score and the prior both land on 0.5 and the blend weight is
+    invisible. Here the opponent (team 1) ships four goals a game while a third
+    team keeps clean sheets, giving the rolling proxy a real spread to normalise
+    against — so the cap changes the output and can be asserted on.
+    """
+    history = [_hist(gw, 90, 5) for gw in range(1, finished_gws + 1)]
+    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_minimal_inputs(
+        {1: history}, finished_gws=finished_gws)
+    bootstrap['teams'].append({'id': 7, 'short_name': 'TUF'})
+    for fx in fixtures:
+        if fx.get('finished'):
+            fx['team_h_score'], fx['team_a_score'] = 0, 4   # team 1 (away) leaks
+    # A watertight third team, so team 1 is the LEAKIEST rather than the only one.
+    for gw in range(1, finished_gws + 1):
+        fixtures.append({'event': gw, 'team_h': 7, 'team_a': 14,
+                         'team_h_difficulty': 3, 'team_a_difficulty': 3,
+                         'finished': True, 'team_h_score': 0, 'team_a_score': 0})
+    return bootstrap, fixtures, understat, id_map, xmins_stats, summaries
+
+
+def test_rolling_weight_never_reaches_one_so_the_prior_keeps_a_say():
+    """TEAM-01: the old blend drove the season prior to zero weight after a few
+    games. Two squads' worth of results must not fully erase it."""
+    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _team01_inputs()
+    merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                              xmins_stats=xmins_stats, summaries=summaries,
+                              rolling_weight_cap=0.35)
+    capped = next(p for p in merged if p['id'] == 1)['fixtures'][0]['attacking_difficulty']
+
+    merged_old, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                                  xmins_stats=xmins_stats, summaries=summaries,
+                                  rolling_weight_cap=1.0)   # pre-TEAM-01 behaviour
+    uncapped = next(p for p in merged_old if p['id'] == 1)['fixtures'][0]['attacking_difficulty']
+    assert capped != uncapped, 'the cap must actually move the blend'
+
+
+def test_zero_cap_yields_the_pure_season_prior():
+    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _team01_inputs()
+    merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                              xmins_stats=xmins_stats, summaries=summaries,
+                              rolling_weight_cap=0.0)
+    fx = next(p for p in merged if p['id'] == 1)['fixtures'][0]
+    # Every fixture in the harness is official difficulty 3 -> (3-1)/4 = 0.5.
+    assert fx['attacking_difficulty'] == pytest.approx(0.5)
+    assert fx['defensive_difficulty'] == pytest.approx(0.5)
+
+
+def test_cold_start_is_untouched_by_the_cap():
+    """A team with no games played is still rated purely on the prior — the cap
+    scales the rolling weight, and at zero games there is none to scale."""
+    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _build_minimal_inputs(
+        {1: []}, finished_gws=0)
+    for cap in (0.0, 0.35, 1.0):
+        merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                                  xmins_stats=xmins_stats, summaries=summaries,
+                                  rolling_weight_cap=cap)
+        fx = next(p for p in merged if p['id'] == 1)['fixtures'][0]
+        assert fx['attacking_difficulty'] == pytest.approx(0.5), f'cap={cap}'
+
+
+def test_team_prior_replaces_the_official_prior_and_splits_by_venue():
+    """TEAM-01: the supplied prior is direction-specific AND venue-specific, and
+    the venue that matters is the OPPONENT's — their home record is what a
+    visiting team runs into."""
+    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _team01_inputs()
+    # Team 1 is the opponent in this harness (team 14 plays team 1 every week).
+    prior = {1: {'att_home': 1.0, 'att_away': 0.0,
+                 'def_home': 1.0, 'def_away': 0.0, 'is_bucket': False}}
+    merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                              xmins_stats=xmins_stats, summaries=summaries,
+                              rolling_weight_cap=0.0,   # isolate the prior
+                              team_prior_scores=prior)
+    fixtures_out = next(p for p in merged if p['id'] == 1)['fixtures']
+    # Our player is on team 14, who host team 1 every gameweek in this harness,
+    # so the opponent is always away -> the away rating applies.
+    assert all(f['is_home'] for f in fixtures_out)
+    assert fixtures_out[0]['attacking_difficulty'] == pytest.approx(0.0)
+    assert fixtures_out[0]['defensive_difficulty'] == pytest.approx(0.0)
+
+
+def test_attack_and_defence_priors_are_independent():
+    """The whole point of the direction split: one number could not say a team is
+    hard to score against AND unthreatening going forward."""
+    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _team01_inputs()
+    prior = {1: {'att_home': 0.9, 'att_away': 0.9,
+                 'def_home': 0.1, 'def_away': 0.1, 'is_bucket': False}}
+    merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                              xmins_stats=xmins_stats, summaries=summaries,
+                              rolling_weight_cap=0.0, team_prior_scores=prior)
+    fx = next(p for p in merged if p['id'] == 1)['fixtures'][0]
+    assert fx['attacking_difficulty'] == pytest.approx(0.9)
+    assert fx['defensive_difficulty'] == pytest.approx(0.1)
+
+
+def test_missing_team_in_the_prior_falls_back_to_official_fdr():
+    """A prior that does not cover every team must not blank the ones it misses."""
+    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _team01_inputs()
+    merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                              xmins_stats=xmins_stats, summaries=summaries,
+                              rolling_weight_cap=0.0,
+                              team_prior_scores={999: {'att_home': 1.0, 'att_away': 1.0,
+                                                       'def_home': 1.0, 'def_away': 1.0,
+                                                       'is_bucket': False}})
+    fx = next(p for p in merged if p['id'] == 1)['fixtures'][0]
+    assert fx['attacking_difficulty'] == pytest.approx(0.5)   # official FDR 3
+
+
+def test_opponent_xg_is_not_capped():
+    """opp_xg feeds the separately-validated GK save-points path; TEAM-01's
+    five-gameweek evidence never measured it, so its weight stays uncapped."""
+    bootstrap, fixtures, understat, id_map, xmins_stats, summaries = _team01_inputs()
+    out = {}
+    for cap in (0.0, 1.0):
+        merged, _ = merge_players(bootstrap, fixtures, understat, id_map,
+                                  xmins_stats=xmins_stats, summaries=summaries,
+                                  rolling_weight_cap=cap)
+        out[cap] = next(p for p in merged if p['id'] == 1)['fixtures'][0]['opponent_xg_per_game']
+    assert out[0.0] == pytest.approx(out[1.0])

@@ -37,6 +37,35 @@ def _avail_enabled() -> bool:
 AVAIL_ENABLED = _avail_enabled()  # AVAIL-01 shadow-first
 
 
+# TEAM-01: the direction-specific, home/away-split season prior built from the
+# previous season's results (team_priors.py). OFF by default — the weight cap it
+# ships alongside is validated on a full season of 2025/26 replays, but this
+# prior is NOT: the only test of it against official FDR on the real cross-season
+# path had n=40 (2026/27 GW1-2), which is far too thin to promote on. Revisit at
+# GW8+ when this season has enough played fixtures to test properly.
+def _team_priors_enabled() -> bool:
+    return os.environ.get('TEAM_PRIORS_ENABLED', 'false').lower() in ('1', 'true', 'yes')
+
+
+def _build_team_prior_scores(bootstrap: dict) -> dict:
+    """TEAM-01 prior scores by live team id. Non-fatal: {} disables the feature
+    and merge_players falls back to the official-FDR prior."""
+    if not _team_priors_enabled():
+        return {}
+    try:
+        from capture_season import load_season_archive
+        from team_priors import build_team_priors
+        scores = build_team_priors(load_season_archive(), bootstrap)
+        promoted = sum(1 for v in scores.values() if v.get('is_bucket'))
+        print(f"TEAM-01 prior: {len(scores)} teams rated ({promoted} on the promoted bucket)")
+        return scores
+    except FileNotFoundError:
+        print("TEAM-01 prior: no season archive — using official FDR prior")
+    except Exception as e:
+        print(f"TEAM-01 prior: skipped ({e})")
+    return {}
+
+
 def _get_cache_dir() -> str:
     """Return the local cache directory path (mirroring save_local logic)."""
     return 'pipeline/cache'
@@ -723,6 +752,7 @@ def run(dry_run: bool = False):
                 bucket_priors=bucket_priors,    # COLD-01
                 odds_lookup=odds_lookup,        # ODDS-02 (live pre-match)
                 odds_cs_weight=1.0 if odds_lookup else 0.0,  # exp09 SHIP weight
+                team_prior_scores=_build_team_prior_scores(bootstrap),  # TEAM-01
             )
             if mc_enabled:
                 merged = compute_simulations(merged, xmins_v2_enabled,

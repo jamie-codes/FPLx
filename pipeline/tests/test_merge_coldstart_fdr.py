@@ -79,13 +79,18 @@ def test_early_season_blends_official_prior_with_rolling_proxy():
     player = next(p for p in merged if p['id'] == 1)
     first = player['fixtures'][0]
 
-    # w = 2/6: score = (1/3)*0.0 + (2/3)*1.0 = 2/3, prior-leaning.
-    assert abs(first['difficulty_score'] - 2 / 3) < 1e-9
-    # Tier thresholds interpolate with the same w (continuity — no game-count
-    # cliff). In this 2-team synthetic the percentile bands degenerate to the
-    # extremes (easy=0.0, hard=1.0), so thr_hard = (1/3)*1.0 + (2/3)*0.6 =
-    # 0.7333 and the 2/3 score lands 'medium'.
-    assert first['difficulty_tier'] == 'medium'
+    # TEAM-01 (2026-09-03): the rolling weight is now scaled by the 0.35 cap,
+    # so w = 0.35 * 2/6 and the score leans further on the prior than it did.
+    w = 0.35 * 2 / 6
+    assert abs(first['difficulty_score'] - (w * 0.0 + (1 - w) * 1.0)) < 1e-9
+    # The property this test exists to protect is unchanged: two games of
+    # evidence must NOT stampede the prior. It is now protected harder.
+    assert first['difficulty_score'] > 2 / 3
+    # Tier thresholds still interpolate with the same w (continuity — no
+    # game-count cliff). With the prior weighted more heavily, an officially
+    # 'hardest' fixture now reads hard on two games instead of medium, which is
+    # the intended consequence.
+    assert first['difficulty_tier'] == 'hard'
     # Opponent-xG blend (3-game window, 2 played): rolling 0.0, prior 1.9 →
     # (1/3)*1.9 scaled by the venue factor — must stay positive, below prior.
     assert 0 < first['opponent_xg_per_game'] < 1.9
@@ -114,7 +119,15 @@ def test_with_real_results_and_spread_rolling_proxy_still_used():
     player = next(p for p in merged if p['id'] == 1)
     first = player['fixtures'][0]
 
-    # Opponent (team 1) has the maximum xGA → difficulty_score 0.0 → 'easy',
-    # despite the official rating of 5.
-    assert first['difficulty_score'] == 0.0
-    assert first['difficulty_tier'] == 'easy'
+    # TEAM-01 (2026-09-03): the rolling proxy no longer wins outright when warm.
+    # It used to reach weight 1.0 and drive the score to 0.0 ('easy'); replaying
+    # 2025/26 against each team's goals over the following five gameweeks showed
+    # that discarding the season prior costs a lot of accuracy (attack r .145 at
+    # full rolling vs .318 at the 0.35 cap), so the prior keeps 65% of the say.
+    #
+    # What this test protects is that the rolling proxy still MOVES the score
+    # against a contrary official rating — it just no longer erases it.
+    w = 0.35
+    assert abs(first['difficulty_score'] - (w * 0.0 + (1 - w) * 1.0)) < 1e-9
+    assert first['difficulty_score'] < 1.0, 'ten games of results must count for something'
+    assert first['difficulty_tier'] == 'medium'

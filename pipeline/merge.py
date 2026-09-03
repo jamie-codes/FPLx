@@ -1003,6 +1003,8 @@ def merge_players(
     odds_lookup: dict | None = None,        # ODDS-01: (fixture_id, team_id) -> {cs_prob,...}
     odds_cs_weight: float = 0.0,            # ODDS-01: exp09 SHIP weight is 1.0; 0 = no-op
     off_season: bool = False,               # OFFSEASON-01: pure-prior per-90 + prior xMins
+    rolling_weight_cap: float = 0.35,       # TEAM-01: ceiling on the rolling proxy's blend weight
+    team_prior_scores: dict | None = None,  # TEAM-01: team_id -> venue-split att/def priors
 ) -> tuple[list, dict]:
     """Merge FPL bootstrap + Understat xG/xA into a unified player list.
 
@@ -1242,21 +1244,49 @@ def merge_players(
     def _blend(w: float, rolling: float, prior: float) -> float:
         return w * rolling + (1 - w) * prior
 
-    def _fixture_difficulty(opp_id: int, own_official_difficulty) -> tuple[float, str, float, float]:
+    def _fixture_difficulty(opp_id: int, own_official_difficulty,
+                            opp_is_home: bool = False) -> tuple[float, str, float, float]:
         """(attacking score, tier, defensive score, opponent xG/game) for one upcoming fixture.
 
-        FPL's single official difficulty rating is a direction-agnostic
-        team-strength prior, blended out linearly as the opponent's rolling
-        sample grows. The tier thresholds interpolate from the official bands
-        to the league-percentile bands with the SAME weight, so the tier is
-        continuous in w — at a full window this reproduces the warm percentile
-        path exactly, with no game-count cliff (review 2026-08-28).
+        A season-long team rating is blended with the rolling proxy, weighted by
+        how much rolling sample the OPPONENT has. The tier thresholds interpolate
+        between the two bands with the SAME weight, so the tier stays continuous
+        in w with no game-count cliff (review 2026-08-28).
+
+        TEAM-01 (2026-09-03): the rolling weight ramps to `rolling_weight_cap`,
+        not to 1.0. It used to reach 1.0 after 3-6 games, discarding the static
+        prior for the rest of the season — and the static prior is the better
+        predictor. Replaying 2025/26 against each team's goals over the FOLLOWING
+        FIVE gameweeks (the horizon the fixture planner actually ranks on):
+
+            weight on rolling    attack r         defence r
+            1.00  (old)          .197 .173 .145   .307 .262 .224
+            0.35  (new default)  .224 .286 .318   .450 .383 .374
+            0.00  (prior only)   .125 .267 .331   .325 .313 .262
+                                 (GW3-10, GW3-20, GW3-33)
+
+        The optimum sits at 0.30-0.35 on both sides at every horizon, and every
+        value in 0.2-0.8 beats the old behaviour. Measured per-match instead, all
+        of these collapse to r < 0.1 — single-fixture goals are Poisson noise, so
+        the five-gameweek aggregate is the honest target.
+
+        A zero-game opponent still gets w = 0, i.e. pure prior, unchanged.
         """
         official_score, _ = _official_fdr_fallback(own_official_difficulty)
         opp_games = len(team_goals_conceded.get(opp_id, []))
 
-        w_att = 0.0 if xga_degenerate else min(opp_games, FDR_PRIOR_WINDOW) / FDR_PRIOR_WINDOW
-        att_score = _blend(w_att, difficulty_scores.get(opp_id, 0.5), official_score)
+        # TEAM-01: direction-specific, home/away-split season prior when one is
+        # supplied, else FPL's single direction-agnostic official rating. The
+        # venue is the OPPONENT's — their home record is what a team visiting
+        # them runs into.
+        prior = team_prior_scores.get(opp_id) if team_prior_scores else None
+        venue = 'home' if opp_is_home else 'away'
+        att_prior = prior[f'att_{venue}'] if prior else official_score
+        def_prior = prior[f'def_{venue}'] if prior else official_score
+
+        cap = max(0.0, min(1.0, rolling_weight_cap))
+        w_att = 0.0 if xga_degenerate else cap * min(opp_games, FDR_PRIOR_WINDOW) / FDR_PRIOR_WINDOW
+        att_score = _blend(w_att, difficulty_scores.get(opp_id, 0.5), att_prior)
         att_tier = _difficulty_tier(
             att_score,
             _blend(w_att, easy_score, OFFICIAL_EASY_BAND),
@@ -1264,14 +1294,21 @@ def merge_players(
         )
 
         # Defensive + opponent-xG proxies run on the 3-game goals-scored window.
-        w_gs = 0.0 if xgs_degenerate else min(opp_games, OPP_XG_PRIOR_WINDOW) / OPP_XG_PRIOR_WINDOW
+        w_gs = 0.0 if xgs_degenerate else cap * min(opp_games, OPP_XG_PRIOR_WINDOW) / OPP_XG_PRIOR_WINDOW
         def_score = _blend(w_gs, defensive_difficulty_scores.get(opp_id, 0.5),   # NEW (DATA-01, D-02)
-                           official_score)
-        # NOTE (review 2026-08-28): at w_gs == 1 a genuinely scoreless 3-game
+                           def_prior)
+        # NOTE (review 2026-08-28): at w_xg == 1 a genuinely scoreless 3-game
         # opponent still yields opp_xg = 0.0 — that is the pre-existing,
         # backtest-validated warm-path behaviour; flooring it would change
         # validated model inputs and needs lab evidence first (BT queue).
-        opp_xg = _blend(w_gs, team_xgs.get(opp_id, 0.0),                         # Phase 83 GK-01
+        #
+        # TEAM-01 deliberately does NOT cap this weight. opp_xg feeds the GK
+        # save-points Poisson (GK-01), a separately backtest-validated path, and
+        # the five-gameweek evidence above is about fixture difficulty, not save
+        # volume. Capping it here would silently move a validated model input on
+        # the strength of an experiment that never measured it.
+        w_xg = 0.0 if xgs_degenerate else min(opp_games, OPP_XG_PRIOR_WINDOW) / OPP_XG_PRIOR_WINDOW
+        opp_xg = _blend(w_xg, team_xgs.get(opp_id, 0.0),                         # Phase 83 GK-01
                         COLDSTART_OPP_XG_BASE + COLDSTART_OPP_XG_SLOPE * official_score)
         return att_score, att_tier, def_score, opp_xg
 
@@ -1284,7 +1321,8 @@ def merge_players(
         if h_id in team_fixtures and len(team_fixtures[h_id]) < FIXTURE_LOOKAHEAD:
             opp_id = a_id
             att_score, att_tier, def_score, opp_xg = \
-                _fixture_difficulty(opp_id, fix.get('team_h_difficulty'))
+                _fixture_difficulty(opp_id, fix.get('team_h_difficulty'),
+                                    opp_is_home=False)   # we are home, they travel
             team_fixtures[h_id].append({
                 'opponent_team': teams[opp_id]['short_name'] if opp_id in teams else str(opp_id),
                 'is_home': True,
@@ -1303,7 +1341,8 @@ def merge_players(
         if a_id in team_fixtures and len(team_fixtures[a_id]) < FIXTURE_LOOKAHEAD:
             opp_id = h_id
             att_score, att_tier, def_score, opp_xg = \
-                _fixture_difficulty(opp_id, fix.get('team_a_difficulty'))
+                _fixture_difficulty(opp_id, fix.get('team_a_difficulty'),
+                                    opp_is_home=True)    # we travel, they are home
             team_fixtures[a_id].append({
                 'opponent_team': teams[opp_id]['short_name'] if opp_id in teams else str(opp_id),
                 'is_home': False,
