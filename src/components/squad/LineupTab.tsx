@@ -91,38 +91,49 @@ function FixtureChip({ fixture, className = '' }: { fixture: NextFixture | null;
 
 // ─── Kit / photo tile ───────────────────────────────────────────────────────
 
-/** One image per tile — a photo or the kit, never one stacked over the other.
+/** Current club's kit, with the player's face on top.
  *
- *  Source order matters and is the opposite of playerImageUrl's default. The two
- *  photo sources are different pictures, not different sizes of one:
+ *  Neither photo source can be trusted for the shirt. Checked on 2026-09-03,
+ *  three summer transfers into this squad:
  *
- *    PL 110x140   portrait, head at the top and the current shirt filling the
- *                 lower two thirds, badge and sponsor legible. 220x280 actual,
- *                 which is almost exactly the tile's 11:13.
- *    api-football 150x150 head-only crop — a collar is all the shirt there is.
+ *    PL 110x140    Mbeumo still in a Brentford shirt months after joining
+ *                  Man Utd. It is a posed portrait and is reshot on the club's
+ *                  schedule, not the transfer's.
+ *    api-football  a 150x150 head crop. Fresher — Mbeumo is in United red —
+ *                  but Semenyo is still in Bournemouth's red and black, so it
+ *                  is not reliable either, and a collar is all the shirt it
+ *                  carries anyway.
  *
- *  The kit is what makes a pitch readable at a glance, so the PL portrait leads
- *  and the headshot backs it up. That reverses the brief's "do not wire this to
- *  resources.premierleague.com" on the owner's explicit request (2026-09-03);
- *  the brief's concern was staleness, which the headshot fallback covers — a
- *  new signing with no PL photo yet still gets a face rather than a blank. */
+ *  The kit GRAPHIC cannot go stale: teamKitUrl is keyed off team_short_name from
+ *  the same API row that says which club the player is at. So the shirt comes
+ *  from there and the photo contributes only a face, cropped to a circle so any
+ *  out-of-date collar is cropped away with it.
+ *
+ *  This does stack two images, which the brief forbade. That rule assumed one
+ *  source could supply both a face and a current shirt; measured against real
+ *  transfers, none can. */
 function KitTile({ id, player, size }: { id: number; player: MergedPlayer; size: 'pitch' | 'bench' }) {
   const { onError, showFallback, fallbackColour } = useTeamBadge(player.team_short_name)
-  const [step, setStep] = useState(0)
+  const [faceStep, setFaceStep] = useState(0)
   const teamCode = TEAM_BADGE_CODE[player.team_short_name]
 
-  const ladder: { src: string; kind: 'photo' | 'kit' }[] = [
-    ...(player.code ? [{ src: playerImageUrl(player.code), kind: 'photo' as const }] : []),
-    ...(player.photo_url ? [{ src: player.photo_url, kind: 'photo' as const }] : []),
-    ...(teamCode ? [{ src: teamKitUrl(teamCode), kind: 'kit' as const }] : []),
+  // Face sources. The PL portrait leads: 220x280 against api-football's 150x150,
+  // so it survives the zoom below, and since only the head is kept its stale
+  // shirt is cropped away. api-football backs it up for players the PL has no
+  // portrait for. Probed 2026-09-03: the PL CDN exposes exactly one photo per
+  // player — no season-scoped path exists (premierleague25/26/27 all 403/502) —
+  // so there is no fresher variant to reach for.
+  const faces = [
+    ...(player.code ? [playerImageUrl(player.code)] : []),
+    ...(player.photo_url ? [player.photo_url] : []),
   ]
-  const current = ladder[Math.min(step, ladder.length - 1)]
+  const face = faces[faceStep]
 
   const box = size === 'pitch'
     ? 'w-full max-w-[72px] aspect-[11/13] rounded-t-lg'
     : 'w-[30px] h-[36px] shrink-0 rounded-[5px]'
 
-  if (showFallback || !current) {
+  if (showFallback || !teamCode) {
     return (
       <div
         role="img"
@@ -135,18 +146,32 @@ function KitTile({ id, player, size }: { id: number; player: MergedPlayer; size:
   }
   return (
     <div className={`relative ${box} bg-white dark:bg-[#1b201a] overflow-hidden`}>
+      {/* Kit sits low so the face can occupy the collar. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={current.src}
-        alt={current.kind === 'photo' ? player.web_name : `${player.team_short_name} kit`}
+        src={teamKitUrl(teamCode)}
+        alt={`${player.team_short_name} kit`}
         data-testid={`pitch-card-kit-${id}`}
-        // A photo fills the tile anchored at the head, so the shirt occupies the
-        // space the eye lands on. A kit graphic is contained instead — cropping
-        // a shirt icon just clips the sleeves off.
-        className={`w-full h-full ${current.kind === 'photo' ? 'object-cover object-top' : 'object-contain object-bottom'}`}
-        // Walk the ladder on failure, then hand off to the flat team colour.
-        onError={step < ladder.length - 1 ? () => setStep(s => s + 1) : onError}
+        className="absolute inset-x-0 bottom-0 w-full h-[78%] object-contain object-bottom"
+        onError={onError}
       />
+      {face && (
+        <span className="absolute left-1/2 top-[2%] w-[54%] aspect-square -translate-x-1/2 overflow-hidden rounded-full bg-white dark:bg-[#1b201a] ring-1 ring-black/10 dark:ring-white/10">
+          {/* object-cover in a square box shows the portrait's top ~79%, which
+              frames the chest as much as the head. The head occupies roughly the
+              top 45%, so scale from the top edge to close that gap. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={face}
+            alt={player.web_name}
+            data-testid={`pitch-card-face-${id}`}
+            className="h-full w-full origin-top scale-[1.75] object-cover object-top"
+            // Try the other source once, then drop the face and leave the kit —
+            // a missing headshot must never blank the tile.
+            onError={() => setFaceStep(s => s + 1)}
+          />
+        </span>
+      )}
     </div>
   )
 }
