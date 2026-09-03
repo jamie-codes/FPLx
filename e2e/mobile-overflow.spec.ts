@@ -72,11 +72,16 @@ const TABS: TabSpec[] = [
     },
   },
   {
-    // Value Gems is in the Research group
+    // Value Gems is in the Research group. Since the product-audit 2026-07
+    // merge, ?t=value-gems aliases to the Gems hub, which OPENS on the Gem
+    // Ratings section — so the ValueGemsTable heading this waited for never
+    // appeared and the tab was never actually measured. Switch to the Value
+    // section first, which is the table this entry exists to check.
     name: 'Value Gems',
     toolId: 'value-gems',
     settle: async (p) => {
-      // ValueGemsTable renders <h1>Value Gems</h1>
+      await p.getByTestId('gems-hub').waitFor({ timeout: 15_000 })
+      await p.getByRole('button', { name: 'Value Gems' }).click()
       await p.getByRole('heading', { name: 'Value Gems' }).waitFor({ timeout: 15_000 })
     },
   },

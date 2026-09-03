@@ -120,7 +120,15 @@ export function DeadlineBanner() {
     <div
       role="status"
       aria-live="polite"
-      className={`border-b px-4 py-2 -mx-4 flex items-center gap-2 text-sm font-medium ${URGENCY_CLASSES[urgency]} ${STICKY_CLASSES[urgency]}`}
+      data-testid="deadline-banner"
+      // SHELL-01 (2026-09-03): desktop-only, the counterpart to
+      // MobileDeadlinePill's `lg:hidden`. This is a full-bleed banner — note the
+      // -mx-4 and the ml-auto dismiss button — mounted as an inline item in the
+      // TopBar's flex row. At mobile it rendered alongside the pill, saying the
+      // same thing, and the pair pushed the right cluster to 506px against a
+      // 430px viewport: every screen in the app scrolled sideways. The pill now
+      // carries the urgency colours that were the reason to show this on a phone.
+      className={`hidden lg:flex border-b px-4 py-2 -mx-4 items-center gap-2 text-sm font-medium ${URGENCY_CLASSES[urgency]} ${STICKY_CLASSES[urgency]}`}
     >
       <span>GW{id} deadline in {formatCountdown(msRemaining)}</span>
       <button

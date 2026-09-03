@@ -243,4 +243,14 @@ describe('DeadlineBanner — lifecycle + a11y', () => {
     expect(screen.getByText(/GW32 deadline in 45m/)).toBeDefined()
     expect(screen.queryByText(/0h/)).toBeNull()
   })
+
+  // SHELL-01: complement of MobileDeadlinePill's lg:hidden. Both visible at the
+  // same width is the bug — the pair overflowed the top bar to 506px at 430px.
+  it('is desktop-only', () => {
+    const { container } = render(<DeadlineBanner />)
+    const banner = container.querySelector('[data-testid="deadline-banner"]')
+    expect(banner, 'banner should render in this fixture').not.toBeNull()
+    expect(banner!.className).toContain('hidden')
+    expect(banner!.className).toContain('lg:flex')
+  })
 })
