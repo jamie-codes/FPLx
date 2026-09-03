@@ -15,6 +15,13 @@ vi.mock('@/lib/hooks/useSquad', () => ({
 vi.mock('@/lib/hooks/usePlayers', () => ({
   usePlayers: () => usePlayersMock(),
 }))
+// PITCH-01: the card tooltip reads the lineup-news badge. Mocked like the other
+// two hooks — this file renders without a QueryClientProvider. Default is
+// undefined, which is also what the real hook returns when the scrape is stale.
+const useLineupNewsMock = vi.fn(() => ({ data: undefined }))
+vi.mock('@/lib/hooks/useLineupNews', () => ({
+  useLineupNews: () => useLineupNewsMock(),
+}))
 
 // Import AFTER mocks (vi.mock hoisting requirement)
 import { LineupTab } from './LineupTab'
@@ -516,10 +523,29 @@ describe('Phase 72: LineupTab', () => {
     it('drops the GK / DEF / MID / FWD label column -- the shape communicates it', () => {
       setupValidLineup()
       const { container } = render(<LineupTab teamId="123" />)
+      // A textContent scan would be wrong: the card tooltip legitimately names
+      // the position. The claim is structural — a row contains cards and
+      // nothing else, where it used to lead with a label div.
       for (const row of ['gk', 'def', 'mid', 'fwd']) {
         const el = container.querySelector('[data-testid="pitch-row-' + row + '"]')!
-        expect(el.textContent, row).not.toContain(row.toUpperCase())
+        const kids = Array.from(el.children)
+        expect(kids.length, row).toBeGreaterThan(0)
+        for (const kid of kids) {
+          expect(kid.getAttribute('data-testid'), row).toMatch(/^pitch-card-\d+$/)
+        }
       }
+    })
+
+    it('the card tooltip carries the detail taken off the resting card', () => {
+      setupValidLineup()
+      const { container } = render(<LineupTab teamId="123" />)
+      const id = starterIds(container)[0]
+      const tip = container.querySelector('[data-testid="pitch-tip-' + id + '"]')!
+      expect(tip).not.toBeNull()
+      expect(tip.textContent).toContain('% start')
+      expect(tip.textContent).toContain('xPts')
+      // It must not be counted as a card by the keep-all-features tripwire.
+      expect(tip.getAttribute('data-testid')).not.toMatch(/^pitch-card-/)
     })
 
     it('C / VC pills exist only under the armed card', () => {

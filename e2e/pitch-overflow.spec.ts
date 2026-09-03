@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test'
 
 /**
- * PITCH-01 acceptance: the redesigned lineup pitch must fit a 390px viewport
- * with five defenders in one row.
+ * PITCH-01 acceptance for the redesigned lineup pitch: it must fit a 390px
+ * viewport with five defenders in one row, keep the tile above its legibility
+ * floor, and honour prefers-reduced-motion.
  *
  * mobile-overflow.spec.ts cannot cover this — it visits ?t=lineup with no team
  * id, so it only ever renders the empty state and never the pitch. This spec
@@ -80,6 +81,48 @@ test.describe('PITCH-01 pitch fits a 390px viewport', () => {
     })
     expect(box.pitchScroll, 'pitch scrolls horizontally').toBeLessThanOrEqual(box.pitchClient)
     expect(box.rowScroll, 'five-defender row overflows its pitch').toBeLessThanOrEqual(box.rowClient)
+  })
+
+  test('the kit tile holds the 62px legibility floor with five across', async ({ page }) => {
+    // Brief §2: below 62px the name plate truncates past usefulness. Asserted on
+    // the tile rather than the card, since the card is the flex item and the
+    // tile is what carries the image and sets the plate's width.
+    await page.goto('/?t=lineup')
+    await page.getByTestId('pitch').waitFor({ timeout: 20_000 })
+    await page.getByTestId('formation-5-3-2').click()
+    await expect(page.locator('[data-testid="pitch-row-def"] [data-testid^="pitch-card-body-"]'))
+      .toHaveCount(5)
+    const widths = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('[data-testid="pitch-row-def"] [data-testid^="pitch-card-kit-"]'))
+        .map(el => Math.round(el.getBoundingClientRect().width)))
+    expect(widths).toHaveLength(5)
+    for (const w of widths) expect(w).toBeGreaterThanOrEqual(62)
+  })
+
+  test('prefers-reduced-motion collapses the lift and the legal-target pulse', async ({ page }) => {
+    // Acceptance: the global rule in globals.css must reach the pitch's two
+    // motions — `transition-transform` on the lift and `animate-pulse` on a
+    // legal drop target. The armed card's static -translate-y is a state
+    // indicator, not motion, and correctly survives.
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto('/?t=lineup')
+    await page.getByTestId('pitch').waitFor({ timeout: 20_000 })
+    const r = await page.evaluate(() => {
+      const probe = document.createElement('div')
+      probe.className = 'animate-pulse transition-transform duration-150'
+      document.body.appendChild(probe)
+      const cs = getComputedStyle(probe)
+      const out = {
+        matches: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+        anim: parseFloat(cs.animationDuration),
+        trans: parseFloat(cs.transitionDuration),
+      }
+      probe.remove()
+      return out
+    })
+    expect(r.matches).toBe(true)
+    expect(r.anim).toBeLessThan(0.05)
+    expect(r.trans).toBeLessThan(0.05)
   })
 
   test('bench tray is two columns and does not overflow', async ({ page }) => {

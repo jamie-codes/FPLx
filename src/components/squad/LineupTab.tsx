@@ -5,7 +5,9 @@ import { useSquad } from '@/lib/hooks/useSquad'
 import { usePlayers } from '@/lib/hooks/usePlayers'
 import { optimiseLineup, FORMATIONS, parseFormation, type Formation } from '@/lib/optimise-lineup'
 import { isLegalSwap, applySwap } from '@/lib/lineup-swap'
-import type { OptimisedLineup, MergedPlayer } from '@/lib/types'
+import type { OptimisedLineup, MergedPlayer, FixtureEntry, LineupNewsPlayer } from '@/lib/types'
+import { useLineupNews } from '@/lib/hooks/useLineupNews'
+import { StatusLabelBadge } from '@/components/shared/StatusLabelBadge'
 import { teamKitUrl } from '@/lib/fpl-images'
 import { TEAM_BADGE_CODE } from '@/lib/team-colours'
 import { useTeamBadge } from '@/lib/hooks/useTeamBadge'
@@ -16,6 +18,8 @@ const GK = 1
 const DEF = 2
 const MID = 3
 const FWD = 4
+
+const POS_LABEL: Record<number, string> = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' }
 
 // PITCH-01: below this the card shows an amber start-probability flag. Above it
 // the number is noise on every card — it used to be a permanent third text line.
@@ -28,9 +32,15 @@ interface LineupTabProps {
 // ─── Fixture chip ───────────────────────────────────────────────────────────
 
 /** PITCH-01: bucket the 0-1 difficulty score into the 1-5 FDR ramp.
- *  The brief said to read fixtures from the club-form artifact; MergedPlayer
- *  already carries the same `{opponent_team, is_home, difficulty_score}` shape
- *  (countPlayersWithFixture below reads it), so this needs no second fetch. */
+ *
+ *  Fixtures come from MergedPlayer.fixtures, not the club-form artifact §6 of
+ *  the brief specifies. The brief states fixture data is "not on MergedPlayer
+ *  (verified)", but `fixtures: FixtureEntry[]` is declared on it at
+ *  src/lib/types.ts:166 with the same opponent_team / is_home /
+ *  difficulty_score / event_id fields, and it is what optimise-lineup.ts and
+ *  blank-gameweek.ts already read to decide blanks. Using it avoids a second
+ *  fetch, a second hook to mock, and a per-card lookup into a parallel map that
+ *  can disagree with the one the optimiser used. */
 function fdrStep(score: number): 1 | 2 | 3 | 4 | 5 {
   return Math.min(5, Math.max(1, Math.floor(score * 5) + 1)) as 1 | 2 | 3 | 4 | 5
 }
@@ -45,15 +55,29 @@ const FDR_CLS: Record<number, string> = {
 
 interface NextFixture { label: string; step: number }
 
+function toChip(fx: FixtureEntry): NextFixture {
+  // FPL fixture-list convention: home in caps, away in lower case.
+  return {
+    label: fx.is_home ? fx.opponent_team.toUpperCase() : fx.opponent_team.toLowerCase(),
+    step: fdrStep(fx.difficulty_score ?? 0.5),
+  }
+}
+
 /** Next-gameweek fixture for a player, or null on a blank — the BGW banner
  *  already explains a blank, so the chip simply does not render. */
 function nextFixtureOf(player: MergedPlayer, nextGw: number | null): NextFixture | null {
   if (nextGw === null) return null
   const fx = (player.fixtures ?? []).find(f => f.event_id === nextGw)
-  if (!fx) return null
-  // FPL fixture-list convention: home in caps, away in lower case.
-  const opp = fx.is_home ? fx.opponent_team.toUpperCase() : fx.opponent_team.toLowerCase()
-  return { label: opp, step: fdrStep(fx.difficulty_score ?? 0.5) }
+  return fx ? toChip(fx) : null
+}
+
+/** The next three fixtures for the tooltip, from the same list. */
+function upcomingOf(player: MergedPlayer, nextGw: number | null): NextFixture[] {
+  if (nextGw === null) return []
+  return (player.fixtures ?? [])
+    .filter(f => f.event_id >= nextGw)
+    .slice(0, 3)
+    .map(toChip)
 }
 
 function FixtureChip({ fixture, className = '' }: { fixture: NextFixture | null; className?: string }) {
@@ -110,12 +134,92 @@ function KitTile({ id, player, size }: { id: number; player: MergedPlayer; size:
   )
 }
 
+// ─── Card tooltip ───────────────────────────────────────────────────────────
+
+/** The detail that came off the resting card: full name, position, start
+ *  probability, xPts and the next three fixtures. Desktop reveals it on hover;
+ *  touch gets it by arming the card, which is the tap that already selects.
+ *
+ *  Absolutely positioned and pointer-events-none so it never reflows the row or
+ *  intercepts the tap that opens it. `w-max max-w-[180px]` with a centred
+ *  transform keeps it inside the pitch on a phone. */
+function TipBody({ player, upcoming, news }: {
+  player: MergedPlayer
+  upcoming: NextFixture[]
+  news: LineupNewsPlayer | undefined
+}) {
+  return (
+    <>
+      <span className="block truncate text-data font-bold text-ink">{player.web_name}</span>
+      <span className="mt-0.5 flex items-center gap-1.5 text-[10px] text-ink-muted">
+        <span>{POS_LABEL[player.element_type] ?? '??'}</span>
+        <span>·</span>
+        <span className="tabular">{Math.round((player.start_prob ?? 0) * 100)}% start</span>
+        <span>·</span>
+        <span className="tabular">{(player.xPts_1gw ?? 0).toFixed(1)} xPts</span>
+      </span>
+      {upcoming.length > 0 && (
+        <span className="mt-1 flex gap-1">
+          {upcoming.map((f, i) => <FixtureChip key={i} fixture={f} />)}
+        </span>
+      )}
+      {news?.status_label && (
+        <span className="mt-1 block"><StatusLabelBadge statusLabel={news.status_label} /></span>
+      )}
+    </>
+  )
+}
+
+/** Touch counterpart to CardTooltip: the same body, in normal flow beneath the
+ *  bench, shown for the armed card. In flow rather than floating because a
+ *  bubble wide enough to read is wider than a phone card, and anchoring it to
+ *  the card either overflows the pitch or gets clipped by it. */
+function ArmedDetail({ player, upcoming, news }: {
+  player: MergedPlayer
+  upcoming: NextFixture[]
+  news: LineupNewsPlayer | undefined
+}) {
+  return (
+    <div
+      data-testid="pitch-armed-detail"
+      className="sm:hidden rounded-xl border border-line bg-surface-1 px-3 py-2"
+    >
+      <TipBody player={player} upcoming={upcoming} news={news} />
+    </div>
+  )
+}
+
+function CardTooltip({
+  player, upcoming, news, open,
+}: {
+  player: MergedPlayer
+  upcoming: NextFixture[]
+  news: LineupNewsPlayer | undefined
+  open: boolean
+}) {
+  return (
+    <span
+      role="tooltip"
+      data-testid={`pitch-tip-${player.id}`}
+      // Desktop only. On a phone a 180px bubble centred on a 62px card hangs
+      // ~60px past the row, which pushes the pitch's scrollWidth out; touch gets
+      // the same content as a strip under the bench instead (see ArmedDetail).
+      className={`hidden sm:block pointer-events-none absolute bottom-full left-1/2 z-30 mb-1 w-max max-w-[180px]
+        -translate-x-1/2 rounded-lg border border-line bg-surface-1 px-2 py-1.5 text-left shadow-lg
+        transition-opacity duration-150 ${open ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+    >
+      <TipBody player={player} upcoming={upcoming} news={news} />
+    </span>
+  )
+}
+
 // ─── PlayerCard (starters) ──────────────────────────────────────────────────
 
 interface PlayerCardProps {
   id: number
   player: MergedPlayer
   nextGw: number | null
+  news: LineupNewsPlayer | undefined
   isPending: boolean
   isLegalTarget: boolean
   isIncompatible: boolean
@@ -132,7 +236,7 @@ interface PlayerCardProps {
 }
 
 function PlayerCard({
-  id, player, nextGw, isPending, isLegalTarget, isIncompatible, isCaptain, isViceCaptain,
+  id, player, nextGw, news, isPending, isLegalTarget, isIncompatible, isCaptain, isViceCaptain,
   onTap, onSetCaptain, onSetVc, canSetCaptain, canSetVc, onDragStart, onDragEnd, onDropOn,
 }: PlayerCardProps) {
   const fixture = nextFixtureOf(player, nextGw)
@@ -152,7 +256,13 @@ function PlayerCard({
   const pill = 'min-h-[44px] px-2 rounded-md bg-surface-1/95 border border-line text-[11px] font-bold text-ink backdrop-blur-sm shadow disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
 
   return (
-    <div className="relative flex flex-1 min-w-0 max-w-[100px] justify-center" data-testid={`pitch-card-${id}`}>
+    <div className="group relative flex flex-1 min-w-0 max-w-[100px] justify-center" data-testid={`pitch-card-${id}`}>
+      <CardTooltip
+        player={player}
+        upcoming={upcomingOf(player, nextGw)}
+        news={news}
+        open={isPending}
+      />
       <button
         type="button"
         // CRITICAL Pitfall 7 (preserved): stopPropagation prevents the pitch
@@ -196,7 +306,7 @@ function PlayerCard({
             </span>
           )}
         </div>
-        <div className="w-full max-w-[72px] bg-white/[0.94] dark:bg-[#0c0e0d]/[0.88] backdrop-blur-[4px] px-1 py-[3px] text-center overflow-hidden">
+        <div className="-mt-1 w-full max-w-[72px] rounded-t-md bg-white/[0.94] dark:bg-[#0c0e0d]/[0.88] backdrop-blur-[4px] px-1 py-[3px] text-center overflow-hidden">
           <span className="block truncate text-data font-bold text-ink">{player.web_name}</span>
         </div>
         <div className="w-full max-w-[72px] rounded-b-md bg-accent text-on-accent px-1 py-[2px] flex items-center justify-center gap-1">
@@ -247,6 +357,7 @@ interface PitchRowProps {
   ids: number[]
   playerMap: Map<number, MergedPlayer>
   nextGw: number | null
+  newsMap: Map<number, LineupNewsPlayer> | undefined
   pendingStarterId: number | null
   onCardTap: (id: number) => void
   effectiveCaptainId: number
@@ -259,13 +370,15 @@ interface PitchRowProps {
 }
 
 function PitchRow({
-  position, ids, playerMap, nextGw, pendingStarterId, onCardTap,
+  position, ids, playerMap, nextGw, newsMap, pendingStarterId, onCardTap,
   effectiveCaptainId, effectiveVcId, onSetCaptain, onSetVc, onDragStart, onDragEnd, onDropOn,
 }: PitchRowProps) {
   // The GK / DEF / MID / FWD label column is gone — the pitch shape says it.
   return (
     <div
-      className="flex justify-center items-start gap-3 px-2"
+      // gap/padding tighten on phones so the tile clears its 62px legibility
+      // floor with five across; both return to the brief's values from sm up.
+      className="flex justify-center items-start gap-1 px-0 sm:gap-3 sm:px-2"
       data-testid={`pitch-row-${position.toLowerCase()}`}
     >
       {ids.map(id => {
@@ -277,6 +390,7 @@ function PitchRow({
             id={id}
             player={player}
             nextGw={nextGw}
+            news={newsMap?.get(id)}
             isPending={id === pendingStarterId}
             isLegalTarget={false}
             isIncompatible={false}
@@ -382,6 +496,9 @@ export function LineupTab({ teamId }: LineupTabProps) {
   const submittedId = teamId.trim() === '' ? null : teamId.trim()
   const { data: squadData, isLoading: squadLoading, error: squadError } = useSquad(submittedId)
   const { data: playersData, isLoading: playersLoading } = usePlayers()
+  // Phase 118 ENGN-02: undefined when the scrape is stale (>48h) or absent, so
+  // the tooltip simply omits the badge rather than showing a stale one.
+  const { data: newsMap } = useLineupNews()
   const isLoading = squadLoading || playersLoading
 
   // PITCH-01: null means "the optimiser's own choice".
@@ -587,7 +704,7 @@ export function LineupTab({ teamId }: LineupTabProps) {
   }
 
   const rowProps = {
-    playerMap, nextGw, pendingStarterId, onCardTap,
+    playerMap, nextGw, newsMap, pendingStarterId, onCardTap,
     effectiveCaptainId, effectiveVcId,
     onSetCaptain: setCaptain, onSetVc: setVc,
     onDragStart, onDragEnd, onDropOn,
@@ -673,10 +790,13 @@ export function LineupTab({ teamId }: LineupTabProps) {
           absolutely-positioned siblings under a relative wrapper; the rows sit
           on top. Chalk is aria-hidden — it is scenery, not content. */}
       <div
-        className="relative rounded-2xl overflow-hidden border border-turf-edge shadow-[0_18px_40px_-24px_rgba(0,0,0,0.55)]"
+        className="relative rounded-2xl border border-turf-edge shadow-[0_18px_40px_-24px_rgba(0,0,0,0.55)]"
         onClick={handleBackgroundTap}
         data-testid="pitch"
       >
+        {/* overflow-hidden lives on the ART layer, not the pitch: clipping the
+            pitch itself would cut the top row's tooltip off at its own edge. */}
+        <div className="absolute inset-0 rounded-2xl overflow-hidden">
         <div className="absolute inset-0 bg-turf" />
         <div className="absolute inset-0 bg-[repeating-linear-gradient(180deg,var(--sp-turf-stripe-a)_0_9.09%,var(--sp-turf-stripe-b)_9.09%_18.18%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,rgba(255,255,255,0.10),transparent_55%),radial-gradient(100%_70%_at_50%_100%,rgba(0,0,0,0.28),transparent_60%)]" />
@@ -685,8 +805,9 @@ export function LineupTab({ teamId }: LineupTabProps) {
         <div aria-hidden="true" className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[20%] h-[34px] border-2 border-t-0 border-chalk rounded-b-[3px]" />
         <div aria-hidden="true" className="absolute -bottom-[88px] left-1/2 -translate-x-1/2 w-[200px] h-[200px] rounded-full border-2 border-chalk" />
         <div aria-hidden="true" className="absolute left-[10px] right-[10px] bottom-[10px] border-t-2 border-chalk" />
+        </div>
 
-        <div className="relative flex flex-col gap-1.5 px-2.5 pt-6 pb-7">
+        <div className="relative flex flex-col gap-1.5 px-1 sm:px-2.5 pt-6 pb-7">
           <PitchRow position="GK"  ids={starterGks}  {...rowProps} />
           <PitchRow position="DEF" ids={starterDefs} {...rowProps} />
           <PitchRow position="MID" ids={starterMids} {...rowProps} />
@@ -704,6 +825,14 @@ export function LineupTab({ teamId }: LineupTabProps) {
         onDragEnd={onDragEnd}
         onDropOn={onDropOn}
       />
+
+      {pendingStarterId !== null && playerMap.get(pendingStarterId) && (
+        <ArmedDetail
+          player={playerMap.get(pendingStarterId)!}
+          upcoming={upcomingOf(playerMap.get(pendingStarterId)!, nextGw)}
+          news={newsMap?.get(pendingStarterId)}
+        />
+      )}
 
       <p className="text-xs italic text-ink-muted">
         Tap a starter, then tap a bench player to swap — or drag one onto the other. Tap elsewhere to cancel.
