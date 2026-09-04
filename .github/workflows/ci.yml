@@ -1,0 +1,83 @@
+name: CI
+
+# There was no test workflow before this (2026-09-04) — only the data pipeline.
+# Nothing ran on a push, which is how seven Playwright tests sat red on main
+# while a top-bar overflow put every screen 76px past a 430px viewport, and how
+# the Value Gems entry in that same audit spent months settling on a heading its
+# tab had stopped rendering after a merge, passing over a page it never opened.
+#
+# The three suites are separate jobs so a red one names itself in the checks
+# list rather than hiding behind whichever ran first.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push supersedes an in-flight run of the same branch. Not applied to
+# main, where every commit's result is worth keeping.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  frontend:
+    name: types + unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Unit tests
+        run: npx vitest run
+
+  pipeline:
+    name: pipeline tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      # requirements.txt is the pipeline's runtime set and carries no test
+      # runner, so pytest is installed alongside it rather than added there.
+      - run: |
+          pip install -r pipeline/requirements.txt
+          pip install pytest==8.3.4
+      - name: Pipeline tests
+        run: python -m pytest pipeline/tests -q
+
+  e2e:
+    name: browser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      # Chromium only — playwright.config.ts defines a single mobile project,
+      # and installing the other engines triples the step for nothing.
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      # The specs stub the API routes they depend on (e2e/stubs.ts), so this
+      # needs no pipeline artifacts and no secrets. playwright.config.ts starts
+      # `npm run dev` itself and reuseExistingServer is false under CI.
+      - name: Playwright
+        run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

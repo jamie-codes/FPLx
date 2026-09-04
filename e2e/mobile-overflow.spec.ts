@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { stubApi } from './stubs'
 
 /**
  * Phase 77 POL-03: 430px mobile overflow audit.
@@ -88,6 +89,13 @@ const TABS: TabSpec[] = [
 ]
 
 test.describe('POL-03 — 430px mobile overflow audit', () => {
+  test.beforeEach(async ({ page }) => {
+    // Hermetic + deterministic: without this the API routes read a gitignored
+    // pipeline cache, so a clean checkout renders error states with nothing wide
+    // in them to overflow, and a dirty one measures whatever is on disk.
+    await stubApi(page)
+  })
+
   for (const tab of TABS) {
     test(`${tab.name} tab does not overflow 430px viewport horizontally`, async ({ page }) => {
       await page.goto(`/?t=${tab.toolId}`)
