@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { lineupNewsSelect } from './useLineupNews'
 import type { LineupNews, LineupNewsPlayer, SourceHealth } from '../types'
 
@@ -58,15 +58,25 @@ describe('lineupNewsSelect — 48h staleness select transform', () => {
   })
 
   it('returns a Map when scraped_at is exactly 48h ago (strict-greater-than boundary)', () => {
-    // Exactly 48h ago — age is NOT > 48h, so select returns a Map
-    const boundaryTime = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
-    const player1 = makeLineupNewsPlayer(10)
-    const data = makeLineupNews(boundaryTime, [player1])
+    // The clock is frozen because this asserts an EXACT boundary. It read
+    // Date.now() to build the timestamp and lineupNewsSelect read it again to
+    // measure the age, so a single millisecond between the two made the age
+    // 48h + 1ms, tipping past the strict > and returning undefined. It won that
+    // race on a fast local run and lost it on a loaded CI runner.
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(new Date('2026-09-01T12:00:00.000Z'))
+      const boundaryTime = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
+      const player1 = makeLineupNewsPlayer(10)
+      const data = makeLineupNews(boundaryTime, [player1])
 
-    const result = lineupNewsSelect(data)
+      const result = lineupNewsSelect(data)
 
-    expect(result).toBeInstanceOf(Map)
-    expect(result?.size).toBe(1)
+      expect(result).toBeInstanceOf(Map)
+      expect(result?.size).toBe(1)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('returned Map keys equal player.id values and values are the original LineupNewsPlayer objects', () => {
