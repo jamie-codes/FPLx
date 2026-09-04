@@ -142,6 +142,21 @@ def test_retries_with_strict_mode_then_passes(with_api_key):
         assert mock_save.call_count == 1
 
 
+def _sdk_error(cls):
+    """Build an SDK exception without calling its constructor.
+
+    These two tests only need an instance of the class the code catches. Calling
+    the constructor couples them to the SDK's signature, which has changed:
+    anthropic 1.x requires response= and body= on APIStatusError and request= on
+    APIError, so `RateLimitError('rate limit')` raises TypeError there.
+
+    The failure was invisible locally because batch_insights degrades to
+    `RateLimitError = Exception` when anthropic is not installed, so a bare
+    string constructed fine and the tests exercised a plain Exception rather than
+    the SDK class at all. __new__ skips __init__ and works either way.
+    """
+    return cls.__new__(cls)
+
 def test_skips_player_on_rate_limit(with_api_key):
     """RateLimitError raised on first attempt for player A causes skip (no retry for that player); player B still processed."""
     from batch_insights import generate_batch_insights
@@ -153,7 +168,7 @@ def test_skips_player_on_rate_limit(with_api_key):
         client = MockClient.return_value
         # First call raises RateLimitError, second call returns clean prose for player_b
         client.messages.create.side_effect = [
-            bi.RateLimitError('rate limit'),
+            _sdk_error(bi.RateLimitError),
             _stub_message('Haaland is the captain pick this week.'),
         ]
         result = generate_batch_insights(players=[player_a, player_b], corpus=_corpus(), gameweek=35)
@@ -173,7 +188,7 @@ def test_skips_player_on_api_error(with_api_key):
          patch('batch_insights.save') as mock_save:
         client = MockClient.return_value
         client.messages.create.side_effect = [
-            bi.APIError('api error'),
+            _sdk_error(bi.APIError),
             _stub_message('Haaland looks good this week.'),
         ]
         result = generate_batch_insights(players=[player_a, player_b], corpus=_corpus(), gameweek=35)
