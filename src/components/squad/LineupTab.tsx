@@ -91,49 +91,43 @@ function FixtureChip({ fixture, className = '' }: { fixture: NextFixture | null;
 
 // ─── Kit / photo tile ───────────────────────────────────────────────────────
 
-/** Current club's kit, with the player's face on top.
+/** The player's head, and nothing else.
  *
- *  Neither photo source can be trusted for the shirt. Checked on 2026-09-03,
- *  three summer transfers into this squad:
+ *  Shirts are deliberately absent (owner's call, 2026-09-04). They were worth
+ *  trying and the trail is worth recording, because both photo sources go stale
+ *  on transfers — checked against three summer moves into this squad:
  *
- *    PL 110x140    Mbeumo still in a Brentford shirt months after joining
- *                  Man Utd. It is a posed portrait and is reshot on the club's
- *                  schedule, not the transfer's.
- *    api-football  a 150x150 head crop. Fresher — Mbeumo is in United red —
- *                  but Semenyo is still in Bournemouth's red and black, so it
- *                  is not reliable either, and a collar is all the shirt it
- *                  carries anyway.
+ *    api-football  150x150 head crop on a white background. The fresher of the
+ *                  two: Mbeumo is in United red days after the move. Semenyo is
+ *                  still in Bournemouth's, so it is not perfect, but a collar is
+ *                  all the shirt it carries, so a stale one barely registers.
+ *    PL 110x140    a posed 220x280 portrait, reshot on the club's schedule
+ *                  rather than the transfer's — Mbeumo is still in a Brentford
+ *                  shirt. Transparent PNG, higher resolution.
  *
- *  The kit GRAPHIC cannot go stale: teamKitUrl is keyed off team_short_name from
- *  the same API row that says which club the player is at. So the shirt comes
- *  from there and the photo contributes only a face, cropped to a circle so any
- *  out-of-date collar is cropped away with it.
+ *  There is no fresher source to reach for: the PL CDN exposes exactly one photo
+ *  per player, with no season-scoped path (premierleague25/26/27 all 403/502),
+ *  and the better-maintained alternatives (Sofascore, FotMob) are unofficial
+ *  endpoints that block hotlinking.
  *
- *  This does stack two images, which the brief forbade. That rule assumed one
- *  source could supply both a face and a current shirt; measured against real
- *  transfers, none can. */
+ *  So api-football leads on freshness, and the PL portrait backs it up zoomed to
+ *  the head, which crops its out-of-date shirt away. Team colour is the last
+ *  resort — a card must never render empty. */
 function KitTile({ id, player, size }: { id: number; player: MergedPlayer; size: 'pitch' | 'bench' }) {
   const { onError, showFallback, fallbackColour } = useTeamBadge(player.team_short_name)
-  const [faceStep, setFaceStep] = useState(0)
-  const teamCode = TEAM_BADGE_CODE[player.team_short_name]
+  const [step, setStep] = useState(0)
 
-  // Face sources. The PL portrait leads: 220x280 against api-football's 150x150,
-  // so it survives the zoom below, and since only the head is kept its stale
-  // shirt is cropped away. api-football backs it up for players the PL has no
-  // portrait for. Probed 2026-09-03: the PL CDN exposes exactly one photo per
-  // player — no season-scoped path exists (premierleague25/26/27 all 403/502) —
-  // so there is no fresher variant to reach for.
-  const faces = [
-    ...(player.code ? [playerImageUrl(player.code)] : []),
-    ...(player.photo_url ? [player.photo_url] : []),
+  const faces: { src: string; portrait: boolean }[] = [
+    ...(player.photo_url ? [{ src: player.photo_url, portrait: false }] : []),
+    ...(player.code ? [{ src: playerImageUrl(player.code), portrait: true }] : []),
   ]
-  const face = faces[faceStep]
+  const face = faces[step]
 
   const box = size === 'pitch'
     ? 'w-full max-w-[72px] aspect-[11/13] rounded-t-lg'
     : 'w-[30px] h-[36px] shrink-0 rounded-[5px]'
 
-  if (showFallback || !teamCode) {
+  if (showFallback || !face) {
     return (
       <div
         role="img"
@@ -145,33 +139,19 @@ function KitTile({ id, player, size }: { id: number; player: MergedPlayer; size:
     )
   }
   return (
-    <div className={`relative ${box} bg-white dark:bg-[#1b201a] overflow-hidden`}>
-      {/* Kit sits low so the face can occupy the collar. */}
+    // White in both themes: api-football bakes a white background into the file
+    // rather than shipping alpha, so a dark tile would frame it in a bright box.
+    <div className={`relative ${box} bg-white overflow-hidden`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={teamKitUrl(teamCode)}
-        alt={`${player.team_short_name} kit`}
+        src={face.src}
+        alt={player.web_name}
         data-testid={`pitch-card-kit-${id}`}
-        className="absolute inset-x-0 bottom-0 w-full h-[78%] object-contain object-bottom"
-        onError={onError}
+        // The PL portrait is a full-body pose, so it scales from its top edge to
+        // bring the head up to the same framing api-football already ships.
+        className={`h-full w-full object-cover object-top ${face.portrait ? 'origin-top scale-[1.75]' : ''}`}
+        onError={step < faces.length - 1 ? () => setStep(s => s + 1) : onError}
       />
-      {face && (
-        <span className="absolute left-1/2 top-[2%] w-[54%] aspect-square -translate-x-1/2 overflow-hidden rounded-full bg-white dark:bg-[#1b201a] ring-1 ring-black/10 dark:ring-white/10">
-          {/* object-cover in a square box shows the portrait's top ~79%, which
-              frames the chest as much as the head. The head occupies roughly the
-              top 45%, so scale from the top edge to close that gap. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={face}
-            alt={player.web_name}
-            data-testid={`pitch-card-face-${id}`}
-            className="h-full w-full origin-top scale-[1.75] object-cover object-top"
-            // Try the other source once, then drop the face and leave the kit —
-            // a missing headshot must never blank the tile.
-            onError={() => setFaceStep(s => s + 1)}
-          />
-        </span>
-      )}
     </div>
   )
 }
