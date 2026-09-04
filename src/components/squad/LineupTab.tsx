@@ -316,7 +316,7 @@ function PlayerCard({
               className="absolute -top-0.5 -right-0.5 min-w-[20px] h-5 px-1 rounded-full bg-surface-1 text-ink border border-line text-[10px] font-extrabold grid place-items-center shadow"
               data-testid="vc-badge"
             >
-              VC
+              V
             </span>
           )}
           {flagged && (

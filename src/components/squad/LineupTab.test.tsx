@@ -219,7 +219,10 @@ describe('Phase 72: LineupTab', () => {
       expect(captainBadge).not.toBeNull()
       expect(captainBadge!.textContent).toBe('C')
       expect(vcBadge).not.toBeNull()
-      expect(vcBadge!.textContent).toBe('VC')
+      // Brief section 3: `C` for captain, `V` for vice. The armband is a 20px
+      // disc — two characters crowd it, and the pill beneath the armed card
+      // still reads VC, where there is room and the extra letter disambiguates.
+      expect(vcBadge!.textContent).toBe('V')
     })
   })
 
